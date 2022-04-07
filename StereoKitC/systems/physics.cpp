@@ -158,6 +158,7 @@ void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3
 	RigidBody   *body   = (RigidBody*)solid->data;
 	SphereShape *sphere = physics_common.createSphereShape(diameter/2);
 	body->addCollider(sphere, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
+	(void)kilograms;
 #endif
 }
 
@@ -168,6 +169,7 @@ void solid_add_box(solid_t solid, const vec3 &dimensions, float kilograms, const
 	RigidBody *body = (RigidBody*)solid->data;
 	BoxShape  *box  = physics_common.createBoxShape(Vector3{ dimensions.x / 2, dimensions.y / 2,dimensions.z / 2 });
 	body->addCollider(box, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
+	(void)kilograms;
 #endif
 }
 
@@ -178,6 +180,7 @@ void solid_add_capsule(solid_t solid, float diameter, float height, float kilogr
 	RigidBody    *body    = (RigidBody*)solid->data;
 	CapsuleShape *capsule = physics_common.createCapsuleShape(diameter/2, height);
 	body->addCollider(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }));
+	(void)kilograms;
 #endif
 }
 

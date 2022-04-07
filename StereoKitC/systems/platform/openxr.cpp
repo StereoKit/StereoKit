@@ -16,6 +16,7 @@
 #include "../../libraries/stref.h"
 #include "../../libraries/ferr_hash.h"
 #include "../render.h"
+#include "../audio.h"
 #include "../input.h"
 #include "../hand/input_hand.h"
 #include "android.h"
@@ -99,18 +100,19 @@ const char *openxr_string(XrResult result) {
 bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 	if (!xr_stage_space) return false;
 
-	XrExtent2Df bounds;
-	if (XR_FAILED(xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds)))
-		return false;
 	if (!openxr_get_space(xr_stage_space, out_pose, time))
 		return false;
 
-	out_size->x = bounds.width;
-	out_size->y = bounds.height;
+	XrExtent2Df bounds;
+	XrResult    res = xrGetReferenceSpaceBoundsRect(xr_session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+	if (XR_SUCCEEDED(res) && res != XR_SPACE_BOUNDS_UNAVAILABLE) {
+		out_size->x = bounds.width;
+		out_size->y = bounds.height;
+	}
 
 	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)",
 		out_size->x, out_size->y,
-		out_pose->position.x, out_pose->position.y, out_pose->position.z,
+		out_pose->position   .x, out_pose->position   .y, out_pose->position   .z,
 		out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
 	return true;
 }
@@ -238,22 +240,8 @@ bool openxr_init() {
 	// Check if OpenXR is on this system, if this is null here, the user needs
 	// to install an OpenXR runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		// openxr_string only works when an xr_instance is present, so we gotta
-		// check the errors manually here. This is only the subset of errors
-		// that xrCreateInstance can throw.
-		const char *err_name = "Unknown";
-		switch (result) {
-			case XR_ERROR_VALIDATION_FAILURE:      err_name = "XR_ERROR_VALIDATION_FAILURE"; break;
-			case XR_ERROR_RUNTIME_FAILURE:         err_name = "XR_ERROR_RUNTIME_FAILURE"; break;
-			case XR_ERROR_OUT_OF_MEMORY:           err_name = "XR_ERROR_OUT_OF_MEMORY"; break;
-			case XR_ERROR_LIMIT_REACHED:           err_name = "XR_ERROR_LIMIT_REACHED"; break;
-			case XR_ERROR_RUNTIME_UNAVAILABLE:     err_name = "XR_ERROR_RUNTIME_UNAVAILABLE"; break;
-			case XR_ERROR_NAME_INVALID:            err_name = "XR_ERROR_NAME_INVALID"; break;
-			case XR_ERROR_INITIALIZATION_FAILED:   err_name = "XR_ERROR_INITIALIZATION_FAILED"; break;
-			case XR_ERROR_EXTENSION_NOT_PRESENT:   err_name = "XR_ERROR_EXTENSION_NOT_PRESENT"; break;
-			case XR_ERROR_API_VERSION_UNSUPPORTED: err_name = "XR_ERROR_API_VERSION_UNSUPPORTED"; break;
-			case XR_ERROR_API_LAYER_NOT_PRESENT:   err_name = "XR_ERROR_API_LAYER_NOT_PRESENT"; break;
-		}
+		const char *err_name = openxr_string(result);
+
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
 		openxr_shutdown();
 		return false;
@@ -496,6 +484,18 @@ bool openxr_init() {
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (xr_ext_available.OCULUS_audio_device_guid) {
+		wchar_t device_guid[128];
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_out(device_guid);
+		}
+		if (XR_SUCCEEDED(xr_extensions.xrGetAudioInputDeviceGuidOculus(xr_instance, device_guid))) {
+			audio_set_default_device_in(device_guid);
+		}
+	}
+#endif
+
 	return true;
 }
 
@@ -606,6 +606,7 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
+	xr_compositor_layers_clear();
 	render_clear();
 }
 
@@ -619,11 +620,18 @@ void openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
 			xr_session_state = changed->state;
-			sk_focused       = xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED;
+
+			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_focus = app_focus_active;
+			else if (xr_session_state == XR_SESSION_STATE_VISIBLE) sk_focus = app_focus_background;
+			else                                                   sk_focus = app_focus_hidden;
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
+			// The runtime should never return this: https://www.khronos.org/registry/OpenXR/specs/1.0/man/html/XrSessionState.html
+			case XR_SESSION_STATE_UNKNOWN: log_errf("Runtime gave us a XR_SESSION_STATE_UNKNOWN! Bad runtime!"); break;
+			case XR_SESSION_STATE_IDLE: break; // Wait till we get XR_SESSION_STATE_READY.
 			case XR_SESSION_STATE_READY: {
+				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = xr_display_types[0];
 
@@ -642,8 +650,11 @@ void openxr_poll_events() {
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break;
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
+			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
 			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
+			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			default: break;
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
@@ -653,11 +664,13 @@ void openxr_poll_events() {
 			}
 		} break;
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
-		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
+		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+		}
 			break;
+		default: break;
 		}
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
@@ -950,60 +963,4 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 } // namespace sk
 
-#else
-
-namespace sk {
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_instance() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_session() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-openxr_handle_t backend_openxr_get_space() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-int64_t backend_openxr_get_time() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return 0;
-}
-
-///////////////////////////////////////////
-
-void *backend_openxr_get_function(const char *function_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return nullptr;
-}
-
-///////////////////////////////////////////
-
-bool32_t backend_openxr_ext_enabled(const char *extension_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-	return false;
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
-		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
-		return;
-	}
-}
-
-}
 #endif

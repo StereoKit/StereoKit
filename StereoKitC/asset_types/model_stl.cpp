@@ -28,7 +28,7 @@ vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vin
 		result = (vind_t)verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
 		indmap->add_or_set(pt, result);
 	} else {
-		result = indmap->items[id];
+		result = indmap->items[(size_t)id];
 	}
 	verts->get(result).norm += normal;
 	return result;
@@ -188,9 +188,8 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 			verts[i].norm = vec3_normalize(verts[i].norm);
 
 		mesh = mesh_create();
-		mesh_set_id   (mesh, id);
-		mesh_set_verts(mesh, &verts[0], (int32_t)verts.count);
-		mesh_set_inds (mesh, &faces[0], (int32_t)faces.count);
+		mesh_set_id  (mesh, id);
+		mesh_set_data(mesh, &verts[0], (int32_t)verts.count, &faces[0], (int32_t)faces.count);
 
 		model_add_subset(model, mesh, material, matrix_identity);
 

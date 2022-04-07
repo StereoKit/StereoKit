@@ -5,6 +5,7 @@
 #include "texture.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
+#include "../systems/defaults.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../systems/platform/platform_utils.h"
@@ -265,7 +266,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		if (vert_count < (int32_t)attr->data->count) {
 			vert_count = (int32_t)attr->data->count;
 			verts      = sk_realloc_t(vert_t, verts, vert_count);
-			for (size_t i = 0; i < vert_count; i++) {
+			for (int32_t i = 0; i < vert_count; i++) {
 				verts[i] = vert_t{ vec3_zero, vec3_zero, vec2_zero, {255,255,255,255} };
 			}
 		}
@@ -277,7 +278,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (cgltf_size v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].pos = *pos;
 				}
 			} else {
@@ -303,7 +304,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec3) * v) + offset);
+					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].norm = *norm;
 				}
 			} else {
@@ -328,7 +329,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
 				// Ideal case is vec2 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (sizeof(vec2) * v) + offset);
+					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].uv = *uv;
 				}
 			} else {
@@ -353,13 +354,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (sizeof(color32) * v) + offset);
+					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].col = *col;
 				}
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
 				// vec4 float colors are also pretty straightforward
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (sizeof(color128) * v) + offset);
+					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
 					verts[v].col = color_to_32(*col);
 				}
 			} else {
@@ -394,21 +395,21 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint8_t) * v) + offset);
+			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 			inds[v] = *ind;
 		}
 	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint16_t) * v) + offset);
+			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 			inds[v] = *ind;
 		}
 	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
 		cgltf_buffer_view *buff   = p->indices->buffer_view;
 		size_t             offset = buff->offset + p->indices->offset;
 		for (size_t v = 0; v < ind_count; v++) {
-			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (sizeof(uint32_t) * v) + offset);
+			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
 #ifdef SK_32BIT_INDICES
 			inds[v] = *ind;
 #else
@@ -424,9 +425,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	result = mesh_create();
-	mesh_set_id   (result, id);
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  (int32_t)ind_count);
+	mesh_set_id  (result, id);
+	mesh_set_data(result, verts, vert_count, inds, (int32_t)ind_count);
 	free(verts);
 	free(inds );
 
@@ -585,16 +585,22 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
-			material_set_texture(result, "diffuse", parse_tex);
-			tex_release(parse_tex);
+			tex_set_fallback(parse_tex, sk_default_tex);
+			if (parse_tex != nullptr) {
+				material_set_texture(result, "diffuse", parse_tex);
+				tex_release(parse_tex);
+			}
 		}
 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
 			if (material->pbr_metallic_roughness.metallic_roughness_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
-			material_set_texture(result, "metal", parse_tex);
-			tex_release(parse_tex);
+			tex_set_fallback(parse_tex, sk_default_tex_rough);
+			if (parse_tex != nullptr) {
+				material_set_texture(result, "metal", parse_tex);
+				tex_release(parse_tex);
+			}
 		}
 
 		float *c = material->pbr_metallic_roughness.base_color_factor;
@@ -612,8 +618,10 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
-			material_set_texture(result, "diffuse", parse_tex);
-			tex_release(parse_tex);
+			if (parse_tex != nullptr) {
+				material_set_texture(result, "diffuse", parse_tex);
+				tex_release(parse_tex);
+			}
 		}
 
 		float *c = material->pbr_specular_glossiness.diffuse_factor;
@@ -633,24 +641,33 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
 		if (material->normal_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
-		material_set_texture(result, "normal", parse_tex);
-		tex_release(parse_tex);
+		tex_set_fallback(parse_tex, sk_default_tex_flat);
+		if (parse_tex != nullptr) {
+			material_set_texture(result, "normal", parse_tex);
+			tex_release(parse_tex);
+		}
 	}
 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
 		if (material->occlusion_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
-		material_set_texture(result, "occlusion", parse_tex);
-		tex_release(parse_tex);
+		tex_set_fallback(parse_tex, sk_default_tex);
+		if (parse_tex != nullptr) {
+			material_set_texture(result, "occlusion", parse_tex);
+			tex_release(parse_tex);
+		}
 	}
 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
 		if (material->emissive_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
-		material_set_texture(result, "emission", parse_tex);
-		tex_release(parse_tex);
+		tex_set_fallback(parse_tex, sk_default_tex_black);
+		if (parse_tex != nullptr) {
+			material_set_texture(result, "emission", parse_tex);
+			tex_release(parse_tex);
+		}
 	}
 
 	return result;
@@ -678,6 +695,9 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 		case cgltf_animation_path_type_rotation:    curve.applies_to = anim_element_rotation;    break;
 		case cgltf_animation_path_type_scale:       curve.applies_to = anim_element_scale;       break;
 		case cgltf_animation_path_type_weights:     curve.applies_to = anim_element_weights;     break;
+		case cgltf_animation_path_type_invalid: {
+			log_errf("Got invalid animation path type");
+		} break;
 		}
 
 		size_t output_size    =          cgltf_accessor_unpack_floats(ch->sampler->output, nullptr, 0);
@@ -698,20 +718,23 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 			switch (curve.applies_to) {
 			case anim_element_translation: {
 				vec3 *tr = (vec3*)curve.keyframe_values + offset;
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					tr[k*skip] = matrix_transform_pt(gltf_orientation_correction, tr[k*skip]);
 			} break;
 			case anim_element_scale: {
 				vec3 *sc = (vec3*)curve.keyframe_values + offset;
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					sc[k*skip] = matrix_transform_dir(gltf_orientation_correction, sc[k*skip]);
 			} break;
 			case anim_element_rotation: {
 				quat *rot = (quat*)curve.keyframe_values + offset;
 				quat r = matrix_extract_rotation(gltf_orientation_correction);
-				for (size_t k = 0; k < curve.keyframe_count; k++)
+				for (int32_t k = 0; k < curve.keyframe_count; k++)
 					rot[k*skip] = r * rot[k*skip];
 			} break;
+			case anim_element_weights: {
+				log_warnf("Animated weights unsupported");
+			}
 			}
 		}
 
@@ -760,8 +783,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	if (parent == -1)
 		transform = transform * gltf_orientation_correction;
 
-	for (int32_t p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
-		mesh_t mesh = gltf_parsemesh(node->mesh, index, p, filename, warnings);
+	for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+		mesh_t mesh = gltf_parsemesh(node->mesh, index, (int)p, filename, warnings);
 		if (mesh == nullptr) continue;
 
 		// If we're splitting this node into multiple meshes, then add the
@@ -830,14 +853,14 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 
 	// Load each root node
 	hashmap_t<cgltf_node*, model_node_id> node_map = {};
-	for (int32_t i = 0; i < data->nodes_count; i++) {
+	for (cgltf_size i = 0; i < data->nodes_count; i++) {
 		cgltf_node *n = &data->nodes[i];
 		if (n->parent == nullptr)
 			gltf_add_node(model, shader, -1, filename, data, n, &node_map, &warnings);
 	}
 
 	// Load each animation
-	for (int32_t i = 0; i < data->animations_count; i++) {
+	for (cgltf_size i = 0; i < data->animations_count; i++) {
 		model->anim_data.anims.add( gltf_parseanim(&data->animations[i], &node_map) );
 	}
 
@@ -850,7 +873,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		skel.bone_count       = (int32_t)skin->joints_count;
 		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
 		skel.skin_node        = *node_map.get(&data->nodes[i]);
-		for (size_t b = 0; b < skel.bone_count; b++) {
+		for (int32_t b = 0; b < skel.bone_count; b++) {
 			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
 		}
 		model->anim_data.skeletons.add(skel);

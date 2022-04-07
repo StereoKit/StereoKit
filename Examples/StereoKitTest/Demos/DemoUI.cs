@@ -133,7 +133,7 @@ class DemoUI : ITest
 		/// Hierarchy transform stack!
 		/// 
 		UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
-		Renderer.Add(clipboard, Matrix.Identity);
+		clipboard.Draw(Matrix.Identity);
 		///
 		/// Once we've done that, we also need to define the layout area of
 		/// the model, where UI elements will go. This is different for each

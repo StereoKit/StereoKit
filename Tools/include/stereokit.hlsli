@@ -54,11 +54,14 @@ float2 FingerGlowEx(float3 world_pos, float3 world_norm) {
 	float dist = 1;
 	float ring = 0;
 	for	(int i=0;i<2;i++) {
-		float3 delta = sk_fingertip[i].xyz - world_pos;
-		float  d     = length(delta);
-		float3 norm  = delta / d;
-		ring = max( ring, min(1, 1 - abs(max(0,dot(world_norm, norm))-0.9)*100) );
-		dist = min( dist, d );
+		float3 to_finger = sk_fingertip[i].xyz - world_pos;
+		float  d         = dot(world_norm, to_finger);
+		float3 on_plane  = sk_fingertip[i].xyz - d*world_norm;
+
+		float dist_from_finger = length(to_finger);
+		float dist_on_plane    = length(world_pos - on_plane);
+		ring = max(ring, saturate(1-abs(d*0.5-dist_on_plane)*600));
+		dist = min( dist, dist_from_finger );
 	}
 
 	return float2(dist, ring);

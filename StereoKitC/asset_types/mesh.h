@@ -25,15 +25,15 @@ struct mesh_weights_t {
 
 struct _mesh_t {
 	asset_header_t   header;
-	int              vert_count;
-	int              vert_capacity;
+	uint32_t         vert_count;
+	uint32_t         vert_capacity;
 	bool32_t         vert_dynamic;
 	skg_buffer_t     vert_buffer;
-	int              ind_count;
-	int              ind_capacity;
+	uint32_t         ind_count;
+	uint32_t         ind_capacity;
 	bool32_t         ind_dynamic;
 	skg_buffer_t     ind_buffer;
-	int              ind_draw;
+	uint32_t         ind_draw;
 	skg_mesh_t       gpu_mesh;
 	bounds_t         bounds;
 	bool32_t         discard_data;

@@ -95,12 +95,23 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 
 	// Call the file picker that does all the real work, and pass the callback
 	// along to _our_ callback.
-	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) {
+	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
 		callback_t *data = (callback_t *)callback_data;
 		if (data->on_confirm)
 			data->on_confirm(data->callback_data, confirmed, filename);
 		free(data);
 	}, filters, filter_count);
+}
+
+///////////////////////////////////////////
+
+char *platform_append_filter(char *to, const file_filter_t *filter, bool search_pattern, const char *postfix) {
+	const char *curr = filter->ext;
+	while (*curr == '.' || *curr == '*') curr++;
+
+	return search_pattern
+		? string_append(to, 3, "*.", curr, postfix)
+		: string_append(to, 2, curr, postfix);
 }
 
 ///////////////////////////////////////////
@@ -112,9 +123,9 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?1:2, filters[e].ext, ", ");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], true, e == filter_count - 1 ? "" : ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		size_t len = strlen(filter);
 		wchar_t *w_filter = platform_to_wchar(filter);
@@ -133,7 +144,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Open";
 			if (GetOpenFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -143,7 +154,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Save As";
 			if (GetSaveFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -163,8 +174,19 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
+			const char *ext = filters[i].ext;
+			while (*ext == '*') ext++;
+
+			char *ext_mem = nullptr;
+			if (*ext != '.') {
+				ext_mem = string_append(nullptr, 2, ".", ext);
+				ext = ext_mem;
+			}
+
+			MultiByteToWideChar(CP_UTF8, 0, ext, (int)strlen(ext)+1, wext, 32);
 			picker.FileTypeFilter().Append(wext);
+
+			free(ext_mem);
 		}
 		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
@@ -197,7 +219,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	case picker_mode_open: {
 		fp_title = string_append(fp_title, 1, "Open (");
 		for (int32_t e = 0; e < filter_count; e++)
-			fp_title = string_append(fp_title, e==filter_count-1?1:2, filters[e].ext, ", ");
+			fp_title = platform_append_filter(fp_title, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		fp_title = string_append(fp_title, 1, ")");
 	} break;
 	}
@@ -298,7 +320,7 @@ void file_picker_open_folder(const char *folder) {
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?strlen(fp_filename)+1:0);
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, (int32_t)(strlen(fp_filename)+1));
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;

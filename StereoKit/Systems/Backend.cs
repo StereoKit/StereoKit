@@ -15,11 +15,16 @@ namespace StereoKit
 		/// WebXR, then this will reflect that.</summary>
 		public static BackendXRType XRType => NativeAPI.backend_xr_get_type();
 
+		/// <summary>What kind of platform is StereoKit running on? This can be
+		/// important to tell you what APIs or functionality is available to
+		/// the app.</summary>
+		public static BackendPlatform Platform => NativeAPI.backend_platform_get();
+
 		/// <summary>This class is NOT of general interest, unless you are
 		/// trying to add support for some unusual OpenXR extension! StereoKit
 		/// should do all the OpenXR work that most people will need. If you
 		/// find yourself here anyhow for something you feel StereoKit should
-		/// support already, please add a feature request on Github!
+		/// support already, please add a feature request on GitHub!
 		/// 
 		/// This class contains handles and methods for working directly with
 		/// OpenXR. This may allow you to activate or work with OpenXR
@@ -80,7 +85,7 @@ namespace StereoKit
 			/// <returns>A delegate, or null on failure.</returns>
 			public static TDelegate GetFunction<TDelegate>(string functionName) {
 				IntPtr fn = NativeAPI.backend_openxr_get_function(functionName);
-				if (fn == null) return default;
+				if (fn == IntPtr.Zero) return default;
 				return Marshal.GetDelegateForFunctionPointer<TDelegate>(fn);
 			}
 
@@ -93,6 +98,47 @@ namespace StereoKit
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			public  static void RequestExt (string extensionName) { NativeLib.Load(); _RequestExt(extensionName); }
 			private static void _RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
+
+			/// <summary>This allows you to add XrCompositionLayers to the list
+			/// that StereoKit submits to xrEndFrame. You must call this every
+			/// frame you wish the layer to be included.</summary>
+			/// <typeparam name="T">This must be a serializable struct that
+			/// follows the XrCompositionLayerBaseHeader data pattern.
+			/// </typeparam>
+			/// <param name="XrCompositionLayerX">A serializable
+			/// XrCompositionLayer struct that follows the
+			/// XrCompositionLayerBaseHeader data pattern. </param>
+			/// <param name="sortOrder">An sort order value for sorting with
+			/// other composition layers in the list. The primary projection
+			/// layer that StereoKit renders to is at 0, -1 would be before it,
+			/// and +1 would be after.</param>
+			public static void AddCompositionLayer<T>(T XrCompositionLayerX, int sortOrder) where T : struct
+			{
+				int size = Marshal.SizeOf<T>();
+				IntPtr ptr = Marshal.AllocHGlobal(size);
+				Marshal.StructureToPtr(XrCompositionLayerX, ptr, false);
+				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
+				Marshal.FreeHGlobal(ptr);
+			}
+		}
+
+		/// <summary>This class contains variables that may be useful for
+		/// interop with the Android operating system, or other Android
+		/// libraries.</summary>
+		public static class Android
+		{
+			/// <summary>This is the `JavaVM*` object that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr JavaVM => NativeAPI.backend_android_get_java_vm();
+			/// <summary>This is the `jobject` activity that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr Activity => NativeAPI.backend_android_get_activity();
+			/// <summary>This is the `JNIEnv*` object that StereoKit uses on
+			/// Android. This is only valid after SK.Initialize, on Android
+			/// systems.</summary>
+			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
 		}
 	}
 }

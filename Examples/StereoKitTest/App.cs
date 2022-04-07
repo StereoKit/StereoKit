@@ -14,6 +14,7 @@ class App
 		logFilter         = LogLevel.Diagnostic};
 
 	public SKSettings Settings => settings;
+	public static PassthroughFBExt passthrough;
 
 	Model  floorMesh;
 	Matrix floorTr;
@@ -48,6 +49,8 @@ class App
 		/// your initialization code!
 		Log.Subscribe(OnLog);
 		/// :End:
+		
+		passthrough = SK.AddStepper<PassthroughFBExt>();
 	}
 
 	//////////////////////
@@ -79,10 +82,25 @@ class App
 
 	public void Step()
 	{
+		CheckFocus();
+
 		Tests.Update();
 
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
+
+		/// :CodeSample: Projection Renderer.Projection
+		/// ### Toggling the projection mode
+		/// Only in flatscreen apps, there is the option to change the main
+		/// camera's projection mode between perspective and orthographic.
+		if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
+			Input.Key(Key.P).IsJustActive())
+		{
+			Renderer.Projection = Renderer.Projection == Projection.Perspective
+				? Projection.Ortho
+				: Projection.Perspective;
+		}
+		/// :End:
 
 		// If we can't see the world, we'll draw a floor!
 		if (SK.System.displayType == Display.Opaque)
@@ -186,6 +204,19 @@ class App
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
 		UI.Text(logText);
 		UI.WindowEnd();
+	}
+	/// :End:
+
+	/// :CodeSample: AppFocus SK.AppFocus
+	/// ### Checking for changes in application focus
+	AppFocus lastFocus = AppFocus.Hidden;
+	void CheckFocus()
+	{
+		if (lastFocus != SK.AppFocus)
+		{
+			lastFocus = SK.AppFocus;
+			Log.Info($"App focus changed to: {lastFocus}");
+		}
 	}
 	/// :End:
 }

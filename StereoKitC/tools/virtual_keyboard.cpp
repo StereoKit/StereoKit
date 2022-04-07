@@ -37,14 +37,15 @@ void virtualkeyboard_reset_modifiers() {
 
 ///////////////////////////////////////////
 
-void virtualkeyboard_open(bool open, text_context_ type) {
+void virtualkeyboard_open(bool32_t open, text_context_ type) {
 	if (open == keyboard_open && type == keyboard_text_context) return;
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		keyboard_pose = *input_head();
-		keyboard_pose.position   += keyboard_pose.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, input_head()->position);
+		matrix to_local   = matrix_invert(render_get_cam_root());
+		pose_t local_head = matrix_transform_pose(to_local, *input_head());
+		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
+		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
 	}
 
 	// Reset the keyboard to its default state
@@ -80,7 +81,7 @@ void send_key_data(const char16_t* charkey,key_ key) {
 ///////////////////////////////////////////
 
 void remove_last_clicked_keys() {
-	for (int i = 0; i < keyboard_pressed_keys.count; i++) {
+	for (size_t i = 0; i < keyboard_pressed_keys.count; i++) {
 		input_keyboard_inject_release(keyboard_pressed_keys[0]);
 		keyboard_pressed_keys.remove(0);
 	}
@@ -103,9 +104,9 @@ void virtualkeyboard_update() {
 	if (keyboard_active_layout == nullptr) return;
 
 	remove_last_clicked_keys();
+	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
 	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body);
-	ui_push_preserve_keyboard(true);
 
 	// Check layer keys for switching between keyboard layout layers
 	int layer_index = 0;
@@ -176,9 +177,9 @@ void virtualkeyboard_update() {
 		ui_pop_id();
 		ui_sameline();
 	}
-	ui_pop_preserve_keyboard();
 	ui_window_end();
 	hierarchy_pop();
+	ui_pop_preserve_keyboard();
 }
 
 }

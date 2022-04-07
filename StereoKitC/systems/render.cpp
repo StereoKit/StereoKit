@@ -28,7 +28,13 @@
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
-#include <DirectXMath.h> // Matrix math functions and objects
+// Matrix math functions and objects
+#if defined(SK_OS_LINUX)
+// Different include path on Linux to hint clangd where the file actually is
+#include "../lib/include_no_win/DirectXMath.h" 
+#else
+#include <DirectXMath.h>
+#endif
 using namespace DirectX;
 
 namespace sk {
@@ -92,8 +98,16 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
+
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
+
+float                   render_ortho_near_clip = 0.0f;
+float                   render_ortho_far_clip  = 50.0f;
+float                   render_ortho_viewport_height = 1.0f;
+
+projection_             render_projection_type = projection_perspective;
+
 render_global_buffer_t  render_global_buffer;
 mesh_t                  render_blit_quad;
 vec4                    render_lighting[9]     = {};
@@ -109,10 +123,9 @@ array_t<render_screenshot_t>  render_screenshot_list = {};
 array_t<render_viewpoint_t>   render_viewpoint_list  = {};
 
 const int32_t           render_skytex_register = 11;
-mesh_t                  render_sky_mesh    = nullptr;
-material_t              render_sky_mat     = nullptr;
-bool32_t                render_sky_show    = false;
-vec4                    render_sky_dims    = {};
+mesh_t                  render_sky_mesh        = nullptr;
+material_t              render_sky_mat         = nullptr;
+bool32_t                render_sky_show        = false;
 
 material_t              render_last_material;
 shader_t                render_last_shader;
@@ -131,6 +144,8 @@ void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_check_screenshots();
 void          render_check_viewpoints ();
+
+void          render_list_prep        (render_list_t list);
 
 ///////////////////////////////////////////
 
@@ -158,12 +173,57 @@ void render_set_fov(float field_of_view_degrees) {
 
 ///////////////////////////////////////////
 
+void render_set_ortho_size(float viewport_height_meters) {
+	render_ortho_viewport_height = viewport_height_meters;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void render_set_ortho_clip(float near_plane, float far_plane) {
+	render_ortho_near_clip = near_plane;
+	render_ortho_far_clip = far_plane;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void render_set_projection(projection_ proj) {
+	render_projection_type = proj;
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+projection_ render_get_projection() {
+	return render_projection_type;
+}
+
+///////////////////////////////////////////
+
+float render_get_ortho_view_height() {
+	return render_ortho_viewport_height;
+}
+
+///////////////////////////////////////////
+
 void render_update_projection() {
-	math_fast_to_matrix( XMMatrixPerspectiveFovRH(
-		render_fov * deg2rad, 
-		(float)sk_system_info().display_width/sk_system_info().display_height, 
-		render_clip_planes.x, 
-		render_clip_planes.y), &render_default_camera_proj);
+	if (render_projection_type == projection_perspective) {
+		math_fast_to_matrix(
+		    XMMatrixPerspectiveFovRH(render_fov * deg2rad,
+		                             (float)sk_system_info().display_width / sk_system_info().display_height,
+		                             render_clip_planes.x,
+		                             render_clip_planes.y),
+		    &render_default_camera_proj);
+	} else {
+		math_fast_to_matrix(
+		    XMMatrixOrthographicRH(
+		        ((float)sk_system_info().display_width / (float)sk_system_info().display_height)*render_ortho_viewport_height, 
+				render_ortho_viewport_height, 
+				render_ortho_near_clip, 
+				render_ortho_far_clip),
+		    &render_default_camera_proj);
+	}
 }
 
 ///////////////////////////////////////////
@@ -212,7 +272,7 @@ skg_tex_fmt_ render_preferred_depth_fmt() {
 
 ///////////////////////////////////////////
 
-matrix render_get_projection() {
+matrix render_get_projection_matrix() {
 	return render_default_camera_proj;
 }
 
@@ -266,10 +326,10 @@ void render_set_skytex(tex_t sky_texture) {
 		return;
 	}
 
+	if (sky_texture != nullptr && render_global_textures[render_skytex_register] != nullptr) {
+		tex_set_fallback(sky_texture, render_global_textures[render_skytex_register]);
+	}
 	render_global_texture(render_skytex_register, sky_texture);
-	render_sky_dims = sky_texture != nullptr 
-		? vec4{ (float)sky_texture->tex.width, (float)sky_texture->tex.height, floorf(log2f((float)sky_texture->tex.width)), 0 }
-		: vec4{};
 }
 
 ///////////////////////////////////////////
@@ -366,6 +426,12 @@ void render_set_clear_color(color128 color) {
 //////////////////////////////////////////
 
 color128 render_get_clear_color() {
+	return color_to_gamma(render_clear_col);
+}
+
+//////////////////////////////////////////
+
+color128 render_get_clear_color_ln() {
 	return render_clear_col;
 }
 
@@ -447,7 +513,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
 	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
 	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
-	render_global_buffer.cubemap_i    = render_sky_dims;
+
+	// TODO: This is a little odd now that textures like this go through the
+	// render_global_textures system.
+	tex_t sky_tex = render_global_textures[render_skytex_register];
+	render_global_buffer.cubemap_i = sky_tex != nullptr
+		? vec4{ (float)sky_tex->width, (float)sky_tex->height, floorf(log2f((float)sky_tex->width)), 0 }
+		: vec4{};
 
 	// Upload shader globals and set them active!
 	material_buffer_set_data(render_shader_globals, &render_global_buffer);
@@ -460,8 +532,12 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 	// Activate any global textures we have
 	for (size_t i = 0; i < _countof(render_global_textures); i++) {
-		if (render_global_textures[i] != nullptr)
-			skg_tex_bind(&render_global_textures[i]->tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource});
+		if (render_global_textures[i] != nullptr) {
+			skg_tex_t *tex = render_global_textures[i]->fallback == nullptr
+				? &render_global_textures[i]->tex
+				: &render_global_textures[i]->fallback->tex;
+			skg_tex_bind(tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource });
+		}
 	}
 
 	render_list_execute(render_list_primary, filter, view_count);
@@ -569,10 +645,10 @@ void render_check_viewpoints() {
 		// Set up the viewport if we've got one!
 		if (render_viewpoint_list[i].viewport.w != 0) {
 			int32_t viewport[4] = {
-				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->tex.height),
-				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->tex.width),
-				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->tex.height) };
+				(int32_t)(render_viewpoint_list[i].viewport.x * render_viewpoint_list[i].rendertarget->width ),
+				(int32_t)(render_viewpoint_list[i].viewport.y * render_viewpoint_list[i].rendertarget->height),
+				(int32_t)(render_viewpoint_list[i].viewport.w * render_viewpoint_list[i].rendertarget->width ),
+				(int32_t)(render_viewpoint_list[i].viewport.h * render_viewpoint_list[i].rendertarget->height) };
 			skg_viewport(viewport);
 		}
 
@@ -621,9 +697,8 @@ bool render_init() {
 		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
-	mesh_set_inds (render_sky_mesh, inds,  _countof(inds));
-	mesh_set_verts(render_sky_mesh, verts, _countof(verts));
-	mesh_set_id   (render_sky_mesh, "render/skybox_mesh");
+	mesh_set_data(render_sky_mesh, verts, _countof(verts), inds, _countof(inds));
+	mesh_set_id  (render_sky_mesh, "render/skybox_mesh");
 
 	shader_t shader_sky = shader_find(default_id_shader_sky);
 	render_sky_mat = material_create(shader_sky);
@@ -678,6 +753,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_blit_to_bound(material_t material) {
+	material_check_dirty(material);
+
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
 	float color[4] = { 0,0,0,0 };
 	skg_target_clear(true, color);
@@ -760,17 +837,17 @@ void render_set_material(material_t material) {
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
-		if (material->args.buffer_dirty) {
-			skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
-			material->args.buffer_dirty = false;
-		}
 		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0);
 	}
 
 	// Bind the material textures
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (render_global_textures[material->args.texture_binds[i].slot] == nullptr)
-			skg_tex_bind(&material->args.textures[i]->tex, material->args.texture_binds[i]);
+		if (render_global_textures[material->args.textures[i].bind.slot] == nullptr) {
+			tex_t tex = material->args.textures[i].tex;
+			if (tex->fallback != nullptr)
+				tex = tex->fallback;
+			skg_tex_bind(&tex->tex, material->args.textures[i].bind);
+		}
 	}
 
 	// And bind the pipeline
@@ -803,7 +880,7 @@ skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, 
 
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	XMMATRIX fast_proj, fast_view;
-	math_matrix_to_fast(render_get_projection(), &fast_proj);
+	math_matrix_to_fast(render_get_projection_matrix(), &fast_proj);
 	math_matrix_to_fast(render_camera_root_final_inv,  &fast_view);
 	XMVECTOR result = XMVector3Unproject(math_vec3_to_fast(normalized_screen_pt),
 		0, 0, (float)sk_system_info().display_width, (float)sk_system_info().display_height,
@@ -906,18 +983,14 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
+	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
+	render_list_prep(list_id);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
+	for (size_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
@@ -956,20 +1029,17 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
-	size_t queue_count = list->queue.count;
-	if (queue_count == 0) {
+	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
 	// TODO: this isn't entirely optimal here, this would be best if sorted
 	// solely by the mesh id since we only have one single material.
-	if (!list->sorted) {
-		radix_sort7(&list->queue[0], queue_count);
-		list->sorted = true;
-	}
+	render_list_prep(list_id);
+	material_check_dirty(override_material);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < queue_count; i++) {
+	for (size_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
@@ -1004,11 +1074,31 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 
 ///////////////////////////////////////////
 
+void render_list_prep(render_list_t list_id) {
+	_render_list_t *list = &render_lists[list_id];
+	if (list->prepped) return;
+
+	// Sort the render queue
+	radix_sort7(&list->queue[0], list->queue.count);
+
+	// Make sure the material buffers are all up-to-date
+	material_t curr = nullptr;
+	for (size_t i = 0; i < list->queue.count; i++) {
+		if (curr == list->queue[i].material) continue;
+		curr = list->queue[i].material;
+		material_check_dirty(curr);
+	}
+
+	list->prepped = true;
+}
+
+///////////////////////////////////////////
+
 void render_list_clear(render_list_t list) {
 	render_lists[list].queue.clear();
-	render_lists[list].stats  = {};
-	render_lists[list].sorted = false;
-	render_lists[list].state  = render_list_state_empty;
+	render_lists[list].stats   = {};
+	render_lists[list].prepped = false;
+	render_lists[list].state   = render_list_state_empty;
 }
 
 } // namespace sk

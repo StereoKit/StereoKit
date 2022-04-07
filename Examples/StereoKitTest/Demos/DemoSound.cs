@@ -104,14 +104,16 @@ namespace StereoKitTest
 		{
 			StepWand();
 
-			UI.WindowBegin("Sound", ref windowPose, new Vec2(20, 0) * U.cm);
+			UI.WindowBegin("Sound", ref windowPose);
 			if (UI.Button("BlipNoise.wav"))
 				fileSound.Play(windowPose.position);
-			UI.Label("Generated Sound:");
-			UI.Label("Duration"); UI.SameLine();
-			UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, 8 * U.cm);
-			if (genSound != null && UI.Button("Play"))
-				genSound.Play(windowPose.position);
+			UI.PanelBegin();
+				UI.Label("Generated Sound:");
+				UI.Label("Duration"); UI.SameLine();
+				UI.HSlider("Duration", ref genDuration, 0.1f, 2, 0, 8 * U.cm);
+				if (genSound != null && UI.Button("Play"))
+					genSound.Play(windowPose.position);
+			UI.PanelEnd();
 			UI.WindowEnd();
 
 			Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(genVolume.center, genVolume.dimensions));

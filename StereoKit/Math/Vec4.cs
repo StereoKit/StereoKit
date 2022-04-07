@@ -17,9 +17,13 @@ namespace StereoKit
 		/// implicit conversions to System.Numerics types are also
 		/// provided.</summary>
 		public Vector4 v;
+		/// <summary>X component.</summary>
 		public float x { get => v.X; set => v.X = value; }
+		/// <summary>Y component.</summary>
 		public float y { get => v.Y; set => v.Y = value; }
+		/// <summary>Z component.</summary>
 		public float z { get => v.Z; set => v.Z = value; }
+		/// <summary>W component.</summary>
 		public float w { get => v.W; set => v.W = value; }
 
 		/// <summary>A normalized Vector that points down the X axis, this is
@@ -61,7 +65,8 @@ namespace StereoKit
 			=> v = new Vector4(x, y, z, w);
 
 
-		/// <summary>A basic constructor, just copies the value in as x,y,z and,w component!</summary>
+		/// <summary>A basic constructor, just copies the value in as the x, y,
+		/// z and w components!</summary>
 		/// <param name="xyzw">X,Y,Z,and W component of the vector.</param>
 		public Vec4(float xyzw)
 			=> v = new Vector4(xyzw, xyzw, xyzw, xyzw);
@@ -78,16 +83,58 @@ namespace StereoKit
 		public Vec4(Vec2 xy, Vec2 zw)
 			=> v = new Vector4(xy.x, xy.y, zw.x, zw.y);
 
+		/// <summary>Allows implicit conversion from System.Numerics.Vector4
+		/// to StereoKit.Vec4.</summary>
+		/// <param name="v">Any System.Numerics Vector4.</param>
+		/// <returns>A StereoKit compatible vector.</returns>
 		public static implicit operator Vec4(Vector4 v) => new Vec4(v.X, v.Y, v.Z, v.W);
+		/// <summary>Allows implicit conversion from StereoKit.Vec4 to
+		/// System.Numerics.Vector4.</summary>
+		/// <param name="v">Any StereoKit.Vec4.</param>
+		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector4(Vec4 v) => v.v;
 
+		/// <summary>Adds matching components together. Commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the added components.</returns>
 		public static Vec4 operator +(Vec4 a, Vec4 b) => a.v + b.v;
+		/// <summary>Subtracts matching components from eachother. Not
+		/// commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the subtracted components.</returns>
 		public static Vec4 operator -(Vec4 a, Vec4 b) => a.v - b.v;
+		/// <summary>A component-wise vector multiplication, same thing as
+		/// a non-uniform scale. NOT a dot product! Commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec4 operator *(Vec4 b, Vec4 a) => a.v * b.v;
+		/// <summary>A component-wise vector division. Not commutative</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec4 operator /(Vec4 b, Vec4 a) => a.v / b.v;
+		/// <summary>Vector negation, returns a vector where each component has
+		/// been negated.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <returns>A vector where each component has been negated.</returns>
 		public static Vec4 operator -(Vec4 a) => -a.v;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec4 operator *(Vec4 a, float b) => a.v * b;
+		/// <summary>A scalar vector division.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec4 operator /(Vec4 a, float b) => a.v / b;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec4 operator *(float b, Vec4 a) => a.v * b;
 
 		/// <summary>What's a dot product do for 4D vectors, you might ask?
@@ -134,6 +181,10 @@ namespace StereoKit
 		public static Vec4 Min(Vec4 a, Vec4 b)
 			=> Vector4.Min(a.v, b.v);
 
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the vector in debug mode. Looks like "[x, y, z, w]"
+		/// </summary>
+		/// <returns>A string that looks like "[x, y, z, w]"</returns>
 		public override string ToString()
 			=> string.Format("[{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}]", x, y, z, w);
 	}

@@ -356,7 +356,7 @@ namespace StereoKit
 		public static BtnState ControllerMenuButton
 			=> NativeAPI.input_controller_menu();
 
-		/// <summary>Retreives all the information about the user's hand!
+		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
 		/// controllers. 
@@ -462,7 +462,7 @@ namespace StereoKit
 		static void Initialize()
 		{
 			initialized = true;
-			callback    = OnEvent; // This is stored in a persistant variable to force the callback from getting garbage collected!
+			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
 			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
 		}
 		static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)

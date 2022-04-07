@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -14,7 +15,7 @@ namespace StereoKit
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
 		public DisplayMode  displayPreference;
-		/// <summary>What type of backgroud blend mode do we prefer for this
+		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
 		/// will show up behind your content, if that's an option? Note that
@@ -28,17 +29,17 @@ namespace StereoKit
 		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
 		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
-		/// one, a detailed one, one that uses stencils? By default, 
+		/// one, a detailed one, one that uses stencils? By default,
 		/// StereoKit uses a balanced mix depending on platform, prioritizing
 		/// speed but opening up when there's headroom.</summary>
 		public DepthMode    depthMode;
 		/// <summary> The default log filtering level. This can be changed at
-		/// runtime, but this allows you to set the log filter before 
+		/// runtime, but this allows you to set the log filter before
 		/// Initialization occurs, so you can choose to get information from
 		/// that. Default is LogLevel.Info.</summary>
 		public LogLevel     logFilter;
 		/// <summary>If the runtime supports it, should this application run
-		/// as an overlay above existing applications? Check 
+		/// as an overlay above existing applications? Check
 		/// SK.System.overlayApp after initialization to see if the runtime
 		/// could comply with this flag. This will always force StereoKit to
 		/// work in a blend compositing mode.</summary>
@@ -61,11 +62,11 @@ namespace StereoKit
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
 		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headeset. If
+		/// so developers can test MR spaces without being in a headset. If
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
-		/// <summary>By default, StereoKit will slow down when the 
+		/// <summary>By default, StereoKit will slow down when the
 		/// application is out of focus. This is useful for saving processing
 		/// power while the app is out-of-focus, but may not always be
 		/// desired. In particular, running multiple copies of a SK app for
@@ -83,23 +84,35 @@ namespace StereoKit
 			set {
 				if (_appName != IntPtr.Zero) Marshal.FreeHGlobal(_appName);
 
-				_appName = string.IsNullOrEmpty(value)
-					? IntPtr.Zero
-					: Marshal.StringToHGlobalAnsi(value);
+				if (string.IsNullOrEmpty(value))
+				{
+					_appName = IntPtr.Zero;
+					return;
+				}
+
+				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				_appName = Marshal.AllocHGlobal(str.Length);
+				Marshal.Copy(str, 0, _appName, str.Length);
 			}
 			get => Marshal.PtrToStringAnsi(_appName);
 		}
-		/// <summary>Where to look for assets when loading files! Final path 
-		/// will look like '[assetsFolder]/[file]', so a trailing '/' is 
+		/// <summary>Where to look for assets when loading files! Final path
+		/// will look like '[assetsFolder]/[file]', so a trailing '/' is
 		/// unnecessary.</summary>
-		public string assetsFolder { 
-			set { 
-				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder); 
+		public string assetsFolder {
+			set {
+				if (_assetsFolder != IntPtr.Zero) Marshal.FreeHGlobal(_assetsFolder);
 
-				_assetsFolder = string.IsNullOrEmpty(value)
-					? IntPtr.Zero
-					: Marshal.StringToHGlobalAnsi(value);
-			} 
+				if (string.IsNullOrEmpty(value))
+				{
+					_assetsFolder = IntPtr.Zero;
+					return;
+				}
+
+				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				_assetsFolder = Marshal.AllocHGlobal(str.Length);
+				Marshal.Copy(str, 0, _assetsFolder, str.Length);
+			}
 			get => Marshal.PtrToStringAnsi(_assetsFolder);
 		}
 	}
@@ -132,8 +145,8 @@ namespace StereoKit
 		private int _perceptionBridgePresent;
 
 		/// <summary>Does the device we're on have eye tracking support
-		/// present? This is _not_ an indicator that the user has given the 
-		/// application permission to access this information. See 
+		/// present? This is _not_ an indicator that the user has given the
+		/// application permission to access this information. See
 		/// `Input.Gaze` for how to use this data.</summary>
 		public bool eyeTrackingPresent { get => _eyeTrackingPresent > 0; }
 		private int _eyeTrackingPresent;
@@ -144,13 +157,13 @@ namespace StereoKit
 		public bool overlayApp { get => _overlayApp > 0; }
 		private int _overlayApp;
 
-		/// <summary>Does this device support world occlusion of digital 
+		/// <summary>Does this device support world occlusion of digital
 		/// objects? If this is true, then World.OcclusionEnabled can be set
 		/// to true, and World.OcclusionMaterial can be modified. </summary>
 		public bool worldOcclusionPresent { get => _worldOcclusionPresent > 0; }
 		private int _worldOcclusionPresent;
 
-		/// <summary>Can this device get ray intersections from the 
+		/// <summary>Can this device get ray intersections from the
 		/// environment? If this is true, then World.RaycastEnabled can be
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
@@ -187,12 +200,12 @@ namespace StereoKit
 	{
 		/// <summary>Position of the vertex, in model space coordinates.</summary>
 		public Vec3 pos;
-		/// <summary>The normal of this vertex, or the direction the vertex is 
+		/// <summary>The normal of this vertex, or the direction the vertex is
 		/// facing. Preferably normalized.</summary>
 		public Vec3 norm;
 		/// <summary>The texture coordinates at this vertex.</summary>
 		public Vec2 uv;
-		/// <summary>The color of the vertex. If you aren't using it, set it to 
+		/// <summary>The color of the vertex. If you aren't using it, set it to
 		/// white.</summary>
 		public Color32 col;
 
@@ -317,7 +330,7 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Pointer
 	{
-		/// <summary>What input soure did this pointer come from? This is
+		/// <summary>What input source did this pointer come from? This is
 		/// a bit-flag that contains input family and capability
 		/// information.</summary>
 		public InputSource source;
@@ -359,6 +372,9 @@ namespace StereoKit
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
@@ -429,7 +445,7 @@ namespace StereoKit
 		/// grabbed.</summary>
 		Normal = Head | Body,
 		/// <summary>No body, no head. Not really a flag, just set to this
-		/// value. The Window will still be grab/moveable. To prevent it from
+		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
 		Empty = 0,
@@ -465,7 +481,7 @@ namespace StereoKit
 	public enum UIVisual
 	{
 		/// <summary>Default state, no UI element at all.</summary>
-		None,
+		None = 0,
 		/// <summary>A default root UI element. Not a particular element, but
 		/// other elements may refer to this if there is nothing more specific
 		/// present.</summary>
@@ -492,5 +508,44 @@ namespace StereoKit
 		/// is used when a Window only has the head panel, without a body.
 		/// </summary>
 		WindowHeadOnly,
+		/// <summary>Refers to UI.HSeparator element.</summary>
+		Separator,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element.</summary>
+		SliderLine,
+		/// <summary>Refers to the push button component of the UI.HSlider
+		/// element when using UIConfirm.Push.</summary>
+		SliderPush,
+		/// <summary>Refers to the pinch button component of the UI.HSlider
+		/// element when using UIConfirm.Pinch.</summary>
+		SliderPinch,
+		Max,
+	}
+
+	public enum UIColor
+	{
+		Primary = 0,
+		Background,
+		Common,
+		Complement,
+		Text,
+		Max,
+	}
+
+	/// <summary>This specifies a particular padding mode for certain UI
+	/// elements, such as the UI.Panel! This describes where padding is applied
+	/// and how it affects the layout of elements.</summary>
+	public enum UIPad
+	{
+		/// <summary>No padding, this matches the element's layout bounds
+		/// exactly!</summary>
+		None,
+		/// <summary>This applies padding inside the element's layout bounds,
+		/// and will inflate the layout bounds to fit the extra padding.</summary>
+		Inside,
+		/// <summary>This will apply the padding outside of the layout bounds!
+		/// This will maintain the size and position of the layout volume, but
+		/// the visual padding will go outside of the volume.</summary>
+		Outside
 	}
 }

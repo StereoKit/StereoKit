@@ -34,14 +34,14 @@
 /// this, but it can be pretty enlightening to browse through a code-base
 /// such as this one for reference.
 /// 
-/// ### [Github Demos folder](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+/// ### [GitHub Demos folder](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
 /// 
 /// These are the demos I build to test StereoKit features and APIs! They 
 /// are occasionally documented, but frequently short and concise. They 
 /// can be great to check out for a focused example of certain parts of 
 /// the API!
 /// 
-/// ### [Github Discussions/Issues](https://github.com/maluoi/StereoKit/discussions)
+/// ### [GitHub Discussions/Issues](https://github.com/maluoi/StereoKit/discussions)
 /// 
 /// The best place to ask a question! It's asynchronous, and a great place
 /// for long-form answers that can also benefit others. The Discussions tab

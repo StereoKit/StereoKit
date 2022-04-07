@@ -23,6 +23,7 @@ namespace StereoKitTest
 		static Pose        windowPose  = new Pose(0, 0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 		static LightMode   mode        = LightMode.Lights;
 		static Tex         cubemap     = null;
+		static bool        cubelightDirty = false;
 		static Pose        previewPose = new Pose(0, -0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
 
 		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
@@ -91,6 +92,11 @@ namespace StereoKitTest
 				if (needsUpdate)
 					UpdateLights();
 			}
+
+			if (cubelightDirty && cubemap.AssetState == AssetState.Loaded) {
+				Renderer.SkyLight = cubemap.CubemapLighting;
+				cubelightDirty = false;
+			}
 		}
 
 		bool LightHandle(int i)
@@ -125,10 +131,10 @@ namespace StereoKitTest
 
 		void LoadSkyImage(string file)
 		{
-			cubemap = Tex.FromCubemapEquirectangular(file, out SphericalHarmonics lighting);
+			cubemap = Tex.FromCubemapEquirectangular(file);
 
-			Renderer.SkyTex   = cubemap;
-			Renderer.SkyLight = lighting;
+			Renderer.SkyTex = cubemap;
+			cubelightDirty  = true;
 		}
 
 		void UpdateLights()

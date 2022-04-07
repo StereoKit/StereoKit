@@ -17,20 +17,20 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{95B47C8E-3A66-483C-ABEE-950E6C2F621A}</ProjectGuid>
     <RootNamespace>StereoKitC</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>StereoKitC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -144,6 +144,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
+    <ClCompile Include="backend.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
@@ -162,7 +163,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="sk_memory.cpp" />
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
-    <ClCompile Include="stereokit_ui.cpp" />
     <ClCompile Include="systems\audio.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
@@ -193,6 +193,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\world.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
+    <ClCompile Include="ui\stereokit_ui.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\animation.h" />
@@ -302,6 +303,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
       <FileType>Document</FileType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debugger_vis.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

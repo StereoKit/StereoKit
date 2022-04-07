@@ -75,10 +75,10 @@ void input_subscribe(input_source_ source, button_state_ event, void (*event_cal
 
 void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
 	for (int64_t i = (int64_t)input_listeners.count-1; i >= 0; i--) {
-		if (input_listeners[i].source         == source && 
-			input_listeners[i].event          == event  && 
-			input_listeners[i].event_callback == event_callback) {
-			input_listeners.remove(i);
+		if (input_listeners[(size_t)i].source         == source && 
+			input_listeners[(size_t)i].event          == event  && 
+			input_listeners[(size_t)i].event_callback == event_callback) {
+			input_listeners.remove((size_t)i);
 		}
 	}
 }

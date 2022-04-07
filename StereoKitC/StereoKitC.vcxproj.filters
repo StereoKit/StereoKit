@@ -61,9 +61,6 @@
     <ClCompile Include="systems\sprite_drawer.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="stereokit_ui.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="libraries\stref.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
@@ -190,6 +187,12 @@
     <ClCompile Include="libraries\stb_image.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="ui\stereokit_ui.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="backend.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -262,7 +265,6 @@
     <ClInclude Include="systems\sprite_drawer.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="stereokit_ui.h" />
     <ClInclude Include="libraries\stref.h">
       <Filter>libraries</Filter>
     </ClInclude>
@@ -434,6 +436,9 @@
     <ClInclude Include="tools\virtual_keyboard_layouts.h">
       <Filter>tools</Filter>
     </ClInclude>
+    <ClInclude Include="stereokit_ui.h">
+      <Filter>ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -459,6 +464,9 @@
     </Filter>
     <Filter Include="tools">
       <UniqueIdentifier>{670092e3-dca4-4cbc-b5ae-316a003e386c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{5eaf06cf-6159-4a20-a332-4b2cff24a5b4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -503,5 +511,8 @@
       <Filter>shaders_builtin</Filter>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debugger_vis.natvis" />
   </ItemGroup>
 </Project>

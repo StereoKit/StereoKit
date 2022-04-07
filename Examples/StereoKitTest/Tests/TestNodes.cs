@@ -74,6 +74,15 @@ class TestNodes : ITest
 
 		_model       = model;
 		_surfaceNode = surfaceNode;
+
+		Tests.Test(TestEmptyVisuals);
+	}
+
+	bool TestEmptyVisuals()
+	{
+		Model     model = new Model();
+		ModelNode node  = model.AddNode(null, Matrix.Identity);
+		return node.Mesh == null && node.Material == null;
 	}
 
 	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent

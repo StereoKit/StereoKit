@@ -27,6 +27,10 @@ bool uwp_mouse_set;
 vec2 uwp_mouse_set_delta;
 vec2 uwp_mouse_frame_get;
 
+bool    uwp_resize_pending = false;
+int32_t uwp_resize_width   = 0;
+int32_t uwp_resize_height  = 0;
+
 }
 
 // The WinRT/UWP mess comes from:
@@ -280,7 +284,7 @@ protected:
 	}
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (!sk_focused) return;
+		if (sk_focus != app_focus_active) return;
 		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
 		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
 		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
@@ -288,7 +292,7 @@ protected:
 		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (!sk_focused) return;
+		if (sk_focus != app_focus_active) return;
 		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
 		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
 		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
@@ -297,16 +301,18 @@ protected:
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (sk_focused) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
+		if (sk_focus == app_focus_active) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
 
 	void OnVisibilityChanged(CoreWindow const & /*sender*/, VisibilityChangedEventArgs const & args) {
 		m_visible = args.Visible();
-		sk_focused = m_visible;
+		sk_focus = m_visible? app_focus_active : app_focus_background;
 	}
 
 	void OnActivation(CoreWindow const & /*sender*/, WindowActivatedEventArgs const & args) {
-		sk_focused = args.WindowActivationState() != CoreWindowActivationState::Deactivated;
+		sk_focus = args.WindowActivationState() != CoreWindowActivationState::Deactivated 
+			? app_focus_active
+			: app_focus_background;
 	}
 
 	void OnAcceleratorKeyActivated(CoreDispatcher const &, AcceleratorKeyEventArgs const & args)
@@ -390,12 +396,10 @@ private:
 
 		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
 			return;
-		sk_info.display_width  = outputWidth;
-		sk_info.display_height = outputHeight;
-		log_infof("Resized to: %d<~BLK>x<~clr>%d", outputWidth, outputHeight);
 
-		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
-		render_update_projection();
+		uwp_resize_pending = true;
+		uwp_resize_width   = outputWidth;
+		uwp_resize_height  = outputHeight;
 	}
 };
 ViewProvider *ViewProvider::inst = nullptr;
@@ -514,7 +518,7 @@ bool uwp_start_flat() {
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
-	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
+	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
@@ -535,6 +539,18 @@ void uwp_step_begin_xr() {
 ///////////////////////////////////////////
 
 void uwp_step_begin_flat() {
+	if (uwp_resize_pending) {
+		uwp_resize_pending = false;
+
+		sk_info.display_width  = uwp_resize_width;
+		sk_info.display_height = uwp_resize_height;
+		log_infof("Resized to: %d<~BLK>x<~clr>%d", uwp_resize_width, uwp_resize_height);
+
+		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
+		tex_set_color_arr   (uwp_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+		render_update_projection();
+	}
+
 	uwp_mouse_frame_get = ViewProvider::inst->mouse_point;
 	flatscreen_input_update();
 }
@@ -545,14 +561,14 @@ void uwp_step_end_flat() {
 	skg_draw_begin();
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	color128 color = render_get_clear_color();
+	color128 color = render_get_clear_color_ln();
 	skg_tex_target_bind(&uwp_target->tex);
 	skg_target_clear(true, &color.r);
 
 	input_update_poses(true);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix view = render_get_cam_final        ();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();

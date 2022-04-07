@@ -10,8 +10,8 @@ class TestHSliders : ITest
 
 	bool TestPush()
 	{
-		bool match = Math.Abs(pushValue - 0.22f) < 0.02f;
-		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider push value: {pushValue:N3} - expected ~0.22");
+		bool match = Math.Abs(pushValue - 0.14f) < 0.02f;
+		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider push value: {pushValue:N3} - expected ~0.14");
 		return match;
 	}
 
@@ -24,7 +24,7 @@ class TestHSliders : ITest
 
 	public void Initialize() {
 		if (Tests.IsTesting) {
-			const float playbackSpeed = 6;
+			const float playbackSpeed = 4;
 
 			Input.HandVisible(Handed.Max, true);
 			anim.Play(playbackSpeed);

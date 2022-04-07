@@ -13,10 +13,11 @@ The test project is pretty spiffy, and it can be nice to see it in action! There
 StereoKit is a cross-platform library, but many features are not platform specific! If you don't need to test on a platform other than Windows, then you only need some of the dependencies.
 
 **Requisites:**
-- Visual Studio 2019 (2022 may also work)
-- VS Workload: Universal Windows Platform
-- VS Workload: Desktop development with C++
-- VS Workload: Game development with C++
+- Visual Studio 2022
+    - VS Workload: Universal Windows Platform
+    - VS Workload: Desktop development with C++
+    - VS Workload: Game development with C++
+- [CMake](https://cmake.org) (To build OpenXR & dependencies)
 
 Open StereoKit.sln and _unload_ these projects
 - StereoKitTest_Android

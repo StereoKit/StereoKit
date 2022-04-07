@@ -4,7 +4,7 @@ using System.Text;
 namespace StereoKit
 {
 	/// <summary>This class is a collection of user interface and interaction
-	/// methods! StereoKit uses an Immediate Mode gui system, which can be very
+	/// methods! StereoKit uses an Immediate Mode GUI system, which can be very
 	/// easy to work with and modify during runtime.
 	/// 
 	/// You must call the UI method every frame you wish it to be available,
@@ -92,6 +92,9 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
+		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
+		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
+
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
 		/// layout surface for UI content to be placed on and interacted with.
@@ -151,7 +154,7 @@ namespace StereoKit
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
 
-		/// /// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
+		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>
@@ -242,7 +245,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most english text is
+		/// within its bounds? TextAlign.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
@@ -425,9 +428,9 @@ namespace StereoKit
 		/// content in.</param>
 		/// <param name="size">Size of the Input in Hierarchy local meters.
 		/// Zero axes will auto-size.</param>
-		/// <param name="type">
-		/// Specify what type of text field this is if string or number field. This dose not limmet what can be typed it is just so it knows what keyboard to use
-		/// </param>
+		/// <param name="type">What category of text this Input represents.
+		/// This may affect what kind of soft keyboard will be displayed, if
+		/// one is shown to the user.</param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
 		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
@@ -442,6 +445,30 @@ namespace StereoKit
 			return false;
 		}
 
+		/// <summary>This is a simple horizontal progress indicator bar. This
+		/// is used by the HSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		public static void ProgressBar(float percent, float width = 0)
+			=> NativeAPI.ui_progress_bar(percent, width);
+
+		/// <summary>This is a simple horizontal progress indicator bar. This
+		/// is used by the HSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size);
+
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
@@ -454,8 +481,8 @@ namespace StereoKit
 		/// side of the slider.</param>
 		/// <param name="step">Locks the value to intervals of step. Starts 
 		/// at min, and increments by step.</param>
-		/// <param name="width">Physical width of the slider on the window.
-		/// </param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -475,8 +502,8 @@ namespace StereoKit
 		/// side of the slider.</param>
 		/// <param name="step">Locks the value to intervals of step. Starts 
 		/// at min, and increments by step.</param>
-		/// <param name="width">Physical width of the slider on the window.
-		/// </param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -536,12 +563,16 @@ namespace StereoKit
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
-		/// You can draw the handle, but it will have no text on it. Returns 
-		/// true for every frame the user is grabbing the handle.</summary>
+		/// You can draw the handle, but it will have no text on it.
+		/// The pose value is always relative to the current hierarchy stack.
+		/// This call will also push the pose transform onto the hierarchy stack, so
+		/// any objects drawn up to the corresponding UI.HandleEnd() will get transformed 
+		/// by the handle pose. Returns true for every frame the user is grabbing the handle.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around.</param>
+		/// be able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
 		/// the pose.</param>
 		/// <param name="drawHandle">Should this function draw the handle 
@@ -554,7 +585,8 @@ namespace StereoKit
 			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
-		/// and all elements have been drawn.</summary>
+		/// and all elements have been drawn. Pops the pose transform pushed
+		/// by UI.HandleBegin() from the hierarchy stack.</summary>
 		public static void HandleEnd   ()
 			=> NativeAPI.ui_handle_end();
 
@@ -566,7 +598,8 @@ namespace StereoKit
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around.</param>
+		/// be able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
 		/// <param name="handle">Size and location of the handle, relative to 
 		/// the pose.</param>
 		/// <param name="drawHandle">Should this function draw the handle for 
@@ -697,7 +730,7 @@ namespace StereoKit
 		/// true. This currently doesn't have any visual effect, so you may
 		/// wish to pair it with a PushTint.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
-		/// interactible?</param>
+		/// interactable?</param>
 		public static void PushEnabled(bool enabled)
 			=> NativeAPI.ui_push_enabled(enabled?1:0);
 
@@ -705,6 +738,26 @@ namespace StereoKit
 		/// was below will then be used as the primary enabled state.</summary>
 		public static void PopEnabled()
 			=> NativeAPI.ui_pop_enabled();
+
+		/// <summary>If you wish to manually draw a Panel, this function will
+		/// let you draw one wherever you want!</summary>
+		/// <param name="start">The top left corner of the Panel element.</param>
+		/// <param name="size">The size of the Panel element, in hierarchy
+		/// local meters.</param>
+		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// UIPad.Inside will behave the same as UIPad.None.</param>
+		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
+
+		/// <summary>This will begin a Panel element that will encompass all 
+		/// elements drawn between PanelBegin and PanelEnd. This is an entirely
+		/// visual element, and is great for visually grouping elements
+		/// together. Every Begin must have a matching End.</summary>
+		/// <param name="padding">Describes how padding is applied to the
+		/// visual element of the Panel.</param>
+		public static void PanelBegin(UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_begin(padding);
+		
+		/// <summary>This will finalize and draw a Panel element.</summary>
+		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
 		/// element. 
@@ -723,8 +776,12 @@ namespace StereoKit
 		/// <param name="material">The Material to use when rendering the UI
 		/// element. The default Material is specifically designed to work
 		/// with quadrant sizing formatted meshes.</param>
-		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null)
-			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero);
+		/// <param name="minSize">For some meshes, such as quadrant sized
+		/// meshes, there's a minimum size where the mesh turns inside out.
+		/// This lets UI elements to accommodate for this minimum size, and
+		/// behave somewhat more appropriately.</param>
+		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
+			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, Vec2.Zero);
 
 		/// <summary>This will reposition the vertices to work well with
 		/// quadrant resizing shaders. The mesh should generally be centered

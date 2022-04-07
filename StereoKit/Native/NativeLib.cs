@@ -31,20 +31,43 @@ namespace StereoKit
 		static extern IntPtr LoadLibraryW(string fileName);
 		static bool LoadWindows(string arch)
 		{
-			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
 			if (LoadLibraryW($"runtimes/win-{arch}/native/StereoKitC.dll") != IntPtr.Zero) return true;
+			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
 			return false;
 		}
 
-
-		[DllImport("libdl", CharSet = CharSet.Ansi)]
-		static extern IntPtr dlopen(string fileName, int flags);
 		static bool LoadUnix(string arch)
+		{
+			try
+			{
+				return LoadUnix1(arch);
+			}
+			catch (DllNotFoundException)
+			{
+				return LoadUnix2(arch);
+			}
+		}
+
+		[DllImport("dl", CharSet = CharSet.Ansi)]
+		static extern IntPtr dlopen(string fileName, int flags);
+		static bool LoadUnix1(string arch)
 		{
 			const int RTLD_NOW = 2;
 			if (dlopen($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			return false;
+		}
+
+		// A hack to support 
+		[DllImport("libdl.so.2", CharSet = CharSet.Ansi, EntryPoint = "dlopen")]
+		static extern IntPtr dlopen2(string fileName, int flags);
+		static bool LoadUnix2(string arch)
+		{
+			const int RTLD_NOW = 2;
+			if (dlopen2($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen2("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			return false;
 		}
 	}

@@ -1,9 +1,11 @@
 #include "material.h"
 #include "shader.h"
+#include "texture.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../sk_memory.h"
+#include "../systems/defaults.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -58,26 +60,39 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		material->args.buffer_size  = buff_size;
 		material->args.buffer_bind  = buff_info->bind;
 		material->args.buffer_dirty = true;
-		material->args.buffer_gpu   = skg_buffer_create(nullptr, 1, buff_size, skg_buffer_type_constant, skg_use_dynamic);
-		if (buff_info->defaults != nullptr)
-			memcpy(material->args.buffer, buff_info->defaults, buff_size);
-		else
-			memset(material->args.buffer, 0, buff_size);
+		if (buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
+		else                                memset(material->args.buffer, 0, buff_size);
+
+		// Construct a material parameters buffer on the GPU, and do it
+		// threadsafe
+		struct material_job_t {
+			material_t material;
+			uint32_t   buff_size;
+		};
+		material_job_t job_data = {material, buff_size};
+		assets_execute_gpu([](void *data) {
+			material_job_t *job_data = (material_job_t *)data;
+			job_data->material->args.buffer_gpu = skg_buffer_create(nullptr, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			return (bool32_t)true;
+		}, &job_data);
 	}
 	if (meta->resource_count > 0) {
 		material->args.texture_count = meta->resource_count;
-		material->args.textures      = sk_malloc_t(tex_t     , meta->resource_count);
-		material->args.texture_binds = sk_malloc_t(skg_bind_t, meta->resource_count);
+		material->args.textures      = sk_malloc_t(shaderargs_tex_t, meta->resource_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
 		for (size_t i = 0; i < meta->resource_count; i++) {
-			material->args.texture_binds[i] = meta->resources[i].bind;
+			shaderargs_tex_t *tex_arg     = &material->args.textures[i];
+			tex_t             default_tex = nullptr;
 
-			if      (string_eq(meta->resources[i].extra, "white")) material->args.textures[i] = tex_find(default_id_tex);
-			else if (string_eq(meta->resources[i].extra, "black")) material->args.textures[i] = tex_find(default_id_tex_black);
-			else if (string_eq(meta->resources[i].extra, "gray" )) material->args.textures[i] = tex_find(default_id_tex_gray);
-			else if (string_eq(meta->resources[i].extra, "flat" )) material->args.textures[i] = tex_find(default_id_tex_flat);
-			else if (string_eq(meta->resources[i].extra, "rough")) material->args.textures[i] = tex_find(default_id_tex_rough);
-			else                                                   material->args.textures[i] = tex_find(default_id_tex);
+			if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
+			else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
+			else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
+			else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
+			else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
+			else                                                   default_tex = tex_find(default_id_tex);
+			tex_arg->tex       = default_tex;
+			tex_arg->meta_hash = 0;
+			tex_arg->bind      = meta->resources[i].bind;
 		}
 	}
 }
@@ -115,15 +130,14 @@ material_t material_copy(material_t material) {
 	material_t result = material_create(material->shader);
 	// release any of the default textures for the material.
 	for (int32_t i = 0; i < result->args.texture_count; i++) {
-		if (result->args.textures[i] != nullptr)
-			tex_release(result->args.textures[i]);
+		if (result->args.textures[i].tex != nullptr)
+			tex_release(result->args.textures[i].tex);
 	}
 	// Store allocated memory temporarily
-	void          *tmp_buffer        = result->args.buffer;
-	skg_buffer_t   tmp_buffer_gpu    = result->args.buffer_gpu;
-	tex_t         *tmp_textures      = result->args.textures;
-	skg_bind_t    *tmp_texture_binds = result->args.texture_binds;
-	asset_header_t tmp_header        = result->header;
+	void             *tmp_buffer        = result->args.buffer;
+	skg_buffer_t      tmp_buffer_gpu    = result->args.buffer_gpu;
+	shaderargs_tex_t *tmp_textures      = result->args.textures;
+	asset_header_t    tmp_header        = result->header;
 
 	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
 	memcpy(result, material, sizeof(_material_t));
@@ -131,16 +145,14 @@ material_t material_copy(material_t material) {
 	result->args.buffer        = tmp_buffer;
 	result->args.buffer_gpu    = tmp_buffer_gpu;
 	result->args.textures      = tmp_textures;
-	result->args.texture_binds = tmp_texture_binds;
 	result->args.buffer_dirty  = true;
-	memcpy(result->args.buffer,        material->args.buffer,        material->args.buffer_size);
-	memcpy(result->args.textures,      material->args.textures,      sizeof(tex_t)      * material->args.texture_count);
-	memcpy(result->args.texture_binds, material->args.texture_binds, sizeof(skg_bind_t) * material->args.texture_count);
+	memcpy(result->args.buffer,   material->args.buffer,   material->args.buffer_size);
+	memcpy(result->args.textures, material->args.textures, sizeof(shaderargs_tex_t) * material->args.texture_count);
 
 	// Add references to all the other material's assets
 	for (int32_t i = 0; i < result->args.texture_count; i++) {
-		if (result->args.textures[i] != nullptr)
-			tex_addref(result->args.textures[i]);
+		if (result->args.textures[i].tex != nullptr)
+			tex_addref(result->args.textures[i].tex);
 	}
 
 	// Copy over the material's pipeline
@@ -181,14 +193,13 @@ void material_release(material_t material) {
 
 void material_destroy(material_t material) {
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (material->args.textures[i] != nullptr)
-			tex_release(material->args.textures[i]);
+		if (material->args.textures[i].tex != nullptr)
+			tex_release(material->args.textures[i].tex);
 	}
 	shader_release(material->shader);
 	skg_pipeline_destroy(&material->pipeline);
 	free(material->args.buffer);
 	free(material->args.textures);
-	free(material->args.texture_binds);
 	*material = {};
 }
 
@@ -204,10 +215,9 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	// Copy over any relevant values that are attached to the old shader
 	if (material->shader != nullptr && shader != nullptr) {
-		shader_t old_shader   = material->shader;
-		void    *old_buffer   = material->args.buffer;
-		tex_t   *old_textures = material->args.textures;
-		skg_bind_t *old_binds = material->args.texture_binds;
+		shader_t          old_shader   = material->shader;
+		void             *old_buffer   = material->args.buffer;
+		shaderargs_tex_t *old_textures = material->args.textures;
 		material_create_arg_defaults(material, shader);
 		material->shader = shader;
 
@@ -223,8 +233,8 @@ void material_set_shader(material_t material, shader_t shader) {
 
 		// Do the same for textures
 		for (uint32_t i = 0; i < old_shader->shader.meta->resource_count; i++) {
-			material_set_texture(material, old_shader->shader.meta->resources[i].name, old_textures[i]);
-			tex_release(old_textures[i]);
+			material_set_texture(material, old_shader->shader.meta->resources[i].name, old_textures[i].tex);
+			tex_release(old_textures[i].tex);
 		}
 
 		// And release the old shader content
@@ -233,7 +243,6 @@ void material_set_shader(material_t material, shader_t shader) {
 		skg_pipeline_destroy(&material->pipeline);
 		free(old_buffer);
 		free(old_textures);
-		free(old_binds);
 	}
 
 	material->shader   = shader;
@@ -528,22 +537,33 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 ///////////////////////////////////////////
 
 bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
-	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-		if (material->shader->shader.meta->resources[i].name_hash == id) {
-			if (material->args.textures[i] != value) {
-				if (material->args.textures[i] != nullptr)
-					tex_release(material->args.textures[i]);
-				material->args.textures[i] = value;
-				if (value != nullptr) {
-					tex_addref(value);
 
-					// Tell the shader about the texture dimensions, if it has
-					// a parameter for it. Texture info will get put into any
-					// float4 param with the name [texname]_i
-					uint64_t tex_info_hash = hash_fnv64_string("_i", id);
-					vec4     info = {(float)tex_get_width(value), (float)tex_get_height(value), (float)(uint32_t)log2(tex_get_width(value)), 0};
-					material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
-				}
+	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		const skg_shader_resource_t *resource = &material->shader->shader.meta->resources[i];
+		if (resource->name_hash == id) {
+
+			// Assigning a null texture will crash the renderer, so we want to
+			// instead find the default texture for the material parameter.
+			if (value == nullptr) {
+				if      (string_eq(resource->extra, "white")) value = sk_default_tex;
+				else if (string_eq(resource->extra, "black")) value = sk_default_tex_black;
+				else if (string_eq(resource->extra, "gray" )) value = sk_default_tex_gray;
+				else if (string_eq(resource->extra, "flat" )) value = sk_default_tex_flat;
+				else if (string_eq(resource->extra, "rough")) value = sk_default_tex_rough;
+				else                                          value = sk_default_tex;
+			}
+
+			if (material->args.textures[i].tex != value) {
+				// No need for safe swap, since we know these textures aren't
+				// the same texture.
+				if (material->args.textures[i].tex != nullptr)
+					tex_release(material->args.textures[i].tex);
+				material->args.textures[i].tex = value;
+				tex_addref(value);
+
+				// Information about the texture needs updated as well, but
+				// this is done when checking the material before rendering,
+				// since the texture's internal contents can change at any time
 			}
 			return true;
 		}
@@ -699,6 +719,38 @@ material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
 
 void material_buffer_set_data(material_buffer_t buffer, const void *data) {
 	skg_buffer_set_contents(&buffer->buffer, data, buffer->size);
+}
+
+///////////////////////////////////////////
+
+void material_check_tex_changes(material_t material) {
+	// Textures that progressively load or swap from fallbacks will change
+	// their dimensions. SK provides dimensions via the texname_i variable, so
+	// we're making sure that stays in sync here.
+	for (size_t i = 0; i < material->args.texture_count; i++) {
+		shaderargs_tex_t *curr = &material->args.textures[i];
+		if (curr->meta_hash != curr->tex->meta_hash) {
+			tex_t physical_tex = curr->tex->fallback == nullptr
+				? curr->tex
+				: curr->tex->fallback;
+			curr->meta_hash = curr->tex->meta_hash;
+
+			uint64_t tex_info_hash = hash_fnv64_string("_i", material->shader->shader.meta->resources[i].name_hash);
+			vec4     info = { (float)physical_tex->width, (float)physical_tex->height, (float)(uint32_t)log2(physical_tex->width), 0 };
+			material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void material_check_dirty(material_t material) {
+	material_check_tex_changes(material);
+
+	if (material->args.buffer_dirty == false || material->args.buffer == nullptr) return;
+
+	skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
+	material->args.buffer_dirty = false;
 }
 
 ///////////////////////////////////////////

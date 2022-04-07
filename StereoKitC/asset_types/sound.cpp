@@ -62,8 +62,8 @@ sound_t sound_create_stream(float buffer_duration) {
 
 	result->type = sound_type_stream;
 	result->buffer.capacity = (uint64_t)((double)buffer_duration * AU_SAMPLE_RATE);
-	result->buffer.data     = sk_malloc_t(float, result->buffer.capacity);
-	memset(result->buffer.data, 0, result->buffer.capacity * sizeof(float));
+	result->buffer.data     = sk_malloc_t(float, (size_t)result->buffer.capacity);
+	memset(result->buffer.data, 0, (size_t)(result->buffer.capacity * sizeof(float)));
 	mtx_init(&result->data_lock, mtx_plain);
 
 	return result;
@@ -77,8 +77,8 @@ sound_t sound_create_samples(const float *samples_at_48000s, uint64_t sample_cou
 	result->type = sound_type_buffer;
 	result->buffer.capacity = sample_count;
 	result->buffer.count    = sample_count;
-	result->buffer.data     = sk_malloc_t(float, sample_count);
-	memcpy(result->buffer.data, samples_at_48000s, sample_count * sizeof(float));
+	result->buffer.data     = sk_malloc_t(float, (size_t)sample_count);
+	memcpy(result->buffer.data, samples_at_48000s, (size_t)(sample_count * sizeof(float)));
 
 	return result;
 }
@@ -91,7 +91,7 @@ sound_t sound_generate(float (*function)(float sample_time), float duration) {
 	result->type = sound_type_buffer;
 	result->buffer.capacity = (uint64_t)((double)duration * AU_SAMPLE_RATE);
 	result->buffer.count    = result->buffer.capacity;
-	result->buffer.data     = sk_malloc_t(float, result->buffer.capacity);
+	result->buffer.data     = sk_malloc_t(float, (size_t)result->buffer.capacity);
 	for (uint64_t i = 0, s = result->buffer.capacity; i < s; i += 1) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}
@@ -285,7 +285,7 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_s
 	// reset the whole thing.
 	if (data_size >= buffer->capacity) {
 		data_size = buffer->capacity;
-		memcpy(buffer->data, data, data_size * sizeof(float));
+		memcpy(buffer->data, data, (size_t)(data_size * sizeof(float)));
 		buffer->start  = 0;
 		buffer->cursor = 0;
 		buffer->count  = data_size;
@@ -300,8 +300,8 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_s
 		// copy as two pieces.
 		uint64_t first_copy_size  = buffer->capacity - write_at;
 		uint64_t second_copy_size = data_size - first_copy_size;
-		memcpy(buffer->data + write_at, data,                   first_copy_size  * sizeof(float));
-		memcpy(buffer->data,            data + first_copy_size, second_copy_size * sizeof(float));
+		memcpy(buffer->data + write_at, data,                   (size_t)(first_copy_size  * sizeof(float)));
+		memcpy(buffer->data,            data + first_copy_size, (size_t)(second_copy_size * sizeof(float)));
 
 		// Update the starting point and the cursor if we copied over the
 		// area where they were.
@@ -309,7 +309,7 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_s
 		if (buffer->cursor < second_copy_size || buffer->cursor >= write_at) buffer->cursor = second_copy_size;
 	} else {
 		// The simple, most frequent case, where we just need a single copy.
-		memcpy(buffer->data + write_at, data, data_size * sizeof(float));
+		memcpy(buffer->data + write_at, data, (size_t)(data_size * sizeof(float)));
 
 		// Update the starting point and the cursor if we copied over the
 		// area where they were.
@@ -333,13 +333,13 @@ uint64_t ring_buffer_read(ring_buffer_t *buffer, float *out_data, uint64_t out_d
 		// if the frames_read wraps past the end of the ring buffer,
 		// then we'll need two copies
 		uint64_t first_half = buffer->capacity - buffer->cursor;
-		memcpy(out_data,            buffer->data + buffer->cursor, sizeof(float) *  first_half);
-		memcpy(out_data+first_half, buffer->data,                  sizeof(float) * (frames_read-first_half));
+		memcpy(out_data,            buffer->data + buffer->cursor, (size_t)(sizeof(float) *  first_half));
+		memcpy(out_data+first_half, buffer->data,                  (size_t)(sizeof(float) * (frames_read-first_half)));
 		buffer->cursor = mini(frames_read-first_half, buffer->start-1);
 	} else {
 		// The starting point of the ring buffer is after the cursor,
 		// so we'll only need a single copy.
-		memcpy(out_data, buffer->data + cursor_start, frames_read*sizeof(float));
+		memcpy(out_data, buffer->data + cursor_start, (size_t)(frames_read*sizeof(float)));
 		buffer->cursor += frames_read;
 		if (buffer->cursor == buffer->start)
 			buffer->cursor -= 1;

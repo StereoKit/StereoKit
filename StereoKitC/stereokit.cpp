@@ -30,11 +30,11 @@ namespace sk {
 
 const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
-display_mode_ sk_display_mode           = display_mode_mixedreality;
+display_mode_ sk_display_mode           = display_mode_none;
 bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
-bool32_t      sk_focused     = true;
+app_focus_    sk_focus       = app_focus_active;
 bool32_t      sk_running     = true;
 bool32_t      sk_initialized = false;
 
@@ -79,6 +79,12 @@ uint64_t sk_version_id() {
 
 ///////////////////////////////////////////
 
+app_focus_ sk_app_focus() {
+	return sk_focus;
+}
+
+///////////////////////////////////////////
+
 void sk_app_update() {
 	if (sk_app_update_func != nullptr)
 		sk_app_update_func();
@@ -88,7 +94,6 @@ void sk_app_update() {
 
 bool32_t sk_init(sk_settings_t settings) {
 	sk_settings               = settings;
-	sk_display_mode           = sk_settings.display_preference;
 	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
 	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
 	if (sk_settings.log_filter != log_none)
@@ -317,7 +322,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (!sk_focused)
+	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active)
 		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
 	return sk_running;
 }

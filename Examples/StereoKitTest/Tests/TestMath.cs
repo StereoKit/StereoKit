@@ -125,13 +125,57 @@ class TestMath : ITest
 		return true;
 	}
 
+	bool TestMatrixOrder()
+	{
+		// StereoKit is Row-Major, this test verifies that matrix
+		// multiplication happens in the correct order and with the correct
+		// results!
+
+		Matrix s = Matrix.S(2);
+		Matrix t = Matrix.T(1, 2, 3);
+		Matrix a = s * t;
+		Matrix b = t * s;
+
+		Log.Info($@"Scale * Translate = A
+|{s.m.M11} {s.m.M12} {s.m.M13} {s.m.M14}|   |{t.m.M11} {t.m.M12} {t.m.M13} {t.m.M14}|   |{a.m.M11} {a.m.M12} {a.m.M13} {a.m.M14}|
+|{s.m.M21} {s.m.M22} {s.m.M23} {s.m.M24}|   |{t.m.M21} {t.m.M22} {t.m.M23} {t.m.M24}|   |{a.m.M21} {a.m.M22} {a.m.M23} {a.m.M24}|
+|{s.m.M31} {s.m.M32} {s.m.M33} {s.m.M34}| X |{t.m.M31} {t.m.M32} {t.m.M33} {t.m.M34}| = |{a.m.M31} {a.m.M32} {a.m.M33} {a.m.M34}|
+|{s.m.M41} {s.m.M42} {s.m.M43} {s.m.M44}|   |{t.m.M41} {t.m.M42} {t.m.M43} {t.m.M44}|   |{a.m.M41} {a.m.M42} {a.m.M43} {a.m.M44}|");
+
+		Log.Info($@"Translate * Scale = B
+|{t.m.M11} {t.m.M12} {t.m.M13} {t.m.M14}|   |{s.m.M11} {s.m.M12} {s.m.M13} {s.m.M14}|   |{b.m.M11} {b.m.M12} {b.m.M13} {b.m.M14}|
+|{t.m.M21} {t.m.M22} {t.m.M23} {t.m.M24}|   |{s.m.M21} {s.m.M22} {s.m.M23} {s.m.M24}|   |{b.m.M21} {b.m.M22} {b.m.M23} {b.m.M24}|
+|{t.m.M31} {t.m.M32} {t.m.M33} {t.m.M34}| X |{s.m.M31} {s.m.M32} {s.m.M33} {s.m.M34}| = |{b.m.M31} {b.m.M32} {b.m.M33} {b.m.M34}|
+|{t.m.M41} {t.m.M42} {t.m.M43} {t.m.M44}|   |{s.m.M41} {s.m.M42} {s.m.M43} {s.m.M44}|   |{b.m.M41} {b.m.M42} {b.m.M43} {b.m.M44}|");
+
+		if (a.m.M41 != 1 || a.m.M42 != 2 || a.m.M43 != 3 || a.m.M44 != 1 || a.m.M11 != 2 || a.m.M22 != 2 || a.m.M33 != 2) return false;
+		if (b.m.M41 != 2 || b.m.M42 != 4 || b.m.M43 != 6 || b.m.M44 != 1 || b.m.M11 != 2 || b.m.M22 != 2 || b.m.M33 != 2) return false;
+
+		return true;
+	}
+
+	bool TestQuaternionRotation()
+	{
+		// TODO: This is backwards!!
+		Quat rot =
+			Quat.FromAngles(0, 0, 90) *
+			Quat.FromAngles(90, 0, 0) *
+			Quat.FromAngles(0, 90, 0);
+		Vec3 result = rot * Vec3.Right;
+		if (Vec3.Distance(result, V.XYZ(-1, 0, 0)) > 0.001f) return false;
+
+		return true;
+	}
+
 	public void Initialize()
 	{
 		Tests.Test(TestMatrixDecompose);
 		Tests.Test(TestMatrixTransform);
+		Tests.Test(TestMatrixOrder);
 		Tests.Test(TestAngleDist);
 		Tests.Test(TestVector2Angles);
 		Tests.Test(TestVector3Angles);
+		Tests.Test(TestQuaternionRotation);
 	}
 
 	public void Shutdown() { }

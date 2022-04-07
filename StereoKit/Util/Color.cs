@@ -173,6 +173,9 @@ namespace StereoKit
 		public static Color LAB(Vec3 lab, float opacity = 1)
 			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
+		public static Color Hex(uint hexValue) => new Color(
+			(hexValue >> 24)/255.0f, ((hexValue >> 16) & 0x000000FF)/255.0f, ((hexValue >> 8) & 0x000000FF)/255.0f, (hexValue & 0x000000FF)/255.0f);
+
 		/// <summary>Converts this from a gamma space color, into a linear
 		/// space color! If this is not a gamma space color, this will just
 		/// make your color wacky!</summary>

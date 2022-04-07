@@ -35,12 +35,12 @@ namespace StereoKit
 		public int SubsetCount => NativeAPI.model_subset_count(_inst);
 
 		/// <summary>This is an enumerable collection of all the nodes in this
-		/// Model, ordered non-heirarchically by when they were added. You can
+		/// Model, ordered non-hierarchically by when they were added. You can
 		/// do Linq stuff with it, foreach it, or just treat it like a List or
 		/// array!</summary>
 		public ModelNodeCollection Nodes => _nodeCollection;
 		/// <summary>This is an enumerable collection of all the nodes with
-		/// Mesh/Material data in this Model, ordered non-heirarchically by
+		/// Mesh/Material data in this Model, ordered non-hierarchically by
 		/// when they were added. You can do Linq stuff with it, foreach it, or
 		/// just treat it like a List or array!</summary>
 		public ModelVisualCollection Visuals => _visualCollection;
@@ -51,7 +51,7 @@ namespace StereoKit
 
 		/// <summary>This is a bounding box that encapsulates the Model and
 		/// all its subsets! It's used for collision, visibility testing, UI
-		/// layout, and probably other things. While it's normally cacluated
+		/// layout, and probably other things. While it's normally calculated
 		/// from the mesh bounds, you can also override this to suit your
 		/// needs.</summary>
 		public Bounds Bounds
@@ -446,7 +446,7 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(Encoding.UTF8.GetBytes(file), final);
+			IntPtr inst = NativeAPI.model_create_file(Encoding.UTF8.GetBytes(file+'\0'), final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -468,7 +468,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(Encoding.UTF8.GetBytes(filename), data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(Encoding.UTF8.GetBytes(filename+'\0'), data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -512,8 +512,8 @@ namespace StereoKit
 		internal int _nodeId;
 		internal Model _model;
 
-		/// <summary>The next ModelNode in the heirarchy, at the same level as
-		/// this one. To the "right" on a heirarchy tree. Null if there are no
+		/// <summary>The next ModelNode in the hierarchy, at the same level as
+		/// this one. To the "right" on a hierarchy tree. Null if there are no
 		/// more ModelNodes in the tree there.</summary>
 		public ModelNode Sibling => From(NativeAPI.model_node_sibling(_model._inst, _nodeId));
 		/// <summary>The ModelNode above this one ("up") in the hierarchy tree,
@@ -562,7 +562,7 @@ namespace StereoKit
 		/// also be re-used elsewhere.</summary>
 		public Mesh Mesh
 		{
-			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_model._inst, _nodeId); return new Mesh(ptr); }
+			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_model._inst, _nodeId); return ptr == IntPtr.Zero ? null : new Mesh(ptr); }
 			set => NativeAPI.model_node_set_mesh(_model._inst, _nodeId, value._inst);
 		}
 		/// <summary>The Model associated with this node. May be null, or may

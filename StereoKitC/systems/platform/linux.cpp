@@ -56,7 +56,8 @@ key_  linux_xk_map_lower[256] = {};
 float linux_scroll  = 0;
 int   linux_mouse_x = 0;
 int   linux_mouse_y = 0;
-bool  linux_mouse_avail = false;
+bool  linux_mouse_in_window = false;
+bool  linux_window_focused = false;
 
 void linux_init_key_lookups() {
 	linux_xk_map_upper[0xFF & XK_BackSpace] = key_backspace;
@@ -200,7 +201,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonPress: {
-				if (sk_focused) {
+				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_keyboard_inject_press(key_mouse_left);    break;
 					case (2): input_keyboard_inject_press(key_mouse_center);  break;
@@ -213,7 +214,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonRelease: {
-				if (sk_focused) {
+				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_keyboard_inject_release(key_mouse_left);    break;
 					case (2): input_keyboard_inject_release(key_mouse_center);  break;
@@ -228,10 +229,16 @@ void linux_events() {
 				linux_mouse_y = event.xmotion.y;
 			} break;
 			case EnterNotify: {
-				linux_mouse_avail = true;
+				linux_mouse_in_window = true;
 			} break;
 			case LeaveNotify: {
-				linux_mouse_avail = false;
+				linux_mouse_in_window = false;
+			} break;
+			case FocusIn: {
+				linux_window_focused = true;
+			} break;
+			case FocusOut: {
+				linux_window_focused = false;
 			} break;
 			case ConfigureNotify: {
 				//Todo: only call this when the user is done resizing
@@ -335,7 +342,9 @@ bool setup_x_window() {
 	}
 
 	XMapWindow(x_dpy, x_win);
-	XStoreName(x_dpy, x_win, sk_app_name);
+	XChangeProperty(x_dpy, x_win, XInternAtom(x_dpy, "_NET_WM_NAME", False),
+								XInternAtom(x_dpy, "UTF8_STRING", False), 8, PropModeReplace,
+								(unsigned char *)sk_app_name, strlen(sk_app_name));
 
 	// loads the XMODIFIERS environment variable to see what input method to use
 	XSetLocaleModifiers("");
@@ -357,7 +366,7 @@ bool setup_x_window() {
 	XSetICFocus(x_linux_input_context);
 
 	// Setup for window events
-	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask );
+	XSelectInput(x_dpy, x_win, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask);
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
@@ -448,7 +457,7 @@ void linux_resize(int width, int height) {
 bool linux_get_cursor(vec2 &out_pos) {
 	out_pos.x = (float)linux_mouse_x;
 	out_pos.y = (float)linux_mouse_y;
-	return linux_mouse_avail;
+	return linux_window_focused || linux_mouse_in_window;
 }
 
 ///////////////////////////////////////////
@@ -495,7 +504,7 @@ void linux_step_begin_flat() {
 void linux_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 	skg_swapchain_bind(&linux_swapchain);
 	skg_target_clear(true, &col.r);
 
@@ -503,8 +512,8 @@ void linux_step_end_flat() {
 
 	input_update_poses(true);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix view = render_get_cam_final        ();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();

@@ -99,7 +99,7 @@ class GuideDrawing : ITest
 		///  - You can create a Mesh from a list of vertices and indices. This is more advanced, but [check the sample here]({{site.url}}/Pages/Reference/Mesh/SetVerts.html).
 		///  
 		/// And where do you get a Material? Well, 
-		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylisic surfaces.
+		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylistic surfaces.
 		///  - A Material [constructor]({{site.url}}/Pages/Reference/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html) for in-depth usage (Materials and Shaders are a lot of fun!).
 		///  - You can call [`Material.Copy`]({{site.url}}/Pages/Reference/Material/Copy.html) to create a duplicate of an existing Material.
 		/// 
@@ -160,7 +160,7 @@ class GuideDrawing : ITest
 		/// 
 		/// The easiest way to draw complex content is through a Model! A Model
 		/// is basically a small scene of Mesh/Material pairs at positions with
-		/// hierarchical relationships to eachother. If you're creating art in
+		/// hierarchical relationships to each other. If you're creating art in
 		/// a 3D modeling tool such as Blender, then this is basically a full
 		/// representation of the scene you've created there.
 		/// 
@@ -201,7 +201,7 @@ class GuideDrawing : ITest
 		/// 
 		/// Text is drawn with a collection of rectangular quads, each mapped
 		/// to a character glyph on a texture. StereoKit supports rendering any
-		/// unicode glyphs yout throw at it, as long as the active Font has
+		/// Unicode glyphs you throw at it, as long as the active Font has
 		/// that glyph defined in it! This means you can work with all sorts of
 		/// different languages right away, without any baking or preparation.
 		/// 

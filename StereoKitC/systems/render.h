@@ -45,15 +45,16 @@ struct _render_list_t {
 	array_t<render_item_t> queue;
 	render_stats_t         stats;
 	render_list_state_     state;
-	bool                   sorted;
+	bool                   prepped;
 };
 
 typedef int64_t render_list_t;
 
-matrix        render_get_projection       ();
+matrix        render_get_projection_matrix();
+float         render_get_ortho_view_height();
 matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
-color128      render_get_clear_color      ();
+color128      render_get_clear_color_ln   ();
 vec2          render_get_clip             ();
 void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count, render_layer_ render_filter);
 void          render_clear                ();

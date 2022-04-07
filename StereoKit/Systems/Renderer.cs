@@ -50,8 +50,8 @@ namespace StereoKit
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
-		/// directly linked to Renderer.LayerFilter, but this behaviour can be
-		/// overriden via `Renderer.OverrideCaptureFilter`.</summary>
+		/// directly linked to Renderer.LayerFilter, but this behavior can be
+		/// overridden via `Renderer.OverrideCaptureFilter`.</summary>
 		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
 
 		/// <summary>This is the gamma space color the renderer will clear
@@ -59,6 +59,7 @@ namespace StereoKit
 		/// on displays with transparent screens</summary>
 		public static Color ClearColor
 		{
+			get => NativeAPI.render_get_clear_color();
 			set => NativeAPI.render_set_clear_color(value);
 		}
 
@@ -71,6 +72,21 @@ namespace StereoKit
 		{
 			get => NativeAPI.render_get_cam_root();
 			set => NativeAPI.render_set_cam_root(value);
+		}
+
+		/// <summary>For flatscreen applications only! This allows you to
+		/// change the camera projection between perspective and orthographic
+		/// projection. This may be of interest for some category of UI work,
+		/// but is generally a niche piece of functionality.
+		/// 
+		/// Swapping between perspective and orthographic will also switch the
+		/// clipping planes and field of view to the values associated with
+		/// that mode. See `SetClip`/`SetFov` for perspective, and
+		/// `SetOrthoClip`/`SetOrthoSize` for orthographic.</summary>
+		public static Projection Projection
+		{
+			get => NativeAPI.render_get_projection();
+			set => NativeAPI.render_set_projection(value);
 		}
 
 		/// <summary>The CaptureFilter is a layer mask for Mixed Reality
@@ -152,7 +168,9 @@ namespace StereoKit
 		/// HoloLens. The smaller the range between the near and far planes,
 		/// the better your z-buffer will look! If you see flickering on
 		/// objects that are overlapping, try making the range smaller.
-		/// </summary>
+		/// 
+		/// These values only affect perspective mode projection, which is the
+		/// default projection mode.</summary>
 		/// <param name="nearPlane">The GPU discards pixels that are too
 		/// close to the camera, this is that distance! It must be larger
 		/// than zero, due to the projection math, which also means that
@@ -166,11 +184,41 @@ namespace StereoKit
 			=> NativeAPI.render_set_clip(nearPlane, farPlane);
 
 		/// <summary>Only works for flatscreen! This updates the camera's 
-		/// projection matrix with a new field of view.</summary>
-		/// <param name="fieldOfViewDegrees">Horizontal field of view in
-		/// degrees.</param>
+		/// projection matrix with a new field of view.
+		/// 
+		/// This value only affects perspective mode projection, which is the
+		/// default projection mode.</summary>
+		/// <param name="fieldOfViewDegrees">Vertical field of view in degrees.
+		/// </param>
 		public static void SetFOV(float fieldOfViewDegrees)
 			=> NativeAPI.render_set_fov(fieldOfViewDegrees);
+
+		/// <summary>Set the near and far clipping planes of the camera!
+		/// These are important to z-buffer quality, especially when using
+		/// low bit depth z-buffers as recommended for devices like the
+		/// HoloLens. The smaller the range between the near and far planes,
+		/// the better your z-buffer will look! If you see flickering on
+		/// objects that are overlapping, try making the range smaller.
+		/// 
+		/// These values only affect orthographic mode projection, which is 
+		/// only available in flatscreen.</summary>
+		/// <param name="nearPlane">The GPU discards pixels that are too
+		/// close to the camera, this is that distance!</param>
+		/// <param name="farPlane">At what distance from the camera does the
+		/// GPU discard pixel? This is not true distance, but rather Z-axis
+		/// distance from zero in View Space coordinates!</param>
+		public static void SetOrthoClip(float nearPlane = 0, float farPlane = 50)
+			=> NativeAPI.render_set_ortho_clip(nearPlane, farPlane);
+
+		/// <summary>This sets the size of the orthographic projection's
+		/// viewport. You can use this feature to zoom in and out of the scene.
+		/// 
+		/// This value only affects orthographic mode projection, which is only
+		/// available in flatscreen.</summary>
+		/// <param name="viewportHeightMeters">The vertical size of the
+		/// projection's viewport, in meters.</param>
+		public static void SetOrthoSize(float viewportHeightMeters)
+			=> NativeAPI.render_set_ortho_size(viewportHeightMeters);
 
 		/// <summary>Renders a Material onto a rendertarget texture! StereoKit uses a 4 vert quad stretched
 		/// over the surface of the texture, and renders the material onto it to the texture.</summary>

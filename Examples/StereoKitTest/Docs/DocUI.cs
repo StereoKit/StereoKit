@@ -105,7 +105,7 @@ class DocUI : ITest
 	/// :CodeSample: UI.HSlider
 	/// ### Horizontal Sliders
 	/// 
-	/// ![A window with a slider]({{site.screen_url}}/UI/HSliderWindow.jpg)
+	/// ![A window with a slider]({{site.screen_url}}/UI/SliderWindow.jpg)
 	/// 
 	/// A slider will slide between two values at increments. The function
 	/// requires a reference to a float variable where the slider's state is

@@ -61,7 +61,7 @@ namespace StereoKit
 		/// direction and location through spatial audio cues. So make sure
 		/// the position is where you want people to think it's from!
 		/// Currently, if this sound is playing somewhere else, it'll be
-		/// cancelled, and moved to this location.</summary>
+		/// canceled, and moved to this location.</summary>
 		/// <param name="at">World space location for the audio to play at.
 		/// </param>
 		/// <param name="volume">Volume modifier for the effect! 1 means full
@@ -117,7 +117,7 @@ namespace StereoKit
 		/// <returns>A sound object, or null if something went wrong.</returns>
 		public static Sound FromFile(string filename)
 		{
-			IntPtr inst = NativeAPI.sound_create(Encoding.UTF8.GetBytes(filename));
+			IntPtr inst = NativeAPI.sound_create(Encoding.UTF8.GetBytes(filename+'\0'));
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
 

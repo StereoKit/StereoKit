@@ -221,14 +221,14 @@ void web_step_begin_flat() {
 void web_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 	skg_swapchain_bind(&web_swapchain);
 	skg_target_clear(true, &col.r);
 
 	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();

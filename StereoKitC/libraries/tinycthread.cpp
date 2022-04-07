@@ -629,6 +629,15 @@ thrd_t thrd_current(void)
 #endif
 }
 
+thrd_id_t thrd_id_current(void)
+{
+#if defined(_TTHREAD_WIN32_)
+	return GetCurrentThreadId();
+#else
+	return pthread_self();
+#endif
+}
+
 int thrd_detach(thrd_t thr)
 {
 #if defined(_TTHREAD_WIN32_)
@@ -645,6 +654,15 @@ int thrd_equal(thrd_t thr0, thrd_t thr1)
   return GetThreadId(thr0) == GetThreadId(thr1);
 #else
   return pthread_equal(thr0, thr1);
+#endif
+}
+
+int thrd_id_equal(thrd_id_t thr0, thrd_id_t thr1)
+{
+#if defined(_TTHREAD_WIN32_)
+	return thr0 == thr1;
+#else
+	return pthread_equal(thr0, thr1);
 #endif
 }
 

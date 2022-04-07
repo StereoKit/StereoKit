@@ -221,12 +221,12 @@ void android_step_end_flat() {
 		return;
 
 	skg_draw_begin();
-	color128 color = render_get_clear_color();
+	color128 color = render_get_clear_color_ln();
 	skg_swapchain_bind(&android_swapchain);
 	skg_target_clear(true, &color.r);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix view = render_get_cam_final        ();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
@@ -234,6 +234,12 @@ void android_step_end_flat() {
 	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
 	skg_swapchain_present(&android_swapchain);
 }
+
+///////////////////////////////////////////
+
+void *backend_android_get_java_vm () { return android_vm; }
+void *backend_android_get_activity() { return android_activity; }
+void *backend_android_get_jni_env () { return android_env; }
 
 } // namespace sk
 

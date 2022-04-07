@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="array_t&lt;*&gt;">
+		<DisplayString Condition="data==0">{"$T1",sb} [] - Uninitialized</DisplayString>
+		<DisplayString Condition="count==0">{"$T1",sb} [] - Empty</DisplayString>
+		<DisplayString>{"$T1",sb} [{count}/{capacity}]</DisplayString>
+		<Expand>
+			<ArrayItems Condition="data != 0">
+				<Size>count</Size>
+				<ValuePointer>data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="sk::matrix"><DisplayString>|{m[0],g},{m[1],g},{m[2],g},{m[3],g} | {m[4],g},{m[5],g},{m[6],g},{m[7],g} | {m[8],g},{m[9],g},{m[10],g},{m[11],g} | {m[12],g},{m[13],g},{m[14],g},{m[15],g}|</DisplayString></Type>
+	<Type Name="sk::color128"><DisplayString>[{r,g},{g,g},{b,g},{a,g}]</DisplayString></Type>
+	<Type Name="sk::color32"><DisplayString>[{r},{g},{b},{a}]</DisplayString></Type>
+	<Type Name="sk::quat"><DisplayString>&lt;{x,g},{y,g},{z,g},{w,g}&gt;</DisplayString></Type>
+	<Type Name="sk::vec4"><DisplayString>&lt;{x,g},{y,g},{z,g},{w,g}&gt;</DisplayString></Type>
+	<Type Name="sk::vec3"><DisplayString>&lt;{x,g},{y,g},{z,g}&gt;</DisplayString></Type>
+	<Type Name="sk::vec2"><DisplayString>&lt;{x,g},{y,g}&gt;</DisplayString></Type>
+	<Type Name="sk::rect_t"><DisplayString>[{x,g},{y,g} - {w,g},{h,g}]</DisplayString></Type>
+	<Type Name="sk::plane_t"><DisplayString>&lt;{center.x,g},{center.y,g},{center.z,g}&gt; - {d,g}</DisplayString></Type>
+	<Type Name="sk::sphere_t"><DisplayString>&lt;{center.x,g},{center.y,g},{center.z,g}&gt; - {radius,g}</DisplayString></Type>
+
+</AutoVisualizer>

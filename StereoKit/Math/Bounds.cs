@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -101,7 +102,42 @@ namespace StereoKit
 		public bool Contains(Vec3 linePt1, Vec3 linePt2, float radius)
 			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius);
 
-		public static Bounds operator *(Bounds a, float b) { return new Bounds(a.center*b, a.dimensions*b); }
+		/// <summary>Scale this bounds. It will scale the center as well as	the dimensions!
+		///  Modifies this bounds object.</summary>
+		/// <remarks>See <seealso cref="Scaled(float)"/> or <seealso cref="Scaled(Vec3)"/>
+		/// for a non-mutating alternative</remarks>
+		/// <param name="scale">Scale to apply</param>
+		public void Scale(float scale)
+		{
+			center *= scale;
+			dimensions *= scale;
+		}
+
+		/// <inheritdoc cref="Scale(float)"/>
+		public void Scale(Vec3 scale)
+		{
+			center *= scale;
+			dimensions *= scale;
+		}
+
+		/// <summary>Scale the bounds.  
+		/// It will scale the center as well as	the dimensions!
+		/// Returns a new Bounds.</summary>
+		/// <remarks>This is equivalent to using the * operator: bounds * scale</remarks>
+		/// <param name="scale">Scale</param>
+		/// <returns>A new scaled bounds</returns>
+		[Pure]
+		public Bounds Scaled(float scale) => this * scale;
+
+		/// <inheritdoc cref="Scaled(float)"/>
+		[Pure]
+		public Bounds Scaled(Vec3 scale) => this * scale;
+
+		[Pure]
+		public static Bounds operator *(Bounds a, float b) => new Bounds(a.center * b, a.dimensions * b);
+
+		[Pure]
+		public static Bounds operator *(Bounds a, Vec3 b) => new Bounds(a.center * b, a.dimensions * b);
 
 		public override string ToString()
 			=> string.Format("[center:{0} dimensions:{1}]", center, dimensions);

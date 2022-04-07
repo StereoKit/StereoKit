@@ -160,6 +160,32 @@ namespace StereoKit
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 	}
 
+	/// <summary>This tells about the app's current focus state, whether it's active and
+	/// receiving input, or if it's backgrounded or hidden. This can be
+	/// important since apps may still run and render when unfocused, as the app
+	/// may still be visible behind the app that _does_ have focus.</summary>
+	public enum AppFocus {
+		/// <summary>This StereoKit app is active, focused, and receiving input from the
+		/// user. Application should behave as normal.</summary>
+		Active,
+		/// <summary>This StereoKit app has been unfocused, something may be compositing
+		/// on top of the app such as an OS dashboard. The app is still visible,
+		/// but some other thing has focus and is receiving input. You may wish
+		/// to pause, disable input tracking, or other such things.</summary>
+		Background,
+		/// <summary>This app is not rendering currently.</summary>
+		Hidden,
+	}
+
+	public enum AssetState {
+		ErrorUnsupported = -3,
+		ErrorNotFound = -2,
+		Error        = -1,
+		None         = 0,
+		Loading,
+		LoadedMeta,
+		Loaded,
+	}
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -194,7 +220,7 @@ namespace StereoKit
 	/// <summary>What type of color information will the texture contain? A
 	/// good default here is Rgba32.</summary>
 	public enum TexFormat {
-		/// <summary>A default zero value for TexFormat! Unitialized formats
+		/// <summary>A default zero value for TexFormat! Uninitialized formats
 		/// will get this value and **** **** up so you know to assign it
 		/// properly :)</summary>
 		None         = 0,
@@ -381,7 +407,7 @@ namespace StereoKit
 		/// zbuffer.</summary>
 		NotEqual,
 		/// <summary>Don't look at the zbuffer at all, just draw everything,
-		/// always, all the time! At this poit, the order at which the mesh
+		/// always, all the time! At this point, the order at which the mesh
 		/// gets drawn will be  super important, so don't forget about
 		/// `Material.QueueOffset`!</summary>
 		Always,
@@ -397,7 +423,7 @@ namespace StereoKit
 	/// to on the shader.</summary>
 	public enum MaterialParam {
 		/// <summary>This data type is not currently recognized. Please
-		/// report your case on Github Issues!</summary>
+		/// report your case on GitHub Issues!</summary>
 		Unknown      = 0,
 		/// <summary>A single 32 bit float value.</summary>
 		Float        = 1,
@@ -510,7 +536,7 @@ namespace StereoKit
 	/// physics engine will apply forces differently based on this type.</summary>
 	public enum SolidType {
 		/// <summary>This object behaves like a normal physical object, it'll
-		/// fall, get pushed around, and generally be succeptible to physical
+		/// fall, get pushed around, and generally be susceptible to physical
 		/// forces! This is a 'Dynamic' body in physics simulation terms.</summary>
 		Normal       = 0,
 		/// <summary>Immovable objects are always stationary! They have
@@ -573,6 +599,21 @@ namespace StereoKit
 		Depth        = 1 << 1,
 		/// <summary>Clear both color and depth data.</summary>
 		All          = Color | Depth,
+	}
+
+	/// <summary>The projection mode used by StereoKit for the main camera! You
+	/// can use this with Renderer.Projection. These options are only
+	/// available in flatscreen mode, as MR headsets provide very
+	/// specific projection matrices.</summary>
+	public enum Projection {
+		/// <summary>This is the default projection mode, and the one you're most likely
+		/// to be familiar with! This is where parallel lines will converge as
+		/// they go into the distance.</summary>
+		Perspective  = 0,
+		/// <summary>Orthographic projection mode is often used for tools, 2D rendering,
+		/// thumbnails of 3D objects, or other similar cases. In this mode,
+		/// parallel lines remain parallel regardless of how far they travel.</summary>
+		Ortho        = 1,
 	}
 
 	/// <summary>When opening the Platform.FilePicker, this enum describes
@@ -916,6 +957,20 @@ namespace StereoKit
 		OpenXR,
 		/// <summary>StereoKit is running in a browser, and is using WebXR!</summary>
 		WebXR,
+	}
+
+	/// <summary>This describes the platform that StereoKit is running on.</summary>
+	public enum BackendPlatform {
+		/// <summary>This is running as a Windows app using the Win32 APIs.</summary>
+		Win32,
+		/// <summary>This is running as a Windows app using the UWP APIs.</summary>
+		Uwp,
+		/// <summary>This is running as a Linux app.</summary>
+		Linux,
+		/// <summary>This is running as an Android app.</summary>
+		Android,
+		/// <summary>This is running in a browser.</summary>
+		Web,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console

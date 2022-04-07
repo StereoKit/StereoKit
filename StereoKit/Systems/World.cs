@@ -58,7 +58,7 @@ namespace StereoKit
 		/// use. Currently only on HoloLens, good for use with the Windows
 		/// QR code package.</summary>
 		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
-		/// aquired from a windows MR API call.</param>
+		/// acquired from a windows MR API call.</param>
 		/// <param name="spatialNodeType">Type of spatial node to locate.</param>
 		/// <param name="qpcTime">A windows performance counter timestamp at
 		/// which the node should be located, obtained from another API or
@@ -133,7 +133,7 @@ namespace StereoKit
 		/// Check SK.System.worldRaycastPresent to see if raycasting can be
 		/// enabled. This will reset itself to false if raycasting isn't
 		/// possible. Loading raycasting data is asynchronous, so collision
-		/// surfaces may not be abailable immediately after setting this
+		/// surfaces may not be available immediately after setting this
 		/// flag.</summary>
 		public static bool RaycastEnabled { 
 			get => NativeAPI.world_get_raycast_enabled();

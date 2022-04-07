@@ -14,20 +14,20 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{B9F338BD-A226-43BF-B6B5-A797F51C7B0D}</ProjectGuid>
     <RootNamespace>StereoKitCTest</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>StereoKitCTest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -90,12 +90,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="demo_draw.cpp" />
+    <ClCompile Include="demo_envmap.cpp" />
     <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
     <ClCompile Include="demo_picker.cpp" />
     <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="demo_sprites.cpp" />
+    <ClCompile Include="demo_ui_layout.cpp" />
     <ClCompile Include="demo_world.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_basics.cpp" />
@@ -104,12 +106,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_draw.h" />
+    <ClInclude Include="demo_envmap.h" />
     <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_ui.h" />
     <ClInclude Include="demo_sprites.h" />
+    <ClInclude Include="demo_ui_layout.h" />
     <ClInclude Include="demo_world.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="demo_basics.h" />

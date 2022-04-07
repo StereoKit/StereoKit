@@ -14,8 +14,6 @@
 
 namespace sk {
 
-display_mode_ platform_mode = display_mode_none;
-
 ///////////////////////////////////////////
 
 bool platform_init() {
@@ -38,7 +36,7 @@ bool platform_init() {
 
 	// Initialize graphics
 #if defined(SK_XR_OPENXR)
-	void *luid = sk_display_mode == display_mode_mixedreality
+	void *luid = sk_get_settings().display_preference == display_mode_mixedreality
 		? openxr_get_luid() 
 		: nullptr;
 #else
@@ -57,14 +55,13 @@ bool platform_init() {
 	}
 
 	// Start up the current mode!
-	if (!platform_set_mode(sk_display_mode)) {
-		if (!sk_no_flatscreen_fallback && sk_display_mode != display_mode_flatscreen) {
+	if (!platform_set_mode(sk_get_settings().display_preference)) {
+		if (!sk_no_flatscreen_fallback && sk_get_settings().display_preference != display_mode_flatscreen) {
 			log_infof("MixedReality display mode failed, falling back to Flatscreen");
-			sk_display_mode = display_mode_flatscreen;
-			if (!platform_set_mode(sk_display_mode))
+			if (!platform_set_mode(display_mode_flatscreen))
 				return false;
 		} else {
-			log_errf("Couldn't initialize StereoKit in %s mode!", sk_display_mode == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
+			log_errf("Couldn't initialize StereoKit in %s mode!", sk_get_settings().display_preference == display_mode_mixedreality ? "MixedReality" : "Flatscreen");
 			return false;
 		}
 	}
@@ -114,7 +111,7 @@ void platform_set_window_xam(void *window) {
 ///////////////////////////////////////////
 
 bool platform_set_mode(display_mode_ mode) {
-	if (platform_mode == mode)
+	if (sk_display_mode == mode)
 		return true;
 
 	switch (mode) {
@@ -124,7 +121,7 @@ bool platform_set_mode(display_mode_ mode) {
 	}
 
 	platform_stop_mode();
-	platform_mode = mode;
+	sk_display_mode = mode;
 
 	bool result = true;
 	if (mode == display_mode_mixedreality) {
@@ -185,7 +182,7 @@ bool platform_set_mode(display_mode_ mode) {
 
 
 void platform_step_begin() {
-	switch (platform_mode) {
+	switch (sk_display_mode) {
 	case display_mode_none: break;
 	case display_mode_mixedreality: {
 #if   defined(SK_OS_ANDROID)
@@ -225,7 +222,7 @@ void platform_step_begin() {
 ///////////////////////////////////////////
 
 void platform_step_end() {
-	switch (platform_mode) {
+	switch (sk_display_mode) {
 	case display_mode_none: break;
 	case display_mode_mixedreality:
 #if defined(SK_XR_OPENXR)
@@ -252,7 +249,7 @@ void platform_step_end() {
 ///////////////////////////////////////////
 
 void platform_stop_mode() {
-	switch (platform_mode) {
+	switch (sk_display_mode) {
 	case display_mode_none: break;
 	case display_mode_mixedreality:
 #if defined(SK_XR_OPENXR)
@@ -273,23 +270,6 @@ void platform_stop_mode() {
 		web_stop_flat    ();
 #endif
 	} break;
-	}
-}
-
-///////////////////////////////////////////
-
-backend_xr_type_ backend_xr_get_type() {
-	if (platform_mode == display_mode_mixedreality) {
-#if defined(SK_XR_OPENXR)
-		return backend_xr_type_openxr;
-#elif defined(SK_XR_WEBXR)
-		return backend_xr_type_webxr;
-#else
-		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
-#endif
-	} else {
-		if (sk_settings.disable_flatscreen_mr_sim) return backend_xr_type_none;
-		else                                       return backend_xr_type_simulator;
 	}
 }
 

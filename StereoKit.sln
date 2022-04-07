@@ -32,7 +32,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitCTest_UWP", "Examp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitTest_UWP", "Examples\StereoKitTest\StereoKitTest_UWP\StereoKitTest_UWP.csproj", "{6AAC0A23-0742-4689-B65D-0B2F5291FB39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitDocumenter", "StereoKitDocumenter\StereoKitDocumenter.csproj", "{4803A1B6-3799-4055-903E-3554B1111208}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitDocumenter", "Tools\StereoKitDocumenter\StereoKitDocumenter.csproj", "{4803A1B6-3799-4055-903E-3554B1111208}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E8C5B727-BA6C-4253-8A05-17A941B15929} = {E8C5B727-BA6C-4253-8A05-17A941B15929}
 		{95B47C8E-3A66-483C-ABEE-950E6C2F621A} = {95B47C8E-3A66-483C-ABEE-950E6C2F621A}
@@ -47,7 +47,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StereoKitCTest_Android.Nati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StereoKitTest_Android", "Examples\StereoKitTest\StereoKitTest_Android\StereoKitTest_Android.csproj", "{9D8B248C-0BAA-4C08-A21D-40C814A992B4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StereoKitAPIGen", "StereoKitAPIGen\StereoKitAPIGen.csproj", "{D99BB395-3C2F-4EE4-88FA-DCAC5A3D02AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StereoKitAPIGen", "Tools\StereoKitAPIGen\StereoKitAPIGen.csproj", "{D99BB395-3C2F-4EE4-88FA-DCAC5A3D02AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
