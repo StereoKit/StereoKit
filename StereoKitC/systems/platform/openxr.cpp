@@ -689,7 +689,7 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
-bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime time) {
+bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, XrTime time) {
 	if (time == 0) time = xr_time;
 
 	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
@@ -698,7 +698,7 @@ bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime time) {
 	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
 		memcpy(&out_pose->position, &space_location.pose.position, sizeof(vec3));
 		memcpy(&out_pose->orientation, &space_location.pose.orientation, sizeof(quat));
-		xr_eyes_sample_time = gaze_sample_time.time;
+		out_gaze_sample_time = gaze_sample_time.time;
 		return true;
 	}
 	return false;
