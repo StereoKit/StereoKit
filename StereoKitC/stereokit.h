@@ -1897,6 +1897,7 @@ SK_API openxr_handle_t   backend_openxr_get_instance();
 SK_API openxr_handle_t   backend_openxr_get_session ();
 SK_API openxr_handle_t   backend_openxr_get_space   ();
 SK_API int64_t           backend_openxr_get_time    ();
+SK_API int64_t           backend_openxr_get_eyes_sample_time();
 SK_API void             *backend_openxr_get_function(const char *function_name);
 SK_API bool32_t          backend_openxr_ext_enabled (const char *extension_name);
 SK_API void              backend_openxr_ext_request (const char *extension_name);

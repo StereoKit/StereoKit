@@ -56,6 +56,7 @@ XrSpace        xr_stage_space   = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
+XrTime         xr_eyes_sample_time = 0;
 
 array_t<const char*> xr_exts_user   = {};
 array_t<uint64_t>    xr_exts_loaded = {};
@@ -701,6 +702,23 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
+bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, XrTime time) {
+	if (time == 0) time = xr_time;
+
+	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
+	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION, &gaze_sample_time };
+	XrResult        res = xrLocateSpace(xr_gaze_space, xr_app_space, time, &space_location);
+	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
+		memcpy(&out_pose->position, &space_location.pose.position, sizeof(vec3));
+		memcpy(&out_pose->orientation, &space_location.pose.orientation, sizeof(quat));
+		out_gaze_sample_time = gaze_sample_time.time;
+		return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
 pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
@@ -893,6 +911,14 @@ int64_t backend_openxr_get_time() {
 	if (backend_xr_get_type() != backend_xr_type_openxr) 
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 	return xr_time;
+}
+
+///////////////////////////////////////////
+
+int64_t backend_openxr_get_eyes_sample_time() {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return xr_eyes_sample_time;
 }
 
 ///////////////////////////////////////////

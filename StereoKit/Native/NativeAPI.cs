@@ -486,6 +486,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong         backend_openxr_get_session ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong         backend_openxr_get_space   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long          backend_openxr_get_time    ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long          backend_openxr_get_eyes_sample_time();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr        backend_openxr_get_function(string function_name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int           backend_openxr_ext_enabled (string extension_name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_ext_request (string extension_name);

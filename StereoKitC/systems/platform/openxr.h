@@ -138,11 +138,13 @@ void openxr_poll_actions  ();
 
 void       *openxr_get_luid ();
 bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
+bool32_t    openxr_get_gaze_space(pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);
 const char* openxr_string   (XrResult result);
 
 extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;
 extern XrSpace    xr_head_space;
+extern XrSpace    xr_gaze_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
@@ -153,6 +155,7 @@ extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
 extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
+extern XrTime     xr_eyes_sample_time;
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
 extern pose_t     xr_bounds_pose_local;

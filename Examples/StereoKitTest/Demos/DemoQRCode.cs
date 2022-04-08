@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// :CodeDoc: Guides 4 Using QR Codes
 /// # Using QR Codes
 /// 
-/// QR codes are a super fast and easy way to to locate an object,
+/// QR codes are a super fast and easy way to locate an object,
 /// provide information from the environment, or `localize` two
 /// devices to the same coordinate space! HoloLens 2 and WMR headsets
 /// have a really convenient way to grab and use this data. They can use
