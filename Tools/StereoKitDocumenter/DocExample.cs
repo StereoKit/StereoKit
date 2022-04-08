@@ -24,7 +24,7 @@ namespace StereoKitDocumenter
 		int sortIndex = 0;
 
 		public string Name => info;
-		public string FileName => Path.Combine(Program.pagesOut, (category.ToLower() == "root" ? "" : category + "/") + info.Replace(' ', '-') + ".md");
+		public string FileName => Path.Combine(Program.options.PagesOut, (category.ToLower() == "root" ? "" : category + "/") + info.Replace(' ', '-') + ".md");
 		public string UrlName => $"{{{{site.url}}}}/Pages/{(category.ToLower() == "root" ? "" : category + "/")}{info.Replace(' ', '-')}.html";
 		public int SortIndex => sortIndex;
 

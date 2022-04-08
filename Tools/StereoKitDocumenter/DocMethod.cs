@@ -15,7 +15,7 @@ namespace StereoKitDocumenter
 
 		public bool   IsStatic => overloads.Count > 0 ? overloads[0].IsStatic : throw new Exception("Calling this too early?");
 		public string Name     => $"{parent.Name}.{ShowName}";
-		public string FileName => Path.Combine(Program.referenceOut, parent.Name + "/" + PathName + ".md");
+		public string FileName => Path.Combine(Program.options.PagesOut + "Reference/", parent.Name + "/" + PathName + ".md");
 		public string UrlName  => $"{{{{site.url}}}}/Pages/Reference/{parent.Name}/{PathName}.html";
 		public string ShowName { get {
 			if      (name == "#ctor")        return parent.Name;

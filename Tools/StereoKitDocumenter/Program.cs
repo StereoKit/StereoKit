@@ -1,3 +1,5 @@
+using CommandLine;
+using CommandLine.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,17 +9,26 @@ namespace StereoKitDocumenter
 {
 	class Program
 	{
-		public const string xmlDocs      = "../../../../bin/StereoKit.xml";
-		public const string pagesOut     = "../../../../docs/Pages/";
-		public const string samplesProj  = "../../../../Examples/StereoKitTest/";
-		public const string referenceOut = pagesOut+"Reference/";
+		public class CLIOptions
+		{
+			[Option('x', "xml", Required = false, HelpText = "Path to your DLL's commentdoc xml file.")]
+			public string XmlDocs { get; set; } = "../../../../../bin/StereoKit.xml";
+			
+			string pagesOut = "../../../../../docs/Pages/";
+			[Option('o', "out", Required = false, HelpText = "Generated markdown output folder.")]
+			public string PagesOut { get => pagesOut; set { pagesOut = value.Replace('\\','/'); if (!pagesOut.EndsWith("/")) pagesOut += "/"; } }
+			
+			[Option('s', "samples", Required = false, HelpText = "A folder that is searched recursively for .cs files with :CodeSample: or :CodeDoc: tags.")]
+			public string SamplesProj { get; set; } = "../../../../../Examples/StereoKitTest/";
+		}
+		public static CLIOptions options;
 
 		public static List<DocClass>  classes = new List<DocClass>();
 		public static List<DocMethod> methods = new List<DocMethod>();
 		public static List<DocField>  fields  = new List<DocField>();
 		public static List<IDocItem>  items   = new List<IDocItem>();
 		public static List<DocInheritMethod> inheritMethods = new List<DocInheritMethod>();
-		public static List<DocInheritField>  inheritFields  = new List<DocInheritField>();
+		public static List<DocInheritField>  inheritFields  = new List<DocInheritField >();
 
 		public static DocClass GetClass(string name) {
 			DocClass result = classes.Find((a) => a.name == name);
@@ -33,9 +44,28 @@ namespace StereoKitDocumenter
 
 		static void Main(string[] args)
 		{
-			int result = RunSKTests();
-			if (result != 0)
-				Environment.Exit(result);
+			Parser                   parser = new Parser(s=>s.HelpWriter = null);
+			ParserResult<CLIOptions> result = parser.ParseArguments<CLIOptions>(args);
+			void DisplayHelp<T>(ParserResult<T> r, IEnumerable<Error> errs) {
+				var helpText = errs.IsVersion()
+					? HelpText.AutoBuild(r)
+					: HelpText.AutoBuild(r, h => {
+						h.AdditionalNewLineAfterOption = false; 
+						h.Heading   = "A tool for building markdown documentation with samples from xml and source code! Designed for StereoKit.";
+						h.Copyright = "";
+					return h;
+				}, e => e);
+				Console.WriteLine(helpText);
+				Environment.Exit(1);
+			}
+			result
+				.WithParsed   (o => options = o)
+				.WithNotParsed(e => DisplayHelp(result, e));
+
+
+			int tests = RunSKTests();
+			if (tests != 0)
+				Environment.Exit(tests);
 
 			Console.WriteLine("Building doc pages...");
 			ScrapeData();
@@ -55,7 +85,7 @@ namespace StereoKitDocumenter
 
 			classes.Sort((a, b) => a.name.CompareTo(b.name));
 			{
-				StreamWriter writer = new StreamWriter(pagesOut + "data.js");
+				StreamWriter writer = new StreamWriter(options.PagesOut + "data.js");
 				writer.Write(WriteIndex());
 				writer.Close();
 			}
@@ -63,7 +93,7 @@ namespace StereoKitDocumenter
 
 		private static void ScrapeData()
 		{
-			XmlReader reader = XmlReader.Create(xmlDocs);
+			XmlReader reader = XmlReader.Create(options.XmlDocs);
 			while (reader.ReadToFollowing("member"))
 			{
 				string    name      = reader.GetAttribute("name");
@@ -89,7 +119,7 @@ namespace StereoKitDocumenter
 			inheritFields .ForEach(f=>f.Resolve(fields));
 			inheritMethods.ForEach(f=>f.Resolve(methods));
 
-			DocExampleFinder.FindExamples(samplesProj);
+			DocExampleFinder.FindExamples(options.SamplesProj);
 		}
 
 		private static int RunSKTests()
@@ -99,9 +129,9 @@ namespace StereoKitDocumenter
 			testInfo.Arguments        = "/C StereoKitTest.exe -test";
 			testInfo.UseShellExecute  = false;
 			#if DEBUG
-			testInfo.WorkingDirectory = "../../../../bin/x64_Debug/StereoKitTest/";
+			testInfo.WorkingDirectory = "../../../../../bin/x64_Debug/StereoKitTest/";
 			#else
-			testInfo.WorkingDirectory = "../../../../bin/x64_Release/StereoKitTest/";
+			testInfo.WorkingDirectory = "../../../../../bin/x64_Release/StereoKitTest/";
 			#endif
 			var process = System.Diagnostics.Process.Start(testInfo);
 			process.WaitForExit();
@@ -136,7 +166,6 @@ namespace StereoKitDocumenter
 			// Get names
 			string[] segs = signature.Split('(');
 			string nameSignature = segs[0];
-			string paramSignature = segs.Length > 1 ? segs[1] : "";
 			segs = nameSignature.Split('.');
 
 			DocField result = new DocField(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
@@ -146,7 +175,8 @@ namespace StereoKitDocumenter
 			{
 				switch (reader.Name.ToLower())
 				{
-					case "summary": result.summary = StringHelper.CleanMultiLine(reader.ReadElementContentAsString().Trim()); break;
+					case "summary": result.summary = StringHelper.XmlReaderToString(reader); break;
+					case "remarks": result.remarks = StringHelper.XmlReaderToString(reader); break;
 					case "inheritdoc": {
 						string reference = reader.GetAttribute("cref").Trim();
 						int    start     = reference.IndexOf('.');

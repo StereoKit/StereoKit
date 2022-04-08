@@ -10,6 +10,7 @@ namespace StereoKitDocumenter
 	{
 		public string name;
 		public string summary;
+		public string remarks;
 		public DocClass parent;
 		public List<DocExample> examples = new List<DocExample>();
 
@@ -23,7 +24,7 @@ namespace StereoKitDocumenter
 		}
 
 		public string Name     => $"{parent.Name}.{name}";
-		public string FileName => Path.Combine(Program.referenceOut, parent.Name + "/" + name + ".md");
+		public string FileName => Path.Combine(Program.options.PagesOut + "Reference/", parent.Name + "/" + name + ".md");
 		public string UrlName  => $"{{{{site.url}}}}/Pages/Reference/{parent.Name}/{name}.html";
 
 		public Type GetFieldType(Type classType) {

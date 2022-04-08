@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 
 namespace StereoKitDocumenter
 {
@@ -11,6 +12,26 @@ namespace StereoKitDocumenter
 						.Replace('\r', ' ')
 						.Replace(':', '.')
 						.Replace("`", "");
+		}
+
+		public static string XmlReaderToString(XmlReader reader)
+		{
+			string contents = "";
+			XmlReader r = reader.ReadSubtree();
+			while (r.Read())
+			{
+				if (r.NodeType == XmlNodeType.Element) {
+					// TODO: This doesn't work, but it also doesn't crash
+					if (r.Name == "see" || r.Name == "seealso")
+					{
+						contents += $"`{TypeName(r.GetAttribute("cref"), false)}`";
+					}
+					continue;
+				}
+				contents += r.ReadContentAsString();
+			}
+			contents = contents.Trim();
+			return CleanMultiLine(contents);
 		}
 
 		public static string CleanForTable(string text)
