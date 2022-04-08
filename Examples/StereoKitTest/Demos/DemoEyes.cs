@@ -1,5 +1,5 @@
-﻿using StereoKit;
-using System;
+﻿using System;
+using StereoKit;
 using System.Collections.Generic;
 
 class DemoEyes : ITest
@@ -12,7 +12,7 @@ class DemoEyes : ITest
 	List<LinePoint> points = new List<LinePoint>();
 	Vec3 previous;
 
-	long lastEyeSampleTime;
+	long lastEyesSampleTime;
 	DateTime demoStartTime;
 	int uniqueSamplesCount;
 
@@ -20,7 +20,7 @@ class DemoEyes : ITest
 	{
 		demoStartTime = DateTime.UtcNow;
 		uniqueSamplesCount = 0;
-		lastEyeSampleTime = -1;
+		lastEyesSampleTime = -1;
 	}
 	public void Shutdown  () { }
 
@@ -60,9 +60,9 @@ class DemoEyes : ITest
 
 		if (Backend.XRType == BackendXRType.OpenXR)
 		{
-			if (Backend.OpenXR.EyesSampleTime != lastEyeSampleTime)
+			if (Backend.OpenXR.EyesSampleTime != lastEyesSampleTime)
             {
-				lastEyeSampleTime = Backend.OpenXR.EyesSampleTime;
+				lastEyesSampleTime = Backend.OpenXR.EyesSampleTime;
 				uniqueSamplesCount++;
             }
 
