@@ -481,7 +481,7 @@ static inline float    vec3_distance_sq (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.
 static inline float    vec2_distance_sq (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude_sq(v); }
 static inline float    vec3_distance    (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.y-b.y, a.z-b.z}; return vec3_magnitude(v); }
 static inline float    vec2_distance    (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude(v); }
-static inline vec3     vec3_project     (vec3 a, vec3 onto_b) { return (vec3_dot(a,onto_b)/vec3_magnitude_sq(onto_b))*onto_b; }
+static inline vec3     vec3_project     (vec3 a, vec3 onto_b) { float t = vec3_dot(a,onto_b)/vec3_magnitude_sq(onto_b); vec3 v = {onto_b.x*t, onto_b.y*t, onto_b.z*t}; return v; }
 static inline vec4     vec4_normalize   (vec4 a) { float imag = 1.0f/vec4_magnitude(a); vec4 v = {a.x*imag, a.y*imag, a.z*imag, a.w*imag}; return v; }
 static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); vec3 v = {a.x*imag, a.y*imag, a.z*imag}; return v; }
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
