@@ -194,6 +194,7 @@ bool win32_start_flat() {
 	wc.hInstance     = GetModuleHandleW(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
+	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	if (!RegisterClassW(&wc)) { free(app_name_w); return false; }
 
 	RECT r;
