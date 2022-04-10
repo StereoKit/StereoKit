@@ -390,15 +390,6 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 		? hand_state[handedness].pose_blend[1][4].position
 		: vec3_zero;
 
-	pose_t hand_pose = { hand_pos, orientation };
-	if (mouse_adjustments) {
-		hand_pose.position =
-			(hand.fingers[1][0].position +
-			 hand.fingers[1][1].position +
-			 hand.fingers[4][0].position +
-			 hand.fingers[4][1].position) * 0.25f;
-	}
-
 	// Update the position and orientation of each joint to be at its proper
 	// location in world space
 	for (size_t f = 0; f < 5; f++) {
@@ -418,11 +409,18 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	} }
 
 	// Update some of the higher level hand poses
-	hand.palm.position    = hand_pose.position;
+
+	// OpenXR spec defines "The palm joint is located at the center of the
+	// middle finger's metacarpal bone", so we'll use that for the position.
+	hand.palm.position =
+		(hand.fingers[2][0].position +
+		 hand.fingers[2][1].position) * 0.5f;
+	// However, OpenXR's facing direction seems... less practical, so here we
+	// arrange them so that "forward" faces out from the palm.
 	hand.palm.orientation = quat_from_angles(
 		0,
-		handedness == handed_right ?  90.f : -90.f, 
-		handedness == handed_right ? -90.f :  90.f) * hand_pose.orientation;
+		handedness == handed_right ?  90.f : -90.f,
+		handedness == handed_right ? -90.f :  90.f) * orientation;
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
 	hand.wrist.orientation = hand.palm.orientation;
 }

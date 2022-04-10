@@ -57,11 +57,12 @@ namespace StereoKit
 		/// <summary>Pose of the wrist. TODO: Not populated right now.
 		/// </summary>
 		public  Pose        wrist;
-		/// <summary>The position and orientation at the center of the palm!
-		/// Here, Forward is the direction the flat of the palm is facing. X+
-		/// is to the outside of the right hand, and to the inside of the
-		/// left hand. </summary>
-		public  Pose        palm;
+		/// <summary>The position and orientation of the palm! Position is
+		/// specifically defined as the middle of the middle finger's root
+		/// (metacarpal) bone. For orientation, Forward is the direction the
+		/// flat of the palm is facing, "Iron Man" style. X+ is to the outside
+		/// of the right hand, and to the inside of the left hand. </summary>
+		public Pose         palm;
 		/// <summary>This is an approximation of where the center of a 
 		/// 'pinch' gesture occurs, and is used internally by StereoKit for
 		/// some tasks, such as UI. For simulated hands, this position will
