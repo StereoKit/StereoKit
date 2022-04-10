@@ -1,4 +1,4 @@
-<p align="center"><img src="/Tools/img/StereoKitWide.svg" alt="StereoKit Logo" height="160"></p>
+<p align="center"><img src="/Tools/img/StereoKitWideBackground.svg" alt="StereoKit Logo" height="160"></p>
 <p align="center">
     <a href="https://github.com/maluoi/stereokit/branches"><img src="https://img.shields.io/github/last-commit/maluoi/stereokit/develop" /></a>
     <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/maluoi/stereokit" /></a>
