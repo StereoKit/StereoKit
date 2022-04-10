@@ -1,18 +1,16 @@
 const std = @import("std");
 
-pub usingnamespace @cImport({
+const c = @cImport({
     @cInclude("stereokit.h");
-    @cInclude("stereokit_ui.h"); });
+    @cInclude("stereokit_ui.h");
+});
 
 pub fn main() !void {
-    const settings = std.mem.zeroInit(sk_settings_t, .{
+    _ = c.sk_init(std.mem.zeroInit(c.sk_settings_t, .{
         .app_name = "StereoKit Zig"
-    });
-    _ = sk_init(settings);
+    }));
 
-    while (sk_step( step ) == 1) { }
-    
-    sk_shutdown();
+    c.sk_run(step, null);
 }
 
 export fn step() void {
