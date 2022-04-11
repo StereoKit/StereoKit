@@ -42,9 +42,9 @@ function Test {
     if ($LASTEXITCODE -ne 0) {
         return $LASTEXITCODE
     }
-    & 'cd' 'StereoKitDocumenter/bin/Release/';
+    Push-Location -Path 'Tools/StereoKitDocumenter/bin/Release/net6.0/'
     & '.\StereoKitDocumenter.exe' | Write-Host
-    & 'cd' '../../../';
+    Pop-Location
     return $LASTEXITCODE
 }
 
