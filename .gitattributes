@@ -1,0 +1,3 @@
+StereoKitC/libraries/* linguist-vendored
+StereoKitC/lib/** linguist-vendored
+Tools/** -linguist-detectable
