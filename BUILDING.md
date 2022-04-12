@@ -40,8 +40,16 @@ It may help to build just the C++ side on Linux first to find which packages nee
 ```
 # From StereoKit's root directory on Linux
 
+# StereoKit uses xmake, check their docs (https://xmake.io/#/getting_started)
+# for details, but here's the quick way to install:
+bash <(curl -fsSL https://xmake.io/shget.text)
+
+# here's a few other pre-reqs I had to install:
+sudo apt-get update
+sudo apt-get install unzip libfontconfig1-dev
+
 # Configure the xmake build
-xmake f -p linux -a x64 --tests=y
+xmake f -p linux -a x64 --tests=y -y
 # Build
 xmake
 
