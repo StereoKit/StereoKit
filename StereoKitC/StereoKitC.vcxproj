@@ -148,6 +148,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="color.cpp" />
     <ClCompile Include="hierarchy.cpp" />
     <ClCompile Include="intersect.cpp" />
+    <ClCompile Include="libraries\cgltf.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniaudio.cpp" />

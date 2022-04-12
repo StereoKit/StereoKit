@@ -193,6 +193,9 @@
     <ClCompile Include="backend.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\cgltf.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
