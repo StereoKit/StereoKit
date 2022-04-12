@@ -66,12 +66,12 @@ namespace StereoKit
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a scaled by b.</returns>
-		public static Vec3 operator *(Vec3 b, Vec3 a) => a.v * b.v;
+		public static Vec3 operator *(Vec3 a, Vec3 b) => a.v * b.v;
 		/// <summary>A component-wise vector division. Not commutative</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a divided by b.</returns>
-		public static Vec3 operator /(Vec3 b, Vec3 a) => a.v / b.v;
+		public static Vec3 operator /(Vec3 a, Vec3 b) => a.v / b.v;
 		/// <summary>Vector negation, returns a vector where each component has
 		/// been negated.</summary>
 		/// <param name="a">Any vector.</param>
@@ -79,19 +79,19 @@ namespace StereoKit
 		public static Vec3 operator -(Vec3 a) => -a.v;
 		/// <summary>A scalar vector multiplication.</summary>
 		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
 		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec3 operator *(Vec3 a, float b) => a.v * b;
 		/// <summary>A scalar vector division.</summary>
 		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
 		/// <returns>A new vector a divided by b.</returns>
 		public static Vec3 operator /(Vec3 a, float b) => a.v / b;
 		/// <summary>A scalar vector multiplication.</summary>
-		/// <param name="a">Any vector.</param>
+		/// <param name="a">Any scalar.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a scaled by b.</returns>
-		public static Vec3 operator *(float b, Vec3 a) => a.v * b;
+		public static Vec3 operator *(float a, Vec3 b) => b.v * a;
 
 		/// <summary>Shorthand for a vector where all values are 0! Same as
 		/// `new Vec3(0,0,0)`.</summary>

@@ -110,12 +110,12 @@ namespace StereoKit
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a scaled by b.</returns>
-		public static Vec4 operator *(Vec4 b, Vec4 a) => a.v * b.v;
+		public static Vec4 operator *(Vec4 a, Vec4 b) => a.v * b.v;
 		/// <summary>A component-wise vector division. Not commutative</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a divided by b.</returns>
-		public static Vec4 operator /(Vec4 b, Vec4 a) => a.v / b.v;
+		public static Vec4 operator /(Vec4 a, Vec4 b) => a.v / b.v;
 		/// <summary>Vector negation, returns a vector where each component has
 		/// been negated.</summary>
 		/// <param name="a">Any vector.</param>
@@ -123,7 +123,7 @@ namespace StereoKit
 		public static Vec4 operator -(Vec4 a) => -a.v;
 		/// <summary>A scalar vector multiplication.</summary>
 		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
 		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec4 operator *(Vec4 a, float b) => a.v * b;
 		/// <summary>A scalar vector division.</summary>
@@ -132,10 +132,10 @@ namespace StereoKit
 		/// <returns>A new vector a divided by b.</returns>
 		public static Vec4 operator /(Vec4 a, float b) => a.v / b;
 		/// <summary>A scalar vector multiplication.</summary>
-		/// <param name="a">Any vector.</param>
+		/// <param name="a">Any scalar.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a scaled by b.</returns>
-		public static Vec4 operator *(float b, Vec4 a) => a.v * b;
+		public static Vec4 operator *(float a, Vec4 b) => b.v * a;
 
 		/// <summary>What's a dot product do for 4D vectors, you might ask?
 		/// Well, I'm no mathematician, so hopefully you are! I've never used

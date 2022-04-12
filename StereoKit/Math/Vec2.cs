@@ -69,19 +69,19 @@ namespace StereoKit
 		public static Vec2 operator -(Vec2 a) => -a.v;
 		/// <summary>A scalar vector multiplication.</summary>
 		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
 		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec2 operator *(Vec2 a, float b) => a.v*b;
 		/// <summary>A scalar vector division.</summary>
 		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
 		/// <returns>A new vector a divided by b.</returns>
 		public static Vec2 operator /(Vec2 a, float b) => a.v/b;
 		/// <summary>A scalar vector multiplication.</summary>
-		/// <param name="a">Any vector.</param>
+		/// <param name="a">Any scalar.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector a scaled by b.</returns>
-		public static Vec2 operator *(float b, Vec2 a) => a.v*b;
+		public static Vec2 operator *(float a, Vec2 b) => b.v*a;
 
 		/// <summary>A Vec2 with all components at zero, this is the same as
 		/// `new Vec2(0,0)`.</summary>
