@@ -403,7 +403,7 @@ bool openxr_init() {
 	gfx_binding.xDisplay    = (Display*  )platform._x_display;
 	gfx_binding.visualid    = *(uint32_t *)platform._visual_id;
 	gfx_binding.glxFBConfig = (GLXFBConfig)platform._glx_fb_config;
-	gfx_binding.glxDrawable = (GLXDrawable)platform._glx_drawable;
+	gfx_binding.glxDrawable = *((GLXDrawable*)platform._glx_drawable);
 	gfx_binding.glxContext  = (GLXContext )platform._glx_context;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL)
 	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
