@@ -68,9 +68,13 @@ namespace sk {
 #define FOR_EACH_EXT_ANDROID(_) \
 	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
 
+#if defined(SKG_LINUX_EGL)
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
 	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
+#else
+#define FOR_EACH_EXT_LINUX(_)
+#endif
 
 // Debug builds only
 #define FOR_EACH_EXT_DEBUG(_) \
