@@ -62,7 +62,7 @@ float3 GetIridescence(uint view_id, float3 world_pos, float3 surface_normal) {
 
 	float pct  = ir * ir_gradient_count;
 	int   g    = pct;
-	pct = frac(pct);
+	pct = smoothstep(0, 1, frac(pct));
 	float3 curr = ir_gradient[g];
 	float3 next = ir_gradient[g+1];
 	return lerp(curr, next, pct);
@@ -74,7 +74,7 @@ float4 ps(psIn input) : SV_TARGET {
 	glow_ex.y *= input.glow_mask;
 	float glow = max((glow_ex.x * 0.2), (glow_ex.y * glow_ex.x));
 
-	float3 iridescence = float3(0.1,0.1,0.1);// GetIridescence(input.view_id, input.world.xyz, input.normal);
+	float3 iridescence = GetIridescence(input.view_id, input.world.xyz, input.normal);
 	float  edge        = saturate((input.light_edge.a - 0.15) / fwidth(input.light_edge.a));
 
 	float4 col = lerp(color, input.inst_col, edge) * input.inst_col.a;
