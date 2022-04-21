@@ -17,9 +17,9 @@ class Program
 		{
 			//-f "$(SolutionDir)\StereoKitC\stereokit.h" -o SKOverrides.txt -d "$(SolutionDir)\StereoKit\Native"
 			args = new string[] { 
-				"-f", "../../../../StereoKitC/stereokit.h",
+				"-f", "../../../../../StereoKitC/stereokit.h",
 				"-o", "SKOverrides.txt",
-				"-d", "../../../../StereoKit/Native"};
+				"-d", "../../../../../StereoKit/Native"};
 		}
 
 		// Parse the parameters into stuff we can work with

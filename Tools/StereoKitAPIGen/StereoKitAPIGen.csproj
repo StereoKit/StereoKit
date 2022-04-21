@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CppAst" Version="0.8.0-alpha-001" />
+    <PackageReference Include="CppAst" Version="0.7.3" />
   </ItemGroup>
 
   <ItemGroup>
