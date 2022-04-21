@@ -541,6 +541,14 @@ namespace StereoKit
 			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId) > 0;
 			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value ? 1 : 0);
 		}
+		/// <summary>Is this node flagged as visible? By default, this is true
+		/// for all nodes with visual elements attached. These nodes will not
+		/// be drawn or skinned if you set this flag to false.</summary>
+		public bool Visible
+		{
+			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId) > 0;
+			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value ? 1 : 0);
+		}
 		/// <summary>The transform of this node relative to the Model itself.
 		/// This incorporates transforms from all parent nodes. Setting this
 		/// transform will update the LocalTransform, as well as all Child

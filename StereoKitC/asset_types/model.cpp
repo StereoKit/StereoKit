@@ -406,6 +406,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.mesh            = mesh;
 		visual.transform_model = node.transform_model;
 		visual.node            = node_id;
+		visual.visible         = true;
 		node.visual = (int32_t)model->visuals.add(visual);
 		model_recalculate_bounds(model);
 	}
@@ -511,6 +512,15 @@ bool32_t model_node_get_solid(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
+bool32_t model_node_get_visible(model_t model, model_node_id node) {
+	int32_t vis = model->nodes[node].visual;
+	return vis == -1
+		? false
+		: model->visuals[vis].visible;
+}
+
+///////////////////////////////////////////
+
 material_t  model_node_get_material(model_t model, model_node_id node) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
@@ -561,6 +571,14 @@ void model_node_set_name(model_t model, model_node_id node, const char* name) {
 
 void model_node_set_solid(model_t model, model_node_id node, bool32_t solid) {
 	model->nodes[node].solid = solid;
+}
+
+///////////////////////////////////////////
+
+void model_node_set_visible(model_t model, model_node_id node, bool32_t visible) {
+	int32_t vis = model->nodes[node].visual;
+	if (vis != -1)
+		model->visuals[vis].visible = visible;
 }
 
 ///////////////////////////////////////////

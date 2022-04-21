@@ -203,8 +203,11 @@ void _anim_inst_check_ready(model_t model) {
 void _anim_update_skin(model_t &model) {
 	_anim_inst_check_ready(model);
 
-	for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) { 
-		matrix root = matrix_invert(model_node_get_transform_model(model, model->anim_data.skeletons[i].skin_node));
+	for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
+		model_node_id skin_node = model->anim_data.skeletons[i].skin_node;
+		if (model_node_get_visible(model, skin_node) == false) continue;
+			
+		matrix root = matrix_invert(model_node_get_transform_model(model, skin_node));
 		for (int32_t b = 0; b < model->anim_data.skeletons[i].bone_count; b++) {
 			model->anim_inst.skinned_meshes[i].bone_transforms[b] = model_node_get_transform_model(model, model->anim_data.skeletons[i].bone_to_node_map[b]) * root;
 		}

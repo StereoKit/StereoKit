@@ -50,13 +50,32 @@ class TestNodes : ITest
 
 		/// :CodeSample: Model Model.Visuals Model.Nodes
 		/// ### Tagged Nodes
-		/// You can search through Visuals and Nodes
+		/// You can search through Visuals and Nodes for nodes with some sort
+		/// of tag in their names. Since these names are from your modeling
+		/// software, this can allow for some level of designer configuration
+		/// that can be specific to your project.
 		var nodes = model.Visuals
-			.Where(n => n.Name.StartsWith("[Wire]"));
-		foreach (var node in nodes)
+			.Where(n => n.Name.Contains("[Wire]"));
+		foreach (ModelNode node in nodes)
 		{
 			node.Material = node.Material.Copy();
 			node.Material.Wireframe = true;
+		}
+		/// :End:
+
+		model.AddNode("[Invisible]", Matrix.S(0.3f), Mesh.Sphere, Material.Default);
+
+		/// :CodeSample: Model Model.Nodes ModelNode.Solid ModelNode.Visible
+		/// ### Collision Tagged Nodes
+		/// One particularly practical example of tagging your ModelNode names
+		/// would be to set up collision information for your Model. If, for
+		/// example, you have a low resolution mesh designed specifically for
+		/// fast collision detection, you can tag your non-solid nodes as
+		/// "[Intangible]", and your collider nodes as "[Invisible]":
+		foreach (ModelNode node in model.Nodes)
+		{
+			node.Solid   = node.Name.Contains("[Intangible]") == false;
+			node.Visible = node.Name.Contains("[Invisible]")  == false;
 		}
 		/// :End:
 
@@ -70,7 +89,6 @@ class TestNodes : ITest
 		{
 			Log.Info($"{model.Nodes[i].Name} using shader {model.Nodes[i].Material?.Shader.Name}");
 		}
-		
 
 		_model       = model;
 		_surfaceNode = surfaceNode;

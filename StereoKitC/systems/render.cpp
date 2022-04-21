@@ -465,14 +465,17 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 
 	anim_update_model(model);
 	for (size_t i = 0; i < model->visuals.count; i++) {
+		const model_visual_t *vis = &model->visuals[i];
+		if (vis->visible == false) continue;
+		
 		render_item_t item;
-		item.mesh     = &model->visuals[i].mesh->gpu_mesh;
-		item.mesh_inds= model->visuals[i].mesh->ind_count;
-		item.material = model->visuals[i].material;
+		item.mesh     = &vis->mesh->gpu_mesh;
+		item.mesh_inds= vis->mesh->ind_count;
+		item.material = vis->material;
 		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, model->visuals[i].mesh);
+		item.sort_id  = render_queue_id(item.material, vis->mesh);
 		item.layer    = (uint16_t)layer;
-		matrix_mul(model->visuals[i].transform_model, root, item.transform);
+		matrix_mul(vis->transform_model, root, item.transform);
 		render_list_add(&item);
 	}
 
