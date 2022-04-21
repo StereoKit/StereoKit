@@ -6,7 +6,8 @@
 namespace sk {
 
 enum asset_type_ {
-	asset_type_mesh = 0,
+	asset_type_none = 0,
+	asset_type_mesh,
 	asset_type_texture,
 	asset_type_shader,
 	asset_type_material,

@@ -201,10 +201,9 @@ void ui_quadrant_size_verts(vert_t *verts, int32_t count, float overflow) {
 void ui_quadrant_size_mesh(mesh_t ref_mesh, float overflow) {
 	vert_t *verts      = nullptr;
 	int32_t vert_count = 0;
-	mesh_get_verts        (ref_mesh, verts, vert_count);
+	mesh_get_verts        (ref_mesh, verts, vert_count, memory_reference);
 	ui_quadrant_size_verts(verts, vert_count, overflow);
 	mesh_set_verts        (ref_mesh, verts, vert_count);
-	free(verts);
 }
 
 ///////////////////////////////////////////

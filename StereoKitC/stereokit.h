@@ -263,6 +263,21 @@ typedef enum asset_state_ {
 	asset_state_loaded,
 } asset_state_;
 
+/*For performance sensitive areas, or places dealing with large chunks of
+  memory, it can be faster to get a reference to that memory rather than
+  copying it! However, if this isn't explicitly stated, it isn't necessarily
+  clear what's happening. So this enum allows us to visibly specify what type
+  of memory reference is occurring.*/
+typedef enum memory_ {
+	/*The chunk of memory involved here is a reference that is still managed or
+	  used by StereoKit! You should _not_ free it, and be extremely cautious
+	  about modifying it.*/
+	memory_reference,
+	/*This memory is now _yours_ and you must free it yourself! Memory has been
+	  allocated, and the data has been copied over to it. Pricey! But safe.*/
+	memory_copy,
+};
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -640,10 +655,10 @@ SK_API void     mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data   (mesh_t mesh);
 SK_API void     mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
 SK_API void     mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count);
+SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
 SK_API int32_t  mesh_get_vert_count  (mesh_t mesh);
 SK_API void     mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
-SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count);
+SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
 SK_API int32_t  mesh_get_ind_count   (mesh_t mesh);
 SK_API void     mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);

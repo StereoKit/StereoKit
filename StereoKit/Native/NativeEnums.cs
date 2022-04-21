@@ -177,15 +177,54 @@ namespace StereoKit
 		Hidden,
 	}
 
+	/// <summary>StereoKit uses an asynchronous loading system to prevent assets from
+	/// blocking execution! This means that asset loading systems will return
+	/// an asset to you right away, even though it is still being processed
+	/// in the background.</summary>
 	public enum AssetState {
+		/// <summary>This asset encountered an issue when parsing the source data. Either
+		/// the format is unrecognized by StereoKit, or the data may be corrupt.
+		/// Check the logs for additional details.</summary>
 		ErrorUnsupported = -3,
+		/// <summary>The asset data was not found! This is most likely an issue with a
+		/// bad file path, or file permissions. Check the logs for additional
+		/// details.</summary>
 		ErrorNotFound = -2,
+		/// <summary>An unknown error occurred when trying to load the asset! Check the
+		/// logs for additional details.</summary>
 		Error        = -1,
+		/// <summary>This asset is in its default state. It has not been told to load
+		/// anything, nor does it have any data!</summary>
 		None         = 0,
+		/// <summary>This asset is currently queued for loading, but hasn't received any
+		/// data yet. Attempting to access metadata or asset data will result in
+		/// blocking the app's execution until that data is loaded!</summary>
 		Loading,
+		/// <summary>This asset is still loading, but some of the higher level data is
+		/// already available for inspection without blocking the app.
+		/// Attempting to access the core asset data will result in blocking the
+		/// app's execution until that data is loaded!</summary>
 		LoadedMeta,
+		/// <summary>This asset is completely loaded without issues, and is ready for
+		/// use!</summary>
 		Loaded,
 	}
+
+	/// <summary>For performance sensitive areas, or places dealing with large chunks of
+	/// memory, it can be faster to get a reference to that memory rather than
+	/// copying it! However, if this isn't explicitly stated, it isn't necessarily
+	/// clear what's happening. So this enum allows us to visibly specify what type
+	/// of memory reference is occurring.</summary>
+	public enum Memory {
+		/// <summary>The chunk of memory involved here is a reference that is still managed or
+		/// used by StereoKit! You should _not_ free it, and be extremely cautious
+		/// about modifying it.</summary>
+		Reference,
+		/// <summary>This memory is now _yours_ and you must free it yourself! Memory has been
+		/// allocated, and the data has been copied over to it. Pricey! But safe.</summary>
+		Copy,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>

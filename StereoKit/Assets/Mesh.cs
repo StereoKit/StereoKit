@@ -91,7 +91,7 @@ namespace StereoKit
 
 		public Vertex[] GetVerts()
 		{
-			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size);
+			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
 			int szStruct = Marshal.SizeOf(typeof(Vertex));
 			Vertex[] result = new Vertex[size];
 			// AHHHHHH
@@ -115,7 +115,7 @@ namespace StereoKit
 
 		public uint[] GetInds()
 		{
-			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size);
+			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
 			int szStruct = Marshal.SizeOf(typeof(uint));
 			uint[] result = new uint[size];
 			// AHHHHHH

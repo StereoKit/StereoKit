@@ -108,9 +108,16 @@ void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, b
 
 ///////////////////////////////////////////
 
-void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count) {
-	out_vertices     = mesh->verts;
+void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count, memory_ reference_mode) {
 	out_vertex_count = mesh->verts == nullptr ? 0 : mesh->vert_count;
+	out_vertices     = nullptr;
+	
+	if (reference_mode == memory_copy && mesh->verts != nullptr && mesh->vert_count > 0) {
+		out_vertices = sk_malloc_t(vert_t, mesh->vert_count);
+		memcpy(out_vertices, mesh->verts, sizeof(vert_t) * mesh->vert_count);
+	} else if (reference_mode == memory_reference) {
+		out_vertices = mesh->verts;
+	}
 }
 
 ///////////////////////////////////////////
@@ -204,9 +211,16 @@ void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, co
 
 ///////////////////////////////////////////
 
-void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
-	out_indices     = mesh->inds;
+void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count, memory_ reference_mode) {
 	out_index_count = mesh->inds == nullptr ? 0 : (int32_t)mesh->ind_count;
+	out_indices     = nullptr;
+	
+	if (reference_mode == memory_copy && mesh->inds != nullptr && mesh->ind_count > 0) {
+		out_indices = sk_malloc_t(vind_t, mesh->ind_count);
+		memcpy(out_indices, mesh->inds, sizeof(vind_t) * mesh->ind_count);
+	} else if (reference_mode == memory_reference) {
+		out_indices = mesh->inds;
+	}
 }
 
 ///////////////////////////////////////////
