@@ -35,6 +35,7 @@ class TestMaterialBuffer : ITest
 
 	bool MaterialBufferId()
 	{
+		Log.Info("NOTE: Expected error log message following.");
 		try
 		{
 			// ids for 0-2 should see MaterialBuffer throw an exceptions
@@ -46,6 +47,7 @@ class TestMaterialBuffer : ITest
 
 	bool MaterialBufferIdOverlap()
 	{
+		Log.Info("NOTE: Expected error log message following.");
 		try
 		{
 			// 13 is already used by MaterialBufferTest, so it should throw
