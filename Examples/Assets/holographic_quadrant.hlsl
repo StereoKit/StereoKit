@@ -69,10 +69,14 @@ float3 GetIridescence(uint view_id, float3 world_pos, float3 surface_normal) {
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	float2 glow_ex = FingerGlowEx(input.world.xyz, input.normal);
-	glow_ex.x = pow(saturate(1 - glow_ex.x / 0.12), 2);
-	glow_ex.y *= input.glow_mask;
-	float glow = max((glow_ex.x * 0.2), (glow_ex.y * glow_ex.x));
+	FingerDist dist = FingerDistanceInfo(input.world.xyz, input.normal);
+
+	const float ring_max_dist = 0.14;
+	const float ring_initial  = 0.006;
+	const float ring_grow     = 0.03;
+	float glow_amt    = saturate(dist.from_finger / ring_max_dist);
+	float glow_radius = ring_initial + glow_amt * ring_grow;
+	float glow        = saturate(1-(dist.on_plane / glow_radius)) * (1-glow_amt) * input.glow_mask;
 
 	float3 iridescence = GetIridescence(input.view_id, input.world.xyz, input.normal);
 	float  edge        = saturate((input.light_edge.a - 0.15) / fwidth(input.light_edge.a));

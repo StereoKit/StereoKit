@@ -50,18 +50,46 @@ float3 Lighting(float3 normal) {
 
 ///////////////////////////////////////////
 
-float2 FingerGlowEx(float3 world_pos, float3 world_norm) {
-	float dist = 1;
-	float ring = 0;
+struct FingerDist {
+	float from_finger;
+	float on_plane;
+};
+
+FingerDist FingerDistanceInfo(float3 world_pos, float3 world_norm) {
+	FingerDist result;
+	result.from_finger = 10000;
+	result.on_plane    = 10000;
+	
 	for	(int i=0;i<2;i++) {
 		float3 to_finger = sk_fingertip[i].xyz - world_pos;
 		float  d         = dot(world_norm, to_finger);
 		float3 on_plane  = sk_fingertip[i].xyz - d*world_norm;
 
+		// Also make distances behind the plane negative
+		float finger_dist = length(to_finger);
+		if (abs(result.from_finger) > finger_dist)
+			result.from_finger = finger_dist * sign(d);
+		
+		result.on_plane = min(result.on_plane, length(world_pos - on_plane));
+	}
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+float2 FingerGlowEx(float3 world_pos, float3 world_norm) {
+	float dist = 1;
+	float ring = 0;
+	for (int i = 0; i < 2; i++) {
+		float3 to_finger = sk_fingertip[i].xyz - world_pos;
+		float  d = dot(world_norm, to_finger);
+		float3 on_plane = sk_fingertip[i].xyz - d * world_norm;
+
 		float dist_from_finger = length(to_finger);
-		float dist_on_plane    = length(world_pos - on_plane);
-		ring = max(ring, saturate(1-abs(d*0.5-dist_on_plane)*600));
-		dist = min( dist, dist_from_finger );
+		float dist_on_plane = length(world_pos - on_plane);
+		ring = max(ring, saturate(1 - abs(d * 0.5 - dist_on_plane) * 600));
+		dist = min(dist, dist_from_finger);
 	}
 
 	return float2(dist, ring);
