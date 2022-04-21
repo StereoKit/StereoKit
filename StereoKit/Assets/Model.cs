@@ -543,7 +543,9 @@ namespace StereoKit
 		}
 		/// <summary>Is this node flagged as visible? By default, this is true
 		/// for all nodes with visual elements attached. These nodes will not
-		/// be drawn or skinned if you set this flag to false.</summary>
+		/// be drawn or skinned if you set this flag to false. If a ModelNode
+		/// has no visual elements attached to it, it will always return false,
+		/// and setting this value will have no effect.</summary>
 		public bool Visible
 		{
 			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId) > 0;
