@@ -43,8 +43,7 @@ namespace StereoKitTest
 			/// file picker, and make a call to OnLoadModel after a file has
 			/// been successfully picked!
 			if (UI.Button("Open Model") && !Platform.FilePickerVisible) {
-				Platform.FilePicker(PickerMode.Open, OnLoadModel, null,
-					".gltf", ".glb", ".obj", ".stl", ".fbx", ".ply");
+				Platform.FilePicker(PickerMode.Open, OnLoadModel, null, Assets.ModelFormats);
 			}
 			/// :End:
 

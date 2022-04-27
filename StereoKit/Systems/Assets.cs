@@ -32,5 +32,8 @@
 		/// <param name="priority">Block the app until this priority level is
 		/// complete.</param>
 		public static void BlockForPriority(int priority) => NativeAPI.assets_block_for_priority(priority);
+
+		public static readonly string[] ModelFormats = { ".gltf", ".glb", ".obj", ".stl", ".ply" };
+		public static readonly string[] TextureFormats = { ".jpg", ".png", ".hdr", ".tga", ".bmp", ".psd", ".pic", ".qoi", ".gif" };
 	}
 }
