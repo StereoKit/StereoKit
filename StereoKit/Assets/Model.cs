@@ -446,7 +446,7 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(Encoding.UTF8.GetBytes(file+'\0'), final);
+			IntPtr inst = NativeAPI.model_create_file(NativeHelper.ToUtf8(file), final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -468,7 +468,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(Encoding.UTF8.GetBytes(filename+'\0'), data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 

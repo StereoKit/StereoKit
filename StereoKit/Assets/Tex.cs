@@ -304,7 +304,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap+'\0'), sRGBData?1:0, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, IntPtr.Zero, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -329,7 +329,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(Encoding.UTF8.GetBytes(equirectangularCubemap+'\0'), sRGBData?1:0, out lightingInfo, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, out lightingInfo, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -351,7 +351,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(Encoding.UTF8.GetBytes(file+'\0'), sRGBData?1:0, 10);
+			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData?1:0, 10);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 

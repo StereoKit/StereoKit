@@ -90,7 +90,7 @@ namespace StereoKit
 					return;
 				}
 
-				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				byte[] str = NativeHelper.ToUtf8(value);
 				_appName = Marshal.AllocHGlobal(str.Length);
 				Marshal.Copy(str, 0, _appName, str.Length);
 			}
@@ -109,7 +109,7 @@ namespace StereoKit
 					return;
 				}
 
-				byte[] str = Encoding.UTF8.GetBytes(value + '\0');
+				byte[] str = NativeHelper.ToUtf8(value);
 				_assetsFolder = Marshal.AllocHGlobal(str.Length);
 				Marshal.Copy(str, 0, _assetsFolder, str.Length);
 			}

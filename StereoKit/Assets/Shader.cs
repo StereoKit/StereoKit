@@ -58,7 +58,7 @@ namespace StereoKit
 		/// load/compile.</returns>
 		public static Shader FromFile(string file)
 		{
-			IntPtr inst = NativeAPI.shader_create_file(Encoding.UTF8.GetBytes(file+'\0'));
+			IntPtr inst = NativeAPI.shader_create_file(NativeHelper.ToUtf8(file));
 			return inst == IntPtr.Zero ? null : new Shader(inst);
 		}
 		/// <summary>Looks for a Shader asset that's already loaded, matching 
