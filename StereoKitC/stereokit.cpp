@@ -4,6 +4,7 @@
 #include "log.h"
 
 #include "libraries/sokol_time.h"
+#include "libraries/tinycthread.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -37,6 +38,8 @@ system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
 bool32_t      sk_running     = true;
 bool32_t      sk_initialized = false;
+bool32_t      sk_first_step  = false;
+thrd_id_t     sk_init_thread = {};
 
 double  sk_timev_scale       = 1;
 float   sk_timevf            = 0;
@@ -96,6 +99,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	sk_settings               = settings;
 	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
 	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+	sk_init_thread            = thrd_id_current();
 	if (sk_settings.log_filter != log_none)
 		log_set_filter(sk_settings.log_filter);
 
@@ -317,6 +321,10 @@ bool32_t sk_step(void (*app_update)(void)) {
 	if (app_system->profile_start_duration == 0)
 		app_system->profile_start_duration = stm_since(app_init_time);
 
+	// TODO: remove this in v0.4 when sk_step is formally replaced by sk_run
+	sk_assert_thread_valid();
+	sk_first_step = true;
+	
 	sk_app_update_func = app_update;
 	sk_update_timer();
 
@@ -330,6 +338,9 @@ bool32_t sk_step(void (*app_update)(void)) {
 ///////////////////////////////////////////
 
 void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
+	sk_assert_thread_valid();
+	sk_first_step = true;
+	
 #if defined(SK_OS_WEB)
 	web_start_main_loop(app_update, app_shutdown);
 #else
@@ -352,6 +363,9 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 	_sk_run_data_update_data   = update_data;
 	_sk_run_data_app_shutdown  = app_shutdown;
 	_sk_run_data_shutdown_data = shutdown_data;
+
+	sk_assert_thread_valid();
+	sk_first_step = true;
 
 #if defined(SK_OS_WEB)
 	web_start_main_loop(
@@ -385,6 +399,26 @@ void sk_update_timer() {
 	sk_timev_elapsedf    = (float)sk_timev_elapsed;
 	sk_timevf_us         = (float)sk_timev_us;
 	sk_timevf            = (float)sk_timev;
+}
+
+///////////////////////////////////////////
+
+void sk_assert_thread_valid() {
+	// sk_init and sk_run/step need to happen on the same thread, but there's a
+	// non-zero chance that some async code can inadvertently put execution
+	// onto another thread without the dev's knowledge. This can trip up async
+	// asset code and cause a blocking loop as the asset waits for the main
+	// thread to step. This function is used to detect and warn of such a
+	// situation.
+	if (sk_initialized == true && sk_first_step == true)
+		return;
+	
+	if (thrd_id_equal(sk_init_thread, thrd_id_current()) == false) {
+		const char* err = "SK.Run and pre-Run GPU asset creation currently must be called on the same thread as SK.Initialize! Has async code accidentally bumped you to another thread?";
+		log_err(err);
+		platform_msgbox_err(err, "Fatal Error");
+		abort();
+	}
 }
 
 ///////////////////////////////////////////

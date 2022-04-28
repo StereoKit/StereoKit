@@ -19,7 +19,9 @@ extern uint64_t sk_timev_raw;
 extern app_focus_ sk_focus;
 extern bool32_t   sk_running;
 extern bool32_t   sk_initialized;
+extern bool32_t   sk_first_step;
 
 void sk_update_timer();
+void sk_assert_thread_valid();
 
 } // namespace sk

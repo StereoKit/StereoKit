@@ -15,6 +15,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
+#include "../libraries/sokol_time.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -388,8 +389,17 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		mtx_unlock(&assets_job_lock);
 
 		// Block until the GPU thread has had a chance to take care of the job.
+		uint64_t start      = stm_now();
+		bool     has_warned = false;
 		while (job->finished == false) {
 			thrd_yield();
+
+			// if the app hasn't started stepping yet and this takes too long,
+			// the application may be off the gpu thread unintentionally.
+			if (sk_first_step == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
+				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
+				has_warned = true;
+			}
 		}
 
 		bool32_t result = job->success;
