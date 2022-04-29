@@ -5,6 +5,11 @@ class DemoTextures : ITest
 	Material exampleMaterial = Default.Material.Copy();
 	Mesh     quad            = Mesh.GeneratePlane(new Vec2(.4f,.4f), -Vec3.Forward, Vec3.Up);
 
+	Matrix   descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
+	string   description = "Here's a quick sample of procedurally assembling a texture!";
+	Matrix   titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
+	string   title       = "Procedural Textures";
+
 	public void Initialize()
 	{
 		/// :CodeSample: Tex.SetColors
@@ -78,6 +83,9 @@ class DemoTextures : ITest
 	{
 		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0, 0, -.25f), new Vec3(0, 0, -1));
 
-		quad.Draw(exampleMaterial, Matrix.T(0,0,-0.5f));
+		quad.Draw(exampleMaterial, Matrix.TR(0.5f, 0, -0.5f, Quat.LookDir(1, 0, -1)));
+
+		Text.Add(title, titlePose);
+		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 	}
 }

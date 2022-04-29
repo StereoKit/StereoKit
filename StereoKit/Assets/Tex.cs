@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -21,18 +20,30 @@ namespace StereoKit
 		/// Id.</summary>
 		public string Id { set => NativeAPI.tex_set_id(_inst, value); }
 
-		/// <summary> The width of the texture, in pixels. </summary>
+		/// <summary> The width of the texture, in pixels. This will be a
+		/// blocking call if AssetState is less than LoadedMeta. </summary>
 		public int Width => NativeAPI.tex_get_width(_inst);
-		/// <summary> The height of the texture, in pixels. </summary>
+		/// <summary> The height of the texture, in pixels. This will be a
+		/// blocking call if AssetState is less than LoadedMeta. </summary>
 		public int Height => NativeAPI.tex_get_height(_inst);
 		/// <summary> The StereoKit format this texture was initialized with.
+		/// This will be a blocking call if AssetState is less than LoadedMeta.
 		/// </summary>
 		public TexFormat Format => NativeAPI.tex_get_format(_inst);
 
+		/// <summary> Textures are loaded asyncronously, so this tells you the
+		/// current state of this texture! This also can tell if an error
+		/// occured, and what type of error it may have been. </summary>
 		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
 
+		/// <summary> This will override the default fallback texutre that gets
+		/// used before the Tex has finished loading. This is useful for
+		/// textures with a specific purpose where the normal fallback texture
+		/// would appear strange, such as a metal/rough map. </summary>
+		public Tex FallbackOverride { set { NativeAPI.tex_set_fallback(_inst, value._inst ); } }
+
 		/// <summary>This event gets called</summary>
-		public event Action<Tex> OnLoaded { 
+		public event Action<Tex> OnLoaded {
 			add {
 				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
 

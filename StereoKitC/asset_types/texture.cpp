@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
+#include "../systems/defaults.h"
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/qoi.h"
@@ -465,9 +466,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->anisotropy   = 4;
 	result->header.state = asset_state_loaded_meta;
 
-	tex_t fallback = tex_find(default_id_tex);
-	tex_set_fallback(result, fallback);
-	tex_release(fallback);
+	tex_set_fallback(result, sk_default_tex_devtex);
 
 	return result;
 }

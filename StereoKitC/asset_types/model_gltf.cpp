@@ -573,7 +573,6 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
-			tex_set_fallback(parse_tex, sk_default_tex);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
 				tex_release(parse_tex);

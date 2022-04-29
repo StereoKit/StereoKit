@@ -818,6 +818,7 @@ SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_co
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
+SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -1978,6 +1979,7 @@ SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
 SK_CONST char *default_id_tex_flat             = "default/tex_flat";
 SK_CONST char *default_id_tex_rough            = "default/tex_rough";
+SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
