@@ -13,6 +13,7 @@ extern tex_t        sk_default_tex_gray;
 extern tex_t        sk_default_tex_flat;
 extern tex_t        sk_default_tex_rough;
 extern tex_t        sk_default_tex_devtex;
+extern tex_t        sk_default_tex_error;
 extern tex_t        sk_default_cubemap;
 extern mesh_t       sk_default_quad;
 extern shader_t     sk_default_shader;

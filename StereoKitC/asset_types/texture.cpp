@@ -1,6 +1,5 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
-#include "../systems/defaults.h"
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/qoi.h"
@@ -31,6 +30,8 @@ const char *tex_msg_mismatched_images     = "Texture array mismatched format or 
 const char *tex_msg_requires_rendertarget = "Zbuffer can only be attached to a rendertarget!";
 const char *tex_msg_requires_depth        = "Zbuffer must be a depth texture!";
 
+tex_t tex_error_texture   = nullptr;
+tex_t tex_loading_texture = nullptr;
 
 ///////////////////////////////////////////
 // Texture loading stages                //
@@ -141,6 +142,7 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 			tex->height != height ||
 			tex->format != format) {
 			log_warnf("Texture data mismatch: %s", data->file_names[i]);
+			tex_set_fallback(tex, tex_error_texture);
 			tex->header.state = asset_state_error;
 			return false;
 		}
@@ -290,9 +292,10 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 
 ///////////////////////////////////////////
 
-void tex_load_on_failure(asset_header_t *, void *job_data) {
-	//tex_load_t *data = (tex_load_t *)job_data;
-	//TODO: error texture
+void tex_load_on_failure(asset_header_t *asset, void *job_data) {
+	tex_load_t *data = (tex_load_t *)job_data;
+	tex_t       tex = (tex_t)asset;
+	tex_set_fallback(tex, tex_error_texture);
 }
 
 ///////////////////////////////////////////
@@ -466,7 +469,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->anisotropy   = 4;
 	result->header.state = asset_state_loaded_meta;
 
-	tex_set_fallback(result, sk_default_tex_devtex);
+	tex_set_fallback(result, tex_loading_texture);
 
 	return result;
 }
@@ -787,6 +790,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 		tex_set_fallback(texture, nullptr);
 		texture->header.state = asset_state_loaded;
 	} else {
+		tex_set_fallback(texture, tex_error_texture);
 		texture->header.state = asset_state_error;
 	}
 }
@@ -1011,6 +1015,36 @@ void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 	memset(out_data, 0, out_data_size);
 	if (!skg_tex_get_contents(&texture->tex, out_data, out_data_size))
 		log_warn("Couldn't get texture contents!");
+}
+
+///////////////////////////////////////////
+
+void tex_set_loading_fallback(tex_t loading_texture) {
+	if (loading_texture != nullptr) {
+		assets_block_until(&loading_texture->header, asset_state_loaded);
+		if (tex_asset_state(loading_texture) < 0) {
+			log_err("Can't assign a texture with an error the default fallback!");
+			return;
+		}
+		tex_addref(loading_texture);
+	}
+	tex_release(tex_loading_texture);
+	tex_loading_texture = loading_texture;
+}
+
+///////////////////////////////////////////
+
+void tex_set_error_fallback(tex_t error_texture) {
+	if (error_texture != nullptr) {
+		assets_block_until(&error_texture->header, asset_state_loaded);
+		if (tex_asset_state(error_texture) < 0) {
+			log_err("Can't assign a texture with an error the default fallback!");
+			return;
+		}
+		tex_addref(error_texture);
+	}
+	tex_release(tex_error_texture);
+	tex_error_texture = error_texture;
 }
 
 ///////////////////////////////////////////

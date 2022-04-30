@@ -841,6 +841,8 @@ SK_API void         tex_set_address         (tex_t texture, tex_address_ address
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
 SK_API int32_t      tex_get_anisotropy      (tex_t texture);
+SK_API void         tex_set_loading_fallback(tex_t loading_texture);
+SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
 
 ///////////////////////////////////////////
@@ -1980,6 +1982,7 @@ SK_CONST char *default_id_tex_gray             = "default/tex_gray";
 SK_CONST char *default_id_tex_flat             = "default/tex_flat";
 SK_CONST char *default_id_tex_rough            = "default/tex_rough";
 SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
+SK_CONST char *default_id_tex_error            = "default/tex_error";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";

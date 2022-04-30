@@ -16,6 +16,7 @@ tex_t        sk_default_tex_gray;
 tex_t        sk_default_tex_flat;
 tex_t        sk_default_tex_rough;
 tex_t        sk_default_tex_devtex;
+tex_t        sk_default_tex_error;
 tex_t        sk_default_cubemap;
 mesh_t       sk_default_quad;
 mesh_t       sk_default_screen_quad;
@@ -107,15 +108,20 @@ bool defaults_init() {
 	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {0.5f,0.5f,1,1}   ); // Default for normal maps
 	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {1,0,1,1}         ); // Default for metal/roughness maps
 
-	sk_default_tex_devtex = dev_texture(default_id_tex_devtex, { 1,1,1,1 }, 1);
+	sk_default_tex_devtex = dev_texture(default_id_tex_devtex, { 1,1,   1,   1 }, 1);
+	sk_default_tex_error  = dev_texture(default_id_tex_error,  { 1,0.7f,0.7f,1 }, 1);
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||
 		sk_default_tex_gray  == nullptr ||
 		sk_default_tex_flat  == nullptr ||
 		sk_default_tex_rough == nullptr ||
-		sk_default_tex_devtex== nullptr)
+		sk_default_tex_devtex== nullptr ||
+		sk_default_tex_error == nullptr)
 		return false;
+
+	tex_set_loading_fallback(sk_default_tex_devtex);
+	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
 	spherical_harmonics_t lighting = { {
@@ -310,6 +316,9 @@ bool defaults_init() {
 ///////////////////////////////////////////
 
 void defaults_shutdown() {
+	tex_set_error_fallback  (nullptr);
+	tex_set_loading_fallback(nullptr);
+
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	sound_release   (sk_default_grab);
@@ -347,6 +356,7 @@ void defaults_shutdown() {
 	tex_release     (sk_default_tex_flat);
 	tex_release     (sk_default_tex_rough);
 	tex_release     (sk_default_tex_devtex);
+	tex_release     (sk_default_tex_error);
 	tex_release     (sk_default_cubemap);
 }
 

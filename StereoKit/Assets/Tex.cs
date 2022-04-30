@@ -40,7 +40,7 @@ namespace StereoKit
 		/// used before the Tex has finished loading. This is useful for
 		/// textures with a specific purpose where the normal fallback texture
 		/// would appear strange, such as a metal/rough map. </summary>
-		public Tex FallbackOverride { set { NativeAPI.tex_set_fallback(_inst, value._inst ); } }
+		public Tex FallbackOverride { set { NativeAPI.tex_set_fallback(_inst, value._inst); } }
 
 		/// <summary>This event gets called</summary>
 		public event Action<Tex> OnLoaded {
@@ -162,7 +162,7 @@ namespace StereoKit
 		{
 			TexFormat format = Format;
 			if (format != TexFormat.Rgba32 && format != TexFormat.Rgba32Linear)
-			{ 
+			{
 				Log.Err($"Can't set a {format} format texture from Color32 data!");
 				return;
 			}
@@ -285,6 +285,23 @@ namespace StereoKit
 		#endregion
 
 		#region Static Methods
+
+		/// <summary>This is the texture that all Tex objects will fall back to
+		/// by default if they are still loading. Assigning a texture here that
+		/// isn't fully loaded will cause the app to block until it is loaded.
+		/// </summary>
+		/// <param name="loadingTexture">Any _valid_ texture here is fine.
+		/// Preferably loaded already, but doesn't have to be.</param>
+		public static void SetLoadingFallback(Tex loadingTexture)
+			=> NativeAPI.tex_set_loading_fallback(loadingTexture._inst);
+
+		/// <summary>This is the texture that all Tex objects with errors will
+		/// fall back to. Assigning a texture here that isn't fully loaded will
+		/// cause the app to block until it is loaded. </summary>
+		/// <param name="errorTexture">Any _valid_ texture here is fine.
+		/// Preferably loaded already, but doesn't have to be.</param>
+		public static void SetErrorFallback(Tex errorTexture)
+			=> NativeAPI.tex_set_error_fallback(errorTexture._inst);
 
 		/// <summary>Finds a texture that matches the given Id! Check out the
 		/// DefaultIds static class for some built-in ids.</summary>
@@ -614,6 +631,10 @@ namespace StereoKit
 		public static Tex Gray => Default.TexGray;
 		/// <inheritdoc cref="Default.TexRough" />
 		public static Tex Rough => Default.TexRough;
+		/// <inheritdoc cref="Default.TexDevTex" />
+		public static Tex DevTex => Default.TexDevTex;
+		/// <inheritdoc cref="Default.TexError" />
+		public static Tex Error => Default.TexError;
 		#endregion
 	}
 }
