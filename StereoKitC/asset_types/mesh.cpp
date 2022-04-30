@@ -850,7 +850,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 			vec3 stretchA  = first_half_y ? p1 : p4;
 			vec3 stretchB  = first_half_y ? p2 : p3;
 			float stretchV = (radius*2)/sizeV;
-			float offV     = first_half_y ? 0 : sizeV-(radius*2);
+			float offV     = first_half_y ? 0 : 1-((radius/sizeV)*2);
 			
 			float py    = y / (float)(subd-2);
 			float pv    = py * stretchV + offV;
@@ -867,7 +867,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 				x = first_half_x ? sx : sx-1;
 				vec3  stretch = first_half_x ? stretchA : stretchB;
 				float stretchU = (radius*2)/sizeU;
-				float offU     = first_half_x ? 0 : sizeU-(radius*2);
+				float offU     = first_half_x ? 0 : 1-((radius/sizeU)*2);
 
 				float px      = x / (float)(subd-2);
 				float pu      = px * stretchU + offU;
