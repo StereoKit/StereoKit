@@ -475,7 +475,7 @@ void gltf_apply_sampler(tex_t to_tex, cgltf_sampler *sampler) {
 
 ///////////////////////////////////////////
 
-tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data) {
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data, int32_t priority) {
 	cgltf_image *image = tex->image;
 
 	// Check if we've already loaded this image
@@ -488,7 +488,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
-		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size, srgb_data);
+		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size, srgb_data, priority);
 		if (result == nullptr) 
 			log_warnf("[%s] Couldn't load texture: %s", filename, image->name);
 		else
@@ -504,13 +504,13 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 		cgltf_load_buffer_base64(&options, size, start, &buffer);
 
 		if (buffer != nullptr) {
-			result = tex_create_mem(buffer, size, srgb_data);
+			result = tex_create_mem(buffer, size, srgb_data, priority);
 			tex_set_id(result, id);
 			free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex_create_file(id, srgb_data);
+		result = tex_create_file(id, srgb_data, priority);
 	}
 	if (result != nullptr)
 		gltf_apply_sampler(result, tex->sampler);
@@ -572,7 +572,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
-			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
 				tex_release(parse_tex);
@@ -582,7 +582,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
 			if (material->pbr_metallic_roughness.metallic_roughness_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
-			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, false, 13);
 			tex_set_fallback(parse_tex, sk_default_tex_rough);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "metal", parse_tex);
@@ -604,7 +604,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
 				tex_release(parse_tex);
@@ -627,7 +627,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
 		if (material->normal_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false, 13);
 		tex_set_fallback(parse_tex, sk_default_tex_flat);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, "normal", parse_tex);
@@ -638,7 +638,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	tex = material->occlusion_texture.texture;
 	if (tex != nullptr && material_has_param(result, "occlusion", material_param_texture)) {
 		if (material->occlusion_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false, 11);
 		tex_set_fallback(parse_tex, sk_default_tex);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, "occlusion", parse_tex);
@@ -649,7 +649,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
 		if (material->emissive_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 12);
 		tex_set_fallback(parse_tex, sk_default_tex_black);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, "emission", parse_tex);

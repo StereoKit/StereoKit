@@ -276,7 +276,7 @@ typedef enum memory_ {
 	/*This memory is now _yours_ and you must free it yourself! Memory has been
 	  allocated, and the data has been copied over to it. Pricey! But safe.*/
 	memory_copy,
-};
+} memory_;
 
 typedef struct sk_settings_t {
 	const char    *app_name;

@@ -432,13 +432,15 @@ int32_t assets_current_task_priority() {
 // Asset thread                          //
 ///////////////////////////////////////////
 
+int64_t assets_task_sort(asset_task_t *task) { return task->sort; }
+
 void assets_add_task(asset_task_t src_task) {
 	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
 	memcpy(task, &src_task, sizeof(asset_task_t));
 	assets_addref(*task->asset);
 
 	mtx_lock(&asset_thread_task_mtx);
-	int64_t idx = asset_thread_tasks.binary_search(&asset_task_t::sort, task->sort);
+	int64_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
 	if (idx < 0) idx = ~idx;
 	asset_thread_tasks.insert(idx, task);
 	mtx_unlock(&asset_thread_task_mtx);
