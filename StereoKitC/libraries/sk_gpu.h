@@ -1266,8 +1266,8 @@ void skg_pipeline_update_blend(skg_pipeline_t *pipeline) {
 		desc_blend.RenderTarget[0].DestBlend             = D3D11_BLEND_INV_SRC_ALPHA;
 		desc_blend.RenderTarget[0].BlendOp               = D3D11_BLEND_OP_ADD;
 		desc_blend.RenderTarget[0].SrcBlendAlpha         = D3D11_BLEND_ONE;
-		desc_blend.RenderTarget[0].DestBlendAlpha        = D3D11_BLEND_ZERO;
-		desc_blend.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_ADD;
+		desc_blend.RenderTarget[0].DestBlendAlpha        = D3D11_BLEND_ONE;
+		desc_blend.RenderTarget[0].BlendOpAlpha          = D3D11_BLEND_OP_MAX;
 		break;
 	case skg_transparency_add:
 		desc_blend.RenderTarget[0].BlendEnable           = true;
@@ -2342,6 +2342,8 @@ wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
 #define GL_ONE_MINUS_CONSTANT_COLOR 0x8002
 #define GL_CONSTANT_ALPHA           0x8003
 #define GL_ONE_MINUS_CONSTANT_ALPHA 0x8004
+#define GL_FUNC_ADD                 0x8006
+#define GL_MAX                      0x8008
 
 #define GL_NEVER                    0x0200 
 #define GL_LESS                     0x0201
@@ -2589,6 +2591,7 @@ GLE(void,     glScissor,                 int32_t x, int32_t y, uint32_t width, u
 GLE(void,     glCullFace,                uint32_t mode) \
 GLE(void,     glBlendFunc,               uint32_t sfactor, uint32_t dfactor) \
 GLE(void,     glBlendFuncSeparate,       uint32_t srcRGB, uint32_t dstRGB, uint32_t srcAlpha, uint32_t dstAlpha) \
+GLE(void,     glBlendEquationSeparate,   uint32_t modeRGB, uint32_t modeAlpha) \
 GLE(void,     glDispatchCompute,         uint32_t num_groups_x, uint32_t num_groups_y, uint32_t num_groups_z) \
 GLE(const char *, glGetString,           uint32_t name) \
 GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
@@ -3462,10 +3465,12 @@ void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	case skg_transparency_blend:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
 		break;
 	case skg_transparency_add:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 		break;
 	case skg_transparency_none:
 		glDisable(GL_BLEND);
