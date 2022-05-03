@@ -15,7 +15,7 @@ namespace StereoKit
 		public static Tex SkyTex
 		{
 			get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
-			set => NativeAPI.render_set_skytex(value._inst);
+			set => NativeAPI.render_set_skytex(value == null ? IntPtr.Zero : value._inst);
 		}
 
 		/// <summary>Sets the lighting information for the scene! You can
