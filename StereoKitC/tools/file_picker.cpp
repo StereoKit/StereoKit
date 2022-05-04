@@ -332,7 +332,8 @@ void file_picker_open_folder(const char *folder) {
 	char *curr_start = curr;
 	while (*curr != '\0') {
 		if (*curr == '/' || *curr == '\\') {
-			fp_path.fragments.add( string_substr(curr_start, 0, curr - curr_start) );
+			if (curr_start != curr)
+				fp_path.fragments.add( string_substr(curr_start, 0, curr - curr_start) );
 			curr_start = curr + 1;
 		}
 		curr++;
@@ -381,6 +382,7 @@ void file_picker_update() {
 			width += size + gutter;
 		}
 		// Draw the fragment crumbs as clickable buttons
+		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{max_width, line_height});
 		for (size_t i = start; i < fp_path.fragments.count; i++) {
 			ui_push_idi(i);
 			vec2 size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
