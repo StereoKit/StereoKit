@@ -31,6 +31,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources >
 	</PropertyGroup>
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
