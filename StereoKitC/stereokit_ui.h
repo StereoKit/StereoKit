@@ -73,6 +73,8 @@ SK_API void     ui_show_volumes        (bool32_t      show);
 SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
 SK_API void     ui_settings            (ui_settings_t settings);
+SK_API float    ui_get_padding         ();
+SK_API float    ui_get_gutter          ();
 SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);

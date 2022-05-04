@@ -13,12 +13,14 @@ struct stref_t {
 	bool temp;
 };
 
-char *string_copy  (const char *string);
-char *string_make  (stref_t &ref);
-char *string_append(char *base, uint32_t count, ...);
-bool  string_eq    (const char *a, const char *b);
-bool  string_eq_nocase(const char *a, const char *b);
-bool  string_endswith (const char *a, const char *end, bool case_sensitive = true);
+char *string_copy      (const char *string);
+char *string_make      (stref_t &ref);
+char *string_append    (char *base, uint32_t count, ...);
+char *string_substr    (const char *a, uint32_t start, uint32_t length);
+bool  string_eq        (const char *a, const char *b);
+bool  string_eq_nocase (const char *a, const char *b);
+bool  string_endswith  (const char *a, const char *end, bool case_sensitive = true);
+bool  string_startswith(const char *a, const char *is);
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);

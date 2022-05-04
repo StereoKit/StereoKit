@@ -458,6 +458,18 @@ void ui_settings(ui_settings_t settings) {
 
 ///////////////////////////////////////////
 
+float ui_get_padding() {
+	return skui_settings.padding;
+}
+
+///////////////////////////////////////////
+
+float ui_get_gutter() {
+	return skui_settings.gutter;
+}
+
+///////////////////////////////////////////
+
 void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	

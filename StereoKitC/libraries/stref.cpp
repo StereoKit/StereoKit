@@ -52,6 +52,19 @@ char *string_append(char *aBase, uint32_t aCount, ...) {
 
 ///////////////////////////////////////////
 
+char *string_substr(const char *a, uint32_t start, uint32_t length) {
+	if (length == 0) return nullptr;
+
+	char *result = (char *)malloc(length + 1);
+	if (result != nullptr) {
+		memcpy(result, a + start, length);
+		result[length] = '\0';
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool  string_eq(const char *a, const char *b) {
 	if (a == nullptr || b == nullptr) return false;
 	while (*a != '\0' && *b != '\0') {
@@ -101,6 +114,18 @@ bool  string_endswith(const char *a, const char *end, bool case_sensitive) {
 		}
 		return *a == *end;
 	}
+}
+
+///////////////////////////////////////////
+
+bool string_startswith(const char *a, const char *is) {
+	while (*is != '\0') {
+		if (*a == '\0' || *is != *a)
+			return false;
+		a++;
+		is++;
+	}
+	return true;
 }
 
 ///////////////////////////////////////////
