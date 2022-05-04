@@ -27,10 +27,10 @@
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
 	<ItemGroup>
 		<ProjectReference Include="$(ProjectDir)..\..\StereoKit\StereoKit.csproj" />
-		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.dll" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
-		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.pdb" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.dll" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
+		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.pdb" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
 	</ItemGroup>
 	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 
