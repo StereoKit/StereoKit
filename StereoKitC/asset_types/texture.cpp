@@ -1013,8 +1013,22 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
 	assets_block_until(&texture->header, asset_state_loaded);
 	memset(out_data, 0, out_data_size);
-	if (!skg_tex_get_contents(&texture->tex, out_data, out_data_size))
+
+	struct tex_data_job_t {
+		tex_t texture;
+		void *out_data;
+		size_t out_data_size;
+	};
+	tex_data_job_t job_data = { texture, out_data, out_data_size };
+
+	bool32_t result = assets_execute_gpu([](void *data) {
+		tex_data_job_t *job_data = (tex_data_job_t *)data;
+		return (bool32_t)skg_tex_get_contents(&job_data->texture->tex, job_data->out_data, job_data->out_data_size);
+	}, &job_data);
+
+	if (!result) {
 		log_warn("Couldn't get texture contents!");
+	}
 }
 
 ///////////////////////////////////////////
