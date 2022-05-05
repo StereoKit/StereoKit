@@ -205,7 +205,7 @@ struct array_t {
 		return r < 0 ? r : -(r+2);
 	}
 
-	template <typename D>
+	/*template <typename D>
 	int64_t binary_search(D (*get_key)(T item), D item) const {
 		int64_t l = 0, r = count - 1;
 		while (l <= r) {
@@ -216,7 +216,7 @@ struct array_t {
 			else                       return mid;
 		}
 		return r < 0 ? r : -(r + 2);
-	}
+	}*/
 
 	//////////////////////////////////////
 	// Sort methods

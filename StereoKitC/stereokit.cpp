@@ -410,7 +410,7 @@ void sk_assert_thread_valid() {
 	// asset code and cause a blocking loop as the asset waits for the main
 	// thread to step. This function is used to detect and warn of such a
 	// situation.
-	if (sk_initialized == true && sk_first_step == true)
+	if (sk_initialized && sk_first_step)
 		return;
 	
 	if (thrd_id_equal(sk_init_thread, thrd_id_current()) == false) {

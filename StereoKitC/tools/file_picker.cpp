@@ -333,13 +333,13 @@ void file_picker_open_folder(const char *folder) {
 	while (*curr != '\0') {
 		if (*curr == '/' || *curr == '\\') {
 			if (curr_start != curr)
-				fp_path.fragments.add( string_substr(curr_start, 0, curr - curr_start) );
+				fp_path.fragments.add( string_substr(curr_start, 0, (uint32_t)(curr - curr_start)) );
 			curr_start = curr + 1;
 		}
 		curr++;
 	}
 	if (curr_start != curr) {
-		fp_path.fragments.add(string_substr(curr_start, 0, curr - curr_start));
+		fp_path.fragments.add(string_substr(curr_start, 0, (uint32_t)(curr - curr_start)));
 	}
 }
 
@@ -366,7 +366,7 @@ void file_picker_update() {
 		vec3    address_bar_start = ui_layout_at();
 		float   max_width         = ui_area_remaining().x;
 		float   width = 0;
-		int32_t start = fp_path.fragments.count-1;
+		int32_t start = maxi(0,((int32_t)fp_path.fragments.count)-1);
 
 		const float gutter  = ui_get_gutter();
 		const float padding = ui_get_padding();
@@ -384,7 +384,7 @@ void file_picker_update() {
 		// Draw the fragment crumbs as clickable buttons
 		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{max_width, line_height});
 		for (size_t i = start; i < fp_path.fragments.count; i++) {
-			ui_push_idi(i);
+			ui_push_idi((int32_t)i);
 			vec2 size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
 			if (ui_button_sz(fp_path.fragments[i], size) && i < fp_path.fragments.count-1) {
 				char *new_path = string_copy(fp_path.folder);
@@ -436,13 +436,13 @@ void file_picker_update() {
 
 		// List the files
 		vec2 size = { .12f, line_height * 1.5f };
-		const int scroll_cols = 3;
-		const int scroll_rows = 5;
-		const int scroll_step = scroll_cols*scroll_rows;
+		const int32_t scroll_cols = 3;
+		const int32_t scroll_rows = 5;
+		const int32_t scroll_step = scroll_cols*scroll_rows;
 		vec3 file_grid_start = ui_layout_at();
 		ui_panel_begin();
-		for (size_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
-			if (i >= fp_items.count) {
+		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
+			if (i >= (int32_t)fp_items.count) {
 				ui_layout_reserve(size);
 			} else if (ui_button_sz(fp_items[i].name, size)) {
 				if (fp_items[i].file)
@@ -466,7 +466,7 @@ void file_picker_update() {
 		}
 		ui_pop_enabled();
 		ui_sameline();
-		ui_push_enabled(fp_scroll_offset + scroll_step < fp_items.count);
+		ui_push_enabled(fp_scroll_offset + scroll_step < (int32_t)fp_items.count);
 		if (ui_button_at("v", file_grid_start - vec3{ right, bottom,0 }, vec2{ max_width - right, size.y })) {
 			fp_scroll_offset = fp_scroll_offset + scroll_step;
 		}

@@ -74,9 +74,9 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 
 	vec3 lab = color_to_lab(base_color);
 	color32 core_color  = color_to_32(base_color);
-	color32 core_color2 = color_to_32(color_lab(lab.x * pow(0.9f,  contrast_boost), lab.y, lab.z, 1));
-	color32 line_color  = color_to_32(color_lab(lab.x * pow(0.8f,  contrast_boost), lab.y, lab.z, 1));
-	color32 line2_color = color_to_32(color_lab(lab.x * pow(0.75f, contrast_boost), lab.y, lab.z, 1));
+	color32 core_color2 = color_to_32(color_lab(lab.x * powf(0.9f,  contrast_boost), lab.y, lab.z, 1));
+	color32 line_color  = color_to_32(color_lab(lab.x * powf(0.8f,  contrast_boost), lab.y, lab.z, 1));
+	color32 line2_color = color_to_32(color_lab(lab.x * powf(0.75f, contrast_boost), lab.y, lab.z, 1));
 
 	color32 *data   = sk_malloc_t(color32, size * size);
 	for (int32_t y = 0; y < size; y++) {

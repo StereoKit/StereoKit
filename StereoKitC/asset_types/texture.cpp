@@ -55,7 +55,7 @@ struct tex_load_t {
 void tex_load_free(asset_header_t *, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 
-	for (size_t i = 0; i < data->file_count; i++) {
+	for (int32_t i = 0; i < data->file_count; i++) {
 		if (data->file_names != nullptr) free(data->file_names[i]);
 		if (data->file_data  != nullptr) free(data->file_data [i]);
 		if (data->color_data != nullptr) free(data->color_data[i]);
@@ -292,10 +292,8 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 
 ///////////////////////////////////////////
 
-void tex_load_on_failure(asset_header_t *asset, void *job_data) {
-	tex_load_t *data = (tex_load_t *)job_data;
-	tex_t       tex = (tex_t)asset;
-	tex_set_fallback(tex, tex_error_texture);
+void tex_load_on_failure(asset_header_t *asset, void *) {
+	tex_set_fallback((tex_t)asset, tex_error_texture);
 }
 
 ///////////////////////////////////////////
@@ -447,7 +445,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 #endif
 	};
-	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, width * height);
+	tex_add_loading_task(result, load_data, actions, _countof(actions), priority, (float)(width * height));
 
 	return result;
 }
@@ -523,7 +521,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	load_data->is_srgb    = srgb_data;
 	load_data->file_count = file_count;
 	load_data->file_names = sk_malloc_t(char *, file_count);
-	for (size_t i = 0; i < file_count; i++) {
+	for (int32_t i = 0; i < file_count; i++) {
 		load_data->file_names[i] = string_copy(files[i]);
 	}
 

@@ -432,17 +432,30 @@ int32_t assets_current_task_priority() {
 // Asset thread                          //
 ///////////////////////////////////////////
 
-int64_t assets_task_sort(asset_task_t *task) { return task->sort; }
-
 void assets_add_task(asset_task_t src_task) {
 	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
 	memcpy(task, &src_task, sizeof(asset_task_t));
 	assets_addref(*task->asset);
 
 	mtx_lock(&asset_thread_task_mtx);
-	int64_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
+
+	// This array_t function has some strange behavior on 32 bit builds related
+	// to render sort items. We're duplicating it here without templating to
+	// avoid the issue for now.
+	int64_t idx = -1;
+	int64_t l = 0, r = asset_thread_tasks.count - 1;
+	while (l <= r) {
+		int64_t mid     = (l + r) / 2;
+		int64_t mid_val = asset_thread_tasks[(size_t)mid]->sort;
+		if      (mid_val < task->sort) l = mid + 1;
+		else if (mid_val > task->sort) r = mid - 1;
+		else { idx = mid; break; };
+	}
+	if (idx == -1)
+		idx = r < 0 ? r : -(r + 2);
+
 	if (idx < 0) idx = ~idx;
-	asset_thread_tasks.insert(idx, task);
+	asset_thread_tasks.insert((size_t)idx, task);
 	mtx_unlock(&asset_thread_task_mtx);
 }
 

@@ -26,9 +26,9 @@ struct render_stats_t {
 struct render_item_t {
 	DirectX::XMMATRIX transform;
 	color128    color;
+	uint64_t    sort_id;
 	skg_mesh_t *mesh;
 	material_t  material;
-	uint64_t    sort_id;
 	int32_t     mesh_inds;
 	uint16_t    layer;
 };

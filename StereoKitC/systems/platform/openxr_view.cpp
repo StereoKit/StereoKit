@@ -86,8 +86,8 @@ void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_
 
 	int64_t id = xr_compositor_layer_sort.binary_search(sort_order);
 	if (id < 0) id = ~id;
-	xr_compositor_layer_sort.insert(id, sort_order);
-	xr_compositor_layers    .insert(id, start);
+	xr_compositor_layer_sort.insert((size_t)id, sort_order);
+	xr_compositor_layers    .insert((size_t)id, start);
 }
 
 ///////////////////////////////////////////

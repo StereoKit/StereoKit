@@ -836,7 +836,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_lists[render_list_active].stats.swaps_material++;
+	render_lists[(size_t)render_list_active].stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -929,16 +929,16 @@ render_list_t render_list_create() {
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	render_lists[list].queue.free();
-	render_lists[list] = {};
-	render_lists[list].state = render_list_state_destroyed;
+	render_lists[(size_t)list].queue.free();
+	render_lists[(size_t)list] = {};
+	render_lists[(size_t)list].state = render_list_state_destroyed;
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
 	render_list_active = render_list_stack.add(list);
-	render_lists[list].state = render_list_state_used;
+	render_lists[(size_t)list].state = render_list_state_used;
 }
 
 ///////////////////////////////////////////
@@ -951,13 +951,13 @@ void render_list_pop() {
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	render_lists[render_list_active].queue.add(*item);
+	render_lists[(size_t)render_list_active].queue.add(*item);
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	render_lists[list].queue.add(*item);
+	render_lists[(size_t)list].queue.add(*item);
 }
 
 ///////////////////////////////////////////
@@ -983,7 +983,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 ///////////////////////////////////////////
 
 void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1029,7 +1029,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 ///////////////////////////////////////////
 
 void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1078,7 +1078,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 ///////////////////////////////////////////
 
 void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &render_lists[list_id];
+	_render_list_t *list = &render_lists[(size_t)list_id];
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1098,10 +1098,10 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	render_lists[list].queue.clear();
-	render_lists[list].stats   = {};
-	render_lists[list].prepped = false;
-	render_lists[list].state   = render_list_state_empty;
+	render_lists[(size_t)list].queue.clear();
+	render_lists[(size_t)list].stats   = {};
+	render_lists[(size_t)list].prepped = false;
+	render_lists[(size_t)list].state   = render_list_state_empty;
 }
 
 } // namespace sk
