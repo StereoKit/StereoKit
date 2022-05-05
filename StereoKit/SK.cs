@@ -89,7 +89,13 @@ namespace StereoKit
 		/// This can be useful for setting up a few things, but should
 		/// probably be a pretty rare case.</summary>
 		public static void PreLoadLibrary()
-			=> NativeLib.Load();
+		{
+			if (!NativeLib.Load())
+			{
+				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
+				Console.WriteLine("[SK error] Failed to load StereoKitC!");
+			}
+		}
 
 		public static void SetWindow(IntPtr window)
 			=> NativeAPI.sk_set_window_xam(window);
