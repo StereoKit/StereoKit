@@ -66,7 +66,7 @@ target("StereoKitC")
     add_options("uwp")
     add_options("linux-graphics-backend")
     add_options("oculus-openxr")
-    set_version("0.3.6-preview.5")
+    set_version("0.3.6-preview.6")
     set_kind("shared")
     set_symbols("debug")
     if is_plat("windows") then
@@ -148,6 +148,9 @@ target("StereoKitC")
 
         print("Copying binary files from "..build_folder.." to "..dist_folder)
 
+        os.mkdir("$(projectdir)/bin/distribute/bin/"..dist_os)
+        os.mkdir("$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)")
+        os.mkdir("$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)")
         os.cp(build_folder.."*.dll", dist_folder)
         os.cp(build_folder.."*.so",  dist_folder)
         os.cp(build_folder.."*.lib", dist_folder)
