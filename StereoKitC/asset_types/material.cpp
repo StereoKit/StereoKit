@@ -126,6 +126,8 @@ material_t material_create(shader_t shader) {
 ///////////////////////////////////////////
 
 material_t material_copy(material_t material) {
+	if (material == nullptr) return nullptr;
+
 	// Make a new empty material
 	material_t result = material_create(material->shader);
 	// release any of the default textures for the material.
