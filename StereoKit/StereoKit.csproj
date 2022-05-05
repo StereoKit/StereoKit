@@ -7,6 +7,7 @@
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
 	</PropertyGroup>
 
+	<!-- References -->
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
@@ -32,6 +33,11 @@
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources >
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+		<Deterministic>true</Deterministic>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 	</PropertyGroup>
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
