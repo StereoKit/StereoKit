@@ -652,6 +652,15 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
 	texture->tex    = skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count);
+	texture->width  = texture->tex.width;
+	texture->height = texture->tex.height;
+
+	texture->header.state = skg_tex_is_valid(&texture->tex) 
+		? asset_state_loaded
+		: asset_state_error;
+	tex_set_fallback(texture, texture->header.state <= 0 
+		? tex_error_texture 
+		: nullptr);
 }
 
 ///////////////////////////////////////////

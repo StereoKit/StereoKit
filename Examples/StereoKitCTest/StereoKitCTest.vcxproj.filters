@@ -15,6 +15,7 @@
     <ClCompile Include="demo_draw.cpp" />
     <ClCompile Include="demo_ui_layout.cpp" />
     <ClCompile Include="demo_envmap.cpp" />
+    <ClCompile Include="demo_mirror.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -25,6 +26,7 @@
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_world.h" />
+    <ClInclude Include="demo_mirror.h" />
     <ClInclude Include="skt_lighting.h" />
     <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="Shaders\skt_default_lighting.hlsl.h">

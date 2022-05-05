@@ -94,6 +94,7 @@
     <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_lines.cpp" />
     <ClCompile Include="demo_mic.cpp" />
+    <ClCompile Include="demo_mirror.cpp" />
     <ClCompile Include="demo_picker.cpp" />
     <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="demo_sprites.cpp" />
@@ -110,6 +111,7 @@
     <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="demo_lines.h" />
     <ClInclude Include="demo_mic.h" />
+    <ClInclude Include="demo_mirror.h" />
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_ui.h" />
     <ClInclude Include="demo_sprites.h" />
