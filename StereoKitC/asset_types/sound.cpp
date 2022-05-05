@@ -315,7 +315,7 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_s
 		// area where they were.
 		uint64_t write_end = write_at + data_size;
 		if (buffer->start  >= write_at && buffer->start  < write_end) buffer->start  = write_end % buffer->count;
-		if (buffer->cursor >= write_at && buffer->cursor < write_end) buffer->cursor = write_end % buffer->count;
+		if (buffer->cursor >  write_at && buffer->cursor < write_end) buffer->cursor = write_end % buffer->count;
 	}
 }
 
@@ -323,18 +323,18 @@ void ring_buffer_write(ring_buffer_t *buffer, const float *data, uint64_t data_s
 
 uint64_t ring_buffer_read(ring_buffer_t *buffer, float *out_data, uint64_t out_data_size) {
 	if (out_data_size == 0) return 0;
+	uint64_t cursor_start    = buffer->cursor+1;
 	uint64_t cursor_relative = buffer->cursor < buffer->start
-		? buffer->cursor + (buffer->capacity-buffer->start)
-		: buffer->cursor - buffer->start;
+		? cursor_start + (buffer->capacity-buffer->start)
+		: cursor_start - buffer->start;
 	uint64_t frames_read = mini(out_data_size, buffer->count - cursor_relative);
 
-	uint64_t cursor_start = buffer->cursor;
-	if (buffer->cursor + frames_read > buffer->capacity) {
+	if (cursor_start + frames_read > buffer->capacity) {
 		// if the frames_read wraps past the end of the ring buffer,
 		// then we'll need two copies
-		uint64_t first_half = buffer->capacity - buffer->cursor;
-		memcpy(out_data,            buffer->data + buffer->cursor, (size_t)(sizeof(float) *  first_half));
-		memcpy(out_data+first_half, buffer->data,                  (size_t)(sizeof(float) * (frames_read-first_half)));
+		uint64_t first_half = buffer->capacity - cursor_start;
+		memcpy(out_data,            buffer->data + cursor_start, (size_t)(sizeof(float) *  first_half));
+		memcpy(out_data+first_half, buffer->data,                (size_t)(sizeof(float) * (frames_read-first_half)));
 		buffer->cursor = mini(frames_read-first_half, buffer->start-1);
 	} else {
 		// The starting point of the ring buffer is after the cursor,
