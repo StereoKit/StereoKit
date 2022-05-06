@@ -1,7 +1,7 @@
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "demo_mirror.h"
+#include "demo_windows.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -36,7 +36,7 @@ vector<window_t> mirror_windows;
 
 ///////////////////////////////////////////
 
-void demo_mirror_init() {
+void demo_windows_init() {
 	mirror_mesh = mesh_find (default_id_mesh_quad);
 
 	DwmGetDxSharedSurface = (fn_GetDxSharedSurface)GetProcAddress(LoadLibrary("user32.dll"), "DwmGetDxSharedSurface");
@@ -93,7 +93,7 @@ void demo_mirror_init() {
 
 ///////////////////////////////////////////
 
-void demo_mirror_update() {
+void demo_windows_update() {
 	static pose_t window_pose =
 		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 
@@ -117,11 +117,11 @@ void demo_mirror_update() {
 
 ///////////////////////////////////////////
 
-void demo_mirror_shutdown() {
+void demo_windows_shutdown() {
 	mesh_release    (mirror_mesh);
 }
 #else
-void demo_mirror_init() {}
-void demo_mirror_update() {}
-void demo_mirror_shutdown() {}
+void demo_windows_init() {}
+void demo_windows_update() {}
+void demo_windows_shutdown() {}
 #endif

@@ -15,7 +15,8 @@ using namespace sk;
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
-#include "demo_mirror.h"
+#include "demo_windows.h"
+#include "demo_desktop.h"
 
 #include <stdio.h>
 
@@ -83,12 +84,20 @@ scene_t demos[] = {
 		demo_envmap_init,
 		demo_envmap_update,
 		demo_envmap_shutdown,
+	},
+#if defined(_WIN32) && !defined(WINDOWS_UWP)
+	{
+		"Windows",
+		demo_windows_init,
+		demo_windows_update,
+		demo_windows_shutdown,
 	}, {
-		"Desktop Mirror",
-		demo_mirror_init,
-		demo_mirror_update,
-		demo_mirror_shutdown,
+		"Desktop",
+		demo_desktop_init,
+		demo_desktop_update,
+		demo_desktop_shutdown,
 	}
+#endif
 };
 
 
