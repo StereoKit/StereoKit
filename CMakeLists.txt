@@ -388,6 +388,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_desktop.h
+    Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h
     Examples/StereoKitCTest/demo_picker.cpp
     Examples/StereoKitCTest/demo_mic.h
@@ -402,6 +404,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
+    Examples/StereoKitCTest/demo_windows.h
+    Examples/StereoKitCTest/demo_windows.cpp
     Examples/StereoKitCTest/demo_lines.h
     Examples/StereoKitCTest/demo_lines.cpp
     Examples/StereoKitCTest/demo_lighting.h
