@@ -97,7 +97,7 @@ void duplication_shutdown(IDXGIOutputDuplication *duplication) {
 ///////////////////////////////////////////
 
 void demo_mesh_create(tex_t for_tex, float curve_radius, mesh_t mesh) {
-	int32_t cols = 16;
+	int32_t cols = 32;
 	int32_t rows = 2;
 
 	float aspect = tex_get_width(for_tex) / (float)tex_get_height(for_tex);
@@ -110,11 +110,10 @@ void demo_mesh_create(tex_t for_tex, float curve_radius, mesh_t mesh) {
 		float yp = y / (float)(rows - 1);
 		for (int32_t x = 0; x < cols; x++)
 		{
-			float xp = x / (float)(cols - 1);
+			float xp   = x / (float)(cols - 1);
 			float curr = (xp - 0.5f) * angle;
-			vec3  pt = vec3{ sinf(curr), yp - 0.5f, cosf(curr) } *curve_radius;
 
-			verts[x + y * cols] = vert_t{ vec3{pt.x, pt.y, pt.z-curve_radius}, vec3{0,0,1}, vec2{1-xp,1-yp}, {255,255,255,255} };
+			verts[x + y * cols] = vert_t{ vec3{sinf(curr) * curve_radius, yp - 0.5f, cosf(curr)*curve_radius -curve_radius}, vec3{0,0,1}, vec2{1-xp,1-yp}, {255,255,255,255} };
 
 			if (x < cols-1 && y < rows-1) {
 				int32_t ind = (x+y*cols)*6;
