@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "_stereokit.h"
+#include "libraries/sk_gpu.h"
 #include "systems/platform/platform_utils.h"
 
 namespace sk {
@@ -110,5 +111,43 @@ void *backend_android_get_java_vm () { log_err("backend_ platform functions only
 void *backend_android_get_activity() { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
 void *backend_android_get_jni_env () { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
 #endif
+
+///////////////////////////////////////////
+
+backend_graphics_ backend_graphics_get() {
+#if defined(SKG_DIRECT3D11)
+	return backend_graphics_d3d11;
+#elif defined(SKG_OPENGL)
+	return backend_graphics_none;
+#endif
+}
+
+///////////////////////////////////////////
+
+void *backend_d3d11_get_d3d_device() {
+#if !defined(SKG_DIRECT3D11)
+	log_err("backend_d3d11_ functions only work when D3D11 is the backend!");
+	return nullptr;
+#else
+	void *d3d_device;
+	void *d3d_context;
+	render_get_device((void **)&d3d_device, (void **)&d3d_context);
+	return d3d_device;
+#endif
+}
+
+///////////////////////////////////////////
+
+void *backend_d3d11_get_d3d_context() {
+#if !defined(SKG_DIRECT3D11)
+	log_err("backend_d3d11_ functions only work when D3D11 is the backend!");
+	return nullptr;
+#else
+	void *d3d_device;
+	void *d3d_context;
+	render_get_device((void **)&d3d_device, (void **)&d3d_context);
+	return d3d_context;
+#endif
+}
 
 }

@@ -1910,6 +1910,15 @@ typedef enum backend_platform_ {
 	backend_platform_web,
 } backend_platform_;
 
+/*This describes the graphics API thatStereoKit is using for rendering.*/
+typedef enum backend_graphics_ {
+	/*An invalid default value. Right now, this may likely indicate a variety
+	  of OpenGL.*/
+	backend_graphics_none,
+	/*DirectX's Direct3D11 is used for rendering!*/
+	backend_graphics_d3d11,
+} backend_graphics_;
+
 typedef uint64_t openxr_handle_t;
 
 SK_API backend_xr_type_  backend_xr_get_type        ();
@@ -1922,10 +1931,15 @@ SK_API void             *backend_openxr_get_function(const char *function_name);
 SK_API bool32_t          backend_openxr_ext_enabled (const char *extension_name);
 SK_API void              backend_openxr_ext_request (const char *extension_name);
 SK_API void              backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
-SK_API backend_platform_ backend_platform_get        ();
-SK_API void             *backend_android_get_java_vm ();
-SK_API void             *backend_android_get_activity();
-SK_API void             *backend_android_get_jni_env ();
+
+SK_API backend_platform_ backend_platform_get         ();
+SK_API void             *backend_android_get_java_vm  ();
+SK_API void             *backend_android_get_activity ();
+SK_API void             *backend_android_get_jni_env  ();
+
+SK_API backend_graphics_ backend_graphics_get         ();
+SK_API void             *backend_d3d11_get_d3d_device ();
+SK_API void             *backend_d3d11_get_d3d_context();
 
 ///////////////////////////////////////////
 

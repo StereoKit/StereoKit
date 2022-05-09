@@ -500,6 +500,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_java_vm ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_activity();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_jni_env ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendGraphics backend_graphics_get();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_device();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_context();
 
 		///////////////////////////////////////////
 

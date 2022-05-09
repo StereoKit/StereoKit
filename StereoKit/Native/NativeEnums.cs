@@ -1012,6 +1012,15 @@ namespace StereoKit
 		Web,
 	}
 
+	/// <summary>This describes the graphics API thatStereoKit is using for rendering.</summary>
+	public enum BackendGraphics {
+		/// <summary>An invalid default value. Right now, this may likely indicate a variety
+		/// of OpenGL.</summary>
+		None,
+		/// <summary>DirectX's Direct3D11 is used for rendering!</summary>
+		D3D11,
+	}
+
 	/// <summary>The log tool will write to the console with annotations for console
 	/// colors, which helps with readability, but isn't always supported.
 	/// These are the options available for configuring those colors.</summary>

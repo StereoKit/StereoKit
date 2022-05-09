@@ -36,6 +36,7 @@ log_inform Info
 backend_xr_type_ BackendXRType
 backend_xr_type_webxr WebXR
 backend_xr_type_openxr OpenXR
+backend_graphics_d3d11 D3D11
 display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState

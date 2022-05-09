@@ -20,6 +20,11 @@ namespace StereoKit
 		/// the app.</summary>
 		public static BackendPlatform Platform => NativeAPI.backend_platform_get();
 
+		/// <summary>This describes the graphics API thatStereoKit is using for
+		/// rendering. StereoKit uses D3D11 for Windows platforms, and a flavor
+		/// of OpenGL for Linux, Android, and Web.</summary>
+		public static BackendGraphics Graphics => NativeAPI.backend_graphics_get();
+
 		/// <summary>This class is NOT of general interest, unless you are
 		/// trying to add support for some unusual OpenXR extension! StereoKit
 		/// should do all the OpenXR work that most people will need. If you
@@ -139,6 +144,12 @@ namespace StereoKit
 			/// Android. This is only valid after SK.Initialize, on Android
 			/// systems.</summary>
 			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
+		}
+
+		public static class D3D11
+		{
+			public static IntPtr D3DDevice  => NativeAPI.backend_d3d11_get_d3d_device();
+			public static IntPtr D3DContext => NativeAPI.backend_d3d11_get_d3d_context();
 		}
 	}
 }
