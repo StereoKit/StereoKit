@@ -99,6 +99,7 @@ CPMAddPackage(
 ###########################################
 
 set(SK_SRC_SHADERS_HLSL
+  StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
   StereoKitC/shaders_builtin/shader_builtin_font.hlsl

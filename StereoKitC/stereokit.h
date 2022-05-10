@@ -2007,6 +2007,7 @@ SK_CONST char *default_id_mesh_lefthand        = "default/mesh_lefthand";
 SK_CONST char *default_id_mesh_righthand       = "default/mesh_righthand";
 SK_CONST char *default_id_mesh_ui_button       = "default/mesh_ui_button";
 SK_CONST char *default_id_shader               = "default/shader";
+SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";

@@ -23,6 +23,7 @@ mesh_t       sk_default_screen_quad;
 mesh_t       sk_default_sphere;
 mesh_t       sk_default_cube;
 shader_t     sk_default_shader;
+shader_t     sk_default_shader_blit;
 shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_pbr_clip;
 shader_t     sk_default_shader_unlit;
@@ -172,6 +173,7 @@ bool defaults_init() {
 
 	// Shaders
 	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+	sk_default_shader_blit        = shader_create_mem((void*)sks_shader_builtin_blit_hlsl,        sizeof(sks_shader_builtin_blit_hlsl));
 	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
 	sk_default_shader_unlit_clip  = shader_create_mem((void*)sks_shader_builtin_unlit_clip_hlsl,  sizeof(sks_shader_builtin_unlit_clip_hlsl));
 	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
@@ -192,6 +194,7 @@ bool defaults_init() {
 		sk_default_shader_pbr_clip = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
 
 	if (sk_default_shader             == nullptr ||
+		sk_default_shader_blit        == nullptr ||
 		sk_default_shader_pbr         == nullptr ||
 		sk_default_shader_pbr_clip    == nullptr ||
 		sk_default_shader_unlit       == nullptr ||
@@ -206,6 +209,7 @@ bool defaults_init() {
 		return false;
 
 	shader_set_id(sk_default_shader,             default_id_shader);
+	shader_set_id(sk_default_shader_blit,        default_id_shader_blit);
 	shader_set_id(sk_default_shader_pbr,         default_id_shader_pbr);
 	shader_set_id(sk_default_shader_pbr_clip,    default_id_shader_pbr_clip);
 	shader_set_id(sk_default_shader_unlit,       default_id_shader_unlit);
@@ -335,6 +339,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
 	shader_release  (sk_default_shader);
+	shader_release  (sk_default_shader_blit);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_unlit_clip);
 	shader_release  (sk_default_shader_font);

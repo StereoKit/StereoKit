@@ -226,6 +226,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="rect_atlas.h" />
+    <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
@@ -307,6 +308,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders_builtin\shader_builtin_blit.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

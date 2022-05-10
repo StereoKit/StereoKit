@@ -442,6 +442,9 @@
     <ClInclude Include="stereokit_ui.h">
       <Filter>ui</Filter>
     </ClInclude>
+    <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h">
+      <Filter>shaders_builtin</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -517,5 +520,10 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders_builtin\shader_builtin_blit.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
