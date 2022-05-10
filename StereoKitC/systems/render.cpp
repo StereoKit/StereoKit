@@ -755,6 +755,26 @@ void render_shutdown() {
 
 ///////////////////////////////////////////
 
+void render_blit_clear(tex_t to_rendertarget, color128 color, bool32_t depth) {
+	skg_tex_t *old_target = skg_tex_target_get();
+	if (old_target != &to_rendertarget->tex)
+		skg_tex_target_bind(&to_rendertarget->tex);
+}
+
+///////////////////////////////////////////
+
+void render_blit_rect(tex_t to_rendertarget, rect_t rect_percent, material_t material) {
+
+}
+
+///////////////////////////////////////////
+
+void render_blit_rect_px(tex_t to_rendertarget, rect_t rect_pixels, material_t material) {
+
+}
+
+///////////////////////////////////////////
+
 void render_blit_to_bound(material_t material) {
 	material_check_dirty(material);
 

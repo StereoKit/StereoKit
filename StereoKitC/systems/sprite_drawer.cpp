@@ -6,6 +6,7 @@
 #include "../asset_types/assets.h"
 
 #include "../libraries/array.h"
+#include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -20,6 +21,7 @@ namespace sk {
 array_t<sprite_buffer_t> sprite_buffers = {};
 mesh_t                   sprite_quad_old;
 mesh_t                   sprite_quad;
+material_t               sprite_blit_mat;
 
 ///////////////////////////////////////////
 
@@ -116,7 +118,8 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 ///////////////////////////////////////////
 
 bool sprite_drawer_init() {
-	sprite_quad = mesh_find(default_id_mesh_quad);
+	sprite_quad     = mesh_find(default_id_mesh_quad);
+	sprite_blit_mat = material_create(sk_default_shader_blit);
 
 	// Default rendering quad
 	sprite_quad_old = mesh_create();
@@ -136,7 +139,27 @@ bool sprite_drawer_init() {
 
 ///////////////////////////////////////////
 
+void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
+	for (size_t i = 0; i < sprites.count; i++)
+	{
+		material_set_texture(sprite_blit_mat, "source", sprites[i]->texture);
+		render_blit(target, sprite_blit_mat);
+	}
+}
+
+///////////////////////////////////////////
+
 void sprite_drawer_update() {
+	for (size_t i = 0; i < sprite_atlases.count; i++) {
+		if (sprite_atlases[i].dirty_full) {
+			sprite_drawer_update_atlas(sprite_atlases[i].texture, sprite_atlases[i].sprites);
+			sprite_atlases[i].dirty_full = false;
+		} else if (sprite_atlases[i].dirty_queue.count > 0) {
+			sprite_drawer_update_atlas(sprite_atlases[i].texture, sprite_atlases[i].dirty_queue);
+			sprite_atlases[i].dirty_queue.clear();
+		}
+	}
+
 	for (size_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)
@@ -153,6 +176,7 @@ void sprite_drawer_update() {
 ///////////////////////////////////////////
 
 void sprite_drawer_shutdown() {
+	material_release(sprite_blit_mat);
 	mesh_release(sprite_quad);
 	mesh_release(sprite_quad_old);
 	for (size_t i = 0; i < sprite_buffers.count; i++) {

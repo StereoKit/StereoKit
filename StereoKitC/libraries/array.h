@@ -205,18 +205,17 @@ struct array_t {
 		return r < 0 ? r : -(r+2);
 	}
 
-	/*template <typename D>
-	int64_t binary_search(D (*get_key)(T item), D item) const {
+	int64_t binary_search(int64_t (*get_key)(T item), int64_t item) const {
 		int64_t l = 0, r = count - 1;
 		while (l <= r) {
 			int64_t mid = (l + r) / 2;
-			D       mid_val = get_key(data[mid]);
+			int64_t mid_val = get_key(data[mid]);
 			if      (mid_val < item) l = mid + 1;
 			else if (mid_val > item) r = mid - 1;
 			else                       return mid;
 		}
 		return r < 0 ? r : -(r + 2);
-	}*/
+	}
 
 	//////////////////////////////////////
 	// Sort methods
