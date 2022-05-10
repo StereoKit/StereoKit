@@ -415,7 +415,7 @@ static inline quat   operator* (quat a, quat b) { return quat_mul(a, b); }
 static inline matrix operator* (matrix a, matrix b) { matrix result; matrix_mul(a, b, result); return result; }
 static inline vec3   operator* (matrix a, vec3 b) { return matrix_transform_pt(a, b); }
 static inline vec4   operator* (matrix a, vec4 b) { return matrix_transform_pt4(a, b); }
-#endif
+
 
 static inline float    vec4_magnitude   (vec4 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w); }
 static inline float    vec3_magnitude   (vec3 a) { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); }
@@ -438,6 +438,7 @@ static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a
 static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
 static inline bool32_t vec2_in_radius   (vec2 pt, vec2 center, float radius) { return vec2_distance_sq(center, pt) < radius*radius; }
+#endif
 
 SK_CONST float  deg2rad         = 0.01745329252f;
 SK_CONST float  rad2deg         = 57.295779513f;
