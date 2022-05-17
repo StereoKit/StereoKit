@@ -310,7 +310,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <Natvis Include="debugger_vis.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shaders_builtin\shader_builtin_blit.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_blit.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

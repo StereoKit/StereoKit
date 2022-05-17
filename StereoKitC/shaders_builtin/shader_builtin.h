@@ -7,6 +7,7 @@
 #include "shader_builtin_unlit.hlsl.h"
 #include "shader_builtin_unlit_clip.hlsl.h"
 #include "shader_builtin_equirect.hlsl.h"
+#include "shader_builtin_blit.hlsl.h"
 #include "shader_builtin_font.hlsl.h"
 #include "shader_builtin_lines.hlsl.h"
 #include "shader_builtin_ui.hlsl.h"
