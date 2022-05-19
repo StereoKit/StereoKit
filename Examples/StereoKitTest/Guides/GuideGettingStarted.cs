@@ -35,7 +35,7 @@
 ///   - UWP is for HoloLens 2, and can run on Windows desktop. UWP can be slower to compile, and is no longer receiving updates from the .Net team.
 /// - _[Cross Platform Template (in development)](https://github.com/maluoi/StereoKit/tree/master/StereoKitTemplates/StereoKitXPlat)_
 ///   - This is an early version still in project format. It works with .Net Core, UWP, and Xamarin(Android/Quest) all at once via a DLL shared between multiple platform specific projects.
-/// - _[Native C++ Template (in development)](https://github.com/maluoi/StereoKit/tree/master/StereoKitTemplates/SKNative)_
+/// - _[Native C++ Template (in development)](https://github.com/StereoKit/SKTemplate-CMake)_
 ///   - StereoKit does provide a C API, but experienced developers should only choose this if the benefits outweigh the lack of C API documentation.
 /// 
 /// For an overview of the initial code in the .Net Core and UWP templates,
