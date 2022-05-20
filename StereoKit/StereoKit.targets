@@ -5,8 +5,8 @@
 	<!-- Copy the package's native libraries into the project, since it doesn't
 	     seem you can link directly to libraries in the package folder. Except
 	     for UWP, this is the one thing UWP seems to get right automatically. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP') or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
-		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
+	<Target Name="StereoKitLibraries" BeforeTargets="AfterBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP') or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
+		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for $(TargetFramework)."/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
@@ -39,6 +39,47 @@
 			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
+
+		<!-- .NET MAUI projects pretend they're UWP, and grab UWP binaries
+		automatically, instead of the more appropriate Win32 ones. -->
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFramework.StartsWith('net6.0-windows10'))"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
+		<Copy
+			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFramework.StartsWith('net6.0-android'))"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/libStereoKitC.so;$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/libopenxr_loader.so;$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/StereoKitC.sym"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
+	</Target>
+
+	<PropertyGroup Condition="'$(SingleProject)' == 'true'">
+		<!-- Net Core -->
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'==''">Platforms\</NetCoreRootProjectFolder>
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'!=''">$(PlatformsProjectFolder)</NetCoreRootProjectFolder>
+		<EnableDefaultNetCoreItems>false</EnableDefaultNetCoreItems>
+		<NetCoreProjectFolder Condition=" '$(NetCoreProjectFolder)' == '' ">$(NetCoreRootProjectFolder)NetCore\</NetCoreProjectFolder>
+		<NetCoreProjectFolder>$([MSBuild]::EnsureTrailingSlash('$(NetCoreProjectFolder)'))</NetCoreProjectFolder>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<MauiPlatformSpecificFolder Include="$(NetCoreProjectFolder)" TargetPlatformIdentifier="" />
+	</ItemGroup>
+	<Target Name="SKMauiCore" BeforeTargets="_MauiRemovePlatformCompileItems" Condition="'$(SingleProject)' == 'true' and '$(TargetFramework)' == 'net6.0' and ('$(SKNetCoreMultiTarget)' == 'true' or '$(SKNetCoreMultiTarget)' == '')">
+		<Message Importance="high" Text="[StereoKit NuGet] Adding .NET Core multi-target support."/>
+		<ItemGroup>
+			<!-- This 'Include' property is the magical key to the kingdom!!
+			     The core problem is an order of operations issue, and putting
+			     this in the Target fixes things. The 'Update' attribute won't
+			     work in Targets though, so we're technically duplicating the
+			     Compile element here. That's okay though, because the
+			     previous duplicate has been excluded! -->
+			<Compile
+				Condition="'$(TargetFramework)' == 'net6.0'"
+				Include="$(NetCoreProjectFolder)**/*.cs">
+				<ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+			</Compile>
+		</ItemGroup>
 	</Target>
 
 	<!-- Link libraries to Xamarin or Maui Android projects.  -->
