@@ -7,11 +7,13 @@ using namespace sk;
 ///////////////////////////////////////////
 
 sprite_t ui_sprite;
+sprite_t ui_search_sprite;
 
 ///////////////////////////////////////////
 
 void demo_ui_init() {
-	ui_sprite = sprite_create_file("StereoKitWide.png", sprite_type_single);
+	ui_sprite        = sprite_create_file("StereoKitWide.png", sprite_type_single);
+	ui_search_sprite = sprite_create_file("search.png",        sprite_type_single);
 }
 
 ///////////////////////////////////////////
@@ -25,6 +27,12 @@ void demo_ui_update() {
 	ui_button("Testing!"); ui_sameline();
 	static char buffer[128] = {};
 	ui_input("text", buffer, 128, {16*cm2m,ui_line_height()});
+	
+	vec2     size   = { 6 * cm2m, ui_line_height() };
+	bounds_t bounds = ui_layout_reserve(size);
+	static ui_btn_layout_ layout = ui_btn_layout_left;
+	if (ui_button_img_at("Find", ui_search_sprite, layout, bounds.center + bounds.dimensions / 2, size))
+		layout = (ui_btn_layout_)((layout + 1) % 5);
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;

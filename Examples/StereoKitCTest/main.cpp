@@ -150,7 +150,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[2]);
+	scene_set_active(demos[1]);
 
 	sk_run(common_update, common_shutdown);
 

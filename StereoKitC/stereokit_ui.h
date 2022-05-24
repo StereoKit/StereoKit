@@ -59,6 +59,14 @@ typedef enum ui_pad_ {
 	ui_pad_outside,
 } ui_pad_;
 
+typedef enum ui_btn_layout_ {
+	ui_btn_layout_left,
+	ui_btn_layout_right,
+	ui_btn_layout_top,
+	ui_btn_layout_bottom,
+	ui_btn_layout_center,
+} ui_btn_layout_;
+
 typedef struct ui_settings_t {
 	float padding;
 	float gutter;
@@ -120,6 +128,8 @@ SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds);
 SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);  // TODO: remove in v0.4
 SK_API bool32_t      ui_button_at         (const char     *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_at_16      (const char16_t *text, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_button_img_at     (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_button_img_at_16  (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_button_round_at_16(const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
