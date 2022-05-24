@@ -387,8 +387,20 @@ bool audio_init() {
 
 	ma_result result = ma_device_init(&au_context, &au_config, &au_device);
 	if (result != MA_SUCCESS) {
-		log_errf("Failed to open audio playback device, '%s'.", ma_result_description(result));
-		return false;
+		log_warnf("Failed to open audio playback device, '%s'.", ma_result_description(result));
+		
+		// Make a desperate attempt to fall back to a null device.
+		ma_backend backend = ma_backend_null;
+		if (ma_context_init(&backend, 1, nullptr, &au_context) != MA_SUCCESS) {
+			return false;
+		}
+		result = ma_device_init(&au_context, &au_config, &au_device);
+		
+		// Even the null device failed, so let's stop.
+		if (result != MA_SUCCESS) {
+			log_errf("Failed to open null audio playback device, '%s'.", ma_result_description(result));
+			return false;
+		}
 	}
 
 	result = ma_device_start(&au_device);
