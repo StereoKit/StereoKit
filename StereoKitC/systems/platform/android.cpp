@@ -114,6 +114,9 @@ void android_resize_swapchain() {
 	int32_t height = ANativeWindow_getWidth (android_window);
 	int32_t width  = ANativeWindow_getHeight(android_window);
 
+	if (android_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
+		return;
+
 	log_diagf("Resized swapchain: %dx%d", width, height);
 	skg_swapchain_resize(&android_swapchain, width, height);
 	sk_info.display_width  = width;

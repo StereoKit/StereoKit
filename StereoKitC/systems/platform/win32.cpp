@@ -41,7 +41,7 @@ const int32_t win32_multisample = 8;
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (width == sk_info.display_width && height == sk_info.display_height)
+	if (win32_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;

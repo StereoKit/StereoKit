@@ -143,7 +143,7 @@ web_key_map_t web_keymap[] = {
 ///////////////////////////////////////////
 
 WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
-	if (width == sk_info.display_width && height == sk_info.display_height)
+	if (web_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;

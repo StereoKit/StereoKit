@@ -442,7 +442,7 @@ bool linux_start_flat() {
 ///////////////////////////////////////////
 
 void linux_resize(int width, int height) {
-	if (width == sk_info.display_width && height == sk_info.display_height)
+	if (linux_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
