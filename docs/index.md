@@ -6,7 +6,7 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 <table style="max-width:34em;">
 <tr><td style="width:25%;">
 <img src="{{site.url}}/img/StereoKitLogoLight.svg" alt="StereoKit Logo" />
-</td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><b><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates" target="_blank">Install</a></b> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/maluoi/StereoKit/" target="_blank">View Source</a></p></td></tr></table>
+</td><td><p>StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR!</p><p><b><a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates" target="_blank">Install</a></b> - <a href="{{site.url}}/Pages/Guides/Getting-Started.html">Get Started Guide</a> - <a href="https://github.com/StereoKit/StereoKit/" target="_blank">View Source</a></p></td></tr></table>
 
 <video autoplay loop muted><source src='{{site.url}}/img/SKHighlightReel.mp4' type='video/mp4'>Your browser doesn't seem to play .mp4s!</video>
 
@@ -29,7 +29,7 @@ description: StereoKit is an easy-to-use open source mixed reality library for b
 
 StereoKit prioritizes mixed reality application development above all else! This allows us to focus on features such as a first class mixed reality input system, fast performance by default even on mobile devices, quick iteration time on-device, and a runtime asset pipeline that lets users and developers load real assets from the file-system. All of this and more are packaged in a terse API that's well documented, easy to learn, and easy to write.
 
-StereoKit is ready to use, but still early in its life! Keep track on [Twitter](https://twitter.com/koujaku/) for development news and gifs, or check [this blog](https://playdeck.net/project/stereokit) for more substantial updates! Can't find a feature you need for your project? Request it on [the issues page](https://github.com/maluoi/StereoKit/issues), and we'll prioritize getting you up and running!
+StereoKit is ready to use, but still early in its life! Keep track on [Twitter](https://twitter.com/koujaku/) for development news and gifs, or check [this blog](https://playdeck.net/project/stereokit) for more substantial updates! Can't find a feature you need for your project? Request it on [the issues page](https://github.com/StereoKit/StereoKit/issues), and we'll prioritize getting you up and running!
 
 ## Getting started
 
@@ -58,7 +58,7 @@ class Program
 ```
 ![Hello World]({{site.url}}/img/StereoKitMin.gif)
 
-Interested in the [source for StereoKit](https://github.com/maluoi/StereoKit)? It's open and MIT licensed! You don't need to build from source to use it, but if you want to, it's there for you to modify or debug with!
+Interested in the [source for StereoKit](https://github.com/StereoKit/StereoKit)? It's open and MIT licensed! You don't need to build from source to use it, but if you want to, it's there for you to modify or debug with!
 
 ## Roadmap
 
@@ -70,4 +70,4 @@ Long term, we'd love to add StereoKit Framework! Framework is a higher-level lay
 
 ## Issue reports
 
-We'd love to hear if you've run into an issue! The best way to let us know is to file an issue [on the Github repository](https://github.com/maluoi/StereoKit/issues). For an even faster response, file your reports with an `ITest` that can reproduce the issue, so we can quickly fix and prevent regressions! [Here's an example of such a test](https://github.com/maluoi/StereoKit/blob/develop/Examples/StereoKitTest/Tests/TestTextureCrash.cs).
+We'd love to hear if you've run into an issue! The best way to let us know is to file an issue [on the Github repository](https://github.com/StereoKit/StereoKit/issues). For an even faster response, file your reports with an `ITest` that can reproduce the issue, so we can quickly fix and prevent regressions! [Here's an example of such a test](https://github.com/StereoKit/StereoKit/blob/develop/Examples/StereoKitTest/Tests/TestTextureCrash.cs).

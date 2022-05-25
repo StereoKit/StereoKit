@@ -15,7 +15,7 @@
 /// ### Ask for Help
 /// We love to hear what problems you're running into! StereoKit is completely open source and has no analytics or surveillance tools embedded in it at all. If you have an issue, we won't know about it unless _you_ tell us, or we spot it ourselves!
 ///
-/// The best place to ask for help will always be the [GitHub Issues](https://github.com/maluoi/StereoKit/issues), or [GitHub Discussions](https://github.com/maluoi/StereoKit/discussions) pages. Be sure to provide logs, platform information, and as many other details as may be relevant!
+/// The best place to ask for help will always be the [GitHub Issues](https://github.com/StereoKit/StereoKit/issues), or [GitHub Discussions](https://github.com/StereoKit/StereoKit/discussions) pages. Be sure to provide logs, platform information, and as many other details as may be relevant!
 ///
 /// ## Common Issues
 /// Here's a short list of some common issues we've seen people ask about!
