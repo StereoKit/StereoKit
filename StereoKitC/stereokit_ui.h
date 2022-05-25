@@ -62,8 +62,6 @@ typedef enum ui_pad_ {
 typedef enum ui_btn_layout_ {
 	ui_btn_layout_left,
 	ui_btn_layout_right,
-	ui_btn_layout_top,
-	ui_btn_layout_bottom,
 	ui_btn_layout_center,
 } ui_btn_layout_;
 

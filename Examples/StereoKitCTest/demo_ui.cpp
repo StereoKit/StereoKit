@@ -28,11 +28,11 @@ void demo_ui_update() {
 	static char buffer[128] = {};
 	ui_input("text", buffer, 128, {16*cm2m,ui_line_height()});
 	
-	vec2     size   = { 6 * cm2m, ui_line_height() };
+	vec2     size   = { 8 * cm2m * (cosf(time_getf())*0.5f+0.5f) + 1*cm2m, 6 * cm2m * (sinf(time_getf()) * 0.5f + 0.5f) + 1 * cm2m };
 	bounds_t bounds = ui_layout_reserve(size);
 	static ui_btn_layout_ layout = ui_btn_layout_left;
 	if (ui_button_img_at("Find", ui_search_sprite, layout, bounds.center + bounds.dimensions / 2, size))
-		layout = (ui_btn_layout_)((layout + 1) % 5);
+		layout = (ui_btn_layout_)((layout + 1) % 3);
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;
