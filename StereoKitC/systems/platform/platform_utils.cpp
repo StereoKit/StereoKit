@@ -543,40 +543,52 @@ char *platform_working_dir() {
 void  platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
 #if defined(SK_OS_WINDOWS)
 	if (string_eq(directory_path, "")) {
-		char drive_names[256];
-		GetLogicalDriveStrings(sizeof(drive_names), drive_names);
-		char *curr = drive_names;
+		DWORD size = GetLogicalDriveStringsW(0, nullptr);
+		wchar_t *drive_names = sk_malloc_t(wchar_t, size);
+		GetLogicalDriveStringsW(size, drive_names);
+
+		wchar_t *curr = drive_names;
 		while (*curr != '\0') {
-			on_item(callback_data, curr, false);
-			curr = curr + strlen(curr)+1;
+			char *drive_u8 = platform_from_wchar(curr);
+			on_item(callback_data, drive_u8, false);
+			curr = curr + wcslen(curr)+1;
+			free(drive_u8);
 		}
+
+		free(drive_names);
 		return;
 	}
 
-	WIN32_FIND_DATA info;
-	HANDLE          handle = nullptr;
+	WIN32_FIND_DATAW info;
+	HANDLE           handle = nullptr;
 
 	char *filter = string_copy(directory_path);
 	if (string_endswith(filter, "\\"))
 		filter = string_append(filter, 1, "*.*");
 	else filter = string_append(filter, 1, "\\*.*");
+	wchar_t *filter_w = platform_to_wchar(filter);
 
-	handle = FindFirstFile(filter, &info);
+	handle = FindFirstFileW(filter_w, &info);
 	if (handle == INVALID_HANDLE_VALUE) return;
 
 	while (handle) {
-		if (!string_eq(info.cFileName, ".") && !string_eq(info.cFileName, "..")) {
+		char *filename_u8 = platform_from_wchar(info.cFileName);
+		if (!string_eq(filename_u8, ".") && !string_eq(filename_u8, "..")) {
 			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				on_item(callback_data, info.cFileName, false);
+				on_item(callback_data, filename_u8, false);
 			else
-				on_item(callback_data, info.cFileName, true);
+				on_item(callback_data, filename_u8, true);
 		}
+		free(filename_u8);
 
-		if (!FindNextFile(handle, &info)) {
+		if (!FindNextFileW(handle, &info)) {
 			FindClose(handle);
 			handle = nullptr;
 		}
 	}
+	free(filter);
+	free(filter_w);
+
 #elif defined(SK_OS_LINUX)
 	if (string_eq(directory_path, "")) {
 		directory_path = platform_path_separator;
