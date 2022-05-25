@@ -473,11 +473,11 @@ float ui_get_gutter() {
 void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	
-	skui_palette[0] = color_to_linear( color );                                                                     // Primary color: Headers, separators, etc.
-	skui_palette[1] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
-	skui_palette[2] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	skui_palette[3] = color_to_linear( color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.2f,   hsv.z * 0.55f, color.a) ); // Complement color: unused so far?
-	skui_palette[4] = color128{1, 1, 1, 1};                                                                         // Text color
+	skui_palette[0] = color_to_linear( color );                                                    // Primary color: Headers, separators, etc.
+	skui_palette[1] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
+	skui_palette[2] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
+	skui_palette[3] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
+	skui_palette[4] = color128{1, 1, 1, 1};                                                        // Text color
 }
 
 ///////////////////////////////////////////
