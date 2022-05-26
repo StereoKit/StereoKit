@@ -47,11 +47,6 @@
 			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
-		<Copy
-			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFramework.StartsWith('net6.0-android'))"
-			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/libStereoKitC.so;$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/libopenxr_loader.so;$(MSBuildThisFileDirectory)../runtimes/android-arm64-v8a/native/StereoKitC.sym"
-			DestinationFolder  = "$(OutputPath)"
-			SkipUnchangedFiles = "true"/>
 	</Target>
 
 	<PropertyGroup Condition="'$(SingleProject)' == 'true'">
@@ -84,8 +79,8 @@
 
 	<!-- Link libraries to Xamarin or Maui Android projects.  -->
 	<ItemGroup Condition= "'$(TargetFrameworkIdentifier)'=='MonoAndroid' or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so"/>
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so" />
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libStereoKitC.so"/>
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libopenxr_loader.so" />
 	</ItemGroup>
 
 </Project>

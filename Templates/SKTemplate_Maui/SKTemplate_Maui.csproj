@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net6.0;net6.0-android</TargetFrameworks>
+		<TargetFrameworks>net6.0-android;net6.0</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net6.0-windows10.0.19041.0</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>SKTemplate_Maui</RootNamespace>
@@ -20,19 +20,15 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">29.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-		<PlatformTarget>x64</PlatformTarget>
-		<Platforms>x64</Platforms>
+
 	</PropertyGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\appiconfg.svg">
-			<Color>#000000</Color>
-			<ForegroundFile>Resources\appiconfg.svg</ForegroundFile>
-		</MauiIcon>
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#000000" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -42,15 +38,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="Resources\appiconfg.svg" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="StereoKit" Version="0.3.6-preview.6" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Resources\Images\" />
-	</ItemGroup>
-
 </Project>

@@ -10,7 +10,7 @@ using AndroidX.AppCompat.App;
 
 namespace SKTemplate_Maui;
 
-[Activity(MainLauncher = true, Exported = true)]
+[Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, Exported = true)]
 [IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 {
