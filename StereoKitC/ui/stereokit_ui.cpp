@@ -1595,7 +1595,7 @@ bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_lay
 	vec2 final_size;
 
 	vec2 size = {};
-	if (image_layout == ui_btn_layout_center) {
+	if (image_layout == ui_btn_layout_center || image_layout == ui_btn_layout_center_no_text) {
 		size = { skui_fontsize, skui_fontsize };
 	} else {
 		vec2  txt_size   = text_size_t(text, skui_font_stack.last());
