@@ -294,6 +294,52 @@ namespace StereoKit
 		public static bool ButtonAt(string text, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_button_at_16(text, topLeftCorner, size);
 
+		/// <summary>A pressable button accompanied by an image! The button
+		/// will expand to fit the text provided to it, horizontally. Text is
+		/// re-used as the id. Will return true only on the first frame it is
+		/// pressed! </summary>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="image">This is the image that will be drawn along with
+		/// the text. See imageLayout for where the image gets drawn!</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_button_img_16(text, image._inst, imageLayout);
+
+		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+
+		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="image">This is the image that will be drawn along with
+		/// the text. See imageLayout for where the image gets drawn!</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
 		/// useful for radio-like behavior! Check an enum for a value, and use

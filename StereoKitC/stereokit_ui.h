@@ -63,6 +63,7 @@ typedef enum ui_btn_layout_ {
 	ui_btn_layout_left,
 	ui_btn_layout_right,
 	ui_btn_layout_center,
+	ui_btn_layout_center_no_text,
 } ui_btn_layout_;
 
 typedef struct ui_settings_t {
@@ -150,6 +151,10 @@ SK_API bool32_t ui_button         (const char     *text);
 SK_API bool32_t ui_button_16      (const char16_t *text);
 SK_API bool32_t ui_button_sz      (const char     *text, vec2 size);
 SK_API bool32_t ui_button_sz_16   (const char16_t *text, vec2 size);
+SK_API bool32_t ui_button_img     (const char     *text, sprite_t image, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_button_img_16  (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_button_img_sz   (const char    *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size);
+SK_API bool32_t ui_button_img_sz_16(const char16_t*text, sprite_t image, ui_btn_layout_ image_layout, vec2 size);
 SK_API bool32_t ui_button_round   (const char     *id, sprite_t image, float diameter sk_default(0));
 SK_API bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter sk_default(0));
 SK_API bool32_t ui_toggle         (const char     *text, sk_ref(bool32_t) pressed);

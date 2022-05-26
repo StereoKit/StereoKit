@@ -548,4 +548,23 @@ namespace StereoKit
 		/// the visual padding will go outside of the volume.</summary>
 		Outside
 	}
+
+	/// <summary>Describes the layout of a button with image/text contents! You
+	/// can think of the naming here as being the location of the image, with
+	/// the text filling the remaining space.</summary>
+	public enum UIBtnLayout
+	{
+		/// <summary>Image to the left, text to the right. Image will take up
+		/// no more than half the width.</summary>
+		Left,
+		/// <summary>Image to the right, text to the left. Image will take up
+		/// no more than half the width.</summary>
+		Right,
+		/// <summary>Image will be centered in the button, and fill up the
+		/// button as though it was the only element. Text will cram itself
+		/// under the padding below the image.</summary>
+		Center,
+		/// <summary>Same as `Center`, but omitting the text.</summary>
+		CenterNoText,
+	}
 }

@@ -1506,52 +1506,54 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	
 	float pad2       = skui_settings.padding * 2;
 	float pad2gutter = pad2 + skui_settings.gutter;
-	if (size.x > pad2gutter && size.y > pad2) {
-		float depth = finger_offset + 2 * mm2m;
-		vec3  image_at;
-		float image_size;
-		text_align_ image_align;
-		vec3  text_at;
-		vec2  text_size;
-		text_align_ text_align;
-		float aspect = sprite_get_aspect(image);
-		switch (image_layout) {
-		case ui_btn_layout_left:
-			image_align = text_align_center_left;
-			image_size  = fminf(size.y - pad2, ((size.x - pad2gutter)*0.5f) / aspect);
-			image_at    = window_relative_pos - vec3{ skui_settings.padding, size.y/2, depth };
+	float depth      = finger_offset + 2 * mm2m;
+	vec3  image_at;
+	float image_size;
+	text_align_ image_align;
+	vec3  text_at;
+	vec2  text_size;
+	text_align_ text_align;
+	float aspect = sprite_get_aspect(image);
+	switch (image_layout) {
+	case ui_btn_layout_left:
+		image_align = text_align_center_left;
+		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter)*0.5f) / aspect);
+		image_at    = window_relative_pos - vec3{ skui_settings.padding, size.y/2, depth };
 			
-			text_align = text_align_center_right;
-			text_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y/2, depth };
-			text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
-			break;
-		case ui_btn_layout_right:
-			image_align = text_align_center_right;
-			image_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y / 2, depth };
-			image_size  = fminf(size.y - pad2, ((size.x - pad2gutter) * 0.5f) / aspect);
+		text_align = text_align_center_right;
+		text_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y/2, depth };
+		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		break;
+	case ui_btn_layout_right:
+		image_align = text_align_center_right;
+		image_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y / 2, depth };
+		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter) * 0.5f) / aspect);
 			
-			text_align = text_align_center_left;
-			text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
-			text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
-			break;
-		case ui_btn_layout_center:
-			image_align = text_align_center;
-			image_size  = fminf(size.y - pad2, (size.x - pad2) / aspect);
-			image_at    = window_relative_pos - vec3{ size.x/2, size.y / 2, depth }; 
+		text_align = text_align_center_left;
+		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
+		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		break;
+	case ui_btn_layout_center_no_text:
+	case ui_btn_layout_center:
+		image_align = text_align_center;
+		image_size  = fminf(size.y - pad2, (size.x - pad2) / aspect);
+		image_at    = window_relative_pos - vec3{ size.x/2, size.y / 2, depth }; 
 			
-			text_align = text_align_top_center;
-			float y = size.y / 2 + image_size / 2;
-			text_at    = window_relative_pos - vec3{size.x/2, y, depth};
-			text_size  = { size.x-pad2, (size.y-skui_settings.padding*0.25f)-y };
-			break;
-		}
-	
+		text_align = text_align_top_center;
+		float y = size.y / 2 + image_size / 2;
+		text_at    = window_relative_pos - vec3{size.x/2, y, depth};
+		text_size  = { size.x-pad2, (size.y-skui_settings.padding*0.25f)-y };
+		break;
+	}
+
+	if (image_size>0) {
 		color128 final_color = skui_tint;
 		if (!skui_enabled_stack.last()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 		final_color.a = fmaxf(activation, color_blend);
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
-		ui_text_in(text_at, text_size, text, text_align, text_align_center);
+		if (image_layout != ui_btn_layout_center_no_text)
+			ui_text_in(text_at, text_size, text, text_align, text_align_center);
 	}
 	return state & button_state_just_active;
 }
@@ -1584,6 +1586,42 @@ bool32_t ui_button_g(const C *text) {
 }
 bool32_t ui_button   (const char     *text) { return ui_button_g<char,     text_size   >(text); }
 bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_size_16>(text); }
+
+///////////////////////////////////////////
+
+template<typename C, vec2(*text_size_t)(const C *text, text_style_t style)>
+bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_layout) {
+	vec3 final_pos;
+	vec2 final_size;
+
+	vec2 size = {};
+	if (image_layout == ui_btn_layout_center) {
+		size = { skui_fontsize, skui_fontsize };
+	} else {
+		vec2  txt_size   = text_size_t(text, skui_font_stack.last());
+		float aspect     = sprite_get_aspect(image);
+		float image_size = skui_fontsize * aspect;
+		size = vec2{ txt_size.x + image_size + skui_settings.gutter, skui_fontsize };
+	}
+
+	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+}
+bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char,     text_size   >(text, image, image_layout); }
+bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char16_t, text_size_16>(text, image, image_layout); }
+
+///////////////////////////////////////////
+
+template<typename C>
+bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) {
+	vec3 final_pos;
+	vec2 final_size;
+
+	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+}
+bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char    >(text, image, image_layout, size); }
+bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size); }
 
 ///////////////////////////////////////////
 

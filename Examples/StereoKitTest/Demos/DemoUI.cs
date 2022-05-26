@@ -99,7 +99,7 @@ class DemoUI : ITest
 		/// Any UI method will return true on the frame when their value or
 		/// state has changed.
 		/// 
-		if (UI.ButtonRound("Exit", powerSprite))
+		if (UI.ButtonImg("Exit", powerSprite))
 			SK.Quit();
 		/// 
 		/// And for every begin, there must also be an end! StereoKit will
