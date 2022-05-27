@@ -32,6 +32,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 skg_swapchain_t         linux_swapchain;
+bool32_t                linux_swapchain_initialized = false;
 system_t               *linux_render_sys = nullptr;
 
 // GLX/Xlib
@@ -376,6 +377,7 @@ bool setup_x_window() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
 	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	linux_swapchain_initialized = true;
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
 
@@ -442,7 +444,7 @@ bool linux_start_flat() {
 ///////////////////////////////////////////
 
 void linux_resize(int width, int height) {
-	if (linux_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!linux_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
@@ -484,6 +486,7 @@ void linux_stop_flat() {
 
 void linux_shutdown() {
 	XCloseDisplay(x_dpy);
+	linux_swapchain_initialized = false;
 }
 
 ///////////////////////////////////////////
