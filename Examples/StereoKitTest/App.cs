@@ -19,6 +19,7 @@ class App
 	Model  floorMesh;
 	Matrix floorTr;
 	Pose   demoSelectPose = new Pose();
+	Sprite powerButton;
 
 	List<string> demoNames = new List<string>();
 
@@ -64,6 +65,8 @@ class App
 
 		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
 		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
+
+		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
 		demoSelectPose.position    = new Vec3(0, 0, -0.6f);
 		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
@@ -138,7 +141,7 @@ class App
 		}
 		UI.NextLine();
 		UI.HSeparator();
-		if (UI.Button("Exit"))
+		if (UI.ButtonImg("Exit", powerButton))
 			SK.Quit();
 		UI.WindowEnd();
 
