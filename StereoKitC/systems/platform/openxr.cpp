@@ -1,4 +1,3 @@
-
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 
@@ -7,6 +6,7 @@
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
+#include "openxr_extensions.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
 
@@ -15,6 +15,7 @@
 #include "../../asset_types/texture.h"
 #include "../../libraries/stref.h"
 #include "../../libraries/ferr_hash.h"
+#include "../../libraries/sk_gpu.h"
 #include "../render.h"
 #include "../audio.h"
 #include "../input.h"
@@ -25,12 +26,16 @@
 #include "win32.h"
 
 #include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
+#include <openxr/openxr_platform.h>
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined(SK_OS_ANDROID) || defined(SK_OS_LINUX)
+#include <time.h>
+#endif
 
 namespace sk {
 

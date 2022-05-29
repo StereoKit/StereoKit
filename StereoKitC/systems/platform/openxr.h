@@ -3,19 +3,13 @@
 #include "../platform/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
-#include "../../stereokit.h"
-#include "../../libraries/sk_gpu.h"
-
 #if defined(SK_OS_ANDROID)
-	#include <android/native_activity.h>
-	#include <time.h>
 	#define XR_USE_PLATFORM_ANDROID
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
-#elif defined(SK_OS_LINUX)
-	#include <time.h>
 
+#elif defined(SK_OS_LINUX)
 	#if defined(SKG_LINUX_EGL)
 		#define XR_USE_PLATFORM_EGL
 		#define XR_USE_GRAPHICS_API_OPENGL_ES
@@ -26,102 +20,27 @@
 
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
+
 #elif defined(SK_OS_WEB)
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
 	#define XR_USE_GRAPHICS_API_OPENGL
+
 #elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	#define XR_USE_PLATFORM_WIN32
-	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
-	#if defined(SKG_OPENGL)
+	#if defined(SKG_FORCE_OPENGL)
 		#define XR_USE_GRAPHICS_API_OPENGL
-	#elif defined(SKG_DIRECT3D11)
+	#else
 		#define XR_USE_GRAPHICS_API_D3D11
 	#endif
-#endif
 
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-#include <d3d11.h>
-#define XR_GFX_EXTENSION XR_KHR_D3D11_ENABLE_EXTENSION_NAME
-#define XrSwapchainImage XrSwapchainImageD3D11KHR
-#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR
-#define XrGraphicsRequirements XrGraphicsRequirementsD3D11KHR
-#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR
-#define xrGetGraphicsRequirementsKHR xrGetD3D11GraphicsRequirementsKHR
-#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetD3D11GraphicsRequirementsKHR
-#define NAME_xrGetGraphicsRequirementsKHR "xrGetD3D11GraphicsRequirementsKHR"
-#define XrGraphicsBinding XrGraphicsBindingD3D11KHR
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_D3D11_KHR
-
-#elif defined(XR_USE_PLATFORM_WIN32) && defined(XR_USE_GRAPHICS_API_OPENGL)
-#include <windows.h>
-#include <unknwn.h>
-#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
-#define XrSwapchainImage XrSwapchainImageOpenGLKHR
-#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
-#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLKHR
-#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR
-#define xrGetGraphicsRequirementsKHR xrGetOpenGLGraphicsRequirementsKHR
-#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLGraphicsRequirementsKHR
-#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
-#define XrGraphicsBinding XrGraphicsBindingOpenGLWin32KHR
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR
-
-#elif defined(XR_USE_PLATFORM_XLIB) && defined(XR_USE_GRAPHICS_API_OPENGL)
-#include<X11/X.h>
-#include<X11/Xlib.h>
-#include<GL/gl.h>
-#include<GL/glx.h>
-#include<GL/glu.h>
-#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
-#define XrSwapchainImage XrSwapchainImageOpenGLKHR
-#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
-#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLKHR
-#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR
-#define xrGetGraphicsRequirementsKHR xrGetOpenGLGraphicsRequirementsKHR
-#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLGraphicsRequirementsKHR
-#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
-#define XrGraphicsBinding XrGraphicsBindingOpenGLXlibKHR
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR
-
-#elif defined(XR_USE_GRAPHICS_API_VULKAN)
-#define XR_GFX_EXTENSION XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
-#define XrSwapchainImage XrSwapchainImageVulkanKHR
-#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR
-#define XrGraphicsRequirements XrGraphicsRequirementsVulkanKHR
-#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR
-#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetVulkanGraphicsRequirementsKHR
-#define NAME_xrGetGraphicsRequirementsKHR "xrGetVulkanGraphicsRequirementsKHR"
-#define XrGraphicsBinding XrGraphicsBindingVulkanKHR
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR
-
-#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-#include <EGL/egl.h>
-#define XR_GFX_EXTENSION XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME
-#define XrSwapchainImage XrSwapchainImageOpenGLESKHR
-#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR
-#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLESKHR
-#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR
-#define xrGetGraphicsRequirementsKHR xrGetOpenGLESGraphicsRequirementsKHR
-#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLESGraphicsRequirementsKHR
-#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLESGraphicsRequirementsKHR"
-
-#if defined(SK_OS_ANDROID)
-
-#define XrGraphicsBinding XrGraphicsBindingOpenGLESAndroidKHR
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR
-
-#elif defined(SK_OS_LINUX)
-
-#define XrGraphicsBinding XrGraphicsBindingEGLMNDX
-#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_EGL_MNDX
+	#define XR_USE_PLATFORM_WIN32
+	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
 
 #endif
 
-#endif
+#include "../../stereokit.h"
 
 #include <openxr/openxr.h>
-#include "openxr_extensions.h"
 
 #include <stdint.h>
 

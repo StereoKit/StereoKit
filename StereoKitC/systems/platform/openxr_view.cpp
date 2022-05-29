@@ -2,6 +2,7 @@
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
+#include "openxr_extensions.h"
 #include "openxr_input.h"
 
 #include "../../stereokit.h"
@@ -14,7 +15,6 @@
 #include "../../libraries/sokol_time.h"
 #include "../system.h"
 
-#include <openxr/openxr.h>
 #include <stdio.h>
 
 namespace sk {

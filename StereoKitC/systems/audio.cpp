@@ -10,6 +10,7 @@
 #include "../libraries/isac_spatial_sound.h"
 
 #include <string.h>
+#include <assert.h>
 
 namespace sk {
 

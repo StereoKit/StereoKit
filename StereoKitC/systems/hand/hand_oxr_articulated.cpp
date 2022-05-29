@@ -5,6 +5,7 @@
 #include "../../_stereokit.h"
 #include "../../sk_memory.h"
 #include "../platform/openxr.h"
+#include "../platform/openxr_extensions.h"
 #include "../input.h"
 #include "../render.h"
 #include "input_hand.h"
