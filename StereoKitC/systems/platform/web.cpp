@@ -28,6 +28,7 @@ typedef struct web_key_map_t {
 } web_key_map_t;
 
 skg_swapchain_t web_swapchain  = {};
+bool            web_swapchain_initialized = false;
 system_t       *web_render_sys = nullptr;
 vec2            web_mouse_pos  = { 0,0 };
 bool            web_mouse_tracked = false;
@@ -143,7 +144,7 @@ web_key_map_t web_keymap[] = {
 ///////////////////////////////////////////
 
 WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
-	if (web_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!web_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
@@ -188,6 +189,7 @@ bool web_start_flat() {
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
 	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	web_swapchain_initialized = true;
 	sk_info.display_width  = web_swapchain.width;
 	sk_info.display_height = web_swapchain.height;
 	
@@ -203,6 +205,7 @@ bool web_start_flat() {
 void web_stop_flat() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy    (&web_swapchain);
+	web_swapchain_initialized = false;
 }
 
 ///////////////////////////////////////////
