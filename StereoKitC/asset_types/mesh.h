@@ -4,7 +4,7 @@
 
 #include "../libraries/sk_gpu.h"
 #include "../stereokit.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "assets.h"
 
 namespace sk {

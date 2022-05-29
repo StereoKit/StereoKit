@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
+#include "../sk_math.h"
 #include "mesh.h"
 #include "assets.h"
 

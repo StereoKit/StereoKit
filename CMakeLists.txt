@@ -186,6 +186,7 @@ set(SK_SRC_CODE
   StereoKitC/rect_atlas.h
   StereoKitC/rect_atlas.cpp
   StereoKitC/sk_math.h
+  StereoKitC/sk_math_dx.h
   StereoKitC/sk_math.cpp
   StereoKitC/sk_memory.h
   StereoKitC/sk_memory.cpp
@@ -261,8 +262,6 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/physics.cpp
   StereoKitC/systems/render.h
   StereoKitC/systems/render.cpp
-  StereoKitC/systems/render_sort.h
-  StereoKitC/systems/render_sort.cpp
   StereoKitC/systems/sprite_drawer.h
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h

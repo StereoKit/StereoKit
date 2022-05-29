@@ -7,7 +7,7 @@
 
 #include "../libraries/array.h"
 #include "../hierarchy.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 
 #include <DirectXMath.h> // Matrix math functions and objects

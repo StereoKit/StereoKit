@@ -240,6 +240,7 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="shaders_builtin\shader_builtin_ui.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h" />
     <ClInclude Include="shaders_builtin\shader_builtin_unlit.hlsl.h" />
+    <ClInclude Include="sk_math_dx.h" />
     <ClInclude Include="sk_memory.h" />
     <ClInclude Include="spherical_harmonics.h" />
     <ClInclude Include="stereokit.h" />

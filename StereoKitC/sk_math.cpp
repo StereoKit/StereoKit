@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "sk_math.h"
+#include "sk_math_dx.h"
 
 #include "systems/render.h"
 

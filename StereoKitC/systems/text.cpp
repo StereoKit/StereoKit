@@ -4,7 +4,7 @@
 #include "../asset_types/material.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"

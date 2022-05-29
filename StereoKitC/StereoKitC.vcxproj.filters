@@ -439,6 +439,9 @@
     <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h">
       <Filter>shaders_builtin</Filter>
     </ClInclude>
+    <ClInclude Include="sk_math_dx.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

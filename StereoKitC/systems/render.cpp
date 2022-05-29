@@ -3,7 +3,7 @@
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "../stereokit.h"
@@ -27,13 +27,6 @@
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
-// Matrix math functions and objects
-#if defined(SK_OS_LINUX)
-// Different include path on Linux to hint clangd where the file actually is
-#include "../lib/include_no_win/DirectXMath.h" 
-#else
-#include <DirectXMath.h>
-#endif
 using namespace DirectX;
 
 namespace sk {
