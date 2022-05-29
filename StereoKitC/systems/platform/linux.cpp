@@ -375,7 +375,7 @@ bool setup_x_window() {
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
 	linux_swapchain_initialized = true;
 	sk_info.display_width  = linux_swapchain.width;

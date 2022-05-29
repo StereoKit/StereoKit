@@ -440,7 +440,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
 
 	int64_t depth_formats[] = {
-		skg_tex_fmt_to_native(render_preferred_depth_fmt()),
+		skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};

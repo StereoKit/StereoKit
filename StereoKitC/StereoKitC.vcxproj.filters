@@ -127,9 +127,6 @@
     <ClCompile Include="libraries\sk_gpu.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
-    <ClCompile Include="systems\render_sort.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\platform\android.cpp">
       <Filter>systems\platform</Filter>
     </ClCompile>
@@ -366,9 +363,6 @@
     </ClInclude>
     <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h">
       <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\render_sort.h">
-      <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\platform\android.h">
       <Filter>systems\platform</Filter>

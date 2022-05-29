@@ -27,6 +27,7 @@ ANativeWindow    *android_next_window     = nullptr;
 jobject           android_next_window_xam = nullptr;
 bool              android_next_win_ready  = false;
 skg_swapchain_t   android_swapchain       = {};
+bool              android_swapchain_created = false;
 system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
@@ -100,8 +101,9 @@ bool android_init() {
 
 void android_create_swapchain() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	android_swapchain_created = true;
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
 	render_update_projection();
@@ -114,7 +116,7 @@ void android_resize_swapchain() {
 	int32_t height = ANativeWindow_getWidth (android_window);
 	int32_t width  = ANativeWindow_getHeight(android_window);
 
-	if (android_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!android_swapchain_created || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 
 	log_diagf("Resized swapchain: %dx%d", width, height);
@@ -165,6 +167,7 @@ bool android_start_flat() {
 void android_stop_flat() {
 	flatscreen_input_shutdown();
 	if (android_window) {
+		android_swapchain_created = false;
 		skg_swapchain_destroy(&android_swapchain);
 		android_window = nullptr;
 	}

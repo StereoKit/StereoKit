@@ -225,7 +225,7 @@ bool win32_start_flat() {
 	int32_t height = bounds.bottom - bounds.top;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 #if defined(SKG_OPENGL)
 	depth_fmt = skg_tex_fmt_depthstencil;
 #endif

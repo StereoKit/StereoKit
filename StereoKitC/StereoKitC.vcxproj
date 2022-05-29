@@ -187,7 +187,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClCompile Include="systems\platform\win32.cpp" />
     <ClCompile Include="systems\platform\flatscreen_input.cpp" />
     <ClCompile Include="systems\render.cpp" />
-    <ClCompile Include="systems\render_sort.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
@@ -270,7 +269,6 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <ClInclude Include="systems\platform\win32.h" />
     <ClInclude Include="systems\platform\flatscreen_input.h" />
     <ClInclude Include="systems\render.h" />
-    <ClInclude Include="systems\render_sort.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
