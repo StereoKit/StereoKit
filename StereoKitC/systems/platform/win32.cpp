@@ -22,6 +22,7 @@ namespace sk {
 
 HWND            win32_window              = nullptr;
 skg_swapchain_t win32_swapchain           = {};
+bool            win32_swapchain_initialized = false;
 tex_t           win32_target              = {};
 float           win32_scroll              = 0;
 LONG_PTR        win32_openxr_base_winproc = 0;
@@ -41,7 +42,7 @@ const int32_t win32_multisample = 8;
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (win32_swapchain._swapchain == nullptr || (width == sk_info.display_width && height == sk_info.display_height))
+	if (win32_swapchain_initialized == false || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
@@ -230,6 +231,7 @@ bool win32_start_flat() {
 	depth_fmt = skg_tex_fmt_depthstencil;
 #endif
 	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, skg_tex_fmt_none, width, height);
+	win32_swapchain_initialized = true;
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
@@ -249,6 +251,7 @@ void win32_stop_flat() {
 	flatscreen_input_shutdown();
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
+	win32_swapchain_initialized = false;
 }
 
 ///////////////////////////////////////////
