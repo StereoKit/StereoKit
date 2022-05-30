@@ -368,7 +368,6 @@ target_include_directories(StereoKitC
 target_link_libraries( StereoKitC
   PRIVATE
     ${PHYSICS_LIB}
-  PUBLIC
     openxr_loader
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
@@ -433,6 +432,7 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
+  add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
   if(SK_PHYSICS)
     target_compile_options(reactphysics3d PRIVATE "/MP")
   endif()
