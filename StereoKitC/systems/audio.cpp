@@ -361,7 +361,6 @@ bool audio_init() {
 		} else {
 			log_warnf("ISAC audio backend failed 0x%X, falling back to miniaudio!", hr);
 		}
-		isac_destroy();
 	}
 #endif
 

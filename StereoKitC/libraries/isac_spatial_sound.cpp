@@ -1,15 +1,66 @@
 #ifdef _MSC_VER
 
 #include "isac_spatial_sound.h"
+#include <winrt/Windows.Foundation.h>
 #include <mmdeviceapi.h>
 #include <SpatialAudioClient.h>
 #include <winrt/Windows.Media.Devices.h>
 #include <wrl.h>
-#include <winrt/Windows.Foundation.h>
 
 using namespace Microsoft::WRL;
 using namespace winrt::Windows::Media::Devices;
 using namespace sk;
+
+///////////////////////////////////////////
+
+constexpr uint32_t c_HrtfSampleRate = 48000;
+
+///////////////////////////////////////////
+
+// Some helper macros to deal with HRESULTs and allocations
+#define RETURN_IF_NULL_ALLOC(x) \
+if (x == nullptr) return E_OUTOFMEMORY
+
+#define RETURN_IF_FAILED(x) \
+{HRESULT __hr = x; \
+if (FAILED(__hr)) return __hr;}
+
+#define RETURN_HR_IF(x, y) \
+if (y) return x
+
+#define RETURN_HR_IF_NULL(x, y) \
+if (y == nullptr) return x
+
+///////////////////////////////////////////
+
+class IsacAdapter final
+{
+public:
+	IsacAdapter(uint32_t maxSources);
+	virtual ~IsacAdapter();
+
+	HRESULT Activate(isac_callback callback);
+	static DWORD WINAPI SpatialAudioClientWorker(LPVOID lpParam);
+
+private:
+	HRESULT ActivateIsacInterface(winrt::hstring* activatedDeviceId);
+	HRESULT ActivateSpatialAudioStream(const WAVEFORMATEX& objectFormat, UINT32 maxObjects);
+	HRESULT HandleDeviceChange(winrt::hstring newDeviceId);
+	void Stop();
+
+private:
+	Microsoft::WRL::ComPtr<ISpatialAudioObject>* m_Sources;
+	Microsoft::WRL::ComPtr<ISpatialAudioClient> m_Isac;
+	Microsoft::WRL::ComPtr<ISpatialAudioObjectRenderStream> m_SpatialAudioStream;
+	winrt::hstring m_DeviceIdInUse;
+	bool m_IsActivated;
+	winrt::event_token m_DeviceChangeToken;
+	uint32_t m_MaxSources;
+	HANDLE m_PumpEvent;
+	HANDLE m_PumpThread;
+	HANDLE m_PumpThreadCanceller;
+	isac_callback m_AppCallback;
+};
 
 ///////////////////////////////////////////
 
@@ -36,55 +87,32 @@ private:
 
 ///////////////////////////////////////////
 
-constexpr uint32_t c_HrtfSampleRate = 48000;
-
-Microsoft::WRL::ComPtr<ISpatialAudioObject>            *m_Sources;
-Microsoft::WRL::ComPtr<ISpatialAudioClient>             m_Isac;
-Microsoft::WRL::ComPtr<ISpatialAudioObjectRenderStream> m_SpatialAudioStream;
-winrt::hstring                                          m_DeviceIdInUse;
-bool                                                    m_IsActivated;
-winrt::event_token                                      m_DeviceChangeToken;
-uint32_t                                                m_MaxSources;
-HANDLE                                                  m_PumpEvent;
-HANDLE                                                  m_PumpThread;
-HANDLE                                                  m_PumpThreadCanceller;
-isac_callback                                           m_AppCallback;
-
-///////////////////////////////////////////
-
-HRESULT      Activate                  (isac_callback callback);
-DWORD WINAPI SpatialAudioClientWorker  (LPVOID lpParam);
-HRESULT      ActivateIsacInterface     (winrt::hstring *activatedDeviceId);
-HRESULT      ActivateSpatialAudioStream(const WAVEFORMATEX &objectFormat, UINT32 maxObjects);
-HRESULT      HandleDeviceChange        (winrt::hstring newDeviceId);
-void         Stop();
-
-///////////////////////////////////////////
-
-// Some helper macros to deal with HRESULTs and allocations
-#define RETURN_IF_NULL_ALLOC(x) \
-if (x == nullptr) return E_OUTOFMEMORY
-
-#define RETURN_IF_FAILED(x) \
-{HRESULT __hr = x; \
-if (FAILED(__hr)) return __hr;}
-
-#define RETURN_HR_IF(x, y) \
-if (y) return x
-
-#define RETURN_HR_IF_NULL(x, y) \
-if (y == nullptr) return x
-
-///////////////////////////////////////////
-
-// IsacAdapter implementation -----------------------
+IsacAdapter* isac_adapter = nullptr;
 
 long isac_activate(uint32_t maxSources, isac_callback callback) {
-	m_IsActivated = false;
-	m_PumpEvent   = nullptr;
-	m_AppCallback = nullptr;
-	m_PumpThread  = nullptr;
+	isac_adapter = new IsacAdapter(maxSources);
+	HRESULT hr = isac_adapter->Activate(callback);
 
+	if (FAILED(hr)) {
+		delete isac_adapter;
+		isac_adapter = nullptr;
+	}
+	return hr;
+}
+
+///////////////////////////////////////////
+
+void isac_destroy() {
+	if (isac_adapter)
+		delete isac_adapter;
+}
+
+///////////////////////////////////////////
+// IsacAdapter implementation -----------------------
+
+IsacAdapter::IsacAdapter(uint32_t maxSources) : m_IsActivated(false), 
+	m_PumpEvent(nullptr), m_AppCallback(nullptr), m_PumpThread(nullptr)
+{
 	// Subscribe to device change notifications so we can reactivate later
 	winrt::Windows::Foundation::TypedEventHandler<struct winrt::Windows::Foundation::IInspectable, 
 		struct winrt::Windows::Media::Devices::DefaultAudioRenderDeviceChangedEventArgs> 
@@ -92,23 +120,19 @@ long isac_activate(uint32_t maxSources, isac_callback callback) {
 			DefaultAudioRenderDeviceChangedEventArgs const& args) {
 			return HandleDeviceChange(args.Id());
 	};
-	m_DeviceChangeToken   = MediaDevice::DefaultAudioRenderDeviceChanged(deviceChangeHandler);
-	m_Sources             = new ComPtr<ISpatialAudioObject>[maxSources];
-	m_MaxSources          = maxSources;
+	m_DeviceChangeToken = MediaDevice::DefaultAudioRenderDeviceChanged(deviceChangeHandler);
+	m_Sources = new ComPtr<ISpatialAudioObject>[maxSources];
+	m_MaxSources = maxSources;
 	m_PumpThreadCanceller = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-
-	return Activate(callback);
 }
 
 ///////////////////////////////////////////
 
-void isac_destroy() {
+IsacAdapter::~IsacAdapter() {
 	// Unregister from device change notifications
 	MediaDevice::DefaultAudioRenderDeviceChanged(m_DeviceChangeToken);
 	Stop();
 	delete[] m_Sources;
-	m_Isac.ReleaseAndGetAddressOf();
-	m_SpatialAudioStream.ReleaseAndGetAddressOf();
 	CloseHandle(m_PumpEvent);
 	CloseHandle(m_PumpThreadCanceller);
 }
@@ -116,7 +140,7 @@ void isac_destroy() {
 ///////////////////////////////////////////
 
 // If ISAC is currently playing audio, stop it and cancel processing on the render thread
-void Stop()
+void IsacAdapter::Stop()
 {
 	if (m_SpatialAudioStream)
 	{
@@ -129,7 +153,7 @@ void Stop()
 
 // Calls ActivateAudioInterfaceAsync and waits for it to complete
 // On success, sets activatedDeviceId to the id of the device that ISAC is activated against
-HRESULT ActivateIsacInterface(winrt::hstring* activatedDeviceId) {
+HRESULT IsacAdapter::ActivateIsacInterface(winrt::hstring* activatedDeviceId) {
 	// ActivateAudioInterfaceAsync takes a special activation object.
 	// This is our implementation of that object.
 	ComPtr<IsacActivator> spCompletionObject = Make<IsacActivator>();
@@ -181,7 +205,7 @@ HRESULT FindAcceptableWaveformat(ISpatialAudioClient* isac, WAVEFORMATEX* object
 
 // Assuming ISAC has been activated, uses that ISAC in conjunction with the passed-in parameters to activate the
 // spatial audio stream and associated static bed objects
-HRESULT ActivateSpatialAudioStream(const WAVEFORMATEX& objectFormat, UINT32 maxObjects) {
+HRESULT IsacAdapter::ActivateSpatialAudioStream(const WAVEFORMATEX& objectFormat, UINT32 maxObjects) {
 	RETURN_HR_IF_NULL(E_NOT_VALID_STATE, m_Isac);
 	if (m_PumpEvent == nullptr) {
 		m_PumpEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -205,7 +229,7 @@ HRESULT ActivateSpatialAudioStream(const WAVEFORMATEX& objectFormat, UINT32 maxO
 ///////////////////////////////////////////
 
 // Fully activates, initializes, and starts the ISAC interfaces and all related member variables
-HRESULT Activate(isac_callback callback) {
+HRESULT IsacAdapter::Activate(isac_callback callback) {
 	RETURN_HR_IF_NULL(E_INVALIDARG, callback);
 	
 	m_AppCallback = callback;
@@ -240,7 +264,7 @@ HRESULT Activate(isac_callback callback) {
 	// If we previously created a thread, close it down first
 	if (m_PumpThread != nullptr) CloseHandle(m_PumpThread);
 	// Start the rendering thread
-	m_PumpThread = CreateThread(nullptr, 0, &SpatialAudioClientWorker, nullptr, 0, nullptr);
+	m_PumpThread = CreateThread(nullptr, 0, &IsacAdapter::SpatialAudioClientWorker, (void*)this, 0, nullptr);
 	SetThreadPriority(m_PumpThread, THREAD_PRIORITY_ABOVE_NORMAL);
 			
 	return S_OK;
@@ -249,7 +273,7 @@ HRESULT Activate(isac_callback callback) {
 ///////////////////////////////////////////
 
 // Reacts to an audio endpoint change
-HRESULT HandleDeviceChange(winrt::hstring newDeviceId) {
+HRESULT IsacAdapter::HandleDeviceChange(winrt::hstring newDeviceId) {
 	// Don't process this device change request if we're already playing on the new device
 	RETURN_HR_IF(S_OK, newDeviceId == m_DeviceIdInUse);
 
@@ -265,22 +289,23 @@ HRESULT HandleDeviceChange(winrt::hstring newDeviceId) {
 
 // This must be called on a separate thread, as it never returns (unless cancelled).
 // It will run every ISAC pump pass (roughly 10ms), triggered by the Windows audio stack setting the m_PumpEvent
-DWORD WINAPI SpatialAudioClientWorker(LPVOID lpParam) {
-	BYTE** objectBuffers = new BYTE*[m_MaxSources];
-	vec3* positions = new vec3[m_MaxSources];
-	float* volumes = new float[m_MaxSources];
+DWORD WINAPI IsacAdapter::SpatialAudioClientWorker(LPVOID lpParam) {
+	IsacAdapter* pThis = (IsacAdapter*)lpParam;
+	BYTE** objectBuffers = new BYTE*[pThis->m_MaxSources];
+	vec3* positions = new vec3[pThis->m_MaxSources];
+	float* volumes = new float[pThis->m_MaxSources];
 	// Setup the render loop. It will run indefinitely. Every time PumpEvent is set, the while loop continues
 	// If PumpThreadCanceller is set, WaitForMultipleObjects will return WAIT_OBJECT_1, and the while loop will break
-	const HANDLE eventsToWaitOn[2] = { m_PumpEvent, m_PumpThreadCanceller };
+	const HANDLE eventsToWaitOn[2] = { pThis->m_PumpEvent, pThis->m_PumpThreadCanceller };
 	while (WAIT_OBJECT_0 == WaitForMultipleObjects(2, eventsToWaitOn, FALSE, INFINITE)) {
 		UINT32 objects = 0;
 		UINT32 frameCount = 0;
-		if (FAILED(m_SpatialAudioStream->BeginUpdatingAudioObjects(&objects, &frameCount))) break;
+		if (FAILED(pThis->m_SpatialAudioStream->BeginUpdatingAudioObjects(&objects, &frameCount))) break;
 
 		// Fill the buffers for the call into the app code
 		UINT32 byteCount = 0;
-		for (uint32_t i = 0; i < m_MaxSources; i++)         {
-			m_Sources[i]->GetBuffer(&objectBuffers[i], &byteCount);
+		for (uint32_t i = 0; i < pThis->m_MaxSources; i++)         {
+			pThis->m_Sources[i]->GetBuffer(&objectBuffers[i], &byteCount);
 			// Fill the buffers with 0s
 			memset(objectBuffers[i], 0, byteCount);
 			// Set all positions and volumes to 0, too. The app callback will overwrite them
@@ -289,19 +314,19 @@ DWORD WINAPI SpatialAudioClientWorker(LPVOID lpParam) {
 		}
 
 		// Notify Stereokit that ISAC needs data. Stereokit will handle filling in each active object's information
-		m_AppCallback((float**)objectBuffers, m_MaxSources, byteCount / sizeof(float), positions, volumes);
+		pThis->m_AppCallback((float**)objectBuffers, pThis->m_MaxSources, byteCount / sizeof(float), positions, volumes);
 
-		for (uint32_t i = 0; i < m_MaxSources; i++) {
+		for (uint32_t i = 0; i < pThis->m_MaxSources; i++) {
 			// Intentionally ignore any per-object failures and continue to the next object
-			m_Sources[i]->SetPosition(positions[i].x, positions[i].y, positions[i].z);
+			pThis->m_Sources[i]->SetPosition(positions[i].x, positions[i].y, positions[i].z);
 			// Apply 1/r gain
 			float dist = vec3_magnitude(positions[i]);
 			// Guard against objects being too close
 			if (dist <= 0.00001f) dist = 1;
-			m_Sources[i]->SetVolume(min(1.0f, volumes[i] / dist));
+			pThis->m_Sources[i]->SetVolume(min(1.0f, volumes[i] / dist));
 		}
 
-		m_SpatialAudioStream->EndUpdatingAudioObjects();
+		pThis->m_SpatialAudioStream->EndUpdatingAudioObjects();
 	}
 
 	delete[] objectBuffers;
@@ -311,7 +336,6 @@ DWORD WINAPI SpatialAudioClientWorker(LPVOID lpParam) {
 }
 
 ///////////////////////////////////////////
-
 // IsacActivator implementation -----------------------------
 
 IsacActivator::IsacActivator() : m_ActivateResult(E_ILLEGAL_METHOD_CALL) {
