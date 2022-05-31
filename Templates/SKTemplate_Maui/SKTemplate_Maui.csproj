@@ -34,7 +34,16 @@
 		<MauiImage Include="Resources\Images\*" />
 
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
-		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="Assets\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	
+		<AndroidAsset Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" Include="Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</AndroidAsset>
+		<Content Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'android'" Include="Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
 	</ItemGroup>
 
 	<ItemGroup>
