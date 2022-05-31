@@ -85,7 +85,7 @@ float2 brdf_appx(half Roughness, half NoV ) {
 float4 ps(psIn input) : SV_TARGET {
 	float4 albedo      = diffuse  .Sample(diffuse_s,  input.uv) * input.color;
 	float3 emissive    = emission .Sample(emission_s, input.uv).rgb * emission_factor.rgb;
-	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // b is metallic, rough is g
+	float2 metal_rough = metal    .Sample(metal_s,    input.uv).gb; // rough is g, b is metallic
 	float  ao          = occlusion.Sample(occlusion_s,input.uv).r;  // occlusion is sometimes part of the metal tex, uses r channel
 
 	float3 view        = normalize(input.view_dir);

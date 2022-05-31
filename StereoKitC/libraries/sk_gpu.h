@@ -121,22 +121,22 @@ typedef enum skg_tex_sample_ {
 
 typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_none = 0,
-	skg_tex_fmt_rgba32 = 1,
-	skg_tex_fmt_rgba32_linear = 2,
-	skg_tex_fmt_bgra32 = 3,
-	skg_tex_fmt_bgra32_linear = 4,
-	skg_tex_fmt_rg11b10 = 5,
-	skg_tex_fmt_rgb10a2 = 6,
-	skg_tex_fmt_rgba64u = 7,
-	skg_tex_fmt_rgba64s = 8,
-	skg_tex_fmt_rgba64f = 9,
-	skg_tex_fmt_rgba128 = 10,
-	skg_tex_fmt_r8 = 11,
-	skg_tex_fmt_r16 = 12,
-	skg_tex_fmt_r32 = 13,
-	skg_tex_fmt_depthstencil = 14,
-	skg_tex_fmt_depth32 = 15,
-	skg_tex_fmt_depth16 = 16,
+	skg_tex_fmt_rgba32,
+	skg_tex_fmt_rgba32_linear,
+	skg_tex_fmt_bgra32,
+	skg_tex_fmt_bgra32_linear,
+	skg_tex_fmt_rg11b10,
+	skg_tex_fmt_rgb10a2,
+	skg_tex_fmt_rgba64u,
+	skg_tex_fmt_rgba64s,
+	skg_tex_fmt_rgba64f,
+	skg_tex_fmt_rgba128,
+	skg_tex_fmt_r8,
+	skg_tex_fmt_r16,
+	skg_tex_fmt_r32,
+	skg_tex_fmt_depthstencil,
+	skg_tex_fmt_depth32,
+	skg_tex_fmt_depth16,
 } skg_tex_fmt_;
 
 typedef enum skg_fmt_ {
@@ -3060,7 +3060,7 @@ bool skg_capability(skg_cap_ capability) {
 		return false;
 #else
 #pragma clang diagnostic push
-// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
+		// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
 #pragma clang diagnostic ignored "-Wtautological-pointer-compare"
 		return glPolygonMode != nullptr;
 #pragma clang diagnostic pop
