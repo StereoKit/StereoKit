@@ -451,6 +451,12 @@ install(
   TARGETS StereoKitC 
   EXPORT  StereoKitC-targets
 )
+if (SK_BUILD_TESTS)
+  install(
+    TARGETS StereoKitCTest
+    EXPORT  StereoKitCTest-targets
+  )
+endif()
 
 install(
   FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
