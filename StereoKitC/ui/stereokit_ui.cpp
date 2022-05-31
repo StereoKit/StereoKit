@@ -1515,6 +1515,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	text_align_ text_align;
 	float aspect = sprite_get_aspect(image);
 	switch (image_layout) {
+	default:
 	case ui_btn_layout_left:
 		image_align = text_align_center_left;
 		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter)*0.5f) / aspect);
