@@ -101,6 +101,7 @@ bool32_t        skui_enable_far_interact = true;
 uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -1011,6 +1012,30 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 
 ///////////////////////////////////////////
 
+button_state_ ui_last_element_hand_used(handed_ hand) {
+	return button_make_state(
+		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev == skui_last_element,
+		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_active() {
+	return button_make_state(
+		skui_hand[handed_left].active_prev == skui_last_element || skui_hand[handed_right].active_prev == skui_last_element,
+		skui_hand[handed_left].active      == skui_last_element || skui_hand[handed_right].active      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_focused() {
+	return button_make_state(
+		skui_hand[handed_left].focused_prev == skui_last_element || skui_hand[handed_right].focused_prev == skui_last_element,
+		skui_hand[handed_left].focused      == skui_last_element || skui_hand[handed_right].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
 void ui_nextline() {
 	layer_t &layer = skui_layers.last();
 	skui_prev_offset      = layer.offset;
@@ -1052,6 +1077,8 @@ void ui_space(float space) {
 void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+	
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1091,6 +1118,8 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1333,6 +1362,8 @@ template<typename C>
 bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 	uint64_t id_hash = ui_stack_hash(id);
 	bool     result  = false;
+
+	skui_last_element = id_hash;
 
 	for (int32_t i = 0; i < handed_max; i++) {
 		bool     was_focused = skui_hand[i].focused_prev == id_hash;
@@ -2096,6 +2127,8 @@ bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, doub
 bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	bool result = false;
 	float color = 1;
+
+	skui_last_element = id;
 
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
