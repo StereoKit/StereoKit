@@ -7,9 +7,6 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<OutputPath>..\..\bin\x64_$(Configuration)\StereoKitTest\</OutputPath>
 		<RunWorkingDirectory>$(OutputPath)</RunWorkingDirectory>
-		
-		<SKAssetFolder>..\Assets</SKAssetFolder>
-		<SKAssetDestination>Assets</SKAssetDestination>
 	</PropertyGroup>
 	
 	<!-- IF YOU ARE LOOKING AT THIS FOLDER AS REFERENCE, I recommend that you
@@ -35,6 +32,16 @@
 		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
 		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
 	</ItemGroup>
+	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
+
+	<!-- Copy assets, and build the app's shaders into the final app folder -->
+	<ItemGroup>
+		<Content Include="..\Assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
+		<SKShader Include="..\Assets\**\*.hlsl" BuildRoot="..\" BuildTo="Assets" />
+	</ItemGroup>
 
 	<!-- This guide file shouldn't be compiled -->
 	<ItemGroup>
@@ -43,7 +50,4 @@
 	<ItemGroup>
 		<None Include="Guides\GuideGettingStarted.cs" />
 	</ItemGroup>
-
-	<Import Project="$(ProjectDir)..\..\StereoKit\SKAssets.targets" />
-	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 </Project>

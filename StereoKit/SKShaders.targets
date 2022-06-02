@@ -12,24 +12,16 @@
 		</AvailableItemName>
 	</ItemGroup>
 
+	<!-- Make sure the project rebuilds when .hlsl files change -->
+	<ItemGroup>
+		<UpToDateCheckInput Include="**/*.hlsl" />
+	</ItemGroup>
+
 	<!-- Switch compiler binary depending on the platform -->
 	<PropertyGroup>
 		<SKShadercExe Condition="'$(OS)'=='Windows_NT'">skshaderc.exe</SKShadercExe>
 		<SKShadercExe Condition="'$(OS)'!='Windows_NT'">skshaderc</SKShadercExe>
-
-		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
-		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
-		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
 	</PropertyGroup>
-
-	<!-- Automatically include shaders -->
-	<ItemGroup>
-		<SKShader Include="$(SKAssetFolder)/**/*.hlsl">
-			<RelFile>%(RecursiveDir)%(Filename)%(Extension)</RelFile>
-			<RelFolder>%(RecursiveDir)</RelFolder>
-		</SKShader>
-		<UpToDateCheckInput Include="$(SKAssetFolder)/**/*.hlsl"/>
-	</ItemGroup>
 
 	<!-- This target builds all SKShader items. This is skipped for Library
 	     type projects. -->
@@ -38,20 +30,22 @@
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
 			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
-			<SKOutDir Condition="'$(SKOutDir)'==''">$(SKAssetDestination)</SKOutDir>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'==''">$(OutDir)%(SKShader.RelativeDir)/</SKOutDir>
+			<SKOutDir Condition="'%(SkShader.BuildTo)'!=''">$(OutDir)%(SkShader.BuildTo)/</SKOutDir>
 		</PropertyGroup>
-		
+
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
-			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKOutDir)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
-				<Outputs>$(IntermediateOutputPath)$(SKOutDir)/%(SKShader.RelFile).sks</Outputs>
-				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
+			<SKShader>
+				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../tools/'))include" -o "$(SKOutDir)" "%(SKShader.Identity)"</Command>
+				<Outputs>$(SKOutDir)%(SKShader.Filename)%(SKShader.Extension).sks</Outputs>
+				<RelativeName Condition="'%(SKShader.BuildRoot)'!=''">$([MSBuild]::MakeRelative("%(SKShader.BuildRoot)", "%(SKShader.Identity).sks"))</RelativeName>
+				<RelativeName Condition="'%(SKShader.BuildRoot)'==''">@(SKShader).sks</RelativeName>
 			</SKShader>
 		</ItemGroup>
 
 		<!-- Run the compile commands -->
-		<Exec Command="%(SKShader.Command)" Condition="'%(SKShader.Command)'!=''" Outputs="%(SKShader.Outputs)">
+		<Exec Command="%(SKShader.Command)" Outputs="%(SKShader.Outputs)">
 			<Output ItemName="Generated" TaskParameter="Outputs" />
 		</Exec>
 
@@ -66,12 +60,13 @@
 		<ItemGroup>
 			<Content Condition="'$(TargetFrameworkIdentifier)'!='MonoAndroid'" Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-				<Link>$(SKOutDir)/%(SKShader.RelativeName)</Link>
+				<DeploymentContent>true</DeploymentContent>
+				<Link>%(SKShader.RelativeName)</Link>
 			</Content>
 			
 			<AndroidAsset Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'" Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-				<Link>$(SKOutDir)/%(SKShader.RelativeName)</Link>
+				<Link>%(SKShader.RelativeName)</Link>
 			</AndroidAsset>
 		</ItemGroup>
 	</Target>

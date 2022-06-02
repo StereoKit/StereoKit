@@ -77,7 +77,6 @@
 		<!-- Targets and copies and commands for the NuGet package once it's in
 		the user's project. -->
 		<Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
-		<Content Pack="true" Include="SKAssets.targets" PackagePath="build\" />
 		<Content Pack="true" Include="SKShaders.targets" PackagePath="build\" />
 		<Content Pack="true" Include="SKShader.xml" PackagePath="build\" />
 	</ItemGroup>
