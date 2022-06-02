@@ -440,6 +440,20 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
+const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
+    if (mesh->bvh_data != nullptr)
+        return mesh->bvh_data;
+    if (mesh->discard_data)
+        return nullptr;
+
+    mesh->bvh_data = new mesh_bvh_t(1, 16);
+    mesh->bvh_data->build(mesh);
+
+    return mesh->bvh_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
@@ -516,8 +530,20 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 		}
 	}
 
-	return nearest_dist != FLT_MAX;
+	return nearest_dist != FLT_MAX;    
 }
+
+///////////////////////////////////////////
+
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
+
+    const mesh_bvh_t *data = mesh_get_bvh_data(mesh);
+    if (data == nullptr)
+        return false;
+
+    return false;
+}
+
 ///////////////////////////////////////////
 
 bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
