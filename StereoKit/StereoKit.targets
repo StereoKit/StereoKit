@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Import Project="$(MSBuildThisFileDirectory)SKAssets.targets" />
 	<Import Project="$(MSBuildThisFileDirectory)SKShaders.targets" />
 
 	<!-- Copy the package's native libraries into the project, since it doesn't
