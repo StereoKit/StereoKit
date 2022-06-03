@@ -25,7 +25,8 @@ Paul Melis, 2022
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
 
-//#define VERBOSE
+//#define VERBOSE_BUILD
+#define VERBOSE_INTERSECTION
 
 namespace sk {
 
@@ -121,7 +122,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
 
     bvh_node_t& node = nodes[current_node_index];
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
     printf("build_recursive(): depth = %d, current_node_index = %d\n", depth, current_node_index);
     printf("... leaf_first = %d, num_triangles = %d\n", node.leaf_first, node.num_triangles);
     for (i = node.leaf_first; i < node.leaf_first+node.num_triangles; i++)
@@ -131,7 +132,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
 
     if (node.num_triangles <= acceptable_leaf_size)
     {
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
         printf("[%d] Creating a leaf node of %d triangles\n", depth, node.num_triangles);
 #endif
         if (statistics)
@@ -151,7 +152,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
     
     boundingbox& bbox = node.bbox;
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
     printf("... bounding box:\n");
     printf("... (min) %.6f, %.6f, %.6f\n", bbox.min().x, bbox.min().y, bbox.min().z);
     printf("... (max) %.6f, %.6f, %.6f\n", bbox.max().x, bbox.max().y, bbox.max().z);    
@@ -199,7 +200,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
         split_axis = sorted_dimensions[d];
         split_value = vec3_field(bbox_center, split_axis);
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
         printf("[%d] Splitting on axis %d, value %.6f\n", depth, split_axis, split_value);
 
         for (l = node.leaf_first; l < node.leaf_first+node.num_triangles; l++)
@@ -222,14 +223,14 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
         num_triangles_left = l - node.leaf_first;
         num_triangles_right = node.num_triangles - num_triangles_left;
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
         printf("[%d] %d left, %d right\n", depth, num_triangles_left, num_triangles_right);
 #endif
 
         if (num_triangles_left == 0 || num_triangles_right == 0)
         {
             // All triangles in one of the half, discontinue this attempt
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
             printf("[%d] skipping dimension %d, all triangles on one side\n", depth);
 #endif
             continue;
@@ -240,7 +241,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
         bound_triangles(left_bbox, sorted_triangles, triangle_vertices, node.leaf_first, num_triangles_left);
         bound_triangles(right_bbox, sorted_triangles, triangle_vertices, l, num_triangles_right);
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
         printf("[%d] left bbox:  %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
             depth, left_bbox[0].x, left_bbox[0].y, left_bbox[0].z,
             left_bbox[1].x, left_bbox[1].y, left_bbox[1].z);
@@ -284,7 +285,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
 
     // Split dimensions exhausted, forced to create a leaf
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
     // XXX warn
     printf("[%d] Split options exhausted, creating a leaf of %d triangles\n", depth, node.num_triangles);
 #endif
@@ -365,7 +366,7 @@ mesh_bvh_t::build(const mesh_t mesh)
         );
     }
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
     printf("%d triangles:\n", num_triangles);
     for (int t = 0; t < num_triangles; t++)
     {
@@ -386,7 +387,7 @@ mesh_bvh_t::build(const mesh_t mesh)
     boundingbox mesh_bbox;
     bound_triangles(mesh_bbox, sorted_triangles, triangle_vertices, 0, num_triangles-1);
 
-#ifdef VERBOSE
+#ifdef VERBOSE_BUILD
     printf("bvh_build():\n");
     printf("... mesh of %d triangles\n", num_triangles);
     printf("... bounding box:\n");
@@ -473,7 +474,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
 
     while (true)
     {        
-#ifdef VERBOSE
+#ifdef VERBOSE_TRACE
         printf("t_nearest_hit = %.6f\n", t_nearest_hit);
         printf("current node = %d\n", current_node_index);
         printf("stack_top = %d\n", stack_top);
@@ -493,7 +494,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
             traverse_left_child = nodes[left_child].bbox.intersect_full(t_left_min, t_left_max, bbox_ray, 0.0f, t_nearest_hit);
             traverse_right_child = nodes[left_child+1].bbox.intersect_full(t_right_min, t_right_max, bbox_ray, 0.0f, t_nearest_hit);
 
-#ifdef VERBOSE
+#ifdef VERBOSE_TRACE
             if (traverse_left_child)
                 printf("traverse left, node %d, t=%.6f..%.6f\n", left_child, t_left_min, t_left_max);
             if (traverse_right_child)
@@ -516,7 +517,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                         traversal_tmin_stack[stack_top] = t_right_min;                        
 
                         // Traverse to left
-#ifdef VERBOSE                        
+#ifdef VERBOSE_TRACE                        
                         printf("traversing left, then right\n");
 #endif                        
                         current_node_index = left_child;
@@ -531,7 +532,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                         traversal_tmin_stack[stack_top] = t_left_min;
                         
                         // Traverse to right
-#ifdef VERBOSE                        
+#ifdef VERBOSE_TRACE                        
                         printf("traversing right, then left\n");
 #endif                        
                         current_node_index = left_child+1;
@@ -540,7 +541,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                 else
                 {
                     // Traverse left only
-#ifdef VERBOSE                    
+#ifdef VERBOSE_TRACE                    
                     printf("traversing left only\n");
 #endif                    
                     current_node_index = left_child;
@@ -551,7 +552,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
             else if (traverse_right_child)
             {
                 // Traverse right only
-#ifdef VERBOSE                
+#ifdef VERBOSE_TRACE                
                 printf("traversing right only\n");
 #endif                
                 current_node_index = left_child+1;
@@ -562,7 +563,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
         {
             // Intersect ray with triangles in this leaf node
 
-#ifdef VERBOSE
+#ifdef VERBOSE_TRACE
             printf("Checking %d triangles\n", node.num_triangles);
 #endif            
             for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
@@ -607,7 +608,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                 if ((u >= 0) && (v >= 0) && (u + v < 1)) {
                     float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
                     if (t_hit > 0 && t_hit < t_nearest_hit) {
-#ifdef VERBOSE                        
+#ifdef VERBOSE_TRACE                        
                         printf("Found new hit at t = %.6f, distance^2 = %.6f\n", t_hit, dist);
 #endif                        
                         t_nearest_hit = t_hit;
@@ -633,12 +634,12 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
         // is intersected closer to the ray origin than the best hit
         // found so far (or the stack becomes empty)
 
-#ifdef VERBOSE
+#ifdef VERBOSE_TRACE
         printf("popping from stack:\n");
         for (int i = 0; i <= stack_top; i++)
             printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
 #endif
-        
+
         while (stack_top >= 0)
         {
             current_node_index = traversal_node_stack[stack_top];

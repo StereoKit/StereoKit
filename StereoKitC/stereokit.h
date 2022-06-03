@@ -1206,6 +1206,7 @@ SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_set_bounds              (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t      model_get_bounds              (model_t model);
 SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t *out_pt);
+SK_API bool32_t      model_ray_intersect_bvh       (model_t model, ray_t model_space_ray, ray_t *out_pt);
 
 SK_API void          model_step_anim               (model_t model);
 SK_API bool32_t      model_play_anim               (model_t model, const char *animation_name, anim_mode_ mode);

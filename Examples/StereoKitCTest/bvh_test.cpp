@@ -20,7 +20,7 @@ int main()
 
     model_t model;
     
-    //model = model_create_file("DamagedHelmet.gltf");
+    model = model_create_file("DamagedHelmet.gltf");
     
     // Long narrow triangles that are hard to split
     //model = model_create_file("Radio.glb");
@@ -29,6 +29,7 @@ int main()
     //model = model_create_file("cube.glb");
 
     //model = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
+
     // No isec -10,-10,-10 dir 1,1,1?
     /*
     vec3{10,10,10}, vec3{-1,-1,-1}
@@ -49,12 +50,10 @@ int main()
     ???
 
     */
-    model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
+    //model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
     //model = model_create_file("t.glb");
     //model = model_create_file("/home/melis/models/angel/angel.obj");
     //model = model_create_file("/home/melis/models/lucy/lucy2.glb");
-
-    mesh_t mesh;
     
     ray_t ray{
         vec3{10,10,10}, vec3{-1,-1,-1}
@@ -69,6 +68,8 @@ int main()
 
     gettimeofday(&t0, NULL);
 
+#if 1
+    mesh_t mesh;
     printf("%d subsets\n", model_subset_count(model));
     for (int i = 0; i < model_subset_count(model); i++)        
     {
@@ -82,6 +83,16 @@ int main()
                 intersection.dir.x, intersection.dir.y, intersection.dir.z);
         }
     }
+#else
+    // Should result in the same intersection as closest hit found above 
+    // (i.e. when explicitly looping over meshes). Yet isn't always the case.
+    if (model_ray_intersect_bvh(model, ray, &intersection))
+    {
+        printf("intersection at %6f,%6f,%6f (normal %.6f,%.6f,%.6f)!\n",
+            intersection.pos.x, intersection.pos.y, intersection.pos.z,
+            intersection.dir.x, intersection.dir.y, intersection.dir.z);
+    }
+#endif
 
     gettimeofday(&t1, NULL);
     double tdiff = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec)/1000000.0f;
