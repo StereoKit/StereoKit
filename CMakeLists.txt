@@ -250,8 +250,10 @@ set(SK_SRC_LIBRARIES
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
+  StereoKitC/systems/bbox.h
+  StereoKitC/systems/bbox.cpp
   StereoKitC/systems/bvh.h
-  StereoKitC/systems/bvh.cpp
+  StereoKitC/systems/bvh.cpp  
   StereoKitC/systems/defaults.h
   StereoKitC/systems/defaults.cpp
   StereoKitC/systems/input.h

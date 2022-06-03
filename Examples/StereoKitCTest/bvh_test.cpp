@@ -20,13 +20,13 @@ int main()
 
     model_t model;
     
-    model = model_create_file("DamagedHelmet.gltf");
+    //model = model_create_file("DamagedHelmet.gltf");
     
     // Long narrow triangles that are hard to split
     //model = model_create_file("Radio.glb");
 
     //model = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
-    //model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
+    model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
     //model = model_create_file("t.glb");
     //model = model_create_file("/home/melis/models/angel/angel.obj");
     //model = model_create_file("/home/melis/models/lucy/lucy2.glb");
@@ -44,10 +44,10 @@ int main()
     mesh = model_get_mesh(model, 0);
     
     ray_t ray{
-        vec3{-10,-10-10}, vec3{1,1,1}
+        vec3{-10,-10, -10}, vec3{1,1,1}
     };
 
-    ray_t intersection = {};    
+    ray_t intersection = {};
 
     timeval t0, t1;
 
@@ -56,7 +56,11 @@ int main()
     gettimeofday(&t0, NULL);
 
     if (mesh_ray_intersect_bvh(mesh, ray, &intersection))
-        printf("intersection!\n");
+    {
+        printf("intersection at %6f,%6f,%6f (normal %.6f,%.6f,%.6f)!\n",
+            intersection.pos.x, intersection.pos.y, intersection.pos.z,
+            intersection.dir.x, intersection.dir.y, intersection.dir.z);
+    }
 
     gettimeofday(&t1, NULL);
     double tdiff = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec)/1000000.0f;

@@ -8,6 +8,23 @@ const float C_INFINITY = 1e6f;
 
 namespace sk {
 
+// Ray with some precomputed values, for faster bbox intersection queries
+struct bbox_ray_t
+{    
+    bbox_ray_t(ray_t ray)
+    {
+        origin = ray.pos;
+        inv_direction = vec3{1.0f/ray.dir.x, 1.0f/ray.dir.y, 1.0f/ray.dir.z};
+        sign[0] = inv_direction.x < 0;
+        sign[1] = inv_direction.y < 0;
+        sign[2] = inv_direction.z < 0;        
+    }
+
+    vec3 origin;
+    vec3 inv_direction;
+    short sign[3];
+};
+
 //
 // An axis-aligned bounding box (AABB)
 //
@@ -119,22 +136,14 @@ public:
         return 2.0 * (s.x*s.y + s.x*s.z + s.y*s.z);
     }
 
-/*
     // Intersect a ray with (delimited by t0 and t1) with the given bounding box.
     // Returns true when the ray intersects the bbox, returns false otherwise
-    bool    intersect(Ray r, float t0, float t1) const;
+    bool    intersect(bbox_ray_t r, float t0, float t1) const;
 
     // Intersect a ray with (delimited by t0 and t1) with the given bounding box.
     // Returns 1 (and sets t_min and t_max) when the ray intersects the bbox,
     // returns 0 otherwise
-    bool    intersect_full(float& t_min, float& t_max, Ray r, float t0, float t1) const;
-*/
-
-    void print() const
-    {
-        printf("<bbox %.6f %.6f %.6f -> %.6f %.6f %.6f>", bounds[0].x, bounds[0].y, bounds[0].z, bounds[1].x, bounds[1].y, bounds[1].z);
-    }
-
+    bool    intersect_full(float& t_min, float& t_max, bbox_ray_t r, float t0, float t1) const;
 
 protected:
     vec3    bounds[2];

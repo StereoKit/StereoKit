@@ -29,6 +29,8 @@ Paul Melis, 2022
 
 namespace sk {
 
+const int TRAVERSAL_STACK_SIZE = 128;
+
 // One node in the Bounding Volume Hierarchy
 
 struct bvh_node_t
@@ -134,6 +136,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
 #endif
         if (statistics)
         {
+            statistics->depth = std::max(statistics->depth, depth);
             statistics->num_leafs++;
             statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.num_triangles);
         }
@@ -339,7 +342,7 @@ mesh_bvh_t::build(const mesh_t mesh)
     // are then used during BVH construction. Whenever a bounding box of a 
     // group of triangles is needed this is computed on-the-fly.
 
-    const mesh_collision_t *collision_data = mesh_get_collision_data(mesh);
+    collision_data = mesh_get_collision_data(mesh);
     if (collision_data == nullptr)
     {
         log_err("mesh_bvh_t::build(): no mesh collision data available");
@@ -393,16 +396,6 @@ mesh_bvh_t::build(const mesh_t mesh)
 
     mesh_bbox.grow(C_EPSILON);
 
-    if (statistics)
-    {
-        statistics->num_leafs = 0;
-        statistics->num_inner_nodes = 0;
-        statistics->max_leaf_size = 0;
-        statistics->num_forced_leafs = 0;
-        for (int i = 0; i < 3; i++)
-            statistics->split_axis_histogram[i] = 0;
-    }
-
     //acceptable_leaf_size = 2;
     the_mesh = mesh;    // XXX debugging only
 
@@ -441,6 +434,7 @@ mesh_bvh_t::build(const mesh_t mesh)
 void
 mesh_bvh_t::statistics_t::print()
 {    
+    printf("... depth %d\n", depth);
     printf("... %d leaf nodes, %d inner nodes\n",
         num_leafs, num_inner_nodes);
     printf("... maximum leaf size %d\n", max_leaf_size);
@@ -450,4 +444,197 @@ mesh_bvh_t::statistics_t::print()
         printf("... %d | %5d\n", i, split_axis_histogram[i]);
 }
 
+// Find closest triangle intersection for the given model-space ray
+bool
+mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) const
+{
+    // Use local stack to avoid having to recurse
+    uint32_t traversal_node_stack[TRAVERSAL_STACK_SIZE];
+    float traversal_tmin_stack[TRAVERSAL_STACK_SIZE];
+
+    uint32_t left_child;
+    bool traverse_left_child, traverse_right_child;    
+    
+    float t_left_min, t_right_min;
+    float t_hit, t_nearest_hit = FLT_MAX;
+    float nearest_dist = FLT_MAX;
+    float dummy;
+    vec3  pt = {};    
+
+    // Stack is initially empty
+    short stack_top = -1;    
+
+    // Start at root node
+    uint32_t current_node_index = 0;
+
+    // Precompute ray value that's quicker to test against the bboxes
+    bbox_ray_t bbox_ray(model_space_ray);
+
+    while (true)
+    {        
+        printf("t_nearest_hit = %.6f\n", t_nearest_hit);
+        printf("current node = %d\n", current_node_index);
+        printf("stack_top = %d\n", stack_top);
+
+        printf("stack now:\n");
+        for (int i = 0; i <= stack_top; i++)
+            printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
+
+        const bvh_node_t& node = nodes[current_node_index];
+
+        if (!node.is_leaf())
+        {
+            // Check for traversal down to the child nodes of this inner node
+            left_child = node.leaf_first;
+
+            traverse_left_child = nodes[left_child].bbox.intersect_full(t_left_min, dummy, bbox_ray, 0.0f, t_nearest_hit);
+            traverse_right_child = nodes[left_child+1].bbox.intersect_full(t_right_min, dummy, bbox_ray, 0.0f, t_nearest_hit);
+
+            printf("traverse left %d (%.6f), right %d (%.6f)\n", 
+                traverse_left_child, t_left_min, traverse_right_child, t_right_min);
+
+            if (traverse_left_child)
+            {
+                if (traverse_right_child)
+                {
+                    // Traverse both children, but traverse into closest one first
+
+                    if (t_left_min < t_right_min)
+                    {
+                        // Left, possibly right
+
+                        // Push right
+                        stack_top++;
+                        traversal_node_stack[stack_top] = left_child+1;
+                        traversal_tmin_stack[stack_top] = t_right_min;                        
+
+                        // Traverse to left
+                        printf("traversing left, then right\n");
+                        current_node_index = left_child;
+                    }
+                    else
+                    {
+                        // Right, possibly left
+
+                        // Push left
+                        stack_top++;
+                        traversal_node_stack[stack_top] = left_child;
+                        traversal_tmin_stack[stack_top] = t_left_min;
+                        
+                        // Traverse to right
+                        printf("traversing right, then left\n");
+                        current_node_index = left_child+1;
+                    }
+                }
+                else
+                {
+                    // Traverse left only
+                    printf("traversing left only\n");
+                    current_node_index = left_child;
+                }
+
+                continue;
+            }
+            else if (traverse_right_child)
+            {
+                // Traverse right only
+                printf("traversing right only\n");
+                current_node_index = left_child+1;
+                continue;
+            }
+        }
+        else
+        {
+            // Intersect ray with triangles in this leaf node
+
+            printf("Checking %d triangles\n", node.num_triangles);
+            for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
+            {
+                uint32_t triangle = sorted_triangles[t];
+                plane_t& plane = collision_data->planes[triangle];
+
+                // Inline version of plane_ray_intersect, as we need the t value
+                t_hit = 
+                    -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / 
+                    vec3_dot(model_space_ray.dir, plane.normal);
+
+                if (t_hit > t_nearest_hit)
+                {
+                    // Hit can not be closer than best so far
+                    continue;
+                }
+                
+                pt = model_space_ray.pos + model_space_ray.dir * t;             
+
+                // point in triangle, implementation based on:
+                // https://blackpawn.com/texts/pointinpoly/default.html
+
+                // Compute vectors
+                vec3 v0 = collision_data->pts[3*triangle+1] - collision_data->pts[3*triangle+0];
+                vec3 v1 = collision_data->pts[3*triangle+2] - collision_data->pts[3*triangle+0];
+                vec3 v2 = pt - collision_data->pts[3*triangle+0];
+
+                // Compute dot products
+                float dot00 = vec3_dot(v0, v0);
+                float dot01 = vec3_dot(v0, v1);
+                float dot02 = vec3_dot(v0, v2);
+                float dot11 = vec3_dot(v1, v1);
+                float dot12 = vec3_dot(v1, v2);
+
+                // Compute barycentric coordinates
+                float inv_denom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+                float u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+                float v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+                // Check if point is in triangle
+                if ((u >= 0) && (v >= 0) && (u + v < 1)) {
+                    float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
+                    if (t_hit < t_nearest_hit) {
+                        printf("Found new hit at t = %.6f, distance = %.6f\n", t_hit, nearest_dist);
+                        t_nearest_hit = t_hit;
+                        nearest_dist = dist;
+                        if (out_start_inds != nullptr) {
+                            *out_start_inds = 3*triangle;
+                        }
+                        *out_pt = {pt, collision_data->planes[triangle].normal};
+                    }
+                }
+            }
+        }
+
+        // Pop from stack
+
+        if (stack_top == -1)
+        {
+            // Empty stack, done!
+            return nearest_dist != FLT_MAX;
+        }
+        
+        // Keep popping next node to visit until we find a node whose bbox
+        // is intersected closer to the ray origin than the best hit
+        // found so far (or the stack becomes empty)
+
+        printf("popping from stack:\n");
+        for (int i = 0; i <= stack_top; i++)
+            printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
+
+        while (stack_top >= 0)
+        {
+            current_node_index = traversal_node_stack[stack_top];
+            if (traversal_tmin_stack[stack_top--] < t_nearest_hit)
+            {
+                // Traverse to node
+                break;
+            }
+
+            if (stack_top == -1)
+            {
+                // Empty stack, done!
+                return nearest_dist != FLT_MAX;
+            }
+        }
+    }
 }
+
+
+} // namespace sk

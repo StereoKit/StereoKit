@@ -1,14 +1,13 @@
 #include "bbox.h"
 
-// Intersect a ray (delimited by t0 and t1) with the given bounding box.
-// Returns 1 (and sets t_min and t_max) when the ray intersects the bbox,
-// returns 0 otherwise
-
 namespace sk {
 
-/*
+// Intersect a ray (delimited by t0 and t1) with the given bounding box.
+// Returns true (and sets t_min and t_max) when the ray intersects the bbox,
+// returns false otherwise
+
 bool
-boundingbox::intersect_full(float& t_min, float& t_max, Ray r, float t0, float t1) const
+boundingbox::intersect_full(float& t_min, float& t_max, bbox_ray_t r, float t0, float t1) const
 {
     // This code makes handy use of IEEE floating-point behaviour, such
     // as division by zero. See
@@ -17,8 +16,6 @@ boundingbox::intersect_full(float& t_min, float& t_max, Ray r, float t0, float t
 
     float   tmin, tmax;
     float   tymin, tymax, tzmin, tzmax;
-
-    //num_bboxes_tested++;
 
     tmin = (bounds[r.sign[0]].x - r.origin.x) * r.inv_direction.x;
     tmax = (bounds[1-r.sign[0]].x - r.origin.x) * r.inv_direction.x;
@@ -52,17 +49,15 @@ boundingbox::intersect_full(float& t_min, float& t_max, Ray r, float t0, float t
 }
 
 // Intersect a ray with the given bounding box.
-// Returns 1 when the ray intersects the bbox, returns 0 otherwise
+// Returns true when the ray intersects the bbox, returns false otherwise
 
 bool
-boundingbox::intersect(Ray r, float t0, float t1) const
+boundingbox::intersect(bbox_ray_t r, float t0, float t1) const
 {
     // This code makes handy use of IEEE floating-point behaviour, such
     // as division by zero. See
     // 1) Shirley et.al. Section 10.9.1
     // 2) Williams et.al., "An Efficient and Robust Ray-Box Intersection Algorithm"
-
-    //num_bboxes_tested++;
 
     float   tmin, tmax;
     float   tymin, tymax, tzmin, tzmax;
@@ -92,10 +87,7 @@ boundingbox::intersect(Ray r, float t0, float t1) const
     if (tzmax < tmax)
         tmax = tzmax;
 
-    //printf("tmin = %.6f, tmax = %.6f; t0 = %.6f, t1 = %.6f\n", tmin, tmax, t0, t1);
-
     return (tmin < t1 && tmax > t0);
 }
-*/
     
-}
+} // namespace sk
