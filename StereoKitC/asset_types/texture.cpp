@@ -1,5 +1,4 @@
 #include "../stereokit.h"
-#include "../shaders_builtin/shader_builtin.h"
 #include "../systems/platform/platform_utils.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/qoi.h"
