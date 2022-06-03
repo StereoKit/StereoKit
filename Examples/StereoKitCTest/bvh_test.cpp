@@ -25,7 +25,30 @@ int main()
     // Long narrow triangles that are hard to split
     //model = model_create_file("Radio.glb");
 
+    //model = model_create_file("uvsphere.glb");
+    //model = model_create_file("cube.glb");
+
     //model = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
+    // No isec -10,-10,-10 dir 1,1,1?
+    /*
+    vec3{10,10,10}, vec3{-1,-1,-1}
+
+    mesh[14] 65532 vertices, 104034 triangles
+    BVH statistics:
+    ... 104034 triangles
+    ... depth 21
+    ... 9591 leaf nodes, 9590 inner nodes
+    ... maximum leaf size 16
+    ... 0 forced leafs
+    ... Split axis histogram:
+    ... 0 |  4709
+    ... 1 |  4620
+    ... 2 |   261
+    intersection at -0.663039,-0.663039,-0.663039 (normal 0.000000,-0.000000,-1.000000)!
+
+    ???
+
+    */
     model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
     //model = model_create_file("t.glb");
     //model = model_create_file("/home/melis/models/angel/angel.obj");
@@ -33,38 +56,36 @@ int main()
 
     mesh_t mesh;
     
-    printf("%d subsets\n", model_subset_count(model));
-    for (int i = 0; i < model_subset_count(model); i++)        
-    {
-        mesh = model_get_mesh(model, i);
-        printf("mesh[%d] %d vertices, %d triangles\n", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
-    }
-
-    printf("Building BVH for subset 0 only!\n");
-    mesh = model_get_mesh(model, 0);
-    
     ray_t ray{
-        vec3{-10,-10, -10}, vec3{1,1,1}
+        vec3{10,10,10}, vec3{-1,-1,-1}
+        //vec3{0,-10,0}, vec3{0,1,0}
     };
 
     ray_t intersection = {};
 
     timeval t0, t1;
 
-    printf("Doing intersection (and BVH build)\n");
+    printf("Performing intersection against mesh subset(s):\n");
 
     gettimeofday(&t0, NULL);
 
-    if (mesh_ray_intersect_bvh(mesh, ray, &intersection))
+    printf("%d subsets\n", model_subset_count(model));
+    for (int i = 0; i < model_subset_count(model); i++)        
     {
-        printf("intersection at %6f,%6f,%6f (normal %.6f,%.6f,%.6f)!\n",
-            intersection.pos.x, intersection.pos.y, intersection.pos.z,
-            intersection.dir.x, intersection.dir.y, intersection.dir.z);
+        mesh = model_get_mesh(model, i);
+        printf("mesh[%d] %d vertices, %d triangles\n", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
+
+        if (mesh_ray_intersect_bvh(mesh, ray, &intersection))
+        {
+            printf("intersection at %6f,%6f,%6f (normal %.6f,%.6f,%.6f)!\n",
+                intersection.pos.x, intersection.pos.y, intersection.pos.z,
+                intersection.dir.x, intersection.dir.y, intersection.dir.z);
+        }
     }
 
     gettimeofday(&t1, NULL);
     double tdiff = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec)/1000000.0f;
-    printf("%.6f\n", tdiff);
+    printf("intersection test took %.6fs\n", tdiff);
     
     sk_shutdown();
     return 0;

@@ -456,6 +456,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
     bool traverse_left_child, traverse_right_child;    
     
     float t_left_min, t_right_min;
+    float t_left_max, t_right_max;
     float t_hit, t_nearest_hit = FLT_MAX;
     float nearest_dist = FLT_MAX;
     float dummy;
@@ -472,6 +473,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
 
     while (true)
     {        
+#ifdef VERBOSE
         printf("t_nearest_hit = %.6f\n", t_nearest_hit);
         printf("current node = %d\n", current_node_index);
         printf("stack_top = %d\n", stack_top);
@@ -479,6 +481,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
         printf("stack now:\n");
         for (int i = 0; i <= stack_top; i++)
             printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
+#endif
 
         const bvh_node_t& node = nodes[current_node_index];
 
@@ -487,11 +490,15 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
             // Check for traversal down to the child nodes of this inner node
             left_child = node.leaf_first;
 
-            traverse_left_child = nodes[left_child].bbox.intersect_full(t_left_min, dummy, bbox_ray, 0.0f, t_nearest_hit);
-            traverse_right_child = nodes[left_child+1].bbox.intersect_full(t_right_min, dummy, bbox_ray, 0.0f, t_nearest_hit);
+            traverse_left_child = nodes[left_child].bbox.intersect_full(t_left_min, t_left_max, bbox_ray, 0.0f, t_nearest_hit);
+            traverse_right_child = nodes[left_child+1].bbox.intersect_full(t_right_min, t_right_max, bbox_ray, 0.0f, t_nearest_hit);
 
-            printf("traverse left %d (%.6f), right %d (%.6f)\n", 
-                traverse_left_child, t_left_min, traverse_right_child, t_right_min);
+#ifdef VERBOSE
+            if (traverse_left_child)
+                printf("traverse left, node %d, t=%.6f..%.6f\n", left_child, t_left_min, t_left_max);
+            if (traverse_right_child)
+                printf("traverse right, node %d, t=%.6f..%.6f\n", left_child+1, t_right_min, t_right_max);
+#endif
 
             if (traverse_left_child)
             {
@@ -509,7 +516,9 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                         traversal_tmin_stack[stack_top] = t_right_min;                        
 
                         // Traverse to left
+#ifdef VERBOSE                        
                         printf("traversing left, then right\n");
+#endif                        
                         current_node_index = left_child;
                     }
                     else
@@ -522,14 +531,18 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                         traversal_tmin_stack[stack_top] = t_left_min;
                         
                         // Traverse to right
+#ifdef VERBOSE                        
                         printf("traversing right, then left\n");
+#endif                        
                         current_node_index = left_child+1;
                     }
                 }
                 else
                 {
                     // Traverse left only
+#ifdef VERBOSE                    
                     printf("traversing left only\n");
+#endif                    
                     current_node_index = left_child;
                 }
 
@@ -538,7 +551,9 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
             else if (traverse_right_child)
             {
                 // Traverse right only
+#ifdef VERBOSE                
                 printf("traversing right only\n");
+#endif                
                 current_node_index = left_child+1;
                 continue;
             }
@@ -547,24 +562,26 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
         {
             // Intersect ray with triangles in this leaf node
 
+#ifdef VERBOSE
             printf("Checking %d triangles\n", node.num_triangles);
+#endif            
             for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
             {
                 uint32_t triangle = sorted_triangles[t];
                 plane_t& plane = collision_data->planes[triangle];
 
-                // Inline version of plane_ray_intersect, as we need the t value
+                // Inline version of plane_ray_intersect(), as we need the t value
                 t_hit = 
                     -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / 
                     vec3_dot(model_space_ray.dir, plane.normal);
 
                 if (t_hit > t_nearest_hit)
                 {
-                    // Hit can not be closer than best so far
+                    // Hit cannot be closer than best found so far, no need to check further
                     continue;
                 }
                 
-                pt = model_space_ray.pos + model_space_ray.dir * t;             
+                pt = model_space_ray.pos + model_space_ray.dir * t_hit;             
 
                 // point in triangle, implementation based on:
                 // https://blackpawn.com/texts/pointinpoly/default.html
@@ -589,8 +606,10 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                 // Check if point is in triangle
                 if ((u >= 0) && (v >= 0) && (u + v < 1)) {
                     float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
-                    if (t_hit < t_nearest_hit) {
-                        printf("Found new hit at t = %.6f, distance = %.6f\n", t_hit, nearest_dist);
+                    if (t_hit > 0 && t_hit < t_nearest_hit) {
+#ifdef VERBOSE                        
+                        printf("Found new hit at t = %.6f, distance^2 = %.6f\n", t_hit, dist);
+#endif                        
                         t_nearest_hit = t_hit;
                         nearest_dist = dist;
                         if (out_start_inds != nullptr) {
@@ -609,15 +628,17 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
             // Empty stack, done!
             return nearest_dist != FLT_MAX;
         }
-        
+
         // Keep popping next node to visit until we find a node whose bbox
         // is intersected closer to the ray origin than the best hit
         // found so far (or the stack becomes empty)
 
+#ifdef VERBOSE
         printf("popping from stack:\n");
         for (int i = 0; i <= stack_top; i++)
             printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
-
+#endif
+        
         while (stack_top >= 0)
         {
             current_node_index = traversal_node_stack[stack_top];

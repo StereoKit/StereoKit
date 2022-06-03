@@ -537,13 +537,13 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
     vec3 result = {};
-    printf("center %6f, %.6f, %.6f\n", mesh->bounds.center.x, mesh->bounds.center.y, mesh->bounds.center.z);
-    printf("dims   %6f, %.6f, %.6f\n", mesh->bounds.dimensions.x, mesh->bounds.dimensions.y, mesh->bounds.dimensions.z);
-    printf("origin   %6f, %.6f, %.6f\n", model_space_ray.pos.x, model_space_ray.pos.y, model_space_ray.pos.z);
-    printf("dir   %6f, %.6f, %.6f\n", model_space_ray.dir.x, model_space_ray.dir.y, model_space_ray.dir.z);
+    //printf("center %6f, %.6f, %.6f\n", mesh->bounds.center.x, mesh->bounds.center.y, mesh->bounds.center.z);
+    //printf("dims   %6f, %.6f, %.6f\n", mesh->bounds.dimensions.x, mesh->bounds.dimensions.y, mesh->bounds.dimensions.z);
+    //printf("origin   %6f, %.6f, %.6f\n", model_space_ray.pos.x, model_space_ray.pos.y, model_space_ray.pos.z);
+    //printf("dir   %6f, %.6f, %.6f\n", model_space_ray.dir.x, model_space_ray.dir.y, model_space_ray.dir.z);
     if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
     {
-        printf("no bound isec\n");
+        //printf("no bound isec\n");
         return false;
     }
 
