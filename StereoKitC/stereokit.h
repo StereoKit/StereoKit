@@ -2036,9 +2036,9 @@ SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
 
   // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
 #if SK_VERSION_PRERELEASE != 0
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview" SK_STR(SK_VERSION_PRERELEASE))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview." SK_STR(SK_VERSION_PRERELEASE)
 #else
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH)
 #endif
 
   // A version in hex looks like: 0xMMMMiiiiPPPPrrrr

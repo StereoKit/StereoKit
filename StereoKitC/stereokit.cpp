@@ -71,7 +71,35 @@ system_info_t sk_system_info() {
 ///////////////////////////////////////////
 
 const char *sk_version_name() {
-	return SK_VERSION;
+	return SK_VERSION " "
+#if defined(SK_OS_WEB)
+		"Web"
+#elif defined(SK_OS_ANDROID)
+		"Android"
+#elif defined(SK_OS_LINUX)
+		"Linux"
+#elif defined(SK_OS_WINDOWS)
+		"Win32"
+#elif defined(SK_OS_WINDOWS_UWP)
+		"UWP"
+#else
+		"MysteryPlatform"
+#endif
+		
+		" "
+		
+#if defined(__x86_64__) || defined(_M_X64)
+		"x64"
+#elif defined(__aarch64__) || defined(_M_ARM64)
+		"ARM64"
+#elif defined(_M_ARM)
+		"ARM"
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+		"x86"
+#else
+		"MysteryArchitecture"
+#endif
+	;
 }
 
 ///////////////////////////////////////////
