@@ -1,13 +1,16 @@
 /*
 Bounding Volume Hierarchy for accelerated ray-triangle intersection testing.
 
-Heavily inspired by Jacco Bikker's excellent series starting with
+Based on existing ray tracing code, but also heavily inspired by 
+Jacco Bikker's excellent BVH series starting with
 https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
 
-Possibile optimizations:
+Possible optimizations:
 - Use surface area heuristic (and binning)
 - Use a custom float3 value to get rid of vec3 usage in boundingbox, 
   so vec3_field() isn't needed anymore
+- SIMD operations for certain computations
+- Multi-threaded construction
 
 Paul Melis, 2022
 */
@@ -317,6 +320,25 @@ mesh_bvh_t::build(const mesh_t mesh)
 {    
     // XXX refuse if num triangles is zero
 
+    // A restriction during BVH construction is that we don't want to touch the
+    // underlying vertex and index arrays in the passed mesh. So we need to keep some local
+    // array of triangle indices and sort that during BVH construction.
+    // This array needs to be kept around after construction, as the BVH leaf nodes
+    // will point into it to list the triangles in each node.
+    //
+    // Also, we need, either explicitly or implicitly, a bounding box
+    // for each triangle during BVH construction. We could pre-compute those triangle 
+    // bboxes and store them in a temporary array. But each bbox would take up 6 floats, 
+    // i.e. 24 bytes. So for a 1M triangle model  the temporary bbox array uses 24MB. 
+    // For typical (smallish) SK meshes this overhead should not be a problem, but for 
+    // large meshes on memory-constrained devices it could be. Plus it would come
+    // on top of the array mentioned above.
+    //
+    // Instead, we leverage the existing mesh collision data, which provides
+    // an array of triangle vertices, to precompute triangle centroids, which
+    // are then used during BVH construction. Whenever a bounding box of a 
+    // group of triangles is needed this is computed on-the-fly.
+
     const mesh_collision_t *collision_data = mesh_get_collision_data(mesh);
     if (collision_data == nullptr)
     {
@@ -351,35 +373,12 @@ mesh_bvh_t::build(const mesh_t mesh)
     }
 #endif
 
-
-    // List of triangle indices, will get reordered during construction
+    // List of triangle indices, which will get reordered during construction
     sorted_triangles = sk_malloc_t(uint32_t, num_triangles);
     for (int i = 0; i < num_triangles; i++)
         sorted_triangles[i] = i;    
 
-    // A restriction during BVH construction is that we don't want to touch the
-    // underlying vertex and index arrays in the mesh. So we need to keep some local
-    // array of triangle indices and sort that during BVH construction.
-    // This array needs to be kept around after construction, as the BVH leaf nodes
-    // will point into it to list the triangles in each node.
-    //
-    // Also, we need, either explicitly or implicitly, a bounding box
-    // for each triangle during BVH construction to partition on a split plane. 
-    // We could pre-compute those triangle bboxes and store them in a temporary array. 
-    // Each bbox would take up 6 floats, i.e. 24 bytes. So for a 1M triangle model 
-    // the temporary bbox array uses 24MB. 
-    // For typical (smallish) SK meshes this overhead should not be a problem, but for 
-    // large meshes on memory-constrained devices it could be. Plus it would come
-    // on top of the array mentioned above.
-    //
-    // The alternative is to duplicate the original mesh->inds array here
-    // and sort that during BVH construction, at the expense of having
-    // to consult mesh->verts[i/j/k].pos each time we need a triangle extent.
-    // Also, we will be manipulating 12 bytes per triangle (assuming 32-bit indices), 
-    // instead of a triangle index of 4 bytes that would look up into the temporary bbox array. 
-    // Using a local index array would use num_triangles*3*4 bytes, 
-    // so 12MB for a 1M triangle mesh. Plus it can serve as the array the BVH leaf
-    // node reference. 
+    // Compute mesh bounding box (could reuse what's in mesh_t, but not sure it's accurate)
 
     boundingbox mesh_bbox;
     bound_triangles(mesh_bbox, sorted_triangles, triangle_vertices, 0, num_triangles-1);
@@ -404,51 +403,35 @@ mesh_bvh_t::build(const mesh_t mesh)
             statistics->split_axis_histogram[i] = 0;
     }
 
-    // A balanced BVH built fully to depth D will have
-    //     2^(D-1)-1    inner nodes
-    // and
-    //     2^(D-1)      leaf nodes
-    //
-    // Divide the total number of triangles to store by acceptable_leaf_size
-    // to get an estimate of the number of leaf nodes needed. Then, set
-    // the maximum depth to a value that will allow that number of
-    // leafs to be reached.
-    //
-    // As the tree in reality will almost always not be nicely balanced, 
-    // the above does not guarantee that there won't be instances in which the
-    // maximum depth is reached and a leaf needs to be created. So we
-    // add more levels just to be sure :)
-    
-    int estimated_num_leafs = (int)(1.0f * num_triangles / acceptable_leaf_size + 0.5f);
-
-#ifdef VERBOSE    
-    printf("... Estimated number of leaf nodes needed = %d\n", estimated_num_leafs);
-#endif   
-
     //acceptable_leaf_size = 2;
-
     the_mesh = mesh;    // XXX debugging only
 
-    // Allocate some necessary arrays 
-    
-    // XXX need to trim this number    
+    // We pre-allocate an array of BVH nodes, enough to
+    // always fit. 
+    // XXX After construction is done, and the actual
+    // number of nodes needed is known we should trim
+    // the array.
+
     nodes = sk_malloc_t(bvh_node_t, num_triangles*2);
 
-    // Build the BVH
-
+    // Bootstrap with a single leaf node holding all triangles
+    
     bvh_node_t& root_node = nodes[0];
     root_node.leaf_first = 0;
     root_node.num_triangles = num_triangles;
     root_node.bbox = mesh_bbox;
     next_node_index = 1;
 
+    // Build the BVH
+
     build_recursive(1, 0, triangle_vertices, triangle_centroids, collision_data);
 
     if (statistics)
     {
         printf("BVH statistics:\n");
+        printf("... %d triangles\n", the_mesh->ind_count/3);
         statistics->print();
-    }    
+    }
 
     // Clean up
 
