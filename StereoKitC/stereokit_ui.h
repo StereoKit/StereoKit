@@ -110,6 +110,10 @@ SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
 
+SK_API button_state_ ui_last_element_hand_used(handed_ hand);
+SK_API button_state_ ui_last_element_active   ();
+SK_API button_state_ ui_last_element_focused  ();
+
 SK_API vec2     ui_area_remaining(); // TODO: remove in v0.4, prefer ui_layout_remaining
 SK_API void     ui_nextline      ();
 SK_API void     ui_sameline      ();

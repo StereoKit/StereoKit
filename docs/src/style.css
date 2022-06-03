@@ -49,9 +49,9 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #EEE;
 
-    width:100%;
+    max-width:950px;
     height:100%;
-    margin:0px;
+    margin: auto;
     padding:0px;
     background-color: #222;
 }

@@ -11,12 +11,12 @@
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="$(SKTest) != 'True'">
+		<!--<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="$(SKTest) != 'True'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="$(SKTest) != 'True'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
+		</ProjectReference>-->
 	</ItemGroup>
 
 	<!-- NuGet package -->

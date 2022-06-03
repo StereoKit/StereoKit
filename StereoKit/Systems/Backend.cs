@@ -146,9 +146,16 @@ namespace StereoKit
 			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
 		}
 
+		/// <summary>When using Direct3D11 for rendering, this contains a
+		/// number of variables that may be useful for doing advanced rendering
+		/// tasks.</summary>
 		public static class D3D11
 		{
+			/// <summary>This is the main `ID3D11Device*` StereoKit uses for
+			/// rendering.</summary>
 			public static IntPtr D3DDevice  => NativeAPI.backend_d3d11_get_d3d_device();
+			/// <summary>This is the main `ID3D11DeviceContext*` StereoKit uses
+			/// for rendering.</summary>
 			public static IntPtr D3DContext => NativeAPI.backend_d3d11_get_d3d_context();
 		}
 	}

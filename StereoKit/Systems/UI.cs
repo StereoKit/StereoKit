@@ -83,6 +83,20 @@ namespace StereoKit
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
 
+		/// <summary>Tells if the hand was involved in the focus or active
+		/// state of the most recent UI element using an id.</summary>
+		/// <param name="hand">Which hand we're checking.</param>
+		/// <returns>A BtnState that indicated the hand was "just active" this
+		/// frame, is currently "active" or if it "just became inactive" this
+		/// frame.</returns>
+		public static BtnState LastElementHandUsed(Handed hand) => NativeAPI.ui_last_element_hand_used(hand);
+		/// <summary>Tells the Active state of the most recent UI element that
+		/// used an id.</summary>
+		public static BtnState LastElementActive => NativeAPI.ui_last_element_active();
+		/// <summary>Tells the Focused state of the most recent UI element that
+		/// used an id.</summary>
+		public static BtnState LastElementFocused => NativeAPI.ui_last_element_focused();
+
 		/// <summary>Tells if the user is currently interacting with a UI
 		/// element! This will be true if the hand has an active or focused UI
 		/// element.</summary>

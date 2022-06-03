@@ -89,9 +89,20 @@ namespace StereoKit
 		public void SetVerts(Vertex[] verts)
 			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
 
+		/// <summary>This marshalls the Mesh's vertex data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
+		/// and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of vertices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public Vertex[] GetVerts()
 		{
 			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(Vertex));
 			Vertex[] result = new Vertex[size];
 			// AHHHHHH
@@ -113,9 +124,20 @@ namespace StereoKit
 		public void SetInds (uint[] inds)
 			=>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
 
+		/// <summary>This marshalls the Mesh's index data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing indices on the
+		/// CPU, and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of indices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public uint[] GetInds()
 		{
 			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(uint));
 			uint[] result = new uint[size];
 			// AHHHHHH

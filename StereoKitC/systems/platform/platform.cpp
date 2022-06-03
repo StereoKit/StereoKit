@@ -57,6 +57,7 @@ bool platform_init() {
 	// Start up the current mode!
 	if (!platform_set_mode(sk_get_settings().display_preference)) {
 		if (!sk_no_flatscreen_fallback && sk_get_settings().display_preference != display_mode_flatscreen) {
+			log_clear_any_fail_reason();
 			log_infof("MixedReality display mode failed, falling back to Flatscreen");
 			if (!platform_set_mode(display_mode_flatscreen))
 				return false;
