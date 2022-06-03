@@ -47,17 +47,13 @@ struct mesh_bvh_t
 
     int  acceptable_leaf_size;
 
-    mesh_t the_mesh;   // XXX debugging only
+    mesh_t the_mesh;
     const mesh_collision_t *collision_data;
 
     bvh_node_t      *nodes;
     uint32_t        next_node_index;
-
     uint32_t        *sorted_triangles;
-
     statistics_t    *statistics;
 };
-
-
 
 } // namespace sk

@@ -1,18 +1,21 @@
 /*
 Bounding Volume Hierarchy for accelerated ray-triangle intersection testing.
 
-Based on existing ray tracing code, but also heavily inspired by 
+Based on my existing ray tracing code, but also heavily inspired by 
 Jacco Bikker's excellent BVH series starting with
 https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
 
 Possible optimizations:
-- Use surface area heuristic (and binning)
+- Use surface area heuristic for determining when to stop
+  partitioning, instead of the fixed max leaf size currently used
+- Add multiple split plane candidates, particularly binned SAH
 - Use a custom float3 value to get rid of vec3 usage in boundingbox, 
   so vec3_field() isn't needed anymore
 - SIMD operations for certain computations
 - Multi-threaded construction
 
-Paul Melis, 2022
+June, 2022
+Paul Melis, SURF (paul.melis@surf.nl)
 */
 #include <cstdlib>
 #include <cstdio>
@@ -26,7 +29,7 @@ Paul Melis, 2022
 #include "../asset_types/mesh.h"
 
 //#define VERBOSE_BUILD
-#define VERBOSE_INTERSECTION
+//#define VERBOSE_INTERSECTION
 
 namespace sk {
 
@@ -186,8 +189,8 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
     // Iterate over the three split dimensions in descending order of
     // bbox size on that dimension. When the triangles are unsplitable
     // (or we can't split in a favorable way) continue to the next dimension.
-    // Create a leaf with all triangles in case none of dimensions is a good
-    // split candidate.
+    // Create a leaf with all triangles in case none of the dimensions is a 
+    // good split candidate.
 
     uint32_t l, r;
     boundingbox left_bbox, right_bbox;
@@ -291,6 +294,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index,
 #endif
 
 #if 0
+    // Save forced leafs to .obj files, for debugging
     char s[256];
     static int next_forced_leaf = 0;
     sprintf(s, "forced_leaf%04d.obj", next_forced_leaf++);
@@ -396,9 +400,7 @@ mesh_bvh_t::build(const mesh_t mesh)
 #endif
 
     mesh_bbox.grow(C_EPSILON);
-
-    //acceptable_leaf_size = 2;
-    the_mesh = mesh;    // XXX debugging only
+    the_mesh = mesh;    
 
     // We pre-allocate an array of BVH nodes, enough to
     // always fit. 
@@ -469,7 +471,7 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
     // Start at root node
     uint32_t current_node_index = 0;
 
-    // Precompute ray value that's quicker to test against the bboxes
+    // Pre-compute a ray value that's quicker to test against the bboxes
     bbox_ray_t bbox_ray(model_space_ray);
 
     while (true)
@@ -576,9 +578,9 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
                     -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / 
                     vec3_dot(model_space_ray.dir, plane.normal);
 
-                if (t_hit > t_nearest_hit)
+                if (t_hit >= t_nearest_hit)
                 {
-                    // Hit cannot be closer than best found so far, no need to check further
+                    // Hit will not be closer than best one found so far, no need to check further
                     continue;
                 }
                 
@@ -657,6 +659,5 @@ mesh_bvh_t::intersect(ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_
         }
     }
 }
-
 
 } // namespace sk

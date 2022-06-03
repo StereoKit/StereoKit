@@ -1,14 +1,13 @@
 #pragma once
 
 #include "../stereokit.h"
-//#include "ray.h"
 
 const float C_EPSILON = 1e-6f;
 const float C_INFINITY = 1e6f;
 
 namespace sk {
 
-// Ray with some precomputed values, for faster bbox intersection queries
+// Ray with some pre-computed values, for faster bbox intersection queries
 struct bbox_ray_t
 {    
     bbox_ray_t(ray_t ray)
