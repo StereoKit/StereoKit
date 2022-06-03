@@ -446,7 +446,7 @@ const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
     if (mesh->discard_data)
         return nullptr;
 
-    mesh->bvh_data = new mesh_bvh_t(1, 16);
+    mesh->bvh_data = new mesh_bvh_t(16);
     mesh->bvh_data->build(mesh);
 
     return mesh->bvh_data;

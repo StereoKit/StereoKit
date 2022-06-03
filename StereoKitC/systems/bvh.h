@@ -4,17 +4,20 @@
 
 namespace sk {
 
+struct mesh_collision_t;
 struct bvh_node_t;
 struct boundingbox;
 
 struct mesh_bvh_t
 {
-    mesh_bvh_t(int max_depth=16, int acc_leaf_size=16);
+    mesh_bvh_t(int acc_leaf_size=16);
     ~mesh_bvh_t();
 
     // Build a BVH for the triangles in the mesh
     void build(const mesh_t mesh);
-    void build_recursive(int depth, int node_index, const boundingbox* triangle_bboxes);
+    void build_recursive(int depth, int node_index, 
+        const vec3* triangle_vertices, const vec3* triangle_centroids, 
+        const mesh_collision_t* collision_data);
 
     struct statistics_t
     {
@@ -28,15 +31,14 @@ struct mesh_bvh_t
         void print();
     };
 
-    int  max_depth;
     int  acceptable_leaf_size;
 
-    mesh_t          the_mesh;
+    mesh_t          the_mesh;   // XXX debugging only
 
     bvh_node_t      *nodes;
     uint32_t        next_node_index;
 
-    uint32_t        *triangle_indices;
+    uint32_t        *sorted_triangles;
 
     statistics_t    *statistics;
 };
