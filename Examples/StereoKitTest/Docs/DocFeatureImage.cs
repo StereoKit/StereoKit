@@ -2,13 +2,9 @@
 
 class DocFeatureImage : ITest
 {
-	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
-	//Pose   clipboardPose = new Pose(.39f, -.2f, -.55f, Quat.LookDir(-1, .4f, 1));
 	Pose   clipboardPose = new Pose(.39f, -0.05f, -.55f, Quat.LookDir(-1, .4f, 1));
-	bool   clipToggle;
-	float  clipSlider = 0.75f;
-	int    clipOption = 1;
+	float  clipSlider    = 0.75f;
 
 	Model helmet     = Model.FromFile("DamagedHelmet.gltf");
 	Pose  helmetPose = new Pose(.04f,-0.1f,-.55f, Quat.LookDir(1,.5f,1));
@@ -50,9 +46,6 @@ class DocFeatureImage : ITest
 		
 		helmet.Draw(helmetPose.ToMatrix(.1f));
 
-		//UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
-		//clipboard.Draw(Matrix.Identity, new Color(.75f,.75f,.75f,1));
-		//UI.LayoutArea(new Vec3(13, 15, 0) * U.cm, new Vec2(26, 30) * U.cm);
 		UI.WindowBegin(" Welcome!", ref clipboardPose, V.XY(.26f,0));
 		UI.Image(logoSprite, new Vec2(24, 0) * U.cm);
 
@@ -73,7 +66,6 @@ class DocFeatureImage : ITest
 		UI.PanelEnd();
 
 		UI.WindowEnd();
-		//UI.HandleEnd();
 
 		Tests.Screenshot("FeatureImage.jpg", 1, 830, 480, 90, screenshotFrom, screenshotAt);
 	}
