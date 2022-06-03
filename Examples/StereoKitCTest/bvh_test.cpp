@@ -96,7 +96,7 @@ int main()
 
     gettimeofday(&t1, NULL);
     double tdiff = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec)/1000000.0f;
-    printf("intersection test took %.6fs\n", tdiff);
+    printf("intersection test (including BVH build) took %.6fs\n", tdiff);
     
     sk_shutdown();
     return 0;
