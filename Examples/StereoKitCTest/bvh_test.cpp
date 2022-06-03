@@ -19,19 +19,26 @@ int main()
     printf("Loading model\n");
 
     model_t model;
-    /*
-    //model = model_create_file("DamagedHelmet.gltf");
-    model = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
-    //model = model_create_file("t.glb");
-    */
-
-    //model = model_create_file("/home/melis/models/angel/angel.obj");
-    model = model_create_file("/home/melis/models/lucy/lucy2.glb");
-
-    mesh_t mesh = model_get_mesh(model, 0);
-    printf("mesh[0] %d vertices, %d triangles\n", mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
     
+    //model = model_create_file("DamagedHelmet.gltf");
+    //model = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
+    model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
+    //model = model_create_file("t.glb");
+    //model = model_create_file("/home/melis/models/angel/angel.obj");
+    //model = model_create_file("/home/melis/models/lucy/lucy2.glb");
 
+    mesh_t mesh;
+    
+    printf("%d subsets\n", model_subset_count(model));
+    for (int i = 0; i < model_subset_count(model); i++)        
+    {
+        mesh = model_get_mesh(model, i);
+        printf("mesh[%d] %d vertices, %d triangles\n", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
+    }
+
+    printf("Building BVH for subset 0 only!\n");
+    mesh = model_get_mesh(model, 0);
+    
     ray_t ray{
         vec3{-10,-10-10}, vec3{1,1,1}
     };
@@ -54,3 +61,4 @@ int main()
     sk_shutdown();
     return 0;
 }
+

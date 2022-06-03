@@ -1,3 +1,15 @@
+/*
+Bounding Volume Hierarchy for accelerated ray-triangle intersection testing.
+
+Heavily inspired by Jacco Bikker's excellent series starting with
+https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+
+Possibile optimizations:
+- Use a custom float3 value to get rid of vec3 usage in boundingbox, 
+  so vec3_field() isn't needed anymore
+
+Paul Melis, 2022
+*/
 #include <cstdlib>
 #include <cstdio>
 #include <string.h>
@@ -13,37 +25,26 @@
 
 namespace sk {
 
-//
 // One node in the Bounding Volume Hierarchy
-//
 
 struct bvh_node_t
 {
-    // Boolean determining if this node is a leaf node or an inner node
-    short is_leaf;
-
     // The bounding box for this node
     boundingbox bbox;
+    
+    // If num_triangles == 0 then this is an inner node, 
+    // otherwise a leaf node of num_triangles triangles.
+    uint32_t    num_triangles;
 
-    // Depending on the is_leaf flag access .leaf or .inner
-    union
-    {
-        // Leaf node
-        struct
-        {
-            uint32_t    first_triangle;
-            uint32_t    num_triangles;
-        }
-        leaf;
+    // If an inner node this is the index of the left child (with the right child
+    // at leaf_first+1). If a leaf node this is the index in mesh_bvh_t::triangle_indices 
+    // of the first triangle.
+    uint32_t    leaf_first;
 
-        // Inner node
-        struct
-        {            
-            uint32_t left_child, right_child;
-        }
-        inner;
-    };
+    bool is_leaf() const { return num_triangles > 0; }
 };
+
+// BVH class
 
 mesh_bvh_t::mesh_bvh_t(int max_depth, int acc_leaf_size)
 {
@@ -61,7 +62,8 @@ mesh_bvh_t::~mesh_bvh_t()
 }
 
 // Determine the bounding box that encloses the given triangles,
-// which are specified as a sub-sequence, i.e. triangle_indices[first:first+count[
+// which are specified as a sub-sequence of triangle_indices, 
+// i.e. triangle_indices[first..first+count-1]
 static void
 bound_triangles(boundingbox& bbox, const uint32_t *triangle_indices, const boundingbox *triangle_bboxes, int first, int count)
 {
@@ -83,6 +85,7 @@ bound_triangles(boundingbox& bbox, const uint32_t *triangle_indices, const bound
     bbox.grow(C_EPSILON);
 }
 
+// Convenience method for indexing a vec3 by coordinate index
 inline float
 vec3_field(vec3 v, int index)
 {
@@ -115,28 +118,28 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
 
 #ifdef VERBOSE
     printf("build_recursive(): depth = %d, current_node_index = %d\n", depth, current_node_index);
-    printf("... first_triangle = %d, num_triangles = %d\n", node.leaf.first_triangle, node.leaf.num_triangles);
-    //for (i = node.leaf.first_triangle; i < node.leaf.first_triangle+node.leaf.num_triangles; i++)
+    printf("... first_triangle = %d, num_triangles = %d\n", node.leaf_first, node.num_triangles);
+    //for (i = node.leaf.first_triangle; i < node.leaf_first+node.num_triangles; i++)
         //printf("[%d] %d  ", i, triangle_indices[i]);
     //printf("\n");
 #endif
 
-    if (depth == max_depth || node.leaf.num_triangles <= acceptable_leaf_size)
+    if (depth == max_depth || node.num_triangles <= acceptable_leaf_size)
     {
         // Will not subdivide any further, node will stay a leaf node
 
 #ifdef VERBOSE
-        if (node.leaf.num_triangles > acceptable_leaf_size)
-            printf("[%d] Maximum depth reached, forced to create a leaf of %d triangles\n", depth, node.leaf.num_triangles);
+        if (node.num_triangles > acceptable_leaf_size)
+            printf("[%d] Maximum depth reached, forced to create a leaf of %d triangles\n", depth, node.num_triangles);
         else
-            printf("[%d] Creating a leaf node of %d triangles\n", depth, node.leaf.num_triangles);
+            printf("[%d] Creating a leaf node of %d triangles\n", depth, node.num_triangles);
 #endif
         if (statistics)
         {
             statistics->num_leafs++;
-            if (node.leaf.num_triangles > acceptable_leaf_size)
+            if (node.num_triangles > acceptable_leaf_size)
                 statistics->num_forced_leafs++;
-            statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.leaf.num_triangles);
+            statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.num_triangles);
         }
 
         return;
@@ -201,8 +204,8 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
         printf("[%d] Splitting on axis %d, value %.6f\n", depth, split_axis, split_value);
 #endif
 
-        l = node.leaf.first_triangle;
-        r = l + node.leaf.num_triangles - 1;
+        l = node.leaf_first;
+        r = l + node.num_triangles - 1;
         while (l <= r)
         {            
             if (vec3_field(triangle_bboxes[triangle_indices[l]].center(), split_axis) < split_value)
@@ -211,8 +214,8 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
                 std::swap(triangle_indices[l], triangle_indices[r--]);
         }        
 
-        num_triangles_left = l - node.leaf.first_triangle;
-        num_triangles_right = node.leaf.num_triangles - num_triangles_left;
+        num_triangles_left = l - node.leaf_first;
+        num_triangles_right = node.num_triangles - num_triangles_left;
 
 #ifdef VERBOSE
         printf("[%d] %d left, %d right\n", depth, num_triangles_left, num_triangles_right);
@@ -234,7 +237,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
 
         // Triangles are now split into two groups, determine bboxes for each.    
 
-        bound_triangles(left_bbox, triangle_indices, triangle_bboxes, node.leaf.first_triangle, num_triangles_left);
+        bound_triangles(left_bbox, triangle_indices, triangle_bboxes, node.leaf_first, num_triangles_left);
 
 #ifdef VERBOSE
         printf("[%d] left bbox:  %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
@@ -255,21 +258,17 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
         const uint32_t left_child_index = next_node_index++;
         const uint32_t right_child_index = next_node_index++;
 
-        node.is_leaf = 0;
-        node.inner.left_child = left_child_index;
-        node.inner.right_child = right_child_index;
+        node.leaf_first = left_child_index;
 
         bvh_node_t& left_node = nodes[left_child_index];
-        left_node.is_leaf = 1;
         left_node.bbox = left_bbox;
-        left_node.leaf.first_triangle = node.leaf.first_triangle;
-        left_node.leaf.num_triangles = num_triangles_left;
+        left_node.leaf_first = node.leaf_first;
+        left_node.num_triangles = num_triangles_left;
 
         bvh_node_t& right_node = nodes[right_child_index];
-        right_node.is_leaf = 1;
         right_node.bbox = right_bbox;
-        right_node.leaf.first_triangle = l;
-        right_node.leaf.num_triangles = num_triangles_right;
+        right_node.leaf_first = l;
+        right_node.num_triangles = num_triangles_right;
 
         build_recursive(depth+1, left_child_index, triangle_bboxes);
         build_recursive(depth+1, right_child_index, triangle_bboxes);
@@ -287,7 +286,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
 
 #ifdef VERBOSE
     // XXX warn
-    printf("[%d] Split dimensions exhausted, creating a leaf of %d triangles\n", depth, node.leaf.num_triangles);
+    printf("[%d] Split dimensions exhausted, creating a leaf of %d triangles\n", depth, node.num_triangles);
 #endif
 
 #if 0
@@ -300,7 +299,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
     for (i = 0; i < the_mesh->vert_count; i++)
         fprintf(f, "v %g %g %g\n", the_mesh->verts[i].pos.x, the_mesh->verts[i].pos.y, the_mesh->verts[i].pos.z);
     // Note: 0-based indices converted to 1-based
-    for (t = node.leaf.first_triangle; t < node.leaf.first_triangle+node.leaf.num_triangles; t++)
+    for (t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
         fprintf(f, "f %d %d %d\n", 1+the_mesh->inds[3*t+0], 1+the_mesh->inds[3*t+1], 1+the_mesh->inds[3*t+2]);
     fclose(f);
 #endif
@@ -309,7 +308,7 @@ mesh_bvh_t::build_recursive(int depth, int current_node_index, const boundingbox
     {
         statistics->num_leafs++;
         statistics->num_forced_leafs++;
-        statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.leaf.num_triangles);
+        statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.num_triangles);
     }
 }
 
@@ -320,6 +319,7 @@ void
 mesh_bvh_t::build(const mesh_t mesh)
 {
     // XXX check that CPU mesh data is available
+    // XXX refuse if num triangles is zero
 
     boundingbox mesh_bbox;
     int estimated_num_leafs;
@@ -437,9 +437,8 @@ mesh_bvh_t::build(const mesh_t mesh)
     // Build the BVH
 
     bvh_node_t& root_node = nodes[0];
-    root_node.is_leaf = 1;
-    root_node.leaf.first_triangle = 0;
-    root_node.leaf.num_triangles = num_triangles;
+    root_node.leaf_first = 0;
+    root_node.num_triangles = num_triangles;
     root_node.bbox = mesh_bbox;
 
     next_node_index = 1;
@@ -459,7 +458,7 @@ mesh_bvh_t::build(const mesh_t mesh)
 
 void
 mesh_bvh_t::statistics_t::print()
-{
+{    
     printf("... %d leaf nodes, %d inner nodes\n",
         num_leafs, num_inner_nodes);
     printf("... maximum leaf size %d\n", max_leaf_size);
