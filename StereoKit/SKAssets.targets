@@ -8,7 +8,8 @@
 	</PropertyGroup>
 	
 	<ItemGroup Condition="'$(SKCopyAssets)' == 'True'">
-		<Content Include="$(SKAssetFolder)/**">
+		<None Remove="$(SKAssetFolder)/**"/>
+		<Content Condition="'$(TargetFrameworkIdentifier)'!='MonoAndroid'" Include="$(SKAssetFolder)/**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>$(SKAssetDestination)/%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</Content>
