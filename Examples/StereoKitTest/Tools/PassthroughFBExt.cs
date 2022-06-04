@@ -129,8 +129,11 @@ namespace StereoKit.Framework
 			Success = 0,
 		}
 
+#pragma warning disable 0169 // handle is not "used", but required for interop
 		struct XrPassthroughFB      { ulong handle; }
 		struct XrPassthroughLayerFB { ulong handle; }
+#pragma warning restore 0169
+		
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB
 		{

@@ -5,6 +5,8 @@
 		<Platforms>x64;ARM64;ARM;Any CPU</Platforms>
 		<OutputPath>..\bin\</OutputPath>
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+
+		<NoWarn>1701;1702;1573</NoWarn>
 	</PropertyGroup>
 
 	<!-- References -->
@@ -32,7 +34,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources >
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

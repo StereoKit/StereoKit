@@ -186,6 +186,6 @@ namespace StereoKit
 		/// </summary>
 		/// <returns>A string that looks like "[x, y, z, w]"</returns>
 		public override string ToString()
-			=> string.Format("[{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}]", x, y, z, w);
+			=> string.Format("[{0:0.##}, {1:0.##}, {2:0.##}, {3:0.##}]", x, y, z, w);
 	}
 }

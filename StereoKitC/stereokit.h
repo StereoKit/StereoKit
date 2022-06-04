@@ -1602,6 +1602,8 @@ typedef struct mouse_t {
 /*A collection of system key codes, representing keyboard
   characters and mouse buttons. Based on VK codes.*/
 typedef enum key_ {
+	/*Doesn't represent a key, generally means this item has not been set to
+	  any particular value!*/
 	key_none      = 0x00,
 	/*Left mouse button.*/
 	key_mouse_left = 0x01,

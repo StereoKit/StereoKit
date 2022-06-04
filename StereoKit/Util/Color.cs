@@ -26,6 +26,24 @@ namespace StereoKit
 		public static readonly Color32 Black = new Color32(0, 0, 0, 255);
 		/// <summary>Pure transparent black! Same as (0,0,0,0).</summary>
 		public static readonly Color32 BlackTransparent = new Color32(0, 0, 0, 0);
+
+		/// <summary>Create a color from an integer based hex value! This can
+		/// make it easier to copy over colors from the web. This isn't a
+		/// string function though, so you'll need to fill it out the whole
+		/// way. Ex: `Color.Hex(0x0000FFFF)` would be RGBA(0,0,255,255).
+		/// </summary>
+		/// <param name="hexValue">An integer representing RGBA hex values!
+		/// Like: `0x0000FFFF`.</param>
+		/// <returns>A 32 bit Color32 value.</returns>
+		public static Color32 Hex(uint hexValue) => new Color32(
+			(byte)(hexValue >> 24), (byte)((hexValue >> 16) & 0x000000FF), (byte)((hexValue >> 8) & 0x000000FF), (byte)(hexValue & 0x000000FF));
+
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the color in debug mode. Looks like "[r, g, b, a]"
+		/// </summary>
+		/// <returns>A string that looks like "[r, g, b, a]"</returns>
+		public override string ToString()
+			=> string.Format("[{0}, {1}, {2}, {3}]", r, g, b, a);
 	}
 
 	/// <summary>A color value stored as 4 floats with values that are
@@ -173,6 +191,13 @@ namespace StereoKit
 		public static Color LAB(Vec3 lab, float opacity = 1)
 			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
 
+		/// <summary>Create a color from an integer based hex value! This can
+		/// make it easier to copy over colors from the web. This isn't a
+		/// string function though, so you'll need to fill it out the whole
+		/// way. Ex: `Color.Hex(0x0000FFFF)` would be RGBA(0,0,1,1).</summary>
+		/// <param name="hexValue">An integer representing RGBA hex values!
+		/// Like: `0x0000FFFF`.</param>
+		/// <returns>A 128 bit Color value.</returns>
 		public static Color Hex(uint hexValue) => new Color(
 			(hexValue >> 24)/255.0f, ((hexValue >> 16) & 0x000000FF)/255.0f, ((hexValue >> 8) & 0x000000FF)/255.0f, (hexValue & 0x000000FF)/255.0f);
 
@@ -195,5 +220,12 @@ namespace StereoKit
 			=> new Color(a.r * b, a.g * b, a.b * b, a.a * b);
 		public static Color operator *(Color a, Color b)
 			=> new Color(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a);
+
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the color in debug mode. Looks like "[r, g, b, a]"
+		/// </summary>
+		/// <returns>A string that looks like "[r, g, b, a]"</returns>
+		public override string ToString()
+			=> string.Format("[{0:0.##}, {1:0.##}, {2:0.##}, {3:0.##}]", r, g, b, a);
 	}
 }

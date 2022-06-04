@@ -33,7 +33,13 @@
 		/// complete.</param>
 		public static void BlockForPriority(int priority) => NativeAPI.assets_block_for_priority(priority);
 
+		/// <summary>A list of supported model format extensions. This pairs
+		/// pretty well with `Platform.FilePicker` when attempting to load a
+		/// `Model`!</summary>
 		public static readonly string[] ModelFormats = { ".gltf", ".glb", ".obj", ".stl", ".ply" };
+		/// <summary>A list of supported texture format extensions. This pairs
+		/// pretty well with `Platform.FilePicker` when attempting to load a
+		/// `Tex`!</summary>
 		public static readonly string[] TextureFormats = { ".jpg", ".png", ".hdr", ".tga", ".bmp", ".psd", ".pic", ".qoi", ".gif" };
 	}
 }

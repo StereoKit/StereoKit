@@ -189,6 +189,15 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
 
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+		{
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
+			modelSpaceAt = intersection.position;
+			return result;
+		}
+		
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should
@@ -199,15 +208,6 @@ namespace StereoKit
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
 			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
-
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
-		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
-		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
-			modelSpaceAt = intersection.position;
-			return result;
-		}
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value

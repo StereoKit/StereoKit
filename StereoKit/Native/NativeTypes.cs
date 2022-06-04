@@ -519,16 +519,33 @@ namespace StereoKit
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>A maximum enum value to allow for iterating through enum
+		/// values.</summary>
 		Max,
 	}
 
+	/// <summary>Theme color categories to pair with `UI.SetThemeColor`.
+	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>This is the main accent color used by window headers,
+		/// separators, etc.</summary>
 		Primary = 0,
+		/// <summary>This is a background sort of color that should generally
+		/// be dark. Used by window bodies and backgrounds of certain elements.
+		/// </summary>
 		Background,
+		/// <summary>A normal UI element color, for elements like buttons and
+		/// sliders.</summary>
 		Common,
+		/// <summary>Not really used anywhere at the moment, maybe for the
+		/// UI.Panel.</summary>
 		Complement,
+		/// <summary>Text color! This should generally be really bright, and at
+		/// the very least contrast-ey.</summary>
 		Text,
+		/// <summary>A maximum enum value to allow for iterating through enum
+		/// values.</summary>
 		Max,
 	}
 

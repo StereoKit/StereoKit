@@ -30,14 +30,23 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SphericalHarmonics
 	{
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient1;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient2;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient3;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient4;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient5;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient6;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient7;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient8;
+		/// <summary>A set of RGB coefficients</summary>
 		public Vec3 coefficient9;
 
 		/// <summary>Returns the dominant direction of the light represented

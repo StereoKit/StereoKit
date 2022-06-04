@@ -33,7 +33,7 @@ namespace StereoKit
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
 
-		/// <summary>Human-readable version name embedded in the StereoKitC 
+		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
 		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
 		/// <summary>An integer version Id! This is defined using a hex value
@@ -97,6 +97,12 @@ namespace StereoKit
 			}
 		}
 
+		/// <summary>Android only. This is for telling StereoKit about the
+		/// active Android window surface. In particular, Xamarin's
+		/// ISurfaceHolderCallback2 gets SurfaceCreated and SurfaceDestroyed
+		/// events, and these events should feed into this function.</summary>
+		/// <param name="window">This is an ISurfaceHolder.Surface.Handle or
+		/// equivalent pointer.</param>
 		public static void SetWindow(IntPtr window)
 			=> NativeAPI.sk_set_window_xam(window);
 
@@ -193,11 +199,41 @@ namespace StereoKit
 			NativeAPI.sk_run(_stepAction, _shutdownCallback);
 		}
 
-		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
-		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
-		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
-		public static void RemoveStepper<T>() where T:IStepper => _steppers.Remove<T>();
 
+		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
+		/// <summary>This creates and registers an instance the `IStepper` type
+		/// provided as the generic parameter. SK will hold onto it, Initialize
+		/// it, Step it every frame, and call Shutdown when the application
+		/// ends. This is generally safe to do before SK.Initialize is called,
+		/// the constructor is called right away, and Initialize is called
+		/// right after SK.Initialize, or right away if SK is already
+		/// initialized.</summary>
+		/// <param name="type">Any object that implements IStepper, and has a
+		/// constructor with zero parameters.</param>
+		/// <returns>Just for convenience, this returns the instance that was
+		/// just added.</returns>
+		public static object AddStepper(Type type) => _steppers.Add(type);
+		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
+		/// <summary>This removes a specific IStepper from SK's IStepper list.
+		/// This will call the IStepper's Shutdown method before returning.
+		/// </summary>
+		/// <param name="stepper">The specific IStepper instance to remove.
+		/// </param>
+		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
+		/// <summary>This removes all IStepper instances that are assignable to
+		/// the generic type specified. This will call the IStepper's Shutdown
+		/// method on each removed instance before returning.</summary>
+		/// <param name="type">Any type.</param>
+		public static void RemoveStepper(Type type) => _steppers.Remove(type);
+		public static void RemoveStepper<T>() => _steppers.Remove<T>();
+
+		/// <summary>This will queue up some code to be run on StereoKit's main
+		/// thread! Immediately after StereoKit's Step, all callbacks
+		/// registered here will execute, and then removed from the list.
+		/// </summary>
+		/// <param name="action">Some code to run! This Action will persist in
+		/// a list until after Step, at which point it is removed and dropped.
+		/// </param>
 		public static void ExecuteOnMain(Action action) => _mainThreadInvoke.Add(action);
 	}
 }
