@@ -18,13 +18,12 @@ void *sk_malloc(size_t bytes) {
 
 ///////////////////////////////////////////
 
-void *sk_malloc_zero(size_t bytes) {
-	void *result = malloc(bytes);
+void *sk_calloc(size_t bytes) {
+	void *result = calloc(bytes, 1);
 	if (result == nullptr && bytes > 0) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
-	memset(result, 0, bytes);
 	return result;
 }
 
