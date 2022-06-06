@@ -17,9 +17,9 @@ that data around.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|IntPtr data|A pointer to a chunk of memory containing color              data! Should be  width*height*size_of_texture_format bytes large.              Color data should definitely match the format provided when              constructing the texture!|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|IntPtr data|A pointer to a chunk of memory containing color             data! Should be  width*height*size_of_texture_format bytes large.             Color data should definitely match the format provided when              constructing the texture!|
 
 <div class='signature' markdown='1'>
 ```csharp
@@ -37,16 +37,16 @@ Tex to avoid this.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|Color32[]& data|An array of 32 bit colors, should be a length              of `width*height`.|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|Color32[]& data|An array of 32 bit colors, should be a length             of `width*height`.|
 
 <div class='signature' markdown='1'>
 ```csharp
 void SetColors(int width, int height, Color[]& data)
 ```
 Set the texture's pixels using a color array! This
-function sould only be called on textures with a format of Rgba128.
+function should only be called on textures with a format of Rgba128.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
@@ -56,16 +56,16 @@ TexType.ImageNomips when creating the Tex to avoid this.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|Color[]& data|An array of 128 bit colors, should be a length              of `width*height`.|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|Color[]& data|An array of 128 bit colors, should be a length             of `width*height`.|
 
 <div class='signature' markdown='1'>
 ```csharp
 void SetColors(int width, int height, Byte[]& data)
 ```
 Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R8.
+function should only be called on textures with a format of R8.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
@@ -75,16 +75,16 @@ TexType.ImageNomips when creating the Tex to avoid this.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|Byte[]& data|An array of 8 bit values, should be a length              of `width*height`.|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|Byte[]& data|An array of 8 bit values, should be a length             of `width*height`.|
 
 <div class='signature' markdown='1'>
 ```csharp
 void SetColors(int width, int height, UInt16[]& data)
 ```
 Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R16.
+function should only be called on textures with a format of R16.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
@@ -94,16 +94,16 @@ TexType.ImageNomips when creating the Tex to avoid this.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|UInt16[]& data|An array of 16 bit values, should be a length              of `width*height`.|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|UInt16[]& data|An array of 16 bit values, should be a length             of `width*height`.|
 
 <div class='signature' markdown='1'>
 ```csharp
 void SetColors(int width, int height, Single[]& data)
 ```
 Set the texture's pixels using a scalar array! This
-function sould only be called on textures with a format of R32.
+function should only be called on textures with a format of R32.
 You can call this as many times as you'd like, even with different
 widths and heights. Calling this multiple times will mark it as
 dynamic on the graphics card. Calling this function can also
@@ -113,9 +113,9 @@ TexType.ImageNomips when creating the Tex to avoid this.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|Single[]& data|An array of 32 bit values, should be a length              of `width*height`.|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|Single[]& data|An array of 32 bit values, should be a length             of `width*height`.|
 
 
 

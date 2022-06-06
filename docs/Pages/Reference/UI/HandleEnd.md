@@ -1,7 +1,7 @@
 ---
 layout: default
 title: UI.HandleEnd
-description: Finishes a handle! Must be called after UI.HandleBegin() and all elements have been drawn.
+description: Finishes a handle! Must be called after UI.HandleBegin() and all elements have been drawn. Pops the pose transform pushed by UI.HandleBegin() from the hierarchy stack.
 ---
 # [UI]({{site.url}}/Pages/Reference/UI.html).HandleEnd
 
@@ -10,7 +10,8 @@ description: Finishes a handle! Must be called after UI.HandleBegin() and all el
 static void HandleEnd()
 ```
 Finishes a handle! Must be called after UI.HandleBegin()
-and all elements have been drawn.
+and all elements have been drawn. Pops the pose transform pushed
+by UI.HandleBegin() from the hierarchy stack.
 </div>
 
 

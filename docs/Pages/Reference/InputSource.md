@@ -8,9 +8,6 @@ description: What type of device is the source of the pointer? This is a bit-fla
 What type of device is the source of the pointer? This is a
 bit-flag that can contain some input source family information.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -24,5 +21,3 @@ bit-flag that can contain some input source family information.
 |Hand|Matches with any hand input source.|
 |HandLeft|Matches with left hand input sources.|
 |HandRight|Matches with right hand input sources.|
-
-

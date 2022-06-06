@@ -8,9 +8,6 @@ description: Here's where hands get crazy! Technical terms, and watch out for th
 Here's where hands get crazy! Technical terms, and watch out for
 the thumbs!
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -20,8 +17,6 @@ the thumbs!
 |KnuckleMinor|Joint 3. The joints right below the fingertip!|
 |Root|Joint 0. This is at the base of the hand, right above the wrist. For the thumb, Root and KnuckleMajor have the same value.|
 |Tip|Joint 4. The end/tip of each finger!|
-
-
 
 ## Examples
 

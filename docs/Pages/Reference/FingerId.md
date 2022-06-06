@@ -7,9 +7,6 @@ description: Index values for each finger! From 0-4, from thumb to little finger
 
 Index values for each finger! From 0-4, from thumb to little finger.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -19,8 +16,6 @@ Index values for each finger! From 0-4, from thumb to little finger.
 |Middle|Finger 2, next to the index finger.|
 |Ring|Finger 3! What does one do with this finger? I guess... wear rings on it?|
 |Thumb|Finger 0.|
-
-
 
 ## Examples
 

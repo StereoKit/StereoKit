@@ -22,7 +22,6 @@ order to execute a render command. So if you need speed, and only
 have a single mesh with a precalculated transform matrix, it can be
 faster to render a Mesh instead of a Model!
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -32,12 +31,11 @@ faster to render a Mesh instead of a Model!
 |[AnimMode]({{site.url}}/Pages/Reference/AnimMode.html) [AnimMode]({{site.url}}/Pages/Reference/Model/AnimMode.html)|The playback mode of the active animation.|
 |[ModelAnimCollection]({{site.url}}/Pages/Reference/ModelAnimCollection.html) [Anims]({{site.url}}/Pages/Reference/Model/Anims.html)|An enumerable collection of animations attached to this Model. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
 |float [AnimTime]({{site.url}}/Pages/Reference/Model/AnimTime.html)|This is the current time of the active animation in seconds, from the start of the animation. If no animation is active, this will be zero. This will always be a value between zero and the active animation's `Duration`. For a percentage of completion, see `AnimCompletion` instead.|
-|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally cacluated from the mesh bounds, you can also override this to suit your needs.|
-|[ModelNodeCollection]({{site.url}}/Pages/Reference/ModelNodeCollection.html) [Nodes]({{site.url}}/Pages/Reference/Model/Nodes.html)|This is an enumerable collection of all the nodes in this Model, ordered non-heirarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
+|[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Model/Bounds.html)|This is a bounding box that encapsulates the Model and all its subsets! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally calculated from the mesh bounds, you can also override this to suit your needs.|
+|[ModelNodeCollection]({{site.url}}/Pages/Reference/ModelNodeCollection.html) [Nodes]({{site.url}}/Pages/Reference/Model/Nodes.html)|This is an enumerable collection of all the nodes in this Model, ordered non-hierarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
 |[ModelNode]({{site.url}}/Pages/Reference/ModelNode.html) [RootNode]({{site.url}}/Pages/Reference/Model/RootNode.html)|Returns the first root node in the Model's hierarchy. There may be additional root nodes, and these will be Siblings of this ModelNode. If there are no nodes present on the Model, this will be null.|
 |int [SubsetCount]({{site.url}}/Pages/Reference/Model/SubsetCount.html)|The number of mesh subsets attached to this model.|
-|[ModelVisualCollection]({{site.url}}/Pages/Reference/ModelVisualCollection.html) [Visuals]({{site.url}}/Pages/Reference/Model/Visuals.html)|This is an enumerable collection of all the nodes with Mesh/Material data in this Model, ordered non-heirarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
-
+|[ModelVisualCollection]({{site.url}}/Pages/Reference/ModelVisualCollection.html) [Visuals]({{site.url}}/Pages/Reference/Model/Visuals.html)|This is an enumerable collection of all the nodes with Mesh/Material data in this Model, ordered non-hierarchically by when they were added. You can do Linq stuff with it, foreach it, or just treat it like a List or array!|
 
 ## Instance Methods
 
@@ -63,8 +61,6 @@ faster to render a Mesh instead of a Model!
 |[SetTransform]({{site.url}}/Pages/Reference/Model/SetTransform.html)|Changes the transform for the subset to a new one! This is in Model space, so it's relative to the origin of the model.|
 |[StepAnim]({{site.url}}/Pages/Reference/Model/StepAnim.html)|Calling Draw will automatically step the Model's animation, but if you don't draw the Model, or need access to the animated nodes before drawing, then you can step the animation early manually via this method. Animation will only ever be stepped once per frame, so it's okay to call this multiple times, or in addition to Draw.|
 
-
-
 ## Static Methods
 
 |  |  |
@@ -73,7 +69,6 @@ faster to render a Mesh instead of a Model!
 |[FromFile]({{site.url}}/Pages/Reference/Model/FromFile.html)|Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file.|
 |[FromMemory]({{site.url}}/Pages/Reference/Model/FromMemory.html)|Loads a list of mesh and material subsets from a .obj, .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note that this function won't work well on files that reference other files, such as .gltf files with references in them.|
 |[FromMesh]({{site.url}}/Pages/Reference/Model/FromMesh.html)|Creates a single mesh subset Model using the indicated Mesh and Material! An id will be automatically generated for this asset.|
-
 
 ## Examples
 
@@ -145,6 +140,24 @@ public void Step() {
 }
 ```
 
+### Counting the Vertices and Triangles in a Model
+
+Model.Visuals are always guaranteed to have a Mesh, so no need to
+null check there, and VertCount and IndCount are available even if
+Mesh.KeepData is false!
+```csharp
+int vertCount = 0;
+int triCount  = 0;
+
+foreach (ModelNode node in model.Visuals)
+{
+	Mesh mesh = node.Mesh;
+	vertCount += mesh.VertCount;
+	triCount  += mesh.IndCount / 3;
+}
+Log.Info($"Model stats: {vertCount} vertices, {triCount} triangles");
+```
+
 ### Assembling a Model
 While normally you'll load Models from file, you can also assemble
 them yourself procedurally! This example shows assembling a simple
@@ -184,14 +197,31 @@ foreach (ModelNode node in model.Visuals)
 ```
 
 ### Tagged Nodes
-You can search through Visuals and Nodes
+You can search through Visuals and Nodes for nodes with some sort
+of tag in their names. Since these names are from your modeling
+software, this can allow for some level of designer configuration
+that can be specific to your project.
 ```csharp
 var nodes = model.Visuals
-	.Where(n => n.Name.StartsWith("[Wire]"));
-foreach (var node in nodes)
+	.Where(n => n.Name.Contains("[Wire]"));
+foreach (ModelNode node in nodes)
 {
 	node.Material = node.Material.Copy();
 	node.Material.Wireframe = true;
+}
+```
+
+### Collision Tagged Nodes
+One particularly practical example of tagging your ModelNode names
+would be to set up collision information for your Model. If, for
+example, you have a low resolution mesh designed specifically for
+fast collision detection, you can tag your non-solid nodes as
+"[Intangible]", and your collider nodes as "[Invisible]":
+```csharp
+foreach (ModelNode node in model.Nodes)
+{
+	node.Solid   = node.Name.Contains("[Intangible]") == false;
+	node.Visible = node.Name.Contains("[Invisible]")  == false;
 }
 ```
 

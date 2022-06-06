@@ -8,9 +8,6 @@ description: A shorthand class with unit multipliers. Helps make code a little m
 A shorthand class with unit multipliers. Helps make code a
 little more terse on occasions!.
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
@@ -19,5 +16,3 @@ little more terse on occasions!.
 |float [km]({{site.url}}/Pages/Reference/U/km.html)|Converts meters to kilometers. There are 1000m in 1km, so this just multiplies by 1000.|
 |float [m]({{site.url}}/Pages/Reference/U/m.html)|StereoKit's default unit is meters, but sometimes it's nice to be explicit!|
 |float [mm]({{site.url}}/Pages/Reference/U/mm.html)|Converts millimeters to meters. There are 1000mm in 1m. In StereoKit 1 unit is 1 meter, so `250 * Units.mm2m == 0.25`, 250 millimeters is .25 meters/units.|
-
-

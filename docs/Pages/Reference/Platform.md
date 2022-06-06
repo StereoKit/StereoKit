@@ -10,9 +10,6 @@ cross-platform. You might be able to do many of these things with C#,
 but you might not be able to do them in as portable a manner as these
 methods do!
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
@@ -20,7 +17,6 @@ methods do!
 |bool [FilePickerVisible]({{site.url}}/Pages/Reference/Platform/FilePickerVisible.html)|This will check if the file picker interface is currently visible. Some pickers will never show this, as they block the application until the picker has completed.|
 |bool [ForceFallbackKeyboard]({{site.url}}/Pages/Reference/Platform/ForceFallbackKeyboard.html)|Force the use of StereoKit's built-in fallback keyboard instead of the system keyboard. This may be great for testing or look and feel matching, but the system keyboard should generally be preferred for accessibility reasons.|
 |bool [KeyboardVisible]({{site.url}}/Pages/Reference/Platform/KeyboardVisible.html)|Check if a soft keyboard is currently visible. This may be an OS provided keyboard or StereoKit's fallback keyboard, but will not indicate the presence of a physical keyboard.|
-
 
 ## Static Methods
 
@@ -33,4 +29,3 @@ methods do!
 |[ReadFileBytes]({{site.url}}/Pages/Reference/Platform/ReadFileBytes.html)|Reads the entire contents of the file as a byte array, taking advantage of any permissions that may have been granted by Platform.FilePicker. Returns null on failure.|
 |[ReadFileText]({{site.url}}/Pages/Reference/Platform/ReadFileText.html)|Reads the entire contents of the file as a UTF-8 string, taking advantage of any permissions that may have been granted by Platform.FilePicker. Returns null on failure.|
 |[WriteFile]({{site.url}}/Pages/Reference/Platform/WriteFile.html)|Writes a UTF-8 text file to the filesystem, taking advantage of any permissions that may have been granted by Platform.FilePicker.|
-

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Tex.Width
-description: The width of the texture, in pixels.
+description: The width of the texture, in pixels. This will be a blocking call if AssetState is less than LoadedMeta.
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Width
 
@@ -10,5 +10,6 @@ int Width{ get }
 </div>
 
 ## Description
-The width of the texture, in pixels.
+The width of the texture, in pixels. This will be a
+blocking call if AssetState is less than LoadedMeta.
 

@@ -7,9 +7,6 @@ description: A bit-flag for the current state of a button input.
 
 A bit-flag for the current state of a button input.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -20,8 +17,6 @@ A bit-flag for the current state of a button input.
 |Inactive|Is the button currently up, unpressed?|
 |JustActive|Has the button just been pressed? Only true for a single frame.|
 |JustInactive|Has the button just been released? Only true for a single frame.|
-
-
 
 ## Examples
 

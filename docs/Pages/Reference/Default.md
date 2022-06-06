@@ -10,9 +10,6 @@ created or loaded by StereoKit during its initialization phase! Feel
 free to use them or Copy them, but be wary about modifying them,
 since it could affect many things throughout the system.
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
@@ -47,8 +44,8 @@ since it could affect many things throughout the system.
 |[Sound]({{site.url}}/Pages/Reference/Sound.html) [SoundUnclick]({{site.url}}/Pages/Reference/Default/SoundUnclick.html)|A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse release, with extra low frequencies in it.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [Tex]({{site.url}}/Pages/Reference/Default/Tex.html)|Default 2x2 white opaque texture, this is the texture referred to as 'white' in the shader texture defaults.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexBlack]({{site.url}}/Pages/Reference/Default/TexBlack.html)|Default 2x2 black opaque texture, this is the texture referred to as 'black' in the shader texture defaults.|
+|[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexDevTex]({{site.url}}/Pages/Reference/Default/TexDevTex.html)|This is a white checkered grid texture used to easily add visual features to materials. By default, this is used for the loading fallback texture for all Tex objects.|
+|[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexError]({{site.url}}/Pages/Reference/Default/TexError.html)|This is a red checkered grid texture used to indicate some sort of error has occurred. By default, this is used for the error fallback texture for all Tex objects.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexFlat]({{site.url}}/Pages/Reference/Default/TexFlat.html)|Default 2x2 flat normal texture, this is a normal that faces out from the, face, and has a color value of (0.5,0.5,1). This is the texture referred to as 'flat' in the shader texture defaults.|
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexGray]({{site.url}}/Pages/Reference/Default/TexGray.html)|Default 2x2 middle gray (0.5,0.5,0.5) opaque texture, this is the texture referred to as 'gray' in the shader texture defaults.|
-|[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexRough]({{site.url}}/Pages/Reference/Default/TexRough.html)|Default 2x2 roughness color (0,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.|
-
-
+|[Tex]({{site.url}}/Pages/Reference/Tex.html) [TexRough]({{site.url}}/Pages/Reference/Default/TexRough.html)|Default 2x2 roughness color (1,1,0,1) texture, this is the texture referred to as 'rough' in the shader texture defaults.|

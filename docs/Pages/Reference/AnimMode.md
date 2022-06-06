@@ -8,9 +8,6 @@ description: Describes how an animation is played back, and what to do when the 
 Describes how an animation is played back, and what to do when
 the animation hits the end.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -18,8 +15,6 @@ the animation hits the end.
 |Loop|If the animation reaches the end, it will always loop back around to the start again.|
 |Manual|The animation will not progress on its own, and instead must be driven by providing information to the model's AnimTime or AnimCompletion properties.|
 |Once|When the animation reaches the end, it will freeze in-place.|
-
-
 
 ## Examples
 

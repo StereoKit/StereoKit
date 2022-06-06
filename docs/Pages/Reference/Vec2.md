@@ -9,7 +9,6 @@ A vector with 2 components: x and y. This can represent a
 point in 2D space, a directional vector, or any other sort of value
 with 2 dimensions to it!
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -20,10 +19,11 @@ with 2 dimensions to it!
 |float [MagnitudeSq]({{site.url}}/Pages/Reference/Vec2/MagnitudeSq.html)|This is the squared magnitude of the vector! It skips the Sqrt call, and just gives you the squared version for speedy calculations that can work with it squared.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Normalized]({{site.url}}/Pages/Reference/Vec2/Normalized.html)|Creates a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
 |Vector2 [v]({{site.url}}/Pages/Reference/Vec2/v.html)|The internal, wrapped System.Numerics type. This can be nice to have around so you can pass its fields as 'ref', which you can't do with properties. You won't often need this, as implicit conversions to System.Numerics types are also provided.|
+|float [x]({{site.url}}/Pages/Reference/Vec2/x.html)|X component.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [X0Y]({{site.url}}/Pages/Reference/Vec2/X0Y.html)|Promotes this Vec2 to a Vec3, using 0 for the Y axis.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [XY0]({{site.url}}/Pages/Reference/Vec2/XY0.html)|Promotes this Vec2 to a Vec3, using 0 for the Z axis.|
+|float [y]({{site.url}}/Pages/Reference/Vec2/y.html)|Y component.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [YX]({{site.url}}/Pages/Reference/Vec2/YX.html)|A transpose swizzle property, returns (y,x)|
-
 
 ## Instance Methods
 
@@ -33,7 +33,7 @@ with 2 dimensions to it!
 |[Angle]({{site.url}}/Pages/Reference/Vec2/Angle.html)|Returns the counter-clockwise degrees from [1,0]. Resulting value is between 0 and 360. Vector does not need to be normalized.|
 |[InRadius]({{site.url}}/Pages/Reference/Vec2/InRadius.html)|Checks if a point is within a certain radius of this one. This is an easily readable shorthand of the squared distance check.|
 |[Normalize]({{site.url}}/Pages/Reference/Vec2/Normalize.html)|Turns this vector into a normalized vector (vector with a length of 1) from the current vector. Will not work properly if the vector has a length of zero.|
-
+|[ToString]({{site.url}}/Pages/Reference/Vec2/ToString.html)|Mostly for debug purposes, this is a decent way to log or inspect the vector in debug mode. Looks like "[x, y]"|
 
 ## Static Fields and Properties
 
@@ -43,7 +43,6 @@ with 2 dimensions to it!
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitX]({{site.url}}/Pages/Reference/Vec2/UnitX.html)|A normalized Vector that points down the X axis, this is the same as `new Vec2(1,0)`.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [UnitY]({{site.url}}/Pages/Reference/Vec2/UnitY.html)|A normalized Vector that points down the Y axis, this is the same as `new Vec2(0,1)`.|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [Zero]({{site.url}}/Pages/Reference/Vec2/Zero.html)|A Vec2 with all components at zero, this is the same as `new Vec2(0,0)`.|
-
 
 ## Static Methods
 
@@ -58,3 +57,13 @@ with 2 dimensions to it!
 |[Max]({{site.url}}/Pages/Reference/Vec2/Max.html)|Returns a vector where each elements is the maximum value for each corresponding pair.|
 |[Min]({{site.url}}/Pages/Reference/Vec2/Min.html)|Returns a vector where each elements is the minimum value for each corresponding pair.|
 
+## Operators
+
+|  |  |
+|--|--|
+|[+]({{site.url}}/Pages/Reference/Vec2/op_Addition.html)|Adds matching components together. Commutative.|
+|[/]({{site.url}}/Pages/Reference/Vec2/op_Division.html)|A component-wise vector division. Not commutative|
+|[Implicit Conversions]({{site.url}}/Pages/Reference/Vec2/op_Implicit.html)|Allows implicit conversion from System.Numerics.Vector2 to StereoKit.Vec2.|
+|[*]({{site.url}}/Pages/Reference/Vec2/op_Multiply.html)|A component-wise vector multiplication, same thing as a non-uniform scale. NOT a dot product! Commutative.|
+|[-]({{site.url}}/Pages/Reference/Vec2/op_Subtraction.html)|Subtracts matching components from eachother. Not commutative.|
+|[-]({{site.url}}/Pages/Reference/Vec2/op_UnaryNegation.html)|Vector negation, returns a vector where each component has been negated.|

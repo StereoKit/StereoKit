@@ -1,12 +1,12 @@
 ---
 layout: default
-title: Guides Working with Materials
-description: Working with Materials
+title: Working with Materials
+description: Materials describe the visual appearance of everything on-screen, so having a solid understanding of how they work is important to making a good looking application! ...
 ---
 
 # Working with Materials
 
-Materials describe the visual appearance of everything onscreen, so having
+Materials describe the visual appearance of everything on-screen, so having
 a solid understanding of how they work is important to making a good
 looking application! Fortunately, StereoKit comes with some great tools
 built-in, and Materials can be a _lot_ of fun to work with!
@@ -73,7 +73,7 @@ helps to codify and standardize common parameter names, it's always
 best to be somewhat familiar with the Shader that the Material is
 using.
 
-For example, Material.Default uses [this Shader](https://github.com/maluoi/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
+For example, Material.Default uses [this Shader](https://github.com/StereoKit/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
 and you can see the parameters listed at the top:
 ```csharp
 //--color:color = 1,1,1,1

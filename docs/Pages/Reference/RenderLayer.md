@@ -12,9 +12,6 @@ to draw a player's avatar in a 'mirror' rendertarget, but not in
 the primary display. See `Renderer.LayerFilter` for configuring what
 the primary display renders.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -32,5 +29,3 @@ the primary display renders.
 |Layer8|Render layer 8.|
 |Layer9|Render layer 9.|
 |Vfx|The default VFX layer, StereoKit draws some non-standard mesh content using this flag, such as lines.|
-
-

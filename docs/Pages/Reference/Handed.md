@@ -7,9 +7,6 @@ description: An enum for indicating which hand to use!
 
 An enum for indicating which hand to use!
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -17,8 +14,6 @@ An enum for indicating which hand to use!
 |Left|Left hand.|
 |Max|The number of hands one generally has, this is much nicer than doing a for loop with '2' as the condition! It's much clearer when you can loop Hand.Max times instead.|
 |Right|Right hand.|
-
-
 
 ## Examples
 

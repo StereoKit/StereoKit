@@ -7,7 +7,6 @@ description: Information about a system's capabilities and properties!
 
 Information about a system's capabilities and properties!
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -21,7 +20,3 @@ Information about a system's capabilities and properties!
 |bool [spatialBridgePresent]({{site.url}}/Pages/Reference/SystemInfo/spatialBridgePresent.html)|Does the device we're currently on have the spatial graph bridge extension? The extension is provided through the function `World.FromSpatialNode`. This allows OpenXR to talk with certain windows APIs, such as the QR code API that provides Graph Node GUIDs for the pose.|
 |bool [worldOcclusionPresent]({{site.url}}/Pages/Reference/SystemInfo/worldOcclusionPresent.html)|Does this device support world occlusion of digital objects? If this is true, then World.OcclusionEnabled can be set to true, and World.OcclusionMaterial can be modified.|
 |bool [worldRaycastPresent]({{site.url}}/Pages/Reference/SystemInfo/worldRaycastPresent.html)|Can this device get ray intersections from the environment? If this is true, then World.RaycastEnabled can be set to true, and World.Raycast can be used.|
-
-
-
-

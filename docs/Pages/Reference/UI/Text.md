@@ -18,7 +18,7 @@ settings, which can be changed with UI.Push/PopTextStyle.
 |  |  |
 |--|--|
 |string text|The text you wish to display, there's no              additional parsing done to this text, so put it in as you want to             see it!|
-|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) textAlign|Where should the text position itself             within its bounds? TextAlign.TopLeft is how most english text is             aligned.|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) textAlign|Where should the text position itself             within its bounds? TextAlign.TopLeft is how most English text is             aligned.|
 
 
 
