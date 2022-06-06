@@ -67,10 +67,10 @@ namespace StereoKit
 				} break;
 				default: result = curr + result; break;
 			}
-								
+
 			if (exp is CppBinaryExpression) {
 				result = ((CppBinaryExpression)exp).Operator + " " + result;
-				exp = ((CppBinaryExpression)exp).Arguments[0];
+				exp    = ((CppBinaryExpression)exp).Arguments[0];
 				result = " " + result;
 			} else {
 				exp = null;
