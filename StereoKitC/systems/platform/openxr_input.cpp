@@ -598,7 +598,7 @@ void oxri_update_poses() {
 		action_info.action = xrc_action_eyes;
 		xrGetActionStatePose(xr_session, &action_info, &action_pose);
 
-		if (action_pose.isActive && openxr_get_space(xr_gaze_space, &input_eyes_pose_local)) {
+		if (action_pose.isActive && openxr_get_gaze_space(&input_eyes_pose_local, xr_eyes_sample_time)) {
 			input_eyes_pose_world.position    = root   * input_eyes_pose_local.position;
 			input_eyes_pose_world.orientation = root_q * input_eyes_pose_local.orientation;
 

@@ -11,7 +11,7 @@ namespace StereoKit
 	/// Text colors can be set with a tag, and reset back to default with
 	/// &lt;~clr&gt;. Color codes are as follows:
 	/// 
-	/// | Dark | Bright | Decription  |
+	/// | Dark | Bright | Description |
 	/// |------|--------|-------------|
 	/// | DARK | BRIGHT | DESCRIPTION |
 	/// | blk  | BLK    | Black       |
@@ -69,7 +69,7 @@ namespace StereoKit
 		/// severity level!</summary>
 		/// <param name="level">Severity level of this log message.</param>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Write(LogLevel level, string text, params object[] items)
 			=> NativeAPI.log_write(level, string.Format(text, items));
@@ -78,14 +78,14 @@ namespace StereoKit
 		/// severity level!</summary>
 		/// <param name="level">Severity level of this log message.</param>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		public static void Write(LogLevel level, string text)
 			=> NativeAPI.log_write(level, text);
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Info
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Info(string text, params object[] items)
 			=> Write(LogLevel.Info, text, items);
@@ -93,14 +93,14 @@ namespace StereoKit
 		/// <summary>Writes a formatted line to the log using a LogLevel.Info
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		public static void Info(string text)
 			=> Write(LogLevel.Info, text);
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Warn
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Warn(string text, params object[] items)
 			=> Write(LogLevel.Warning, text, items);
@@ -108,14 +108,14 @@ namespace StereoKit
 		/// <summary>Writes a formatted line to the log using a LogLevel.Warn
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		public static void Warn(string text)
 			=> Write(LogLevel.Warning, text);
 
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Error severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Err(string text, params object[] items)
 			=> Write(LogLevel.Error, text, items);
@@ -123,7 +123,7 @@ namespace StereoKit
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Error severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
-		/// class docs for for guidance on color tags.</param>
+		/// class docs for guidance on color tags.</param>
 		public static void Err(string text)
 			=> Write(LogLevel.Error, text);
 
@@ -142,7 +142,7 @@ namespace StereoKit
 		}
 		private static void _Subscribe(LogCallback onLog)
 		{
-			// Separate function because the native call will make C# atempt
+			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
 			callbacks.Add(onLog); // This prevents the callback from getting GCed
 			NativeAPI.log_subscribe(onLog);
@@ -159,7 +159,7 @@ namespace StereoKit
 		}
 		private static void _Unsubscribe(LogCallback onLog)
 		{
-			// Separate function because the native call will make C# atempt
+			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
 			callbacks.Remove(onLog);
 			NativeAPI.log_unsubscribe(onLog);

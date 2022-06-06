@@ -12,6 +12,7 @@ struct model_visual_t {
 	mesh_t        mesh;
 	material_t    material;
 	matrix        transform_model;
+	bool32_t      visible;
 };
 
 struct model_node_t {

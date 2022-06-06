@@ -206,7 +206,7 @@ font_t font_create_files(const char **files, int32_t file_count) {
 
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
-	for (size_t i = 0; i < file_count; i++) {
+	for (int32_t i = 0; i < file_count; i++) {
 		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];

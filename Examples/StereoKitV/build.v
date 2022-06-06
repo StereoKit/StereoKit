@@ -13,9 +13,8 @@ fn main() {
 
 	// Set up our build folder with some DLLs we need
 	os.mkdir("bin") or {}
-	os.cp("../../bin/distribute/bin/x64/StereoKitC.dll", "bin/StereoKitC.dll") or {}
-	os.cp("../../bin/distribute/bin/x64/LeapC.dll", "bin/LeapC.dll") or {}
+	os.cp("../../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll", "bin/StereoKitC.dll") or {}
 
 	// And build
-	os.exec("v -o bin/app.exe run " + files) or { }
+	os.execute("v -o bin/app.exe run " + files)
 }

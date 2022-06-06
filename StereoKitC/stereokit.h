@@ -4,13 +4,13 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 5
+#define SK_VERSION_PATCH 6
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
 	#define SK_EXIMPORT
-    #define SK_CONST __attribute__((weak))
+	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
 	#if defined(_DLL) || defined(BUILDING_DLL)
@@ -210,6 +210,74 @@ typedef enum render_layer_ {
 } render_layer_;
 SK_MakeFlag(render_layer_);
 
+/*This tells about the app's current focus state, whether it's active and
+  receiving input, or if it's backgrounded or hidden. This can be
+  important since apps may still run and render when unfocused, as the app
+  may still be visible behind the app that _does_ have focus.*/
+typedef enum app_focus_ {
+	/*This StereoKit app is active, focused, and receiving input from the
+	  user. Application should behave as normal.*/
+	app_focus_active,
+	/*This StereoKit app has been unfocused, something may be compositing
+	  on top of the app such as an OS dashboard. The app is still visible,
+	  but some other thing has focus and is receiving input. You may wish
+	  to pause, disable input tracking, or other such things.*/
+	app_focus_background,
+	/*This app is not rendering currently.*/
+	app_focus_hidden,
+} app_focus_;
+
+/*StereoKit uses an asynchronous loading system to prevent assets from
+  blocking execution! This means that asset loading systems will return
+  an asset to you right away, even though it is still being processed
+  in the background.
+  
+  This enum will tell you about what state the asset is currently in,
+  so you know what sort of behavior to expect from it.*/
+typedef enum asset_state_ {
+	/*This asset encountered an issue when parsing the source data. Either
+	  the format is unrecognized by StereoKit, or the data may be corrupt.
+	  Check the logs for additional details.*/
+	asset_state_error_unsupported = -3,
+	/*The asset data was not found! This is most likely an issue with a
+	  bad file path, or file permissions. Check the logs for additional
+	  details.*/
+	asset_state_error_not_found   = -2,
+	/*An unknown error occurred when trying to load the asset! Check the
+	  logs for additional details.*/
+	asset_state_error             = -1,
+	/*This asset is in its default state. It has not been told to load
+	  anything, nor does it have any data!*/
+	asset_state_none              =  0,
+	/*This asset is currently queued for loading, but hasn't received any
+	  data yet. Attempting to access metadata or asset data will result in
+	  blocking the app's execution until that data is loaded!*/
+	asset_state_loading,
+	/*This asset is still loading, but some of the higher level data is
+	  already available for inspection without blocking the app.
+	  Attempting to access the core asset data will result in blocking the
+	  app's execution until that data is loaded!*/
+	asset_state_loaded_meta,
+	/*This asset is completely loaded without issues, and is ready for
+	  use!*/
+	asset_state_loaded,
+} asset_state_;
+
+/*For performance sensitive areas, or places dealing with large chunks of
+  memory, it can be faster to get a reference to that memory rather than
+  copying it! However, if this isn't explicitly stated, it isn't necessarily
+  clear what's happening. So this enum allows us to visibly specify what type
+  of memory reference is occurring.*/
+typedef enum memory_ {
+	/*The chunk of memory involved here is a reference that is still managed or
+	  used by StereoKit! You should _not_ free it, and be extremely cautious
+	  about modifying it.*/
+	memory_reference,
+	/*This memory is now _yours_ and you must free it yourself! Memory has been
+	  allocated, and the data has been copied over to it. Pricey! But safe.*/
+	memory_copy,
+} memory_;
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -243,7 +311,6 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
-
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
@@ -257,6 +324,7 @@ SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
 SK_API const char   *sk_version_name       ();
 SK_API uint64_t      sk_version_id         ();
+SK_API app_focus_    sk_app_focus          ();
 
 ///////////////////////////////////////////
 
@@ -428,7 +496,7 @@ static inline float    vec3_distance_sq (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.
 static inline float    vec2_distance_sq (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude_sq(v); }
 static inline float    vec3_distance    (vec3 a, vec3 b) { vec3 v = {a.x-b.x, a.y-b.y, a.z-b.z}; return vec3_magnitude(v); }
 static inline float    vec2_distance    (vec2 a, vec2 b) { vec2 v = {a.x-b.x, a.y-b.y}; return vec2_magnitude(v); }
-static inline vec3     vec3_project     (vec3 a, vec3 onto_b) { return (vec3_dot(a,onto_b)/vec3_magnitude_sq(onto_b))*onto_b; }
+static inline vec3     vec3_project     (vec3 a, vec3 onto_b) { float t = vec3_dot(a,onto_b)/vec3_magnitude_sq(onto_b); vec3 v = {onto_b.x*t, onto_b.y*t, onto_b.z*t}; return v; }
 static inline vec4     vec4_normalize   (vec4 a) { float imag = 1.0f/vec4_magnitude(a); vec4 v = {a.x*imag, a.y*imag, a.z*imag, a.w*imag}; return v; }
 static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnitude(a); vec3 v = {a.x*imag, a.y*imag, a.z*imag}; return v; }
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
@@ -585,17 +653,21 @@ SK_API void     mesh_release         (mesh_t mesh);
 SK_API void     mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void     mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t mesh_get_keep_data   (mesh_t mesh);
+SK_API void     mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
 SK_API void     mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count);
+SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API int32_t  mesh_get_vert_count  (mesh_t mesh);
 SK_API void     mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
-SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count);
+SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
+SK_API int32_t  mesh_get_ind_count   (mesh_t mesh);
 SK_API void     mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
 SK_API void     mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
 SK_API bounds_t mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t mesh_has_skin        (mesh_t mesh);
 SK_API void     mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
 SK_API void     mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
-SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t *out_pt);
+SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c);
 
 SK_API mesh_t   mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
 SK_API mesh_t   mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
@@ -639,7 +711,7 @@ SK_MakeFlag(tex_type_);
 /*What type of color information will the texture contain? A
   good default here is Rgba32.*/
 typedef enum tex_format_ {
-	/*A default zero value for TexFormat! Unitialized formats
+	/*A default zero value for TexFormat! Uninitialized formats
 	  will get this value and **** **** up so you know to assign it
 	  properly :)*/
 	tex_format_none = 0,
@@ -648,52 +720,52 @@ typedef enum tex_format_ {
 	  the time you're dealing with color images! Matches well with the
 	  Color32 struct! If you're storing normals, rough/metal, or
 	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32,
+	tex_format_rgba32 = 1,
 	/*Red/Green/Blue/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is what you'll want most
 	  of the time you're dealing with color data! Matches well with the
 	  Color32 struct.*/
-	tex_format_rgba32_linear,
-	tex_format_bgra32,
-	tex_format_bgra32_linear,
-	tex_format_rg11b10,
-	tex_format_rgb10a2,
+	tex_format_rgba32_linear = 2,
+	tex_format_bgra32 = 3,
+	tex_format_bgra32_linear = 4,
+	tex_format_rg11b10 = 5,
+	tex_format_rgb10a2 = 6,
 	/*Red/Green/Blue/Transparency data channels, at 16 bits
 	  per-channel! This is not common, but you might encounter it with
 	  raw photos, or HDR images.*/
-	tex_format_rgba64, // TODO: remove during major version update
-	tex_format_rgba64s,
-	tex_format_rgba64f,
+	tex_format_rgba64 = 7, // TODO: remove during major version update
+	tex_format_rgba64s = 8,
+	tex_format_rgba64f = 9,
 	/*Red/Green/Blue/Transparency data channels at 32 bits
 	  per-channel! Basically 4 floats per color, which is bonkers
 	  expensive. Don't use this unless you know -exactly- what you're
 	  doing.*/
-	tex_format_rgba128,
+	tex_format_rgba128 = 10,
 	/*A single channel of data, with 8 bits per-pixel! This
 	  can be great when you're only using one channel, and want to
 	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
-	tex_format_r8,
+	tex_format_r8 = 11,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
 	  information in it. Values in the shader are always 0.0-1.0.*/
-	tex_format_r16,
+	tex_format_r16 = 12,
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32,
+	tex_format_r32 = 13,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil,
+	tex_format_depthstencil = 14,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
-	tex_format_depth32,
+	tex_format_depth32 = 15,
 	/*16 bits of depth is not a lot, but it can be enough if
 	  your far clipping plane is pretty close. If you're seeing lots of
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16,
+	tex_format_depth16 = 16,
 
 	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
@@ -738,17 +810,21 @@ typedef enum tex_address_ {
 
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
-SK_API tex_t        tex_create_mem          (void *file_data, size_t file_size, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color32      (color32  *data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_file         (const char *file,                       bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_count, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
-SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_create_mem          (void *file_data, size_t file_size,      bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_file         (const char *file,                       bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
+SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
+SK_API asset_state_ tex_asset_state         (const tex_t texture);
+SK_API void         tex_on_load             (tex_t texture, void (*on_load)(tex_t texture, void *context), void *context);
+SK_API void         tex_on_load_remove      (tex_t texture, void (*on_load)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
@@ -765,6 +841,8 @@ SK_API void         tex_set_address         (tex_t texture, tex_address_ address
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
 SK_API int32_t      tex_get_anisotropy      (tex_t texture);
+SK_API void         tex_set_loading_fallback(tex_t loading_texture);
+SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
 
 ///////////////////////////////////////////
@@ -862,7 +940,7 @@ typedef enum depth_test_ {
 	  zbuffer.*/
 	depth_test_not_equal,
 	/*Don't look at the zbuffer at all, just draw everything,
-	  always, all the time! At this poit, the order at which the mesh
+	  always, all the time! At this point, the order at which the mesh
 	  gets drawn will be  super important, so don't forget about
 	  `Material.QueueOffset`!*/
 	depth_test_always,
@@ -878,7 +956,7 @@ typedef enum depth_test_ {
   to on the shader.*/
 typedef enum material_param_ {
 	/*This data type is not currently recognized. Please
-	  report your case on Github Issues!*/
+	  report your case on GitHub Issues!*/
 	material_param_unknown = 0,
 	/*A single 32 bit float value.*/
 	material_param_float = 1,
@@ -1051,10 +1129,10 @@ typedef uint32_t text_style_t;
 SK_API text_style_t  text_make_style               (font_t font, float character_height,                      color128 color_gamma);
 SK_API text_style_t  text_make_style_shader        (font_t font, float character_height, shader_t shader,     color128 color_gamma);
 SK_API text_style_t  text_make_style_mat           (font_t font, float character_height, material_t material, color128 color_gamma);
-SK_API void          text_add_at                   (const char     *text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API void          text_add_at_16                (const char16_t *text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API float         text_add_in                   (const char     *text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
-SK_API float         text_add_in_16                (const char16_t *text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0));
+SK_API void          text_add_at                   (const char     *text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API void          text_add_at_16                (const char16_t *text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API float         text_add_in                   (const char     *text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API float         text_add_in_16                (const char16_t *text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
 SK_API vec2          text_size                     (const char     *text_utf8,  text_style_t style sk_default(0));
 SK_API vec2          text_size_16                  (const char16_t *text_utf16, text_style_t style sk_default(0));
 
@@ -1067,7 +1145,7 @@ SK_API float         text_style_get_char_height    (text_style_t style);
   physics engine will apply forces differently based on this type.*/
 typedef enum solid_type_ {
 	/*This object behaves like a normal physical object, it'll
-	  fall, get pushed around, and generally be succeptible to physical
+	  fall, get pushed around, and generally be susceptible to physical
 	  forces! This is a 'Dynamic' body in physics simulation terms.*/
 	solid_type_normal = 0,
 	/*Immovable objects are always stationary! They have
@@ -1171,12 +1249,14 @@ SK_API model_node_id model_node_iterate            (model_t model, model_node_id
 SK_API model_node_id model_node_get_root           (model_t model);
 SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
 SK_API bool32_t      model_node_get_solid          (model_t model, model_node_id node);
+SK_API bool32_t      model_node_get_visible        (model_t model, model_node_id node);
 SK_API material_t    model_node_get_material       (model_t model, model_node_id node);
 SK_API mesh_t        model_node_get_mesh           (model_t model, model_node_id node);
 SK_API matrix        model_node_get_transform_model(model_t model, model_node_id node);
 SK_API matrix        model_node_get_transform_local(model_t model, model_node_id node);
 SK_API void          model_node_set_name           (model_t model, model_node_id node, const char* name);
 SK_API void          model_node_set_solid          (model_t model, model_node_id node, bool32_t    solid);
+SK_API void          model_node_set_visible        (model_t model, model_node_id node, bool32_t    visible);
 SK_API void          model_node_set_material       (model_t model, model_node_id node, material_t  material);
 SK_API void          model_node_set_mesh           (model_t model, model_node_id node, mesh_t      mesh);
 SK_API void          model_node_set_transform_model(model_t model, model_node_id node, matrix      transform_model_space);
@@ -1247,8 +1327,28 @@ typedef enum render_clear_ {
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
 
+/*The projection mode used by StereoKit for the main camera! You
+  can use this with Renderer.Projection. These options are only
+  available in flatscreen mode, as MR headsets provide very
+  specific projection matrices.*/
+typedef enum projection_ {
+	/*This is the default projection mode, and the one you're most likely
+	  to be familiar with! This is where parallel lines will converge as
+	  they go into the distance.*/
+	projection_perspective = 0,
+	/*Orthographic projection mode is often used for tools, 2D rendering,
+	  thumbnails of 3D objects, or other similar cases. In this mode,
+	  parallel lines remain parallel regardless of how far they travel.*/
+	projection_ortho = 1
+} projection_;
+
+//TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
+SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
+SK_API void                  render_set_ortho_size (float viewport_height_meters);
+SK_API void                  render_set_projection (projection_ proj);
+SK_API projection_           render_get_projection ();
 SK_API matrix                render_get_cam_root   ();
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
@@ -1261,6 +1361,7 @@ SK_API void                  render_override_capture_filter(bool32_t use_overrid
 SK_API render_layer_         render_get_capture_filter     ();
 SK_API bool32_t              render_has_capture_filter     ();
 SK_API void                  render_set_clear_color(color128 color_gamma);
+SK_API color128              render_get_clear_color();
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex ();
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
@@ -1501,6 +1602,8 @@ typedef struct mouse_t {
 /*A collection of system key codes, representing keyboard
   characters and mouse buttons. Based on VK codes.*/
 typedef enum key_ {
+	/*Doesn't represent a key, generally means this item has not been set to
+	  any particular value!*/
 	key_none      = 0x00,
 	/*Left mouse button.*/
 	key_mouse_left = 0x01,
@@ -1795,16 +1898,50 @@ typedef enum backend_xr_type_ {
 	backend_xr_type_webxr,
 } backend_xr_type_;
 
+/*This describes the platform that StereoKit is running on.*/
+typedef enum backend_platform_ {
+	/*This is running as a Windows app using the Win32 APIs.*/
+	backend_platform_win32,
+	/*This is running as a Windows app using the UWP APIs.*/
+	backend_platform_uwp,
+	/*This is running as a Linux app.*/
+	backend_platform_linux,
+	/*This is running as an Android app.*/
+	backend_platform_android,
+	/*This is running in a browser.*/
+	backend_platform_web,
+} backend_platform_;
+
+/*This describes the graphics API thatStereoKit is using for rendering.*/
+typedef enum backend_graphics_ {
+	/*An invalid default value. Right now, this may likely indicate a variety
+	  of OpenGL.*/
+	backend_graphics_none,
+	/*DirectX's Direct3D11 is used for rendering!*/
+	backend_graphics_d3d11,
+} backend_graphics_;
+
 typedef uint64_t openxr_handle_t;
 
-SK_API backend_xr_type_ backend_xr_get_type        ();
-SK_API openxr_handle_t  backend_openxr_get_instance();
-SK_API openxr_handle_t  backend_openxr_get_session ();
-SK_API openxr_handle_t  backend_openxr_get_space   ();
-SK_API int64_t          backend_openxr_get_time    ();
-SK_API void            *backend_openxr_get_function(const char *function_name);
-SK_API bool32_t         backend_openxr_ext_enabled (const char *extension_name);
-SK_API void             backend_openxr_ext_request (const char *extension_name);
+SK_API backend_xr_type_  backend_xr_get_type        ();
+SK_API openxr_handle_t   backend_openxr_get_instance();
+SK_API openxr_handle_t   backend_openxr_get_session ();
+SK_API openxr_handle_t   backend_openxr_get_space   ();
+SK_API int64_t           backend_openxr_get_time    ();
+SK_API int64_t           backend_openxr_get_eyes_sample_time();
+SK_API void             *backend_openxr_get_function(const char *function_name);
+SK_API bool32_t          backend_openxr_ext_enabled (const char *extension_name);
+SK_API void              backend_openxr_ext_request (const char *extension_name);
+SK_API void              backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
+
+SK_API backend_platform_ backend_platform_get         ();
+SK_API void             *backend_android_get_java_vm  ();
+SK_API void             *backend_android_get_activity ();
+SK_API void             *backend_android_get_jni_env  ();
+
+SK_API backend_graphics_ backend_graphics_get         ();
+SK_API void             *backend_d3d11_get_d3d_device ();
+SK_API void             *backend_d3d11_get_d3d_context();
 
 ///////////////////////////////////////////
 
@@ -1836,7 +1973,11 @@ SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 
 ///////////////////////////////////////////
 
-SK_API void assets_releaseref_threadsafe(void *asset);
+SK_API void    assets_releaseref_threadsafe(void *asset);
+SK_API int32_t assets_current_task         ();
+SK_API int32_t assets_total_tasks          ();
+SK_API int32_t assets_current_task_priority();
+SK_API void    assets_block_for_priority   (int32_t priority);
 
 ///////////////////////////////////////////
 
@@ -1856,6 +1997,8 @@ SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
 SK_CONST char *default_id_tex_flat             = "default/tex_flat";
 SK_CONST char *default_id_tex_rough            = "default/tex_rough";
+SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
+SK_CONST char *default_id_tex_error            = "default/tex_error";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
@@ -1866,6 +2009,7 @@ SK_CONST char *default_id_mesh_lefthand        = "default/mesh_lefthand";
 SK_CONST char *default_id_mesh_righthand       = "default/mesh_righthand";
 SK_CONST char *default_id_mesh_ui_button       = "default/mesh_ui_button";
 SK_CONST char *default_id_shader               = "default/shader";
+SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
@@ -1894,9 +2038,9 @@ SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
 
   // This will look like 'M.i.P-rcr', or 'M.i.P' if r is 0
 #if SK_VERSION_PRERELEASE != 0
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview" SK_STR(SK_VERSION_PRERELEASE))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH) "-preview." SK_STR(SK_VERSION_PRERELEASE)
 #else
-#define SK_VERSION (SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH))
+#define SK_VERSION SK_STR(SK_VERSION_MAJOR) "." SK_STR(SK_VERSION_MINOR) "." SK_STR(SK_VERSION_PATCH)
 #endif
 
   // A version in hex looks like: 0xMMMMiiiiPPPPrrrr

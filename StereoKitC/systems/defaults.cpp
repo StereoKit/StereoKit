@@ -15,12 +15,15 @@ tex_t        sk_default_tex_black;
 tex_t        sk_default_tex_gray;
 tex_t        sk_default_tex_flat;
 tex_t        sk_default_tex_rough;
+tex_t        sk_default_tex_devtex;
+tex_t        sk_default_tex_error;
 tex_t        sk_default_cubemap;
 mesh_t       sk_default_quad;
 mesh_t       sk_default_screen_quad;
 mesh_t       sk_default_sphere;
 mesh_t       sk_default_cube;
 shader_t     sk_default_shader;
+shader_t     sk_default_shader_blit;
 shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_pbr_clip;
 shader_t     sk_default_shader_unlit;
@@ -59,20 +62,67 @@ tex_t defaults_texture(const char *id, color128 color) {
 
 ///////////////////////////////////////////
 
+tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
+	tex_t result = tex_create();
+	tex_set_id(result, id);
+
+	const int32_t size          = 256;                 // Texture total size
+	const int32_t slices        = 4;                   // Slice this up into 4x4 squares
+	const int32_t slice_size    = size / slices;       // Size in px of each square
+	const int32_t slice_half    = slice_size/2;        // precalculate half (for lines)
+	const int32_t slice_quarter = slice_size/4;        // precalculate quarter (for lines)
+	const int32_t checker_size  = size / (slices * 2); // Alternate core color in a checker pattern, with 2 checkers per slice
+
+	vec3 lab = color_to_lab(base_color);
+	color32 core_color  = color_to_32(base_color);
+	color32 core_color2 = color_to_32(color_lab(lab.x * powf(0.9f,  contrast_boost), lab.y, lab.z, 1));
+	color32 line_color  = color_to_32(color_lab(lab.x * powf(0.8f,  contrast_boost), lab.y, lab.z, 1));
+	color32 line2_color = color_to_32(color_lab(lab.x * powf(0.75f, contrast_boost), lab.y, lab.z, 1));
+
+	color32 *data   = sk_malloc_t(color32, size * size);
+	for (int32_t y = 0; y < size; y++) {
+		int ydist  = abs(slice_half    - ((y + slice_half   ) % slice_size));
+		int ydist2 = abs(slice_quarter - ((y + slice_quarter) % slice_half));
+
+		for (int32_t x = 0; x < size; x++) {
+			int xdist  = abs(slice_half    - ((x + slice_half   ) % slice_size));
+			int xdist2 = abs(slice_quarter - ((x + slice_quarter) % slice_half));
+
+			int32_t i = x + y * size;
+			if      (xdist < 2 || ydist <2) data[i] = line_color;
+			else if (xdist2< 1 || ydist2<1) data[i] = line2_color;
+			else                            data[i] = ((x/checker_size) + (y/checker_size)) %2 == 0 ? core_color : core_color2;
+		}
+	}
+
+	tex_set_colors(result, size, size, data);
+	return result;
+}
+
+///////////////////////////////////////////
+
 bool defaults_init() {
 	// Textures
 	sk_default_tex       = defaults_texture(default_id_tex,       {1,1,1,1}         );
 	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,1}         );
 	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {0.5f,0.5f,0.5f,1});
 	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {0.5f,0.5f,1,1}   ); // Default for normal maps
-	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,0,1,1}         ); // Default for metal/roughness maps
+	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {1,1,0,1}         ); // Default for metal/roughness maps
+
+	sk_default_tex_devtex = dev_texture(default_id_tex_devtex, { 1,1,   1,   1 }, 1);
+	sk_default_tex_error  = dev_texture(default_id_tex_error,  { 1,0.7f,0.7f,1 }, 1);
 
 	if (sk_default_tex       == nullptr ||
 		sk_default_tex_black == nullptr ||
 		sk_default_tex_gray  == nullptr ||
 		sk_default_tex_flat  == nullptr ||
-		sk_default_tex_rough == nullptr)
+		sk_default_tex_rough == nullptr ||
+		sk_default_tex_devtex== nullptr ||
+		sk_default_tex_error == nullptr)
 		return false;
+
+	tex_set_loading_fallback(sk_default_tex_devtex);
+	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
 	spherical_harmonics_t lighting = { {
@@ -101,8 +151,7 @@ bool defaults_init() {
 		{ vec3{ 0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
 		{ vec3{-0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} }, };
 	vind_t inds[6] = { 2,1,0, 3,2,0 };
-	mesh_set_verts(sk_default_quad, verts, 4);
-	mesh_set_inds (sk_default_quad, inds,  6);
+	mesh_set_data(sk_default_quad, verts, 4, inds, 6);
 	
 	// Default rendering quad
 	sk_default_screen_quad = mesh_create();
@@ -112,8 +161,7 @@ bool defaults_init() {
 		{ vec3{ 1, 1,0}, vec3{0,0,1}, vec2{1,0}, color32{255,255,255,255} },
 		{ vec3{-1, 1,0}, vec3{0,0,1}, vec2{0,0}, color32{255,255,255,255} }, };
 	vind_t sq_inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_verts(sk_default_screen_quad, sq_verts, 4);
-	mesh_set_inds (sk_default_screen_quad, sq_inds,  6);
+	mesh_set_data(sk_default_screen_quad, sq_verts, 4, sq_inds, 6);
 	
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
@@ -125,6 +173,7 @@ bool defaults_init() {
 
 	// Shaders
 	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
+	sk_default_shader_blit        = shader_create_mem((void*)sks_shader_builtin_blit_hlsl,        sizeof(sks_shader_builtin_blit_hlsl));
 	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
 	sk_default_shader_unlit_clip  = shader_create_mem((void*)sks_shader_builtin_unlit_clip_hlsl,  sizeof(sks_shader_builtin_unlit_clip_hlsl));
 	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
@@ -145,6 +194,7 @@ bool defaults_init() {
 		sk_default_shader_pbr_clip = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
 
 	if (sk_default_shader             == nullptr ||
+		sk_default_shader_blit        == nullptr ||
 		sk_default_shader_pbr         == nullptr ||
 		sk_default_shader_pbr_clip    == nullptr ||
 		sk_default_shader_unlit       == nullptr ||
@@ -159,6 +209,7 @@ bool defaults_init() {
 		return false;
 
 	shader_set_id(sk_default_shader,             default_id_shader);
+	shader_set_id(sk_default_shader_blit,        default_id_shader_blit);
 	shader_set_id(sk_default_shader_pbr,         default_id_shader_pbr);
 	shader_set_id(sk_default_shader_pbr_clip,    default_id_shader_pbr_clip);
 	shader_set_id(sk_default_shader_unlit,       default_id_shader_unlit);
@@ -269,6 +320,9 @@ bool defaults_init() {
 ///////////////////////////////////////////
 
 void defaults_shutdown() {
+	tex_set_error_fallback  (nullptr);
+	tex_set_loading_fallback(nullptr);
+
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	sound_release   (sk_default_grab);
@@ -285,6 +339,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
 	shader_release  (sk_default_shader);
+	shader_release  (sk_default_shader_blit);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_unlit_clip);
 	shader_release  (sk_default_shader_font);
@@ -305,6 +360,8 @@ void defaults_shutdown() {
 	tex_release     (sk_default_tex_gray);
 	tex_release     (sk_default_tex_flat);
 	tex_release     (sk_default_tex_rough);
+	tex_release     (sk_default_tex_devtex);
+	tex_release     (sk_default_tex_error);
 	tex_release     (sk_default_cubemap);
 }
 

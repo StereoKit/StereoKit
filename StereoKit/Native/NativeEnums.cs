@@ -160,6 +160,71 @@ namespace StereoKit
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 	}
 
+	/// <summary>This tells about the app's current focus state, whether it's active and
+	/// receiving input, or if it's backgrounded or hidden. This can be
+	/// important since apps may still run and render when unfocused, as the app
+	/// may still be visible behind the app that _does_ have focus.</summary>
+	public enum AppFocus {
+		/// <summary>This StereoKit app is active, focused, and receiving input from the
+		/// user. Application should behave as normal.</summary>
+		Active,
+		/// <summary>This StereoKit app has been unfocused, something may be compositing
+		/// on top of the app such as an OS dashboard. The app is still visible,
+		/// but some other thing has focus and is receiving input. You may wish
+		/// to pause, disable input tracking, or other such things.</summary>
+		Background,
+		/// <summary>This app is not rendering currently.</summary>
+		Hidden,
+	}
+
+	/// <summary>StereoKit uses an asynchronous loading system to prevent assets from
+	/// blocking execution! This means that asset loading systems will return
+	/// an asset to you right away, even though it is still being processed
+	/// in the background.</summary>
+	public enum AssetState {
+		/// <summary>This asset encountered an issue when parsing the source data. Either
+		/// the format is unrecognized by StereoKit, or the data may be corrupt.
+		/// Check the logs for additional details.</summary>
+		ErrorUnsupported = -3,
+		/// <summary>The asset data was not found! This is most likely an issue with a
+		/// bad file path, or file permissions. Check the logs for additional
+		/// details.</summary>
+		ErrorNotFound = -2,
+		/// <summary>An unknown error occurred when trying to load the asset! Check the
+		/// logs for additional details.</summary>
+		Error        = -1,
+		/// <summary>This asset is in its default state. It has not been told to load
+		/// anything, nor does it have any data!</summary>
+		None         = 0,
+		/// <summary>This asset is currently queued for loading, but hasn't received any
+		/// data yet. Attempting to access metadata or asset data will result in
+		/// blocking the app's execution until that data is loaded!</summary>
+		Loading,
+		/// <summary>This asset is still loading, but some of the higher level data is
+		/// already available for inspection without blocking the app.
+		/// Attempting to access the core asset data will result in blocking the
+		/// app's execution until that data is loaded!</summary>
+		LoadedMeta,
+		/// <summary>This asset is completely loaded without issues, and is ready for
+		/// use!</summary>
+		Loaded,
+	}
+
+	/// <summary>For performance sensitive areas, or places dealing with large chunks of
+	/// memory, it can be faster to get a reference to that memory rather than
+	/// copying it! However, if this isn't explicitly stated, it isn't necessarily
+	/// clear what's happening. So this enum allows us to visibly specify what type
+	/// of memory reference is occurring.</summary>
+	public enum Memory {
+		/// <summary>The chunk of memory involved here is a reference that is still managed or
+		/// used by StereoKit! You should _not_ free it, and be extremely cautious
+		/// about modifying it.</summary>
+		Reference,
+		/// <summary>This memory is now _yours_ and you must free it yourself! Memory has been
+		/// allocated, and the data has been copied over to it. Pricey! But safe.</summary>
+		Copy,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -194,7 +259,7 @@ namespace StereoKit
 	/// <summary>What type of color information will the texture contain? A
 	/// good default here is Rgba32.</summary>
 	public enum TexFormat {
-		/// <summary>A default zero value for TexFormat! Unitialized formats
+		/// <summary>A default zero value for TexFormat! Uninitialized formats
 		/// will get this value and **** **** up so you know to assign it
 		/// properly :)</summary>
 		None         = 0,
@@ -203,66 +268,66 @@ namespace StereoKit
 		/// the time you're dealing with color images! Matches well with the
 		/// Color32 struct! If you're storing normals, rough/metal, or
 		/// anything else, use Rgba32Linear.</summary>
-		Rgba32,
+		Rgba32       = 1,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rgba32Linear,
+		Rgba32Linear = 2,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Bgra32,
+		Bgra32       = 3,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Bgra32Linear,
+		Bgra32Linear = 4,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rg11b10,
+		Rg11b10      = 5,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rgb10a2,
+		Rgb10a2      = 6,
 		/// <summary>TODO: remove during major version update</summary>
-		Rgba64,
-		Rgba64s,
-		Rgba64f,
+		Rgba64       = 7,
+		Rgba64s      = 8,
+		Rgba64f      = 9,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
 		/// expensive. Don't use this unless you know -exactly- what you're
 		/// doing.</summary>
-		Rgba128,
+		Rgba128      = 10,
 		/// <summary>A single channel of data, with 8 bits per-pixel! This
 		/// can be great when you're only using one channel, and want to
 		/// reduce memory usage. Values in the shader are always 0.0-1.0.</summary>
-		R8,
+		R8           = 11,
 		/// <summary>A single channel of data, with 16 bits per-pixel! This
 		/// is a good format for height maps, since it stores a fair bit of
 		/// information in it. Values in the shader are always 0.0-1.0.</summary>
-		R16,
+		R16          = 12,
 		/// <summary>A single channel of data, with 32 bits per-pixel! This
 		/// basically treats each pixel as a generic float, so you can do all
 		/// sorts of strange and interesting things with this.</summary>
-		R32,
+		R32          = 13,
 		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
 		/// to store stencil information! Stencil data can be used for things
 		/// like clipping effects, deferred rendering, or shadow effects.</summary>
-		DepthStencil,
+		DepthStencil = 14,
 		/// <summary>32 bits of data per depth value! This is pretty detailed,
 		/// and is excellent for experiences that have a very far view
 		/// distance.</summary>
-		Depth32,
+		Depth32      = 15,
 		/// <summary>16 bits of depth is not a lot, but it can be enough if
 		/// your far clipping plane is pretty close. If you're seeing lots of
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Depth16,
+		Depth16      = 16,
 		/// <summary>16 bits of depth is not a lot, but it can be enough if
 		/// your far clipping plane is pretty close. If you're seeing lots of
 		/// flickering where two objects overlap, you either need to bring
@@ -381,7 +446,7 @@ namespace StereoKit
 		/// zbuffer.</summary>
 		NotEqual,
 		/// <summary>Don't look at the zbuffer at all, just draw everything,
-		/// always, all the time! At this poit, the order at which the mesh
+		/// always, all the time! At this point, the order at which the mesh
 		/// gets drawn will be  super important, so don't forget about
 		/// `Material.QueueOffset`!</summary>
 		Always,
@@ -397,7 +462,7 @@ namespace StereoKit
 	/// to on the shader.</summary>
 	public enum MaterialParam {
 		/// <summary>This data type is not currently recognized. Please
-		/// report your case on Github Issues!</summary>
+		/// report your case on GitHub Issues!</summary>
 		Unknown      = 0,
 		/// <summary>A single 32 bit float value.</summary>
 		Float        = 1,
@@ -413,9 +478,10 @@ namespace StereoKit
 		Vector3      = 4,
 		/// <summary>A 4 component vector composed of floating point values.</summary>
 		Vector4      = 5,
-		[Obsolete("Replaced by MaterialParam.Vector4")]
+
 		/// <summary>A 4 component vector composed of floating point values.
 		/// TODO: Remove in v0.4</summary>
+		[Obsolete("Replaced by MaterialParam.Vector4")]
 		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix       = 6,
@@ -510,7 +576,7 @@ namespace StereoKit
 	/// physics engine will apply forces differently based on this type.</summary>
 	public enum SolidType {
 		/// <summary>This object behaves like a normal physical object, it'll
-		/// fall, get pushed around, and generally be succeptible to physical
+		/// fall, get pushed around, and generally be susceptible to physical
 		/// forces! This is a 'Dynamic' body in physics simulation terms.</summary>
 		Normal       = 0,
 		/// <summary>Immovable objects are always stationary! They have
@@ -573,6 +639,21 @@ namespace StereoKit
 		Depth        = 1 << 1,
 		/// <summary>Clear both color and depth data.</summary>
 		All          = Color | Depth,
+	}
+
+	/// <summary>The projection mode used by StereoKit for the main camera! You
+	/// can use this with Renderer.Projection. These options are only
+	/// available in flatscreen mode, as MR headsets provide very
+	/// specific projection matrices.</summary>
+	public enum Projection {
+		/// <summary>This is the default projection mode, and the one you're most likely
+		/// to be familiar with! This is where parallel lines will converge as
+		/// they go into the distance.</summary>
+		Perspective  = 0,
+		/// <summary>Orthographic projection mode is often used for tools, 2D rendering,
+		/// thumbnails of 3D objects, or other similar cases. In this mode,
+		/// parallel lines remain parallel regardless of how far they travel.</summary>
+		Ortho        = 1,
 	}
 
 	/// <summary>When opening the Platform.FilePicker, this enum describes
@@ -676,6 +757,8 @@ namespace StereoKit
 	/// <summary>A collection of system key codes, representing keyboard
 	/// characters and mouse buttons. Based on VK codes.</summary>
 	public enum Key {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
 		None         = 0x00,
 		/// <summary>Left mouse button.</summary>
 		MouseLeft    = 0x01,
@@ -916,6 +999,29 @@ namespace StereoKit
 		OpenXR,
 		/// <summary>StereoKit is running in a browser, and is using WebXR!</summary>
 		WebXR,
+	}
+
+	/// <summary>This describes the platform that StereoKit is running on.</summary>
+	public enum BackendPlatform {
+		/// <summary>This is running as a Windows app using the Win32 APIs.</summary>
+		Win32,
+		/// <summary>This is running as a Windows app using the UWP APIs.</summary>
+		Uwp,
+		/// <summary>This is running as a Linux app.</summary>
+		Linux,
+		/// <summary>This is running as an Android app.</summary>
+		Android,
+		/// <summary>This is running in a browser.</summary>
+		Web,
+	}
+
+	/// <summary>This describes the graphics API thatStereoKit is using for rendering.</summary>
+	public enum BackendGraphics {
+		/// <summary>An invalid default value. Right now, this may likely indicate a variety
+		/// of OpenGL.</summary>
+		None,
+		/// <summary>DirectX's Direct3D11 is used for rendering!</summary>
+		D3D11,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console

@@ -1,18 +1,23 @@
-#flag -L../../bin/distribute/bin/x64
+#flag -L../../bin/distribute/bin/Win32/x64/Release
 #flag -I../../bin/distribute/include
 #flag -lStereoKitC
 #include "stereokit.h"
 
-fn C.sk_init(charptr, int, int)
-fn C.sk_step(onStep fn()) bool
-fn C.sk_shutdown()
+struct C.sk_settings_t {
+}
+
+fn C.sk_init(C.sk_settings_t)
+fn C.sk_run(onStep fn(), onShutdown fn())
 
 fn main() {
-	C.sk_init("StereoKit V", 0, 0)
-	for C.sk_step(step) { }
-	C.sk_shutdown()
+	C.sk_init(C.sk_settings_t{})
+	C.sk_run(step, shutdown)
 }
 
 fn step() {
+
+}
+
+fn shutdown() {
 
 }

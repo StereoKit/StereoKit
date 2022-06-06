@@ -13,6 +13,10 @@
     <ClCompile Include="skt_lighting.cpp" />
     <ClCompile Include="demo_lighting.cpp" />
     <ClCompile Include="demo_draw.cpp" />
+    <ClCompile Include="demo_ui_layout.cpp" />
+    <ClCompile Include="demo_envmap.cpp" />
+    <ClCompile Include="demo_windows.cpp" />
+    <ClCompile Include="demo_desktop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo_basics.h" />
@@ -23,6 +27,8 @@
     <ClInclude Include="demo_mic.h" />
     <ClInclude Include="demo_picker.h" />
     <ClInclude Include="demo_world.h" />
+    <ClInclude Include="demo_windows.h" />
+    <ClInclude Include="demo_desktop.h" />
     <ClInclude Include="skt_lighting.h" />
     <ClInclude Include="demo_lighting.h" />
     <ClInclude Include="Shaders\skt_default_lighting.hlsl.h">
@@ -32,6 +38,11 @@
       <Filter>Shaders</Filter>
     </ClInclude>
     <ClInclude Include="demo_draw.h" />
+    <ClInclude Include="demo_ui_layout.h" />
+    <ClInclude Include="demo_envmap.h" />
+    <ClInclude Include="Shaders\blit.hlsl.h">
+      <Filter>Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -45,5 +56,6 @@
     <None Include="Shaders\skt_default_lighting.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\blit.hlsl" />
   </ItemGroup>
 </Project>

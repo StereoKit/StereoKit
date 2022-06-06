@@ -189,19 +189,34 @@ struct array_t {
 
 	int64_t binary_search(const T &item) const;
 
-	// Extra template parameters mean this needs completely defined right here
+	// Extra template parameters mean this needs completely defined right here.
+	// Does not work on pointers.
 	template <typename _T, typename D>
 	int64_t binary_search(const D _T::*key, const D &item) const {
 		array_view_t<D> view = array_view_t<D>{data, count, sizeof(_T), (size_t)&((_T*)nullptr->*key)};
 		int64_t l = 0, r = (int64_t)view.count - 1;
 		while (l <= r) {
-			int64_t mid = (l+r) / 2;
-			if      (view[mid] < item) l = mid + 1;
-			else if (view[mid] > item) r = mid - 1;
+			int64_t mid     = (l+r) / 2;
+			D       mid_val = view[mid];
+			if      (mid_val < item) l = mid + 1;
+			else if (mid_val > item) r = mid - 1;
 			else                       return mid;
 		}
 		return r < 0 ? r : -(r+2);
 	}
+
+	/*template <typename D>
+	int64_t binary_search(D (*get_key)(T item), D item) const {
+		int64_t l = 0, r = count - 1;
+		while (l <= r) {
+			int64_t mid = (l + r) / 2;
+			D       mid_val = get_key(data[mid]);
+			if      (mid_val < item) l = mid + 1;
+			else if (mid_val > item) r = mid - 1;
+			else                       return mid;
+		}
+		return r < 0 ? r : -(r + 2);
+	}*/
 
 	//////////////////////////////////////
 	// Sort methods

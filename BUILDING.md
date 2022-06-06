@@ -13,10 +13,11 @@ The test project is pretty spiffy, and it can be nice to see it in action! There
 StereoKit is a cross-platform library, but many features are not platform specific! If you don't need to test on a platform other than Windows, then you only need some of the dependencies.
 
 **Requisites:**
-- Visual Studio 2019 (2022 may also work)
-- VS Workload: Universal Windows Platform
-- VS Workload: Desktop development with C++
-- VS Workload: Game development with C++
+- Visual Studio 2022
+    - VS Workload: Universal Windows Platform
+    - VS Workload: Desktop development with C++
+    - VS Workload: Game development with C++
+- [CMake](https://cmake.org) (To build OpenXR & dependencies)
 
 Open StereoKit.sln and _unload_ these projects
 - StereoKitTest_Android
@@ -37,10 +38,18 @@ StereoKit builds Linux code using xmake running on Windows Subsystems for Linux.
 It may help to build just the C++ side on Linux first to find which packages need to be installed. Here's how you build StereoKit using xmake:
 
 ```
-# From StereoKit's root directory on Linux
+# StereoKit uses xmake, check their docs (https://xmake.io/#/getting_started)
+# for details, but here's the quick way to install:
+bash <(curl -fsSL https://xmake.io/shget.text)
+
+# here's a few other pre-reqs, mostly pulled from OpenXR's build list:
+sudo apt-get update
+sudo apt-get install build-essential cmake unzip libfontconfig1-dev libgl1-mesa-dev libvulkan-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+
+### From StereoKit's root directory ###
 
 # Configure the xmake build
-xmake f -p linux -a x64 --tests=y
+xmake f -p linux -a x64 --tests=y -y
 # Build
 xmake
 

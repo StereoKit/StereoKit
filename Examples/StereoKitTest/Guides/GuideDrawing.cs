@@ -99,7 +99,7 @@ class GuideDrawing : ITest
 		///  - You can create a Mesh from a list of vertices and indices. This is more advanced, but [check the sample here]({{site.url}}/Pages/Reference/Mesh/SetVerts.html).
 		///  
 		/// And where do you get a Material? Well, 
-		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylisic surfaces.
+		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylistic surfaces.
 		///  - A Material [constructor]({{site.url}}/Pages/Reference/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html) for in-depth usage (Materials and Shaders are a lot of fun!).
 		///  - You can call [`Material.Copy`]({{site.url}}/Pages/Reference/Material/Copy.html) to create a duplicate of an existing Material.
 		/// 
@@ -160,7 +160,7 @@ class GuideDrawing : ITest
 		/// 
 		/// The easiest way to draw complex content is through a Model! A Model
 		/// is basically a small scene of Mesh/Material pairs at positions with
-		/// hierarchical relationships to eachother. If you're creating art in
+		/// hierarchical relationships to each other. If you're creating art in
 		/// a 3D modeling tool such as Blender, then this is basically a full
 		/// representation of the scene you've created there.
 		/// 
@@ -173,7 +173,7 @@ class GuideDrawing : ITest
 		/// So... that was also pretty simple! The only real trick with Models
 		/// is getting one in the first place, but even that's not too hard.
 		/// There's a lot you can do with a Model beyond just drawing it, so
-		/// for more details on that, check out [the Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
+		/// for more details on that, check out [the Model guide](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
 		/// 
 		/// But here's the quick list of where you can get a Model to begin
 		/// with:
@@ -201,7 +201,7 @@ class GuideDrawing : ITest
 		/// 
 		/// Text is drawn with a collection of rectangular quads, each mapped
 		/// to a character glyph on a texture. StereoKit supports rendering any
-		/// unicode glyphs yout throw at it, as long as the active Font has
+		/// Unicode glyphs you throw at it, as long as the active Font has
 		/// that glyph defined in it! This means you can work with all sorts of
 		/// different languages right away, without any baking or preparation.
 		/// 
@@ -222,11 +222,11 @@ class GuideDrawing : ITest
 		/// tricks to be learned, but this is a great start! There's treasures
 		/// in the documentation, so hunt around in there for more samples. You
 		/// may also be interested in the [Materials guide]({{site.url}}/Pages/Guides/Working-with-Materials.html)
-		/// for advanced rendering code, or the [Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) 
+		/// for advanced rendering code, or the [Model guide](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) 
 		/// (coming soon), for managing your visible content!
 		/// 
 		/// If you'd like to see all the code for this document,
-		/// [check it out here!](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideDrawing.cs)
+		/// [check it out here!](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideDrawing.cs)
 		/// :End:
 		Tests.Screenshot("Drawing_Defaults.jpg",      600, 600,     V.XYZ(   0,     0,  1.2f), Vec3.Zero);
 		Tests.Screenshot("Drawing_MatrixCombine.jpg", 600, 600,     V.XYZ(  10,     0,  2   ), V.XYZ(10, 0,0));

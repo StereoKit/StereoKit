@@ -1,5 +1,6 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
+#include "../sk_math.h"
 #include "mesh.h"
 #include "assets.h"
 
@@ -37,7 +38,7 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
+void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data && update_original) {
 		if (mesh->vert_capacity < vertex_count)
@@ -75,7 +76,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, 
 	if (calculate_bounds && vertex_count > 0) {
 		vec3 min = vertices[0].pos;
 		vec3 max = vertices[0].pos;
-		for (int32_t i = 1; i < vertex_count; i++) {
+		for (uint32_t i = 1; i < vertex_count; i++) {
 			min.x = fminf(vertices[i].pos.x, min.x);
 			min.y = fminf(vertices[i].pos.y, min.y);
 			min.z = fminf(vertices[i].pos.z, min.z);
@@ -90,19 +91,45 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, 
 ///////////////////////////////////////////
 
 void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds) {
-	_mesh_set_verts(mesh, vertices, vertex_count, calculate_bounds, true);
+	struct vert_upload_job_t {
+		mesh_t        mesh;
+		const vert_t *vertices;
+		int32_t       vertex_count;
+		bool32_t      calculate_bounds;
+	};
+	vert_upload_job_t job_data = {mesh, vertices, vertex_count, calculate_bounds};
+
+	assets_execute_gpu([](void *data) {
+		vert_upload_job_t *job_data = (vert_upload_job_t *)data;
+		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
+		
+		return (bool32_t)true;
+	}, &job_data);
 }
 
 ///////////////////////////////////////////
 
-void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count) {
-	out_vertices     = mesh->verts;
+void mesh_get_verts(mesh_t mesh, vert_t *&out_vertices, int32_t &out_vertex_count, memory_ reference_mode) {
 	out_vertex_count = mesh->verts == nullptr ? 0 : mesh->vert_count;
+	out_vertices     = nullptr;
+	
+	if (reference_mode == memory_copy && mesh->verts != nullptr && mesh->vert_count > 0) {
+		out_vertices = sk_malloc_t(vert_t, mesh->vert_count);
+		memcpy(out_vertices, mesh->verts, sizeof(vert_t) * mesh->vert_count);
+	} else if (reference_mode == memory_reference) {
+		out_vertices = mesh->verts;
+	}
 }
 
 ///////////////////////////////////////////
 
-void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
+int32_t mesh_get_vert_count(mesh_t mesh) {
+	return mesh->vert_count;
+}
+
+///////////////////////////////////////////
+
+void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 	if (index_count % 3 != 0) {
 		log_err("mesh_set_inds index_count must be a multiple of 3!");
 		return;
@@ -145,16 +172,69 @@ void mesh_set_inds (mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 
 ///////////////////////////////////////////
 
-void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count) {
-	out_indices     = mesh->inds;
-	out_index_count = mesh->inds == nullptr ? 0 : mesh->ind_count;
+void mesh_set_inds(mesh_t mesh, const vind_t *indices,  int32_t index_count) {
+	struct ind_upload_job_t {
+		mesh_t        mesh;
+		const vind_t *indices;
+		int32_t       index_count;
+	};
+	ind_upload_job_t job_data = {mesh, indices, index_count};
+
+	assets_execute_gpu([](void *data) {
+		ind_upload_job_t *job_data = (ind_upload_job_t *)data;
+		_mesh_set_inds(job_data->mesh, job_data->indices, job_data->index_count);
+		
+		return (bool32_t)true;
+	}, &job_data);
+}
+
+///////////////////////////////////////////
+
+void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds) {
+	struct mesh_upload_job_t {
+		mesh_t        mesh;
+		const vert_t *vertices;
+		int32_t       vertex_count;
+		const vind_t *indices;
+		int32_t       index_count;
+		bool32_t      calculate_bounds;
+	};
+	mesh_upload_job_t job_data = {mesh, vertices, vertex_count, indices, index_count, calculate_bounds};
+
+	assets_execute_gpu([](void *data) {
+		mesh_upload_job_t *job_data = (mesh_upload_job_t *)data;
+		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
+		_mesh_set_inds (job_data->mesh, job_data->indices,  job_data->index_count);
+		
+		return (bool32_t)true;
+	}, &job_data);
+}
+
+///////////////////////////////////////////
+
+void mesh_get_inds(mesh_t mesh, vind_t *&out_indices, int32_t &out_index_count, memory_ reference_mode) {
+	out_index_count = mesh->inds == nullptr ? 0 : (int32_t)mesh->ind_count;
+	out_indices     = nullptr;
+	
+	if (reference_mode == memory_copy && mesh->inds != nullptr && mesh->ind_count > 0) {
+		out_indices = sk_malloc_t(vind_t, mesh->ind_count);
+		memcpy(out_indices, mesh->inds, sizeof(vind_t) * mesh->ind_count);
+	} else if (reference_mode == memory_reference) {
+		out_indices = mesh->inds;
+	}
+}
+
+///////////////////////////////////////////
+
+int32_t mesh_get_ind_count(mesh_t mesh) {
+	return (int32_t)mesh->ind_count;
 }
 
 ///////////////////////////////////////////
 
 void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *inds, int32_t ind_count) {
-	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
-	for (size_t i = 0; i < ind_count; i+=3) {
+	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_zero;
+	for (int32_t i = 0; i < ind_count; i+=3) {
 		vert_t *v1 = &verts[inds[i  ]];
 		vert_t *v2 = &verts[inds[i+1]];
 		vert_t *v3 = &verts[inds[i+2]];
@@ -166,17 +246,18 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 		v2->norm += normal;
 		v3->norm += normal;
 	}
-	for (size_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
 }
 
 ///////////////////////////////////////////
 
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
-	if (index_count > mesh->ind_count) {
-		index_count = mesh->ind_count;
+	uint32_t u_count = index_count;
+	if (u_count > mesh->ind_count) {
+		u_count = mesh->ind_count;
 		log_warn("mesh_set_draw_inds: Can't render more indices than the mesh has! Capping...");
 	}
-	mesh->ind_draw  = index_count;
+	mesh->ind_draw = u_count;
 }
 
 ///////////////////////////////////////////
@@ -197,7 +278,7 @@ bool32_t mesh_has_skin(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
-bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, int32_t bone_count) {
+bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_count, const vec4 *bone_weights, uint32_t bone_weight_count, int32_t bone_count) {
 	if (mesh->discard_data) {
 		log_err("mesh_set_skin: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
 		return false;
@@ -249,7 +330,7 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
 	}
 
-	for (int32_t i = 0; i < mesh->vert_count; i++) {
+	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
 
@@ -344,9 +425,9 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 	coll.pts    = sk_malloc_t(vec3   , mesh->ind_count);
 	coll.planes = sk_malloc_t(plane_t, mesh->ind_count/3);
 
-	for (int32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
+	for (uint32_t i = 0; i < mesh->ind_count; i++) coll.pts[i] = mesh->verts[mesh->inds[i]].pos;
 
-	for (int32_t i = 0; i < mesh->ind_count; i += 3) {
+	for (uint32_t i = 0; i < mesh->ind_count; i += 3) {
 		vec3    dir1   = coll.pts[i+1] - coll.pts[i];
 		vec3    dir2   = coll.pts[i+1] - coll.pts[i+2];
 		vec3    normal = vec3_normalize( vec3_cross(dir2, dir1) );
@@ -387,7 +468,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -398,7 +479,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
 
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
-	for (int32_t i = 0; i < mesh->ind_count; i+=3) {
+	for (uint32_t i = 0; i < mesh->ind_count; i+=3) {
 		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
 			continue;
 
@@ -427,12 +508,31 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt) {
 			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
 			if (dist < nearest_dist) {
 				nearest_dist = dist;
+				if (out_start_inds != nullptr) {
+					*out_start_inds = i;
+				}
 				*out_pt = {pt, data->planes[i / 3].normal};
 			}
 		}
 	}
 
 	return nearest_dist != FLT_MAX;
+}
+///////////////////////////////////////////
+
+bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
+	if (mesh->discard_data) {
+		log_err("mesh_get_triangle: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
+		return false;
+	}
+	if (mesh->ind_count > triangle_index) {
+		*a = mesh->verts[mesh->inds[triangle_index]];
+		*b = mesh->verts[mesh->inds[triangle_index + 1]];
+		*c = mesh->verts[mesh->inds[triangle_index + 2]];
+		return true;
+	}else {
+		return false;
+	}
 }
 
 ///////////////////////////////////////////
@@ -495,8 +595,7 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] =  x    +  y    * subd;
 	} }
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -566,8 +665,7 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -636,8 +734,7 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -706,8 +803,7 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
 	verts[(subdivisions+1)*4+1] = { -z_off, -dir, {0.5f,0.99f}, {255,255,255,255} };
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);
@@ -755,7 +851,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 			vec3 stretchA  = first_half_y ? p1 : p4;
 			vec3 stretchB  = first_half_y ? p2 : p3;
 			float stretchV = (radius*2)/sizeV;
-			float offV     = first_half_y ? 0 : sizeV-(radius*2);
+			float offV     = first_half_y ? 0 : 1-((radius/sizeV)*2);
 			
 			float py    = y / (float)(subd-2);
 			float pv    = py * stretchV + offV;
@@ -772,7 +868,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 				x = first_half_x ? sx : sx-1;
 				vec3  stretch = first_half_x ? stretchA : stretchB;
 				float stretchU = (radius*2)/sizeU;
-				float offU     = first_half_x ? 0 : sizeU-(radius*2);
+				float offU     = first_half_x ? 0 : 1-((radius/sizeU)*2);
 
 				float px      = x / (float)(subd-2);
 				float pu      = px * stretchU + offU;
@@ -797,8 +893,7 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 		}
 	}
 
-	mesh_set_verts(result, verts, vert_count);
-	mesh_set_inds (result, inds,  ind_count);
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
 	free(verts);
 	free(inds);

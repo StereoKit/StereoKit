@@ -2,6 +2,7 @@
 #include "../_stereokit.h"
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
+#include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -46,6 +47,11 @@ struct fp_item_t {
 	bool  file;
 };
 
+struct fp_path_t {
+	char          *folder;
+	array_t<char*> fragments;
+};
+
 #if defined(SK_OS_WINDOWS_UWP)
 struct fp_file_cache_t {
 public:
@@ -68,10 +74,11 @@ picker_mode_                 fp_mode;
 file_filter_t               *fp_filters       = nullptr;
 int32_t                      fp_filter_count  = 0;
 char                        *fp_title         = nullptr;
-char                        *fp_folder        = nullptr;
 char                        *fp_active        = nullptr;
 array_t<fp_item_t>           fp_items         = {};
 pose_t                       fp_win_pose      = pose_identity;
+fp_path_t                    fp_path          = {};
+int32_t                      fp_scroll_offset = 0;
 
 ///////////////////////////////////////////
 
@@ -95,12 +102,23 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 
 	// Call the file picker that does all the real work, and pass the callback
 	// along to _our_ callback.
-	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) {
+	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
 		callback_t *data = (callback_t *)callback_data;
 		if (data->on_confirm)
 			data->on_confirm(data->callback_data, confirmed, filename);
 		free(data);
 	}, filters, filter_count);
+}
+
+///////////////////////////////////////////
+
+char *platform_append_filter(char *to, const file_filter_t *filter, bool search_pattern, const char *postfix) {
+	const char *curr = filter->ext;
+	while (*curr == '.' || *curr == '*') curr++;
+
+	return search_pattern
+		? string_append(to, 3, "*.", curr, postfix)
+		: string_append(to, 2, curr, postfix);
 }
 
 ///////////////////////////////////////////
@@ -112,9 +130,9 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?1:2, filters[e].ext, ", ");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = string_append(filter, e==filter_count-1?2:3, "*", filters[e].ext, ";");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], true, e == filter_count - 1 ? "" : ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		size_t len = strlen(filter);
 		wchar_t *w_filter = platform_to_wchar(filter);
@@ -133,7 +151,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Open";
 			if (GetOpenFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -143,7 +161,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Save As";
 			if (GetSaveFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, strlen(filename)+1);
+				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				free(filename);
 			} else {
 				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
@@ -163,8 +181,19 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
+			const char *ext = filters[i].ext;
+			while (*ext == '*') ext++;
+
+			char *ext_mem = nullptr;
+			if (*ext != '.') {
+				ext_mem = string_append(nullptr, 2, ".", ext);
+				ext = ext_mem;
+			}
+
+			MultiByteToWideChar(CP_UTF8, 0, ext, (int)strlen(ext)+1, wext, 32);
 			picker.FileTypeFilter().Append(wext);
+
+			free(ext_mem);
 		}
 		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
 		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
@@ -197,7 +226,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	case picker_mode_open: {
 		fp_title = string_append(fp_title, 1, "Open (");
 		for (int32_t e = 0; e < filter_count; e++)
-			fp_title = string_append(fp_title, e==filter_count-1?1:2, filters[e].ext, ", ");
+			fp_title = platform_append_filter(fp_title, &filters[e], false, e == filter_count - 1 ? "" : ", ");
 		fp_title = string_append(fp_title, 1, ")");
 	} break;
 	}
@@ -207,7 +236,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	fp_filters = sk_malloc_t(file_filter_t, fp_filter_count);
 	memcpy(fp_filters, filters, sizeof(file_filter_t) * fp_filter_count);
 
-	file_picker_open_folder(fp_folder);
+	file_picker_open_folder(fp_path.folder);
 
 	const pose_t *head = input_head();
 	vec3          pos  = head->position + head->orientation*vec3_forward*.5f + head->orientation*vec3_up*0.2f;
@@ -289,16 +318,35 @@ void file_picker_open_folder(const char *folder) {
 	fp_items.sort([](const fp_item_t &a, const fp_item_t &b) { return a.file != b.file ? a.file-b.file : strcmp(a.name, b.name); });
 
 	char *new_folder = string_copy(folder);
-	free(fp_folder);
+	free(fp_path.folder);
 	free(dir_mem);
-	fp_folder = new_folder;
-	fp_active = nullptr;
+	fp_path.fragments.each(free);
+	fp_path.fragments.clear();
+
+	fp_path.folder   = new_folder;
+	fp_active        = nullptr;
+	fp_scroll_offset = 0;
+
+	// Create path fragments for navigation
+	char *curr       = fp_path.folder;
+	char *curr_start = curr;
+	while (*curr != '\0') {
+		if (*curr == '/' || *curr == '\\') {
+			if (curr_start != curr)
+				fp_path.fragments.add( string_substr(curr_start, 0, (uint32_t)(curr - curr_start)) );
+			curr_start = curr + 1;
+		}
+		curr++;
+	}
+	if (curr_start != curr) {
+		fp_path.fragments.add(string_substr(curr_start, 0, (uint32_t)(curr - curr_start)));
+	}
 }
 
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, fp_filename?strlen(fp_filename)+1:0);
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, (int32_t)(strlen(fp_filename)+1));
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;
@@ -311,16 +359,51 @@ void file_picker_finish() {
 void file_picker_update() {
 	if (fp_show) {
 		ui_push_id("_skp");
-		ui_window_begin(fp_title, fp_win_pose, { .4f,0 });
+		ui_window_begin(fp_title, fp_win_pose, { .46f,0 });
 
-		// Show the current directory
-		if (ui_button("Up")) {
-			char *path = platform_pop_path_new(fp_folder);
-			file_picker_open_folder(path);
-			free(path);
+		// Show the current directory address bar!
+		float   line_height       = ui_line_height();
+		vec3    address_bar_start = ui_layout_at();
+		float   max_width         = ui_area_remaining().x;
+		float   width = 0;
+		int32_t start = maxi(0,((int32_t)fp_path.fragments.count)-1);
+
+		const float gutter  = ui_get_gutter();
+		const float padding = ui_get_padding();
+
+		// Start at the end, and look backwards until we rin out of room!
+		// That's the fragment we'll start with
+		for (int32_t i = start; i >= 0; i--) {
+			float size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding*2);
+			if (width + size > max_width) {
+				break;
+			}
+			start = i;
+			width += size + gutter;
 		}
-		ui_sameline();
-		ui_label_sz(fp_folder, {ui_layout_remaining().x, ui_line_height()});
+		// Draw the fragment crumbs as clickable buttons
+		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{max_width, line_height});
+		for (size_t i = start; i < fp_path.fragments.count; i++) {
+			ui_push_idi((int32_t)i);
+			vec2 size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
+			if (ui_button_sz(fp_path.fragments[i], size) && i < fp_path.fragments.count-1) {
+				char *new_path = string_copy(fp_path.folder);
+				for (size_t p = i; p < fp_path.fragments.count-1; p++)
+				{
+					char *next_path = platform_pop_path_new(new_path);
+					free(new_path);
+					new_path = next_path;
+				}
+				file_picker_open_folder(new_path);
+				free(new_path);
+				ui_pop_id();
+				break;
+			}
+			ui_pop_id();
+			ui_sameline();
+		}
+		ui_panel_at(address_bar_start, vec2{ max_width, ui_line_height() });
+		ui_nextline();
 
 		// Show the active item
 		switch (fp_mode) {
@@ -331,7 +414,7 @@ void file_picker_update() {
 			}
 			ui_sameline();
 			if (ui_button("Save")) { 
-				snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_buffer);
+				snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_buffer);
 				fp_call        = true;
 				fp_call_status = true;
 			}
@@ -341,32 +424,53 @@ void file_picker_update() {
 		case picker_mode_open: {
 			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
 			ui_sameline();
-			if (fp_active) {
-				if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
-				ui_sameline();
-				ui_label(fp_active);
-			} else {
-				ui_label("");
-			}
+			if (fp_active == nullptr) ui_push_enabled(false);
+			if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
+			ui_sameline();
+			ui_label(fp_active?fp_active:"None selected...");
+			if (fp_active == nullptr) ui_pop_enabled();
 		} break;
 		}
 
 		ui_hseparator();
 
 		// List the files
-		vec2 size = { .085f, ui_line_height() * 1.5f };
-		for (size_t i = 0; i < fp_items.count; i++) {
-			if (ui_button_sz(fp_items[i].name, size)) {
+		vec2 size = { .12f, line_height * 1.5f };
+		const int32_t scroll_cols = 3;
+		const int32_t scroll_rows = 5;
+		const int32_t scroll_step = scroll_cols*scroll_rows;
+		vec3 file_grid_start = ui_layout_at();
+		ui_panel_begin();
+		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
+			if (i >= (int32_t)fp_items.count) {
+				ui_layout_reserve(size);
+			} else if (ui_button_sz(fp_items[i].name, size)) {
 				if (fp_items[i].file)
 					fp_active = fp_items[i].name;
 				else {
-					char *path = platform_push_path_new(fp_folder, fp_items[i].name);
+					char *path = platform_push_path_new(fp_path.folder, fp_items[i].name);
 					file_picker_open_folder(path);
 					free(path);
 				}
 			}
 			ui_sameline();
 		}
+		ui_panel_end();
+
+		ui_nextline();
+		float right  = (size.x + gutter) * scroll_cols;
+		float bottom = (size.y + gutter) * (scroll_rows-1);
+		ui_push_enabled(fp_scroll_offset - scroll_step >= 0);
+		if (ui_button_at("^", file_grid_start - vec3{ right,0,0 }, vec2{ max_width-right, size.y})) {
+			fp_scroll_offset = fp_scroll_offset - scroll_step;
+		}
+		ui_pop_enabled();
+		ui_sameline();
+		ui_push_enabled(fp_scroll_offset + scroll_step < (int32_t)fp_items.count);
+		if (ui_button_at("v", file_grid_start - vec3{ right, bottom,0 }, vec2{ max_width - right, size.y })) {
+			fp_scroll_offset = fp_scroll_offset + scroll_step;
+		}
+		ui_pop_enabled();
 
 		ui_window_end();
 		ui_pop_id();
@@ -380,8 +484,11 @@ void file_picker_update() {
 ///////////////////////////////////////////
 
 void file_picker_shutdown() {
-	free(fp_title ); fp_title  = nullptr;
-	free(fp_folder); fp_folder = nullptr;
+	free(fp_title      ); fp_title  = nullptr;
+	free(fp_path.folder);
+	fp_path.fragments.each(free);
+	fp_path.fragments.free();
+	fp_path = {};
 	fp_items.free();
 
 #if defined(SK_OS_WINDOWS_UWP)

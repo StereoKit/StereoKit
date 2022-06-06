@@ -57,11 +57,12 @@ namespace StereoKit
 		/// <summary>Pose of the wrist. TODO: Not populated right now.
 		/// </summary>
 		public  Pose        wrist;
-		/// <summary>The position and orientation at the center of the palm!
-		/// Here, Forward is the direction the flat of the palm is facing. X+
-		/// is to the outside of the right hand, and to the inside of the
-		/// left hand. </summary>
-		public  Pose        palm;
+		/// <summary>The position and orientation of the palm! Position is
+		/// specifically defined as the middle of the middle finger's root
+		/// (metacarpal) bone. For orientation, Forward is the direction the
+		/// flat of the palm is facing, "Iron Man" style. X+ is to the outside
+		/// of the right hand, and to the inside of the left hand. </summary>
+		public Pose         palm;
 		/// <summary>This is an approximation of where the center of a 
 		/// 'pinch' gesture occurs, and is used internally by StereoKit for
 		/// some tasks, such as UI. For simulated hands, this position will
@@ -356,7 +357,7 @@ namespace StereoKit
 		public static BtnState ControllerMenuButton
 			=> NativeAPI.input_controller_menu();
 
-		/// <summary>Retreives all the information about the user's hand!
+		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
 		/// controllers. 
@@ -462,7 +463,7 @@ namespace StereoKit
 		static void Initialize()
 		{
 			initialized = true;
-			callback    = OnEvent; // This is stored in a persistant variable to force the callback from getting garbage collected!
+			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
 			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
 		}
 		static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)

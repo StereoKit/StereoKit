@@ -1,6 +1,4 @@
 using StereoKit;
-using System;
-using System.Threading.Tasks;
 
 namespace StereoKitTest
 {
@@ -13,6 +11,7 @@ namespace StereoKitTest
 
 		Model    model      = null;
 		float    modelScale = 1;
+		int      modelTask  = 0;
 		float    animScrub  = 0;
 		float    menuScale  = 1;
 		bool     showNodes  = false;
@@ -44,10 +43,12 @@ namespace StereoKitTest
 			/// file picker, and make a call to OnLoadModel after a file has
 			/// been successfully picked!
 			if (UI.Button("Open Model") && !Platform.FilePickerVisible) {
-				Platform.FilePicker(PickerMode.Open, OnLoadModel, null,
-					".gltf", ".glb", ".obj", ".stl", ".fbx", ".ply");
+				Platform.FilePicker(PickerMode.Open, OnLoadModel, null, Assets.ModelFormats);
 			}
 			/// :End:
+
+			float percent = (Assets.CurrentTask - modelTask) / (float)(Assets.TotalTasks - modelTask);
+			UI.ProgressBar(percent);
 
 			UI.Label("Scale");
 			UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);
@@ -106,13 +107,11 @@ namespace StereoKitTest
 		/// size.
 		private void OnLoadModel(string filename)
 		{
-			Task.Run(() =>
-			{
-				model      = Model.FromFile(filename);
-				modelScale = 1 / model.Bounds.dimensions.Magnitude;
-				if (model.Anims.Count > 0)
-					model.PlayAnim(model.Anims[0], AnimMode.Loop);
-			});
+			model      = Model.FromFile(filename);
+			modelTask  = Assets.CurrentTask;
+			modelScale = 1 / model.Bounds.dimensions.Magnitude;
+			if (model.Anims.Count > 0)
+				model.PlayAnim(model.Anims[0], AnimMode.Loop);
 		}
 		/// :End:
 

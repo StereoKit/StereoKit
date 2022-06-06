@@ -22,7 +22,7 @@ class DemoRayMesh : ITest
 		UI.Handle("Cast", ref castPose, sphereMesh.Bounds*0.03f);
 		boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix());
 		sphereMesh.Draw(Default.MaterialUI, castPose.ToMatrix(0.03f));
-		Lines.Add(castPose.position, boxPose.position, Color.White, 0.01f);
+		Lines.Add(castPose.position, boxPose.position, Color.White, 0.005f);
 
 		// Create a ray that's in the Mesh's model space
 		Matrix transform = boxPose.ToMatrix();
@@ -32,9 +32,18 @@ class DemoRayMesh : ITest
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Ray at))
+		if (ray.Intersect(boxMesh, out Ray at, out uint index))
 		{
-			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
+			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.01f));
+			if (boxMesh.GetTriangle(index, out Vertex a, out Vertex b, out Vertex c))
+			{
+				Vec3 aPt = transform.Transform(a.pos);
+				Vec3 bPt = transform.Transform(b.pos);
+				Vec3 cPt = transform.Transform(c.pos);
+				Lines.Add(aPt, bPt, new Color32(0,255,0,255), 0.005f);
+				Lines.Add(bPt, cPt, new Color32(0,255,0,255), 0.005f);
+				Lines.Add(cPt, aPt, new Color32(0,255,0,255), 0.005f);
+			}
 		}
 	}
 	/// :End:

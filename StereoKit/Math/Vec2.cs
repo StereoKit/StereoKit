@@ -15,7 +15,9 @@ namespace StereoKit
 		/// implicit conversions to System.Numerics types are also
 		/// provided.</summary>
 		public Vector2 v;
+		/// <summary>X component.</summary>
 		public float x { get => v.X; set => v.X=value; }
+		/// <summary>Y component.</summary>
 		public float y { get => v.Y; set => v.Y=value; }
 
 		/// <summary>A basic constructor, just copies the values in!</summary>
@@ -27,17 +29,59 @@ namespace StereoKit
 		/// <param name="xy">X and Y component of the vector.</param>
 		public Vec2(float xy) => v = new Vector2(xy, xy);
 
+		/// <summary>Allows implicit conversion from System.Numerics.Vector2
+		/// to StereoKit.Vec2.</summary>
+		/// <param name="v">Any System.Numerics Vector2.</param>
+		/// <returns>A StereoKit compatible vector.</returns>
 		public static implicit operator Vec2(Vector2 v) => new Vec2(v.X, v.Y);
+		/// <summary>Allows implicit conversion from StereoKit.Vec2 to
+		/// System.Numerics.Vector2</summary>
+		/// <param name="v">Any StereoKit.Vec2.</param>
+		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector2(Vec2 v) => v.v;
 
+		/// <summary>Adds matching components together. Commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the added components.</returns>
 		public static Vec2 operator +(Vec2 a, Vec2 b) => a.v+b.v;
+		/// <summary>Subtracts matching components from eachother. Not
+		/// commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector from the subtracted components.</returns>
 		public static Vec2 operator -(Vec2 a, Vec2 b) => a.v-b.v;
+		/// <summary>A component-wise vector multiplication, same thing as
+		/// a non-uniform scale. NOT a dot product! Commutative.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec2 operator *(Vec2 a, Vec2 b) => a.v*b.v;
+		/// <summary>A component-wise vector division. Not commutative</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec2 operator /(Vec2 a, Vec2 b) => a.v/b.v;
+		/// <summary>Vector negation, returns a vector where each component has
+		/// been negated.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <returns>A vector where each component has been negated.</returns>
 		public static Vec2 operator -(Vec2 a) => -a.v;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector a scaled by b.</returns>
 		public static Vec2 operator *(Vec2 a, float b) => a.v*b;
+		/// <summary>A scalar vector division.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector a divided by b.</returns>
 		public static Vec2 operator /(Vec2 a, float b) => a.v/b;
-		public static Vec2 operator *(float b, Vec2 a) => a.v*b;
+		/// <summary>A scalar vector multiplication.</summary>
+		/// <param name="a">Any scalar.</param>
+		/// <param name="b">Any vector.</param>
+		/// <returns>A new vector a scaled by b.</returns>
+		public static Vec2 operator *(float a, Vec2 b) => b.v*a;
 
 		/// <summary>A Vec2 with all components at zero, this is the same as
 		/// `new Vec2(0,0)`.</summary>
@@ -136,7 +180,7 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="pt">The point to check against.</param>
 		/// <param name="radius">The distance to check against.</param>
-		/// <returns>True if the points are within radius of eachother, false 
+		/// <returns>True if the points are within radius of each other, false
 		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool InRadius(Vec2 pt, float radius)
@@ -178,13 +222,13 @@ namespace StereoKit
 			=> (b.v-a.v).LengthSquared();
 
 		/// <summary>Checks if two points are within a certain radius of
-		/// eachother. This is an easily readable shorthand of the squared
+		/// each other. This is an easily readable shorthand of the squared
 		/// distance check. </summary>
 		/// <param name="a">The first point.</param>
 		/// <param name="b">And the second point!</param>
 		/// <param name="radius">The distance to check against.</param>
-		/// <returns>True if a and b are within radius of eachother, false not.
-		/// </returns>
+		/// <returns>True if a and b are within radius of each other, false if 
+		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool InRadius(Vec2 a, Vec2 b, float radius)
 			=> (a.v - b.v).LengthSquared() < radius * radius;
@@ -222,7 +266,10 @@ namespace StereoKit
 		public static Vec2 Min(Vec2 a, Vec2 b)
 			=> Vector2.Min(a.v, b.v);
 
+		/// <summary>Mostly for debug purposes, this is a decent way to log or
+		/// inspect the vector in debug mode. Looks like "[x, y]"</summary>
+		/// <returns>A string that looks like "[x, y]"</returns>
 		public override string ToString()
-			=> string.Format("[{0:0.00}, {1:0.00}]", x, y);
+			=> string.Format("[{0:0.##}, {1:0.##}]", x, y);
 	}
 }

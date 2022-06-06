@@ -27,6 +27,7 @@ ANativeWindow    *android_next_window     = nullptr;
 jobject           android_next_window_xam = nullptr;
 bool              android_next_win_ready  = false;
 skg_swapchain_t   android_swapchain       = {};
+bool              android_swapchain_created = false;
 system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
@@ -100,8 +101,9 @@ bool android_init() {
 
 void android_create_swapchain() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	android_swapchain_created = true;
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
 	render_update_projection();
@@ -113,6 +115,9 @@ void android_create_swapchain() {
 void android_resize_swapchain() {
 	int32_t height = ANativeWindow_getWidth (android_window);
 	int32_t width  = ANativeWindow_getHeight(android_window);
+
+	if (!android_swapchain_created || (width == sk_info.display_width && height == sk_info.display_height))
+		return;
 
 	log_diagf("Resized swapchain: %dx%d", width, height);
 	skg_swapchain_resize(&android_swapchain, width, height);
@@ -162,6 +167,7 @@ bool android_start_flat() {
 void android_stop_flat() {
 	flatscreen_input_shutdown();
 	if (android_window) {
+		android_swapchain_created = false;
 		skg_swapchain_destroy(&android_swapchain);
 		android_window = nullptr;
 	}
@@ -221,12 +227,12 @@ void android_step_end_flat() {
 		return;
 
 	skg_draw_begin();
-	color128 color = render_get_clear_color();
+	color128 color = render_get_clear_color_ln();
 	skg_swapchain_bind(&android_swapchain);
 	skg_target_clear(true, &color.r);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix view = render_get_cam_final        ();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();
@@ -234,6 +240,12 @@ void android_step_end_flat() {
 	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
 	skg_swapchain_present(&android_swapchain);
 }
+
+///////////////////////////////////////////
+
+void *backend_android_get_java_vm () { return android_vm; }
+void *backend_android_get_activity() { return android_activity; }
+void *backend_android_get_jni_env () { return android_env; }
 
 } // namespace sk
 

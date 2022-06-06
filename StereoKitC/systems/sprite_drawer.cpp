@@ -7,7 +7,7 @@
 
 #include "../libraries/array.h"
 #include "../hierarchy.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 
 #include <DirectXMath.h> // Matrix math functions and objects
@@ -102,8 +102,8 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
 		vec3 offset = vec3_zero;
-		if      (anchor_position & text_align_x_left  ) offset.x =  sprite->aspect/2;
-		else if (anchor_position & text_align_x_right ) offset.x = -sprite->aspect/2;
+		if      (anchor_position & text_align_x_left  ) offset.x = -sprite->aspect/2;
+		else if (anchor_position & text_align_x_right ) offset.x =  sprite->aspect/2;
 		if      (anchor_position & text_align_y_bottom) offset.y =  0.5f;
 		else if (anchor_position & text_align_y_top   ) offset.y = -0.5f;
 		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {sprite->aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
@@ -129,8 +129,7 @@ bool sprite_drawer_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id       (sprite_quad_old, "render/sprite_quad");
 	mesh_set_keep_data(sprite_quad_old, false);
-	mesh_set_verts    (sprite_quad_old, verts, 4, false);
-	mesh_set_inds     (sprite_quad_old, inds,  6);
+	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, false);
 
 	return true;
 }

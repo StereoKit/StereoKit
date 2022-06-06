@@ -28,6 +28,7 @@ typedef struct web_key_map_t {
 } web_key_map_t;
 
 skg_swapchain_t web_swapchain  = {};
+bool            web_swapchain_initialized = false;
 system_t       *web_render_sys = nullptr;
 vec2            web_mouse_pos  = { 0,0 };
 bool            web_mouse_tracked = false;
@@ -143,7 +144,7 @@ web_key_map_t web_keymap[] = {
 ///////////////////////////////////////////
 
 WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
-	if (width == sk_info.display_width && height == sk_info.display_height)
+	if (!web_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
@@ -185,9 +186,10 @@ bool web_start_flat() {
 	sk_info.display_type   = display_opaque;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
 	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	web_swapchain_initialized = true;
 	sk_info.display_width  = web_swapchain.width;
 	sk_info.display_height = web_swapchain.height;
 	
@@ -203,6 +205,7 @@ bool web_start_flat() {
 void web_stop_flat() {
 	flatscreen_input_shutdown();
 	skg_swapchain_destroy    (&web_swapchain);
+	web_swapchain_initialized = false;
 }
 
 ///////////////////////////////////////////
@@ -221,14 +224,14 @@ void web_step_begin_flat() {
 void web_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 	skg_swapchain_bind(&web_swapchain);
 	skg_target_clear(true, &col.r);
 
 	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();

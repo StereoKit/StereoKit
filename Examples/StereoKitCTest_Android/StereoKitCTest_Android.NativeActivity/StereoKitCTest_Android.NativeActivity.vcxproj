@@ -63,7 +63,7 @@
     <IncludePath>$(SolutionDir)StereoKitC;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup>
-    <LibraryPath>$(SolutionDir)bin/distribute/bin/android/arm64-v8a/release/</LibraryPath>
+    <LibraryPath>$(SolutionDir)bin/distribute/bin/android/arm64-v8a/$(Configuration)/</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -76,7 +76,7 @@
       <LibraryDependencies>%(LibraryDependencies);GLESv1_CM;EGL;m</LibraryDependencies>
     </Link>
     <PreBuildEvent>
-      <Command >copy "$(SolutionDir)bin\distribute\bin\android\arm64-v8a\release\*.so" /B /Y</Command>
+      <Command >copy "$(SolutionDir)bin\distribute\bin\android\arm64-v8a\$(Configuration)\*.so" /B /Y</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

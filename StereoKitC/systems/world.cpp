@@ -5,6 +5,7 @@
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
 #include "platform/openxr.h"
+#include "platform/openxr_extensions.h"
 #include "render.h"
 
 #include <float.h>

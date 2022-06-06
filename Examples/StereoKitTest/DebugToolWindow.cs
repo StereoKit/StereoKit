@@ -86,7 +86,8 @@ class DebugToolWindow
 	{
 		UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*U.cm);
 		if (UI.Button("Print Screenshot Pose") || Input.Key(Key.F7).IsJustActive()) HeadshotPose();
-		if (UI.Button("Print Hand Pose") || Input.Key(Key.F8).IsJustActive()) HandshotPose();
+		if (UI.Button("Print R Hand Pose") || Input.Key(Key.F8).IsJustActive()) HandshotPose(Handed.Right);
+		if (UI.Button("Print L Hand Pose") || Input.Key(Key.F9).IsJustActive()) HandshotPose(Handed.Left);
 		if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
 		if (UI.Toggle("Record Head", ref recordHead)) ToggleRecordHead();
 		if (headAnim != null) {
@@ -221,9 +222,9 @@ class DebugToolWindow
 		Log.Info($"Tests.Screenshot(\"image.jpg\", 600, 600, new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
-	static void HandshotPose()
+	static void HandshotPose(Handed hand)
 	{
-		Hand h = Input.Hand(Handed.Right);
+		Hand h = Input.Hand(hand);
 		HandJoint[] joints = new HandJoint[27];
 		Array.Copy(h.fingers, 0, joints, 0, 25);
 		joints[25] = new HandJoint(h.palm.position, h.palm.orientation, 0);

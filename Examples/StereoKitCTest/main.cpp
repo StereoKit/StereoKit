@@ -6,6 +6,7 @@ using namespace sk;
 #include "scene.h"
 #include "demo_basics.h"
 #include "demo_ui.h"
+#include "demo_ui_layout.h"
 #include "demo_mic.h"
 #include "demo_sprites.h"
 #include "demo_lines.h"
@@ -13,6 +14,9 @@ using namespace sk;
 #include "demo_world.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
+#include "demo_envmap.h"
+#include "demo_windows.h"
+#include "demo_desktop.h"
 
 #include <stdio.h>
 
@@ -35,6 +39,11 @@ scene_t demos[] = {
 		demo_ui_init,
 		demo_ui_update,
 		demo_ui_shutdown,
+	}, {
+		"UI Layout",
+		demo_ui_layout_init,
+		demo_ui_layout_update,
+		demo_ui_layout_shutdown,
 	}, {
 		"Microphone",
 		demo_mic_init,
@@ -71,9 +80,24 @@ scene_t demos[] = {
 		demo_draw_update,
 		demo_draw_shutdown,
 	}, {
-		"Exit",
-		sk_quit,
+		"Environment Map",
+		demo_envmap_init,
+		demo_envmap_update,
+		demo_envmap_shutdown,
+	},
+#if defined(_WIN32) && !defined(WINDOWS_UWP)
+	{
+		"Windows",
+		demo_windows_init,
+		demo_windows_update,
+		demo_windows_shutdown,
+	}, {
+		"Desktop",
+		demo_desktop_init,
+		demo_desktop_update,
+		demo_desktop_shutdown,
 	}
+#endif
 };
 
 
@@ -126,7 +150,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[8]);
+	scene_set_active(demos[1]);
 
 	sk_run(common_update, common_shutdown);
 
@@ -174,12 +198,15 @@ void common_update() {
 	for (int i = 0; i < sizeof(demos) / sizeof(scene_t); i++) {
 		std::string &name = demos[i].name;
 
+		ui_sameline();
+
 		if (ui_button(name.c_str())) {
 			log_write(log_inform, name.c_str());
 			scene_set_active(demos[i]);
 		}
-		ui_sameline();
 	}
+	ui_hseparator();
+	if (ui_button("Exit")) sk_quit();
 	ui_window_end();
 
 	ruler_window();

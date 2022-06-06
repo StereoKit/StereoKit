@@ -1,4 +1,5 @@
-﻿using StereoKit;
+﻿using System;
+using StereoKit;
 using System.Collections.Generic;
 
 class DemoEyes : ITest
@@ -11,13 +12,23 @@ class DemoEyes : ITest
 	List<LinePoint> points = new List<LinePoint>();
 	Vec3 previous;
 
-	public void Initialize() { }
+	long lastEyesSampleTime;
+	DateTime demoStartTime;
+	int uniqueSamplesCount;
+
+	public void Initialize()
+	{
+		demoStartTime = DateTime.UtcNow;
+		uniqueSamplesCount = 0;
+		lastEyesSampleTime = -1;
+	}
 	public void Shutdown  () { }
 
 	public void Update()
 	{
 		Plane plane = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
-		Mesh.Quad.Draw(Material.Default, Matrix.TRS(new Vec3(0.54f, 0, -0.468f), Quat.LookDir(plane.normal), 0.5f));
+		Matrix quadPose = Matrix.TRS(new Vec3(0.54f, 0, -0.468f), Quat.LookDir(plane.normal), 0.5f);
+		Mesh.Quad.Draw(Material.Default, quadPose);
 		if (Input.Eyes.Ray.Intersect(plane, out Vec3 at))
 		{
 			Color stateColor = Input.EyesTracked.IsActive() 
@@ -46,5 +57,17 @@ class DemoEyes : ITest
 
 		Text.Add(title, titlePose);
 		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+
+		if (Backend.XRType == BackendXRType.OpenXR)
+		{
+			if (Backend.OpenXR.EyesSampleTime != lastEyesSampleTime)
+            {
+				lastEyesSampleTime = Backend.OpenXR.EyesSampleTime;
+				uniqueSamplesCount++;
+            }
+
+			double sampleFrequency = uniqueSamplesCount / (DateTime.UtcNow - demoStartTime).TotalSeconds;
+			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.55f, -0.1f)) * quadPose);
+		}
 	}
 }

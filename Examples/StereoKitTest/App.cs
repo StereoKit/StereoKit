@@ -14,10 +14,12 @@ class App
 		logFilter         = LogLevel.Diagnostic};
 
 	public SKSettings Settings => settings;
+	public static PassthroughFBExt passthrough;
 
 	Model  floorMesh;
 	Matrix floorTr;
 	Pose   demoSelectPose = new Pose();
+	Sprite powerButton;
 
 	List<string> demoNames = new List<string>();
 
@@ -48,6 +50,8 @@ class App
 		/// your initialization code!
 		Log.Subscribe(OnLog);
 		/// :End:
+		
+		passthrough = SK.AddStepper<PassthroughFBExt>();
 	}
 
 	//////////////////////
@@ -61,6 +65,8 @@ class App
 
 		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
 		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
+
+		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
 		demoSelectPose.position    = new Vec3(0, 0, -0.6f);
 		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
@@ -79,10 +85,25 @@ class App
 
 	public void Step()
 	{
+		CheckFocus();
+
 		Tests.Update();
 
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
+
+		/// :CodeSample: Projection Renderer.Projection
+		/// ### Toggling the projection mode
+		/// Only in flatscreen apps, there is the option to change the main
+		/// camera's projection mode between perspective and orthographic.
+		if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
+			Input.Key(Key.P).IsJustActive())
+		{
+			Renderer.Projection = Renderer.Projection == Projection.Perspective
+				? Projection.Ortho
+				: Projection.Perspective;
+		}
+		/// :End:
 
 		// If we can't see the world, we'll draw a floor!
 		if (SK.System.displayType == Display.Opaque)
@@ -120,7 +141,7 @@ class App
 		}
 		UI.NextLine();
 		UI.HSeparator();
-		if (UI.Button("Exit"))
+		if (UI.ButtonImg("Exit", powerButton))
 			SK.Quit();
 		UI.WindowEnd();
 
@@ -186,6 +207,19 @@ class App
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
 		UI.Text(logText);
 		UI.WindowEnd();
+	}
+	/// :End:
+
+	/// :CodeSample: AppFocus SK.AppFocus
+	/// ### Checking for changes in application focus
+	AppFocus lastFocus = AppFocus.Hidden;
+	void CheckFocus()
+	{
+		if (lastFocus != SK.AppFocus)
+		{
+			lastFocus = SK.AppFocus;
+			Log.Info($"App focus changed to: {lastFocus}");
+		}
 	}
 	/// :End:
 }

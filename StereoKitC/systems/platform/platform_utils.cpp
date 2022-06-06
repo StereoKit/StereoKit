@@ -103,7 +103,11 @@ void platform_msgbox_err(const char *text, const char *header) {
 		platform_sleep(100);
 	}
 #elif defined(SK_OS_WINDOWS)
-	MessageBox(nullptr, text, header, MB_OK | MB_ICONERROR);
+	wchar_t *text_w   = platform_to_wchar(text);
+	wchar_t *header_w = platform_to_wchar(header);
+	MessageBoxW(nullptr, text_w, header_w, MB_OK | MB_ICONERROR);
+	free(text_w);
+	free(header_w);
 #else
 	log_err("No messagebox capability for this platform!");
 #endif
@@ -142,7 +146,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// Linux thinks folders are files, but then fails in a bad way when
 	// treating them like files.
 	struct stat buffer;
-	if (stat(filename, &buffer) != 0 || (S_ISDIR(buffer.st_mode))) {
+	if (stat(filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
 		log_diagf("platform_read_file can't read folders: %s", filename);
 		return false;
 	}
@@ -539,40 +543,52 @@ char *platform_working_dir() {
 void  platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
 #if defined(SK_OS_WINDOWS)
 	if (string_eq(directory_path, "")) {
-		char drive_names[256];
-		GetLogicalDriveStrings(sizeof(drive_names), drive_names);
-		char *curr = drive_names;
+		DWORD size = GetLogicalDriveStringsW(0, nullptr);
+		wchar_t *drive_names = sk_malloc_t(wchar_t, size);
+		GetLogicalDriveStringsW(size, drive_names);
+
+		wchar_t *curr = drive_names;
 		while (*curr != '\0') {
-			on_item(callback_data, curr, false);
-			curr = curr + strlen(curr)+1;
+			char *drive_u8 = platform_from_wchar(curr);
+			on_item(callback_data, drive_u8, false);
+			curr = curr + wcslen(curr)+1;
+			free(drive_u8);
 		}
+
+		free(drive_names);
 		return;
 	}
 
-	WIN32_FIND_DATA info;
-	HANDLE          handle = nullptr;
+	WIN32_FIND_DATAW info;
+	HANDLE           handle = nullptr;
 
 	char *filter = string_copy(directory_path);
 	if (string_endswith(filter, "\\"))
 		filter = string_append(filter, 1, "*.*");
 	else filter = string_append(filter, 1, "\\*.*");
+	wchar_t *filter_w = platform_to_wchar(filter);
 
-	handle = FindFirstFile(filter, &info);
+	handle = FindFirstFileW(filter_w, &info);
 	if (handle == INVALID_HANDLE_VALUE) return;
 
 	while (handle) {
-		if (!string_eq(info.cFileName, ".") && !string_eq(info.cFileName, "..")) {
+		char *filename_u8 = platform_from_wchar(info.cFileName);
+		if (!string_eq(filename_u8, ".") && !string_eq(filename_u8, "..")) {
 			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				on_item(callback_data, info.cFileName, false);
+				on_item(callback_data, filename_u8, false);
 			else
-				on_item(callback_data, info.cFileName, true);
+				on_item(callback_data, filename_u8, true);
 		}
+		free(filename_u8);
 
-		if (!FindNextFile(handle, &info)) {
+		if (!FindNextFileW(handle, &info)) {
 			FindClose(handle);
 			handle = nullptr;
 		}
 	}
+	free(filter);
+	free(filter_w);
+
 #elif defined(SK_OS_LINUX)
 	if (string_eq(directory_path, "")) {
 		directory_path = platform_path_separator;
@@ -683,7 +699,7 @@ wchar_t *platform_to_wchar(const char *utf8_string) {
 }
 
 char *platform_from_wchar(const wchar_t *string) {
-	int     len  = wcslen(string)+1;
+	int32_t len  = (int)(wcslen(string)+1);
 	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);
 	char *result = sk_malloc_t(char, size);
 	WideCharToMultiByte               (CP_UTF8, 0, string, len, result, size, nullptr, nullptr);

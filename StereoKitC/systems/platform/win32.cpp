@@ -22,6 +22,7 @@ namespace sk {
 
 HWND            win32_window              = nullptr;
 skg_swapchain_t win32_swapchain           = {};
+bool            win32_swapchain_initialized = false;
 tex_t           win32_target              = {};
 float           win32_scroll              = 0;
 LONG_PTR        win32_openxr_base_winproc = 0;
@@ -41,7 +42,7 @@ const int32_t win32_multisample = 8;
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (width == sk_info.display_width && height == sk_info.display_height)
+	if (win32_swapchain_initialized == false || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
@@ -64,12 +65,12 @@ void win32_physical_key_interact() {
 
 bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
-	case WM_LBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: if (sk_focused) input_keyboard_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   if (sk_focused) input_keyboard_inject_release(key_mouse_center); return true;
+	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
@@ -77,7 +78,7 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
-	case WM_MOUSEWHEEL:  if (sk_focused) win32_scroll += (short)HIWORD(wParam); return true;
+	case WM_MOUSEWHEEL:  if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
 	}
 }
@@ -100,8 +101,7 @@ bool win32_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool win32_start_post_xr() {
-	wchar_t app_name_w[256];
-	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
 	// Create a window just to grab input
 	WNDCLASSW wc = {0}; 
@@ -117,14 +117,15 @@ bool win32_start_post_xr() {
 	if( !RegisterClassW(&wc) ) return false;
 
 	win32_window = CreateWindowW(
-		app_name_w, 
-		app_name_w, 
+		app_name_w,
+		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		0, 0, 0, 0,
 		0, 0, 
-		wc.hInstance, 
+		wc.hInstance,
 		nullptr);
 
+	free(app_name_w);
 	if (!win32_window) {
 		return false;
 	}
@@ -150,17 +151,16 @@ bool win32_start_flat() {
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
 
-	wchar_t app_name_w[256];
-	mbstowcs(app_name_w, sk_app_name, _countof(app_name_w));
+	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
-	WNDCLASSW wc = {0}; 
+	WNDCLASSW wc = {0};
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
 			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
-			case WM_SETFOCUS:   sk_focused = true;  break;
-			case WM_KILLFOCUS:  sk_focused = false; break;
-			case WM_MOUSEWHEEL: if (sk_focused) win32_scroll += (short)HIWORD(wParam); break;
+			case WM_SETFOCUS:   sk_focus   = app_focus_active;          break;
+			case WM_KILLFOCUS:  sk_focus   = app_focus_background;      break;
+			case WM_MOUSEWHEEL: if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); break;
 			case WM_SYSCOMMAND: {
 				// Has the user pressed the restore/'un-maximize' button?
 				// WM_SIZE happens -after- this event, and contains the new size.
@@ -195,7 +195,8 @@ bool win32_start_flat() {
 	wc.hInstance     = GetModuleHandleW(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
-	if( !RegisterClassW(&wc) ) return false;
+	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	if (!RegisterClassW(&wc)) { free(app_name_w); return false; }
 
 	RECT r;
 	r.left   = sk_settings.flatscreen_pos_x;
@@ -204,16 +205,19 @@ bool win32_start_flat() {
 	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
 	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindowW(
-		app_name_w, 
-		app_name_w, 
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
-		max(0,r.left), 
-		max(0,r.top), 
-		r.right  - r.left, 
-		r.bottom - r.top, 
+		app_name_w,
+		app_name_w,
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		max(0,r.left),
+		max(0,r.top),
+		r.right  - r.left,
+		r.bottom - r.top,
 		0, 0, 
-		wc.hInstance, 
+		wc.hInstance,
 		nullptr);
+
+	free(app_name_w);
+
 	if( !win32_window ) return false;
 
 	RECT bounds;
@@ -222,11 +226,12 @@ bool win32_start_flat() {
 	int32_t height = bounds.bottom - bounds.top;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = render_preferred_depth_fmt();
+	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 #if defined(SKG_OPENGL)
 	depth_fmt = skg_tex_fmt_depthstencil;
 #endif
 	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, skg_tex_fmt_none, width, height);
+	win32_swapchain_initialized = true;
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
@@ -246,6 +251,7 @@ void win32_stop_flat() {
 	flatscreen_input_shutdown();
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
+	win32_swapchain_initialized = false;
 }
 
 ///////////////////////////////////////////
@@ -272,7 +278,7 @@ void win32_step_begin_flat() {
 void win32_step_end_flat() {
 	skg_draw_begin();
 
-	color128 col = render_get_clear_color();
+	color128 col = render_get_clear_color_ln();
 #if defined(SKG_OPENGL)
 	skg_swapchain_bind(&win32_swapchain);
 #else
@@ -282,8 +288,8 @@ void win32_step_end_flat() {
 
 	input_update_poses(true);
 
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection();
+	matrix view = render_get_cam_final        ();
+	matrix proj = render_get_projection_matrix();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1, render_get_filter());
 	render_clear();

@@ -139,6 +139,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
+    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\x86_64\$(ConfigurationName)\libStereoKitC.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Abi>x86_64</Abi>
+    </AndroidNativeLibrary>
     <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libopenxr_loader.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
@@ -152,7 +156,9 @@
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>cd $(SolutionDir)
-xmake f -p android -a arm64-v8a -y -m $(ConfigurationName)
+xmake f -p android -a arm64-v8a -y -m $(ConfigurationName) --oculus-openxr=y
+xmake
+xmake f -p android -a x86_64 -y -m $(ConfigurationName) --oculus-openxr=n
 xmake</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

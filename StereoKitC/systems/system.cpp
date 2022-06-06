@@ -95,7 +95,7 @@ bool systems_sort() {
 		init_ids[i].count = systems[i].init_dependency_count;
 		init_ids[i].ids   = sk_malloc_t(int32_t, systems[i].init_dependency_count);
 
-		for (size_t d = 0; d < systems[i].init_dependency_count; d++) {
+		for (int32_t d = 0; d < systems[i].init_dependency_count; d++) {
 			init_ids[i].ids[d] = systems_find_id(systems[i].init_dependencies[d]);
 			if (init_ids[i].ids[d] == -1) {
 				log_errf("Can't find system init dependency by the name of %s!", systems[i].init_dependencies[d]);
@@ -131,6 +131,8 @@ bool systems_initialize() {
 	for (size_t i = 0; i < systems.count; i++) {
 		int32_t index = system_init_order[i];
 		if (systems[index].func_initialize != nullptr) {
+			log_diagf("Initializing %s", systems[index].name);
+
 			// start timing
 			uint64_t start = stm_now();
 
@@ -141,7 +143,6 @@ bool systems_initialize() {
 
 			// end timing
 			systems[index].profile_start_duration = stm_since(start);
-			log_diagf("Initialized %s", systems[index].name);
 		}
 	}
 	systems_initialized = true;
@@ -189,30 +190,28 @@ void systems_shutdown() {
 	log_info("<~BLK>______________________________________________________<~clr>");
 	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
-	for (int32_t i = 0; i < systems.count; i++) {
-		int32_t index = i;
-
-		char start_time[24];
-		char update_time[24];
+	for (size_t i = 0; i < systems.count; i++) {
+		char start_time   [24];
+		char update_time  [24];
 		char shutdown_time[24];
 
-		if (systems[index].profile_start_duration != 0) {
-			double ms = stm_ms(systems[index].profile_start_duration);
+		if (systems[i].profile_start_duration != 0) {
+			double ms = stm_ms(systems[i].profile_start_duration);
 			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(start_time, sizeof(start_time), "          ");
 
-		if (systems[index].profile_update_duration != 0) {
-			double ms = stm_ms(systems[index].profile_update_duration / systems[index].profile_update_count);
+		if (systems[i].profile_update_duration != 0) {
+			double ms = stm_ms(systems[i].profile_update_duration / systems[i].profile_update_count);
 			// Exception for FramePresent, since it includes vsync time
-			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[index].name, "FramePresent") ? "<~RED>":"", ms);
+			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[i].name, "FramePresent") ? "<~RED>":"", ms);
 		} else snprintf(update_time, sizeof(update_time), "        ");
 
-		if (systems[index].profile_shutdown_duration != 0) {
-			double ms = stm_ms(systems[index].profile_shutdown_duration);
+		if (systems[i].profile_shutdown_duration != 0) {
+			double ms = stm_ms(systems[i].profile_shutdown_duration);
 			snprintf(shutdown_time, sizeof(shutdown_time), "%s%7.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(shutdown_time, sizeof(shutdown_time), "         ");
 		
-		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
+		log_infof("<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[i].name, start_time, update_time, shutdown_time);
 	}
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	

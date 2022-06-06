@@ -199,8 +199,8 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 	};
 	// Support function, gets the following whitespace separated word
 	void (*get_word)(char *start, char *out, size_t out_size) = [](char *start, char *out, size_t out_size) {
-		int count = 0;
-		while (*start != ' ' && *start != '\t' && *start != '\n' && *start != '\r' && *start != '\0' && count < (out_size - 1)) {
+		size_t count = 0;
+		while (*start != ' ' && *start != '\t' && *start != '\n' && *start != '\r' && *start != '\0' && count+1 < out_size) {
 			out[count] = *start++;
 			count++;
 		}
@@ -299,7 +299,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 				off += strlen(word) + 1;
 				int32_t count = atoi(word);
 				_ply_convert(data, el->properties[0].bytes, el->properties[0].type, (uint8_t*)&count, sizeof(double), ply_prop_int);
-				for (size_t c = 0; c < count; c++) {
+				for (int32_t c = 0; c < count; c++) {
 					get_word(line + off, word, sizeof(word));
 					off += strlen(word) + 1;
 					if (el->properties[0].type == ply_prop_decimal) {
@@ -357,7 +357,7 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 
 	// Find the elements we want to convert by name
 	const ply_element_t *elements = nullptr;
-	for (size_t i = 0; i < file->count; i++) {
+	for (int32_t i = 0; i < file->count; i++) {
 		if (strcmp(file->elements[i].name, element_name) == 0) {
 			elements = &file->elements[i];
 			break;

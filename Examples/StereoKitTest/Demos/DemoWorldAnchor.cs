@@ -17,7 +17,7 @@ class DemoWorldAnchor : ITest
 
 	string selected = null;
 
-	public string CreateAnchor(Vec3 at, string id = null)
+	public string CreateAnchor(Pose at, string id = null)
 	{
 		string anchorID = id == null
 			? Guid.NewGuid().ToString()
@@ -28,7 +28,7 @@ class DemoWorldAnchor : ITest
 		SpatialAnchor                     anchor     = SpatialAnchor.TryCreateRelativeTo(stationary.CoordinateSystem);
 		Pose                              pose       = World.FromPerceptionAnchor(anchor);
 
-		Pose newAnchor = pose.ToMatrix().Inverse.Transform(new Pose(at, Quat.Identity));
+		Pose newAnchor = pose.ToMatrix().Inverse.Transform(at);
 		anchor = SpatialAnchor.TryCreateRelativeTo(stationary.CoordinateSystem, newAnchor.position, newAnchor.orientation);
 		pose   = World.FromPerceptionAnchor(anchor);
 
@@ -87,7 +87,7 @@ class DemoWorldAnchor : ITest
 
 		UI.WindowBegin("Anchors", ref pose);
 		if (anchorStore != null && UI.Button("Create New"))
-			CreateAnchor(wandTip);
+			CreateAnchor(new Pose(wandTip, Quat.Identity));
 		
 		// List options for the selected anchor
 		if (selected != null)

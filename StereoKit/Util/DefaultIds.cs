@@ -18,6 +18,8 @@
 		internal const string texGray  = "default/tex_gray";
 		internal const string texFlat  = "default/tex_flat";
 		internal const string texRough = "default/tex_rough";
+		internal const string texDevTex= "default/tex_devtex";
+		internal const string texError = "default/tex_error";
 		internal const string cubemap  = "default/cubemap";
 
 		internal const string font = "default/font";

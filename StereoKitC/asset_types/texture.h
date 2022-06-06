@@ -9,7 +9,14 @@ namespace sk {
 
 struct _tex_t {
 	asset_header_t header;
+	tex_t          fallback;
+
+	// Metadata fields
+	int32_t        width;
+	int32_t        height;
 	tex_format_    format;
+	uint64_t       meta_hash;
+
 	tex_type_      type;
 	tex_sample_    sample_mode;
 	tex_address_   address_mode;
@@ -26,6 +33,8 @@ void        tex_set_surface      (tex_t texture, void *native_surface, tex_type_
 void        tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_index);
 size_t      tex_format_size      (tex_format_ format);
 tex_format_ tex_get_tex_format   (int64_t native_fmt);
+void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, tex_format_ format);
+uint64_t    tex_meta_hash        (tex_t texture);
 
 
 } // namespace sk

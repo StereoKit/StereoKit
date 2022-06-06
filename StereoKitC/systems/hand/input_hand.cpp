@@ -283,7 +283,7 @@ void input_hand_update() {
 		input_hand_state_update((handed_)i);
 	}
 
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
 			hand_sources[i].update_inactive();
 	}
@@ -377,7 +377,7 @@ hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation) {
+void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// only sim it if it's tracked
@@ -386,7 +386,7 @@ void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_p
 
 	// For mice based hands, we change the hand's location to center the
 	// pointer finger on the mouse
-	vec3 finger_off = center_on_finger 
+	vec3 finger_off = mouse_adjustments
 		? hand_state[handedness].pose_blend[1][4].position
 		: vec3_zero;
 
@@ -409,10 +409,17 @@ void input_hand_sim_poses(handed_ handedness, bool center_on_finger, vec3 hand_p
 	} }
 
 	// Update some of the higher level hand poses
-	hand.palm.position    = hand_pos;
+
+	// OpenXR spec defines "The palm joint is located at the center of the
+	// middle finger's metacarpal bone", so we'll use that for the position.
+	hand.palm.position =
+		(hand.fingers[2][0].position +
+		 hand.fingers[2][1].position) * 0.5f;
+	// However, OpenXR's facing direction seems... less practical, so here we
+	// arrange them so that "forward" faces out from the palm.
 	hand.palm.orientation = quat_from_angles(
 		0,
-		handedness == handed_right ?  90.f : -90.f, 
+		handedness == handed_right ?  90.f : -90.f,
 		handedness == handed_right ? -90.f :  90.f) * orientation;
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
 	hand.wrist.orientation = hand.palm.orientation;

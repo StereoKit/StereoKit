@@ -2,6 +2,7 @@
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
+#include "openxr_extensions.h"
 #include "openxr_input.h"
 
 #include "../../stereokit.h"
@@ -14,7 +15,6 @@
 #include "../../libraries/sokol_time.h"
 #include "../system.h"
 
-#include <openxr/openxr.h>
 #include <stdio.h>
 
 namespace sk {
@@ -72,6 +72,50 @@ void device_display_delete(device_display_t &display) {
 	free(display.view_depths     ); display.view_depths      = nullptr;
 	free(display.view_projections); display.view_projections = nullptr;
 	free(display.view_configs    ); display.view_configs     = nullptr;
+}
+
+///////////////////////////////////////////
+
+array_t<uint8_t> xr_compositor_bytes      = {};
+array_t<size_t>  xr_compositor_layers     = {};
+array_t<int32_t> xr_compositor_layer_sort = {};
+
+void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
+	size_t start = xr_compositor_bytes.count;
+	xr_compositor_bytes.add_range((uint8_t*)XrCompositionLayerBaseHeader, layer_size);
+
+	int64_t id = xr_compositor_layer_sort.binary_search(sort_order);
+	if (id < 0) id = ~id;
+	xr_compositor_layer_sort.insert((size_t)id, sort_order);
+	xr_compositor_layers    .insert((size_t)id, start);
+}
+
+///////////////////////////////////////////
+
+array_t<XrCompositionLayerBaseHeader*> xr_compositor_layer_ptrs = {};
+const array_t<XrCompositionLayerBaseHeader *> *compositor_layers_get() {
+	xr_compositor_layer_ptrs.clear();
+	for (size_t i = 0; i < xr_compositor_layers.count; i++) {
+		xr_compositor_layer_ptrs.add((XrCompositionLayerBaseHeader *)(xr_compositor_bytes.data + xr_compositor_layers[i]));
+	}
+	return &xr_compositor_layer_ptrs;
+}
+
+///////////////////////////////////////////
+
+void xr_compositor_layers_clear() {
+	xr_compositor_bytes     .clear();
+	xr_compositor_layers    .clear();
+	xr_compositor_layer_sort.clear();
+}
+
+///////////////////////////////////////////
+
+void compositor_layers_free() {
+	xr_compositor_bytes     .free();
+	xr_compositor_layers    .free();
+	xr_compositor_layer_sort.free();
+	xr_compositor_layer_ptrs.free();
 }
 
 ///////////////////////////////////////////
@@ -151,6 +195,8 @@ bool openxr_views_create() {
 	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      sk_info.display_type = display_opaque;      break;
 	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
 	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
+	// Just max_enum
+	default: break;
 	}
 
 	return true;
@@ -166,6 +212,7 @@ void openxr_views_destroy() {
 	xr_display_types     .free();
 	xr_display_2nd_states.free();
 	xr_display_2nd_layers.free();
+	compositor_layers_free();
 }
 
 ///////////////////////////////////////////
@@ -198,7 +245,10 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	switch (out_view.blend) {
 	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    blend_mode_str = "Additive";    break;
 	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: blend_mode_str = "Alpha Blend"; break;
-	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      blend_mode_str = "Opaque";      break; }
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      blend_mode_str = "Opaque";      break; 
+	// Just max_enum
+	default: break;
+	}
 	log_diagf("Creating view: <~grn>%s<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr> blend:<~grn>%s<~clr>",
 		openxr_view_name(view_type),
 		render_fmt_name((tex_format_)skg_tex_fmt_from_native(out_view.color_format)),
@@ -390,7 +440,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
 
 	int64_t depth_formats[] = {
-		skg_tex_fmt_to_native(render_preferred_depth_fmt()),
+		skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
@@ -565,15 +615,18 @@ bool openxr_render_frame() {
 			layer2nd.layerCount            = 1;
 			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
 			xr_display_2nd_layers.add(layer2nd);
+		} else {
+			backend_openxr_composition_layer(xr_displays[i].projection_data, sizeof(XrCompositionLayerProjection), 0);
 		}
 	}
 
 	// We're finished with rendering our layer, so send it off for display!
+	const array_t<XrCompositionLayerBaseHeader*> *comp_layers = compositor_layers_get();
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime          = frame_state.predictedDisplayTime;
 	end_info.environmentBlendMode = xr_displays[0].blend;
-	end_info.layerCount           = xr_displays[0].active ? 1 : 0;
-	end_info.layers               = (XrCompositionLayerBaseHeader**)&xr_displays[0].projection_data;
+	end_info.layerCount           = (uint32_t)comp_layers->count;
+	end_info.layers               = comp_layers->data;
 
 	XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 	end_second.viewConfigurationCount      = (uint32_t)xr_display_2nd_layers.count;
@@ -583,6 +636,7 @@ bool openxr_render_frame() {
 
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame [%s]");
+
 	return true;
 }
 
@@ -675,7 +729,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		// Call the rendering callback with our view and swapchain info
 		tex_t    target = layer.swapchain_color.textures[index];
 		color128 col    = sk_info.display_type == display_opaque
-			? render_get_clear_color()
+			? render_get_clear_color_ln()
 			: color128{ 0,0,0,0 };
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);

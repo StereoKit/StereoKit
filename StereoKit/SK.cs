@@ -10,7 +10,7 @@ namespace StereoKit
 	public static class SK
 	{
 		private static SystemInfo   _system;
-		private static Steppers     _steppers;
+		private static Steppers     _steppers         = new Steppers();
 		private static List<Action> _mainThreadInvoke = new List<Action>();
 
 		/// <summary>This is a copy of the settings that StereoKit was
@@ -28,18 +28,25 @@ namespace StereoKit
 		/// </summary>
 		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
 		/// <summary>This structure contains information about the current 
-		/// system and its capabilites. There's a lot of different MR devices,
+		/// system and its capabilities. There's a lot of different MR devices,
 		/// so it's nice to have code for systems with particular 
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
 
-		/// <summary>Human-readable version name embedded in the StereoKitC 
+		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
 		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
 		/// <summary>An integer version Id! This is defined using a hex value
 		/// with this format: `0xMMMMiiiiPPPPrrrr` in order of 
 		/// Major.mInor.Patch.pre-Release</summary>
 		public static ulong VersionId => NativeAPI.sk_version_id();
+
+		/// <summary> This tells about the app's current focus state,
+		/// whether it's active and receiving input, or if it's
+		/// backgrounded or hidden. This can be important since apps may
+		/// still run and render when unfocused, as the app may still be
+		/// visible behind the app that _does_ have focus. </summary>
+		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
@@ -62,13 +69,40 @@ namespace StereoKit
 			return IsInitialized;
 		}
 
+		/// <summary>This is a _very_ rudimentary way to initialize StereoKit,
+		/// it doesn't take much, but a robust application will prefer to use
+		/// an overload that takes SKSettings. This uses all the default
+		/// settings, which are primarily configured for development.</summary>
+		/// <param name="projectName">Name of the application, this shows up an
+		/// the top of the Win32 window, and is submitted to OpenXR. OpenXR
+		/// caps this at 128 characters.</param>
+		/// <param name="assetsFolder">Where to look for assets when loading
+		/// files! Final path will look like '[assetsFolder]/[file]', so a
+		/// trailing '/' is unnecessary.</param>
+		/// <returns>Returns true if all systems are successfully 
+		/// initialized!</returns>
+		public static bool Initialize(string projectName = "StereoKit App", string assetsFolder = "")
+			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
+
 		/// <summary>If you need to call StereoKit code before calling
 		/// SK.Initialize, you may need to explicitly load the library first.
 		/// This can be useful for setting up a few things, but should
 		/// probably be a pretty rare case.</summary>
 		public static void PreLoadLibrary()
-			=> NativeLib.Load();
+		{
+			if (!NativeLib.Load())
+			{
+				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
+				Console.WriteLine("[SK error] Failed to load StereoKitC!");
+			}
+		}
 
+		/// <summary>Android only. This is for telling StereoKit about the
+		/// active Android window surface. In particular, Xamarin's
+		/// ISurfaceHolderCallback2 gets SurfaceCreated and SurfaceDestroyed
+		/// events, and these events should feed into this function.</summary>
+		/// <param name="window">This is an ISurfaceHolder.Surface.Handle or
+		/// equivalent pointer.</param>
 		public static void SetWindow(IntPtr window)
 			=> NativeAPI.sk_set_window_xam(window);
 
@@ -88,7 +122,7 @@ namespace StereoKit
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
 
-				_steppers = new Steppers();
+				_steppers.InitializeSteppers();
 			}
 
 			return result;
@@ -148,7 +182,7 @@ namespace StereoKit
 		/// execution completes, it properly calls the shutdown callback and
 		/// shuts down StereoKit for you.
 		/// 
-		/// Using this method is important for compatability with WASM and is
+		/// Using this method is important for compatibility with WASM and is
 		/// the preferred method of controlling the main loop, over 
 		/// `SK.Step`.</summary>
 		/// <param name="onStep">A callback where you put your application 
@@ -165,11 +199,41 @@ namespace StereoKit
 			NativeAPI.sk_run(_stepAction, _shutdownCallback);
 		}
 
-		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
-		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
-		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
-		public static void RemoveStepper<T>() where T:IStepper => _steppers.Remove<T>();
 
+		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
+		/// <summary>This creates and registers an instance the `IStepper` type
+		/// provided as the generic parameter. SK will hold onto it, Initialize
+		/// it, Step it every frame, and call Shutdown when the application
+		/// ends. This is generally safe to do before SK.Initialize is called,
+		/// the constructor is called right away, and Initialize is called
+		/// right after SK.Initialize, or right away if SK is already
+		/// initialized.</summary>
+		/// <param name="type">Any object that implements IStepper, and has a
+		/// constructor with zero parameters.</param>
+		/// <returns>Just for convenience, this returns the instance that was
+		/// just added.</returns>
+		public static object AddStepper(Type type) => _steppers.Add(type);
+		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
+		/// <summary>This removes a specific IStepper from SK's IStepper list.
+		/// This will call the IStepper's Shutdown method before returning.
+		/// </summary>
+		/// <param name="stepper">The specific IStepper instance to remove.
+		/// </param>
+		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
+		/// <summary>This removes all IStepper instances that are assignable to
+		/// the generic type specified. This will call the IStepper's Shutdown
+		/// method on each removed instance before returning.</summary>
+		/// <param name="type">Any type.</param>
+		public static void RemoveStepper(Type type) => _steppers.Remove(type);
+		public static void RemoveStepper<T>() => _steppers.Remove<T>();
+
+		/// <summary>This will queue up some code to be run on StereoKit's main
+		/// thread! Immediately after StereoKit's Step, all callbacks
+		/// registered here will execute, and then removed from the list.
+		/// </summary>
+		/// <param name="action">Some code to run! This Action will persist in
+		/// a list until after Step, at which point it is removed and dropped.
+		/// </param>
 		public static void ExecuteOnMain(Action action) => _mainThreadInvoke.Add(action);
 	}
 }

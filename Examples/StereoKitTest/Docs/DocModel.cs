@@ -20,6 +20,24 @@ class DocModel : ITest
 			Matrix .T(0,1,0));
 		/// :End:
 
+		/// :CodeSample: Model Model.Visuals Mesh.VertCount Mesh.IndCount
+		/// ### Counting the Vertices and Triangles in a Model
+		/// 
+		/// Model.Visuals are always guaranteed to have a Mesh, so no need to
+		/// null check there, and VertCount and IndCount are available even if
+		/// Mesh.KeepData is false!
+		int vertCount = 0;
+		int triCount  = 0;
+
+		foreach (ModelNode node in model.Visuals)
+		{
+			Mesh mesh = node.Mesh;
+			vertCount += mesh.VertCount;
+			triCount  += mesh.IndCount / 3;
+		}
+		Log.Info($"Model stats: {vertCount} vertices, {triCount} triangles");
+		/// :End:
+
 		int lastSubset = model.AddSubset(
 			Mesh   .GenerateCube(new Vec3(0.5f,1,0.5f)),
 			Default.Material,
