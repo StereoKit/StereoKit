@@ -68,7 +68,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		result->dimensions_normalized = { result->aspect, 1 };
 
 	if (type == sprite_type_atlased) {
-		log_warn("sprite_create: Atlased sprites not implemented yet! Switching to single.");
+		log_diag("sprite_create: Atlased sprites not implemented yet! Switching to single.");
 		type = sprite_type_single;
 	}
 	
