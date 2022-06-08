@@ -441,14 +441,14 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 ///////////////////////////////////////////
 
 const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
-    if (mesh->bvh_data != nullptr)
-        return mesh->bvh_data;
-    if (mesh->discard_data)
-        return nullptr;
+	if (mesh->bvh_data != nullptr)
+		return mesh->bvh_data;
+	if (mesh->discard_data)
+		return nullptr;
 
-    mesh->bvh_data = mesh_bvh_create(mesh, 16);
+	mesh->bvh_data = mesh_bvh_create(mesh, 16);
 
-    return mesh->bvh_data;
+	return mesh->bvh_data;
 }
 
 ///////////////////////////////////////////
@@ -469,8 +469,8 @@ void mesh_destroy(mesh_t mesh) {
 	free(mesh->inds);
 	free(mesh->collision_data.pts   );     // XXX doesn't this fail when no colldata has been created?
 	free(mesh->collision_data.planes);
-    if (mesh->bvh_data)
-        mesh_bvh_destroy(mesh->bvh_data);
+	if (mesh->bvh_data)
+		mesh_bvh_destroy(mesh->bvh_data);
 	*mesh = {};
 }
 
@@ -489,8 +489,8 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
 	if (data == nullptr)
 		return false;
-    if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
-        return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
 
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
@@ -537,15 +537,15 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 ///////////////////////////////////////////
 
 bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
-    vec3 result = {};
+	vec3 result = {};
 
-    const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);
-    if (bvh == nullptr)
-        return false;
-    if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
-        return false;
+	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);
+	if (bvh == nullptr)
+		return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
 
-    return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds);
+	return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds);
 }
 
 ///////////////////////////////////////////
