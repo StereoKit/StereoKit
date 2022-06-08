@@ -455,6 +455,7 @@ display_mode_ sk_active_display_mode() { return sk_display_mode; }
 
 ///////////////////////////////////////////
 
+double time_get_raw          (){ return stm_sec(stm_now()); }
 float  time_getf_unscaled    (){ return sk_timevf_us; };
 double time_get_unscaled     (){ return sk_timev_us; };
 float  time_getf             (){ return sk_timevf; };

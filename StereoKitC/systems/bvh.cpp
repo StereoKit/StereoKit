@@ -345,7 +345,7 @@ mesh_bvh_t*
 mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 {    
     // XXX refuse if num triangles is zero?
-    const double t0 = stm_sec(stm_now());
+    const double t0 = time_get_raw();
 
     mesh_bvh_t *bvh = sk_calloc_t(mesh_bvh_t, 1);
 
@@ -446,7 +446,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     mesh_bvh_build_recursive(0, nodes, &next_node_index, sorted_triangles,
         acc_leaf_size, triangle_vertices, triangle_centroids, bvh->collision_data);
 
-    const double t1 = stm_sec(stm_now());
+    const double t1 = time_get_raw();
 
     // XXX use log function
     printf("BVH construction done in %.1fms\n", 1000*(t1-t0));

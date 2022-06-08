@@ -328,6 +328,7 @@ SK_API app_focus_    sk_app_focus          ();
 
 ///////////////////////////////////////////
 
+SK_API double        time_get_raw          ();
 SK_API float         time_getf_unscaled    ();
 SK_API double        time_get_unscaled     ();
 SK_API float         time_getf             ();
