@@ -52,13 +52,15 @@ int main()
     */
     
     //model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
-    //model = model_create_file("t.glb");
+    //model = model_create_file("t.glb");    
     //model = model_create_file("/home/melis/models/angel/angel.obj");
     //model = model_create_file("/home/melis/models/lucy/lucy2.glb");
     
     ray_t ray{
         vec3{10,10,10}, vec3{-1,-1,-1}
         //vec3{0,-10,0}, vec3{0,1,0}
+        // angel
+        //vec3{0.46,31.05,10}, vec3{0,0,-1}
     };
 
     ray_t intersection = {};

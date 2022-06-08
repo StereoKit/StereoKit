@@ -27,6 +27,7 @@ Paul Melis, SURF (paul.melis@surf.nl)
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../asset_types/mesh.h"
+#include "../libraries/sokol_time.h"
 
 //#define VERBOSE_BUILD
 //#define VERBOSE_INTERSECTION
@@ -34,31 +35,6 @@ Paul Melis, SURF (paul.melis@surf.nl)
 namespace sk {
 
 const int TRAVERSAL_STACK_SIZE = 128;
-
-void
-bvh_stats_clear(bvh_stats_t& stats)
-{
-    stats.depth = 0;
-    stats.num_leafs = 0;
-    stats.num_inner_nodes = 0;
-    stats.max_leaf_size = 0;
-    stats.num_forced_leafs = 0;
-    for (int i = 0; i < 3; i++)
-        stats.split_axis_histogram[i] = 0;
-}
-
-void
-bvh_stats_print(bvh_stats_t& stats)
-{
-    printf("... depth %d\n", stats.depth);
-    printf("... %d leaf nodes, %d inner nodes\n",
-        stats.num_leafs, stats.num_inner_nodes);
-    printf("... maximum leaf size %d\n", stats.max_leaf_size);
-    printf("... %d forced leafs\n", stats.num_forced_leafs);
-    printf("... Split axis histogram:\n");
-    for (int i = 0; i < 3; i++)
-        printf("... %d | %5d\n", i, stats.split_axis_histogram[i]);
-}
 
 // One node in the Bounding Volume Hierarchy
 
@@ -78,6 +54,56 @@ struct bvh_node_t
 
     bool is_leaf() const { return num_triangles > 0; }
 };
+
+// Statistics on a built BVH
+
+static void
+bvh_stats_clear(bvh_stats_t *stats)
+{
+    stats->depth = 0;
+    stats->num_leafs = 0;
+    stats->num_inner_nodes = 0;
+    stats->max_leaf_size = 0;
+    stats->num_forced_leafs = 0;
+}
+
+static void
+bvh_stats_print(const bvh_stats_t *stats)
+{
+    printf("... depth %d\n", stats->depth);
+    printf("... %d leaf nodes, %d inner nodes\n",
+        stats->num_leafs, stats->num_inner_nodes);
+    printf("... maximum leaf size %d\n", stats->max_leaf_size);
+    printf("... %d forced leafs (%.1f%%)\n", stats->num_forced_leafs, 100.0f*stats->num_forced_leafs/stats->num_leafs);
+}
+
+static void
+gather_stats(const mesh_bvh_t *bvh, short depth, int current_node_index, bvh_stats_t *stats, int acc_leaf_size)
+{
+    const bvh_node_t& node = bvh->nodes[current_node_index];
+    stats->depth = std::max(stats->depth, depth);
+
+    if (node.is_leaf())
+    {
+        stats->num_leafs++;
+        stats->max_leaf_size = std::max(stats->max_leaf_size, node.num_triangles);
+        if (node.num_triangles > acc_leaf_size)
+            stats->num_forced_leafs++;
+    }
+    else
+    {
+        stats->num_inner_nodes++;
+        gather_stats(bvh, depth+1, node.leaf_first, stats, acc_leaf_size);
+        gather_stats(bvh, depth+1, node.leaf_first+1, stats, acc_leaf_size);
+    }
+}
+
+void        
+mesh_bvh_statistics(const mesh_bvh_t *bvh, bvh_stats_t *stats, int acc_leaf_size)
+{
+    bvh_stats_clear(stats);
+    gather_stats(bvh, 1, 0, stats, acc_leaf_size);
+}
 
 // Determine the bounding box that encloses the given triangles,
 // which are specified as a sub-sequence of sorted_triangles, 
@@ -125,7 +151,7 @@ mesh_bvh_build_recursive(int current_node_index,
     uint32_t *sorted_triangles,
     int acceptable_leaf_size, 
     const vec3* triangle_vertices, const vec3* triangle_centroids, 
-    const mesh_collision_t *collision_data, bvh_stats_t *statistics)
+    const mesh_collision_t *collision_data)
 {
     vec3        bbox_size, bbox_center;
     int         i, j, t;
@@ -280,12 +306,9 @@ mesh_bvh_build_recursive(int current_node_index,
         // XXX Could check for leaf size here and only recurse when needed, instead of
         // doing the check in build_recursive()
         mesh_bvh_build_recursive(left_child_index, nodes, next_node_index, sorted_triangles, acceptable_leaf_size, 
-            triangle_vertices, triangle_centroids, collision_data, statistics);
+            triangle_vertices, triangle_centroids, collision_data);
         mesh_bvh_build_recursive(right_child_index, nodes, next_node_index, sorted_triangles, acceptable_leaf_size, 
-            triangle_vertices, triangle_centroids, collision_data, statistics);
-
-        statistics->split_axis_histogram[split_axis]++;
-        statistics->num_inner_nodes++;
+            triangle_vertices, triangle_centroids, collision_data);
 
         return;
     }
@@ -315,21 +338,16 @@ mesh_bvh_build_recursive(int current_node_index,
     }
     fclose(f);
 #endif
-
-    statistics->num_leafs++;
-    statistics->num_forced_leafs++;
-    statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.num_triangles);
 }
 
 // Build a BVH over the triangles in the given mesh.
 mesh_bvh_t*
-mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
+mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 {    
     // XXX refuse if num triangles is zero?
+    const double t0 = stm_sec(stm_now());
 
     mesh_bvh_t *bvh = sk_calloc_t(mesh_bvh_t, 1);
-
-    bvh_stats_clear(bvh->statistics);
 
     // A restriction during BVH construction is that we don't want to touch the
     // underlying vertex and index arrays in the passed mesh. So we need to keep some local
@@ -426,13 +444,23 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
     // Build the BVH
 
     mesh_bvh_build_recursive(0, nodes, &next_node_index, sorted_triangles,
-        acc_leaf_size, triangle_vertices, triangle_centroids, bvh->collision_data, &bvh->statistics);
+        acc_leaf_size, triangle_vertices, triangle_centroids, bvh->collision_data);
+
+    const double t1 = stm_sec(stm_now());
+
+    // XXX use log function
+    printf("BVH construction done in %.1fms\n", 1000*(t1-t0));
 
     // Done!
 
-    printf("BVH statistics:\n");
-    printf("... %d triangles\n", bvh->the_mesh->ind_count/3);
-    bvh_stats_print(bvh->statistics);
+    if (show_stats)
+    {
+        printf("BVH statistics:\n");
+        printf("... %d triangles\n", bvh->the_mesh->ind_count/3);
+        bvh_stats_t stats;
+        mesh_bvh_statistics(bvh, &stats, acc_leaf_size);
+        bvh_stats_print(&stats);
+    }
 
     // Clean up
 
@@ -667,3 +695,4 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
 }
 
 } // namespace sk
+
