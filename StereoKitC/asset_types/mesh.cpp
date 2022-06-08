@@ -842,6 +842,76 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 ///////////////////////////////////////////
 
+// Bottom always at origin, top at dir*depth
+mesh_t mesh_gen_cone(float diameter, float depth, vec3 dir, int32_t subdivisions) {
+	mesh_t result = mesh_create();
+	dir = vec3_normalize(dir);
+	float radius = diameter / 2;
+
+	vind_t subd = (vind_t)subdivisions;
+	int vert_count = (subdivisions+1) * 4 + 2;
+	int ind_count  = subdivisions * 12;
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
+
+	// Calculate any perpendicular vector
+	vec3 perp = vec3{dir.z, dir.z, -dir.x-dir.y};
+	if (vec3_magnitude_sq(perp) == 0)
+		perp = vec3{-dir.y-dir.z, dir.x, dir.x};
+
+	vec3 axis_x = vec3_normalize(vec3_cross(dir, perp));
+	vec3 axis_y = vec3_normalize(vec3_cross(dir, axis_x));
+	vec3 z_off  = dir * (depth / 2.f);
+	vec3 top_pos = dir * depth;
+	vind_t ind = 0;
+
+	for (vind_t i = 0; i <= subd; i++) {
+		float u   = ((float)i / subd);
+		float ang = u * (float)M_PI * 2;
+		float x   = cosf(ang);
+		float y   = sinf(ang);
+		vec3 normal  = axis_x * x + axis_y * y;
+		vec3 bot_pos = normal*radius;
+
+		// strip first
+		verts[i * 4  ] = { top_pos,  normal, {u,0}, {255,255,255,255} };
+		verts[i * 4+1] = { bot_pos,  normal, {u,1}, {255,255,255,255} };
+		// now circular faces
+		verts[i * 4+2] = { top_pos,  dir,    {u,0}, {255,255,255,255} };
+		verts[i * 4+3] = { bot_pos, -dir,    {u,1}, {255,255,255,255} };
+
+		if (i == subd) continue;
+
+		vind_t in = (i + 1) % (subd+1);
+		// Top slice
+		inds[ind++] = i  * 4 + 2;
+		inds[ind++] = in * 4 + 2;
+		inds[ind++] = (subd+1) * 4;
+		// Bottom slice
+		inds[ind++] = (subd+1) * 4+1;
+		inds[ind++] = in * 4 + 3;
+		inds[ind++] = i  * 4 + 3;
+		// Now edge strip quad
+		inds[ind++] = in * 4+1;
+		inds[ind++] = in * 4;
+		inds[ind++] = i  * 4;
+		inds[ind++] = i  * 4+1;
+		inds[ind++] = in * 4+1;
+		inds[ind++] = i  * 4;
+	}
+	// center points for the circle
+	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
+	verts[(subdivisions+1)*4+1] = { vec3{}, -dir, {0.5f,0.99f}, {255,255,255,255} };
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	free(verts);
+	free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
 mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();

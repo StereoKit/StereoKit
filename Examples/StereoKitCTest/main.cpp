@@ -17,6 +17,7 @@ using namespace sk;
 #include "demo_envmap.h"
 #include "demo_windows.h"
 #include "demo_desktop.h"
+#include "demo_bvh.h"
 
 #include <stdio.h>
 
@@ -84,7 +85,12 @@ scene_t demos[] = {
 		demo_envmap_init,
 		demo_envmap_update,
 		demo_envmap_shutdown,
-	},
+	}, {
+        "BVH",
+        demo_bvh_init,
+        demo_bvh_update,
+        demo_bvh_shutdown,
+    },
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 	{
 		"Windows",

@@ -675,6 +675,7 @@ SK_API mesh_t   mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_d
 SK_API mesh_t   mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
 SK_API mesh_t   mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
 SK_API mesh_t   mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t   mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 
 ///////////////////////////////////////////
 

@@ -391,6 +391,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_bvh.h
+    Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_desktop.h
     Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h
