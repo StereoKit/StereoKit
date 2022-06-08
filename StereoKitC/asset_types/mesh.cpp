@@ -446,8 +446,7 @@ const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
     if (mesh->discard_data)
         return nullptr;
 
-    mesh->bvh_data = new mesh_bvh_t(16);
-    mesh->bvh_data->build(mesh);
+    mesh->bvh_data = mesh_bvh_create(mesh, 16);
 
     return mesh->bvh_data;
 }
@@ -468,8 +467,10 @@ void mesh_destroy(mesh_t mesh) {
 	skg_buffer_destroy(&mesh->ind_buffer);
 	free(mesh->verts);
 	free(mesh->inds);
-	free(mesh->collision_data.pts   );
+	free(mesh->collision_data.pts   );     // XXX doesn't this fail when no colldata has been created?
 	free(mesh->collision_data.planes);
+    if (mesh->bvh_data)
+        mesh_bvh_destroy(mesh->bvh_data);
 	*mesh = {};
 }
 
@@ -544,7 +545,7 @@ bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_p
     if (bvh == nullptr)
         return false;
 
-    return bvh->intersect(model_space_ray, out_pt, out_start_inds);
+    return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds);
 }
 
 ///////////////////////////////////////////
