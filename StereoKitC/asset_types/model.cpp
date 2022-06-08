@@ -358,6 +358,40 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 
 ///////////////////////////////////////////
 
+// Same as model_ray_intersect_bvh, but returns mesh and indices if intersection found
+bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, uint32_t* out_start_inds) {
+    vec3 bounds_at;
+    if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
+        return false;
+
+    float closest = FLT_MAX;
+    *out_pt = {};
+    for (size_t i = 0; i < model->nodes.count; i++) {
+        model_node_t *n = &model->nodes[i];
+        if (!n->solid || n->visual == -1)
+            continue;
+
+        matrix inverse   = matrix_invert(n->transform_model);
+        ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
+        ray_t  at;
+        uint32_t local_start_inds;
+        if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds)) {
+            float d = vec3_distance_sq(local_ray.pos, at.pos);
+            if (d < closest) {
+                closest = d;
+                if (out_mesh != nullptr && out_start_inds != nullptr) {
+                    *out_mesh = model->visuals[n->visual].mesh;
+                    *out_start_inds = local_start_inds;
+                }
+                *out_pt = matrix_transform_ray(n->transform_model, at);
+            }
+        }
+    }
+    return closest != FLT_MAX;
+}
+
+///////////////////////////////////////////
+
 void model_destroy(model_t model) {
 	anim_inst_destroy(&model->anim_inst);
 	anim_data_destroy(&model->anim_data);

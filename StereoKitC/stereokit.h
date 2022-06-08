@@ -1209,6 +1209,7 @@ SK_API void          model_set_bounds              (model_t model, const sk_ref(
 SK_API bounds_t      model_get_bounds              (model_t model);
 SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t *out_pt);
 SK_API bool32_t      model_ray_intersect_bvh       (model_t model, ray_t model_space_ray, ray_t *out_pt);
+SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr));
 
 SK_API void          model_step_anim               (model_t model);
 SK_API bool32_t      model_play_anim               (model_t model, const char *animation_name, anim_mode_ mode);
@@ -2050,3 +2051,4 @@ SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
   // A version in hex looks like: 0xMMMMiiiiPPPPrrrr
   // In order of Major.mInor.Patch.pre-Release
 #define SK_VERSION_ID ( ((uint64_t)SK_VERSION_MAJOR << 48) | ((uint64_t)SK_VERSION_MINOR << 32) | ((uint64_t)SK_VERSION_PATCH << 16) | (uint64_t)(SK_VERSION_PRERELEASE) )
+
