@@ -15,19 +15,16 @@ struct bvh_stats_t
     uint32_t max_leaf_size;
     uint32_t num_forced_leafs;
 
-    int depth;
+    short depth;
     int split_axis_histogram[3];
 };
 
 struct mesh_bvh_t
 {
-    int                 acceptable_leaf_size;
-
     mesh_t              the_mesh;
     const mesh_collision_t *collision_data;
 
     bvh_node_t          *nodes;
-    uint32_t            next_node_index;
     uint32_t            *sorted_triangles;
     bvh_stats_t         statistics;
 };

@@ -72,7 +72,7 @@ struct bvh_node_t
     uint32_t    num_triangles;
 
     // If an inner node this is the index of the left child (with the right child
-    // at leaf_first+1). If a leaf node this is the index in mesh_bvh_t::sorted_triangles 
+    // at leaf_first+1). If a leaf node this is the index in sorted_triangles[]
     // of the first triangle.
     uint32_t    leaf_first;
 
@@ -119,37 +119,35 @@ vec3_field(vec3 v, int index)
 // Recursively subdivide the triangles in the current leaf node into two groups, 
 // by determining a split plane based on the current bound, 
 // and sorting the triangles into "left-of" and "right-of".
-// XXX avoid bvh-> where possible
 static void
-mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index, 
+mesh_bvh_build_recursive(int current_node_index, 
+    bvh_node_t *nodes, uint32_t *next_node_index,
+    uint32_t *sorted_triangles,
+    int acceptable_leaf_size, 
     const vec3* triangle_vertices, const vec3* triangle_centroids, 
-    const mesh_collision_t *collision_data)
+    const mesh_collision_t *collision_data, bvh_stats_t *statistics)
 {
     vec3        bbox_size, bbox_center;
     int         i, j, t;
     short       sorted_dimensions[3];
     short       split_axis;
     float       split_value;
-    int         num_triangles_left, num_triangles_right;    
 
-    bvh_node_t& node = bvh->nodes[current_node_index];
+    bvh_node_t& node = nodes[current_node_index];
 
 #ifdef VERBOSE_BUILD
-    printf("build_recursive(): depth = %d, current_node_index = %d\n", depth, current_node_index);
+    printf("build_recursive(): current_node_index = %d\n", current_node_index);
     printf("... leaf_first = %d, num_triangles = %d\n", node.leaf_first, node.num_triangles);
     for (i = node.leaf_first; i < node.leaf_first+node.num_triangles; i++)
         printf("[%d] %d  ", i, sorted_triangles[i]);
     printf("\n");
 #endif
 
-    if (node.num_triangles <= bvh->acceptable_leaf_size)
+    if (node.num_triangles <= acceptable_leaf_size)
     {
 #ifdef VERBOSE_BUILD
-        printf("[%d] Creating a leaf node of %d triangles\n", depth, node.num_triangles);
+        printf("Creating a leaf node of %d triangles\n", node.num_triangles);
 #endif
-        bvh->statistics.depth = std::max(bvh->statistics.depth, depth);
-        bvh->statistics.num_leafs++;
-        bvh->statistics.max_leaf_size = std::max(bvh->statistics.max_leaf_size, node.num_triangles);
 
         return;
     }
@@ -210,7 +208,7 @@ mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index,
         split_value = vec3_field(bbox_center, split_axis);
 
 #ifdef VERBOSE_BUILD
-        printf("[%d] Splitting on axis %d, value %.6f\n", depth, split_axis, split_value);
+        printf("Splitting on axis %d, value %.6f\n", split_axis, split_value);
 
         for (l = node.leaf_first; l < node.leaf_first+node.num_triangles; l++)
         {
@@ -223,53 +221,54 @@ mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index,
         r = l + node.num_triangles - 1;
         while (l <= r)
         {            
-            if (vec3_field(triangle_centroids[bvh->sorted_triangles[l]], split_axis) < split_value)
+            if (vec3_field(triangle_centroids[sorted_triangles[l]], split_axis) < split_value)
                 l++;
             else
-                std::swap(bvh->sorted_triangles[l], bvh->sorted_triangles[r--]);
+                std::swap(sorted_triangles[l], sorted_triangles[r--]);
         }        
 
-        num_triangles_left = l - node.leaf_first;
-        num_triangles_right = node.num_triangles - num_triangles_left;
+        const int num_triangles_left = l - node.leaf_first;
+        const int num_triangles_right = node.num_triangles - num_triangles_left;
 
 #ifdef VERBOSE_BUILD
-        printf("[%d] %d left, %d right\n", depth, num_triangles_left, num_triangles_right);
+        printf("%d left, %d right\n", num_triangles_left, num_triangles_right);
 #endif
 
         if (num_triangles_left == 0 || num_triangles_right == 0)
         {
             // All triangles in one of the half, discontinue this attempt
 #ifdef VERBOSE_BUILD
-            printf("[%d] skipping dimension %d, all triangles on one side\n", depth);
+            printf("Skipping dimension %d, all triangles on one side\n");
 #endif
             continue;
         }
 
         // Triangles are now split into two groups, determine bboxes for each.    
 
-        bound_triangles(left_bbox, bvh->sorted_triangles, triangle_vertices, node.leaf_first, num_triangles_left);
-        bound_triangles(right_bbox, bvh->sorted_triangles, triangle_vertices, l, num_triangles_right);
+        bound_triangles(left_bbox, sorted_triangles, triangle_vertices, node.leaf_first, num_triangles_left);
+        bound_triangles(right_bbox, sorted_triangles, triangle_vertices, l, num_triangles_right);
 
 #ifdef VERBOSE_BUILD
-        printf("[%d] left bbox:  %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
-            depth, left_bbox[0].x, left_bbox[0].y, left_bbox[0].z,
+        printf("left bbox:  %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
+            left_bbox[0].x, left_bbox[0].y, left_bbox[0].z,
             left_bbox[1].x, left_bbox[1].y, left_bbox[1].z);
-        printf("[%d] right bbox: %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
-            depth, right_bbox[0].x, right_bbox[0].y, right_bbox[0].z,
+        printf("right bbox: %.6f, %.6f, %.6f .. %.6f, %.6f, %.6f\n",
+            right_bbox[0].x, right_bbox[0].y, right_bbox[0].z,
             right_bbox[1].x, right_bbox[1].y, right_bbox[1].z);
 #endif
 
         // Create two child nodes and recurse
         
-        const uint32_t left_child_index = bvh->next_node_index++;
-        const uint32_t right_child_index = bvh->next_node_index++;    
+        const uint32_t left_child_index = *next_node_index;
+        const uint32_t right_child_index = left_child_index + 1;
+        *next_node_index += 2;
 
-        bvh_node_t& left_node = bvh->nodes[left_child_index];
+        bvh_node_t& left_node = nodes[left_child_index];
         left_node.bbox = left_bbox;
         left_node.leaf_first = node.leaf_first;
         left_node.num_triangles = num_triangles_left;
 
-        bvh_node_t& right_node = bvh->nodes[right_child_index];
+        bvh_node_t& right_node = nodes[right_child_index];
         right_node.bbox = right_bbox;
         right_node.leaf_first = l;
         right_node.num_triangles = num_triangles_right;
@@ -280,11 +279,13 @@ mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index,
         
         // XXX Could check for leaf size here and only recurse when needed, instead of
         // doing the check in build_recursive()
-        mesh_bvh_build_recursive(bvh, depth+1, left_child_index, triangle_vertices, triangle_centroids, collision_data);
-        mesh_bvh_build_recursive(bvh, depth+1, right_child_index, triangle_vertices, triangle_centroids, collision_data);
+        mesh_bvh_build_recursive(left_child_index, nodes, next_node_index, sorted_triangles, acceptable_leaf_size, 
+            triangle_vertices, triangle_centroids, collision_data, statistics);
+        mesh_bvh_build_recursive(right_child_index, nodes, next_node_index, sorted_triangles, acceptable_leaf_size, 
+            triangle_vertices, triangle_centroids, collision_data, statistics);
 
-        bvh->statistics.split_axis_histogram[split_axis]++;
-        bvh->statistics.num_inner_nodes++;
+        statistics->split_axis_histogram[split_axis]++;
+        statistics->num_inner_nodes++;
 
         return;
     }
@@ -293,7 +294,7 @@ mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index,
 
 #ifdef VERBOSE_BUILD
     // XXX warn
-    printf("[%d] Split options exhausted, creating a leaf of %d triangles\n", depth, node.num_triangles);
+    printf("Split options exhausted, creating a leaf of %d triangles\n", node.num_triangles);
 #endif
 
 #if 0
@@ -315,19 +316,9 @@ mesh_bvh_build_recursive(mesh_bvh_t *bvh, int depth, int current_node_index,
     fclose(f);
 #endif
 
-    bvh->statistics.num_leafs++;
-    bvh->statistics.num_forced_leafs++;
-    bvh->statistics.max_leaf_size = std::max(bvh->statistics.max_leaf_size, node.num_triangles);
-}
-
-
-
-void        
-mesh_bvh_destroy(mesh_bvh_t *bvh)
-{
-    free(bvh->nodes);
-    free(bvh->sorted_triangles);
-    *bvh = {};
+    statistics->num_leafs++;
+    statistics->num_forced_leafs++;
+    statistics->max_leaf_size = std::max(statistics->max_leaf_size, node.num_triangles);
 }
 
 // Build a BVH over the triangles in the given mesh.
@@ -337,8 +328,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
     // XXX refuse if num triangles is zero?
 
     mesh_bvh_t *bvh = sk_calloc_t(mesh_bvh_t, 1);
-    
-    bvh->acceptable_leaf_size = acc_leaf_size;
+
     bvh_stats_clear(bvh->statistics);
 
     // A restriction during BVH construction is that we don't want to touch the
@@ -395,14 +385,14 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
 #endif
 
     // List of triangle indices, which will get reordered during construction
-    bvh->sorted_triangles = sk_malloc_t(uint32_t, num_triangles);
+    uint32_t *sorted_triangles = bvh->sorted_triangles = sk_malloc_t(uint32_t, num_triangles);
     for (int i = 0; i < num_triangles; i++)
-        bvh->sorted_triangles[i] = i;    
+        sorted_triangles[i] = i;    
 
     // Compute mesh bounding box (could reuse what's in mesh_t, but not sure it's accurate)
 
     boundingbox mesh_bbox;
-    bound_triangles(mesh_bbox, bvh->sorted_triangles, triangle_vertices, 0, num_triangles-1);
+    bound_triangles(mesh_bbox, sorted_triangles, triangle_vertices, 0, num_triangles-1);
 
 #ifdef VERBOSE_BUILD
     printf("bvh_build():\n");
@@ -410,30 +400,35 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
     printf("... bounding box:\n");
     printf("... (min) %.6f, %.6f, %.6f\n", mesh_bbox.min().x, mesh_bbox.min().y, mesh_bbox.min().z);
     printf("... (max) %.6f, %.6f, %.6f\n", mesh_bbox.max().x, mesh_bbox.max().y, mesh_bbox.max().z);
+    printf("... acceptable leaf size %d\n", acc_leaf_size);
 #endif
 
     mesh_bbox.grow(C_EPSILON);
     bvh->the_mesh = mesh;    
 
-    // We pre-allocate an array of BVH nodes, enough to
-    // always fit. 
+    // We pre-allocate an array of BVH nodes, enough to always fit. 
     // XXX After construction is done, and the actual
     // number of nodes needed is known we should trim
     // the array.
 
-    bvh->nodes = sk_malloc_t(bvh_node_t, num_triangles*2);
+    bvh_node_t *nodes = bvh->nodes = sk_malloc_t(bvh_node_t, num_triangles*2);
 
     // Bootstrap with a single leaf node holding all triangles
     
-    bvh_node_t& root_node = bvh->nodes[0];
+    bvh_node_t& root_node = nodes[0];
     root_node.leaf_first = 0;
     root_node.num_triangles = num_triangles;
     root_node.bbox = mesh_bbox;
-    bvh->next_node_index = 1;
+
+    // XXX could return value from build function, instead of using a variable
+    uint32_t next_node_index = 1;
 
     // Build the BVH
 
-    mesh_bvh_build_recursive(bvh, 1, 0, triangle_vertices, triangle_centroids, bvh->collision_data);
+    mesh_bvh_build_recursive(0, nodes, &next_node_index, sorted_triangles,
+        acc_leaf_size, triangle_vertices, triangle_centroids, bvh->collision_data, &bvh->statistics);
+
+    // Done!
 
     printf("BVH statistics:\n");
     printf("... %d triangles\n", bvh->the_mesh->ind_count/3);
@@ -446,11 +441,22 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size)
     return bvh;
 }
 
+void        
+mesh_bvh_destroy(mesh_bvh_t *bvh)
+{
+    free(bvh->nodes);
+    free(bvh->sorted_triangles);
+    *bvh = {};
+}
+
 // Find closest triangle intersection for the given model-space ray
-// XXX reduce bvh-> usage
 bool        
 mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds)
 {
+    const bvh_node_t *nodes = bvh->nodes;
+    const uint32_t *sorted_triangles = bvh->sorted_triangles;
+    const mesh_collision_t *collision_data = bvh->collision_data;
+
     // Use local stack to avoid having to recurse
     uint32_t traversal_node_stack[TRAVERSAL_STACK_SIZE];
     float traversal_tmin_stack[TRAVERSAL_STACK_SIZE];
@@ -486,15 +492,15 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
             printf("%d (%.6f)\n", traversal_node_stack[i], traversal_tmin_stack[i]);
 #endif
 
-        const bvh_node_t& node = bvh->nodes[current_node_index];
+        const bvh_node_t& node = nodes[current_node_index];
 
         if (!node.is_leaf())
         {
             // Check for traversal down to the child nodes of this inner node
             left_child = node.leaf_first;
 
-            traverse_left_child = bvh->nodes[left_child].bbox.intersect_full(t_left_min, t_left_max, bbox_ray, 0.0f, t_nearest_hit);
-            traverse_right_child = bvh->nodes[left_child+1].bbox.intersect_full(t_right_min, t_right_max, bbox_ray, 0.0f, t_nearest_hit);
+            traverse_left_child = nodes[left_child].bbox.intersect_full(t_left_min, t_left_max, bbox_ray, 0.0f, t_nearest_hit);
+            traverse_right_child = nodes[left_child+1].bbox.intersect_full(t_right_min, t_right_max, bbox_ray, 0.0f, t_nearest_hit);
 
 #ifdef VERBOSE_TRACE
             if (traverse_left_child)
@@ -570,8 +576,8 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
 #endif            
             for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
             {
-                uint32_t triangle = bvh->sorted_triangles[t];
-                plane_t& plane = bvh->collision_data->planes[triangle];
+                uint32_t triangle = sorted_triangles[t];
+                plane_t& plane = collision_data->planes[triangle];
 
                 // Inline version of plane_ray_intersect(), as we need the t value
                 t_hit = 
@@ -590,9 +596,9 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                 // https://blackpawn.com/texts/pointinpoly/default.html
 
                 // Compute vectors
-                vec3 v0 = bvh->collision_data->pts[3*triangle+1] - bvh->collision_data->pts[3*triangle+0];
-                vec3 v1 = bvh->collision_data->pts[3*triangle+2] - bvh->collision_data->pts[3*triangle+0];
-                vec3 v2 = pt - bvh->collision_data->pts[3*triangle+0];
+                vec3 v0 = collision_data->pts[3*triangle+1] - collision_data->pts[3*triangle+0];
+                vec3 v1 = collision_data->pts[3*triangle+2] - collision_data->pts[3*triangle+0];
+                vec3 v2 = pt - collision_data->pts[3*triangle+0];
 
                 // Compute dot products
                 float dot00 = vec3_dot(v0, v0);
@@ -618,7 +624,7 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                         if (out_start_inds != nullptr) {
                             *out_start_inds = 3*triangle;
                         }
-                        *out_pt = {pt, bvh->collision_data->planes[triangle].normal};
+                        *out_pt = {pt, collision_data->planes[triangle].normal};
                     }
                 }
             }

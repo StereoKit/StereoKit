@@ -20,7 +20,7 @@ int main()
 
     model_t model;
     
-    //model = model_create_file("DamagedHelmet.gltf");
+    model = model_create_file("DamagedHelmet.gltf");
     
     // Long narrow triangles that are hard to split
     //model = model_create_file("Radio.glb");
@@ -51,7 +51,7 @@ int main()
 
     */
     
-    model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
+    //model = model_create_file("/home/melis/models/red-car-wreck/scene.gltf");
     //model = model_create_file("t.glb");
     //model = model_create_file("/home/melis/models/angel/angel.obj");
     //model = model_create_file("/home/melis/models/lucy/lucy2.glb");
