@@ -8,16 +8,20 @@ using namespace std;
 
 ///////////////////////////////////////////
 
-pose_t  model_xform;
 model_t model_to_intersect;
+pose_t  model_pose;
 
 mesh_t  mesh_from, mesh_to;
 pose_t  from_pose, to_pose;
-ray_t   model_ray, world_ray;
+ray_t   world_ray, model_ray;
 ray_t   intersection;
 
+material_t model_material;
 material_t isec_material;
 mesh_t  isec_sphere;
+
+bool use_bvh = false;
+bool have_intersection;
 
 ///////////////////////////////////////////
 
@@ -26,11 +30,14 @@ void demo_bvh_init() {
     mesh_from = mesh_gen_sphere(0.04f, 16);
     mesh_to = mesh_gen_cone(0.04f, 0.1f, vec3{0.0f,0.0f,-1.0f}, 16);
 
-    isec_material = material_find(default_id_material);
+    isec_material = material_copy(material_find(default_id_material));
+    material_set_color(isec_material, "color", color128{1.0f,0.5f,0.0f,1.0f});
     isec_sphere = mesh_gen_sphere(0.01f, 8);
 
 	// Load model_to_intersect 
-	model_to_intersect = model_create_file("Radio.glb");
+	//model_to_intersect = model_create_file("Radio.glb");
+    model_to_intersect = model_create_file("suzanne.obj");
+    model_material = material_find(default_id_material);
 
     // Initial ray endpoints
     bounds_t b = model_get_bounds(model_to_intersect);
@@ -42,7 +49,19 @@ void demo_bvh_init() {
 
 void demo_bvh_update() {
 
-	model_draw(model_to_intersect, pose_matrix(model_xform, vec3_one));    
+    // XXX add use_bvh option
+    // XXX add reset model pose option
+    // XXX add showing start indices 
+    // XXX show intersection time
+    // XXX could add switch to disable isec testing (or one-shot), for large models
+
+    // Model being intersected
+
+    ui_handle_begin("model", model_pose, model_get_bounds(model_to_intersect), false);
+	model_draw     (model_to_intersect, matrix_identity);
+    ui_handle_end  ();
+
+    // World-space ray defined by two endpoint handles
 
     ui_handle_begin("from", from_pose, mesh_get_bounds(mesh_from), false, ui_move_pos_only);
     mesh_draw      (mesh_from, isec_material, matrix_identity);
@@ -54,23 +73,35 @@ void demo_bvh_update() {
     mesh_draw      (mesh_to, isec_material, matrix_identity);
     ui_handle_end  ();
 
-    world_ray = ray_t{from_pose.position, to_pose.position - from_pose.position};
-    // XXX
-    model_ray = world_ray;
+    // Compute model-space ray
 
-    if (model_ray_intersect_bvh(model_to_intersect, model_ray, &intersection))
-    {        
-        line_add(from_pose.position, to_pose.position, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
+    world_ray = {from_pose.position, to_pose.position-from_pose.position};
+    matrix world_to_model_matrix = matrix_invert(pose_matrix(model_pose));
+    model_ray = matrix_transform_ray(world_to_model_matrix, world_ray);
 
-        mesh_draw(isec_sphere, isec_material, matrix_t(intersection.pos));
+    // Intersection test
 
-        line_add(intersection.pos, intersection.pos+intersection.dir*0.1f,
-            color32{0,0,255,255}, color32{0,0,255,255}, 0.005f);
-    }
+    if (use_bvh)
+        have_intersection = model_ray_intersect_bvh(model_to_intersect, model_ray, &intersection);
     else
+        have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection);
+        
+    // Intersection result
+
+    if (!have_intersection)
     {
+        // Red: no intersection
         line_add(from_pose.position, to_pose.position, color32{255,0,0,255}, color32{255,0,0,255}, 0.005f);
+        return;
     }
+
+    // Green: intersection found, show point, including normal
+    line_add(from_pose.position, to_pose.position, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
+
+    mesh_draw(isec_sphere, isec_material, matrix_t(intersection.pos));
+
+    line_add(intersection.pos, intersection.pos+intersection.dir*0.1f,
+        color32{0,0,255,255}, color32{0,0,255,255}, 0.005f);
 }
 
 ///////////////////////////////////////////
