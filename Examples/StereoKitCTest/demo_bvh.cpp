@@ -45,7 +45,9 @@ void demo_bvh_init() {
 
     // Scale model to unit size
     bounds_t b = model_get_bounds(model_to_intersect);
-    model_scale = 1.0f / vec3_magnitude(b.dimensions);
+    float m = vec3_magnitude(b.dimensions);
+    if (m > 1.0f)
+        model_scale = 1.0f / vec3_magnitude(b.dimensions);
 
     // Initial ray endpoints
     from_pose = {(b.center - 0.7f*b.dimensions)*model_scale, quat_identity};
