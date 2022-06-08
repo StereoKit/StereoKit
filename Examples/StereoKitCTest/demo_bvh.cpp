@@ -76,7 +76,8 @@ void demo_bvh_update() {
     // Compute model-space ray
 
     world_ray = {from_pose.position, to_pose.position-from_pose.position};
-    matrix world_to_model_matrix = matrix_invert(pose_matrix(model_pose));
+    matrix model_to_world_matrix = pose_matrix(model_pose);
+    matrix world_to_model_matrix = matrix_invert(model_to_world_matrix);
     model_ray = matrix_transform_ray(world_to_model_matrix, world_ray);
 
     // Intersection test
@@ -98,9 +99,12 @@ void demo_bvh_update() {
     // Green: intersection found, show point, including normal
     line_add(from_pose.position, to_pose.position, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
 
-    mesh_draw(isec_sphere, isec_material, matrix_t(intersection.pos));
+    vec3 world_isec_point = matrix_transform_pt(model_to_world_matrix, intersection.pos);
+    vec3 world_isec_normal = matrix_transform_dir(model_to_world_matrix, intersection.dir);
 
-    line_add(intersection.pos, intersection.pos+intersection.dir*0.1f,
+    mesh_draw(isec_sphere, isec_material, matrix_t(world_isec_point));        
+
+    line_add(world_isec_point, world_isec_point+world_isec_normal*0.1f,
         color32{0,0,255,255}, color32{0,0,255,255}, 0.005f);
 }
 
