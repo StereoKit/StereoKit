@@ -358,7 +358,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 
 ///////////////////////////////////////////
 
-// Same as model_ray_intersect_bvh, but returns mesh and indices if intersection found
+// Same as model_ray_intersect_bvh, but returns mesh and start index if intersection found
 bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, uint32_t* out_start_inds) {
     vec3 bounds_at;
     if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
