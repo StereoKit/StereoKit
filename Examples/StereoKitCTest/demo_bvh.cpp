@@ -38,9 +38,16 @@ void demo_bvh_init() {
     isec_sphere = mesh_gen_sphere(0.01f, 8);
 
 	// Load model_to_intersect 
-	//model_to_intersect = model_create_file("Radio.glb");
-    model_to_intersect = model_create_file("suzanne.obj");
+	model_to_intersect = model_create_file("Radio.glb");
+    //model_to_intersect = model_create_file("suzanne.obj");
     //model_to_intersect = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
+
+    printf("%d subsets\n", model_subset_count(model_to_intersect));
+    for (int i = 0; i < model_subset_count(model_to_intersect); i++)        
+    {
+        mesh_t mesh = model_get_mesh(model_to_intersect, i);
+        printf("mesh[%d] %d vertices, %d triangles\n", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
+    }
 
     model_material = material_find(default_id_material);
 
@@ -123,7 +130,7 @@ void demo_bvh_update() {
 
         if (isec_mesh != nullptr)
         {
-            printf("%d\n", isec_start_inds);
+            //printf("%d\n", isec_start_inds);
             // Highlight intersected triangle
             vert_t *verts;
             vind_t *inds;
@@ -135,9 +142,9 @@ void demo_bvh_update() {
             vec3 p = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds]].pos);
             vec3 q = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds+1]].pos);
             vec3 r = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds+2]].pos);
-            printf("p %.6f %.6f %.6f\n", p.x, p.y, p.z);
-            printf("q %.6f %.6f %.6f\n", q.x, q.y, q.z);
-            printf("r %.6f %.6f %.6f\n", r.x, r.y, r.z);
+            //printf("p %.6f %.6f %.6f\n", p.x, p.y, p.z);
+            //printf("q %.6f %.6f %.6f\n", q.x, q.y, q.z);
+            //printf("r %.6f %.6f %.6f\n", r.x, r.y, r.z);
 
             line_add(p, q, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
             line_add(q, r, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);

@@ -479,7 +479,7 @@ mesh_bvh_destroy(mesh_bvh_t *bvh)
 
 // Find closest triangle intersection for the given model-space ray
 bool        
-mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds)
+mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t *out_start_inds)
 {
     const bvh_node_t *nodes = bvh->nodes;
     const uint32_t *sorted_triangles = bvh->sorted_triangles;
