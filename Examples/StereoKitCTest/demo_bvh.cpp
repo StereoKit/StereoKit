@@ -40,7 +40,6 @@ void demo_bvh_init() {
 	// Load model_to_intersect 
 	model_to_intersect = model_create_file("Radio.glb");
     //model_to_intersect = model_create_file("suzanne.obj");
-    //model_to_intersect = model_create_file("/home/melis/models/mesa-verde/scene.gltf");
 
     printf("%d subsets\n", model_subset_count(model_to_intersect));
     for (int i = 0; i < model_subset_count(model_to_intersect); i++)        
@@ -103,10 +102,11 @@ void demo_bvh_update() {
     const double t0 = time_get_raw();
 
     mesh_t      isec_mesh = nullptr;
+    matrix      isec_matrix;
     uint32_t    isec_start_inds;
 
     if (use_bvh)
-        have_intersection = model_ray_intersect_bvh_detailed(model_to_intersect, model_ray, &intersection, &isec_mesh, &isec_start_inds);
+        have_intersection = model_ray_intersect_bvh_detailed(model_to_intersect, model_ray, &intersection, &isec_mesh, &isec_matrix, &isec_start_inds);
     else
         have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection);
 
@@ -139,12 +139,12 @@ void demo_bvh_update() {
             mesh_get_verts(isec_mesh, verts, vcount, memory_reference);
             mesh_get_inds(isec_mesh, inds, icount, memory_reference);
 
-            vec3 p = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds]].pos);
-            vec3 q = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds+1]].pos);
-            vec3 r = matrix_transform_pt(model_to_world_matrix, verts[inds[isec_start_inds+2]].pos);
-            //printf("p %.6f %.6f %.6f\n", p.x, p.y, p.z);
-            //printf("q %.6f %.6f %.6f\n", q.x, q.y, q.z);
-            //printf("r %.6f %.6f %.6f\n", r.x, r.y, r.z);
+            vec3 p = matrix_transform_pt(model_to_world_matrix,
+                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds]].pos));
+            vec3 q = matrix_transform_pt(model_to_world_matrix,
+                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds+1]].pos));
+            vec3 r = matrix_transform_pt(model_to_world_matrix,
+                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds+2]].pos));
 
             line_add(p, q, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
             line_add(q, r, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
