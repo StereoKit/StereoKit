@@ -17,11 +17,13 @@ Possible optimizations:
 June, 2022
 Paul Melis, SURF (paul.melis@surf.nl)
 */
+#define NOMINMAX
 #include <cstdlib>
 #include <cstdio>
 #include <string.h>
 #include <cassert>
 #include <math.h>
+#include <algorithm>
 #include "bvh.h"
 #include "bbox.h"
 #include "../stereokit.h"
@@ -81,12 +83,12 @@ static void
 gather_stats(const mesh_bvh_t *bvh, short depth, int current_node_index, bvh_stats_t *stats, int acc_leaf_size)
 {
     const bvh_node_t& node = bvh->nodes[current_node_index];
-    stats->depth = max(stats->depth, depth);
+    stats->depth = std::max(stats->depth, depth);
 
     if (node.is_leaf())
     {
         stats->num_leafs++;
-        stats->max_leaf_size = max(stats->max_leaf_size, node.num_triangles);
+        stats->max_leaf_size = std::max(stats->max_leaf_size, node.num_triangles);
         if (node.num_triangles > acc_leaf_size)
             stats->num_forced_leafs++;
     }
@@ -140,14 +142,6 @@ vec3_field(vec3 v, int index)
     default:
         return 0.0f;
     }
-}
-
-template <typename T> 
-void swap(T& a, T& b)
-{
-    T t = a;
-    a = b;
-    b = a;
 }
 
 // Recursively subdivide the triangles in the current leaf node into two groups, 
@@ -258,7 +252,7 @@ mesh_bvh_build_recursive(int current_node_index,
             if (vec3_field(triangle_centroids[sorted_triangles[l]], split_axis) < split_value)
                 l++;
             else
-                swap(sorted_triangles[l], sorted_triangles[r--]);
+                std::swap(sorted_triangles[l], sorted_triangles[r--]);
         }        
 
         const int num_triangles_left = l - node.leaf_first;
