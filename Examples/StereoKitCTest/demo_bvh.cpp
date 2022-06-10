@@ -167,7 +167,7 @@ void demo_bvh_update() {
     else
     {
         char s[64];
-        sprintf(s, "%.3f ms", time_ms);
+        sprintf_s(s, "%.3f ms", time_ms);
         ui_text(s);
     }
     if (ui_button("Reset pose"))

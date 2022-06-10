@@ -1,6 +1,5 @@
 #include <stereokit.h>
 #include <stereokit_ui.h>
-#include <sys/time.h>
 #include <vector>
 #include <cstdio>
 using namespace sk;
@@ -65,11 +64,11 @@ int main()
 
     ray_t intersection = {};
 
-    timeval t0, t1;
+    double t0, t1;
 
     printf("Performing intersection against mesh subset(s):\n");
 
-    gettimeofday(&t0, NULL);
+    t0 = time_get_raw();
 
 #if 1
     mesh_t mesh;
@@ -97,9 +96,8 @@ int main()
     }
 #endif
 
-    gettimeofday(&t1, NULL);
-    double tdiff = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec)/1000000.0f;
-    printf("intersection test (including BVH build) took %.6fs\n", tdiff);
+    t1 = time_get_raw();
+    printf("intersection test (including BVH build) took %.6f ms\n", 1000.0*(t1-t0));
     
     sk_shutdown();
     return 0;

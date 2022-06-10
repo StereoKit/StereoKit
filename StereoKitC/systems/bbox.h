@@ -132,7 +132,7 @@ public:
     float surface_area() const
     {
         const vec3 s = size();
-        return 2.0 * (s.x*s.y + s.x*s.z + s.y*s.z);
+        return 2.0f * (s.x*s.y + s.x*s.z + s.y*s.z);
     }
 
     // Intersect a ray with (delimited by t0 and t1) with the given bounding box.
