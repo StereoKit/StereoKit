@@ -76,8 +76,7 @@ file picker, and make a call to OnLoadModel after a file has
 been successfully picked!
 ```csharp
 if (UI.Button("Open Model") && !Platform.FilePickerVisible) {
-	Platform.FilePicker(PickerMode.Open, OnLoadModel, null,
-		".gltf", ".glb", ".obj", ".stl", ".fbx", ".ply");
+	Platform.FilePicker(PickerMode.Open, OnLoadModel, null, Assets.ModelFormats);
 }
 ```
 Once you have the filename, it's simply a matter of loading it
@@ -87,13 +86,11 @@ size.
 ```csharp
 private void OnLoadModel(string filename)
 {
-	Task.Run(() =>
-	{
-		model      = Model.FromFile(filename);
-		modelScale = 1 / model.Bounds.dimensions.Magnitude;
-		if (model.Anims.Count > 0)
-			model.PlayAnim(model.Anims[0], AnimMode.Loop);
-	});
+	model      = Model.FromFile(filename);
+	modelTask  = Assets.CurrentTask;
+	modelScale = 1 / model.Bounds.dimensions.Magnitude;
+	if (model.Anims.Count > 0)
+		model.PlayAnim(model.Anims[0], AnimMode.Loop);
 }
 ```
 ### Read Custom Files

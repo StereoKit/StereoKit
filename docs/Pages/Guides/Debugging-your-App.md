@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Guides Debugging your App
-description: Debugging your App
+title: Debugging your App
+description: ### Set up for debugg...
 ---
 
 # Debugging your App
@@ -13,14 +13,14 @@ You may also wish to disable "Just My Code" if you're trying to actually inspect
 StereoKit is set up with Source Link as of v0.3.5, which allows you to inspect StereoKit's code directly from the relevant commit of the main repository on GitHub. Note that distributed binaries are in release format, and may not 'step through' as nicely as a normal debug binary would.
 
 ### Check the Logs!
-StereoKit outputs a lot of useful information in the logs, and there's a chance your issue may be logged there! When submitting an issue on the GitHub repo, including a copy of your logs can really help maintainers to understand what is or isn't happening.
+StereoKit outputs a lot of useful information in the logs, and there's a chance your issue may be logged there! When submitting an issue on the GitHub repository, including a copy of your logs can really help maintainers to understand what is or isn't happening.
 
 All platforms will output the log through the standard debug output window, but you can also tap into the debug logs via [`Log.Subscribe`]({{site.url}}/Pages/Reference/Log/Subscribe.html). Check the docs there for an easy Mixed Reality log window you can add to your project.
 
 ### Ask for Help
 We love to hear what problems you're running into! StereoKit is completely open source and has no analytics or surveillance tools embedded in it at all. If you have an issue, we won't know about it unless _you_ tell us, or we spot it ourselves!
 
-The best place to ask for help will always be the [Github Issues](https://github.com/maluoi/StereoKit/issues), or [GitHub Discussions](https://github.com/maluoi/StereoKit/discussions) pages. Be sure to provide logs, platform information, and as many other details as may be relevant!
+The best place to ask for help will always be the [GitHub Issues](https://github.com/StereoKit/StereoKit/issues), or [GitHub Discussions](https://github.com/StereoKit/StereoKit/discussions) pages. Be sure to provide logs, platform information, and as many other details as may be relevant!
 
 ## Common Issues
 Here's a short list of some common issues we've seen people ask about!

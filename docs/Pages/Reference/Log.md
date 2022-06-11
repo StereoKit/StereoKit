@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Log
-description: A class for logging errors, warnings and information! Different levels of information can be filtered out, and supports coloration via <~[colorCode]> and <~clr> tags.  Text colors can be set with a tag, and reset back to default with <~clr>. Color codes are as follows.  | Dark | Bright | Decription  | |------|--------|-------------| | DARK | BRIGHT | DESCRIPTION | | blk  | BLK    | Black       | | red  | RED    | Red         | | grn  | GRN    | Green       | | ylw  | YLW    | Yellow      | | blu  | BLU    | Blue        | | mag  | MAG    | Magenta     | | cyn  | cyn    | Cyan        | | grn  | GRN    | Green       | | wht  | WHT    | White       |
+description: A class for logging errors, warnings and information! Different levels of information can be filtered out, and supports coloration via <~[colorCode]> and <~clr> tags.  Text colors can be set with a tag, and reset back to default with <~clr>. Color codes are as follows.  | Dark | Bright | Description | |------|--------|-------------| | DARK | BRIGHT | DESCRIPTION | | blk  | BLK    | Black       | | red  | RED    | Red         | | grn  | GRN    | Green       | | ylw  | YLW    | Yellow      | | blu  | BLU    | Blue        | | mag  | MAG    | Magenta     | | cyn  | cyn    | Cyan        | | grn  | GRN    | Green       | | wht  | WHT    | White       |
 ---
 # static class Log
 
@@ -12,7 +12,7 @@ coloration via <~[colorCode]> and <~clr> tags.
 Text colors can be set with a tag, and reset back to default with
 <~clr>. Color codes are as follows:
 
-| Dark | Bright | Decription  |
+| Dark | Bright | Description |
 |------|--------|-------------|
 | DARK | BRIGHT | DESCRIPTION |
 | blk  | BLK    | Black       |
@@ -25,15 +25,11 @@ Text colors can be set with a tag, and reset back to default with
 | grn  | GRN    | Green       |
 | wht  | WHT    | White       |
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
 |--|--|
 |[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) [Filter]({{site.url}}/Pages/Reference/Log/Filter.html)|What's the lowest level of severity logs to display on the console? Default is LogLevel.Info. This property can safely be set before SK initialization.|
-
 
 ## Static Methods
 
@@ -45,7 +41,6 @@ Text colors can be set with a tag, and reset back to default with
 |[Unsubscribe]({{site.url}}/Pages/Reference/Log/Unsubscribe.html)|If you subscribed to the log callback, you can unsubscribe that callback here! This method can safely be called before initialization.|
 |[Warn]({{site.url}}/Pages/Reference/Log/Warn.html)|Writes a formatted line to the log using a LogLevel.Warn severity level!|
 |[Write]({{site.url}}/Pages/Reference/Log/Write.html)|Writes a formatted line to the log with the specified severity level!|
-
 
 ## Examples
 

@@ -6,7 +6,7 @@ description: This is the gamma space color the renderer will clear the screen to
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).ClearColor
 
 <div class='signature' markdown='1'>
-static [Color]({{site.url}}/Pages/Reference/Color.html) ClearColor{ set }
+static [Color]({{site.url}}/Pages/Reference/Color.html) ClearColor{ get set }
 </div>
 
 ## Description

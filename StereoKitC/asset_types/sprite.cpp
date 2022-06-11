@@ -1,6 +1,5 @@
 #include "sprite.h"
 #include "assets.h"
-#include "texture.h"
 #include "../libraries/ferr_hash.h"
 #include "../systems/sprite_drawer.h"
 #include "../sk_math.h"
@@ -56,12 +55,12 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	tex_addref(image);
 	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
-	assets_block_until(&image->header, asset_state_loaded_meta);
+	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
 
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
-	result->aspect = image->width / (float)image->height;
+	result->aspect = tex_get_width(image) / (float)tex_get_height(image);
 	if (result->aspect > 1) // Width is larger than height
 		result->dimensions_normalized = { 1, 1.f / result->aspect };
 	else                    // Height is larger than, or equal to width

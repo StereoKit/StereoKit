@@ -25,7 +25,6 @@ Since rendering is atlas based, you also have only one material per
 atlas. So this is why you might wish to put a sprite in one atlas or
 another, so you can apply different
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -35,14 +34,11 @@ another, so you can apply different
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [NormalizedDimensions]({{site.url}}/Pages/Reference/Sprite/NormalizedDimensions.html)|Width and height of the sprite, normalized so the maximum value is 1.|
 |int [Width]({{site.url}}/Pages/Reference/Sprite/Width.html)|Width of the sprite, in pixels.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
-
-
 
 ## Static Methods
 
@@ -50,4 +46,3 @@ another, so you can apply different
 |--|--|
 |[FromFile]({{site.url}}/Pages/Reference/Sprite/FromFile.html)|Create a sprite from an image file! This loads a Texture from file, and then uses that Texture as the source for the Sprite.|
 |[FromTex]({{site.url}}/Pages/Reference/Sprite/FromTex.html)|Create a sprite from a Texture object!|
-

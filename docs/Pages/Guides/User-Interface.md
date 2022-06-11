@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Guides User Interface
-description: User Interface
+title: User Interface
+description: StereoKit uses an immediate mode UI system. Basically, you define the UI every single frame you want to see it! Sounds a little odd at first, but it does have some pret...
 ---
 
 # Building UI in StereoKit
@@ -91,7 +91,7 @@ Any UI method will return true on the frame when their value or
 state has changed.
 
 ```csharp
-if (UI.ButtonRound("Exit", powerSprite))
+if (UI.ButtonImg("Exit", powerSprite))
 	SK.Quit();
 ```
 
@@ -129,7 +129,7 @@ Hierarchy transform stack!
 
 ```csharp
 UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
-Renderer.Add(clipboard, Matrix.Identity);
+clipboard.Draw(Matrix.Identity);
 ```
 
 Once we've done that, we also need to define the layout area of
@@ -210,5 +210,5 @@ simple, huh? For further reference, and more UI methods, check
 out the [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
 
 If you'd like to see the complete code for this sample,
-[check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
+[check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
 

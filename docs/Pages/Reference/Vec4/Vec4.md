@@ -23,7 +23,8 @@ A basic constructor, just copies the values in!
 ```csharp
 void Vec4(float xyzw)
 ```
-A basic constructor, just copies the value in as x,y,z and,w component!
+A basic constructor, just copies the value in as the x, y,
+z and w components!
 </div>
 
 |  |  |

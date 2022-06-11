@@ -8,10 +8,6 @@ description: A collection of extension methods for the BtnState enum that makes 
 A collection of extension methods for the BtnState enum that makes
 bit-field checks a little easier.
 
-
-
-
-
 ## Static Methods
 
 |  |  |
@@ -20,7 +16,6 @@ bit-field checks a little easier.
 |[IsChanged]({{site.url}}/Pages/Reference/BtnStateExtensions/IsChanged.html)|Was the button either presses or released this frame?|
 |[IsJustActive]({{site.url}}/Pages/Reference/BtnStateExtensions/IsJustActive.html)|Has the button just been pressed this frame?|
 |[IsJustInactive]({{site.url}}/Pages/Reference/BtnStateExtensions/IsJustInactive.html)|Has the button just been released this frame?|
-
 
 ## Examples
 

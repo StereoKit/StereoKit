@@ -1,7 +1,7 @@
 ---
 layout: default
 title: SK.Run
-description: This passes application execution over to StereoKit. This continuously steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. Once execution completes, it properly calls the shutdown callback and shuts down StereoKit for you.  Using this method is important for compatability with WASM and is the preferred method of controlling the main loop, over SK.Step.
+description: This passes application execution over to StereoKit. This continuously steps all StereoKit systems, and inserts user code via callback between the appropriate system updates. Once execution completes, it properly calls the shutdown callback and shuts down StereoKit for you.  Using this method is important for compatibility with WASM and is the preferred method of controlling the main loop, over SK.Step.
 ---
 # [SK]({{site.url}}/Pages/Reference/SK.html).Run
 
@@ -15,7 +15,7 @@ code via callback between the appropriate system updates. Once
 execution completes, it properly calls the shutdown callback and
 shuts down StereoKit for you.
 
-Using this method is important for compatability with WASM and is
+Using this method is important for compatibility with WASM and is
 the preferred method of controlling the main loop, over
 `SK.Step`.
 </div>

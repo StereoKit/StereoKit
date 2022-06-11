@@ -44,7 +44,7 @@ void         font_update_texture(font_t font);
 void         font_update_cache  (font_t font);
 
 int32_t      font_source_add     (const char *filename);
-int32_t      font_source_add_data(const char *name, void *data, size_t data_size);
+int32_t      font_source_add_data(const char *name, const void *data, size_t data_size);
 void         font_source_release (int32_t id);
 
 ///////////////////////////////////////////
@@ -81,7 +81,7 @@ int32_t font_source_add(const char *filename) {
 
 ///////////////////////////////////////////
 
-int32_t font_source_add_data(const char *name, void *data, size_t data_size) {
+int32_t font_source_add_data(const char *name, const void *data, size_t data_size) {
 	int64_t hash = hash_fnv64_string(name);
 	int32_t id   = (int32_t)font_sources.index_where(&font_source_t::name_hash, hash);
 

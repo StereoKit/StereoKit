@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Renderer.SetClip
-description: Set the near and far clipping planes of the camera! These are important to z-buffer quality, especially when using low bit depth z-buffers as recommended for devices like the HoloLens. The smaller the range between the near and far planes, the better your z-buffer will look! If you see flickering on objects that are overlapping, try making the range smaller.
+description: Set the near and far clipping planes of the camera! These are important to z-buffer quality, especially when using low bit depth z-buffers as recommended for devices like the HoloLens. The smaller the range between the near and far planes, the better your z-buffer will look! If you see flickering on objects that are overlapping, try making the range smaller.  These values only affect perspective mode projection, which is the default projection mode.
 ---
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).SetClip
 
@@ -15,6 +15,9 @@ low bit depth z-buffers as recommended for devices like the
 HoloLens. The smaller the range between the near and far planes,
 the better your z-buffer will look! If you see flickering on
 objects that are overlapping, try making the range smaller.
+
+These values only affect perspective mode projection, which is the
+default projection mode.
 </div>
 
 |  |  |

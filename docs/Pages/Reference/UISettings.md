@@ -7,7 +7,6 @@ description: Visual properties and spacing of the UI system.
 
 Visual properties and spacing of the UI system.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -17,7 +16,3 @@ Visual properties and spacing of the UI system.
 |float [depth]({{site.url}}/Pages/Reference/UISettings/depth.html)|The Z depth of 3D UI elements, in meters.|
 |float [gutter]({{site.url}}/Pages/Reference/UISettings/gutter.html)|Spacing between sibling items, in meters.|
 |float [padding]({{site.url}}/Pages/Reference/UISettings/padding.html)|Spacing between an item and its parent, in meters.|
-
-
-
-

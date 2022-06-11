@@ -16,13 +16,11 @@ HSV, LAB, just remember which one you have, and be sure to convert it
 appropriately later. Data is stored as float colors, so this'll be a
 high accuracy blend!
 
-
 ## Instance Fields and Properties
 
 |  |  |
 |--|--|
 |int [Count]({{site.url}}/Pages/Reference/Gradient/Count.html)|The number of color keys present in this gradient.|
-
 
 ## Instance Methods
 
@@ -34,6 +32,3 @@ high accuracy blend!
 |[Get32]({{site.url}}/Pages/Reference/Gradient/Get32.html)|Samples the gradient's color at the given position, and converts it to a 32 bit color. If your RGBA color values are outside of the 0-1 range, then you'll get some issues as they're converted to 0-255 range bytes!|
 |[Remove]({{site.url}}/Pages/Reference/Gradient/Remove.html)|Removes the color key at the given index!|
 |[Set]({{site.url}}/Pages/Reference/Gradient/Set.html)|Updates the color key at the given index! This will NOT re-order color keys if they are moved past another key's position, which could lead to strange behavior.|
-
-
-

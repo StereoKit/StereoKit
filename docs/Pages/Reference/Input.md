@@ -8,9 +8,6 @@ description: Input from the system come from this class! Hands, eyes, heads, mic
 Input from the system come from this class! Hands, eyes,
 heads, mice and pointers!
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
@@ -21,13 +18,12 @@ heads, mice and pointers!
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [Head]({{site.url}}/Pages/Reference/Input/Head.html)|The position and orientation of the user's head! This is the center point between the user's eyes, NOT the center of the user's head. Forward points the same way the user's face is facing.|
 |[Mouse]({{site.url}}/Pages/Reference/Mouse.html) [Mouse]({{site.url}}/Pages/Reference/Input/Mouse.html)|Information about this system's mouse, or lack thereof!|
 
-
 ## Static Methods
 
 |  |  |
 |--|--|
 |[Controller]({{site.url}}/Pages/Reference/Input/Controller.html)|Gets raw controller input data from the system. Note that not all buttons provided here are guaranteed to be present on the user's physical controller. Controllers are also not guaranteed to be available on the system, and are never simulated.|
-|[Hand]({{site.url}}/Pages/Reference/Input/Hand.html)|Retreives all the information about the user's hand! StereoKit will always provide hand information, however sometimes that information is simulated, like in the case of a mouse, or controllers.  Note that this is a copy of the hand information, and it's a good chunk of data, so it's a good idea to grab it once and keep it around for the frame, or at least function, rather than asking for it again and again each time you want to touch something.|
+|[Hand]({{site.url}}/Pages/Reference/Input/Hand.html)|Retrieves all the information about the user's hand! StereoKit will always provide hand information, however sometimes that information is simulated, like in the case of a mouse, or controllers.  Note that this is a copy of the hand information, and it's a good chunk of data, so it's a good idea to grab it once and keep it around for the frame, or at least function, rather than asking for it again and again each time you want to touch something.|
 |[HandClearOverride]({{site.url}}/Pages/Reference/Input/HandClearOverride.html)|Clear out the override status from Input.HandOverride, and restore the user's control over it again.|
 |[HandMaterial]({{site.url}}/Pages/Reference/Input/HandMaterial.html)|Set the Material used to render the hand! The default material uses an offset of 10 to ensure it gets drawn overtop of other elements.|
 |[HandOverride]({{site.url}}/Pages/Reference/Input/HandOverride.html)|This allows you to completely override the hand's pose information! It is still treated like the user's hand, so this is great for simulating input for testing purposes. It will remain overridden until you call Input.HandClearOverride.|
@@ -36,4 +32,3 @@ heads, mice and pointers!
 |[Key]({{site.url}}/Pages/Reference/Input/Key.html)|Keyboard key state! On desktop this is super handy, but even standalone MR devices can have bluetooth keyboards, or even just holographic system keyboards!|
 |[TextConsume]({{site.url}}/Pages/Reference/Input/TextConsume.html)|Returns the next text character from the list of characters that have been entered this frame! Will return '\0' if there are no more characters left in the list. These are from the system's text entry system, and so can be unicode, will repeat if their 'key' is held down, and could arrive from something like a copy/paste operation.  If you wish to reset this function to begin at the start of the read list on the next call, you can call `Input.TextReset`.|
 |[TextReset]({{site.url}}/Pages/Reference/Input/TextReset.html)|Resets the `Input.TextConsume` read list back to the start. For example, `UI.Input` will _not_ call `TextReset`, so it effectively will consume those characters, hiding them from any `TextConsume` calls following it. If you wanted to check the current frame's text, but still allow `UI.Input` to work later on in the frame, you would read everything with `TextConsume`, and then `TextReset` afterwards to reset the read list for the following `UI.Input`.|
-

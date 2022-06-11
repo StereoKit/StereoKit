@@ -8,7 +8,6 @@ description: This stores information about the mouse! What's its state, where's 
 This stores information about the mouse! What's its state, where's
 it pointed, do we even have one?
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -18,7 +17,3 @@ it pointed, do we even have one?
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [posChange]({{site.url}}/Pages/Reference/Mouse/posChange.html)|How much has the mouse's position changed in the current frame? Measured in pixels.|
 |float [scroll]({{site.url}}/Pages/Reference/Mouse/scroll.html)|What's the current scroll value for the mouse's scroll wheel? TODO: Units|
 |float [scrollChange]({{site.url}}/Pages/Reference/Mouse/scrollChange.html)|How much has the scroll wheel value changed during this frame? TODO: Units|
-
-
-
-

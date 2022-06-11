@@ -283,6 +283,7 @@ typedef struct skg_shader_meta_t {
 #if   defined(SKG_DIRECT3D11)
 
 
+#define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 #include <dxgi1_6.h>
 
@@ -650,9 +651,6 @@ SKG_API void                    skg_shader_meta_release        (skg_shader_meta_
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <math.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #include <stdio.h>
 

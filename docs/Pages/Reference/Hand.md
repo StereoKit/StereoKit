@@ -7,7 +7,6 @@ description: Information about a hand!
 
 Information about a hand!
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -26,7 +25,7 @@ Information about a hand!
 |bool [IsPinched]({{site.url}}/Pages/Reference/Hand/IsPinched.html)|Are the fingers currently pinched?|
 |bool [IsTracked]({{site.url}}/Pages/Reference/Hand/IsTracked.html)|Is the hand being tracked by the sensors right now?|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [Material]({{site.url}}/Pages/Reference/Hand/Material.html)|Set the Material used to render the hand! The default material uses an offset of 10 to ensure it gets drawn overtop of other elements.|
-|[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation at the center of the palm! Here, Forward is the direction the flat of the palm is facing. X+ is to the outside of the right hand, and to the inside of the left hand.|
+|[Pose]({{site.url}}/Pages/Reference/Pose.html) [palm]({{site.url}}/Pages/Reference/Hand/palm.html)|The position and orientation of the palm! Position is specifically defined as the middle of the middle finger's root (metacarpal) bone. For orientation, Forward is the direction the flat of the palm is facing, "Iron Man" style. X+ is to the outside of the right hand, and to the inside of the left hand.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [pinch]({{site.url}}/Pages/Reference/Hand/pinch.html)|Is the hand making a pinch gesture right now? Finger and thumb together.|
 |float [pinchActivation]({{site.url}}/Pages/Reference/Hand/pinchActivation.html)|What percentage of activation is the pinch gesture right now? Where 0 is a hand in an outstretched resting position, and 1 is fingers touching, within a device error tolerant threshold.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [pinchPt]({{site.url}}/Pages/Reference/Hand/pinchPt.html)|This is an approximation of where the center of a 'pinch' gesture occurs, and is used internally by StereoKit for some tasks, such as UI. For simulated hands, this position will give you the most stable pinch location possible. For real hands, it'll be pretty close to the stablest point you'll get. This is especially important for when the user begins and ends their pinch action, as you'll often see a lot of extra movement in the fingers then.|
@@ -36,15 +35,11 @@ Information about a hand!
 |bool [Visible]({{site.url}}/Pages/Reference/Hand/Visible.html)|Sets whether or not StereoKit should render this hand for you. Turn this to false if you're going to render your own, or don't need the hand itself to be visible.|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [wrist]({{site.url}}/Pages/Reference/Hand/wrist.html)|Pose of the wrist. TODO: Not populated right now.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[Get]({{site.url}}/Pages/Reference/Hand/Get.html)|Returns the joint information of the indicated hand joint! This also includes fingertips as a 'joint'. This is the same as the [] operator. Note that for thumbs, there are only 4 'joints' in reality, so StereoKit has JointId.Root and JointId.KnuckleMajor as the same pose, so JointId.Tip is still the tip of the thumb!|
-
-
-
 
 ## Examples
 

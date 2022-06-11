@@ -1,7 +1,7 @@
 ---
 layout: default
 title: MaterialParam.Unknown
-description: This data type is not currently recognized. Please report your case on Github Issues!
+description: This data type is not currently recognized. Please report your case on GitHub Issues!
 ---
 # [MaterialParam]({{site.url}}/Pages/Reference/MaterialParam.html).Unknown
 
@@ -11,5 +11,5 @@ static [MaterialParam]({{site.url}}/Pages/Reference/MaterialParam.html) Unknown
 
 ## Description
 This data type is not currently recognized. Please
-report your case on Github Issues!
+report your case on GitHub Issues!
 

@@ -20,7 +20,7 @@ in it, and slide the value up and down.
 |float min|The minimum value the slider can set, left side              of the slider.|
 |float max|The maximum value the slider can set, right              side of the slider.|
 |float step|Locks the value to intervals of step. Starts              at min, and increments by step.|
-|float width|Physical width of the slider on the window.|
+|float width|Physical width of the slider on the window. 0             will fill the remaining amount of window space.|
 |[UIConfirm]({{site.url}}/Pages/Reference/UIConfirm.html) confirmMethod|How should the slider be activated?             Push will be a push-button the user must press first, and pinch             will be a tab that the user must pinch and drag around.|
 |RETURNS: bool|Returns true any time the value changes.|
 
@@ -39,7 +39,7 @@ in it, and slide the value up and down.
 |double min|The minimum value the slider can set, left side              of the slider.|
 |double max|The maximum value the slider can set, right              side of the slider.|
 |double step|Locks the value to intervals of step. Starts              at min, and increments by step.|
-|float width|Physical width of the slider on the window.|
+|float width|Physical width of the slider on the window. 0             will fill the remaining amount of window space.|
 |[UIConfirm]({{site.url}}/Pages/Reference/UIConfirm.html) confirmMethod|How should the slider be activated?             Push will be a push-button the user must press first, and pinch             will be a tab that the user must pinch and drag around.|
 |RETURNS: bool|Returns true any time the value changes.|
 
@@ -51,7 +51,7 @@ in it, and slide the value up and down.
 
 ### Horizontal Sliders
 
-![A window with a slider]({{site.screen_url}}/UI/HSliderWindow.jpg)
+![A window with a slider]({{site.screen_url}}/UI/SliderWindow.jpg)
 
 A slider will slide between two values at increments. The function
 requires a reference to a float variable where the slider's state is

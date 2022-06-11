@@ -1,12 +1,12 @@
 ---
 layout: default
-title: Guides Using QR Codes
-description: Using QR Codes
+title: Using QR Codes
+description: QR codes are a super fast and easy way to locate an object, provide information from the environment, or localize two devices to the same coordinate space! ...
 ---
 
 # Using QR Codes
 
-QR codes are a super fast and easy way to to locate an object,
+QR codes are a super fast and easy way to locate an object,
 provide information from the environment, or `localize` two
 devices to the same coordinate space! HoloLens 2 and WMR headsets
 have a really convenient way to grab and use this data. They can use
@@ -138,5 +138,5 @@ public void Update()
 }
 ```
 And that's all there is to it! You can find all this code
-in context [here on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoQRCode.cs).
+in context [here on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoQRCode.cs).
 

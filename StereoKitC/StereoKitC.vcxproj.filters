@@ -442,6 +442,12 @@
     <ClInclude Include="sk_math_dx.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="asset_types\mesh_.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="asset_types\texture_.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

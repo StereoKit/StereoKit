@@ -19,7 +19,7 @@ every frame the user is grabbing the handle.
 |  |  |
 |--|--|
 |string id|An id for tracking element state. MUST be unique             within current hierarchy.|
-|Pose& pose|The pose state for the handle! The user will              be able to grab this handle and move it around.|
+|Pose& pose|The pose state for the handle! The user will              be able to grab this handle and move it around. The pose is relative             to the current hierarchy stack.|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) handle|Size and location of the handle, relative to              the pose.|
 |bool drawHandle|Should this function draw the handle for              you, or will you draw that yourself?|
 |[UIMove]({{site.url}}/Pages/Reference/UIMove.html) moveType|Describes how the handle will move when              dragged around.|

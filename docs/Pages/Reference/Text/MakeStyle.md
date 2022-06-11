@@ -21,7 +21,7 @@ on Default.ShaderFont.
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
+|float characterHeightMeters|Height of a text glyph in             meters. StereoKit currently bases this on the letter 'T'.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
 
@@ -41,7 +41,7 @@ on the provided Shader.
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
+|float characterHeightMeters|Height of a text glyph in             meters. StereoKit currently bases this on the letter 'T'.|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) shader|This style will create and use a unique             Material based on the Shader that you provide here.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|
@@ -65,7 +65,7 @@ Shader, or takes neither a Shader nor a Material!
 |  |  |
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) font|Font asset you want attached to this style.|
-|float characterHeightMeters|Height of a text glpyh in             meters. StereoKit currently bases this on the letter 'T'.|
+|float characterHeightMeters|Height of a text glyph in             meters. StereoKit currently bases this on the letter 'T'.|
 |[Material]({{site.url}}/Pages/Reference/Material.html) material|Which material should be used to render             the text with? Note that this does NOT duplicate the material, so             some parameters of this Material instance will get overwritten,              like the texture used for the glyph atlas. You should either use             a new Material, or a Material that was already used with this             same font.|
 |[Color]({{site.url}}/Pages/Reference/Color.html) colorGamma|The gamma space color of the text             style. This will be embedded in the vertex color of the text             mesh.|
 |RETURNS: [TextStyle]({{site.url}}/Pages/Reference/TextStyle.html)|A text style id for use with text rendering functions.|

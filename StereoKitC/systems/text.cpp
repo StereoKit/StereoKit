@@ -1,7 +1,6 @@
 #include "text.h"
 #include "../stereokit.h"
 #include "../asset_types/font.h"
-#include "../asset_types/material.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
@@ -119,7 +118,7 @@ text_style_t text_make_style_shader(font_t font, float character_height, shader_
 ///////////////////////////////////////////
 
 text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
-	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
+	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
 	size_t         index  = 0;
 	text_buffer_t *buffer = nullptr;
 

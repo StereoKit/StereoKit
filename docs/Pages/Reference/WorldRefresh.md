@@ -9,17 +9,12 @@ A settings flag that lets you describe the behavior of how
 StereoKit will refresh data about the world mesh, if applicable. This
 is used with `World.RefreshType`.
 
-
-
-
 ## Enum Values
 
 |  |  |
 |--|--|
 |Area|Refreshing occurs when the user leaves the area that was most recently scanned. This area is a sphere that is 0.5 of the World.RefreshRadius.|
 |Timer|Refreshing happens at timer intervals. If an update doesn't happen in time, the next update will happen as soon as possible. The timer interval is configurable via `World.RefreshInterval`.|
-
-
 
 ## Examples
 

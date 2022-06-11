@@ -7,6 +7,7 @@
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "texture.h"
+#include "texture_.h"
 
 #pragma warning(push)
 #pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
