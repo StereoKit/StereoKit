@@ -204,6 +204,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/material.h
   StereoKitC/asset_types/material.cpp
   StereoKitC/asset_types/mesh.h
+  StereoKitC/asset_types/mesh_.h
   StereoKitC/asset_types/mesh.cpp
   StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
@@ -218,6 +219,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/sprite.h
   StereoKitC/asset_types/sprite.cpp
   StereoKitC/asset_types/texture.h
+  StereoKitC/asset_types/texture_.h
   StereoKitC/asset_types/texture.cpp )
 
 set(SK_SRC_LIBRARIES
