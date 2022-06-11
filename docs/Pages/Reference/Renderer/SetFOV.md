@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Renderer.SetFOV
-description: Only works for flatscreen! This updates the camera's projection matrix with a new field of view.
+description: Only works for flatscreen! This updates the camera's projection matrix with a new field of view.  This value only affects perspective mode projection, which is the default projection mode.
 ---
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).SetFOV
 
@@ -11,11 +11,14 @@ static void SetFOV(float fieldOfViewDegrees)
 ```
 Only works for flatscreen! This updates the camera's
 projection matrix with a new field of view.
+
+This value only affects perspective mode projection, which is the
+default projection mode.
 </div>
 
 |  |  |
 |--|--|
-|float fieldOfViewDegrees|Horizontal field of view in             degrees.|
+|float fieldOfViewDegrees|Vertical field of view in degrees.|
 
 
 

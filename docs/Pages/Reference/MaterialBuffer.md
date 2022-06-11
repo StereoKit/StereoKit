@@ -37,14 +37,9 @@ float  windStrength;
 }
 ```
 
-
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[MaterialBuffer]({{site.url}}/Pages/Reference/MaterialBuffer/MaterialBuffer.html)|Create a new global MaterialBuffer bound to the register slot id. All shaders will have access to the data provided via this instance's `Set`.|
 |[Set]({{site.url}}/Pages/Reference/MaterialBuffer/Set.html)|This will upload your data to the GPU for shaders to use.|
-
-
-

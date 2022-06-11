@@ -23,6 +23,25 @@ into model space, see the example in the docs!
 |Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
 |RETURNS: bool|True if an intersection occurs, false otherwise!|
 
+<div class='signature' markdown='1'>
+```csharp
+bool Intersect(Ray modelSpaceRay, Ray& modelSpaceAt, UInt32& outStartInds)
+```
+Checks the intersection point of this ray and a Mesh
+with collision data stored on the CPU. A mesh without collision
+data will always return false. Ray must be in model space,
+intersection point will be in model space too. You can use the
+inverse of the mesh's world transform matrix to bring the ray
+into model space, see the example in the docs!
+</div>
+
+|  |  |
+|--|--|
+|[Ray]({{site.url}}/Pages/Reference/Ray.html) modelSpaceRay|Ray must be in model space, the             intersection point will be in model space too. You can use the             inverse of the mesh's world transform matrix to bring the ray             into model space, see the example in the docs!|
+|Ray& modelSpaceAt|The intersection point and surface             direction of the ray and the mesh, if an intersection occurs.             This is in model space, and must be transformed back into world             space later. Direction is not guaranteed to be normalized,              especially if your own model->world transform contains scale/skew             in it.|
+|UInt32& outStartInds|The index of the first index of the triangle that was hit|
+|RETURNS: bool|True if an intersection occurs, false otherwise!|
+
 
 
 
@@ -49,7 +68,7 @@ public void Update()
 	UI.Handle("Cast", ref castPose, sphereMesh.Bounds*0.03f);
 	boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix());
 	sphereMesh.Draw(Default.MaterialUI, castPose.ToMatrix(0.03f));
-	Lines.Add(castPose.position, boxPose.position, Color.White, 0.01f);
+	Lines.Add(castPose.position, boxPose.position, Color.White, 0.005f);
 
 	// Create a ray that's in the Mesh's model space
 	Matrix transform = boxPose.ToMatrix();
@@ -59,9 +78,18 @@ public void Update()
 
 	// Draw a sphere at the intersection point, if the ray intersects 
 	// with the mesh.
-	if (ray.Intersect(boxMesh, out Ray at))
+	if (ray.Intersect(boxMesh, out Ray at, out uint index))
 	{
-		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.02f));
+		sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.01f));
+		if (boxMesh.GetTriangle(index, out Vertex a, out Vertex b, out Vertex c))
+		{
+			Vec3 aPt = transform.Transform(a.pos);
+			Vec3 bPt = transform.Transform(b.pos);
+			Vec3 cPt = transform.Transform(c.pos);
+			Lines.Add(aPt, bPt, new Color32(0,255,0,255), 0.005f);
+			Lines.Add(bPt, cPt, new Color32(0,255,0,255), 0.005f);
+			Lines.Add(cPt, aPt, new Color32(0,255,0,255), 0.005f);
+		}
 	}
 }
 ```

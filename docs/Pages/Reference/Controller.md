@@ -9,7 +9,6 @@ This represents a physical controller input device! Tracking
 information, buttons, analog sticks and triggers! There's also a Menu
 button that's tracked separately at Input.ContollerMenu.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -37,10 +36,6 @@ button that's tracked separately at Input.ContollerMenu.
 |float [trigger]({{site.url}}/Pages/Reference/Controller/trigger.html)|The trigger button at the user's index finger. These buttons typically have a wide range of activation, so this is provided as a value from 0.0 -> 1.0, where 0 is no interaction, and 1 is full interaction. If a controller has binary activation, this will jump straight from 0 to 1.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [x1]({{site.url}}/Pages/Reference/Controller/x1.html)|The current state of the controller's X1 button. Depending on the specific hardware, this is the first general purpose button on the controller. For example, on an Oculus Quest Touch controller this would represent 'X' on the left controller, and 'A' on the right controller.|
 |[BtnState]({{site.url}}/Pages/Reference/BtnState.html) [x2]({{site.url}}/Pages/Reference/Controller/x2.html)|The current state of the controller's X2 button. Depending on the specific hardware, this is the second general purpose button on the controller. For example, on an Oculus Quest Touch controller this would represent 'Y' on the left controller, and 'B' on the right controller.|
-
-
-
-
 
 ## Examples
 

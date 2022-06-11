@@ -8,19 +8,14 @@ description: A description of what type of window to draw! This is a bit flag, s
 A description of what type of window to draw! This is a bit
 flag, so it can contain multiple elements.
 
-
-
-
 ## Enum Values
 
 |  |  |
 |--|--|
 |Body|Flag to include a body on the window.|
-|Empty|No body, no head. Not really a flag, just set to this value. The Window will still be grab/moveable. To prevent it from being grabbable, combine with the UIMove.None option, or switch to UI.Push/PopSurface.|
+|Empty|No body, no head. Not really a flag, just set to this value. The Window will still be grab/movable. To prevent it from being grabbable, combine with the UIMove.None option, or switch to UI.Push/PopSurface.|
 |Head|Flag to include a head on the window.|
 |Normal|A normal window has a head and a body to it. Both can be grabbed.|
-
-
 
 ## Examples
 

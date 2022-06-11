@@ -18,7 +18,7 @@ order) from the provided angles in degrees!
 |float pitchXDeg|Pitch is rotation around the x axis,             measured in degrees.|
 |float yawYDeg|Yaw is rotation around the y axis, measured             in degrees.|
 |float rollZDeg|Roll is rotation around the z axis,              measured in degrees.|
-|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw roatation!|
+|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw rotation!|
 
 <div class='signature' markdown='1'>
 ```csharp
@@ -31,7 +31,7 @@ order) from the provided angles in degrees!
 |  |  |
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) pitchYawRollDeg|Pitch, yaw, and roll stored as             X, Y, and Z in this Vector. Angle values are in degrees.|
-|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw roatation!|
+|RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A quaternion representing the given Roll/Pitch/Yaw rotation!|
 
 
 

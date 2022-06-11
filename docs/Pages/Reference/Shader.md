@@ -14,14 +14,11 @@ With this particular class, you can mostly just look at it. It doesn't
 do a whole lot. Maybe you can swap out the shader code or something
 sometimes!
 
-
 ## Instance Fields and Properties
 
 |  |  |
 |--|--|
 |string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
-
-
 
 ## Static Fields and Properties
 
@@ -35,7 +32,6 @@ sometimes!
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Unlit]({{site.url}}/Pages/Reference/Shader/Unlit.html)|Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all!|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [UnlitClip]({{site.url}}/Pages/Reference/Shader/UnlitClip.html)|Sometimes lighting just gets in the way! This is an extremely simple and fast shader that uses a 'diffuse' texture and a 'color' tint property to draw a model without any lighting at all! This shader will also discard pixels with an alpha of zero.|
 
-
 ## Static Methods
 
 |  |  |
@@ -43,4 +39,3 @@ sometimes!
 |[Find]({{site.url}}/Pages/Reference/Shader/Find.html)|Looks for a Shader asset that's already loaded, matching the given id! Unless the id has been set manually, the id will be the same as the shader's name provided in the metadata.|
 |[FromFile]({{site.url}}/Pages/Reference/Shader/FromFile.html)|Loads a shader from a precompiled StereoKit Shader (.sks) file! HLSL files can be compiled using the skshaderc tool included in the NuGet package. This should be taken care of by MsBuild automatically, but you may need to ensure your HLSL file is a <SKShader /> item type in the .csproj for this to work. You can also compile with the command line app manually if you're compiling/distributing a shader some other way!|
 |[FromMemory]({{site.url}}/Pages/Reference/Shader/FromMemory.html)|Creates a shader asset from a precompiled StereoKit Shader file stored as bytes!|
-

@@ -11,9 +11,6 @@ are assembling a sheet of images, you may want to clear
 everything on the first image draw, but not clear on subsequent
 draws.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -22,5 +19,3 @@ draws.
 |Color|Clear the rendertarget's color data.|
 |Depth|Clear the rendertarget's depth data, if present.|
 |None|Don't clear anything, leave it as it is.|
-
-

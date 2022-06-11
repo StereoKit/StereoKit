@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Guides Using The Simulator
-description: Using The Simulator
+title: Using The Simulator
+description: As a developer, you can't realistically spend all of your development in a headset just yet. So, a decent grasp over StereoKit's fallback flatscreen MR simulator i...
 ---
 
 # Using the Simulator
@@ -15,7 +15,7 @@ OpenXR runtime or headset.
 ## Simulator Controls
 
 When you start the simulator, you'll find that your mouse controls the
-right hand by default. This is a complete simulaton of an articulated
+right hand by default. This is a complete simulation of an articulated
 hand, so you'll have access to all the joints the same way you would a
 real tracked hand. The hand becomes tracked when the mouse enters the
 window, and untracked when leaving the window. The pointer ray, which is
@@ -73,7 +73,7 @@ SKSettings settings = new SKSettings {
 
 A number of functions are present that can make unit test and
 complex input simulation possible. For a full example of this,
-the [DebugToolWindow](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
+the [DebugToolWindow](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
 in the Test project has a number of sample utilities for
 recording and playing back input.
 
@@ -84,7 +84,7 @@ pose until you call `Input.HandOverride` again with a new pose,
 or call [`Input.HandClearOverride`]({{site.url}}/Pages/Reference/Input/HandClearOverride.html)
 to restore control back to the user.
 
-![An overriden hand]({{site.screen_url}}/HandOverride.jpg)
+![An overridden hand]({{site.screen_url}}/HandOverride.jpg)
 _This screenshot is generated fresh every StereoKit release using Input.HandOverride, to ensure consistency!_
 ```csharp
 // These 25 joints were printed using code from a session with a real

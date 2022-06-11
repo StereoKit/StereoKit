@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Guides Learning Resources
-description: Learning Resources
+title: Learning Resources
+description: Outside of the resources here on the StereoKit site, there's a number of other places you can go for learning information! Here's a collection of external learnin...
 ---
 
 # Learning Resources
@@ -14,7 +14,7 @@ here, just let us know!
 
 ## Sample Projects
 
-### [StereoKit Ink](https://github.com/maluoi/StereoKit-PaintTutorial)
+### [StereoKit Ink](https://github.com/StereoKit/StereoKit-PaintTutorial)
 
 ![StereoKit Ink]({{site.screen_url}}/StereoKitInk.jpg)
 
@@ -22,7 +22,7 @@ A well documented repository that illustrates creating a complete but
 simplified inking application. It includes functionality like custom and
 standard UI, line rendering, file save/load, and hand menus.
 
-### [Bing Maps API and Terrain Sample](https://github.com/maluoi/StereoKit-BingMaps)
+### [Bing Maps API and Terrain Sample](https://github.com/StereoKit/StereoKit-BingMaps)
 
 ![Bing Maps API and Terrain Sample]({{site.screen_url}}/SKMapsTutorial.jpg)
 
@@ -32,21 +32,21 @@ creating a terrain system using StereoKit's shader API, loading color and
 height data from an external API, and building a pedestal interface to
 interact with the content.
 
-### [Release Notes Demo for v0.3.1](https://github.com/maluoi/StereoKitReleaseNotes/tree/main/v0.3.1)
+### [Release Notes Demo for v0.3.1](https://github.com/StereoKit/StereoKitReleaseNotes/tree/main/v0.3.1)
 
 This is an interactive release notes demo project that showcases the
 features released in StereoKit v0.3.1! Not every release has a demo like
 this, but it can be pretty enlightening to browse through a code-base
 such as this one for reference.
 
-### [Github Demos folder](https://github.com/maluoi/StereoKit/tree/master/Examples/StereoKitTest/Demos)
+### [GitHub Demos folder](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitTest/Demos)
 
 These are the demos I build to test StereoKit features and APIs! They
 are occasionally documented, but frequently short and concise. They
 can be great to check out for a focused example of certain parts of
 the API!
 
-### [Github Discussions/Issues](https://github.com/maluoi/StereoKit/discussions)
+### [GitHub Discussions/Issues](https://github.com/StereoKit/StereoKit/discussions)
 
 The best place to ask a question! It's asynchronous, and a great place
 for long-form answers that can also benefit others. The Discussions tab

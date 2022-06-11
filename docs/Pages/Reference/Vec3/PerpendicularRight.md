@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Vec3.PerpendicularRight
-description: Exactly the same as Vec3.Cross, but has some naming memnonics for getting the order right when trying to find a perpendicular vector using the cross product. This'll also make it more obvious to read if that's what you're actually going for when crossing vectors!  If you consider a forward vector and an up vector, then the direction to the right is pretty trivial to imagine in relation to those vectors!
+description: Exactly the same as Vec3.Cross, but has some naming mnemonics for getting the order right when trying to find a perpendicular vector using the cross product. This'll also make it more obvious to read if that's what you're actually going for when crossing vectors!  If you consider a forward vector and an up vector, then the direction to the right is pretty trivial to imagine in relation to those vectors!
 ---
 # [Vec3]({{site.url}}/Pages/Reference/Vec3.html).PerpendicularRight
 
@@ -10,7 +10,7 @@ description: Exactly the same as Vec3.Cross, but has some naming memnonics for g
 static Vec3 PerpendicularRight(Vec3 forward, Vec3 up)
 ```
 Exactly the same as Vec3.Cross, but has some naming
-memnonics for getting the order right when trying to find a
+mnemonics for getting the order right when trying to find a
 perpendicular vector using the cross product. This'll also make
 it more obvious to read if that's what you're actually going for
 when crossing vectors!

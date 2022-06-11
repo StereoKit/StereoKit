@@ -1,17 +1,14 @@
 ---
 layout: default
 title: MatParamName
-description: A better way to access standard shader paramter names, instead of using just strings! If you have your own custom parameters, you can still access them via the string methods, but this is checked and verified by the compiler!
+description: A better way to access standard shader parameter names, instead of using just strings! If you have your own custom parameters, you can still access them via the string methods, but this is checked and verified by the compiler!
 ---
 # enum MatParamName
 
-A better way to access standard shader paramter names,
+A better way to access standard shader parameter names,
 instead of using just strings! If you have your own custom
 parameters, you can still access them via the string methods, but
 this is checked and verified by the compiler!
-
-
-
 
 ## Enum Values
 
@@ -28,8 +25,6 @@ this is checked and verified by the compiler!
 |OcclusionTex|Used by physically based shaders, this can be used for baked ambient occlusion lighting, or to remove specular reflections from areas that are surrounded by geometry that would likely block reflections.  This represents the texture param 'occlusion'.|
 |RoughnessAmount|For physically based shader, this is a multiplier to scale the roughness properties of the material.  This represents the float param 'roughness'.|
 |TexScale|Not necessarily present in all shaders, this multiplies the UV coordinates of the mesh, so that the texture will repeat. This is great for tiling textures!  This represents the float param 'tex_scale'.|
-
-
 
 ## Examples
 

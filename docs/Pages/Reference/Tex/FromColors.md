@@ -19,8 +19,8 @@ depending on the value of the sRGBData parameter.
 |--|--|
 |Color32[]& colors|An array of 32 bit colors, should be a             length of `width*height`.|
 |int width|Width in pixels of the texture. Powers of two             are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
-|bool sRGBData|Is this image color data in sRGB format,              or is it normal/metal/rough/data that's not for direct display?              sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
+|bool sRGBData|Is this image color data in sRGB format,             or is it normal/metal/rough/data that's not for direct display?             sRGB colors get converted to linear color space on the graphics             card, so getting this right can have a big impact on visuals.|
 |RETURNS: [Tex]({{site.url}}/Pages/Reference/Tex.html)|A Tex asset with TexType.Image and TexFormat.Rgba32 from the given array of colors.|
 
 <div class='signature' markdown='1'>

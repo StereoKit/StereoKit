@@ -10,17 +10,12 @@ basic information about the animation, or store it for reference. This
 maintains a link to the Model asset, and will keep it alive as long as
 this object lives.
 
-
 ## Instance Fields and Properties
 
 |  |  |
 |--|--|
 |float [Duration]({{site.url}}/Pages/Reference/Anim/Duration.html)|The duration of the animation at normal playback speed, in seconds.|
 |string [Name]({{site.url}}/Pages/Reference/Anim/Name.html)|The name of the animation as provided by the original asset.|
-
-
-
-
 
 ## Examples
 

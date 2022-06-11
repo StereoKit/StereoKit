@@ -11,9 +11,6 @@ pixels? If you'd like an in-depth explanation of these topics, check
 out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
 by graphics wizard Ben Golus.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -21,5 +18,3 @@ by graphics wizard Ben Golus.
 |Anisotropic|This helps reduce texture blurriness when a surface is viewed at an extreme angle!|
 |Linear|Use a linear blend between adjacent pixels, this creates a smooth, blurry look when texture resolution is too low.|
 |Point|Choose the nearest pixel's color! This makes your texture look like pixel art if you're too close.|
-
-

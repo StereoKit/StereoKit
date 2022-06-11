@@ -7,9 +7,6 @@ description: Severity of a log item.
 
 Severity of a log item.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -18,5 +15,3 @@ Severity of a log item.
 |Error|Danger Will Robinson! Something really bad just happened and needs fixing!|
 |Info|This is non-critical information, just to let you know what's going on.|
 |Warning|Something bad has happened, but it's still within the realm of what's expected.|
-
-

@@ -16,13 +16,11 @@ a grip motion to spawn the menu. The user can then perform actions
 by making fast, direction based motions that are easy to build
 muscle memory for.
 
-
 ## Instance Fields and Properties
 
 |  |  |
 |--|--|
 |bool [Enabled]({{site.url}}/Pages/Reference/HandMenuRadial/Enabled.html)|HandMenuRadial is always Enabled.|
-
 
 ## Instance Methods
 
@@ -34,9 +32,6 @@ muscle memory for.
 |[Show]({{site.url}}/Pages/Reference/HandMenuRadial/Show.html)|Force the hand menu to show at a specific location. This will close the hand menu if it was already open, and resets it to the root menu layer. Also plays an opening sound.|
 |[Shutdown]({{site.url}}/Pages/Reference/HandMenuRadial/Shutdown.html)|Part of IStepper, you shouldn't be calling this yourself.|
 |[Step]({{site.url}}/Pages/Reference/HandMenuRadial/Step.html)|Part of IStepper, you shouldn't be calling this yourself.|
-
-
-
 
 ## Examples
 

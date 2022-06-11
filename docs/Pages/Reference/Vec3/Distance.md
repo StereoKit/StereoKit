@@ -26,6 +26,10 @@ it's not blazing fast, prefer DistanceSq when possible.
 
 ## Examples
 
+### Distance between two points
+
+Distance does use a Sqrt call, so only use it if you definitely
+need the actual distance. Otherwise, consider DistanceSq.
 ```csharp
 Vec3  pointA   = new Vec3(3,2,5);
 Vec3  pointB   = new Vec3(3,2,8);

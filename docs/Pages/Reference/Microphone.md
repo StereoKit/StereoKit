@@ -10,16 +10,12 @@ stores it in a Sound stream. Start and Stop recording, and check the
 Sound property for the results! Remember to ensure your application
 has microphone permissions enabled!
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
 |--|--|
 |bool [IsRecording]({{site.url}}/Pages/Reference/Microphone/IsRecording.html)|Tells if the Microphone is currently recording audio.|
 |[Sound]({{site.url}}/Pages/Reference/Sound.html) [Sound]({{site.url}}/Pages/Reference/Microphone/Sound.html)|This is the sound stream of the Microphone when it is recording. This Asset is created the first time it is accessed via this property, or during Start, and will persist. It is re-used for the Microphone stream if you start/stop/switch devices.|
-
 
 ## Static Methods
 
@@ -28,7 +24,6 @@ has microphone permissions enabled!
 |[GetDevices]({{site.url}}/Pages/Reference/Microphone/GetDevices.html)|Constructs a list of valid Microphone devices attached to the system. These names can be passed into Start to select a specific device to record from. It's recommended to cache this list if you're using it frequently, as this list is constructed each time you call it.  It's good to note that a user might occasionally plug or unplug microphone devices from their system, so this list may occasionally change.|
 |[Start]({{site.url}}/Pages/Reference/Microphone/Start.html)|This begins recording audio from the Microphone! Audio is stored in Microphone.Sound as a stream of audio. If the Microphone is already recording with a different device, it will stop the previous recording and start again with the new device.  If null is provided as the device, then they system's default input device will be used. Some systems may not provide access to devices other than the system's default.|
 |[Stop]({{site.url}}/Pages/Reference/Microphone/Stop.html)|If the Microphone is recording, this will stop it.|
-
 
 ## Examples
 

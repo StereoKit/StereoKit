@@ -50,5 +50,11 @@ if (bounds.Intersect(ray, out Vec3 at))
 // Model that you've scaled. It will scale the center as well as
 // the size!
 bounds = bounds * 0.5f;
+
+// Scale the current bounds reference using 'Scale'
+bounds.Scale(0.5f);
+
+// Scale the bounds by a Vec3
+bounds = bounds * new Vec3(1, 10, 0.5f);
 ```
 

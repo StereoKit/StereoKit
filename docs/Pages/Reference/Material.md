@@ -13,7 +13,6 @@ Items drawn with the same Material can be batched together into a
 single, fast operation on the graphics card, so re-using materials
 can be extremely beneficial for performance!
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -26,7 +25,6 @@ can be extremely beneficial for performance!
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Shader]({{site.url}}/Pages/Reference/Material/Shader.html)|Gets a link to the Shader that the Material is currently using, or overrides the Shader this material uses.|
 |[Transparency]({{site.url}}/Pages/Reference/Transparency.html) [Transparency]({{site.url}}/Pages/Reference/Material/Transparency.html)|What type of transparency does this Material use? Default is None. Transparency has an impact on performance, and draw order. Check the Transparency enum for details.|
 |bool [Wireframe]({{site.url}}/Pages/Reference/Material/Wireframe.html)|Should this material draw only the edges/wires of the mesh? This can be useful for debugging, and even some kinds of visualization work. Note that this may not work on some mobile OpenGL systems like Quest.|
-
 
 ## Instance Methods
 
@@ -46,7 +44,6 @@ can be extremely beneficial for performance!
 |[SetUInt]({{site.url}}/Pages/Reference/Material/SetUInt.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
 |[SetVector]({{site.url}}/Pages/Reference/Material/SetVector.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
 
-
 ## Static Fields and Properties
 
 |  |  |
@@ -60,13 +57,11 @@ can be extremely beneficial for performance!
 |[Material]({{site.url}}/Pages/Reference/Material.html) [Unlit]({{site.url}}/Pages/Reference/Material/Unlit.html)|The default unlit material! This is used by StereoKit any time a mesh or model needs to be rendered with an unlit surface. Its shader may change based on system performance characteristics, so it can be great to copy this one when creating your own materials! Or if you want to override StereoKit's default unlit behavior, here's where you do it!|
 |[Material]({{site.url}}/Pages/Reference/Material.html) [UnlitClip]({{site.url}}/Pages/Reference/Material/UnlitClip.html)|The default unlit material with alpha clipping! This is used by StereoKit for unlit content with transparency, where completely transparent pixels are discarded. This means less alpha blending, and fewer visible alpha blending issues! In particular, this is how Sprites are drawn. Its shader may change based on system performance characteristics, so it can be great to copy this one when creating your own materials! Or if you want to override StereoKit's default unlit clipped behavior, here's where you do it!|
 
-
 ## Static Methods
 
 |  |  |
 |--|--|
 |[Find]({{site.url}}/Pages/Reference/Material/Find.html)|Looks for a Material asset that's already loaded, matching the given id!|
-
 
 ## Examples
 

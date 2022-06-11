@@ -7,7 +7,6 @@ description: Contains information to represents a joint on the hand.
 
 Contains information to represents a joint on the hand.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -17,12 +16,8 @@ Contains information to represents a joint on the hand.
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [position]({{site.url}}/Pages/Reference/HandJoint/position.html)|The center of the joint's world space location.|
 |float [radius]({{site.url}}/Pages/Reference/HandJoint/radius.html)|The distance, in meters, to the surface of the hand from this joint.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[HandJoint]({{site.url}}/Pages/Reference/HandJoint/HandJoint.html)|You can make a hand joint of your own here, but most likely you'd rather fetch one from `Input.Hand().Get()`!|
-
-
-

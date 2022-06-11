@@ -19,7 +19,6 @@ system tray, navigate to "Spatial sound", and choose "Windows Sonic
 for Headphones." For more information, visit
 https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -29,15 +28,13 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 |int [TotalSamples]({{site.url}}/Pages/Reference/Sound/TotalSamples.html)|This will return the total number of audio samples used by the sound! StereoKit currently uses 48,000 samples per second for all audio.|
 |int [UnreadSamples]({{site.url}}/Pages/Reference/Sound/UnreadSamples.html)|This is the maximum number of samples in the sound that are currently available for reading via ReadSamples! ReadSamples will reduce this number by the amount of samples read.  This is only really valid for Stream sounds, all other sound types will just return 0.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
-|[Play]({{site.url}}/Pages/Reference/Sound/Play.html)|Plays the sound at the 3D location specified, using the volume parameter as an additional volume control option! Sound volume falls off from 3D location, and can also indicate direction and location through spatial audio cues. So make sure the position is where you want people to think it's from! Currently, if this sound is playing somewhere else, it'll be cancelled, and moved to this location.|
+|[Play]({{site.url}}/Pages/Reference/Sound/Play.html)|Plays the sound at the 3D location specified, using the volume parameter as an additional volume control option! Sound volume falls off from 3D location, and can also indicate direction and location through spatial audio cues. So make sure the position is where you want people to think it's from! Currently, if this sound is playing somewhere else, it'll be canceled, and moved to this location.|
 |[ReadSamples]({{site.url}}/Pages/Reference/Sound/ReadSamples.html)|This will read samples from the sound stream, starting from the first unread sample. Check UnreadSamples for how many samples are available to read.|
 |[WriteSamples]({{site.url}}/Pages/Reference/Sound/WriteSamples.html)|Only works if this Sound is a stream type! This writes a number of audio samples to the sample buffer, and samples should be between -1 and +1. Streams are stored as ring buffers of a fixed size, so writing beyond the capacity of the ring buffer will overwrite the oldest samples.  StereoKit uses 48,000 samples per second of audio.|
-
 
 ## Static Fields and Properties
 
@@ -45,7 +42,6 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 |--|--|
 |[Sound]({{site.url}}/Pages/Reference/Sound.html) [Click]({{site.url}}/Pages/Reference/Sound/Click.html)|A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse press, with extra low frequencies in it.|
 |[Sound]({{site.url}}/Pages/Reference/Sound.html) [Unclick]({{site.url}}/Pages/Reference/Sound/Unclick.html)|A default click sound that lasts for 300ms. It's a procedurally generated sound based on a mouse release, with extra low frequencies in it.|
-
 
 ## Static Methods
 
@@ -56,7 +52,6 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 |[FromFile]({{site.url}}/Pages/Reference/Sound/FromFile.html)|Loads a sound effect from file! Currently, StereoKit supports .wav and .mp3 files. Audio is converted to mono.|
 |[FromSamples]({{site.url}}/Pages/Reference/Sound/FromSamples.html)|This function will create a sound from an array of samples. Values should range from -1 to +1, and there should be 48,000 values per second of audio.|
 |[Generate]({{site.url}}/Pages/Reference/Sound/Generate.html)|This function will generate a sound from a function you provide! The function is called once for each sample in the duration. As an example, it may be called 48,000 times for each second of duration.|
-
 
 ## Examples
 

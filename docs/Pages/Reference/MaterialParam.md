@@ -10,9 +10,6 @@ What type of data does this material parameter need? This is
 used to tell the shader how large the data is, and where to attach it
 to on the shader.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -29,9 +26,8 @@ to on the shader.
 |UInt2|A 2 component vector composed of unsigned integers.|
 |UInt3|A 3 component vector composed of unsigned integers.|
 |UInt4|A 4 component vector composed of unsigned integers.|
-|Unknown|This data type is not currently recognized. Please report your case on Github Issues!|
+|Unknown|This data type is not currently recognized. Please report your case on GitHub Issues!|
+|Vector|A 4 component vector composed of floating point values. TODO: Remove in v0.4|
 |Vector2|A 2 component vector composed of floating point values.|
 |Vector3|A 3 component vector composed of floating point values.|
 |Vector4|A 4 component vector composed of floating point values.|
-
-

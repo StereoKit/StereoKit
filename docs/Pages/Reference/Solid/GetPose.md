@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Solid.GetPose
-description: Retreives the current pose of the Solid from the physics simulation.
+description: Retrieves the current pose of the Solid from the physics simulation.
 ---
 # [Solid]({{site.url}}/Pages/Reference/Solid.html).GetPose
 
@@ -9,7 +9,7 @@ description: Retreives the current pose of the Solid from the physics simulation
 ```csharp
 Pose GetPose()
 ```
-Retreives the current pose of the Solid from the physics
+Retrieves the current pose of the Solid from the physics
 simulation.
 </div>
 
@@ -21,7 +21,7 @@ simulation.
 ```csharp
 void GetPose(Pose& pose)
 ```
-Retreives the current pose of the Solid from the physics
+Retrieves the current pose of the Solid from the physics
 simulation.
 </div>
 

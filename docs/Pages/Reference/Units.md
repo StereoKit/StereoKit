@@ -8,9 +8,6 @@ description: A collection of unit conversion constants! Multiply things by these
 A collection of unit conversion constants! Multiply things by these
 to convert them into different units.
 
-
-
-
 ## Static Fields and Properties
 
 |  |  |
@@ -21,5 +18,3 @@ to convert them into different units.
 |float [m2mm]({{site.url}}/Pages/Reference/Units/m2mm.html)|Converts meters to millimeters. There are 1000mm in 1m, so this just multiplies by 1000.|
 |float [mm2m]({{site.url}}/Pages/Reference/Units/mm2m.html)|Converts millimeters to meters. There are 1000mm in 1m. In StereoKit 1 unit is 1 meter, so `250 * Units.mm2m == 0.25`, 250 millimeters is .25 meters/units.|
 |float [rad2deg]({{site.url}}/Pages/Reference/Units/rad2deg.html)|Radians to degrees, multiply radian values by this, and you get degrees! Like so: `PI * Units.rad2deg == 180`|
-
-

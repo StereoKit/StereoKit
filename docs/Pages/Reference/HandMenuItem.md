@@ -8,7 +8,6 @@ description: This is a collection of display and behavior information for a sing
 This is a collection of display and behavior information for
 a single item on the hand menu.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -19,15 +18,11 @@ a single item on the hand menu.
 |string [layerName]({{site.url}}/Pages/Reference/HandMenuItem/layerName.html)|If the action is set to Layer, then this is the layer name used to find the next layer for the menu!|
 |string [name]({{site.url}}/Pages/Reference/HandMenuItem/name.html)|Display name of the item.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[HandMenuItem]({{site.url}}/Pages/Reference/HandMenuItem/HandMenuItem.html)|A menu item that'll load another layer when selected.|
-
-
-
 
 ## Examples
 

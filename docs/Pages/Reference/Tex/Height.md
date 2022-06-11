@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Tex.Height
-description: The height of the texture, in pixels.
+description: The height of the texture, in pixels. This will be a blocking call if AssetState is less than LoadedMeta.
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Height
 
@@ -10,5 +10,6 @@ int Height{ get }
 </div>
 
 ## Description
-The height of the texture, in pixels.
+The height of the texture, in pixels. This will be a
+blocking call if AssetState is less than LoadedMeta.
 
