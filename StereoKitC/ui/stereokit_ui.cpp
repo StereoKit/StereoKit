@@ -12,8 +12,6 @@
 
 #include <math.h>
 #include <float.h>
-#include <DirectXMath.h>
-using namespace DirectX;
 
 ///////////////////////////////////////////
 
