@@ -1,8 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "model.h"
-#include "mesh.h"
-#include "texture.h"
+#include "mesh_.h"
+#include "texture_.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../systems/defaults.h"

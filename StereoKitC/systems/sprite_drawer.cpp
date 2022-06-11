@@ -1,16 +1,12 @@
 #include "sprite_drawer.h"
 
 #include "../asset_types/sprite.h"
-#include "../asset_types/material.h"
-#include "../asset_types/mesh.h"
-#include "../asset_types/assets.h"
 
 #include "../libraries/array.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 
-#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {

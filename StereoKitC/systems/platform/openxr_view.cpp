@@ -9,10 +9,12 @@
 #include "../../_stereokit.h"
 #include "../../sk_memory.h"
 #include "../../log.h"
+#include "../../asset_types/texture_.h"
 #include "../../asset_types/texture.h"
 #include "../../systems/render.h"
 #include "../../systems/input.h"
 #include "../../libraries/sokol_time.h"
+#include "../../libraries/sk_gpu.h"
 #include "../system.h"
 
 #include <stdio.h>

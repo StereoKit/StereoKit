@@ -1,6 +1,6 @@
 #include "spherical_harmonics.h"
 #include "sk_math.h"
-#include "asset_types/texture.h"
+#include "asset_types/texture_.h"
 
 namespace sk {
 

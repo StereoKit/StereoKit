@@ -12,7 +12,6 @@
 
 #include "../../sk_memory.h"
 #include "../../log.h"
-#include "../../asset_types/texture.h"
 #include "../../libraries/stref.h"
 #include "../../libraries/ferr_hash.h"
 #include "../../libraries/sk_gpu.h"
