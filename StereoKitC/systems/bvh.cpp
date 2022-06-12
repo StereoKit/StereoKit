@@ -13,6 +13,15 @@ Possible optimizations:
   so vec3_field() isn't needed anymore
 - SIMD operations for certain computations
 - Multi-threaded construction
+- Currently, the split step during recursive construction simply gives up 
+  when it encounters a bunch of triangles for which none of the 3 split
+  axes provide any way to split the triangles into two groups (i.e. all 
+  triangles found to be on the left, or all on the right). In those cases
+  currently a leaf node holding all those triangles is created. But an 
+  option could be to simply divide the triangles into two groups randomly
+  and recurse into the two groups. This will still provide a speedup, as 
+  bboxes can  be tested for each group, instead of always having to test each 
+  triangle separately.
 
 June, 2022
 Paul Melis, SURF (paul.melis@surf.nl)
