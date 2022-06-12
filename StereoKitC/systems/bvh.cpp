@@ -23,11 +23,11 @@ Paul Melis, SURF (paul.melis@surf.nl)
 #include <string.h>
 #include <cassert>
 #include <math.h>
-#include <algorithm>
 #include "bvh.h"
 #include "bbox.h"
 #include "../stereokit.h"
 #include "../sk_memory.h"
+#include "../sk_math.h"
 #include "../asset_types/mesh.h"
 #include "../libraries/sokol_time.h"
 
@@ -83,12 +83,12 @@ static void
 gather_stats(const mesh_bvh_t *bvh, short depth, int current_node_index, bvh_stats_t *stats, int acc_leaf_size)
 {
     const bvh_node_t& node = bvh->nodes[current_node_index];
-    stats->depth = std::max(stats->depth, depth);
+    stats->depth = maxi(stats->depth, depth);
 
     if (node.is_leaf())
     {
         stats->num_leafs++;
-        stats->max_leaf_size = std::max(stats->max_leaf_size, node.num_triangles);
+        stats->max_leaf_size = maxi(stats->max_leaf_size, node.num_triangles);
         if (node.num_triangles > acc_leaf_size)
             stats->num_forced_leafs++;
     }
@@ -252,7 +252,11 @@ mesh_bvh_build_recursive(int current_node_index,
             if (vec3_field(triangle_centroids[sorted_triangles[l]], split_axis) < split_value)
                 l++;
             else
-                std::swap(sorted_triangles[l], sorted_triangles[r--]);
+            {
+                uint32_t temp = sorted_triangles[l];
+                sorted_triangles[l] = sorted_triangles[r];
+                sorted_triangles[r--] = temp;
+            }
         }        
 
         const int num_triangles_left = l - node.leaf_first;
