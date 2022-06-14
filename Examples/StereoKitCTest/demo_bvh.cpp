@@ -24,6 +24,7 @@ mesh_t  isec_sphere;
 
 bool32_t use_bvh = true;
 bool have_intersection;
+cull_ cull_mode;
 
 ///////////////////////////////////////////
 
@@ -59,6 +60,8 @@ void demo_bvh_init() {
     // Initial ray endpoints
     from_pose = {(b.center - 0.7f*b.dimensions)*model_scale, quat_identity};
     to_pose = {(b.center + 0.7f*b.dimensions)*model_scale, quat_identity};
+
+    cull_mode = cull_back;
 }
 
 ///////////////////////////////////////////
@@ -106,9 +109,9 @@ void demo_bvh_update() {
     uint32_t    isec_start_inds;
 
     if (use_bvh)
-        have_intersection = model_ray_intersect_bvh_detailed(model_to_intersect, model_ray, &intersection, &isec_mesh, &isec_matrix, &isec_start_inds);
+        have_intersection = model_ray_intersect_bvh_detailed(model_to_intersect, model_ray, &intersection, &isec_mesh, &isec_matrix, &isec_start_inds, cull_mode);
     else
-        have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection);
+        have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection, cull_mode);
 
     const double t1 = time_get_raw();    
         
@@ -161,6 +164,21 @@ void demo_bvh_update() {
     ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
 
     ui_toggle("Use BVH", use_bvh);
+
+    bool32_t cull_mode_back = cull_mode == cull_back;
+    bool32_t cull_mode_front = cull_mode == cull_front;
+    bool32_t cull_mode_none = cull_mode == cull_none;
+
+    ui_text("Cull: "); ui_sameline();
+    if (ui_toggle("Back", cull_mode_back))
+        cull_mode = cull_back;
+    ui_sameline();
+    if (ui_toggle("Front", cull_mode_front))
+        cull_mode = cull_front;
+    ui_sameline();
+    if (ui_toggle("None", cull_mode_none))
+        cull_mode = cull_none;
+
     float time_ms = 1000*(t1-t0);
     if (time_ms < 0.1f)
         ui_text("< 0.1ms");

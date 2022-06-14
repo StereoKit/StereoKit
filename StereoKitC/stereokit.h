@@ -645,6 +645,25 @@ typedef uint32_t vind_t;
 typedef uint16_t vind_t;
 #endif
 
+/*Culling is discarding an object from the render pipeline!
+  This enum describes how mesh faces get discarded on the graphics
+  card. With culling set to none, you can double the number of pixels
+  the GPU ends up drawing, which can have a big impact on performance.
+  None can be appropriate in cases where the mesh is designed to be
+  'double sided'. Front can also be helpful when you want to flip a
+  mesh 'inside-out'!*/
+typedef enum cull_ {
+	/*Discard if the back of the triangle face is pointing
+	  towards the camera. This is the default behavior.*/
+	cull_back = 0,
+	/*Discard if the front of the triangle face is pointing
+	  towards the camera. This is opposite the default behavior.*/
+	  cull_front,
+	  /*No culling at all! Draw the triangle regardless of which
+		way it's pointing.*/
+		cull_none,
+} cull_;
+
 SK_API mesh_t   mesh_find            (const char *name);
 SK_API mesh_t   mesh_create          ();
 SK_API mesh_t   mesh_copy            (mesh_t mesh);
@@ -667,8 +686,9 @@ SK_API bounds_t mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t mesh_has_skin        (mesh_t mesh);
 SK_API void     mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
 SK_API void     mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
-SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
-SK_API bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+// TODO: in 0.4 move cull_mode parameter up to directly after out_pt (both functions)
+SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
+SK_API bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
 SK_API bool32_t mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c);
 
 SK_API mesh_t   mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
@@ -890,25 +910,6 @@ typedef enum transparency_ {
 	  particles or lighting effects.*/
 	transparency_add,
 } transparency_;
-
-/*Culling is discarding an object from the render pipeline!
-  This enum describes how mesh faces get discarded on the graphics
-  card. With culling set to none, you can double the number of pixels
-  the GPU ends up drawing, which can have a big impact on performance.
-  None can be appropriate in cases where the mesh is designed to be
-  'double sided'. Front can also be helpful when you want to flip a
-  mesh 'inside-out'!*/
-typedef enum cull_ {
-	/*Discard if the back of the triangle face is pointing
-	  towards the camera. This is the default behavior.*/
-	cull_back = 0,
-	/*Discard if the front of the triangle face is pointing
-	  towards the camera. This is opposite the default behavior.*/
-	cull_front,
-	/*No culling at all! Draw the triangle regardless of which
-	  way it's pointing.*/
-	cull_none,
-} cull_;
 
 /*Depth test describes how this material looks at and responds
   to depth information in the zbuffer! The default is Less, which means
@@ -1207,9 +1208,10 @@ SK_API void          model_draw                    (model_t model, matrix transf
 SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_set_bounds              (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t      model_get_bounds              (model_t model);
-SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t *out_pt);
-SK_API bool32_t      model_ray_intersect_bvh       (model_t model, ray_t model_space_ray, ray_t *out_pt);
-SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh sk_default(nullptr), matrix *out_matrix sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t* out_pt, cull_ cull_mode sk_default(cull_back));
+SK_API bool32_t      model_ray_intersect_bvh       (model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode sk_default(cull_back));
+// TODO: in 0.4 move cull_mode parameter up to directly after out_pt
+SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh sk_default(nullptr), matrix *out_matrix sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
 
 SK_API void          model_step_anim               (model_t model);
 SK_API bool32_t      model_play_anim               (model_t model, const char *animation_name, anim_mode_ mode);

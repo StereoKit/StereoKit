@@ -494,7 +494,7 @@ mesh_bvh_destroy(mesh_bvh_t *bvh)
 
 // Find closest triangle intersection for the given model-space ray
 bool        
-mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t *out_start_inds)
+mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t *out_start_inds, cull_ cull_mode)
 {
     const bvh_node_t *nodes = bvh->nodes;
     const uint32_t *sorted_triangles = bvh->sorted_triangles;
@@ -619,12 +619,26 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
             for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
             {
                 uint32_t triangle = sorted_triangles[t];
-                plane_t& plane = collision_data->planes[triangle];
+                const plane_t& plane = collision_data->planes[triangle];
 
                 // Inline version of plane_ray_intersect(), as we need the t value
-                t_hit = 
-                    -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / 
-                    vec3_dot(model_space_ray.dir, plane.normal);
+                // XXX use cull_mode value based on dot denom
+                float denom = vec3_dot(model_space_ray.dir, plane.normal);
+
+                if (fabsf(denom) < 1e-6f)
+                {
+                    // Ray direction (almost) perpendicular to plane, no intersection
+                    continue;
+                }
+
+                if ((cull_mode == cull_front && denom < 0) || (cull_mode == cull_back && denom > 0))
+                {
+                    // Front/back-face culling
+                    // XXX is there a smaller test?
+                    continue;
+                }
+
+                t_hit = -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / denom;
 
                 if (t_hit >= t_nearest_hit)
                 {

@@ -302,7 +302,7 @@ bounds_t model_get_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt) {
+bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -317,7 +317,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at)) {
+		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;
@@ -330,7 +330,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *out_pt) {
+bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -345,7 +345,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at)) {
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;
@@ -359,7 +359,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 ///////////////////////////////////////////
 
 // Same as model_ray_intersect_bvh, but returns mesh, mesh transform and start index if intersection found
-bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds) {
+bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds, cull_ cull_mode) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -375,7 +375,7 @@ bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, 
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
 		uint32_t local_start_inds;
-		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds)) {
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;

@@ -483,7 +483,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -495,8 +495,33 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
 	for (uint32_t i = 0; i < mesh->ind_count; i+=3) {
-		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
+
+		const plane_t& plane = data->planes[i / 3];
+
+		float denom = vec3_dot(model_space_ray.dir, plane.normal);
+
+		if (fabsf(denom) < 1e-6f)
+		{
+			// Ray direction (almost) perpendicular to plane, no intersection
 			continue;
+		}
+
+		if ((cull_mode == cull_front && denom < 0) || (cull_mode == cull_back && denom > 0))
+		{
+			// Front/back-face culling
+			// XXX is there a smaller test?
+			continue;
+		}
+
+		float t_hit = -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / denom;
+
+		if (t_hit < 0)
+		{
+			// Hit behind ray origin
+			continue;
+		}
+
+		pt = model_space_ray.pos + model_space_ray.dir * t_hit;
 
 		// point in triangle, implementation based on:
 		// https://blackpawn.com/texts/pointinpoly/default.html
@@ -536,7 +561,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
 	vec3 result = {};
 
 	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);
@@ -545,7 +570,7 @@ bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_p
 	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
 		return false;
 
-	return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds);
+	return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds, cull_mode);
 }
 
 ///////////////////////////////////////////

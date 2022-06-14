@@ -26,7 +26,7 @@ struct mesh_bvh_t
 
 mesh_bvh_t* mesh_bvh_create(const mesh_t mesh, int acc_leaf_size=16, bool show_stats=true);
 void        mesh_bvh_destroy(mesh_bvh_t* bvh);
-bool        mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds);
+bool        mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode);
 void        mesh_bvh_statistics(const mesh_bvh_t *bvh, bvh_stats_t *stats, int acc_leaf_size=16);
 
 } // namespace sk
