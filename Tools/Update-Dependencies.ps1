@@ -163,7 +163,7 @@ if (!$dependenciesDirty) {
 # Get the Visual Studio executable for building
 $vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
 $vsVersionRange = '[16.0,18.0)'
-$vsExe          = & $vsWhere -latest -property productPath -version $vsVersionRange
+$vsExe          = & $vsWhere -latest -prerelease -property productPath -version $vsVersionRange
 if (!$vsExe) {
     Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Valid Visual Studio version not found!" -ForegroundColor red
     exit 
