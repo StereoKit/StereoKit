@@ -214,9 +214,9 @@ foreach($dep in $dependencies) {
     }
     Push-Location -Path $folderName
     & git fetch
-    & git checkout "$($dep.ReleasePrefix)$($dep.Version)"
     & git clean -fd
     & git reset --hard
+    & git checkout "$($dep.ReleasePrefix)$($dep.Version)"
 
     if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
         Write-Host "Applying patch: $($dep.Patch)"
