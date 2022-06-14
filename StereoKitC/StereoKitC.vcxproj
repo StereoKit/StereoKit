@@ -90,7 +90,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -128,7 +128,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

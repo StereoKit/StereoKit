@@ -14,7 +14,7 @@ function Get-ScriptName { return $MyInvocation.ScriptName }
 function FormatPath { param([string]$path) 
     $archplat = $script:arch
     if ($script:plat -eq 'UWP') {
-        $archplat = "$($script:plat)_UWP"
+        $archplat = "$($script:arch)_UWP"
     }
     return $path.Replace('[arch]',$script:arch).Replace('[config]', $config).Replace('[archplat]', $archplat)
 }
@@ -67,15 +67,17 @@ class Dependency {
     [string]$Repository
     [string]$ReleasePrefix
     [string]$Version
+    [string]$Patch
     [System.Collections.ArrayList]$Copies = @()
     [System.Collections.ArrayList]$CmakeOptions = @()
     [bool]$NeedsBuilt
 
-    Dependency([string]$n, [string]$repo, [string]$prefix, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
+    Dependency([string]$n, [string]$repo, [string]$prefix, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
         $this.Name = $n
         $this.Repository = $repo
         $this.ReleasePrefix = $prefix
         $this.Copies = $copies
+        $this.Patch = $patch
         $this.CmakeOptions = $options
         $this.NeedsBuilt = $false
     }
@@ -92,12 +94,24 @@ class Dependency {
 ######## Dependency List ########
 
 $dependencies = @(
-#    [Dependency]::new('openxr_loader', 'https://github.com/KhronosGroup/OpenXR-SDK.git', 'release-', @('-DOPENXR_DEBUG_POSTFIX=""'), @(
-#        [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-#        [FolderCopy]::new('..\include\openxr\', "include\openxr\", $false, @('h')) )), 
-    [Dependency]::new('reactphysics3d', 'https://github.com/DanielChappuis/reactphysics3d.git', 'v', @('-D', 'CMAKE_CXXFLAGS="_CRT_SECURE_NO_WARNINGS"'), @(
-        [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-        [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) ))
+    [Dependency]::new(
+        'openxr_loader', 
+        'https://github.com/KhronosGroup/OpenXR-SDK.git', 
+        'release-', 
+        $null, 
+        @('-DOPENXR_DEBUG_POSTFIX=""'), 
+        @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\include\openxr\', "include\openxr\", $false, @('h')))
+    ), 
+    [Dependency]::new(
+        'reactphysics3d',
+        'https://github.com/DanielChappuis/reactphysics3d.git',
+        'v',
+        'reactphysics.patch',
+        $null,
+        @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) )
+    )
 )
 
 #####################################################
@@ -201,6 +215,13 @@ foreach($dep in $dependencies) {
     Push-Location -Path $folderName
     & git fetch
     & git checkout "$($dep.ReleasePrefix)$($dep.Version)"
+    & git clean -fd
+    & git reset --hard
+
+    if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
+        Write-Host "Applying patch: $($dep.Patch)"
+        & git apply "$PSScriptRoot\$($dep.Patch)"
+    }
 
     # Make a build folder for the current build options
     $buildFolder = "build_$($arch)_$($plat)_$($config)"
@@ -212,9 +233,9 @@ foreach($dep in $dependencies) {
     # Configure build settings
     Write-Host "$($dep.Name): Configuring $arch $plat" -ForegroundColor green
     if ($plat -eq 'UWP') {
-        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' .. '-Wno-dev'
+        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     } else {
-        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' .. '-Wno-dev'
+        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $($dep.Name) config failed! Stopping build! ---" -ForegroundColor red
