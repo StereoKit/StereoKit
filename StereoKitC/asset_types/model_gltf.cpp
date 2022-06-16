@@ -377,36 +377,49 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	// Now grab the mesh indices
-	size_t  ind_count = p->indices->count;
-	vind_t *inds      = sk_malloc_t(vind_t, ind_count);
-	if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-			inds[v] = *ind;
-		}
-	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-			inds[v] = *ind;
-		}
-	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-#ifdef SK_32BIT_INDICES
-			inds[v] = *ind;
-#else
-			inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
-#endif
+	
+	size_t  ind_count = 0;
+	vind_t *inds      = nullptr;
+	if (p->indices == nullptr) {
+		// No indices listed, create indices that map to one index per vertex
+		ind_count = vert_count;
+		inds      = sk_malloc_t(vind_t, ind_count);
+		for (size_t i = 0; i < ind_count; i++) {
+			inds[i] = i;
 		}
 	} else {
-		gltf_add_warning(warnings, "Unimplemented vertex index format");
-	}
+		// Extract indices from the index buffer
+		ind_count = p->indices->count;
+		inds      = sk_malloc_t(vind_t, ind_count);
+		if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
+			cgltf_buffer_view *buff   = p->indices->buffer_view;
+			size_t             offset = buff->offset + p->indices->offset;
+			for (size_t v = 0; v < ind_count; v++) {
+				uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
+				inds[v] = *ind;
+			}
+		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
+			cgltf_buffer_view *buff   = p->indices->buffer_view;
+			size_t             offset = buff->offset + p->indices->offset;
+			for (size_t v = 0; v < ind_count; v++) {
+				uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
+				inds[v] = *ind;
+			}
+		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
+			cgltf_buffer_view *buff   = p->indices->buffer_view;
+			size_t             offset = buff->offset + p->indices->offset;
+			for (size_t v = 0; v < ind_count; v++) {
+				uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
+	#ifdef SK_32BIT_INDICES
+				inds[v] = *ind;
+	#else
+				inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
+	#endif
+			}
+		} else {
+			gltf_add_warning(warnings, "Unimplemented vertex index format");
+		}
+		}
 
 	if (!has_normals) {
 		mesh_calculate_normals(verts, vert_count, inds, (int32_t)ind_count);
