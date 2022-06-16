@@ -75,23 +75,6 @@
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(ProjectDir)stereokit.h" "$(SolutionDir)bin\distribute\include\" /d /k /y
-xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -113,7 +96,9 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+      <PostBuildEvent>
       <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
@@ -121,14 +106,12 @@ xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(ProjectDir)stereokit.h" "$(SolutionDir)bin\distribute\include\" /d /k /y
 xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>
-      </Message>
+      <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
+"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+      <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
