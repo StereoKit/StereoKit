@@ -167,15 +167,15 @@ xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -213,15 +213,15 @@ xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
 powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

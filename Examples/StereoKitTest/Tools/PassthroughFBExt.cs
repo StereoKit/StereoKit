@@ -19,7 +19,7 @@ namespace StereoKit.Framework
 		public bool Available => extAvailable;
 		public bool Enabled { get => extAvailable && enabled; set => enabled = value; }
 		public bool EnabledPassthrough { get => enabledPassthrough; set {
-			if (enabledPassthrough != value) {
+			if (Available && enabledPassthrough != value) {
 				enabledPassthrough = value;
 				if ( enabledPassthrough) StartPassthrough();
 				if (!enabledPassthrough) EndPassthrough();
@@ -133,7 +133,7 @@ namespace StereoKit.Framework
 		struct XrPassthroughFB      { ulong handle; }
 		struct XrPassthroughLayerFB { ulong handle; }
 #pragma warning restore 0169
-		
+
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB
 		{

@@ -3,6 +3,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
+#include "../libraries/stb_image.h"
 
 #include <string.h>
 
@@ -172,26 +173,34 @@ bool defaults_init() {
 	mesh_set_id(sk_default_sphere,      default_id_mesh_sphere);
 
 	// Shaders
-	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
-	sk_default_shader_blit        = shader_create_mem((void*)sks_shader_builtin_blit_hlsl,        sizeof(sks_shader_builtin_blit_hlsl));
-	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
-	sk_default_shader_unlit_clip  = shader_create_mem((void*)sks_shader_builtin_unlit_clip_hlsl,  sizeof(sks_shader_builtin_unlit_clip_hlsl));
-	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
-	sk_default_shader_equirect    = shader_create_mem((void*)sks_shader_builtin_equirect_hlsl,    sizeof(sks_shader_builtin_equirect_hlsl));
-	sk_default_shader_ui          = shader_create_mem((void*)sks_shader_builtin_ui_hlsl,          sizeof(sks_shader_builtin_ui_hlsl));
-	sk_default_shader_ui_box      = shader_create_mem((void*)sks_shader_builtin_ui_box_hlsl,      sizeof(sks_shader_builtin_ui_box_hlsl));
-	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
-	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
-	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
-	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
-	sk_default_shader_pbr_clip    = shader_create_mem((void*)sks_shader_builtin_pbr_clip_hlsl,    sizeof(sks_shader_builtin_pbr_clip_hlsl));
-
+	int32_t size = 0;
+	void*   data = nullptr;
+#define SHADER_DECODE(shader_mem) { free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
+	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_unlit_clip_hlsl_zip ); sk_default_shader_unlit_clip  = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_font_hlsl_zip       ); sk_default_shader_font        = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_equirect_hlsl_zip   ); sk_default_shader_equirect    = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_hlsl_zip         ); sk_default_shader_ui          = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_box_hlsl_zip     ); sk_default_shader_ui_box      = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_quadrant_hlsl_zip); sk_default_shader_ui_quadrant = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_skybox_hlsl_zip     ); sk_default_shader_sky         = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_pbr_clip_hlsl_zip   ); sk_default_shader_pbr_clip    = shader_create_mem(data, size);
+#undef SHADER_DECODE
+	
 	// Android seems to give us a hard time about this one, so let's fall
 	// back at least somewhat gently.
-	if (!sk_default_shader_pbr)
-		sk_default_shader_pbr = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
-	if (!sk_default_shader_pbr_clip)
-		sk_default_shader_pbr_clip = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
+	if (sk_default_shader && !sk_default_shader_pbr) {
+		sk_default_shader_pbr = sk_default_shader;
+		shader_addref(sk_default_shader);
+	}
+	if (sk_default_shader && !sk_default_shader_pbr_clip) {
+		sk_default_shader_pbr_clip = sk_default_shader;
+		shader_addref(sk_default_shader);
+	}
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_blit        == nullptr ||
