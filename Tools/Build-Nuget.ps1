@@ -195,7 +195,7 @@ __      __          _
 
     # Platform specific shader compile for shaders bundled in the platform binary!
     Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
-    & 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
     # Build Win32 first
     Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
@@ -271,7 +271,7 @@ if ($buildLinux) {
 
     # Platform specific shader compile for shaders bundled in the platform binary!
     Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
-    & 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
     # Find the correct WSL folder
     $linux_folder = ''+$PSScriptRoot
@@ -323,7 +323,7 @@ if ($buildAndroid) {
 
     # Platform specific shader compile for shaders bundled in the platform binary!
     Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
-    & 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
     # Do cross platform build code first
     Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
@@ -388,7 +388,7 @@ if ($upload) {
 
 # Put the shaders back to cross-platform to make dev a little nicer!
 Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundColor green
-& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+& 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green
 
