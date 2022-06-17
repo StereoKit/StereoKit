@@ -46,6 +46,8 @@ array_t<asset_header_t *>      assets_load_events = {};
 ///////////////////////////////////////////
 
 thrd_id_t              asset_thread_id       = {};
+bool32_t               asset_thread_running  = false;
+bool32_t               asset_thread_enabled  = false;
 array_t<asset_task_t*> asset_thread_tasks    = {};
 mtx_t                  asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
@@ -127,6 +129,9 @@ void assets_set_id(asset_header_t *header, const char *id) {
 void assets_set_id(asset_header_t *header, uint64_t id) {
 #if defined(SK_DEBUG)
 	asset_header_t *other = (asset_header_t *)assets_find(id, header->type);
+	if (other != nullptr) {
+		log_errf("Attempted to assign a pre-existing id to an asset! '%s'", header->id_text);
+	}
 	assert(other == nullptr);
 #endif
 	header->id = id;
@@ -275,6 +280,8 @@ void  assets_shutdown_check() {
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
 		}
 #endif
+	} else {
+		log_info("All assets were released properly!");
 	}
 }
 
@@ -362,6 +369,12 @@ void assets_update() {
 ///////////////////////////////////////////
 
 void assets_shutdown() {
+	asset_thread_enabled = false;
+	while (asset_thread_running) {
+		assets_update();
+		thrd_yield();
+	}
+
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
 	mtx_destroy(&assets_multithread_destroy_lock);
@@ -468,8 +481,10 @@ void assets_task_set_complexity(asset_task_t *task, int32_t complexity) {
 
 int32_t asset_thread(void *) {
 	asset_thread_id = thrd_id_current();
+	asset_thread_running = true;
+	asset_thread_enabled = true;
 
-	while (sk_running) {
+	while (asset_thread_enabled || asset_thread_tasks.count>0) {
 		for (size_t i = 0; i < asset_thread_tasks.count; i++) {
 			asset_task_t *task = asset_thread_tasks[i];
 			// Remove the task if it has completed all its actions.
@@ -551,6 +566,7 @@ int32_t asset_thread(void *) {
 	}
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
+	asset_thread_running = false;
 	return 0;
 }
 

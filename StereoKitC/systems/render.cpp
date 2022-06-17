@@ -755,6 +755,7 @@ void render_shutdown() {
 
 	for (size_t i = 0; i < _countof(render_global_textures); i++) {
 		tex_release(render_global_textures[i]);
+		render_global_textures[i] = nullptr;
 	}
 	material_release       (render_sky_mat);
 	mesh_release           (render_sky_mesh);

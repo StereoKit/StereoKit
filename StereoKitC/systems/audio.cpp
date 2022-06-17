@@ -420,6 +420,16 @@ void audio_update() {
 ///////////////////////////////////////////
 
 void audio_shutdown() {
+	// Stop any sounds that are still playing
+	for (int32_t i = 0; i < _countof(au_active_sounds); i++) {
+		if (au_active_sounds[i].sound != nullptr) {
+			sound_inst_t inst;
+			inst._id   = au_active_sounds[i].id;
+			inst._slot = (int16_t)i;
+			sound_inst_stop(inst);
+		}
+	}
+
 	mic_stop();
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	isac_destroy();

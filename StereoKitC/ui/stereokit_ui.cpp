@@ -752,27 +752,29 @@ void ui_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	skui_sl_windows             .free();
-	skui_layers                 .free();
-	skui_id_stack               .free();
-	skui_font_stack             .free();
-	skui_tint_stack             .free();
-	skui_enabled_stack          .free();
-	skui_preserve_keyboard_stack.free();
+	skui_sl_windows              .free();
+	skui_layers                  .free();
+	skui_id_stack                .free();
+	skui_font_stack              .free();
+	skui_tint_stack              .free();
+	skui_enabled_stack           .free();
+	skui_preserve_keyboard_stack .free();
 	skui_preserve_keyboard_ids[0].free();
 	skui_preserve_keyboard_ids[1].free();
-	sound_release(skui_snd_interact);
-	sound_release(skui_snd_uninteract);
-	sound_release(skui_snd_grab);
-	sound_release(skui_snd_ungrab);
-	mesh_release(skui_box);
-	mesh_release(skui_cylinder);
-	mesh_release(skui_box_dbg);
-	material_release(skui_mat);
-	material_release(skui_mat_quad);
-	material_release(skui_mat_dbg);
-	material_release(skui_font_mat);
-	font_release(skui_font);
+	sound_release(skui_snd_interact);   skui_snd_interact   = nullptr;
+	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
+	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
+	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
+	mesh_release(skui_box);      skui_box      = nullptr;
+	mesh_release(skui_cylinder); skui_cylinder = nullptr;
+	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
+	mesh_release(skui_win_top);  skui_win_top  = nullptr;
+	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	material_release(skui_mat);      skui_mat      = nullptr;
+	material_release(skui_mat_quad); skui_mat_quad = nullptr;
+	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
+	material_release(skui_font_mat); skui_font_mat = nullptr;
+	font_release(skui_font); skui_font = nullptr;
 }
 
 ///////////////////////////////////////////
