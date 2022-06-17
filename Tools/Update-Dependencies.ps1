@@ -179,13 +179,21 @@ Write-Host "Using $vsGeneratorName" -ForegroundColor green
 #####################################
 
 # Check for cmake 3.21
-if (!(Get-Command 'cmake' -errorAction SilentlyContinue))
+$cmakeCmd = 'cmake'
+if (!(Get-Command "$cmakeCmd" -errorAction SilentlyContinue))
 {
-    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build OpenXR, please install or add to Path!" -ForegroundColor red
-    exit 1
+    # cmake is not in PATH, ask vswhere for a cmake version
+    $cmakeCmd = & $vsWhere -latest -prerelease -version $vsVersionRange -requires Microsoft.VisualStudio.Component.VC.CMake.Project -find 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
+    if (!(Get-Command "$cmakeCmd" -errorAction SilentlyContinue))
+    {
+        # No cmake available, error out and point users to cmake's website 
+        Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build dependencies, please install or add to Path!" -ForegroundColor red
+        Start-Process 'https://cmake.org/'
+        exit 1
+    }
 }
 $Matches = {}
-$cmakeVersion = & cmake --version
+$cmakeVersion = & $cmakeCmd --version
 $cmakeVersion = [string]$cmakeVersion
 $cmakeVersion -match '(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)' | Out-Null
 $cmvMajor = $Matches.Major
@@ -194,6 +202,7 @@ $cmvPatch = $Matches.Patch
 if ( $cmvMajor -lt 3 -or
     ($cmvMajor -eq 3 -and $cmvMinor -lt 21)) {
     Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake version must be greater than 3.21! Found $cmvMajor.$cmvMinor.$cmvPatch. Please update and try again!" -ForegroundColor red
+    Start-Process 'https://cmake.org/'
     exit 1
 } else {
     Write-Host "Using cmake version: $cmvMajor.$cmvMinor.$cmvPatch" -ForegroundColor green
@@ -233,9 +242,9 @@ foreach($dep in $dependencies) {
     # Configure build settings
     Write-Host "$($dep.Name): Configuring $arch $plat" -ForegroundColor green
     if ($plat -eq 'UWP') {
-        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
+        & $cmakeCmd -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     } else {
-        & cmake -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
+        & $cmakeCmd -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $($dep.Name) config failed! Stopping build! ---" -ForegroundColor red
@@ -244,7 +253,7 @@ foreach($dep in $dependencies) {
 
     # And build it all!
     Write-Host "$($dep.Name): Building $arch $plat" -ForegroundColor green
-    & cmake --build . --config $config -- /m
+    & $cmakeCmd --build . --config $config -- /m
     if ($LASTEXITCODE -ne 0) {
         Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $($dep.Name) build failed! Stopping build! ---" -ForegroundColor red
         exit 1
