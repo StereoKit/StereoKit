@@ -184,7 +184,7 @@ if (!(Get-Command "$cmakeCmd" -errorAction SilentlyContinue))
 {
     # cmake is not in PATH, ask vswhere for a cmake version
     $cmakeCmd = & $vsWhere -latest -prerelease -version $vsVersionRange -requires Microsoft.VisualStudio.Component.VC.CMake.Project -find 'Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
-    if (!(Get-Command "$cmakeCmd" -errorAction SilentlyContinue))
+    if ($cmakeCmd -eq "" -or $null -eq $cmakeCmd -or !(Get-Command "$cmakeCmd" -errorAction SilentlyContinue))
     {
         # No cmake available, error out and point users to cmake's website 
         Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Cmake not detected! It is needed to build dependencies, please install or add to Path!" -ForegroundColor red
