@@ -110,12 +110,12 @@ void hand_oxra_init() {
 
 			// Allocate memory for the SK format mesh data.
 			if (hand_mesh->ind_count < properties_handmesh.maxHandMeshIndexCount) {
-				free(hand_mesh->inds);
+				sk_free(hand_mesh->inds);
 				hand_mesh->inds      = sk_malloc_t(vind_t, properties_handmesh.maxHandMeshIndexCount);
 				hand_mesh->ind_count = properties_handmesh.maxHandMeshIndexCount;
 			}
 			if (hand_mesh->vert_count < properties_handmesh.maxHandMeshVertexCount) {
-				free(hand_mesh->verts);
+				sk_free(hand_mesh->verts);
 				hand_mesh->verts      = sk_malloc_t(vert_t, properties_handmesh.maxHandMeshVertexCount);
 				hand_mesh->vert_count = properties_handmesh.maxHandMeshVertexCount;
 				for (uint32_t i = 0; i < hand_mesh->vert_count; i++)
@@ -143,8 +143,8 @@ void hand_oxra_shutdown() {
 	for (int32_t h = 0; h < handed_max; h++) {
 		xr_extensions.xrDestroyHandTrackerEXT(oxra_hand_tracker[h]);
 		xrDestroySpace(oxra_hand_space[h]);
-		free(oxra_mesh_src[h].indexBuffer.indices);
-		free(oxra_mesh_src[h].vertexBuffer.vertices);
+		sk_free(oxra_mesh_src[h].indexBuffer.indices);
+		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
 	}
 }
 

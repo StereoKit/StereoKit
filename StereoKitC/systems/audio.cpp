@@ -316,7 +316,7 @@ bool32_t mic_start(const char *device_name) {
 void mic_stop() {
 	if (!au_recording) return;
 
-	free(au_mic_name);
+	sk_free(au_mic_name);
 	au_mic_name = nullptr;
 	ma_device_stop  (&au_mic_device);
 	ma_device_uninit(&au_mic_device);

@@ -239,7 +239,7 @@ bool openxr_init() {
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
 	extensions.free();
-	free(layers);
+	sk_free(layers);
 
 	// Check if OpenXR is on this system, if this is null here, the user needs
 	// to install an OpenXR runtime and ensure it's active!
@@ -345,7 +345,7 @@ bool openxr_init() {
 			break;
 		}
 	}
-	free(xr_layers);
+	sk_free(xr_layers);
 
 	// Get the runtime name so we're less likely to invalidate something we
 	// don't kow about.
@@ -381,7 +381,7 @@ bool openxr_init() {
 			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
 			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
 		}
-		free(features);
+		sk_free(features);
 	}
 	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
@@ -532,7 +532,7 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 		}
 	}
 
-	free(layers);
+	sk_free(layers);
 }
 
 ///////////////////////////////////////////
@@ -572,7 +572,7 @@ XrReferenceSpaceType openxr_preferred_space() {
 	// STAGE behavior is preferred. So it would be nice to make some considerations
 	// here to change that?
 
-	free(refspace_types);
+	sk_free(refspace_types);
 
 	return result;
 }

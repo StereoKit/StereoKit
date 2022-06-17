@@ -126,7 +126,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 				}
 			} else {
 				log_errf("[%s] joint format (%d) not implemented", filename, attr->data->component_type);
-				free(bone_ids);
+				sk_free(bone_ids);
 				bone_ids = nullptr;
 			}
 		} else if (attr->type == cgltf_attribute_type_weights && attr->index == 0) {
@@ -180,7 +180,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 						w->w = w->w * sum;
 					}
 				} else {
-					free(floats);
+					sk_free(floats);
 				}
 			} else {
 				log_errf("[%s] weights format (%d) not implemented", filename, attr->data->component_type);
@@ -190,8 +190,8 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 
 	if (!bone_ids || !weights) {
 		log_errf("[%s] mesh skin incomplete", filename);
-		free(bone_ids);
-		free(weights);
+		sk_free(bone_ids);
+		sk_free(weights);
 		return false;
 	}
 
@@ -283,7 +283,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex position type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			has_normals = true;
@@ -309,7 +309,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex normal type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
 			if (attr->index != 0) {
@@ -334,7 +334,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex uv type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			if (attr->index != 0) {
@@ -371,7 +371,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex color type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		}
 	}
@@ -428,8 +428,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	result = mesh_create();
 	mesh_set_id  (result, id);
 	mesh_set_data(result, verts, vert_count, inds, (int32_t)ind_count);
-	free(verts);
-	free(inds );
+	sk_free(verts);
+	sk_free(inds );
 
 	return result;
 }
@@ -519,7 +519,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 		if (buffer != nullptr) {
 			result = tex_create_mem(buffer, size, srgb_data, priority);
 			tex_set_id(result, id);
-			free(buffer);
+			sk_free(buffer);
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
@@ -829,7 +829,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 			: cgltf_result_file_not_found;
 	};
 	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
-		free(data);
+		sk_free(data);
 	};
 
 	cgltf_data *data       = nullptr;

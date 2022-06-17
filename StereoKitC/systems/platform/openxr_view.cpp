@@ -37,8 +37,8 @@ void swapchain_delete(swapchain_t &swapchain) {
 		tex_release(swapchain.textures[s]);
 	}
 	xrDestroySwapchain(swapchain.handle);
-	free(swapchain.images);
-	free(swapchain.textures);
+	sk_free(swapchain.images);
+	sk_free(swapchain.textures);
 }
 
 ///////////////////////////////////////////
@@ -67,13 +67,13 @@ void device_display_delete(device_display_t &display) {
 	swapchain_delete(display.swapchain_color);
 	swapchain_delete(display.swapchain_depth);
 
-	free(display.projection_data );
-	free(display.views           ); display.views            = nullptr;
-	free(display.view_transforms ); display.view_transforms  = nullptr;
-	free(display.view_layers     ); display.view_layers      = nullptr;
-	free(display.view_depths     ); display.view_depths      = nullptr;
-	free(display.view_projections); display.view_projections = nullptr;
-	free(display.view_configs    ); display.view_configs     = nullptr;
+	sk_free(display.projection_data );
+	sk_free(display.views           );
+	sk_free(display.view_transforms );
+	sk_free(display.view_layers     );
+	sk_free(display.view_depths     );
+	sk_free(display.view_projections);
+	sk_free(display.view_configs    );
 }
 
 ///////////////////////////////////////////
@@ -185,7 +185,7 @@ bool openxr_views_create() {
 			}
 		}
 	}
-	free(types);
+	sk_free(types);
 
 	if (xr_displays.count == 0) {
 		log_info("No valid display configurations were found!");
@@ -492,7 +492,7 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	}
 
 	// Release memory
-	free(formats);
+	sk_free(formats);
 }
 
 ///////////////////////////////////////////
@@ -519,7 +519,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 			if (blend_modes[b] == blend_search[s]) {
 				out_blend = blend_modes[b];
 
-				free(blend_modes);
+				sk_free(blend_modes);
 				blend_search.free();
 				return true;
 			}
@@ -533,14 +533,14 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
 			out_blend = blend_modes[i];
 
-			free(blend_modes);
+			sk_free(blend_modes);
 			blend_search.free();
 			return true;
 		}
 	}
 
 	log_info("openxr_preferred_blend couldn't find a valid blend mode!");
-	free(blend_modes);
+	sk_free(blend_modes);
 	blend_search.free();
 	return false;
 }

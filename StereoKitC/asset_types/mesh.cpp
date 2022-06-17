@@ -25,8 +25,8 @@ void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
 
 	mesh->discard_data = !keep_data;
 	if (mesh->discard_data) {
-		free(mesh->verts); mesh->verts = nullptr;
-		free(mesh->inds ); mesh->inds  = nullptr;
+		sk_free(mesh->verts);
+		sk_free(mesh->inds );
 	}
 }
 
@@ -371,13 +371,13 @@ mesh_t mesh_find(const char *id) {
 ///////////////////////////////////////////
 
 void mesh_set_id(mesh_t mesh, const char *id) {
-	assets_set_id(mesh->header, id);
+	assets_set_id(&mesh->header, id);
 }
 
 ///////////////////////////////////////////
 
 void mesh_addref(mesh_t mesh) {
-	assets_addref(mesh->header);
+	assets_addref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -443,7 +443,7 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
-	assets_releaseref(mesh->header);
+	assets_releaseref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -452,10 +452,10 @@ void mesh_destroy(mesh_t mesh) {
 	skg_mesh_destroy  (&mesh->gpu_mesh);
 	skg_buffer_destroy(&mesh->vert_buffer);
 	skg_buffer_destroy(&mesh->ind_buffer);
-	free(mesh->verts);
-	free(mesh->inds);
-	free(mesh->collision_data.pts   );
-	free(mesh->collision_data.planes);
+	sk_free(mesh->verts);
+	sk_free(mesh->inds);
+	sk_free(mesh->collision_data.pts   );
+	sk_free(mesh->collision_data.planes);
 	*mesh = {};
 }
 
@@ -597,8 +597,8 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -667,8 +667,8 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -736,8 +736,8 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -805,8 +805,8 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -895,8 +895,8 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 

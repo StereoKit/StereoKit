@@ -86,7 +86,7 @@ bool systems_sort() {
 		if (result != 0) log_errf("Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
 		else array_reorder((void**)&systems, sizeof(system_t), (int32_t)systems.count, update_order);
 
-		free(update_order);
+		sk_free(update_order);
 	}
 
 	// Turn dependency names into indices for init
@@ -106,18 +106,18 @@ bool systems_sort() {
 
 	// Sort the init order
 	if (result == 0) {
-		free(system_init_order);
+		sk_free(system_init_order);
 		result = topological_sort(init_ids, (int32_t)systems.count, &system_init_order);
 		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
 
 	// Release memory
 	for (size_t i = 0; i < systems.count; i++) {
-		free(init_ids  [i].ids);
-		free(update_ids[i].ids);
+		sk_free(init_ids  [i].ids);
+		sk_free(update_ids[i].ids);
 	}
-	free(init_ids);
-	free(update_ids);
+	sk_free(init_ids);
+	sk_free(update_ids);
 
 	return result == 0;
 }
@@ -216,7 +216,7 @@ void systems_shutdown() {
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	
 	systems.free();
-	free(system_init_order);
+	sk_free(system_init_order);
 }
 
 ///////////////////////////////////////////
@@ -237,15 +237,15 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 			int result = topological_sort_visit(dependencies, count, i, marks, &sorted_curr, *out_order);
 			// If we found a cyclic dependency, ditch out!
 			if (result != 0) {
-				free(marks);
-				free(*out_order);
+				sk_free(marks);
+				sk_free(*out_order);
 				*out_order = nullptr;
 				return result;
 			}
 		}
 	}
 
-	free(marks);
+	sk_free(marks);
 	return 0;
 }
 
@@ -283,7 +283,7 @@ void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_o
 	}
 
 	*list = result;
-	free(src);
+	sk_free(src);
 }
 
 } // namespace sk

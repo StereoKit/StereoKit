@@ -108,46 +108,46 @@ void *assets_allocate(asset_type_ type) {
 	header->id    = hash_fnv64_string(name);
 	header->index = assets.count;
 	header->state = asset_state_none;
-	assets_addref(*header);
+	assets_addref(header);
 	assets.add(header);
 	return header;
 }
 
 ///////////////////////////////////////////
 
-void assets_set_id(asset_header_t &header, const char *id) {
+void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
 #if defined(SK_DEBUG)
-	header.id_text = string_copy(id);
+	header->id_text = string_copy(id);
 #endif
 }
 
 ///////////////////////////////////////////
 
-void assets_set_id(asset_header_t &header, uint64_t id) {
+void assets_set_id(asset_header_t *header, uint64_t id) {
 #if defined(SK_DEBUG)
-	asset_header_t *other = (asset_header_t *)assets_find(id, header.type);
+	asset_header_t *other = (asset_header_t *)assets_find(id, header->type);
 	assert(other == nullptr);
 #endif
-	header.id = id;
+	header->id = id;
 }
 
 ///////////////////////////////////////////
 
-void assets_addref(asset_header_t &asset) {
-	asset.refs += 1;
+void assets_addref(asset_header_t *asset) {
+	asset->refs += 1;
 }
 
 ///////////////////////////////////////////
 
-void assets_releaseref(asset_header_t &asset) {
+void assets_releaseref(asset_header_t *asset) {
 	// Manage the reference count
-	asset.refs -= 1;
-	if (asset.refs < 0) {
+	asset->refs -= 1;
+	if (asset->refs < 0) {
 		log_err("Released too many references to asset!");
 		abort();
 	}
-	if (asset.refs != 0)
+	if (asset->refs != 0)
 		return;
 
 	assets_destroy(asset);
@@ -174,10 +174,10 @@ void assets_releaseref_threadsafe(void *asset) {
 
 ///////////////////////////////////////////
 
-void assets_destroy(asset_header_t &asset) {
-	if (asset.refs != 0) {
+void assets_destroy(asset_header_t *asset) {
+	if (asset->refs != 0) {
 #if defined(SK_DEBUG)
-		log_errf("Destroying asset '%s' that still has references!", asset.id_text);
+		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
 #else
 		log_err("Destroying an asset that still has references!");
 #endif
@@ -185,22 +185,22 @@ void assets_destroy(asset_header_t &asset) {
 	}
 
 	// Call asset specific destroy function
-	switch(asset.type) {
-	case asset_type_mesh:     mesh_destroy    ((mesh_t    )&asset); break;
-	case asset_type_texture:  tex_destroy     ((tex_t     )&asset); break;
-	case asset_type_shader:   shader_destroy  ((shader_t  )&asset); break;
-	case asset_type_material: material_destroy((material_t)&asset); break;
-	case asset_type_model:    model_destroy   ((model_t   )&asset); break;
-	case asset_type_font:     font_destroy    ((font_t    )&asset); break;
-	case asset_type_sprite:   sprite_destroy  ((sprite_t  )&asset); break;
-	case asset_type_sound:    sound_destroy   ((sound_t   )&asset); break;
-	case asset_type_solid:    solid_destroy   ((solid_t   )&asset); break;
+	switch(asset->type) {
+	case asset_type_mesh:     mesh_destroy    ((mesh_t    )asset); break;
+	case asset_type_texture:  tex_destroy     ((tex_t     )asset); break;
+	case asset_type_shader:   shader_destroy  ((shader_t  )asset); break;
+	case asset_type_material: material_destroy((material_t)asset); break;
+	case asset_type_model:    model_destroy   ((model_t   )asset); break;
+	case asset_type_font:     font_destroy    ((font_t    )asset); break;
+	case asset_type_sprite:   sprite_destroy  ((sprite_t  )asset); break;
+	case asset_type_sound:    sound_destroy   ((sound_t   )asset); break;
+	case asset_type_solid:    solid_destroy   ((solid_t   )asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	// Remove it from our list of assets
 	for (size_t i = 0; i < assets.count; i++) {
-		if (assets[i] == &asset) {
+		if (assets[i] == asset) {
 			assets.remove(i);
 			break;
 		}
@@ -208,9 +208,9 @@ void assets_destroy(asset_header_t &asset) {
 
 	// And at last, free the memory we allocated for it!
 #if defined(SK_DEBUG)
-	free(asset.id_text);
+	sk_free(asset->id_text);
 #endif
-	free(&asset);
+	sk_free(asset);
 }
 
 ///////////////////////////////////////////
@@ -218,8 +218,8 @@ void assets_destroy(asset_header_t &asset) {
 void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
 	// Swap references by adding a reference first, then removing. If the asset
 	// is the same, then this prevents the asset from getting destroyed.
-	assets_addref    (* asset);
-	assets_releaseref(**asset_link);
+	assets_addref    ( asset);
+	assets_releaseref(*asset_link);
 	*asset_link = asset;
 }
 
@@ -326,7 +326,7 @@ void assets_update() {
 	// destroy objects where the request came from another thread
 	mtx_lock(&assets_multithread_destroy_lock);
 	for (size_t i = 0; i < assets_multithread_destroy.count; i++) {
-		assets_destroy(*assets_multithread_destroy[i]);
+		assets_destroy(assets_multithread_destroy[i]);
 	}
 	assets_multithread_destroy.clear();
 	mtx_unlock(&assets_multithread_destroy_lock);
@@ -403,7 +403,7 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		}
 
 		bool32_t result = job->success;
-		free(job);
+		sk_free(job);
 		return result;
 	}
 }
@@ -435,7 +435,7 @@ int32_t assets_current_task_priority() {
 void assets_add_task(asset_task_t src_task) {
 	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
 	memcpy(task, &src_task, sizeof(asset_task_t));
-	assets_addref(*task->asset);
+	assets_addref(task->asset);
 
 	mtx_lock(&asset_thread_task_mtx);
 
@@ -493,7 +493,7 @@ int32_t asset_thread(void *) {
 
 				if (task->free_data != nullptr) task->free_data (task->asset, task->load_data);
 				assets_releaseref_threadsafe(task->asset);
-				free(task);
+				sk_free(task);
 				continue;
 			}
 

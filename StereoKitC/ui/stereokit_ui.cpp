@@ -274,8 +274,8 @@ void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -385,8 +385,8 @@ void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices,
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -736,10 +736,10 @@ void ui_update() {
 
 void ui_update_late() {
 	ui_pop_surface();
-	if (skui_layers.count != 0) log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack.count != 1) log_err("ui: Mismatching number of id push/pop calls!");
-	if (skui_tint_stack.count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
-	if (skui_enabled_stack.count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
+	if (skui_layers                 .count != 0) log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack               .count != 1) log_err("ui: Mismatching number of id push/pop calls!");
+	if (skui_tint_stack             .count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
+	if (skui_enabled_stack          .count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
 	if (skui_preserve_keyboard_stack.count != 1) log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
 }
 

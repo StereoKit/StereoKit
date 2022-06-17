@@ -242,12 +242,12 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 
 void anim_inst_destroy(anim_inst_t *inst) {
 	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
-		free(inst->skinned_meshes[i].bone_transforms);
+		sk_free(inst->skinned_meshes[i].bone_transforms);
 		mesh_release(inst->skinned_meshes[i].original_mesh);
 	}
-	free(inst->skinned_meshes);
-	free(inst->curve_last_keyframe);
-	free(inst->node_transforms);
+	sk_free(inst->skinned_meshes);
+	sk_free(inst->curve_last_keyframe);
+	sk_free(inst->node_transforms);
 
 	*inst = {};
 	inst->anim_id = -1;
@@ -258,13 +258,13 @@ void anim_inst_destroy(anim_inst_t *inst) {
 void anim_data_destroy(anim_data_t *data) {
 	for (size_t i = 0; i < data->anims.count; i++) {
 		for (size_t c = 0; c < data->anims[i].curves.count; c++) {
-			free(data->anims[i].curves[c].keyframe_values);
-			free(data->anims[i].curves[c].keyframe_times);
+			sk_free(data->anims[i].curves[c].keyframe_values);
+			sk_free(data->anims[i].curves[c].keyframe_times);
 		}
 		data->anims[i].curves.free();
 	}
 	for (size_t i = 0; i < data->skeletons.count; i++) {
-		free(data->skeletons[i].bone_to_node_map);
+		sk_free(data->skeletons[i].bone_to_node_map);
 	}
 	data->anims    .free();
 	data->skeletons.free();

@@ -23,7 +23,7 @@ model_t model_create() {
 ///////////////////////////////////////////
 
 void model_set_id(model_t model, const char *id) {
-	assets_set_id(model->header, id);
+	assets_set_id(&model->header, id);
 }
 
 ///////////////////////////////////////////
@@ -130,7 +130,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 		model_set_id(result, filename);
 	}
 	
-	free(data);
+	sk_free(data);
 	return result;
 }
 
@@ -270,7 +270,7 @@ void model_remove_subset(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 void model_addref(model_t model) {
-	assets_addref(model->header);
+	assets_addref(&model->header);
 }
 
 ///////////////////////////////////////////
@@ -279,7 +279,7 @@ void model_release(model_t model) {
 	if (model == nullptr)
 		return;
 
-	assets_releaseref(model->header);
+	assets_releaseref(&model->header);
 }
 
 ///////////////////////////////////////////
@@ -334,7 +334,7 @@ void model_destroy(model_t model) {
 	anim_inst_destroy(&model->anim_inst);
 	anim_data_destroy(&model->anim_data);
 	for (size_t i = 0; i < model->nodes.count; i++) {
-		free(model->nodes[i].name);
+		sk_free(model->nodes[i].name);
 	}
 	for (size_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
@@ -558,7 +558,7 @@ matrix model_node_get_transform_local(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 void model_node_set_name(model_t model, model_node_id node, const char* name) {
-	free(model->nodes[node].name);
+	sk_free(model->nodes[node].name);
 	char tmp_name[32];
 	if (name == nullptr) {
 		snprintf(tmp_name, sizeof(tmp_name), "node%d", node);

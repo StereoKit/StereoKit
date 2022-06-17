@@ -116,7 +116,7 @@ void font_source_release(int32_t id) {
 
 	font_sources[id].references -= 1;
 	if (font_sources[id].references == 0) {
-		free(font_sources[id].file);
+		sk_free(font_sources[id].file);
 		font_sources[id].file = nullptr;
 		font_sources[id].info = {};
 	}
@@ -181,7 +181,7 @@ font_t font_create_default() {
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, "sk_font::default");
+	assets_set_id(&result->header, "sk_font::default");
 
 	int32_t id = font_source_add_data("sk_font::default", aileron_font_ttf, aileron_font_ttf_len);
 	if (id >= 0)
@@ -216,7 +216,7 @@ font_t font_create_files(const char **files, int32_t file_count) {
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, file_id);
+	assets_set_id(&result->header, file_id);
 
 	// Load relevant fonts
 	result->font_ids.resize(file_count);
@@ -238,13 +238,13 @@ font_t font_create_files(const char **files, int32_t file_count) {
 ///////////////////////////////////////////
 
 void font_set_id(font_t font, const char* id) {
-	assets_set_id(font->header, id);
+	assets_set_id(&font->header, id);
 }
 
 ///////////////////////////////////////////
 
 void font_addref(font_t font) {
-	assets_addref(font->header);
+	assets_addref(&font->header);
 }
 
 ///////////////////////////////////////////
@@ -252,7 +252,7 @@ void font_addref(font_t font) {
 void font_release(font_t font) {
 	if (font == nullptr)
 		return;
-	assets_releaseref(font->header);
+	assets_releaseref(&font->header);
 }
 
 ///////////////////////////////////////////
@@ -268,7 +268,7 @@ void font_destroy(font_t font) {
 
 	tex_release       ( font->font_tex);
 	rect_atlas_destroy(&font->atlas);
-	free              ( font->atlas_data);
+	sk_free           ( font->atlas_data);
 	font->character_map.free();
 	font->update_queue .free();
 	font->font_ids     .free();
@@ -357,7 +357,7 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 	gbm.pixels = (unsigned char *)sk_malloc(gbm.w * gbm.h);
 	gbm.stride = gbm.w;
 	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
-	free(vertices);
+	sk_free(vertices);
 
 	// Now average the multisamples to get a final value, and add it to the
 	// atlas data.
@@ -374,7 +374,7 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 
 		font->atlas_data[(x + px/multisample) + yoff] = (uint8_t)total;
 	}}
-	free(gbm.pixels);
+	sk_free(gbm.pixels);
 }
 
 ///////////////////////////////////////////
@@ -428,7 +428,7 @@ void font_upsize_texture(font_t font) {
 	}*/
 
 	// Update the atlas to the new values
-	free(font->atlas_data);
+	sk_free(font->atlas_data);
 	font->atlas_data = new_data;
 	font->atlas.w = new_w;
 	font->atlas.h = new_h;

@@ -22,7 +22,7 @@ shader_t shader_find(const char *id) {
 ///////////////////////////////////////////
 
 void shader_set_id(shader_t shader, const char *id) {
-	assets_set_id(shader->header, id);
+	assets_set_id(&shader->header, id);
 }
 
 ///////////////////////////////////////////
@@ -87,7 +87,7 @@ shader_t shader_create_file(const char *filename) {
 ///////////////////////////////////////////
 
 void shader_addref(shader_t shader) {
-	assets_addref(shader->header);
+	assets_addref(&shader->header);
 }
 
 ///////////////////////////////////////////
@@ -95,7 +95,7 @@ void shader_addref(shader_t shader) {
 void shader_release(shader_t shader) {
 	if (shader == nullptr)
 		return;
-	assets_releaseref(shader->header);
+	assets_releaseref(&shader->header);
 }
 
 ///////////////////////////////////////////

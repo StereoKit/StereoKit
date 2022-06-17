@@ -625,13 +625,13 @@ void render_check_screenshots() {
 			memcpy(top_line, bot_line, line_size);
 			memcpy(bot_line, tmp,      line_size);
 		}
-		free(tmp);
+		sk_free(tmp);
 #endif
 		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
-		free(buffer);
-		free(render_screenshot_list[i].filename);
+		sk_free(buffer);
+		sk_free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
 	skg_tex_target_bind(old_target);
@@ -1141,7 +1141,7 @@ render_item_t *radix_queue_area = nullptr;
 size_t         radix_queue_size = 0;
 
 void radix_sort_clean() {
-	free(radix_queue_area);
+	sk_free(radix_queue_area);
 	radix_queue_area = nullptr;
 	radix_queue_size = 0;
 }
@@ -1179,7 +1179,7 @@ static bool is_trivial(size_t freqs[RADIX_SIZE], size_t count) {
 void radix_sort7(render_item_t *a, size_t count) {
 	// Resize up if needed
 	if (radix_queue_size < count) {
-		free(radix_queue_area);
+		sk_free(radix_queue_area);
 		radix_queue_area = sk_malloc_t(render_item_t, count);
 		radix_queue_size = count;
 	}

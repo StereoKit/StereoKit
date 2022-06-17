@@ -248,8 +248,8 @@ void input_hand_shutdown() {
 		}
 		material_release(hand_state[i].material);
 		mesh_release    (hand_state[i].mesh.mesh);
-		free(hand_state[i].mesh.inds);
-		free(hand_state[i].mesh.verts);
+		sk_free(hand_state[i].mesh.inds);
+		sk_free(hand_state[i].mesh.verts);
 	}
 }
 

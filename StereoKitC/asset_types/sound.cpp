@@ -24,7 +24,7 @@ sound_t sound_find(const char *id) {
 ///////////////////////////////////////////
 
 void sound_set_id(sound_t sound, const char *id) {
-	assets_set_id(sound->header, id);
+	assets_set_id(&sound->header, id);
 }
 
 ///////////////////////////////////////////
@@ -49,7 +49,7 @@ sound_t sound_create(const char *filename) {
 	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
 	if (ma_decoder_init_memory(data, length, &config, &result->decoder) != MA_SUCCESS) {
 		log_errf("Failed to parse sound '%s'.", sound_file);
-		assets_releaseref(result->header);
+		assets_releaseref(&result->header);
 		return nullptr;
 	}
 	return result;
@@ -211,7 +211,7 @@ float sound_duration(sound_t sound) {
 ///////////////////////////////////////////
 
 void sound_addref(sound_t sound) {
-	assets_addref(sound->header);
+	assets_addref(&sound->header);
 }
 
 ///////////////////////////////////////////
@@ -220,7 +220,7 @@ void sound_release(sound_t sound) {
 	if (sound == nullptr)
 		return;
 
-	assets_releaseref(sound->header);
+	assets_releaseref(&sound->header);
 }
 
 ///////////////////////////////////////////
@@ -228,7 +228,7 @@ void sound_release(sound_t sound) {
 void sound_destroy(sound_t sound) {
 	ma_decoder_uninit(&sound->decoder);
 	if (sound->buffer.data) {
-		free       ( sound->buffer.data);
+		sk_free    ( sound->buffer.data);
 		mtx_destroy(&sound->data_lock);
 	}
 	memset(sound, 0, sizeof(_sound_t));

@@ -125,7 +125,7 @@ bool win32_start_post_xr() {
 		wc.hInstance,
 		nullptr);
 
-	free(app_name_w);
+	sk_free(app_name_w);
 	if (!win32_window) {
 		return false;
 	}
@@ -196,7 +196,7 @@ bool win32_start_flat() {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	if (!RegisterClassW(&wc)) { free(app_name_w); return false; }
+	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
 
 	RECT r;
 	r.left   = sk_settings.flatscreen_pos_x;
@@ -216,7 +216,7 @@ bool win32_start_flat() {
 		wc.hInstance,
 		nullptr);
 
-	free(app_name_w);
+	sk_free(app_name_w);
 
 	if( !win32_window ) return false;
 
