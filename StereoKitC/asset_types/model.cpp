@@ -137,6 +137,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 ///////////////////////////////////////////
 
 void model_recalculate_bounds(model_t model) {
+	model->bounds_dirty = false;
 	if (model->visuals.count <= 0) {
 		model->bounds = {};
 		return;
@@ -149,8 +150,9 @@ void model_recalculate_bounds(model_t model) {
 	
 	// Find the corners for each bounding cube, and factor them in!
 	for (size_t m = 0; m < model->visuals.count; m += 1) {
+		bounds_t bounds = mesh_get_bounds(model->visuals[m].mesh);
 		for (int32_t i = 0; i < 8; i += 1) {
-			vec3 corner = bounds_corner      (mesh_get_bounds(model->visuals[m].mesh), i);
+			vec3 corner = bounds_corner      (bounds, i);
 			vec3 pt     = matrix_transform_pt(model->visuals[m].transform_model, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
@@ -217,7 +219,7 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 		(asset_header_t**)&model->visuals[subset].mesh,
 		(asset_header_t* )mesh);
 
-	model_recalculate_bounds(model);
+	model->bounds_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -297,6 +299,9 @@ void model_set_bounds(model_t model, const bounds_t &bounds) {
 ///////////////////////////////////////////
 
 bounds_t model_get_bounds(model_t model) {
+	if (model->bounds_dirty) {
+		model_recalculate_bounds(model);
+	}
 	return model->bounds;
 }
 
@@ -408,7 +413,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.node            = node_id;
 		visual.visible         = true;
 		node.visual = (int32_t)model->visuals.add(visual);
-		model_recalculate_bounds(model);
+		model->bounds = bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
 	}
 
 	model->nodes.add(node);
@@ -604,10 +609,9 @@ void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
 	model->visuals[vis].mesh = mesh;
+	model->bounds_dirty = true;
 	mesh_addref (model->visuals[vis].mesh);
 	mesh_release(prev_mesh);
-
-	model_recalculate_bounds(model);
 }
 
 ///////////////////////////////////////////
@@ -648,6 +652,7 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 		curr = model->nodes[curr].sibling;
 	}
 	model->transforms_changed = true;
+	model->bounds_dirty       = true;
 }
 
 ///////////////////////////////////////////
@@ -656,6 +661,7 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 	model->nodes[node].transform_local = transform_local_space;
 	_model_node_update_transforms(model, node);
 	model->transforms_changed = true;
+	model->bounds_dirty       = true;
 }
 
 ///////////////////////////////////////////

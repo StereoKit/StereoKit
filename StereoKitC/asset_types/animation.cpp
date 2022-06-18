@@ -147,6 +147,7 @@ void anim_update_model(model_t model) {
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
 	model->transforms_changed    = true;
+	model->bounds_dirty          = true;
 
 	anim_t *anim = &model->anim_data.anims[model->anim_inst.anim_id];
 	float   time = model_anim_active_time(model);
