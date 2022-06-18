@@ -330,6 +330,8 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
 	}
 
+	XMVECTOR max = g_XMFltMin;
+	XMVECTOR min = g_XMFltMax;
 	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
@@ -353,8 +355,15 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		}
 		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
 		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+		min = XMVectorMin(min, new_pos);
+		max = XMVectorMax(max, new_pos);
 	}
 	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
+	
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	mesh->bounds.center     = {center    .m128_f32[0], center    .m128_f32[1], center    .m128_f32[2]};
+	mesh->bounds.dimensions = {dimensions.m128_f32[0], dimensions.m128_f32[1], dimensions.m128_f32[2]};
 }
 
 ///////////////////////////////////////////
