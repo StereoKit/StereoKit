@@ -410,11 +410,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			size_t             offset = buff->offset + p->indices->offset;
 			for (size_t v = 0; v < ind_count; v++) {
 				uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-	#ifdef SK_32BIT_INDICES
 				inds[v] = *ind;
-	#else
-				inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
-	#endif
 			}
 		} else {
 			gltf_add_warning(warnings, "Unimplemented vertex index format");
