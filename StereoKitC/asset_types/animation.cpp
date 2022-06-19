@@ -228,10 +228,13 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 	}
 	_anim_inst_check_ready(model);
 
-	if (model->anim_inst.curve_last_keyframe == nullptr) {
-		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[anim_id].curves.count);
-		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[anim_id].curves.count);
+	size_t count = model->anim_data.anims[anim_id].curves.count;
+	if (model->anim_inst.curve_last_keyframe == nullptr || model->anim_inst.curve_last_capacity < count) {
+		sk_free(model->anim_inst.curve_last_keyframe);
+		model->anim_inst.curve_last_capacity = count;
+		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, count);
 	}
+	memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * count);
 
 	model->anim_inst.start_time  = time_getf();
 	model->anim_inst.last_update = -1;
