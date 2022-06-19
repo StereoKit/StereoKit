@@ -16,7 +16,7 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if (prev_index + 2 < curve->keyframe_count && curve->keyframe_times[prev_index+1] <= t && curve->keyframe_times[prev_index+2] > t) return prev_index + 1;
 	}
 	if (t <= curve->keyframe_times[0] || curve->keyframe_count == 1) return 0;
-	if (t >= curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 1;
+	if (t >= curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 2;
 
 	int32_t l = 0, r = curve->keyframe_count - 1;
 	while (l <= r) {
@@ -24,15 +24,13 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if      (curve->keyframe_times[mid] <= t && curve->keyframe_times[mid+1] > t) return mid;
 		else if (curve->keyframe_times[mid] < t) l = mid + 1;
 		else if (curve->keyframe_times[mid] > t) r = mid - 1;
-		else log_err("anim_frame 1");
 	}
-	log_err("anim_frame 2");
 	return -1;
 }
 
 ///////////////////////////////////////////
 
-vec3 gltf_cubic_f3(vec3 in_tangent_next, vec3 value, vec3 next_value, vec3 out_tangent, float t, float frame_duration) {
+vec3 gltf_cubic_f3(vec3 value, vec3 in_tangent_next, vec3 out_tangent, vec3 next_value, float t, float frame_duration) {
 	// From the spec https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
 	const float t_2 = t * t;
 	const float t_3 = t_2 * t;
@@ -47,7 +45,7 @@ vec3 gltf_cubic_f3(vec3 in_tangent_next, vec3 value, vec3 next_value, vec3 out_t
 
 ///////////////////////////////////////////
 
-vec4 gltf_cubic_f4(vec4 in_tangent_next, vec4 value, vec4 next_value, vec4 out_tangent, float t, float frame_duration) {
+vec4 gltf_cubic_f4(vec4 value, vec4 in_tangent_next, vec4 out_tangent, vec4 next_value, float t, float frame_duration) {
 	// From the spec https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
 	const float t_2 = t * t;
 	const float t_3 = t_2 * t;
@@ -70,13 +68,17 @@ vec3 anim_curve_sample_f3(const anim_curve_t *curve, int32_t *prev_index, float 
 	vec3   *pts        = (vec3*)curve->keyframe_values;
 	*prev_index = frame;
 
+	if (curve->keyframe_count <= 1) {
+		return pts[0];
+	}
+
 	switch (curve->interpolation) {
 	case anim_interpolation_linear: return vec3_lerp(pts[frame], pts[frame + 1], pct); break;
 	case anim_interpolation_step:   return pts[frame]; break;
 	case anim_interpolation_cubic: {
 		int32_t id      = frame * 3;
 		int32_t id_next = (frame+1) * 3;
-		return gltf_cubic_f3(pts[id_next], pts[id + 1], pts[id_next + 1], pts[id + 2], pct, frame_dur);
+		return gltf_cubic_f3(pts[id + 1], pts[id_next], pts[id + 2], pts[id_next + 1], pct, frame_dur);
 	}break;
 	default: return pts[frame]; break;
 	}
@@ -92,6 +94,10 @@ quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float 
 	quat   *pts        = (quat*)curve->keyframe_values;
 	*prev_index = frame;
 
+	if (curve->keyframe_count <= 1) {
+		return pts[0];
+	}
+
 	switch (curve->interpolation) {
 	case anim_interpolation_linear: return quat_slerp(pts[frame], pts[frame + 1], pct); break;
 	case anim_interpolation_step:   return pts[frame]; break;
@@ -99,7 +105,7 @@ quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float 
 		vec4   *vecs    = (vec4*)curve->keyframe_values;
 		int32_t id      = frame * 3;
 		int32_t id_next = (frame+1) * 3;
-		vec4    result  = gltf_cubic_f4(vecs[id_next], vecs[id + 1], vecs[id_next + 1], vecs[id + 2], pct, frame_dur);
+		vec4    result  = gltf_cubic_f4(vecs[id + 1], vecs[id_next], vecs[id + 2], vecs[id_next + 1], pct, frame_dur);
 		return { result.x, result.y, result.z, result.w };
 	} break;
 	default: return pts[frame]; break;
