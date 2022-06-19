@@ -730,7 +730,7 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 				quat *rot = (quat*)curve.keyframe_values + offset;
 				quat r = matrix_extract_rotation(gltf_orientation_correction);
 				for (int32_t k = 0; k < curve.keyframe_count; k++)
-					rot[k*skip] = r * rot[k*skip];
+					rot[k*skip] = rot[k*skip] * r;
 			} break;
 			case anim_element_weights: {
 				log_warnf("Animated weights unsupported");
