@@ -359,8 +359,8 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active)
-		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
+	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
+		platform_sleep(100);
 	return sk_running;
 }
 
