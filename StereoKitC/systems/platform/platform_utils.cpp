@@ -111,18 +111,28 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	*out_data = nullptr;
 	*out_size = 0;
 
+	char* slash_fix_filename = string_copy(filename);
+	char* curr = slash_fix_filename;
+	while (*curr != '\0') {
+		if (*curr == '\\' || *curr == '/') {
+			*curr = platform_path_separator_c;
+		}
+		curr++;
+	}
+	
 	// Open file
 #if defined(SK_OS_ANDROID)
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
 
 	// Try and load using Android API first!
-	AAsset *asset = AAssetManager_open(android_asset_manager, filename, AASSET_MODE_BUFFER);
+	AAsset *asset = AAssetManager_open(android_asset_manager, slash_fix_filename, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
 		*out_data = sk_malloc(*out_size + 1);
 		AAsset_read(asset, *out_data, *out_size);
 		AAsset_close(asset);
 		((uint8_t *)*out_data)[*out_size] = 0;
+		sk_free(slash_fix_filename);
 		return true;
 	}
 
@@ -130,31 +140,36 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 #elif defined(SK_OS_WINDOWS_UWP)
 	// See if we have a Handle cached from the FilePicker that matches this
 	// file name.
-	if (file_picker_cache_read(filename, out_data, out_size))
+	if (file_picker_cache_read(slash_fix_filename, out_data, out_size)) {
+		sk_free(slash_fix_filename);
 		return true;
+	}
 #endif
 
 #if defined(SK_OS_LINUX)
+
 	// Linux thinks folders are files, but then fails in a bad way when
 	// treating them like files.
 	struct stat buffer;
-	if (stat(filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
-		log_diagf("platform_read_file can't read folders: %s", filename);
+	if (stat(slash_fix_filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
+		log_diagf("platform_read_file can't read folders: %s", slash_fix_filename);
+		sk_free(slash_fix_filename);
 		return false;
 	}
 #endif
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, slash_fix_filename, -1, nullptr, 0);
 	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
-	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
+	MultiByteToWideChar(CP_UTF8, 0, slash_fix_filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"rb");
 	sk_free(wfilename);
 #else
-	FILE *fp = fopen(filename, "rb");
+	FILE *fp = fopen(slash_fix_filename, "rb");
 #endif
 	if (fp == nullptr) {
-		log_diagf("platform_read_file can't find %s", filename);
+		log_diagf("platform_read_file can't find %s", slash_fix_filename);
+		sk_free(slash_fix_filename);
 		return false;
 	}
 
@@ -172,6 +187,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// to treat it like a string
 	((uint8_t *)*out_data)[*out_size] = 0;
 
+	sk_free(slash_fix_filename);
 	return read != 0 || *out_size == 0;
 }
 
