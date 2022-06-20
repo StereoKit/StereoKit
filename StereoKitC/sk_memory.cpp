@@ -38,4 +38,10 @@ void *sk_realloc(void *memory, size_t bytes) {
 	return result;
 }
 
+///////////////////////////////////////////
+
+void _sk_free(void* memory) {
+	free(memory);
+}
+
 } // namespace sk

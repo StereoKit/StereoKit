@@ -36,7 +36,7 @@ bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
-bool32_t      sk_running     = true;
+bool32_t      sk_running     = false;
 bool32_t      sk_initialized = false;
 bool32_t      sk_first_step  = false;
 thrd_id_t     sk_init_thread = {};
@@ -313,6 +313,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	app_system    = systems_find("App");
 	app_init_time = stm_now();
+	sk_running    = sk_initialized;
 	return sk_initialized;
 }
 
@@ -358,8 +359,8 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active)
-		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
+	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
+		platform_sleep(100);
 	return sk_running;
 }
 

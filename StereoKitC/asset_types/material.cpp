@@ -28,7 +28,7 @@ material_t material_find(const char *id) {
 ///////////////////////////////////////////
 
 void material_set_id(material_t material, const char *id) {
-	assets_set_id(material->header, id);
+	assets_set_id(&material->header, id);
 }
 
 ///////////////////////////////////////////
@@ -180,7 +180,7 @@ material_t material_copy_id(const char *id) {
 ///////////////////////////////////////////
 
 void material_addref(material_t material) {
-	assets_addref(material->header);
+	assets_addref(&material->header);
 }
 
 ///////////////////////////////////////////
@@ -188,7 +188,7 @@ void material_addref(material_t material) {
 void material_release(material_t material) {
 	if (material == nullptr)
 		return;
-	assets_releaseref(material->header);
+	assets_releaseref(&material->header);
 }
 
 ///////////////////////////////////////////
@@ -200,8 +200,8 @@ void material_destroy(material_t material) {
 	}
 	shader_release(material->shader);
 	skg_pipeline_destroy(&material->pipeline);
-	free(material->args.buffer);
-	free(material->args.textures);
+	sk_free(material->args.buffer);
+	sk_free(material->args.textures);
 	*material = {};
 }
 
@@ -243,8 +243,8 @@ void material_set_shader(material_t material, shader_t shader) {
 		if (old_shader != nullptr)
 			shader_release(old_shader);
 		skg_pipeline_destroy(&material->pipeline);
-		free(old_buffer);
-		free(old_textures);
+		sk_free(old_buffer);
+		sk_free(old_textures);
 	}
 
 	material->shader   = shader;

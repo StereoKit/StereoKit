@@ -359,8 +359,8 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 	components.components             = sk_malloc_t(XrSceneComponentMSFT, components.componentCountOutput);
 	if (XR_FAILED(xr_extensions.xrGetSceneComponentsMSFT(xr_scene, &info, &components))) {
 		log_warn("xrGetSceneComponentsMSFT failed");
-		free(components.components);
-		free(meshes.sceneMeshes);
+		sk_free(components.components);
+		sk_free(meshes.sceneMeshes);
 		return;
 	}
 
@@ -378,7 +378,7 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 	locate_info.componentIdCount = components.componentCountOutput;
 	locate_info.componentIds     = component_ids;
 	xr_extensions.xrLocateSceneComponentsMSFT(xr_scene, &locate_info, &locations);
-	free(component_ids);
+	sk_free(component_ids);
 
 	mesh_list->clear();
 	if (mesh_list->capacity < meshes.sceneMeshCount)
@@ -405,9 +405,9 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 		mesh_list->add(inst);
 	}
 
-	free(locations.locations);
-	free(components.components);
-	free(meshes.sceneMeshes);
+	sk_free(locations.locations);
+	sk_free(components.components);
+	sk_free(meshes.sceneMeshes);
 }
 
 ///////////////////////////////////////////

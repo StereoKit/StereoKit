@@ -249,7 +249,7 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 	uint32_t ext_count = 0;
 	if (XR_FAILED(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr)))
 		return result;
-	XrExtensionProperties *exts = (XrExtensionProperties*)malloc(sizeof(XrExtensionProperties) * ext_count);
+	XrExtensionProperties* exts = sk_malloc_t(XrExtensionProperties, ext_count);
 	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
 
@@ -276,7 +276,7 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 		}
 	}
 
-	free(exts);
+	sk_free(exts);
 	return result;
 }
 

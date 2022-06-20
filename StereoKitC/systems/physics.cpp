@@ -129,7 +129,7 @@ void solid_release(solid_t solid) {
 	if (solid == nullptr)
 		return;
 
-	assets_releaseref(solid->header);
+	assets_releaseref(&solid->header);
 }
 
 ///////////////////////////////////////////

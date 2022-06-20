@@ -175,7 +175,7 @@ bool defaults_init() {
 	// Shaders
 	int32_t size = 0;
 	void*   data = nullptr;
-#define SHADER_DECODE(shader_mem) { free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
+#define SHADER_DECODE(shader_mem) { sk_free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
 	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);
@@ -189,6 +189,7 @@ bool defaults_init() {
 	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_clip_hlsl_zip   ); sk_default_shader_pbr_clip    = shader_create_mem(data, size);
+	sk_free(data);
 #undef SHADER_DECODE
 	
 	// Android seems to give us a hard time about this one, so let's fall

@@ -70,28 +70,18 @@ namespace sk {
 bool in_messagebox = false;
 void platform_msgbox_err(const char *text, const char *header) {
 #if defined(SK_OS_WINDOWS_UWP)
-	char *src_text  = string_copy(text);
-	char *src_title = string_copy(header);
+	wchar_t* text_w   = platform_to_wchar(text);
+	wchar_t* header_w = platform_to_wchar(header);
 	in_messagebox = true;
 	winrt::Windows::ApplicationModel::Core::CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(
-		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [src_text,src_title]() {
-		size_t   size_text  = strlen(src_text)+1;
-		size_t   size_title = strlen(src_title)+1;
-		wchar_t *w_text  = sk_malloc_t(wchar_t, size_text);
-		wchar_t *w_title = sk_malloc_t(wchar_t, size_title);
-		mbstowcs_s(nullptr, w_text,  size_text,  src_text,   size_text);
-		mbstowcs_s(nullptr, w_title, size_title, src_title, size_title);
+		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [text_w, header_w]() {
 
-		winrt::Windows::UI::Popups::MessageDialog dialog  = winrt::Windows::UI::Popups::MessageDialog(w_text, w_title);
+		winrt::Windows::UI::Popups::MessageDialog dialog  = winrt::Windows::UI::Popups::MessageDialog(text_w, header_w);
 		winrt::Windows::UI::Popups::UICommand     command = winrt::Windows::UI::Popups::UICommand{
 			L"OK",
 			winrt::Windows::UI::Popups::UICommandInvokedHandler{
-				[w_text, w_title, src_text, src_title](winrt::Windows::UI::Popups::IUICommand const &) {
+				[](winrt::Windows::UI::Popups::IUICommand const &) {
 					in_messagebox = false;
-					free(w_text);
-					free(w_title);
-					free(src_text);
-					free(src_title);
 					return;
 				}
 			}
@@ -102,12 +92,14 @@ void platform_msgbox_err(const char *text, const char *header) {
 	while (in_messagebox) {
 		platform_sleep(100);
 	}
+	sk_free(text_w);
+	sk_free(header_w);
 #elif defined(SK_OS_WINDOWS)
 	wchar_t *text_w   = platform_to_wchar(text);
 	wchar_t *header_w = platform_to_wchar(header);
 	MessageBoxW(nullptr, text_w, header_w, MB_OK | MB_ICONERROR);
-	free(text_w);
-	free(header_w);
+	sk_free(text_w);
+	sk_free(header_w);
 #else
 	log_err("No messagebox capability for this platform!");
 #endif
@@ -157,7 +149,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
 	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"rb");
-	free(wfilename);
+	sk_free(wfilename);
 #else
 	FILE *fp = fopen(filename, "rb");
 #endif
@@ -198,7 +190,7 @@ bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
 	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"wb");
-	free(wfilename);
+	sk_free(wfilename);
 #else
 	FILE *fp = fopen(filename, "wb");
 #endif
@@ -338,8 +330,7 @@ void platform_print_callstack() {
 			(nullptr != demangled && 0 == status) ?
 			demangled : symbol);
 
-		if (nullptr != demangled)
-			free(demangled);
+		sk_free(demangled);
 	}
 }
 #else
@@ -529,7 +520,7 @@ char *platform_working_dir() {
 	char   *result = sk_malloc_t(char, len);
 	result[0] = '\0';
 	while (len < 5000 && getcwd(result, len) == nullptr) {
-		free(result);
+		sk_free(result);
 		len       = len * 2;
 		result    = sk_malloc_t(char, len);
 		result[0] = '\0';
@@ -552,10 +543,10 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 			char *drive_u8 = platform_from_wchar(curr);
 			on_item(callback_data, drive_u8, false);
 			curr = curr + wcslen(curr)+1;
-			free(drive_u8);
+			sk_free(drive_u8);
 		}
 
-		free(drive_names);
+		sk_free(drive_names);
 		return;
 	}
 
@@ -586,8 +577,8 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 			handle = nullptr;
 		}
 	}
-	free(filter);
-	free(filter_w);
+	sk_free(filter);
+	sk_free(filter_w);
 
 #elif defined(SK_OS_LINUX)
 	if (string_eq(directory_path, "")) {
@@ -620,7 +611,7 @@ void  platform_iterate_dir(const char *directory_path, void *callback_data, void
 
 char *platform_push_path_ref(char *path, const char *directory) {
 	char *result = platform_push_path_new(path, directory);
-	free(path);
+	sk_free(path);
 	return result;
 }
 
@@ -628,7 +619,7 @@ char *platform_push_path_ref(char *path, const char *directory) {
 
 char *platform_pop_path_ref(char *path) {
 	char *result = platform_pop_path_new(path);
-	free(path);
+	sk_free(path);
 	return result;
 }
 

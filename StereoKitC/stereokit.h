@@ -1,7 +1,5 @@
 #pragma once
 
-#define SK_32BIT_INDICES
-
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
 #define SK_VERSION_PATCH 6
@@ -544,6 +542,8 @@ SK_API bool32_t bounds_ray_intersect   (bounds_t bounds, ray_t ray, vec3 *out_pt
 SK_API bool32_t bounds_point_contains  (bounds_t bounds, vec3 pt);
 SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
+SK_API bounds_t bounds_grow_to_fit_pt  (bounds_t bounds, vec3 pt);
+SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_transform sk_default(nullptr));
 SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////
@@ -639,11 +639,7 @@ typedef struct vert_t {
 
 static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { vert_t v = { position, normal, texture_coordinates, vertex_color }; return v;  }
 
-#ifdef SK_32BIT_INDICES
 typedef uint32_t vind_t;
-#else
-typedef uint16_t vind_t;
-#endif
 
 /*Culling is discarding an object from the render pipeline!
   This enum describes how mesh faces get discarded on the graphics

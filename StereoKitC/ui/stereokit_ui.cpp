@@ -274,8 +274,8 @@ void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -385,8 +385,8 @@ void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices,
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -736,10 +736,10 @@ void ui_update() {
 
 void ui_update_late() {
 	ui_pop_surface();
-	if (skui_layers.count != 0) log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack.count != 1) log_err("ui: Mismatching number of id push/pop calls!");
-	if (skui_tint_stack.count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
-	if (skui_enabled_stack.count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
+	if (skui_layers                 .count != 0) log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack               .count != 1) log_err("ui: Mismatching number of id push/pop calls!");
+	if (skui_tint_stack             .count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
+	if (skui_enabled_stack          .count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
 	if (skui_preserve_keyboard_stack.count != 1) log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
 }
 
@@ -752,27 +752,29 @@ void ui_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	skui_sl_windows             .free();
-	skui_layers                 .free();
-	skui_id_stack               .free();
-	skui_font_stack             .free();
-	skui_tint_stack             .free();
-	skui_enabled_stack          .free();
-	skui_preserve_keyboard_stack.free();
+	skui_sl_windows              .free();
+	skui_layers                  .free();
+	skui_id_stack                .free();
+	skui_font_stack              .free();
+	skui_tint_stack              .free();
+	skui_enabled_stack           .free();
+	skui_preserve_keyboard_stack .free();
 	skui_preserve_keyboard_ids[0].free();
 	skui_preserve_keyboard_ids[1].free();
-	sound_release(skui_snd_interact);
-	sound_release(skui_snd_uninteract);
-	sound_release(skui_snd_grab);
-	sound_release(skui_snd_ungrab);
-	mesh_release(skui_box);
-	mesh_release(skui_cylinder);
-	mesh_release(skui_box_dbg);
-	material_release(skui_mat);
-	material_release(skui_mat_quad);
-	material_release(skui_mat_dbg);
-	material_release(skui_font_mat);
-	font_release(skui_font);
+	sound_release(skui_snd_interact);   skui_snd_interact   = nullptr;
+	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
+	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
+	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
+	mesh_release(skui_box);      skui_box      = nullptr;
+	mesh_release(skui_cylinder); skui_cylinder = nullptr;
+	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
+	mesh_release(skui_win_top);  skui_win_top  = nullptr;
+	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	material_release(skui_mat);      skui_mat      = nullptr;
+	material_release(skui_mat_quad); skui_mat_quad = nullptr;
+	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
+	material_release(skui_font_mat); skui_font_mat = nullptr;
+	font_release(skui_font); skui_font = nullptr;
 }
 
 ///////////////////////////////////////////

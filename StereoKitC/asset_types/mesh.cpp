@@ -25,8 +25,8 @@ void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
 
 	mesh->discard_data = !keep_data;
 	if (mesh->discard_data) {
-		free(mesh->verts); mesh->verts = nullptr;
-		free(mesh->inds ); mesh->inds  = nullptr;
+		sk_free(mesh->verts);
+		sk_free(mesh->inds );
 	}
 }
 
@@ -330,6 +330,8 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
 	}
 
+	XMVECTOR max = g_XMFltMin;
+	XMVECTOR min = g_XMFltMax;
 	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
@@ -353,8 +355,15 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		}
 		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
 		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+		min = XMVectorMin(min, new_pos);
+		max = XMVectorMax(max, new_pos);
 	}
 	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
+	
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	mesh->bounds.center     = {center    .m128_f32[0], center    .m128_f32[1], center    .m128_f32[2]};
+	mesh->bounds.dimensions = {dimensions.m128_f32[0], dimensions.m128_f32[1], dimensions.m128_f32[2]};
 }
 
 ///////////////////////////////////////////
@@ -371,13 +380,13 @@ mesh_t mesh_find(const char *id) {
 ///////////////////////////////////////////
 
 void mesh_set_id(mesh_t mesh, const char *id) {
-	assets_set_id(mesh->header, id);
+	assets_set_id(&mesh->header, id);
 }
 
 ///////////////////////////////////////////
 
 void mesh_addref(mesh_t mesh) {
-	assets_addref(mesh->header);
+	assets_addref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -456,7 +465,7 @@ const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
-	assets_releaseref(mesh->header);
+	assets_releaseref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -465,10 +474,10 @@ void mesh_destroy(mesh_t mesh) {
 	skg_mesh_destroy  (&mesh->gpu_mesh);
 	skg_buffer_destroy(&mesh->vert_buffer);
 	skg_buffer_destroy(&mesh->ind_buffer);
-	free(mesh->verts);
-	free(mesh->inds);
-	free(mesh->collision_data.pts   );     // XXX doesn't this fail when no colldata has been created?
-	free(mesh->collision_data.planes);
+	sk_free(mesh->verts);
+	sk_free(mesh->inds);
+	sk_free(mesh->collision_data.pts   );	// XXX doesn't this fail when no colldata has been created?
+	sk_free(mesh->collision_data.planes);
 	if (mesh->bvh_data)
 		mesh_bvh_destroy(mesh->bvh_data);
 	*mesh = {};
@@ -652,8 +661,8 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -722,8 +731,8 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -791,8 +800,8 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -860,8 +869,8 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -1020,8 +1029,8 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 

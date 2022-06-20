@@ -50,7 +50,7 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 		inds[c+5] = q;
 	}
 	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	free(inds);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -155,7 +155,7 @@ void sprite_drawer_shutdown() {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);
-		free(buffer.verts);
+		sk_free(buffer.verts);
 	}
 	sprite_buffers.clear();
 }

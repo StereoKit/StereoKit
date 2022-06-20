@@ -70,8 +70,8 @@ bool modelfmt_ply(model_t model, const char *filename, void *file_data, size_t f
 
 		model_add_subset(model, mesh, material, matrix_identity);
 
-		free(verts);
-		free(inds);
+		sk_free(verts);
+		sk_free(inds);
 	}
 
 	mesh_release    (mesh);

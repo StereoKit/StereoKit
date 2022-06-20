@@ -66,4 +66,5 @@ void demo_ui_update() {
 void demo_ui_shutdown() {
 	// Release everything
 	sprite_release(ui_sprite);
+	sprite_release(ui_search_sprite);
 }

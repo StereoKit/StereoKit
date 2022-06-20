@@ -316,7 +316,7 @@ bool32_t mic_start(const char *device_name) {
 void mic_stop() {
 	if (!au_recording) return;
 
-	free(au_mic_name);
+	sk_free(au_mic_name);
 	au_mic_name = nullptr;
 	ma_device_stop  (&au_mic_device);
 	ma_device_uninit(&au_mic_device);
@@ -420,6 +420,16 @@ void audio_update() {
 ///////////////////////////////////////////
 
 void audio_shutdown() {
+	// Stop any sounds that are still playing
+	for (int32_t i = 0; i < _countof(au_active_sounds); i++) {
+		if (au_active_sounds[i].sound != nullptr) {
+			sound_inst_t inst;
+			inst._id   = au_active_sounds[i].id;
+			inst._slot = (int16_t)i;
+			sound_inst_stop(inst);
+		}
+	}
+
 	mic_stop();
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	isac_destroy();

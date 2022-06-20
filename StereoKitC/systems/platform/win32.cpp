@@ -21,6 +21,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 HWND            win32_window              = nullptr;
+HINSTANCE       win32_hinst               = nullptr;
 skg_swapchain_t win32_swapchain           = {};
 bool            win32_swapchain_initialized = false;
 tex_t           win32_target              = {};
@@ -125,7 +126,7 @@ bool win32_start_post_xr() {
 		wc.hInstance,
 		nullptr);
 
-	free(app_name_w);
+	sk_free(app_name_w);
 	if (!win32_window) {
 		return false;
 	}
@@ -196,7 +197,8 @@ bool win32_start_flat() {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	if (!RegisterClassW(&wc)) { free(app_name_w); return false; }
+	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
+	win32_hinst = wc.hInstance;
 
 	RECT r;
 	r.left   = sk_settings.flatscreen_pos_x;
@@ -216,7 +218,7 @@ bool win32_start_flat() {
 		wc.hInstance,
 		nullptr);
 
-	free(app_name_w);
+	sk_free(app_name_w);
 
 	if( !win32_window ) return false;
 
@@ -252,6 +254,11 @@ void win32_stop_flat() {
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
 	win32_swapchain_initialized = false;
+
+	DestroyWindow(win32_window); win32_window = nullptr;
+	wchar_t* app_name_w = platform_to_wchar(sk_app_name);
+	UnregisterClassW(app_name_w, win32_hinst); win32_hinst = nullptr;
+	sk_free(app_name_w);
 }
 
 ///////////////////////////////////////////

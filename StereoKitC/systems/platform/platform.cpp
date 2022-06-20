@@ -17,7 +17,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool platform_init() {
-	// Set up any platform dependant variables
+	// Set up any platform dependent variables
 #if   defined(SK_OS_ANDROID)
 	bool result = android_init();
 #elif defined(SK_OS_LINUX)
@@ -272,6 +272,7 @@ void platform_stop_mode() {
 #endif
 	} break;
 	}
+	sk_display_mode = display_mode_none;
 }
 
 } // namespace sk

@@ -31,7 +31,7 @@ int32_t      sprite_map_count = 0;
 ///////////////////////////////////////////
 
 void sprite_set_id(sprite_t sprite, const char *id) {
-	assets_set_id(sprite->header, id);
+	assets_set_id(&sprite->header, id);
 }
 
 ///////////////////////////////////////////
@@ -131,7 +131,7 @@ sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char 
 ///////////////////////////////////////////
 
 void sprite_addref(sprite_t sprite) {
-	assets_addref(sprite->header);
+	assets_addref(&sprite->header);
 }
 
 ///////////////////////////////////////////
@@ -139,7 +139,7 @@ void sprite_addref(sprite_t sprite) {
 void sprite_release(sprite_t sprite) {
 	if (sprite == nullptr)
 		return;
-	assets_releaseref(sprite->header);
+	assets_releaseref(&sprite->header);
 }
 
 ///////////////////////////////////////////

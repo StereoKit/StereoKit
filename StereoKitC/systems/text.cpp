@@ -86,7 +86,7 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 		inds[c+5] = q;
 	}
 	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	free(inds);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -520,7 +520,7 @@ void text_shutdown() {
 		mesh_release(buffer.mesh);
 		font_release(buffer.font);
 		material_release(buffer.material);
-		free(buffer.verts);
+		sk_free(buffer.verts);
 	}
 
 	text_styles .free();
