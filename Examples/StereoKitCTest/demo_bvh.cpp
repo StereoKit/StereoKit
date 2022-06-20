@@ -11,7 +11,9 @@ using namespace std;
 
 model_t model_to_intersect;
 float   model_scale = 1.0f;
-pose_t  model_pose;
+matrix model_scale_matrix;
+bounds_t model_to_intersection_bounds;
+pose_t  model_pose = { 0,0,0, quat_identity };
 
 mesh_t  mesh_from, mesh_to;
 pose_t  from_pose, to_pose;
@@ -57,6 +59,12 @@ void demo_bvh_init() {
     if (m > 1.0f)
         model_scale = 1.0f / vec3_magnitude(b.dimensions);
 
+    model_scale_matrix = matrix_s(vec3{ model_scale, model_scale, model_scale });
+
+    model_to_intersection_bounds = model_get_bounds(model_to_intersect);
+    model_to_intersection_bounds.center *= model_scale;
+    model_to_intersection_bounds.dimensions *= model_scale;
+
     // Initial ray endpoints
     from_pose = {(b.center - 0.7f*b.dimensions)*model_scale, quat_identity};
     to_pose = {(b.center + 0.7f*b.dimensions)*model_scale, quat_identity};
@@ -69,14 +77,11 @@ void demo_bvh_init() {
 void demo_bvh_update() {
 
     // XXX add toggle model scale?
-    // XXX add showing start indices (but not exposed for model_...() call)?
     // XXX could add switch to disable isec testing (or one-shot), for large models
 
     // Model being intersected
 
-    matrix model_scale_matrix = matrix_s(vec3{model_scale,model_scale,model_scale});
-
-    ui_handle_begin("model", model_pose, model_get_bounds(model_to_intersect), false);
+    ui_handle_begin("model", model_pose, model_to_intersection_bounds, false);
 	model_draw     (model_to_intersect, model_scale_matrix);
     ui_handle_end  ();
 
