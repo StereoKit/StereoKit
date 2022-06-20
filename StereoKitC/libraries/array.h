@@ -86,7 +86,7 @@ Example usage:
 #endif
 #ifndef ARRAY_FREE
 #include <malloc.h>
-#define ARRAY_FREE ::free
+#define ARRAY_FREE sk::_sk_free
 #endif
 #ifndef ARRAY_REALLOC
 #include <malloc.h>
