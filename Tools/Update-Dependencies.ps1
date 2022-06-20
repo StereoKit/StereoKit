@@ -145,6 +145,8 @@ foreach($dep in $dependencies) {
         Write-Host "$($dep.Name) library file is missing, building $desiredVersion"
         $dep.NeedsBuilt = $true
         $dependenciesDirty = $true
+    } else {
+        Write-Host $dep.Name ": $currentVersion"
     }
 
     $dep.Version = $desiredVersion
