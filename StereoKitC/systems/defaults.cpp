@@ -189,6 +189,7 @@ bool defaults_init() {
 	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_clip_hlsl_zip   ); sk_default_shader_pbr_clip    = shader_create_mem(data, size);
+	sk_free(data);
 #undef SHADER_DECODE
 	
 	// Android seems to give us a hard time about this one, so let's fall

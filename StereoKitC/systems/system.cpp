@@ -27,8 +27,7 @@ bool              systems_initialized = false;
 int32_t systems_find_id(const char *name);
 bool    systems_sort   ();
 
-void    array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order);
-int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t **out_order);
+int32_t topological_sort      (sort_dependency_t *dependencies, int32_t count, int32_t *ref_order);
 int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, int32_t index, uint8_t *marks, int32_t *sorted_curr, int32_t *out_order);
 
 ///////////////////////////////////////////
@@ -80,11 +79,11 @@ bool systems_sort() {
 
 	// Sort sort the update order
 	if (result == 0) {
-		int32_t *update_order = nullptr;
+		int32_t *update_order = sk_malloc_t(int32_t, systems.count);
 
-		result = topological_sort(update_ids, (int32_t)systems.count, &update_order);
+		result = topological_sort(update_ids, (int32_t)systems.count, update_order);
 		if (result != 0) log_errf("Invalid update dependencies! Cyclic dependency detected at %s!", systems[result].name);
-		else array_reorder((void**)&systems, sizeof(system_t), (int32_t)systems.count, update_order);
+		else systems.reorder(update_order);
 
 		sk_free(update_order);
 	}
@@ -106,8 +105,8 @@ bool systems_sort() {
 
 	// Sort the init order
 	if (result == 0) {
-		sk_free(system_init_order);
-		result = topological_sort(init_ids, (int32_t)systems.count, &system_init_order);
+		system_init_order = sk_malloc_t(int32_t, systems.count);
+		result = topological_sort(init_ids, (int32_t)systems.count, system_init_order);
 		if (result != 0) log_errf("Invalid initialization dependencies! Cyclic dependency detected at %s!", systems[result].name);
 	}
 
@@ -221,11 +220,10 @@ void systems_shutdown() {
 
 ///////////////////////////////////////////
 
-int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t **out_order) {
+int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t *ref_order) {
 	// Topological sort, Depth-first algorithm:
 	// https://en.wikipedia.org/wiki/Topological_sorting
 
-	*out_order           = sk_malloc_t(int32_t, count);
 	uint8_t *marks       = sk_malloc_t(uint8_t, count);
 	int32_t  sorted_curr = count-1;
 	memset(marks, 0, sizeof(uint8_t) * count);
@@ -234,12 +232,10 @@ int32_t topological_sort(sort_dependency_t *dependencies, int32_t count, int32_t
 		for (int32_t i = 0; i < count; i++) {
 			if (marks[i] != 0)
 				continue;
-			int result = topological_sort_visit(dependencies, count, i, marks, &sorted_curr, *out_order);
+			int result = topological_sort_visit(dependencies, count, i, marks, &sorted_curr, ref_order);
 			// If we found a cyclic dependency, ditch out!
 			if (result != 0) {
 				sk_free(marks);
-				sk_free(*out_order);
-				*out_order = nullptr;
 				return result;
 			}
 		}
@@ -272,18 +268,5 @@ int32_t topological_sort_visit(sort_dependency_t *dependencies, int32_t count, i
 	return 0;
 }
 
-///////////////////////////////////////////
-
-void array_reorder(void **list, size_t item_size, int32_t count, int32_t *sort_order) {
-	uint8_t *src    = (uint8_t*)*list;
-	uint8_t *result = (uint8_t*)sk_malloc(item_size * count);
-
-	for (int32_t i = 0; i < count; i++) {
-		memcpy(&result[i * item_size], &src[sort_order[i] * item_size], item_size);
-	}
-
-	*list = result;
-	sk_free(src);
-}
 
 } // namespace sk

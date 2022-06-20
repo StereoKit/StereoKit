@@ -73,8 +73,8 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	data->file_data  = sk_calloc_t(void *, data->file_count);
-	data->file_sizes = sk_calloc_t(size_t, data->file_count);
+	data->file_data  = sk_malloc_t(void *, data->file_count);
+	data->file_sizes = sk_malloc_t(size_t, data->file_count);
 
 	// Load all files
 	int32_t     width  = 0;
@@ -159,8 +159,8 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	data->file_data  = sk_calloc_t(void *, data->file_count);
-	data->file_sizes = sk_calloc_t(size_t, data->file_count);
+	data->file_data  = sk_malloc_t(void *, data->file_count);
+	data->file_sizes = sk_malloc_t(size_t, data->file_count);
 
 	if (!platform_read_file(assets_file(data->file_names[0]), &data->file_data[0], &data->file_sizes[0])) {
 		log_warnf(tex_msg_load_failed, data->file_names[0]);
@@ -379,7 +379,7 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data,
 	tex_set_id(result, file);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
@@ -411,7 +411,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data, int32_t priority) {
 tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
 	tex_t result = tex_create(type);
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
@@ -514,7 +514,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	tex_set_id(result, file_id);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_t(tex_load_t, 1);
 	load_data->is_srgb    = srgb_data;
 	load_data->file_count = file_count;
 	load_data->file_names = sk_malloc_t(char *, file_count);
@@ -564,7 +564,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_set_id(result, equirect_id);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);

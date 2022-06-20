@@ -238,7 +238,23 @@ struct array_t {
 		qsort((uint8_t*)data, count, sizeof(_T), [](const void *a, const void *b) { 
 			size_t offset = (size_t)&((_T*)0->*key); // would love for a way to constexpr this
 			D fa = *(D*)((uint8_t*)a + offset), fb = *(D*)((uint8_t*)b + offset); return (int32_t)((fa < fb) - (fa > fb)); 
-		}); 
+		});
+	}
+
+	void _array_reorder(void** list, size_t item_size, int32_t count, int32_t* sort_order) {
+		uint8_t* src    = (uint8_t*)*list;
+		uint8_t* result = (uint8_t*)ARRAY_MALLOC(item_size * capacity);
+
+		for (int32_t i = 0; i < count; i++) {
+			memcpy(&result[i * item_size], &src[sort_order[i] * item_size], item_size);
+		}
+
+		*list = result;
+		ARRAY_FREE(src);
+	}
+	
+	void reorder(int32_t* item_order) {
+		_array_reorder((void**)&data, sizeof(T), count, item_order);
 	}
 };
 
@@ -283,10 +299,12 @@ struct hashmap_t {
 		return id;
 	}
 
-	T       *get     (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[(size_t)id]; }
-	const T &get_or  (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[(size_t)id]; }
-	int64_t  contains(const K &key)                         const { return hashes.binary_search(_hash(key)); }
-	void     free    ()                                           { hashes.free(); items.free(); }
+	T       *get      (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[(size_t)id]; }
+	const T &get_or   (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[(size_t)id]; }
+	int64_t  contains (const K &key)                         const { return hashes.binary_search(_hash(key)); }
+	void     free     ()                                           { hashes.free(); items.free(); }
+	void     remove   (const K& key)                               { int64_t id = hashes.binary_search(_hash(key)); if (id >= 0) { hashes.remove((size_t)id); items.remove((size_t)id); } }
+	void     remove_at(const int64_t at)                           { if (at >= 0) { hashes.remove(at); items.remove(at); } }
 };
 
 //////////////////////////////////////
