@@ -362,8 +362,8 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 	
 	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
 	XMVECTOR dimensions = XMVectorSubtract(max, min);
-	mesh->bounds.center     = {center    .m128_f32[0], center    .m128_f32[1], center    .m128_f32[2]};
-	mesh->bounds.dimensions = {dimensions.m128_f32[0], dimensions.m128_f32[1], dimensions.m128_f32[2]};
+	mesh->bounds.center     = math_fast_to_vec3(center);
+	mesh->bounds.dimensions = math_fast_to_vec3(dimensions);
 }
 
 ///////////////////////////////////////////

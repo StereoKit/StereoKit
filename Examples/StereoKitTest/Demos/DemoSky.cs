@@ -109,9 +109,13 @@ namespace StereoKitTest
 
 			lightMesh.Draw(lightSrcMat, Matrix.TS(Vec3.Zero, 3* U.cm), Color.HSV(lights[i].color));
 
-			dirty = UI.HSlider("H", ref lights[i].color.v.X, 0, 1, 0, 10 * U.cm) || dirty;
-			dirty = UI.HSlider("S", ref lights[i].color.v.Y, 0, 1, 0, 10 * U.cm) || dirty;
-			dirty = UI.HSlider("V", ref lights[i].color.v.Z, 0, 1, 0, 10 * U.cm) || dirty;
+			float h = lights[i].color.x;
+			float s = lights[i].color.y;
+			float v = lights[i].color.z;
+			dirty = UI.HSlider("H", ref h, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("S", ref s, 0, 1, 0, 10 * U.cm) || dirty;
+			dirty = UI.HSlider("V", ref v, 0, 1, 0, 10 * U.cm) || dirty;
+			lights[i].color = new Vec3(h, s, v);
 
 			UI.HandleEnd();
 			Lines.Add(
