@@ -449,6 +449,19 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
+const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
+	if (mesh->bvh_data != nullptr)
+		return mesh->bvh_data;
+	if (mesh->discard_data)
+		return nullptr;
+
+	mesh->bvh_data = mesh_bvh_create(mesh, 16);
+
+	return mesh->bvh_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
@@ -463,8 +476,10 @@ void mesh_destroy(mesh_t mesh) {
 	skg_buffer_destroy(&mesh->ind_buffer);
 	sk_free(mesh->verts);
 	sk_free(mesh->inds);
-	sk_free(mesh->collision_data.pts   );
+	sk_free(mesh->collision_data.pts   );	// XXX doesn't this fail when no colldata has been created?
 	sk_free(mesh->collision_data.planes);
+	if (mesh->bvh_data)
+		mesh_bvh_destroy(mesh->bvh_data);
 	*mesh = {};
 }
 
@@ -477,7 +492,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -489,8 +504,33 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
 	for (uint32_t i = 0; i < mesh->ind_count; i+=3) {
-		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
+
+		const plane_t& plane = data->planes[i / 3];
+
+		float denom = vec3_dot(model_space_ray.dir, plane.normal);
+
+		if (fabsf(denom) < 1e-6f)
+		{
+			// Ray direction (almost) perpendicular to plane, no intersection
 			continue;
+		}
+
+		if ((cull_mode == cull_front && denom < 0) || (cull_mode == cull_back && denom > 0))
+		{
+			// Front/back-face culling
+			// XXX is there a smaller test?
+			continue;
+		}
+
+		float t_hit = -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / denom;
+
+		if (t_hit < 0)
+		{
+			// Hit behind ray origin
+			continue;
+		}
+
+		pt = model_space_ray.pos + model_space_ray.dir * t_hit;
 
 		// point in triangle, implementation based on:
 		// https://blackpawn.com/texts/pointinpoly/default.html
@@ -527,6 +567,21 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 	return nearest_dist != FLT_MAX;
 }
+
+///////////////////////////////////////////
+
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+	vec3 result = {};
+
+	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);
+	if (bvh == nullptr)
+		return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
+
+	return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds, cull_mode);
+}
+
 ///////////////////////////////////////////
 
 bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
@@ -816,6 +871,76 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 	sk_free(verts);
 	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
+// Bottom always at origin, top at dir*depth
+mesh_t mesh_gen_cone(float diameter, float depth, vec3 dir, int32_t subdivisions) {
+	mesh_t result = mesh_create();
+	dir = vec3_normalize(dir);
+	float radius = diameter / 2;
+
+	vind_t subd = (vind_t)subdivisions;
+	int vert_count = (subdivisions+1) * 4 + 2;
+	int ind_count  = subdivisions * 12;
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
+
+	// Calculate any perpendicular vector
+	vec3 perp = vec3{dir.z, dir.z, -dir.x-dir.y};
+	if (vec3_magnitude_sq(perp) == 0)
+		perp = vec3{-dir.y-dir.z, dir.x, dir.x};
+
+	vec3 axis_x = vec3_normalize(vec3_cross(dir, perp));
+	vec3 axis_y = vec3_normalize(vec3_cross(dir, axis_x));
+	vec3 z_off  = dir * (depth / 2.f);
+	vec3 top_pos = dir * depth;
+	vind_t ind = 0;
+
+	for (vind_t i = 0; i <= subd; i++) {
+		float u   = ((float)i / subd);
+		float ang = u * (float)M_PI * 2;
+		float x   = cosf(ang);
+		float y   = sinf(ang);
+		vec3 normal  = axis_x * x + axis_y * y;
+		vec3 bot_pos = normal*radius;
+
+		// strip first
+		verts[i * 4  ] = { top_pos,  normal, {u,0}, {255,255,255,255} };
+		verts[i * 4+1] = { bot_pos,  normal, {u,1}, {255,255,255,255} };
+		// now circular faces
+		verts[i * 4+2] = { top_pos,  dir,    {u,0}, {255,255,255,255} };
+		verts[i * 4+3] = { bot_pos, -dir,    {u,1}, {255,255,255,255} };
+
+		if (i == subd) continue;
+
+		vind_t in = (i + 1) % (subd+1);
+		// Top slice
+		inds[ind++] = i  * 4 + 2;
+		inds[ind++] = in * 4 + 2;
+		inds[ind++] = (subd+1) * 4;
+		// Bottom slice
+		inds[ind++] = (subd+1) * 4+1;
+		inds[ind++] = in * 4 + 3;
+		inds[ind++] = i  * 4 + 3;
+		// Now edge strip quad
+		inds[ind++] = in * 4+1;
+		inds[ind++] = in * 4;
+		inds[ind++] = i  * 4;
+		inds[ind++] = i  * 4+1;
+		inds[ind++] = in * 4+1;
+		inds[ind++] = i  * 4;
+	}
+	// center points for the circle
+	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
+	verts[(subdivisions+1)*4+1] = { vec3{}, -dir, {0.5f,0.99f}, {255,255,255,255} };
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	free(verts);
+	free(inds);
 	return result;
 }
 

@@ -252,6 +252,10 @@ set(SK_SRC_LIBRARIES
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
+  StereoKitC/systems/bbox.h
+  StereoKitC/systems/bbox.cpp
+  StereoKitC/systems/bvh.h
+  StereoKitC/systems/bvh.cpp  
   StereoKitC/systems/defaults.h
   StereoKitC/systems/defaults.cpp
   StereoKitC/systems/input.h
@@ -389,6 +393,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_bvh.h
+    Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_desktop.h
     Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h
@@ -424,6 +430,20 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+endif()
+
+if (SK_BUILD_TESTS)
+  add_executable( bvh_test
+    Examples/StereoKitCTest/bvh_test.cpp
+  ) 
+
+  target_link_libraries( bvh_test
+    StereoKitC
+  )
+
+  if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
+    target_compile_options(bvh_test PRIVATE "/MP")
+  endif()  
 endif()
 
 ###########################################

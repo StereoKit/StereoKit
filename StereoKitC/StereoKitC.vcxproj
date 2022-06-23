@@ -150,6 +150,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="spherical_harmonics.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="systems\audio.cpp" />
+    <ClCompile Include="systems\bbox.cpp" />
+    <ClCompile Include="systems\bvh.cpp" />
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\hand\hand_mouse.cpp" />
     <ClCompile Include="systems\hand\hand_override.cpp" />
@@ -233,6 +235,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stereokit_ui.h" />
     <ClInclude Include="systems\audio.h" />
+    <ClInclude Include="systems\bbox.h" />
+    <ClInclude Include="systems\bvh.h" />
     <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\hand\hand_mouse.h" />
     <ClInclude Include="systems\hand\hand_override.h" />

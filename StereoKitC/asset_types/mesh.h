@@ -6,6 +6,7 @@
 
 #include "../stereokit.h"
 #include "../sk_math_dx.h"
+#include "../systems/bvh.h"
 #include "assets.h"
 #include "mesh_.h"
 
@@ -38,6 +39,7 @@ struct _mesh_t {
 	vert_t*          verts;
 	vind_t*          inds;
 	mesh_collision_t collision_data;
+	mesh_bvh_t*      bvh_data;
 	mesh_weights_t   skin_data;
 };
 

@@ -193,6 +193,12 @@
     <ClCompile Include="libraries\cgltf.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="systems\bbox.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\bvh.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -447,6 +453,12 @@
     </ClInclude>
     <ClInclude Include="asset_types\texture_.h">
       <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\bbox.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\bvh.h">
+      <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
