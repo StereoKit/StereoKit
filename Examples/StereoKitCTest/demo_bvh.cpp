@@ -173,7 +173,7 @@ void demo_bvh_update() {
 
         vec3 world_isec_point = matrix_transform_pt(model_to_world_matrix, intersection.pos);
         // Ignore scale for normal
-        vec3 world_isec_normal = matrix_transform_dir(matrix_invert(pose_matrix(model_pose)), intersection.dir);
+        vec3 world_isec_normal = matrix_transform_dir(pose_matrix(model_pose), intersection.dir);
 
         mesh_draw(isec_sphere, ray_material, matrix_t(world_isec_point));
 
@@ -184,19 +184,16 @@ void demo_bvh_update() {
         {
             //log_infof("%d\n", isec_start_inds);
             // Highlight intersected triangle
-            vert_t *verts;
-            vind_t *inds;
-            int32_t vcount, icount;
 
-            mesh_get_verts(isec_mesh, verts, vcount, memory_reference);
-            mesh_get_inds(isec_mesh, inds, icount, memory_reference);
+            vert_t v1, v2, v3;
+            mesh_get_triangle(isec_mesh, isec_start_inds, &v1, &v2, &v3);
 
             vec3 p = matrix_transform_pt(model_to_world_matrix,
-                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds]].pos));
+                matrix_transform_pt(isec_matrix, v1.pos));
             vec3 q = matrix_transform_pt(model_to_world_matrix,
-                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds+1]].pos));
+                matrix_transform_pt(isec_matrix, v2.pos));
             vec3 r = matrix_transform_pt(model_to_world_matrix,
-                matrix_transform_pt(isec_matrix, verts[inds[isec_start_inds+2]].pos));
+                matrix_transform_pt(isec_matrix, v3.pos));
 
             line_add(p, q, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
             line_add(q, r, color32{0,255,0,255}, color32{0,255,0,255}, 0.005f);
