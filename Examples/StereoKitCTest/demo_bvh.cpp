@@ -9,7 +9,7 @@ using namespace std;
 
 ///////////////////////////////////////////
 
-model_t model_to_intersect;
+model_t model_to_intersect = {};
 float   model_scale = 1.0f;
 matrix model_scale_matrix;
 bounds_t model_to_intersection_bounds;
@@ -20,13 +20,43 @@ pose_t  from_pose, to_pose;
 ray_t   world_ray, model_ray;
 ray_t   intersection;
 
-material_t model_material;
 material_t ray_material;
 mesh_t  isec_sphere;
 
+float intersect_time = 0;
 bool32_t use_bvh = true;
 bool have_intersection;
 cull_ cull_mode;
+
+///////////////////////////////////////////
+
+void demo_bvh_load_model(const char* filename) {
+    model_release(model_to_intersect);
+	model_to_intersect = model_create_file(filename);
+
+    log_infof("%d subsets", model_subset_count(model_to_intersect));
+    for (int i = 0; i < model_subset_count(model_to_intersect); i++)
+    {
+        mesh_t mesh = model_get_mesh(model_to_intersect, i);
+        log_infof("mesh[%d] %d vertices, %d triangles", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
+    }
+
+    // Scale large models to unit size
+    bounds_t b = model_get_bounds(model_to_intersect);
+    float    m = vec3_magnitude  (b.dimensions);
+    if (m > 1.0f)
+        model_scale = 1.0f / vec3_magnitude(b.dimensions);
+
+    model_scale_matrix = matrix_s(vec3{ model_scale, model_scale, model_scale });
+
+    model_to_intersection_bounds = model_get_bounds(model_to_intersect);
+    model_to_intersection_bounds.center *= model_scale;
+    model_to_intersection_bounds.dimensions *= model_scale;
+
+    // Initial ray endpoints
+    from_pose = {(b.center - 0.7f*b.dimensions)*model_scale, quat_identity};
+    to_pose   = {(b.center + 0.7f*b.dimensions)*model_scale, quat_identity};
+}
 
 ///////////////////////////////////////////
 
@@ -40,34 +70,7 @@ void demo_bvh_init() {
 
     isec_sphere = mesh_gen_sphere(0.01f, 8);
 
-	// Load model_to_intersect 
-	model_to_intersect = model_create_file("Radio.glb");
-    //model_to_intersect = model_create_file("suzanne.obj");
-
-    log_infof("%d subsets", model_subset_count(model_to_intersect));
-    for (int i = 0; i < model_subset_count(model_to_intersect); i++)
-    {
-        mesh_t mesh = model_get_mesh(model_to_intersect, i);
-        log_infof("mesh[%d] %d vertices, %d triangles", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
-    }
-
-    model_material = material_find(default_id_material);
-
-    // Scale large models to unit size
-    bounds_t b = model_get_bounds(model_to_intersect);
-    float m = vec3_magnitude(b.dimensions);
-    if (m > 1.0f)
-        model_scale = 1.0f / vec3_magnitude(b.dimensions);
-
-    model_scale_matrix = matrix_s(vec3{ model_scale, model_scale, model_scale });
-
-    model_to_intersection_bounds = model_get_bounds(model_to_intersect);
-    model_to_intersection_bounds.center *= model_scale;
-    model_to_intersection_bounds.dimensions *= model_scale;
-
-    // Initial ray endpoints
-    from_pose = {(b.center - 0.7f*b.dimensions)*model_scale, quat_identity};
-    to_pose = {(b.center + 0.7f*b.dimensions)*model_scale, quat_identity};
+    demo_bvh_load_model("Radio.glb");
 
     cull_mode = cull_back;
 }
@@ -75,6 +78,46 @@ void demo_bvh_init() {
 ///////////////////////////////////////////
 
 void demo_bvh_update() {
+    static pose_t window_pose = pose_t{ {0.6f,0,-0.25f}, quat_lookat({0.25f,0.0f,0.0f}, {0,0,0}) };
+    ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
+
+    if (ui_button("Load Model")) {
+        file_filter_t picker_filter[] = { {".glb"}, {".gltf"} };
+        platform_file_picker(picker_mode_open, nullptr, [](void*, bool32_t confirm, const char* filename) {
+            if (confirm)
+                demo_bvh_load_model(filename);
+        }, picker_filter, 2);
+    }
+
+    ui_toggle("Use BVH", use_bvh);
+
+    bool32_t cull_mode_back = cull_mode == cull_back;
+    bool32_t cull_mode_front = cull_mode == cull_front;
+    bool32_t cull_mode_none = cull_mode == cull_none;
+
+    ui_text("Cull: "); ui_sameline();
+    if (ui_toggle("Back", cull_mode_back))
+        cull_mode = cull_back;
+    ui_sameline();
+    if (ui_toggle("Front", cull_mode_front))
+        cull_mode = cull_front;
+    ui_sameline();
+    if (ui_toggle("None", cull_mode_none))
+        cull_mode = cull_none;
+
+    float time_ms = 1000*(intersect_time);
+    if (time_ms < 0.1f)
+        ui_text("< 0.1ms");
+    else
+    {
+        char s[64];
+        snprintf(s, 64, "%.3f ms", time_ms);
+        ui_text(s);
+    }
+    if (ui_button("Reset pose"))
+        model_pose = pose_t{vec3{}, quat_identity};
+
+    ui_window_end();
 
     // XXX add toggle model scale?
     // XXX could add switch to disable isec testing (or one-shot), for large models
@@ -118,8 +161,9 @@ void demo_bvh_update() {
     else
         have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection, cull_mode);
 
-    const double t1 = time_get_raw();    
-        
+    const double t1 = time_get_raw();
+    intersect_time = t1 - t0;
+
     // Intersection result
 
     if (have_intersection)
@@ -164,39 +208,6 @@ void demo_bvh_update() {
         // Red: no intersection
         line_add(from_pose.position, to_pose.position, color32{255,0,0,255}, color32{255,0,0,255}, 0.005f);
     }
-
-    static pose_t window_pose = pose_t{ {0.6f,0,-0.25f}, quat_lookat({0.25f,0.0f,0.0f}, {0,0,0}) };
-    ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
-
-    ui_toggle("Use BVH", use_bvh);
-
-    bool32_t cull_mode_back = cull_mode == cull_back;
-    bool32_t cull_mode_front = cull_mode == cull_front;
-    bool32_t cull_mode_none = cull_mode == cull_none;
-
-    ui_text("Cull: "); ui_sameline();
-    if (ui_toggle("Back", cull_mode_back))
-        cull_mode = cull_back;
-    ui_sameline();
-    if (ui_toggle("Front", cull_mode_front))
-        cull_mode = cull_front;
-    ui_sameline();
-    if (ui_toggle("None", cull_mode_none))
-        cull_mode = cull_none;
-
-    float time_ms = 1000*(t1-t0);
-    if (time_ms < 0.1f)
-        ui_text("< 0.1ms");
-    else
-    {
-        char s[64];
-        snprintf(s, 64, "%.3f ms", time_ms);
-        ui_text(s);
-    }
-    if (ui_button("Reset pose"))
-        model_pose = pose_t{vec3{}, quat_identity};
-
-    ui_window_end();        
 }
 
 ///////////////////////////////////////////
