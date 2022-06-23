@@ -42,6 +42,7 @@ Paul Melis, SURF (paul.melis@surf.nl)
 
 //#define VERBOSE_BUILD
 //#define VERBOSE_INTERSECTION
+//#define VERBOSE_STATS
 
 namespace sk {
 
@@ -76,16 +77,6 @@ bvh_stats_clear(bvh_stats_t *stats)
     stats->num_inner_nodes = 0;
     stats->max_leaf_size = 0;
     stats->num_forced_leafs = 0;
-}
-
-static void
-bvh_stats_print(const bvh_stats_t *stats)
-{
-    printf("... depth %d\n", stats->depth);
-    printf("... %d leaf nodes, %d inner nodes\n",
-        stats->num_leafs, stats->num_inner_nodes);
-    printf("... maximum leaf size %d\n", stats->max_leaf_size);
-    printf("... %d forced leafs (%.1f%%)\n", stats->num_forced_leafs, 100.0f*stats->num_forced_leafs/stats->num_leafs);
 }
 
 static void
@@ -463,6 +454,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 
     const double t1 = time_get_raw();
 
+#if defined(VERBOSE_STATS)
     // XXX use log function
     printf("BVH construction done in %.1fms\n", 1000*(t1-t0));
 
@@ -474,8 +466,13 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
         printf("... %d triangles\n", bvh->the_mesh->ind_count/3);
         bvh_stats_t stats;
         mesh_bvh_statistics(bvh, &stats, acc_leaf_size);
-        bvh_stats_print(&stats);
+        printf("... depth %d\n", stats.depth);
+        printf("... %d leaf nodes, %d inner nodes\n",
+            stats.num_leafs, stats.num_inner_nodes);
+        printf("... maximum leaf size %d\n", stats.max_leaf_size);
+        printf("... %d forced leafs (%.1f%%)\n", stats.num_forced_leafs, 100.0f * stats.num_forced_leafs / stats.num_leafs);
     }
+#endif
 
     // Clean up
 

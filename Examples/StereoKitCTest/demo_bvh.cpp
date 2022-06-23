@@ -44,11 +44,11 @@ void demo_bvh_init() {
 	model_to_intersect = model_create_file("Radio.glb");
     //model_to_intersect = model_create_file("suzanne.obj");
 
-    printf("%d subsets\n", model_subset_count(model_to_intersect));
-    for (int i = 0; i < model_subset_count(model_to_intersect); i++)        
+    log_infof("%d subsets", model_subset_count(model_to_intersect));
+    for (int i = 0; i < model_subset_count(model_to_intersect); i++)
     {
         mesh_t mesh = model_get_mesh(model_to_intersect, i);
-        printf("mesh[%d] %d vertices, %d triangles\n", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
+        log_infof("mesh[%d] %d vertices, %d triangles", i, mesh_get_vert_count(mesh), mesh_get_ind_count(mesh)/3);
     }
 
     model_material = material_find(default_id_material);
@@ -138,7 +138,7 @@ void demo_bvh_update() {
 
         if (isec_mesh != nullptr)
         {
-            //printf("%d\n", isec_start_inds);
+            //log_infof("%d\n", isec_start_inds);
             // Highlight intersected triangle
             vert_t *verts;
             vind_t *inds;
