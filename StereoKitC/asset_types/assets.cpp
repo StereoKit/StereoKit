@@ -456,7 +456,7 @@ void assets_add_task(asset_task_t src_task) {
 	// to render sort items. We're duplicating it here without templating to
 	// avoid the issue for now.
 	int64_t idx = -1;
-	int64_t l = 0, r = asset_thread_tasks.count - 1;
+	int64_t l = 0, r = (int64_t)asset_thread_tasks.count - 1;
 	while (l <= r) {
 		int64_t mid     = (l + r) / 2;
 		int64_t mid_val = asset_thread_tasks[(size_t)mid]->sort;
