@@ -31,6 +31,11 @@ struct asset_load_callback_t {
 	void *context;
 };
 
+struct asset_thread_t {
+	thrd_id_t id;
+	bool32_t  running;
+};
+
 ///////////////////////////////////////////
 
 array_t<asset_header_t *>      assets = {};
@@ -45,14 +50,14 @@ array_t<asset_header_t *>      assets_load_events = {};
 
 ///////////////////////////////////////////
 
-thrd_id_t              asset_thread_id       = {};
-bool32_t               asset_thread_running  = false;
+array_t<asset_thread_t>asset_threads         = {};
 bool32_t               asset_thread_enabled  = false;
 array_t<asset_task_t*> asset_thread_tasks    = {};
 mtx_t                  asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
 
-int32_t asset_thread(void *);
+int32_t asset_thread   (void *);
+void    asset_step_task();
 
 ///////////////////////////////////////////
 
@@ -320,8 +325,17 @@ bool assets_init() {
 	mtx_init(&asset_thread_task_mtx,           mtx_plain);
 	mtx_init(&assets_load_event_lock,          mtx_plain);
 
-	thrd_t thread = {};
-	thrd_create(&thread, asset_thread, nullptr);
+#if !defined(__EMSCRIPTEN__)
+	asset_threads.resize(3);
+#endif
+	asset_thread_enabled = true;
+	for (size_t i = 0; i < asset_threads.capacity; i++)
+	{
+		asset_threads.add({});
+		asset_thread_t* th = &asset_threads.last();
+		thrd_t thread = {};
+		thrd_create(&thread, asset_thread, th);
+	}
 
 	return true;
 }
@@ -330,6 +344,12 @@ bool assets_init() {
 
 array_t<asset_load_callback_t> assets_load_call_list = {};
 void assets_update() {
+	// If we have no asset threads for some reason (like WASM), then we'll need
+	// to make sure assets still get loaded here!
+	if (asset_threads.count <= 0) {
+		asset_step_task();
+	}
+
 	// destroy objects where the request came from another thread
 	mtx_lock(&assets_multithread_destroy_lock);
 	for (size_t i = 0; i < assets_multithread_destroy.count; i++) {
@@ -370,10 +390,16 @@ void assets_update() {
 
 void assets_shutdown() {
 	asset_thread_enabled = false;
-	while (asset_thread_running) {
-		assets_update();
-		thrd_yield();
+	for (size_t i = 0; i < asset_threads.count; i++) {
+		while (asset_threads[i].running) {
+			assets_update();
+			thrd_yield();
+		}
 	}
+	asset_threads.free();
+
+	mtx_destroy(&asset_thread_task_mtx);
+	asset_thread_tasks.free();
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
@@ -479,94 +505,101 @@ void assets_task_set_complexity(asset_task_t *task, int32_t complexity) {
 
 ///////////////////////////////////////////
 
-int32_t asset_thread(void *) {
-	asset_thread_id = thrd_id_current();
-	asset_thread_running = true;
-	asset_thread_enabled = true;
+void asset_step_task() {
+	// Pop out the task we want to work on
+	mtx_lock(&asset_thread_task_mtx);
+	if (asset_thread_tasks.count <= 0) { mtx_unlock(&asset_thread_task_mtx); return; }
+	asset_task_t* task = asset_thread_tasks[0];
+	asset_thread_tasks.remove(0);
+	mtx_unlock(&asset_thread_task_mtx);
 
-	while (asset_thread_enabled || asset_thread_tasks.count>0) {
-		for (size_t i = 0; i < asset_thread_tasks.count; i++) {
-			asset_task_t *task = asset_thread_tasks[i];
-			// Remove the task if it has completed all its actions.
-			if (task->action_curr >= task->action_count) {
+	asset_load_action_t* action = &task->actions[task->action_curr];
+	if (action->thread_affinity == asset_thread_asset) {
+		// Execute the asset loading action!
+		bool result = action->action(task, task->asset, task->load_data);
 
-				// If it was successfully loaded, we'll want to notify on_load,
-				// but we do want to skip this if it was removed because of an
-				// issue during load.
-				if (task->asset->state >= asset_state_loaded) {
-					mtx_lock(&assets_load_event_lock);
-					assets_load_events.add(task->asset);
-					mtx_unlock(&assets_load_event_lock);
-				}
+		if (result == false) {
+			// On failure, send an error message, and move to the end
+			// of the action list.
+			if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
+			task->action_curr = task->action_count;
+		}
+		else {
+			// On success, move to the next action in the task!
+			task->action_curr += 1;
+		}
+	} else if (action->thread_affinity == asset_thread_gpu) {
+		if (task->gpu_started == false) {
+			task->gpu_started = true;
 
-				mtx_lock(&asset_thread_task_mtx);
-				asset_tasks_finished += 1;
-				asset_thread_tasks.remove(i);
-				mtx_unlock(&asset_thread_task_mtx);
-
-				i--;
-
-				if (task->free_data != nullptr) task->free_data (task->asset, task->load_data);
-				assets_releaseref_threadsafe(task->asset);
-				sk_free(task);
-				continue;
-			}
-
-			asset_load_action_t *action = &task->actions[task->action_curr];
-			if (action->thread_affinity == asset_thread_asset) {
-				// Execute the asset loading action!
+			// Set up a job for the GPU thread
+			task->gpu_job.data = task;
+			task->gpu_job.asset_job = [](void* data) {
+				asset_task_t* task = (asset_task_t*)data;
+				asset_load_action_t* action = &task->actions[task->action_curr];
 				bool result = action->action(task, task->asset, task->load_data);
 
-				if (result == false) {
-					// On failure, send an error message, and move to the end
-					// of the action list.
-					if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
-					task->action_curr = task->action_count;
-				} else {
-					// On success, move to the next action in the task!
-					task->action_curr += 1;
-				}
-				break;
-			} else if (action->thread_affinity == asset_thread_gpu) {
-				if (task->gpu_started == false) {
-					task->gpu_started = true;
+				return (bool32_t)result;
+			};
 
-					// Set up a job for the GPU thread
-					task->gpu_job.data      = task;
-					task->gpu_job.asset_job = [](void *data) {
-						asset_task_t        *task   = (asset_task_t*)data;
-						asset_load_action_t *action = &task->actions[task->action_curr];
-						bool result = action->action(task, task->asset, task->load_data);
-						
-						return (bool32_t)result;
-					};
-
-					// Add the job to the list
-					mtx_lock(&assets_job_lock);
-					assets_gpu_jobs.add(&task->gpu_job);
-					mtx_unlock(&assets_job_lock);
-				} else if (task->gpu_job.finished) {
-					if (task->gpu_job.success == false) {
-						// On failure, send an error message, and move to
-						// the end of the action list.
-						task->asset->state = asset_state_error;
-						if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
-						task->action_curr = task->action_count;
-					} else {
-						// On success, move to the next action in the task!
-						task->action_curr += 1;
-					}
-					task->gpu_job     = {};
-					task->gpu_started = false;
-					break;
-				}
+			// Add the job to the list
+			mtx_lock(&assets_job_lock);
+			assets_gpu_jobs.add(&task->gpu_job);
+			mtx_unlock(&assets_job_lock);
+		} else if (task->gpu_job.finished) {
+			if (task->gpu_job.success == false) {
+				// On failure, send an error message, and move to
+				// the end of the action list.
+				task->asset->state = asset_state_error;
+				if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
+				task->action_curr = task->action_count;
 			}
+			else {
+				// On success, move to the next action in the task!
+				task->action_curr += 1;
+			}
+			task->gpu_job = {};
+			task->gpu_started = false;
 		}
+	}
+
+	// Put it back in when we're done!
+	if (task->action_curr < task->action_count) {
+		mtx_lock(&asset_thread_task_mtx);
+		asset_thread_tasks.insert(0, task);
+		mtx_unlock(&asset_thread_task_mtx);
+	} else {
+		// Or skip putting it back if it's complete :)
+		asset_tasks_finished += 1;
+
+		// If it was successfully loaded, we'll want to notify on_load, but we
+		// do want to skip this if it was removed because of an issue during
+		// load.
+		if (task->asset->state >= asset_state_loaded) {
+			mtx_lock(&assets_load_event_lock);
+			assets_load_events.add(task->asset);
+			mtx_unlock(&assets_load_event_lock);
+		}
+
+		if (task->free_data != nullptr) task->free_data(task->asset, task->load_data);
+		assets_releaseref_threadsafe(task->asset);
+		sk_free(task);
+	}
+}
+
+///////////////////////////////////////////
+
+int32_t asset_thread(void *thread_inst_obj) {
+	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
+	thread->id      = thrd_id_current();
+	thread->running = true;
+
+	while (asset_thread_enabled || asset_thread_tasks.count>0) {
+		asset_step_task();
 		thrd_yield();
 	}
-	mtx_destroy(&asset_thread_task_mtx);
-	asset_thread_tasks.free();
-	asset_thread_running = false;
+
+	thread->running = false;
 	return 0;
 }
 
@@ -576,9 +609,13 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 	if (asset->state >= state || asset->state < 0)
 		return;
 
-	if (thrd_id_equal(thrd_id_current(), asset_thread_id)) {
-		log_err("assets_block_ should not be called on the assets thread!");
-		return;
+	thrd_id_t curr_id = thrd_id_current();
+	for (size_t i = 0; i < asset_threads.count; i++)
+	{
+		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
+			log_err("assets_block_ should not be called on the assets thread!");
+			return;
+		}
 	}
 
 	while (asset->state < state && asset->state >= 0) {
@@ -592,10 +629,15 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 ///////////////////////////////////////////
 
 void assets_block_for_priority(int32_t priority) {
-	if (thrd_id_equal(thrd_id_current(), asset_thread_id)) {
-		log_err("assets_block_ should not be called on the assets thread!");
-		return;
+	thrd_id_t curr_id = thrd_id_current();
+	for (size_t i = 0; i < asset_threads.count; i++)
+	{
+		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
+			log_err("assets_block_ should not be called on the assets thread!");
+			return;
+		}
 	}
+	
 
 	// This handles if the user passes in INT_MAX
 	int32_t curr_priority = assets_current_task_priority();
