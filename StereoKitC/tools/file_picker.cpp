@@ -373,13 +373,15 @@ void file_picker_update() {
 
 		// Start at the end, and look backwards until we rin out of room!
 		// That's the fragment we'll start with
-		for (int32_t i = start; i >= 0; i--) {
-			float size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding*2);
-			if (width + size > max_width) {
-				break;
+		if (fp_path.fragments.count > 0) {
+			for (int32_t i = start; i >= 0; i--) {
+				float size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2);
+				if (width + size > max_width) {
+					break;
+				}
+				start = i;
+				width += size + gutter;
 			}
-			start = i;
-			width += size + gutter;
 		}
 		// Draw the fragment crumbs as clickable buttons
 		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{max_width, line_height});
