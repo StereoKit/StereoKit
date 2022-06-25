@@ -211,8 +211,10 @@ void common_update() {
 			scene_set_active(demos[i]);
 		}
 	}
+#if !defined(__EMSCRIPTEN__)
 	ui_hseparator();
 	if (ui_button("Exit")) sk_quit();
+#endif
 	ui_window_end();
 
 	ruler_window();
