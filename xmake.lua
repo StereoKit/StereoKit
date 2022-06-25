@@ -188,7 +188,7 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
                 "-s FULL_ES3=1",
                 "-s ALLOW_MEMORY_GROWTH=1",
                 "-s FORCE_FILESYSTEM=1",
-                "--preload-file Examples/Assets",
+                "--preload-file Examples/Assets@/Assets",
                 "-s -Oz",
                 "-s ENVIRONMENT=web")
 
