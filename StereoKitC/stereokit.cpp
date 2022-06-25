@@ -162,7 +162,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Rest of the systems
 	system_t sys_defaults = { "Defaults" };
-	const char *default_deps[] = { "Platform" };
+	const char *default_deps[] = { "Platform", "Assets" };
 	sys_defaults.init_dependencies     = default_deps;
 	sys_defaults.init_dependency_count = _countof(default_deps);
 	sys_defaults.func_initialize       = defaults_init;
@@ -213,7 +213,10 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_renderer);
 
 	system_t sys_assets = { "Assets" };
+	const char* assets_deps       [] = {"Platform"};
 	const char *assets_update_deps[] = {"FrameRender"};
+	sys_assets.init_dependencies       = assets_deps;
+	sys_assets.init_dependency_count   = _countof(assets_deps);
 	sys_assets.update_dependencies     = assets_update_deps;
 	sys_assets.update_dependency_count = _countof(assets_update_deps);
 	sys_assets.func_initialize         = assets_init;

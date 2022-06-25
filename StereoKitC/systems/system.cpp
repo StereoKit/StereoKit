@@ -181,7 +181,7 @@ void systems_shutdown() {
 			systems[index].func_shutdown();
 
 			// end timing
-			systems[i].profile_shutdown_duration = stm_since(start);
+			systems[index].profile_shutdown_duration = stm_since(start);
 		}
 	}
 
