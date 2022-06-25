@@ -225,7 +225,7 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 	void    *face_data[6] = {};
 	size_t   size         = (size_t)tex->width*(size_t)tex->height*tex_format_size(equirect->format);
 	tex_set_colors(face, tex->width, tex->height, nullptr);
-	for (size_t i = 0; i < 6; i++) {
+	for (int32_t i = 0; i < 6; i++) {
 		material_set_vector(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
 		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
 		material_set_vector(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
@@ -267,7 +267,7 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 	tex_release(equirect);
 
 	tex_set_color_arr(tex, tex->width, tex->height, (void**)&face_data, 6);
-	for (size_t i = 0; i < 6; i++) {
+	for (int32_t i = 0; i < 6; i++) {
 		sk_free(face_data[i]);
 	}
 
@@ -1150,7 +1150,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 		}
 	}
 
-	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
+	tex_set_color_arr(result, size, size, (void**)data, 6);
 
 	for (int32_t i = 0; i < 6; i++) {
 		sk_free(data[i]);
@@ -1231,7 +1231,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 		}
 	}
 
-	tex_set_color_arr(result, (int32_t)size, (int32_t)size, (void**)data, 6);
+	tex_set_color_arr(result, size, size, (void**)data, 6);
 
 	for (int32_t i = 0; i < 6; i++) {
 		sk_free(data[i]);

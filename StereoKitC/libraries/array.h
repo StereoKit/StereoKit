@@ -16,9 +16,6 @@ array.h
 	should be better for most use cases, this is particularly handy for data 
 	you don't know the whole story about, or when loading data from files.
 
-	Notes: array.h uses size_t instead of int32_t for performance. It 
-	eliminates at least one ASM instruction in access and set code.
-
 Example usage:
 
 	array_t<vec3> vertices = {};
@@ -41,7 +38,7 @@ Example usage:
 	vertices.insert(at, vec3{0, 0.5f, 0});
 
 	// standard array access
-	for (size_t i=0; i<vertices.count; i+=1) {
+	for (int32_t i=0; i<vertices.count; i+=1) {
 		vertices[i] += vec3{1,1,1};
 	}
 
@@ -51,7 +48,7 @@ Example usage:
 	// Array views allow you to work with just a single component as if it
 	// was an array of its own.
 	array_view_t<float> heights = array_view_create(vertices, &vec3::y);
-	for (size_t i=0; i<heights.count; i+=1) {
+	for (int32_t i=0; i<heights.count; i+=1) {
 		heights[i] = 10;
 	}
 
@@ -114,18 +111,18 @@ Example usage:
 template <typename T>
 struct array_view_t {
 	void  *data;
-	size_t count;
+	int32_t count;
 
-	size_t stride;
-	size_t offset;
+	int32_t stride;
+	size_t  offset;
 
-	void each(void (*e)(T &))      { for (size_t i=0; i<count; i++) e((T&)((uint8_t*)data + i*stride + offset)); }
+	void each(void (*e)(T &))      { for (int32_t i=0; i<count; i++) e((T&)((uint8_t*)data + i*stride + offset)); }
 	T   &last()             const  { return (T&)((uint8_t*)data + (count-1)*stride + offset); }
 	T   *copy_deinterlace() const;
 
-	inline void set        (size_t id, const T &val) { *(T*)((uint8_t*)data + id*stride + offset) = val; }
-	inline T   &get        (size_t id) const         { return ((T*)((uint8_t*)data + id*stride + offset))[0]; }
-	inline T   &operator[] (size_t id) const         { return ((T*)((uint8_t*)data + id*stride + offset))[0]; }
+	inline void set        (int32_t id, const T &val) { *(T*)((uint8_t*)data + id*stride + offset) = val; }
+	inline T   &get        (int32_t id) const         { return ((T*)((uint8_t*)data + id*stride + offset))[0]; }
+	inline T   &operator[] (int32_t id) const         { return ((T*)((uint8_t*)data + id*stride + offset))[0]; }
 };
 
 //////////////////////////////////////
@@ -134,69 +131,69 @@ struct array_view_t {
 
 template <typename T>
 struct array_t {
-	T     *data;
-	size_t count;
-	size_t capacity;
+	T      *data;
+	int32_t count;
+	int32_t capacity;
 
-	size_t      add        (const T &item)             { if (count+1   > capacity) { resize(capacity * 2 < 4         ? 4         : capacity * 2); } data[count] = item; count += 1; return count - 1; }
-	void        add_range  (const T *list, size_t num) { if (count+num > capacity) { resize(capacity * 2 < count+num ? count+num : capacity * 2); } ARRAY_MEMCPY(&data[count], list, sizeof(T)*num); count += num; }
-	void        insert     (size_t at, const T &item);
-	void        resize     (size_t to_capacity);
-	void        trim       ()                        { resize(count); }
-	void        remove     (size_t at);
-	void        pop        ()                        { remove(count - 1); }
-	void        clear      ()                        { count = 0; }
-	T          &last       () const                  { return data[count - 1]; }
-	inline void set        (size_t id, const T &val) { data[id] = val; }
-	inline T   &get        (size_t id) const         { return data[id]; }
-	inline T   &operator[] (size_t id) const         { return data[id]; }
+	int32_t     add        (const T &item)              { if (count+1   > capacity) { resize(capacity * 2 < 4         ? 4         : capacity * 2); } data[count] = item; count += 1; return count - 1; }
+	void        add_range  (const T *list, int32_t num) { if (count+num > capacity) { resize(capacity * 2 < count+num ? count+num : capacity * 2); } ARRAY_MEMCPY(&data[count], list, sizeof(T)*num); count += num; }
+	void        insert     (int32_t at, const T &item);
+	void        resize     (int32_t to_capacity);
+	void        trim       ()                         { resize(count); }
+	void        remove     (int32_t at);
+	void        pop        ()                         { remove(count - 1); }
+	void        clear      ()                         { count = 0; }
+	T          &last       () const                   { return data[count - 1]; }
+	inline void set        (int32_t id, const T &val) { data[id] = val; }
+	inline T   &get        (int32_t id) const         { return data[id]; }
+	inline T   &operator[] (int32_t id) const         { return data[id]; }
 	void        reverse    ();
 	array_t<T>  copy       () const;
-	void        each       (void (*e)(T &))             { for (size_t i=0; i<count; i++) e(data[i]); }
-	void        each       (void (*e)(const T &)) const { for (size_t i=0; i<count; i++) e(data[i]); }
-	void        each       (void (*e)(void *))          { for (size_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(T &))             { for (int32_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(const T &)) const { for (int32_t i=0; i<count; i++) e(data[i]); }
+	void        each       (void (*e)(void *))          { for (int32_t i=0; i<count; i++) e(data[i]); }
 	template <typename U>
-	void        each_with  (U *with, void (*e)(U*, const T &)) const { for (size_t i=0; i<count; i++) e(with, data[i]); }
+	void        each_with  (U *with, void (*e)(U*, const T &)) const { for (int32_t i=0; i<count; i++) e(with, data[i]); }
 	template <typename U>
-	U           each_with  (void (*e)(U *, const T &))         const { U result = {}; for (size_t i = 0; i < count; i++) e(&result, data[i]); }
+	U           each_with  (void (*e)(U *, const T &))         const { U result = {}; for (int32_t i = 0; i < count; i++) e(&result, data[i]); }
 	template <typename U>
-	U           each_sum   (U (*e)(const T &))                 const { U result = 0; for (size_t i = 0; i < count; i++) result += e(data[i]); return result; }
+	U           each_sum   (U (*e)(const T &))                 const { U result = 0; for (int32_t i = 0; i < count; i++) result += e(data[i]); return result; }
 	template <typename U>
-	array_t<U>  each_new   (U    (*e)(const T &)) const { array_t<U> result = {}; result.resize(count); for (size_t i=0; i<count; i++) result.add(e(data[i])); return result; }
+	array_t<U>  each_new   (U    (*e)(const T &)) const { array_t<U> result = {}; result.resize(count); for (int32_t i=0; i<count; i++) result.add(e(data[i])); return result; }
 	void        free       ();
 
 	static array_t<T> make     (int32_t capacity)                     { array_t<T> result = {}; result.resize(capacity); return result; }
-	static array_t<T> make_fill(int32_t capacity, const T &copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(size_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
-	static array_t<T> make_from(T *use_memory, size_t count)          { return {use_memory, count, count}; }
+	static array_t<T> make_fill(int32_t capacity, const T &copy_from) { array_t<T> result = {}; result.resize(capacity); result.count = capacity; for(int32_t i=0;i<capacity;i+=1) result.data[i]=copy_from; return result; }
+	static array_t<T> make_from(T *use_memory, int32_t count)         { return {use_memory, count, count}; }
 
 	//////////////////////////////////////
 	// Linear search methods
 
-	int64_t     index_of   (const T &item) const                                              { for (size_t i = 0; i < count; i++) if (memcmp(&data[i], &item, sizeof(T)) == 0) return i; return -1; }
+	int32_t     index_of   (const T &item) const                                              { for (int32_t i = 0; i < count; i++) if (memcmp(&data[i], &item, sizeof(T)) == 0) return i; return -1; }
 	template <typename _T, typename D>
-	int64_t     index_where(const D _T::*key, const D &item) const                            { const size_t offset = (size_t)&((_T*)0->*key); for (size_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
-	int64_t     index_where(bool (*c)(const T &item, void *user_data), void *user_data) const { for (size_t i=0; i<count; i++) if (c(data[i], user_data)) return i; return -1;}
-	int64_t     index_where(bool (*c)(const T &item)) const                                   { for (size_t i=0; i<count; i++) if (c(data[i]))            return i; return -1;}
-	int64_t     index_best_small(int32_t (*c)(const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r < best) { best = r; result = i;} } return result; }
-	int64_t     index_best_large(int32_t (*c)(const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r > best) { best = r; result = i;} } return result;}
+	int32_t     index_where(const D _T::*key, const D &item) const                            { const size_t offset = (size_t)&((_T*)0->*key); for (int32_t i = 0; i < count; i++) if (memcmp(((uint8_t *)&data[i]) + offset, &item, sizeof(D)) == 0) return i; return -1; }
+	int32_t     index_where(bool (*c)(const T &item, void *user_data), void *user_data) const { for (int32_t i=0; i<count; i++) if (c(data[i], user_data)) return i; return -1;}
+	int32_t     index_where(bool (*c)(const T &item)) const                                   { for (int32_t i=0; i<count; i++) if (c(data[i]))            return i; return -1;}
+	int32_t     index_best_small(int32_t (*c)(const T &item)) const                           { int32_t best = 0x7fffffff; int32_t result = -1; for (int32_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r < best) { best = r; result = i;} } return result; }
+	int32_t     index_best_large(int32_t (*c)(const T &item)) const                           { int32_t best = 0x80000000; int32_t result = -1; for (int32_t i=0; i<count; i++) { int32_t r = c(data[i]); if (r > best) { best = r; result = i;} } return result;}
 	template <typename U>
-	int64_t     index_best_small_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x7fffffff; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r < best) { best = r; result = i;} } return result; }
+	int32_t     index_best_small_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x7fffffff; int32_t result = -1; for (int32_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r < best) { best = r; result = i;} } return result; }
 	template <typename U>
-	int64_t     index_best_large_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = 0x80000000; int64_t result = -1; for (size_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r > best) { best = r; result = i;} } return result; }
+	int32_t     index_best_large_with(U with, int32_t (*c)(U, const T &item)) const                           { int32_t best = -0x80000000; int32_t result = -1; for (int32_t i=0; i<count; i++) { int32_t r = c(with, data[i]); if (r > best) { best = r; result = i;} } return result; }
 
 	//////////////////////////////////////
 	// Binary search methods
 
-	int64_t binary_search(const T &item) const;
+	int32_t binary_search(const T &item) const;
 
 	// Extra template parameters mean this needs completely defined right here.
 	// Does not work on pointers.
 	template <typename _T, typename D>
-	int64_t binary_search(const D _T::*key, const D &item) const {
+	int32_t binary_search(const D _T::*key, const D &item) const {
 		array_view_t<D> view = array_view_t<D>{data, count, sizeof(_T), (size_t)&((_T*)nullptr->*key)};
-		int64_t l = 0, r = (int64_t)view.count - 1;
+		int32_t l = 0, r = view.count - 1;
 		while (l <= r) {
-			int64_t mid     = (l+r) / 2;
+			int32_t mid     = (l+r) / 2;
 			D       mid_val = view[mid];
 			if      (mid_val < item) l = mid + 1;
 			else if (mid_val > item) r = mid - 1;
@@ -206,10 +203,10 @@ struct array_t {
 	}
 
 	/*template <typename D>
-	int64_t binary_search(D (*get_key)(T item), D item) const {
-		int64_t l = 0, r = count - 1;
+	int32_t binary_search(D (*get_key)(T item), D item) const {
+		int32_t l = 0, r = count - 1;
 		while (l <= r) {
-			int64_t mid = (l + r) / 2;
+			int32_t mid = (l + r) / 2;
 			D       mid_val = get_key(data[mid]);
 			if      (mid_val < item) l = mid + 1;
 			else if (mid_val > item) r = mid - 1;
@@ -241,7 +238,7 @@ struct array_t {
 		});
 	}
 
-	void _array_reorder(void** list, size_t item_size, int32_t count, int32_t* sort_order) {
+	void _array_reorder(void** list, int32_t item_size, int32_t count, int32_t* sort_order) {
 		uint8_t* src    = (uint8_t*)*list;
 		uint8_t* result = (uint8_t*)ARRAY_MALLOC(item_size * capacity);
 
@@ -270,24 +267,24 @@ struct hashmap_t {
 	uint64_t _hash(const K &key) const {
 		uint64_t       hash  = 14695981039346656037UL;
 		const uint8_t *bytes = (const uint8_t *)&key;
-		for (size_t i=0; i<sizeof(K); i++)
+		for (int32_t i=0; i<sizeof(K); i++)
 			hash = (hash ^ bytes[i]) * 1099511628211;
 		return hash;
 	}
 
-	int64_t add(const K &key, const T &value) {
+	int32_t add(const K &key, const T &value) {
 		uint64_t hash = _hash(key);
-		int64_t  id   = hashes.binary_search(hash);
+		int32_t  id   = hashes.binary_search(hash);
 		if (id < 0) {
 			id = ~id;
-			hashes.insert((size_t)id, hash );
-			items .insert((size_t)id, value);
+			hashes.insert(id, hash );
+			items .insert(id, value);
 		}
 		return id;
 	}
-	int64_t add_or_set(const K &key, const T &value) {
+	int32_t add_or_set(const K &key, const T &value) {
 		uint64_t hash = _hash(key);
-		int64_t  id   = hashes.binary_search(hash);
+		int32_t  id   = hashes.binary_search(hash);
 		if (id < 0) {
 			id = ~id;
 			hashes.insert(id, hash );
@@ -299,12 +296,12 @@ struct hashmap_t {
 		return id;
 	}
 
-	T       *get      (const K &key)                         const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[(size_t)id]; }
-	const T &get_or   (const K &key, const T &default_value) const { int64_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[(size_t)id]; }
-	int64_t  contains (const K &key)                         const { return hashes.binary_search(_hash(key)); }
+	T       *get      (const K &key)                         const { int32_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[id]; }
+	const T &get_or   (const K &key, const T &default_value) const { int32_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[id]; }
+	int32_t  contains (const K &key)                         const { return hashes.binary_search(_hash(key)); }
 	void     free     ()                                           { hashes.free(); items.free(); }
-	void     remove   (const K& key)                               { int64_t id = hashes.binary_search(_hash(key)); if (id >= 0) { hashes.remove((size_t)id); items.remove((size_t)id); } }
-	void     remove_at(const int64_t at)                           { if (at >= 0) { hashes.remove(at); items.remove(at); } }
+	void     remove   (const K& key)                               { int32_t id = hashes.binary_search(_hash(key)); if (id >= 0) { hashes.remove(id); items.remove(id); } }
+	void     remove_at(const int32_t at)                           { if (at >= 0) { hashes.remove(at); items.remove(at); } }
 };
 
 //////////////////////////////////////
@@ -312,13 +309,13 @@ struct hashmap_t {
 //////////////////////////////////////
 
 template <typename T>
-int64_t array_t<T>::binary_search(const T &item) const {
-	int64_t l = 0, r = (int64_t)count - 1;
+int32_t array_t<T>::binary_search(const T &item) const {
+	int32_t l = 0, r = count - 1;
 	while (l <= r) {
-		int64_t mid = (l+r) / 2;
-		if      (get((size_t)mid) < item) l = mid + 1;
-		else if (get((size_t)mid) > item) r = mid - 1;
-		else                              return mid;
+		int32_t mid = (l+r) / 2;
+		if      (get(mid) < item) l = mid + 1;
+		else if (get(mid) > item) r = mid - 1;
+		else                      return mid;
 	}
 	return r < 0 ? r : -(r+2);
 }
@@ -326,7 +323,7 @@ int64_t array_t<T>::binary_search(const T &item) const {
 //////////////////////////////////////
 
 template <typename T>
-void array_t<T>::resize(size_t to_capacity) {
+void array_t<T>::resize(int32_t to_capacity) {
 	data     = (T*)ARRAY_REALLOC(data, sizeof(T) * to_capacity);
 	capacity = to_capacity;
 	if (count > to_capacity)
@@ -357,7 +354,7 @@ array_t<T> array_t<T>::copy() const {
 //////////////////////////////////////
 
 template <typename T>
-void array_t<T>::remove(size_t aAt) {
+void array_t<T>::remove(int32_t aAt) {
 	ARRAY_ASSERT(aAt < count);
 
 	ARRAY_MEMMOVE(&data[aAt], &data[aAt+1], (count - (aAt + 1))*sizeof(T));
@@ -367,7 +364,7 @@ void array_t<T>::remove(size_t aAt) {
 //////////////////////////////////////
 
 template <typename T>
-void array_t<T>::insert(size_t aAt, const T &item) {
+void array_t<T>::insert(int32_t aAt, const T &item) {
 	ARRAY_ASSERT(aAt <= count);
 
 	if (count+1 > capacity) 
@@ -382,7 +379,7 @@ void array_t<T>::insert(size_t aAt, const T &item) {
 
 template <typename T>
 void array_t<T>::reverse() {
-	for(size_t i=0; i<count/2; i+=1) {
+	for(int32_t i=0; i<count/2; i+=1) {
 		T tmp = this->get(i);
 		this->set(i, this->get(count - i - 1));
 		this->set(count - i - 1, tmp);
@@ -394,8 +391,8 @@ void array_t<T>::reverse() {
 //////////////////////////////////////
 
 template <typename D, typename T>
-inline static array_view_t<D> array_view_create(const T *data, size_t count, D T::*key) {
-	return array_view_t<D>{data, count, sizeof(T), (size_t)&((T*)nullptr->*key)};
+inline static array_view_t<D> array_view_create(const T *data, int32_t count, D T::*key) {
+	return array_view_t<D>{data, count, sizeof(T), (int32_t)&((T*)nullptr->*key)};
 }
 
 //////////////////////////////////////
@@ -403,7 +400,7 @@ inline static array_view_t<D> array_view_create(const T *data, size_t count, D T
 // can be called like this: array_view_create(arr_of_vec3, &vec3::x);
 template <typename D, typename T>
 inline static array_view_t<D> array_view_create(const array_t<T> &src, D T::*key) {
-	return array_view_t<D>{src.data, src.count, sizeof(T), (size_t)&((T*)nullptr->*key)};
+	return array_view_t<D>{src.data, src.count, sizeof(T), (int32_t)&((T*)nullptr->*key)};
 }
 
 //////////////////////////////////////
@@ -419,7 +416,7 @@ template <typename T>
 T *array_view_t<T>::copy_deinterlace() const {
 	T *result = (T*)ARRAY_MALLOC(sizeof(T) * count);
 
-	for (size_t i=0; i<count; i++) {
+	for (int32_t i=0; i<count; i++) {
 		result[i] = this->get(i);
 	}
 	return result;

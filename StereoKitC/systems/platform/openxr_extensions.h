@@ -265,7 +265,7 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
 		else {
 			bool found = false;
-			for (size_t e = 0; e < extra_exts.count; e++) {
+			for (int32_t e = 0; e < extra_exts.count; e++) {
 				if (strcmp(extra_exts[e], exts[i].extensionName) == 0) {
 					result.add(extra_exts[e]);
 					found = true;

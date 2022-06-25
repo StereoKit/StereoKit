@@ -141,7 +141,7 @@ void input_hand_refresh_system() {
 
 void modify(pose_t *pose, vec3 offset) {
 	quat rot = quat_from_angles(0, 180, 0);
-	for (size_t i = 0; i < 25; i++) {
+	for (int32_t i = 0; i < 25; i++) {
 		pose[i].position   += offset;
 		pose[i].position   *= 1.15f;
 		pose[i].orientation = rot * pose[i].orientation;
@@ -153,7 +153,7 @@ void input_hand_init() {
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
 
 	float blend = 1;
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		if (hand_sources[i].system == hand_system_oxr_controllers) {
 			blend = hand_sources[i].pinch_blend;
 			break;
@@ -192,7 +192,7 @@ void input_hand_init() {
 	material_set_queue_offset(hand_mat, 10);
 	
 	// Initialize the hands!
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		hand_state[i].visible  = true;
 		hand_state[i].solid    = true;
 		hand_state[i].material = hand_mat;
@@ -209,8 +209,8 @@ void input_hand_init() {
 		// Set up initial default hand pose, so we don't get any accidental pinch/grips on start
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 		hand_t &hand = hand_state[i].info;
-		for (size_t f = 0; f < 5; f++) {
-		for (size_t j = 0; j < 5; j++) {
+		for (int32_t f = 0; f < 5; f++) {
+		for (int32_t j = 0; j < 5; j++) {
 			vec3 pos = input_pose_neutral[f][j].position;
 			quat rot = input_pose_neutral[f][j].orientation;
 			if (i == handed_right) {
@@ -228,7 +228,7 @@ void input_hand_init() {
 	tex_release(gradient_tex);
 	material_release(hand_mat);
 
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].init();
 	}
 
@@ -238,12 +238,12 @@ void input_hand_init() {
 ///////////////////////////////////////////
 
 void input_hand_shutdown() {
-	for (size_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].shutdown();
 	}
 
-	for (size_t i = 0; i < handed_max; i++) {
-		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
+	for (int32_t i = 0; i < handed_max; i++) {
+		for (int32_t f = 0; f < SK_FINGER_SOLIDS; f++) {
 			solid_release(hand_state[i].solids[f]);
 		}
 		material_release(hand_state[i].material);
@@ -263,12 +263,12 @@ void input_hand_update() {
 	if (hand_size_update <= 0) {
 		hand_size_update = 1;
 
-		for (size_t h = 0; h < handed_max; h++) {
+		for (int32_t h = 0; h < handed_max; h++) {
 			if (!(hand_state[h].info.tracked_state & button_state_active))
 				continue;
 
 			hand_state[h].info.size = 0;
-			for (size_t j = 0; j < hand_joint_tip-1; j++) {
+			for (int32_t j = 0; j < hand_joint_tip-1; j++) {
 				hand_state[h].info.size += vec3_magnitude(
 					hand_state[h].info.fingers[hand_finger_middle][j  ].position -
 					hand_state[h].info.fingers[hand_finger_middle][j+1].position);
@@ -279,7 +279,7 @@ void input_hand_update() {
 	}
 
 	// Update hand states
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		input_hand_state_update((handed_)i);
 	}
 
@@ -296,7 +296,7 @@ void input_hand_update_poses(bool update_visuals) {
 		hand_sources[hand_system].update_poses(update_visuals);
 
 	if (update_visuals) {
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			// Update hand meshes, and draw 'em
 			bool tracked = hand_state[i].info.tracked_state & button_state_active;
 			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
@@ -317,7 +317,7 @@ void input_hand_update_poses(bool update_visuals) {
 ///////////////////////////////////////////
 
 void input_hand_update_meshes() {
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		// Update hand meshes, and draw 'em
 		bool tracked = hand_state[i].info.tracked_state & button_state_active;
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
@@ -392,9 +392,9 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 
 	// Update the position and orientation of each joint to be at its proper
 	// location in world space
-	for (size_t f = 0; f < 5; f++) {
+	for (int32_t f = 0; f < 5; f++) {
 		const pose_t *finger = &hand_state[handedness].pose_blend[f][0];
-	for (size_t j = 0; j < 5; j++) {
+	for (int32_t j = 0; j < 5; j++) {
 		vec3 pos = finger[j].position - finger_off;
 		quat rot = finger[j].orientation;
 		if (handedness == handed_right) {
@@ -449,8 +449,8 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 	// between poses
 	float delta = time_elapsedf_unscaled() * 30;
 	delta = delta>1?1:delta;
-	for (size_t f = 0; f < 5; f++) {
-	for (size_t j = 0; j < 5; j++) {
+	for (int32_t f = 0; f < 5; f++) {
+	for (int32_t j = 0; j < 5; j++) {
 		pose_t *p = &hand_state[handedness].pose_blend[f][j];
 		p->position    = vec3_lerp (p->position,    dest_pose[f * 5 + j].position,    delta);
 		p->orientation = quat_slerp(p->orientation, dest_pose[f * 5 + j].orientation, delta);
@@ -606,7 +606,7 @@ void input_hand_update_mesh(handed_ hand) {
 			if (f == 0 && j < 2) scale *= 0.5f; // thumb is too fat at the bottom
 
 			// Use the local axis to create a ring of verts
-			for (size_t i = 0; i < ring_count; i++) {
+			for (int32_t i = 0; i < ring_count; i++) {
 				data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
 				data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
 				v++;
@@ -615,7 +615,7 @@ void input_hand_update_mesh(handed_ hand) {
 			// Last ring to blunt the fingertip
 			if (j == SK_FINGERJOINTS - 1) {
 				scale = scale * 0.75f;
-				for (size_t i = 0; i < ring_count; i++) {
+				for (int32_t i = 0; i < ring_count; i++) {
 					vec3 at = pose.position + tip_fwd * pose.radius * 0.65f;
 					data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
 					data.verts[v].pos  = at + (up*sincos[i].y + right*sincos[i].x)*scale + tip_up * pose.radius*0.25f;
@@ -654,7 +654,7 @@ void input_hand_solid(handed_ hand, bool32_t solid) {
 	}
 
 	hand_state[hand].solid = solid;
-	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
+	for (int32_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}
 }

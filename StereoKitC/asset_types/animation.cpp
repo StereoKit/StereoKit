@@ -158,7 +158,7 @@ void anim_update_model(model_t model) {
 	anim_t *anim = &model->anim_data.anims[model->anim_inst.anim_id];
 	float   time = model_anim_active_time(model);
 
-	for (size_t i = 0; i < anim->curves.count; i++) {
+	for (int32_t i = 0; i < anim->curves.count; i++) {
 		model_node_id node = anim->curves[i].node_id;
 
 		model->anim_inst.node_transforms[node].dirty = true;
@@ -186,7 +186,7 @@ void _anim_inst_check_ready(model_t model) {
 
 	if (inst->node_transforms == nullptr) {
 		inst->node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
-		for (size_t i = 0; i < model->nodes.count; i++) {
+		for (int32_t i = 0; i < model->nodes.count; i++) {
 			matrix_decompose(model->nodes[i].transform_local,
 				inst->node_transforms[i].translation,
 				inst->node_transforms[i].scale,
@@ -194,7 +194,7 @@ void _anim_inst_check_ready(model_t model) {
 		}
 	}
 	if (inst->skinned_meshes == nullptr) {
-		inst->skinned_mesh_count = (int32_t)data->skeletons.count;
+		inst->skinned_mesh_count = data->skeletons.count;
 		inst->skinned_meshes     = sk_malloc_t(anim_inst_subset_t, inst->skinned_mesh_count);
 		for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
 			inst->skinned_meshes[i].original_mesh   = model_node_get_mesh(model, data->skeletons[i].skin_node);
@@ -228,13 +228,13 @@ void _anim_update_skin(model_t &model) {
 ///////////////////////////////////////////
 
 void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
-	if (anim_id < 0 || anim_id >= (int32_t)model->anim_data.anims.count) {
+	if (anim_id < 0 || anim_id >= model->anim_data.anims.count) {
 		log_err("Attempted to play an invalid animation id.");
 		return;
 	}
 	_anim_inst_check_ready(model);
 
-	size_t count = model->anim_data.anims[anim_id].curves.count;
+	int32_t count = model->anim_data.anims[anim_id].curves.count;
 	if (model->anim_inst.curve_last_keyframe == nullptr || model->anim_inst.curve_last_capacity < count) {
 		sk_free(model->anim_inst.curve_last_keyframe);
 		model->anim_inst.curve_last_capacity = count;
@@ -266,14 +266,14 @@ void anim_inst_destroy(anim_inst_t *inst) {
 ///////////////////////////////////////////
 
 void anim_data_destroy(anim_data_t *data) {
-	for (size_t i = 0; i < data->anims.count; i++) {
-		for (size_t c = 0; c < data->anims[i].curves.count; c++) {
+	for (int32_t i = 0; i < data->anims.count; i++) {
+		for (int32_t c = 0; c < data->anims[i].curves.count; c++) {
 			sk_free(data->anims[i].curves[c].keyframe_values);
 			sk_free(data->anims[i].curves[c].keyframe_times);
 		}
 		data->anims[i].curves.free();
 	}
-	for (size_t i = 0; i < data->skeletons.count; i++) {
+	for (int32_t i = 0; i < data->skeletons.count; i++) {
 		sk_free(data->skeletons[i].bone_to_node_map);
 	}
 	data->anims    .free();
@@ -287,13 +287,13 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 	
 	if (data->anims.count > 0) {
 		result.anims.resize(data->anims.count);
-		for (size_t i = 0; i < data->anims.count; i++) {
+		for (int32_t i = 0; i < data->anims.count; i++) {
 			anim_t &anim_src = data->anims[i];
 			anim_t  anim = {};
 			anim.duration = anim_src.duration;
 			anim.name     = string_copy(anim_src.name);
 			anim.curves.resize(anim_src.curves.count);
-			for (size_t c = 0; c < anim_src.curves.count; c++) {
+			for (int32_t c = 0; c < anim_src.curves.count; c++) {
 				anim_curve_t &curve_src = anim_src.curves[c];
 				anim_curve_t  curve = {};
 				curve.applies_to     = curve_src.applies_to;
@@ -322,7 +322,7 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 
 	if (data->skeletons.count > 0) {
 		result.skeletons.resize(data->skeletons.count);
-		for (size_t i = 0; i < data->skeletons.count; i++) {
+		for (int32_t i = 0; i < data->skeletons.count; i++) {
 			anim_skeleton_t &skel_src = data->skeletons[i];
 			anim_skeleton_t  skel     = {};
 			skel.bone_count       = skel_src.bone_count;

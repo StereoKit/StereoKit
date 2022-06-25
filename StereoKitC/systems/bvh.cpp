@@ -89,7 +89,7 @@ gather_stats(const mesh_bvh_t *bvh, short depth, int current_node_index, bvh_sta
     {
         stats->num_leafs++;
         stats->max_leaf_size = maxi(stats->max_leaf_size, node.num_triangles);
-        if (node.num_triangles > acc_leaf_size)
+        if (node.num_triangles > (uint32_t)acc_leaf_size)
             stats->num_forced_leafs++;
     }
     else
@@ -171,7 +171,7 @@ mesh_bvh_build_recursive(int current_node_index,
     printf("\n");
 #endif
 
-    if (node.num_triangles <= acceptable_leaf_size)
+    if (node.num_triangles <= (uint32_t)acceptable_leaf_size)
     {
 #ifdef VERBOSE_BUILD
         printf("Creating a leaf node of %d triangles\n", node.num_triangles);
@@ -410,8 +410,8 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 
     // List of triangle indices, which will get reordered during construction
     uint32_t *sorted_triangles = bvh->sorted_triangles = sk_malloc_t(uint32_t, num_triangles);
-    for (int i = 0; i < num_triangles; i++)
-        sorted_triangles[i] = i;    
+    for (uint32_t i = 0; i < num_triangles; i++)
+        sorted_triangles[i] = i;
 
     // Compute mesh bounding box (could reuse what's in mesh_t, but not sure it's accurate)
 
@@ -613,7 +613,7 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
 #ifdef VERBOSE_INTERSECTION
             printf("Checking %d triangles\n", node.num_triangles);
 #endif            
-            for (int t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
+            for (uint32_t t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
             {
                 uint32_t triangle = sorted_triangles[t];
                 const plane_t& plane = collision_data->planes[triangle];

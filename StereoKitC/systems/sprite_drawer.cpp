@@ -80,8 +80,8 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 	}
 	
 	// Add a sprite quad
-	size_t offset = buffer.vert_count;
-	vec3   normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
+	int32_t offset = buffer.vert_count;
+	vec3    normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
 	buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
 	buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
 	buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };
@@ -133,7 +133,7 @@ bool sprite_drawer_init() {
 ///////////////////////////////////////////
 
 void sprite_drawer_update() {
-	for (size_t i = 0; i < sprite_buffers.count; i++) {
+	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -151,7 +151,7 @@ void sprite_drawer_update() {
 void sprite_drawer_shutdown() {
 	mesh_release(sprite_quad);
 	mesh_release(sprite_quad_old);
-	for (size_t i = 0; i < sprite_buffers.count; i++) {
+	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);

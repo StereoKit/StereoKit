@@ -51,11 +51,11 @@ model_t model_copy(model_t model) {
 	result->bounds       = model->bounds;
 	result->nodes_used   = model->nodes_used;
 	result->anim_inst.anim_id = -1;
-	for (size_t i = 0; i < result->visuals.count; i++) {
+	for (int32_t i = 0; i < result->visuals.count; i++) {
 		material_addref(result->visuals[i].material);
 		mesh_addref    (result->visuals[i].mesh);
 	}
-	for (size_t i = 0; i < result->nodes.count; i++) {
+	for (int32_t i = 0; i < result->nodes.count; i++) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
 	}
 
@@ -149,7 +149,7 @@ void model_recalculate_bounds(model_t model) {
 	min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
-	for (size_t m = 0; m < model->visuals.count; m += 1) {
+	for (int32_t m = 0; m < model->visuals.count; m += 1) {
 		bounds_t bounds = mesh_get_bounds(model->visuals[m].mesh);
 		for (int32_t i = 0; i < 8; i += 1) {
 			vec3 corner = bounds_corner      (bounds, i);
@@ -171,14 +171,14 @@ void model_recalculate_bounds(model_t model) {
 ///////////////////////////////////////////
 
 const char *model_get_name(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	return model_node_get_name(model, model->visuals[subset].node);
 }
 
 ///////////////////////////////////////////
 
 material_t model_get_material(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	material_addref(model->visuals[subset].material);
 	return model->visuals[subset].material;
 }
@@ -186,7 +186,7 @@ material_t model_get_material(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 mesh_t model_get_mesh(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	mesh_addref(model->visuals[subset].mesh);
 	return model->visuals[subset].mesh;
 }
@@ -194,14 +194,14 @@ mesh_t model_get_mesh(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 matrix model_get_transform(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	return model->visuals[subset].transform_model;
 }
 
 ///////////////////////////////////////////
 
 void model_set_material(model_t model, int32_t subset, material_t material) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	assert(material != nullptr);
 
 	assets_safeswap_ref(
@@ -212,7 +212,7 @@ void model_set_material(model_t model, int32_t subset, material_t material) {
 ///////////////////////////////////////////
 
 void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	assert(mesh != nullptr);
 
 	assets_safeswap_ref(
@@ -225,14 +225,14 @@ void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
 ///////////////////////////////////////////
 
 void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	model_node_set_transform_model(model, model->visuals[subset].node, transform);
 }
 
 ///////////////////////////////////////////
 
 int32_t model_subset_count(model_t model) {
-	return (int32_t)model->visuals.count;
+	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -256,14 +256,14 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 ///////////////////////////////////////////
 
 void model_remove_subset(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 
 	model->nodes[model->visuals[subset].node].visual = -1;
 	mesh_release    (model->visuals[subset].mesh);
 	material_release(model->visuals[subset].material);
 	model->visuals.remove(subset);
 
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		if (model->nodes[i].visual > subset)
 			model->nodes[i].visual--;
 	}
@@ -314,7 +314,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 
 	float closest = FLT_MAX;
 	*out_pt = {};
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		model_node_t *n = &model->nodes[i];
 		if (!n->solid || n->visual == -1)
 			continue;
@@ -342,7 +342,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 
 	float closest = FLT_MAX;
 	*out_pt = {};
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		model_node_t *n = &model->nodes[i];
 		if (!n->solid || n->visual == -1)
 			continue;
@@ -371,7 +371,7 @@ bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, 
 
 	float closest = FLT_MAX;
 	*out_pt = {};
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		model_node_t *n = &model->nodes[i];
 		if (!n->solid || n->visual == -1)
 			continue;
@@ -401,10 +401,10 @@ bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, 
 void model_destroy(model_t model) {
 	anim_inst_destroy(&model->anim_inst);
 	anim_data_destroy(&model->anim_data);
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		sk_free(model->nodes[i].name);
 	}
-	for (size_t i = 0; i < model->visuals.count; i++) {
+	for (int32_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
 		material_release(model->visuals[i].material);
 	}
@@ -475,7 +475,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.transform_model = node.transform_model;
 		visual.node            = node_id;
 		visual.visible         = true;
-		node.visual = (int32_t)model->visuals.add(visual);
+		node.visual = model->visuals.add(visual);
 		model->bounds = bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
 	}
 
@@ -486,7 +486,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 ///////////////////////////////////////////
 
 model_node_id model_node_find(model_t model, const char *name) {
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		if (string_eq(model->nodes[i].name, name))
 			return (model_node_id)i;
 	}
@@ -516,7 +516,7 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 int32_t model_node_count(model_t model) {
-	return (int32_t)model->nodes.count;
+	return model->nodes.count;
 }
 
 ///////////////////////////////////////////
@@ -528,7 +528,7 @@ model_node_id model_node_index(model_t, int32_t index) {
 ///////////////////////////////////////////
 
 int32_t model_node_visual_count(model_t model){
-	return (int32_t)model->visuals.count;
+	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -654,7 +654,7 @@ void model_node_set_visible(model_t model, model_node_id node, bool32_t visible)
 void model_node_set_material(model_t model, model_node_id node, material_t material) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = (int32_t)model->visuals.add({});
+		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	assets_safeswap_ref(
@@ -667,7 +667,7 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = (int32_t)model->visuals.add({});
+		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
@@ -773,16 +773,16 @@ void model_set_anim_completion(model_t model, float percent) {
 ///////////////////////////////////////////
 
 int32_t model_anim_find(model_t model, const char *animation_name) {
-	for (size_t i = 0; i < model->anim_data.anims.count; i++)
+	for (int32_t i = 0; i < model->anim_data.anims.count; i++)
 		if (string_eq(model->anim_data.anims[i].name, animation_name))
-			return (int32_t)i;
+			return i;
 	return false;
 }
 
 ///////////////////////////////////////////
 
 int32_t model_anim_count(model_t model) {
-	return (int32_t)model->anim_data.anims.count;
+	return model->anim_data.anims.count;
 }
 
 ///////////////////////////////////////////
@@ -823,14 +823,14 @@ float model_anim_active_completion(model_t model) {
 ///////////////////////////////////////////
 
 const char *model_anim_get_name(model_t model, int32_t index) {
-	assert(index < (int32_t)model->anim_data.anims.count);
+	assert(index < model->anim_data.anims.count);
 	return model->anim_data.anims[index].name;
 }
 
 ///////////////////////////////////////////
 
 float model_anim_get_duration(model_t model, int32_t index) {
-	assert(index < (int32_t)model->anim_data.anims.count);
+	assert(index < model->anim_data.anims.count);
 	return model->anim_data.anims[index].duration;
 }
 

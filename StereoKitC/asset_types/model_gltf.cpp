@@ -31,7 +31,7 @@ void   gltf_add_warning       (array_t<const char *> *warnings, const char *text
 ///////////////////////////////////////////
 
 void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
-	for (size_t i = 0; i < warnings->count; i++) {
+	for (int32_t i = 0; i < warnings->count; i++) {
 		if (warnings->data[i] == text)
 			return;
 	}
@@ -385,7 +385,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		ind_count = vert_count;
 		inds      = sk_malloc_t(vind_t, ind_count);
 		for (size_t i = 0; i < ind_count; i++) {
-			inds[i] = i;
+			inds[i] = (vind_t)i;
 		}
 	} else {
 		// Extract indices from the index buffer
@@ -875,7 +875,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		model->anim_data.skeletons.add(skel);
 	}
 
-	for (size_t i = 0; i < warnings.count; i++) {
+	for (int32_t i = 0; i < warnings.count; i++) {
 		log_warnf("[%s] %s", filename, warnings[i]);
 	}
 

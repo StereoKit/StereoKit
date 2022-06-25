@@ -68,8 +68,8 @@ void *assets_find(const char *id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void *assets_find(uint64_t id, asset_type_ type) {
-	size_t count = assets.count;
-	for (size_t i = 0; i < count; i++) {
+	int32_t count = assets.count;
+	for (int32_t i = 0; i < count; i++) {
 		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0)
 			return assets[i];
 	}
@@ -107,7 +107,7 @@ void *assets_allocate(asset_type_ type) {
 	}
 
 	char name[64];
-	snprintf(name, sizeof(name), "auto/asset_%zu", assets.count);
+	snprintf(name, sizeof(name), "auto/asset_%d", assets.count);
 
 	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
@@ -209,7 +209,7 @@ void assets_destroy(asset_header_t *asset) {
 	}
 
 	// Remove it from our list of assets
-	for (size_t i = 0; i < assets.count; i++) {
+	for (int32_t i = 0; i < assets.count; i++) {
 		if (assets[i] == asset) {
 			assets.remove(i);
 			break;
@@ -253,7 +253,7 @@ void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset
 ///////////////////////////////////////////
 
 void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context)) {
-	for (size_t i = 0; i < assets_load_callbacks.count; i++) {
+	for (int32_t i = 0; i < assets_load_callbacks.count; i++) {
 		if ( assets_load_callbacks[i].asset   == asset &&
 			(assets_load_callbacks[i].on_load == on_load || on_load == nullptr)) {
 			assets_load_callbacks.remove(i);
@@ -268,7 +268,7 @@ void  assets_shutdown_check() {
 	if (assets.count > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
 #if defined(SK_DEBUG)
-		for (size_t i = 0; i < assets.count; i++) {
+		for (int32_t i = 0; i < assets.count; i++) {
 			const char *type_name = "[unimplemented type name]";
 			switch(assets[i]->type) {
 			case asset_type_mesh:     type_name = "mesh_t";     break;
@@ -329,7 +329,7 @@ bool assets_init() {
 	asset_threads.resize(3);
 #endif
 	asset_thread_enabled = true;
-	for (size_t i = 0; i < asset_threads.capacity; i++)
+	for (int32_t i = 0; i < asset_threads.capacity; i++)
 	{
 		asset_threads.add({});
 		asset_thread_t* th = &asset_threads.last();
@@ -352,7 +352,7 @@ void assets_update() {
 
 	// destroy objects where the request came from another thread
 	mtx_lock(&assets_multithread_destroy_lock);
-	for (size_t i = 0; i < assets_multithread_destroy.count; i++) {
+	for (int32_t i = 0; i < assets_multithread_destroy.count; i++) {
 		assets_destroy(assets_multithread_destroy[i]);
 	}
 	assets_multithread_destroy.clear();
@@ -360,7 +360,7 @@ void assets_update() {
 
 	// Do any jobs the assets need on the main thread, like GPU buffer uploads
 	mtx_lock(&assets_job_lock);
-	for (size_t i = 0; i < assets_gpu_jobs.count; i++) {
+	for (int32_t i = 0; i < assets_gpu_jobs.count; i++) {
 		assets_gpu_jobs[i]->success  = assets_gpu_jobs[i]->asset_job(assets_gpu_jobs[i]->data);
 		assets_gpu_jobs[i]->finished = true;
 	}
@@ -369,8 +369,8 @@ void assets_update() {
 
 	// Update any on_load event callbacks
 	mtx_lock(&assets_load_event_lock);
-	for (size_t i = 0; i < assets_load_events.count; i++) {
-		for (size_t c = 0; c < assets_load_callbacks.count; c++) {
+	for (int32_t i = 0; i < assets_load_events.count; i++) {
+		for (int32_t c = 0; c < assets_load_callbacks.count; c++) {
 			asset_load_callback_t *callback = &assets_load_callbacks[c];
 			if (assets_load_events[i] == callback->asset) {
 				// If the callback removes itself when it's called, this loop
@@ -390,7 +390,7 @@ void assets_update() {
 
 void assets_shutdown() {
 	asset_thread_enabled = false;
-	for (size_t i = 0; i < asset_threads.count; i++) {
+	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
 			assets_update();
 			thrd_yield();
@@ -456,7 +456,7 @@ int32_t assets_current_task() {
 ///////////////////////////////////////////
 
 int32_t assets_total_tasks() {
-	return (int32_t)asset_thread_tasks.count + asset_tasks_finished;
+	return asset_thread_tasks.count + asset_tasks_finished;
 }
 
 ///////////////////////////////////////////
@@ -481,11 +481,11 @@ void assets_add_task(asset_task_t src_task) {
 	// This array_t function has some strange behavior on 32 bit builds related
 	// to render sort items. We're duplicating it here without templating to
 	// avoid the issue for now.
-	int64_t idx = -1;
-	int64_t l = 0, r = (int64_t)asset_thread_tasks.count - 1;
+	int32_t idx = -1;
+	int32_t l = 0, r = asset_thread_tasks.count - 1;
 	while (l <= r) {
-		int64_t mid     = (l + r) / 2;
-		int64_t mid_val = asset_thread_tasks[(size_t)mid]->sort;
+		int32_t mid     = (l + r) / 2;
+		int64_t mid_val = asset_thread_tasks[mid]->sort;
 		if      (mid_val < task->sort) l = mid + 1;
 		else if (mid_val > task->sort) r = mid - 1;
 		else { idx = mid; break; };
@@ -494,7 +494,7 @@ void assets_add_task(asset_task_t src_task) {
 		idx = r < 0 ? r : -(r + 2);
 
 	if (idx < 0) idx = ~idx;
-	asset_thread_tasks.insert((size_t)idx, task);
+	asset_thread_tasks.insert(idx, task);
 	mtx_unlock(&asset_thread_task_mtx);
 }
 
@@ -610,7 +610,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		return;
 
 	thrd_id_t curr_id = thrd_id_current();
-	for (size_t i = 0; i < asset_threads.count; i++)
+	for (int32_t i = 0; i < asset_threads.count; i++)
 	{
 		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
 			log_err("assets_block_ should not be called on the assets thread!");
@@ -630,7 +630,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 
 void assets_block_for_priority(int32_t priority) {
 	thrd_id_t curr_id = thrd_id_current();
-	for (size_t i = 0; i < asset_threads.count; i++)
+	for (int32_t i = 0; i < asset_threads.count; i++)
 	{
 		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
 			log_err("assets_block_ should not be called on the assets thread!");

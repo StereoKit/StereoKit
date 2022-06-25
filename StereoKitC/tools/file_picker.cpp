@@ -366,7 +366,7 @@ void file_picker_update() {
 		vec3    address_bar_start = ui_layout_at();
 		float   max_width         = ui_area_remaining().x;
 		float   width = 0;
-		int32_t start = maxi(0,((int32_t)fp_path.fragments.count)-1);
+		int32_t start = maxi(0,fp_path.fragments.count-1);
 
 		const float gutter  = ui_get_gutter();
 		const float padding = ui_get_padding();
@@ -385,12 +385,12 @@ void file_picker_update() {
 		}
 		// Draw the fragment crumbs as clickable buttons
 		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{max_width, line_height});
-		for (size_t i = start; i < fp_path.fragments.count; i++) {
-			ui_push_idi((int32_t)i);
+		for (int32_t i = start; i < fp_path.fragments.count; i++) {
+			ui_push_idi(i);
 			vec2 size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
 			if (ui_button_sz(fp_path.fragments[i], size) && i < fp_path.fragments.count-1) {
 				char *new_path = string_copy(fp_path.folder);
-				for (size_t p = i; p < fp_path.fragments.count-1; p++)
+				for (int32_t p = i; p < fp_path.fragments.count-1; p++)
 				{
 					char *next_path = platform_pop_path_new(new_path);
 					sk_free(new_path);
@@ -444,7 +444,7 @@ void file_picker_update() {
 		vec3 file_grid_start = ui_layout_at();
 		ui_panel_begin();
 		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
-			if (i >= (int32_t)fp_items.count) {
+			if (i >= fp_items.count) {
 				ui_layout_reserve(size);
 			} else if (ui_button_sz(fp_items[i].name, size)) {
 				if (fp_items[i].file)
@@ -468,7 +468,7 @@ void file_picker_update() {
 		}
 		ui_pop_enabled();
 		ui_sameline();
-		ui_push_enabled(fp_scroll_offset + scroll_step < (int32_t)fp_items.count);
+		ui_push_enabled(fp_scroll_offset + scroll_step < fp_items.count);
 		if (ui_button_at("v", file_grid_start - vec3{ right, bottom,0 }, vec2{ max_width - right, size.y })) {
 			fp_scroll_offset = fp_scroll_offset + scroll_step;
 		}

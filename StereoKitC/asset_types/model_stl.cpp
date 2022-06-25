@@ -23,12 +23,12 @@ struct stl_triangle_t {
 
 vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vind_t> *indmap) {
 	vind_t  result = 0;
-	int64_t id     = indmap->contains(pt);
+	int32_t id     = indmap->contains(pt);
 	if (id < 0) {
 		result = (vind_t)verts->add(vert_t{ pt, {}, {}, {255,255,255,255} });
 		indmap->add_or_set(pt, result);
 	} else {
-		result = indmap->items[(size_t)id];
+		result = indmap->items[id];
 	}
 	verts->get(result).norm += normal;
 	return result;
@@ -184,12 +184,12 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 			modelfmt_stl_binary_flat(file_data, file_length, &verts, &faces);
 
 		// Normalize all the normals
-		for (size_t i = 0; i < verts.count; i++)
+		for (int32_t i = 0; i < verts.count; i++)
 			verts[i].norm = vec3_normalize(verts[i].norm);
 
 		mesh = mesh_create();
 		mesh_set_id  (mesh, id);
-		mesh_set_data(mesh, &verts[0], (int32_t)verts.count, &faces[0], (int32_t)faces.count);
+		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
 		model_add_subset(model, mesh, material, matrix_identity);
 

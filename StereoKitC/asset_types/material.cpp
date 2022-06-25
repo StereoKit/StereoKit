@@ -80,7 +80,7 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		material->args.texture_count = meta->resource_count;
 		material->args.textures      = sk_malloc_t(shaderargs_tex_t, meta->resource_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
-		for (size_t i = 0; i < meta->resource_count; i++) {
+		for (uint32_t i = 0; i < meta->resource_count; i++) {
 			shaderargs_tex_t *tex_arg     = &material->args.textures[i];
 			tex_t             default_tex = nullptr;
 
@@ -586,7 +586,7 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 	uint64_t id = hash_fnv64_string(name);
 
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 			if (material->shader->shader.meta->resources[i].name_hash == id)
 				return true;
 		}
@@ -628,7 +628,7 @@ bool32_t material_get_param(material_t material, const char *name, material_para
 
 bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 			if (material->shader->shader.meta->resources[i].name_hash == id) {
 				memcpy(out_value, &material->args.textures[i], sizeof(tex_t));
 				return true;

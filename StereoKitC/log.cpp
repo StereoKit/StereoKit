@@ -185,7 +185,7 @@ void log_write(log_ level, const char *text) {
 		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
 	// Send the plain-text version out to the listeners as well
-	for (size_t i = 0; i < log_listeners.count; i++) {
+	for (int32_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i](level, colored_text);
 	}
 	platform_debug_output(level, colored_text);
@@ -320,7 +320,7 @@ void log_subscribe(void (*on_log)(log_, const char*)) {
 ///////////////////////////////////////////
 
 void log_unsubscribe(void (*on_log)(log_, const char*)) {
-	for (size_t i = 0; i < log_listeners.count; i++) {
+	for (int32_t i = 0; i < log_listeners.count; i++) {
 		if (log_listeners[i] == on_log) {
 			log_listeners.remove(i);
 			break;

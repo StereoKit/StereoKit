@@ -119,7 +119,7 @@ text_style_t text_make_style_shader(font_t font, float character_height, shader_
 
 text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
-	size_t         index  = 0;
+	int32_t        index  = 0;
 	text_buffer_t *buffer = nullptr;
 
 	if (font == nullptr) {
@@ -127,7 +127,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	}
 	
 	// Find or make a buffer for this style
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		if (text_buffers[i].id == id) {
 			buffer = &text_buffers[i];
 			index  = i;
@@ -499,7 +499,7 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 void text_update() {
 	font_update_fonts();
 
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -515,7 +515,7 @@ void text_update() {
 ///////////////////////////////////////////
 
 void text_shutdown() {
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		mesh_release(buffer.mesh);
 		font_release(buffer.font);

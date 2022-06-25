@@ -478,7 +478,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 	}
 
 	anim_update_model(model);
-	for (size_t i = 0; i < model->visuals.count; i++) {
+	for (int32_t i = 0; i < model->visuals.count; i++) {
 		const model_visual_t *vis = &model->visuals[i];
 		if (vis->visible == false) continue;
 		
@@ -542,13 +542,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	material_buffer_set_data(render_shader_globals, &render_global_buffer);
 
 	// Activate any material buffers we have
-	for (size_t i = 0; i < _countof(material_buffers); i++) {
+	for (int32_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
 			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
 	}
 
 	// Activate any global textures we have
-	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+	for (int32_t i = 0; i < _countof(render_global_textures); i++) {
 		if (render_global_textures[i] != nullptr) {
 			skg_tex_t *tex = render_global_textures[i]->fallback == nullptr
 				? &render_global_textures[i]->tex
@@ -574,7 +574,7 @@ void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
 
 	skg_tex_t *old_target = skg_tex_target_get();
-	for (size_t i = 0; i < render_screenshot_list.count; i++) {
+	for (int32_t i = 0; i < render_screenshot_list.count; i++) {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
 
@@ -643,7 +643,7 @@ void render_check_viewpoints() {
 	if (render_viewpoint_list.count == 0) return;
 
 	skg_tex_t *old_target = skg_tex_target_get();
-	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
+	for (int32_t i = 0; i < render_viewpoint_list.count; i++) {
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex);
 
@@ -744,7 +744,7 @@ void render_update() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (size_t i = 0; i < render_lists.count; i++) {
+	for (int32_t i = 0; i < render_lists.count; i++) {
 		render_list_release(i);
 	}
 	render_lists          .free();
@@ -753,7 +753,7 @@ void render_shutdown() {
 	render_viewpoint_list .free();
 	render_instance_list  .free();
 
-	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+	for (int32_t i = 0; i < _countof(render_global_textures); i++) {
 		tex_release(render_global_textures[i]);
 		render_global_textures[i] = nullptr;
 	}
@@ -851,7 +851,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_lists[(size_t)render_list_active].stats.swaps_material++;
+	render_lists[render_list_active].stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -876,7 +876,7 @@ void render_set_material(material_t material) {
 
 skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = (int32_t)list.count - offset;
+	int32_t size  = list.count - offset;
 	int32_t start = offset;
 
 	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
@@ -935,7 +935,7 @@ void render_get_device(void **device, void **context) {
 ///////////////////////////////////////////
 
 render_list_t render_list_create() {
-	int64_t id = render_lists.index_where(&_render_list_t::state, render_list_state_destroyed);
+	int32_t id = render_lists.index_where(&_render_list_t::state, render_list_state_destroyed);
 	if (id == -1)
 		id = render_lists.add({});
 	return id;
@@ -944,16 +944,16 @@ render_list_t render_list_create() {
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	render_lists[(size_t)list].queue.free();
-	render_lists[(size_t)list] = {};
-	render_lists[(size_t)list].state = render_list_state_destroyed;
+	render_lists[list].queue.free();
+	render_lists[list] = {};
+	render_lists[list].state = render_list_state_destroyed;
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
 	render_list_active = render_list_stack.add(list);
-	render_lists[(size_t)list].state = render_list_state_used;
+	render_lists[list].state = render_list_state_used;
 }
 
 ///////////////////////////////////////////
@@ -966,13 +966,13 @@ void render_list_pop() {
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	render_lists[(size_t)render_list_active].queue.add(*item);
+	render_lists[render_list_active].queue.add(*item);
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	render_lists[(size_t)list].queue.add(*item);
+	render_lists[list].queue.add(*item);
 }
 
 ///////////////////////////////////////////
@@ -998,7 +998,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 ///////////////////////////////////////////
 
 void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1008,7 +1008,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	render_list_prep(list_id);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
@@ -1044,7 +1044,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 ///////////////////////////////////////////
 
 void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1057,7 +1057,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	material_check_dirty(override_material);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
@@ -1093,7 +1093,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 ///////////////////////////////////////////
 
 void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1101,7 +1101,7 @@ void render_list_prep(render_list_t list_id) {
 
 	// Make sure the material buffers are all up-to-date
 	material_t curr = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		if (curr == list->queue[i].material) continue;
 		curr = list->queue[i].material;
 		material_check_dirty(curr);
@@ -1113,10 +1113,10 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	render_lists[(size_t)list].queue.clear();
-	render_lists[(size_t)list].stats   = {};
-	render_lists[(size_t)list].prepped = false;
-	render_lists[(size_t)list].state   = render_list_state_empty;
+	render_lists[list].queue.clear();
+	render_lists[list].stats   = {};
+	render_lists[list].prepped = false;
+	render_lists[list].state   = render_list_state_empty;
 }
 
 ///////////////////////////////////////////

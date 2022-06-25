@@ -296,7 +296,7 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 	}
 
 	key_ keycode = key_none;
-	for (size_t i = 0; i < _countof(web_keymap); i++) {
+	for (int32_t i = 0; i < _countof(web_keymap); i++) {
 		if (string_eq(web_keymap[i].name, key_event->code)) {
 			keycode = web_keymap[i].key;
 			break;

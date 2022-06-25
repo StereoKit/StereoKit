@@ -670,7 +670,7 @@ bool ui_init() {
 void ui_update() {
 	skui_finger_radius = 0;
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t    *hand    = input_hand((handed_)i);
 		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i]);
 
@@ -869,7 +869,7 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 
 	layer_t      &layer    = skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		layer.finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
 		layer.finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
 		layer.pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
@@ -884,7 +884,7 @@ void ui_pop_surface() {
 	skui_layers.pop();
 
 	if (skui_layers.count <= 0) {
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = skui_hand[i].finger_world;
 			skui_hand[i].finger_prev   = skui_hand[i].finger_world_prev;
 			skui_hand[i].pinch_pt      = skui_hand[i].pinch_pt_world;
@@ -892,7 +892,7 @@ void ui_pop_surface() {
 		}
 	} else {
 		layer_t &layer = skui_layers.last();
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = layer.finger_pos[i];
 			skui_hand[i].finger_prev   = layer.finger_prev[i];
 			skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
@@ -2355,15 +2355,15 @@ void ui_handle_end() {
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
-	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
+	int32_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;
 		ui_window_t new_window = {};
 		new_window.hash = id;
 		new_window.size = window_size;
-		skui_sl_windows.insert((size_t)index, new_window);
+		skui_sl_windows.insert(index, new_window);
 	}
-	ui_window_t &window = skui_sl_windows[(size_t)index];
+	ui_window_t &window = skui_sl_windows[index];
 	window.type = window_type;
 	
 	// figure out the size of it, based on its window type

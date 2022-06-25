@@ -83,13 +83,13 @@ array_t<size_t>  xr_compositor_layers     = {};
 array_t<int32_t> xr_compositor_layer_sort = {};
 
 void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
-	size_t start = xr_compositor_bytes.count;
+	int32_t start = xr_compositor_bytes.count;
 	xr_compositor_bytes.add_range((uint8_t*)XrCompositionLayerBaseHeader, layer_size);
 
-	int64_t id = xr_compositor_layer_sort.binary_search(sort_order);
+	int32_t id = xr_compositor_layer_sort.binary_search(sort_order);
 	if (id < 0) id = ~id;
-	xr_compositor_layer_sort.insert((size_t)id, sort_order);
-	xr_compositor_layers    .insert((size_t)id, start);
+	xr_compositor_layer_sort.insert(id, sort_order);
+	xr_compositor_layers    .insert(id, start);
 }
 
 ///////////////////////////////////////////
@@ -97,7 +97,7 @@ void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_
 array_t<XrCompositionLayerBaseHeader*> xr_compositor_layer_ptrs = {};
 const array_t<XrCompositionLayerBaseHeader *> *compositor_layers_get() {
 	xr_compositor_layer_ptrs.clear();
-	for (size_t i = 0; i < xr_compositor_layers.count; i++) {
+	for (int32_t i = 0; i < xr_compositor_layers.count; i++) {
 		xr_compositor_layer_ptrs.add((XrCompositionLayerBaseHeader *)(xr_compositor_bytes.data + xr_compositor_layers[i]));
 	}
 	return &xr_compositor_layer_ptrs;
@@ -207,7 +207,7 @@ bool openxr_views_create() {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
-	for (size_t i = 0; i < xr_displays.count; i++) {
+	for (int32_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(xr_displays[i]);
 	}
 	xr_displays          .free();
@@ -514,8 +514,8 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 	if (sk_settings.blend_preference & display_blend_opaque  ) blend_search.add(XR_ENVIRONMENT_BLEND_MODE_OPAQUE);
 
 	// Search for the first user preference
-	for (size_t s = 0; s < blend_search.count; s++) {
-		for (size_t b = 0; b < blend_count; b++) {
+	for (int32_t s = 0; s < blend_search.count; s++) {
+		for (uint32_t b = 0; b < blend_count; b++) {
 			if (blend_modes[b] == blend_search[s]) {
 				out_blend = blend_modes[b];
 
@@ -527,7 +527,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 	}
 
 	// If none found, return the first blend mode StereoKit recognizes.
-	for (size_t i = 0; i < blend_count; i++) {
+	for (uint32_t i = 0; i < blend_count; i++) {
 		if (blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ADDITIVE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_OPAQUE ||
 			blend_modes[i] == XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
@@ -573,7 +573,7 @@ bool openxr_render_frame() {
 	xr_displays[0].active = session_active;
 
 	// Check each secondary display to see if it's active or not
-	for (uint32_t i = 1; i < xr_displays.count; i++) {
+	for (int32_t i = 1; i < xr_displays.count; i++) {
 		if (xr_displays[i].active != (bool32_t)xr_display_2nd_states[i - 1].active) {
 			xr_displays[i].active  = (bool32_t)xr_display_2nd_states[i - 1].active;
 
@@ -602,7 +602,7 @@ bool openxr_render_frame() {
 	xr_display_2nd_layers.clear();
 
 	skg_draw_begin();
-	for (size_t i = 0; i < xr_displays.count; i++) {
+	for (int32_t i = 0; i < xr_displays.count; i++) {
 		if (!xr_displays[i].active) continue;
 
 		render_layer_ filter = xr_displays[i].type == xr_display_primary

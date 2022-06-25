@@ -21,7 +21,7 @@ enum render_list_state_ {
 	render_list_state_rendering,
 };
 
-typedef int64_t render_list_t;
+typedef int32_t render_list_t;
 
 matrix        render_get_projection_matrix();
 float         render_get_ortho_view_height();

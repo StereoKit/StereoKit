@@ -1822,7 +1822,7 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
-SK_API int                   input_pointer_count  (input_source_ filter sk_default(input_source_any));
+SK_API int32_t               input_pointer_count  (input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t         *input_hand           (handed_ hand);
 SK_API void                  input_hand_override  (handed_ hand, const hand_joint_t *hand_joints);

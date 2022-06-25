@@ -13,7 +13,7 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 	if (norms->count == 0) norms->add(vec3{ 0,1,0 });
 	vert_t v = vert_t{ verts->get(iV - 1LL), norms->get(iN - 1LL), uvs->get(iT - 1LL), {255,255,255,255} };
 
-	int64_t index = indmap->contains(v);
+	int32_t index = indmap->contains(v);
 	if (index < 0) {
 		index = mesh_verts->add(v);
 		indmap->add_or_set(v, (vind_t)index);
@@ -101,7 +101,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 
 	mesh = mesh_create();
 	mesh_set_id  (mesh, id);
-	mesh_set_data(mesh, &verts[0], (int32_t)verts.count, &faces[0], (int32_t)faces.count);
+	mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
 	model_add_subset(model, mesh, material, matrix_identity);
 
