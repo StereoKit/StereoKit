@@ -43,6 +43,13 @@ openxr_handle_t backend_openxr_get_session() {
 
 ///////////////////////////////////////////
 
+openxr_handle_t backend_openxr_get_system_id() {
+	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return 0;
+}
+
+///////////////////////////////////////////
+
 openxr_handle_t backend_openxr_get_space() {
 	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 	return 0;

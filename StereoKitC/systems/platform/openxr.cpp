@@ -903,6 +903,14 @@ openxr_handle_t backend_openxr_get_session() {
 
 ///////////////////////////////////////////
 
+openxr_handle_t backend_openxr_get_system_id() {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_system_id;
+}
+
+///////////////////////////////////////////
+
 openxr_handle_t backend_openxr_get_space() {
 	if (backend_xr_get_type() != backend_xr_type_openxr) 
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");

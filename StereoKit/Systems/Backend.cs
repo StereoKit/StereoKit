@@ -50,6 +50,12 @@ namespace StereoKit
 			/// be started quite so early.</summary>
 			public static ulong Session => NativeAPI.backend_openxr_get_session();
 
+			/// <summary>Type: XrSystemId. This is the id of the device
+			/// StereoKit is currently using! This is the result of calling
+			/// `xrGetSystem` with `XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY`.
+			/// </summary>
+			public static ulong SystemId => NativeAPI.backend_openxr_get_system_id();
+
 			/// <summary>Type: XrSpace. StereoKit's primary coordinate space,
 			/// valid after SK.Initialize, this will most likely be created
 			/// from `XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT` or
