@@ -297,13 +297,6 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/flatscreen_input.cpp
   StereoKitC/platforms/linux.h
   StereoKitC/platforms/linux.cpp
-  StereoKitC/platforms/openxr.h
-  StereoKitC/platforms/openxr.cpp
-  StereoKitC/platforms/openxr_extensions.h
-  StereoKitC/platforms/openxr_input.h
-  StereoKitC/platforms/openxr_input.cpp
-  StereoKitC/platforms/openxr_view.h
-  StereoKitC/platforms/openxr_view.cpp
   StereoKitC/platforms/platform.h
   StereoKitC/platforms/platform.cpp
   StereoKitC/platforms/platform_utils.h
