@@ -4,16 +4,16 @@
 
 #include "platform_utils.h"
 
-#include "../../stereokit.h"
-#include "../../sk_memory.h"
-#include "../../sk_math.h"
-#include "../../log.h"
-#include "../../libraries/stref.h"
-#include "../../libraries/array.h"
-#include "../../tools/file_picker.h"
-#include "../../tools/virtual_keyboard.h"
-#include "../../systems/input_keyboard.h"
-#include "../../asset_types/font.h"
+#include "../stereokit.h"
+#include "../sk_memory.h"
+#include "../sk_math.h"
+#include "../log.h"
+#include "../libraries/stref.h"
+#include "../libraries/array.h"
+#include "../tools/file_picker.h"
+#include "../tools/virtual_keyboard.h"
+#include "../systems/input_keyboard.h"
+#include "../asset_types/font.h"
 
 #include <stdio.h>
 #include <stdlib.h>

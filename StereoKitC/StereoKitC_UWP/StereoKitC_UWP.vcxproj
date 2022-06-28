@@ -18,6 +18,7 @@
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
+    <ReadOnlyProject>true</ReadOnlyProject>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ItemGroup Label="ProjectConfigurations">
@@ -134,30 +135,15 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\libraries\*.cpp" />
-    <ClCompile Include="..\libraries\*.c" />
-    <ClCompile Include="..\tools\*.cpp" />
-    <ClCompile Include="..\asset_types\*.cpp" />
-    <ClCompile Include="..\systems\*.cpp" />
-    <ClCompile Include="..\systems\platform\*.cpp" />
-    <ClCompile Include="..\systems\hand\*.cpp" />
-    <ClCompile Include="..\shaders_builtin\*.cpp" />
-    <ClCompile Include="..\ui\*.cpp" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\libraries\*.h" />
-    <ClInclude Include="..\tools\*.h" />
-    <ClInclude Include="..\asset_types\*.h" />
-    <ClInclude Include="..\systems\*.h" />
-    <ClInclude Include="..\systems\platform\*.h" />
-    <ClInclude Include="..\systems\hand\*.h" />
-    <ClInclude Include="..\shaders_builtin\*.h" />
-    <ClInclude Include="..\ui\*.h" />
+    <_WildCardClCompile Include="..\**\*.cpp" Exclude="..\StereoKitC_UWP\**\*.cpp;..\lib\**\*.cpp"/>
   </ItemGroup>
+  <Target Name="AddWildCardItems" AfterTargets="BuildGenerateSources">
+    <ItemGroup>
+      <ClCompile Include="@(_WildCardClCompile)" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
