@@ -40,6 +40,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+typedef struct context_callback_t {
+	void (*callback)(void* context);
+	void *context;
+} context_callback_t;
+
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
 	"",
@@ -64,6 +69,8 @@ XrTime         xr_eyes_sample_time = 0;
 
 array_t<const char*> xr_exts_user   = {};
 array_t<uint64_t>    xr_exts_loaded = {};
+
+array_t<context_callback_t> xr_callbacks_pre_session_create = {};
 
 bool   xr_has_bounds        = false;
 vec2   xr_bounds_size       = {};
@@ -385,6 +392,13 @@ bool openxr_init() {
 	}
 	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
+
+	// Before we call xrCreateSession, lets fire an event for anyone that needs
+	// to set things up!
+	for (size_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
+		xr_callbacks_pre_session_create[i].callback(xr_callbacks_pre_session_create[i].context);
+	}
+	xr_callbacks_pre_session_create.free();
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
@@ -971,6 +985,17 @@ void backend_openxr_ext_request(const char *extension_name) {
 	}
 
 	xr_exts_user.add(string_copy(extension_name));
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+
+	xr_callbacks_pre_session_create.add({ on_pre_session_create, context });
 }
 
 } // namespace sk

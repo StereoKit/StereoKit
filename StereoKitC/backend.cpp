@@ -87,6 +87,15 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 ///////////////////////////////////////////
 
+void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
+	if (sk_initialized) {
+		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
 	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 }

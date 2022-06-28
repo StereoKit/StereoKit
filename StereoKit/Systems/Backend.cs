@@ -131,6 +131,36 @@ namespace StereoKit
 				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
 				Marshal.FreeHGlobal(ptr);
 			}
+
+			private static event Action _onPreCreateSession;
+			private static bool         _onPreCreateSessionRegistered = false;
+			private static void _OnPreCreateSession(IntPtr context)
+			{
+				_onPreCreateSession();
+				_onPreCreateSession           = null;
+				_onPreCreateSessionRegistered = false;
+			}
+
+			public static event Action OnPreCreateSession {
+				add {
+					if (_onPreCreateSessionRegistered == false)
+					{
+						_onPreCreateSessionRegistered = true;
+						NativeAPI.backend_openxr_add_callback_pre_session_create(_OnPreCreateSession, IntPtr.Zero);
+					}
+					_onPreCreateSession += value;
+				}
+				remove => _onPreCreateSession -= value;
+			}
+
+			internal static void CleanupInitialize()
+			{
+				// If OpenXR was not the backend, the callback events could
+				// still contain callbacks with capture data! So we want to
+				// free all those up.
+				_onPreCreateSession           = null;
+				_onPreCreateSessionRegistered = false;
+			}
 		}
 
 		/// <summary>This class contains variables that may be useful for

@@ -125,6 +125,8 @@ namespace StereoKit
 				_steppers.InitializeSteppers();
 			}
 
+			Backend.OpenXR.CleanupInitialize();
+
 			return result;
 		}
 
