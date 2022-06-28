@@ -1,5 +1,5 @@
 #include "defaults.h"
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"

@@ -1,12 +1,12 @@
-#include "../platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../platform/openxr.h"
-#include "../platform/openxr_input.h"
-#include "../input.h"
-#include "../render.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_input.h"
+#include "../systems/input.h"
+#include "../systems/render.h"
 #include "input_hand.h"
 
 #include <string.h>

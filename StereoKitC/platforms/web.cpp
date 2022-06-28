@@ -5,17 +5,17 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../../asset_types/texture.h"
-#include "../../libraries/sokol_time.h"
-#include "../../libraries/unicode.h"
-#include "../../libraries/stref.h"
-#include "../system.h"
-#include "../render.h"
-#include "../input.h"
-#include "../input_keyboard.h"
-#include "../hand/input_hand.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../asset_types/texture.h"
+#include "../libraries/sokol_time.h"
+#include "../libraries/unicode.h"
+#include "../libraries/stref.h"
+#include "../systems/system.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/input_keyboard.h"
+#include "../hands/input_hand.h"
 #include "flatscreen_input.h"
 
 namespace sk {

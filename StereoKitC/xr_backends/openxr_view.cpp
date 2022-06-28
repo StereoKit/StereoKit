@@ -1,21 +1,21 @@
-#include "platform_utils.h"
+#include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
 #include "openxr_extensions.h"
 #include "openxr_input.h"
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../../sk_memory.h"
-#include "../../log.h"
-#include "../../asset_types/texture_.h"
-#include "../../asset_types/texture.h"
-#include "../../systems/render.h"
-#include "../../systems/input.h"
-#include "../../libraries/sokol_time.h"
-#include "../../libraries/sk_gpu.h"
-#include "../system.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../sk_memory.h"
+#include "../log.h"
+#include "../asset_types/texture_.h"
+#include "../asset_types/texture.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/system.h"
+#include "../libraries/sokol_time.h"
+#include "../libraries/sk_gpu.h"
 
 #include <stdio.h>
 

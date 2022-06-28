@@ -7,17 +7,17 @@
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 
-#include "openxr.h"
+#include "../xr_backends/openxr.h"
 #include "flatscreen_input.h"
-#include "../render.h"
-#include "../input.h"
-#include "../input_keyboard.h"
-#include "../system.h"
-#include "../../_stereokit.h"
-#include "../../log.h"
-#include "../../libraries/sk_gpu.h"
-#include "../../libraries/sokol_time.h"
-#include "../../libraries/unicode.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/input_keyboard.h"
+#include "../systems/system.h"
+#include "../_stereokit.h"
+#include "../log.h"
+#include "../libraries/sk_gpu.h"
+#include "../libraries/sokol_time.h"
+#include "../libraries/unicode.h"
 
 #if defined(SKG_LINUX_EGL)
 

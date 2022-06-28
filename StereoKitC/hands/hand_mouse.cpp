@@ -1,7 +1,7 @@
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../input.h"
-#include "../platform/flatscreen_input.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../systems/input.h"
+#include "../platforms/flatscreen_input.h"
 #include "input_hand.h"
 
 namespace sk {

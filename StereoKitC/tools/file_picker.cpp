@@ -6,11 +6,11 @@
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #if defined(SK_OS_WINDOWS)
 
-	#include "../systems/platform/win32.h"
+	#include "../platforms/win32.h"
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
 	#include <commdlg.h>
