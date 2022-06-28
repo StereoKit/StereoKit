@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../systems/platform/platform_utils.h" // SK_DEBUG
+#include "../platforms/platform_utils.h" // SK_DEBUG
 #include <stdint.h>
 
 namespace sk {

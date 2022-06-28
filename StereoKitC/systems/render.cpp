@@ -15,8 +15,8 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../systems/platform/flatscreen_input.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/flatscreen_input.h"
+#include "../platforms/platform_utils.h"
 
 #pragma warning(push)
 #pragma warning(disable : 26451 26819 6386 6385 )

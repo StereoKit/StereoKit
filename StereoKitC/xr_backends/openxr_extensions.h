@@ -1,11 +1,11 @@
 #pragma once
 
-#include "platform_utils.h"
+#include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
-#include "../../stereokit.h"
-#include "../../libraries/array.h"
+#include "../stereokit.h"
+#include "../libraries/array.h"
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
 	#define WIN32_LEAN_AND_MEAN

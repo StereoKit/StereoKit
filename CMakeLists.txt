@@ -278,42 +278,44 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/world.cpp )
 
 set(SK_SRC_HANDS
-  StereoKitC/systems/hand/hand_mouse.h
-  StereoKitC/systems/hand/hand_mouse.cpp
-  StereoKitC/systems/hand/hand_override.h
-  StereoKitC/systems/hand/hand_override.cpp
-  StereoKitC/systems/hand/hand_oxr_articulated.h
-  StereoKitC/systems/hand/hand_oxr_articulated.cpp
-  StereoKitC/systems/hand/hand_oxr_controller.h
-  StereoKitC/systems/hand/hand_oxr_controller.cpp
-  StereoKitC/systems/hand/hand_poses.h
-  StereoKitC/systems/hand/input_hand.h
-  StereoKitC/systems/hand/input_hand.cpp )
+  StereoKitC/hands/hand_mouse.h
+  StereoKitC/hands/hand_mouse.cpp
+  StereoKitC/hands/hand_override.h
+  StereoKitC/hands/hand_override.cpp
+  StereoKitC/hands/hand_oxr_articulated.h
+  StereoKitC/hands/hand_oxr_articulated.cpp
+  StereoKitC/hands/hand_oxr_controller.h
+  StereoKitC/hands/hand_oxr_controller.cpp
+  StereoKitC/hands/hand_poses.h
+  StereoKitC/hands/input_hand.h
+  StereoKitC/hands/input_hand.cpp )
 
-set(SK_SRC_PLATFORM
-  StereoKitC/systems/platform/android.cpp
-  StereoKitC/systems/platform/android.h
-  StereoKitC/systems/platform/flatscreen_input.h
-  StereoKitC/systems/platform/flatscreen_input.cpp
-  StereoKitC/systems/platform/linux.h
-  StereoKitC/systems/platform/linux.cpp
-  StereoKitC/systems/platform/openxr.h
-  StereoKitC/systems/platform/openxr.cpp
-  StereoKitC/systems/platform/openxr_extensions.h
-  StereoKitC/systems/platform/openxr_input.h
-  StereoKitC/systems/platform/openxr_input.cpp
-  StereoKitC/systems/platform/openxr_view.h
-  StereoKitC/systems/platform/openxr_view.cpp
-  StereoKitC/systems/platform/platform.h
-  StereoKitC/systems/platform/platform.cpp
-  StereoKitC/systems/platform/platform_utils.h
-  StereoKitC/systems/platform/platform_utils.cpp
-  StereoKitC/systems/platform/web.h
-  StereoKitC/systems/platform/web.cpp  
-  StereoKitC/systems/platform/uwp.h
-  StereoKitC/systems/platform/uwp.cpp  
-  StereoKitC/systems/platform/win32.h
-  StereoKitC/systems/platform/win32.cpp )
+set(SK_SRC_PLATFORMS
+  StereoKitC/platforms/android.cpp
+  StereoKitC/platforms/android.h
+  StereoKitC/platforms/flatscreen_input.h
+  StereoKitC/platforms/flatscreen_input.cpp
+  StereoKitC/platforms/linux.h
+  StereoKitC/platforms/linux.cpp
+  StereoKitC/platforms/platform.h
+  StereoKitC/platforms/platform.cpp
+  StereoKitC/platforms/platform_utils.h
+  StereoKitC/platforms/platform_utils.cpp
+  StereoKitC/platforms/web.h
+  StereoKitC/platforms/web.cpp  
+  StereoKitC/platforms/uwp.h
+  StereoKitC/platforms/uwp.cpp  
+  StereoKitC/platforms/win32.h
+  StereoKitC/platforms/win32.cpp )
+
+set(SK_SRC_XR_BACKENDS
+  StereoKitC/xr_backends/openxr.h
+  StereoKitC/xr_backends/openxr.cpp
+  StereoKitC/xr_backends/openxr_extensions.h
+  StereoKitC/xr_backends/openxr_input.h
+  StereoKitC/xr_backends/openxr_input.cpp
+  StereoKitC/xr_backends/openxr_view.h
+  StereoKitC/xr_backends/openxr_view.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h
@@ -340,7 +342,8 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_LIBRARIES}
   ${SK_SRC_SYSTEMS}
   ${SK_SRC_HANDS}
-  ${SK_SRC_PLATFORM}
+  ${SK_SRC_PLATFORMS}
+  ${SK_SRC_XR_BACKENDS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
@@ -352,7 +355,8 @@ source_group("asset_types" FILES ${SK_SRC_ASSET_TYPES})
 source_group("libraries"   FILES ${SK_SRC_LIBRARIES})
 source_group("systems"     FILES ${SK_SRC_SYSTEMS})
 source_group("hands"       FILES ${SK_SRC_HANDS})
-source_group("platform"    FILES ${SK_SRC_PLATFORM})
+source_group("platform"    FILES ${SK_SRC_PLATFORMS})
+source_group("xr_backends" FILES ${SK_SRC_XR_BACKENDS})
 source_group("tools"       FILES ${SK_SRC_TOOLS})
 source_group("ui"          FILES ${SK_SRC_UI})
 
@@ -432,20 +436,6 @@ if (SK_BUILD_TESTS)
   endif()
 endif()
 
-if (SK_BUILD_TESTS)
-  add_executable( bvh_test
-    Examples/StereoKitCTest/bvh_test.cpp
-  ) 
-
-  target_link_libraries( bvh_test
-    StereoKitC
-  )
-
-  if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-    target_compile_options(bvh_test PRIVATE "/MP")
-  endif()  
-endif()
-
 ###########################################
 ## Multi-threaded build MSVC             ##
 ###########################################
@@ -475,7 +465,7 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/ui/stereokit_ui.h" "Tools/include/stereokit.hlsli"
   DESTINATION include)
 
 install(

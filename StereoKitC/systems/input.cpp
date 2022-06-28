@@ -1,10 +1,10 @@
 #include "../stereokit.h"
 #include "input.h"
 #include "input_keyboard.h"
-#include "hand/input_hand.h"
+#include "../hands/input_hand.h"
 #include "../libraries/array.h"
-#include "platform/openxr.h"
-#include "platform/openxr_input.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_input.h"
 
 namespace sk {
 

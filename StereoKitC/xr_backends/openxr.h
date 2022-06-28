@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
 #if defined(SK_OS_ANDROID)
@@ -38,7 +38,7 @@
 
 #endif
 
-#include "../../stereokit.h"
+#include "../stereokit.h"
 
 #include <openxr/openxr.h>
 

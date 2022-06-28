@@ -1,10 +1,10 @@
 #pragma once
 
-#include "platform_utils.h"
+#include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
-#include "../../stereokit.h"
-#include "../../libraries/array.h"
+#include "../stereokit.h"
+#include "../libraries/array.h"
 
 #include <openxr/openxr.h>
 #include <stdint.h>

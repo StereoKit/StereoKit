@@ -1,4 +1,6 @@
 #pragma once
+#include "../stereokit.h"
+
 namespace sk {
 
 void flatscreen_input_init();

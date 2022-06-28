@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../stereokit.h"
+#include "../stereokit.h"
 
 #if   defined(__EMSCRIPTEN__)
 	#define SK_OS_WEB

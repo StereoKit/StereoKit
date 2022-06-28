@@ -4,14 +4,14 @@
 #include <dxgi1_2.h>
 #include <process.h>
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../../asset_types/texture.h"
-#include "../../libraries/sokol_time.h"
-#include "../system.h"
-#include "../render.h"
-#include "../input.h"
-#include "../input_keyboard.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../asset_types/texture.h"
+#include "../libraries/sokol_time.h"
+#include "../systems/system.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/input_keyboard.h"
 #include "flatscreen_input.h"
 
 namespace sk {

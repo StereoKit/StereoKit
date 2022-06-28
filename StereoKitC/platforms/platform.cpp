@@ -1,16 +1,16 @@
 #include "platform.h"
 #include "platform_utils.h"
 
-#include "../../_stereokit.h"
-#include "../../log.h"
+#include "../_stereokit.h"
+#include "../log.h"
 #include "win32.h"
 #include "uwp.h"
 #include "linux.h"
 #include "android.h"
 #include "web.h"
-#include "openxr.h"
+#include "../xr_backends/openxr.h"
 
-#include "../../libraries/sk_gpu.h"
+#include "../libraries/sk_gpu.h"
 
 namespace sk {
 

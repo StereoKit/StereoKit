@@ -1,5 +1,5 @@
-#include "../../stereokit.h"
-#include "../input.h"
+#include "../stereokit.h"
+#include "../systems/input.h"
 #include "input_hand.h"
 
 #include <string.h>

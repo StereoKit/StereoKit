@@ -1,10 +1,10 @@
+#include "sound.h"
+#include "assets.h"
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../asset_types/assets.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../systems/audio.h"
-#include "sound.h"
 
 #include <string.h>
 

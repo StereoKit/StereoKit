@@ -1,12 +1,12 @@
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../asset_types/assets.h"
 #include "../asset_types/mesh_.h"
-#include "platform/openxr.h"
-#include "platform/openxr_extensions.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_extensions.h"
 #include "render.h"
 
 #include <float.h>

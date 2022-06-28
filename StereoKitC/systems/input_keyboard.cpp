@@ -1,6 +1,6 @@
 #include "input.h"
 #include "input_keyboard.h"
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
 

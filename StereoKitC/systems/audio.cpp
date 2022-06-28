@@ -3,7 +3,7 @@
 
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include "../libraries/miniaudio.h"
 #include "../libraries/stref.h"

@@ -5,15 +5,15 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
-#include "../../asset_types/texture.h"
-#include "../../libraries/sokol_time.h"
-#include "../system.h"
-#include "../render.h"
-#include "../input.h"
-#include "../input_keyboard.h"
-#include "../hand/input_hand.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
+#include "../asset_types/texture.h"
+#include "../libraries/sokol_time.h"
+#include "../systems/system.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/input_keyboard.h"
+#include "../hands/input_hand.h"
 #include "flatscreen_input.h"
 
 namespace sk {

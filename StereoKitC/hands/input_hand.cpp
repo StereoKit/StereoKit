@@ -1,7 +1,7 @@
-#include "../../stereokit.h"
-#include "../../sk_math.h"
-#include "../../sk_memory.h"
-#include "../input.h"
+#include "../stereokit.h"
+#include "../sk_math.h"
+#include "../sk_memory.h"
+#include "../systems/input.h"
 #include "input_hand.h"
 #include "hand_poses.h"
 
@@ -10,7 +10,7 @@
 #include "hand_oxr_controller.h"
 #include "hand_oxr_articulated.h"
 
-#include "../platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include <math.h>
 #include <string.h>

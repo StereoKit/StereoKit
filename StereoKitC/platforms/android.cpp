@@ -1,15 +1,15 @@
 #include "android.h"
 #if defined(SK_OS_ANDROID)
 
-#include "../../log.h"
-#include "openxr.h"
+#include "../log.h"
+#include "../xr_backends/openxr.h"
 #include "flatscreen_input.h"
-#include "../render.h"
-#include "../input.h"
-#include "../system.h"
-#include "../../_stereokit.h"
-#include "../../libraries/sk_gpu.h"
-#include "../../libraries/sokol_time.h"
+#include "../systems/render.h"
+#include "../systems/input.h"
+#include "../systems/system.h"
+#include "../_stereokit.h"
+#include "../libraries/sk_gpu.h"
+#include "../libraries/sokol_time.h"
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>

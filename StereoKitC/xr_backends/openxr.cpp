@@ -1,7 +1,7 @@
-#include "../../stereokit.h"
-#include "../../_stereokit.h"
+#include "../stereokit.h"
+#include "../_stereokit.h"
 
-#include "platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #if defined(SK_XR_OPENXR)
 
@@ -10,19 +10,19 @@
 #include "openxr_input.h"
 #include "openxr_view.h"
 
-#include "../../sk_memory.h"
-#include "../../log.h"
-#include "../../libraries/stref.h"
-#include "../../libraries/ferr_hash.h"
-#include "../../libraries/sk_gpu.h"
-#include "../render.h"
-#include "../audio.h"
-#include "../input.h"
-#include "../hand/input_hand.h"
-#include "android.h"
-#include "linux.h"
-#include "uwp.h"
-#include "win32.h"
+#include "../sk_memory.h"
+#include "../log.h"
+#include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
+#include "../libraries/sk_gpu.h"
+#include "../systems/render.h"
+#include "../systems/audio.h"
+#include "../systems/input.h"
+#include "../hands/input_hand.h"
+#include "../platforms/android.h"
+#include "../platforms/linux.h"
+#include "../platforms/uwp.h"
+#include "../platforms/win32.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>

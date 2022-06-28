@@ -1,9 +1,9 @@
-#include "../../_stereokit.h"
+#include "../_stereokit.h"
 #include "platform_utils.h"
 #include "flatscreen_input.h"
 
-#include "../input.h"
-#include "../render.h"
+#include "../systems/input.h"
+#include "../systems/render.h"
 
 namespace sk {
 
