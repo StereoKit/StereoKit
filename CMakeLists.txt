@@ -443,20 +443,6 @@ if (SK_BUILD_TESTS)
   endif()
 endif()
 
-if (SK_BUILD_TESTS)
-  add_executable( bvh_test
-    Examples/StereoKitCTest/bvh_test.cpp
-  ) 
-
-  target_link_libraries( bvh_test
-    StereoKitC
-  )
-
-  if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-    target_compile_options(bvh_test PRIVATE "/MP")
-  endif()  
-endif()
-
 ###########################################
 ## Multi-threaded build MSVC             ##
 ###########################################
