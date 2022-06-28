@@ -1,106 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\demo_sprites.cpp" />
-    <ClCompile Include="..\demo_ui.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\scene.cpp" />
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp">
-      <Filter>reference_files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\*.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\demo_sprites.h" />
-    <ClInclude Include="..\demo_ui.h" />
-    <ClInclude Include="..\scene.h" />
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\demo_sprites.h" />
-    <ClInclude Include="..\demo_ui.h" />
-    <ClInclude Include="..\scene.h" />
-    <ClInclude Include="..\demo_sprites.h" />
-    <ClInclude Include="..\demo_ui.h" />
-    <ClInclude Include="..\scene.h" />
-    <ClInclude Include="..\demo_sprites.h" />
-    <ClInclude Include="..\demo_ui.h" />
-    <ClInclude Include="..\scene.h" />
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h">
-      <Filter>reference_files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\*.h" />
+    <ClCompile Include="..\*.cpp"/>
+    <ClInclude Include="..\*.h"/>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\Logo.scale-100.png">
@@ -125,9 +27,6 @@
   <ItemGroup>
     <Filter Include="Assets">
       <UniqueIdentifier>{db9086fe-bacc-4437-8272-1aa6642082db}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="reference_files">
-      <UniqueIdentifier>{896c97bd-7622-4c49-ac26-91ed17920e6d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
