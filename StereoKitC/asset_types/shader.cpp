@@ -1,5 +1,5 @@
 #include "../stereokit.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/stref.h"
 #include "shader.h"
 #include "assets.h"

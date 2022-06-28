@@ -12,7 +12,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../rect_atlas.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../sk_memory.h"
 
 #include <stdio.h>

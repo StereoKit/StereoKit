@@ -4,7 +4,7 @@
 #include "../sk_memory.h"
 #include "model.h"
 #include "../libraries/stref.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include <stdio.h>
 #include <string.h>

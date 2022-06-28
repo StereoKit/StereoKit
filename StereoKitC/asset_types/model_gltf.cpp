@@ -8,7 +8,7 @@
 #include "../systems/defaults.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/cgltf.h"
 
 #include <stdio.h>
