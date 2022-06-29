@@ -56,7 +56,7 @@ Interested in the [source for StereoKit](https://github.com/StereoKit/StereoKit)
 
 ## Building or Contributing
 
-For those that want to build the test project, or perhaps the whole library from scratch, there's a [guide to building StereoKit's repository](https://github.com/StereoKit/StereoKit/BUILDING.md)! For those that wish to contribute features or fixes to StereoKit, awesome! Check out the [contributor's guide](https://github.com/StereoKit/StereoKit/CONTRIBUTING.md). In addition, you may want to check with the maintainers on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
+For those that want to build the test project, or perhaps the whole library from scratch, there's a [guide to building StereoKit's repository](https://github.com/StereoKit/StereoKit/blob/master/BUILDING.md)! For those that wish to contribute features or fixes to StereoKit, awesome! Check out the [contributor's guide](https://github.com/StereoKit/StereoKit/blob/master/CONTRIBUTING.md). In addition, you may want to check with the maintainers on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
 
 ## Issue reports
 
