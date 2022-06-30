@@ -39,7 +39,7 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("wasm") then
-    add_requires("openxr_loader 1.0.22", {verify = false, configs = {vs_runtime="MD", shared=false}})
+    add_requires("openxr_loader 1.0.24", {verify = false, configs = {vs_runtime="MD", shared=false}})
     add_requires("reactphysics3d 0.9.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
 

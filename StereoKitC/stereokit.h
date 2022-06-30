@@ -1583,6 +1583,7 @@ typedef struct hand_t {
 
 typedef struct controller_t {
 	pose_t        pose;
+	pose_t        palm;
 	pose_t        aim;
 	button_state_ tracked;
 	track_state_  tracked_pos;
