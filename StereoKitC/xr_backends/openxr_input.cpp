@@ -655,7 +655,7 @@ void oxri_update_poses() {
 
 		// Get the palm position from either the extension, or our previous
 		// fallback offsets from the grip pose.
-		if (xr_ext_available.EXT_palm_pose_private) {
+		if (xr_ext_available.EXT_palm_pose) {
 			space_location = { XR_TYPE_SPACE_LOCATION };
 			XrResult res = xrLocateSpace(xrc_space_palm[hand], xr_app_space, xr_time, &space_location);
 			if (XR_UNQUALIFIED_SUCCESS(res)) {
