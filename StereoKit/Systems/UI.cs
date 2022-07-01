@@ -107,7 +107,9 @@ namespace StereoKit
 			=> NativeAPI.ui_is_interacting(hand);
 
 		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
+		[Obsolete("To be removed in v0.4")]
 		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
+		public static Color GetThemeColor(UIColor colorType) => NativeAPI.ui_get_theme_color(colorType);
 
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a

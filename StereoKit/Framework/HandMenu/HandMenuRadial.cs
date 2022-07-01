@@ -42,7 +42,8 @@ namespace StereoKit.Framework
 		Stack<int>        navStack = new Stack<int>();
 		int               activeLayer;
 		LinePoint[]       circle;
-		float             activation = minScale;
+		float             activation  = 0;
+		float             menuScale   = 0;
 		float             angleOffset = 0;
 
 		Mesh background;
@@ -96,7 +97,7 @@ namespace StereoKit.Framework
 			if (!active)
 				return;
 			Default.SoundUnclick.Play(menuPose.position);
-			activation  = minScale;
+			menuScale   = minScale;
 			active      = false;
 			angleOffset = 0;
 			navStack.Clear();
@@ -153,10 +154,11 @@ namespace StereoKit.Framework
 		void StepMenu(Hand hand)
 		{
 			// Animate the menu a bit
-			float time = (Time.Elapsedf * 24);
+			float time = Math.Min(1, Time.Elapsedf * 24);
 			menuPose.position    = Vec3  .Lerp (menuPose.position,    destPose.position,    time);
 			menuPose.orientation = Quat  .Slerp(menuPose.orientation, destPose.orientation, time);
-			activation           = SKMath.Lerp (activation, 1, time);
+			activation           = SKMath.Lerp (activation,           1,                    time);
+			menuScale            = SKMath.Lerp (menuScale,            1,                    time);
 
 			// Pre-calculate some circle traversal values
 			HandRadialLayer layer = layers[activeLayer];
@@ -166,7 +168,7 @@ namespace StereoKit.Framework
 
 			// Push the Menu's pose onto the stack, so we can draw, and work
 			// in local space.
-			Hierarchy.Push(menuPose.ToMatrix(activation));
+			Hierarchy.Push(menuPose.ToMatrix(menuScale));
 
 			// Calculate the status of the menu!
 			Vec3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
@@ -184,29 +186,33 @@ namespace StereoKit.Framework
 			Lines.Add(Vec3.Zero, new Vec3(tipLocal.x, tipLocal.y, 0), Color.White * 0.5f, 0.001f);
 
 			// Now draw each of the menu items!
-			Color colorPrimary = UI.GetThemeColor(UIColor.Primary, Color.White).ToLinear();
-			Color colorCommon  = UI.GetThemeColor(UIColor.Background, Color.White).ToLinear();
+			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
+			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
 			for (int i = 0; i < count; i++)
 			{
-				float currAngle     = i*step + layer.startAngle + angleOffset;
-				bool  highlightText = focused && angleId == i;
+				float currAngle = i*step + layer.startAngle + angleOffset;
+				bool  highlight = focused && angleId == i && activation >= 0.99f;
 
-				Matrix r = Matrix.R(0, 0, currAngle);
-				background    .Draw(Material.UI, r, colorCommon  * (highlightText ? 2.0f:1.0f));
-				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlightText ? 2.0f:1.0f));
+				float  depth = highlight ? -0.005f : 0.0f;
+				Matrix r     = Matrix.TR(0,0,depth, Quat.FromAngles( 0, 0, currAngle ));
+				background    .Draw(Material.UI, r, colorCommon  * (highlight ? 2.0f:1.0f));
+				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlight ? 2.0f:1.0f));
 				if (layer.items[i].image != null)
 				{
 					float height = TextStyle.Default.CharHeight;
 					Vec3  offset = new Vec3(0, height * 0.75f, 0);
 					Vec3  at     = Vec3.AngleXY(currAngle + halfStep) * midDist;
-					Hierarchy.Push(Matrix.TS(at, highlightText ? 1.2f : 1));
+					at.z = depth;
+					Hierarchy.Push(Matrix.TS(at, highlight ? 1.2f : 1));
 						layer.items[i].image.Draw(Matrix.TS(offset, height), TextAlign.Center);
 						Text.Add(layer.items[i].name, Matrix.TS(-offset, .5f), TextAlign.BottomCenter);
 					Hierarchy.Pop();
 				}
 				else
 				{
-					Text.Add(layer.items[i].name, Matrix.TS(Vec3.AngleXY(currAngle + halfStep) * midDist, highlightText ? 0.6f : 0.5f), TextAlign.BottomCenter);
+					Vec3 at = Vec3.AngleXY(currAngle + halfStep) * midDist;
+					at.z = depth;
+					Text.Add(layer.items[i].name, Matrix.TS(at, highlight ? 0.6f : 0.5f), TextAlign.BottomCenter);
 				}
 			}
 
@@ -217,7 +223,7 @@ namespace StereoKit.Framework
 
 			// But not if we're still in the process of animating, interaction values 
 			// could be pretty incorrect when we're still lerping around.
-			if (activation < 0.95f) return;
+			if (activation < 0.99f) return;
 			if (selected)           SelectItem(layer.items[angleId], tipWorld, (angleId + 0.5f) * step);
 			if (cancel)             Close();
 		}
@@ -260,6 +266,7 @@ namespace StereoKit.Framework
 		{
 			Plane plane = new Plane(menuPose.position, menuPose.Forward);
 			destPose.position = plane.Closest(at);
+			activation = 0;
 
 			if (layers[activeLayer].backAngle != 0)
 			{
@@ -282,8 +289,8 @@ namespace StereoKit.Framework
 
 		static void GenerateSliceMesh(float angle, float minDist, float maxDist, ref Mesh mesh)
 		{
-			float gap = 2 * U.mm;
-			int count = (int)(angle * 0.25f);
+			float gap   = 2 * U.mm;
+			int   count = (int)(angle * 0.25f);
 
 			float innerStartAngle = (gap / (minDist * Units.deg2rad));
 			float innerAngle      = angle - innerStartAngle * 2;
@@ -298,8 +305,8 @@ namespace StereoKit.Framework
 
 			for (uint i = 0; i < count; i++)
 			{
-				Vec3 innerDir = Vec3.AngleXY(innerStartAngle + i * innerStep, 0.001f);
-				Vec3 outerDir = Vec3.AngleXY(outerStartAngle + i * outerStep, 0.001f);
+				Vec3 innerDir = Vec3.AngleXY(innerStartAngle + i * innerStep, 0.005f);
+				Vec3 outerDir = Vec3.AngleXY(outerStartAngle + i * outerStep, 0.005f);
 				verts[i * 2    ] = new Vertex(innerDir * minDist, Vec3.Forward);
 				verts[i * 2 + 1] = new Vertex(outerDir * maxDist, Vec3.Forward);
 
