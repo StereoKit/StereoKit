@@ -42,9 +42,11 @@ namespace StereoKit.Framework
 		Stack<int>        navStack = new Stack<int>();
 		int               activeLayer;
 		LinePoint[]       circle;
-		LinePoint[]       innerCircle;
 		float             activation = minScale;
 		float             angleOffset = 0;
+
+		Mesh background;
+		Mesh backgroundEdge;
 		#endregion
 
 		#region Public Methods
@@ -59,7 +61,6 @@ namespace StereoKit.Framework
 		{
 			layers      = menuLayers;
 			circle      = new LinePoint[48];
-			innerCircle = new LinePoint[circle.Length];
 
 			// Pre-generate circles for the menu
 			float step  = 360.0f / (circle.Length-1);
@@ -68,7 +69,6 @@ namespace StereoKit.Framework
 			{
 				Vec3 dir = Vec3.AngleXY(i * step);
 				circle     [i] = new LinePoint(dir * maxDist, color, 2 * Units.mm2m);
-				innerCircle[i] = new LinePoint(dir * minDist, color, 2 * Units.mm2m);
 			}
 		}
 
@@ -85,6 +85,9 @@ namespace StereoKit.Framework
 			destPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
 			activeLayer = 0;
 			active      = true;
+
+			GenerateSliceMesh(360 / layers[0].items.Length, minDist, maxDist, ref background);
+			GenerateSliceMesh(360 / layers[0].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
 		}
 
 		/// <summary>Closes the menu if it's open! Plays a closing sound.</summary>
@@ -180,19 +183,31 @@ namespace StereoKit.Framework
 			int angleId = (int)(fingerAngle / step);
 			Lines.Add(Vec3.Zero, new Vec3(tipLocal.x, tipLocal.y, 0), Color.White * 0.5f, 0.001f);
 
-			// Draw the menu inner and outer circles
-			Lines.Add(circle);
-			Lines.Add(innerCircle);
-
 			// Now draw each of the menu items!
+			Color colorPrimary = UI.GetThemeColor(UIColor.Primary, Color.White).ToLinear();
+			Color colorCommon  = UI.GetThemeColor(UIColor.Background, Color.White).ToLinear();
 			for (int i = 0; i < count; i++)
 			{
 				float currAngle     = i*step + layer.startAngle + angleOffset;
 				bool  highlightText = focused && angleId == i;
-				bool  highlightLine = highlightText || (focused && (angleId+1)%count == i);
-				Vec3  dir           = Vec3.AngleXY(currAngle);
-				Lines.Add(dir * minDist, dir * maxDist, highlightLine ? Color.White : Color.White*0.5f, highlightLine?0.002f:0.001f);
-				Text .Add(layer.items[i].name, Matrix.TRS(Vec3.AngleXY(currAngle + halfStep)*midDist, Quat.FromAngles(0, 0, currAngle + halfStep - 90), highlightText?1.2f:1), TextAlign.BottomCenter);
+
+				Matrix r = Matrix.R(0, 0, currAngle);
+				background    .Draw(Material.UI, r, colorCommon  * (highlightText ? 2.0f:1.0f));
+				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlightText ? 2.0f:1.0f));
+				if (layer.items[i].image != null)
+				{
+					float height = TextStyle.Default.CharHeight;
+					Vec3  offset = new Vec3(0, height * 0.75f, 0);
+					Vec3  at     = Vec3.AngleXY(currAngle + halfStep) * midDist;
+					Hierarchy.Push(Matrix.TS(at, highlightText ? 1.2f : 1));
+						layer.items[i].image.Draw(Matrix.TS(offset, height), TextAlign.Center);
+						Text.Add(layer.items[i].name, Matrix.TS(-offset, .5f), TextAlign.BottomCenter);
+					Hierarchy.Pop();
+				}
+				else
+				{
+					Text.Add(layer.items[i].name, Matrix.TS(Vec3.AngleXY(currAngle + halfStep) * midDist, highlightText ? 0.6f : 0.5f), TextAlign.BottomCenter);
+				}
 			}
 
 			// Done with local work
@@ -214,6 +229,9 @@ namespace StereoKit.Framework
 			activeLayer = Array.FindIndex(layers, l => l.layerName == name);
 			if (activeLayer == -1)
 				Log.Err($"Couldn't find hand menu layer named {name}!");
+
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, ref background);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
 		}
 
 		void Back()
@@ -221,6 +239,9 @@ namespace StereoKit.Framework
 			Default.SoundUnclick.Play(menuPose.position);
 			if (navStack.Count > 0)
 				activeLayer = navStack.Pop();
+
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, ref background);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
 		}
 
 		void SelectItem(HandMenuItem item, Vec3 at, float fromAngle)
@@ -256,7 +277,45 @@ namespace StereoKit.Framework
 			Vec3 palmDirection   = hand.palm.Forward.Normalized;
 			Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized;
 
-			return Vec3.Dot(palmDirection, directionToHead) > 0.5f;
+			return Vec3.Dot(palmDirection, directionToHead) > 0.25f;
+		}
+
+		static void GenerateSliceMesh(float angle, float minDist, float maxDist, ref Mesh mesh)
+		{
+			float gap = 2 * U.mm;
+			int count = (int)(angle * 0.25f);
+
+			float innerStartAngle = (gap / (minDist * Units.deg2rad));
+			float innerAngle      = angle - innerStartAngle * 2;
+			float innerStep       = innerAngle / (count - 1);
+
+			float outerStartAngle = (gap / (maxDist * Units.deg2rad));
+			float outerAngle      = angle - outerStartAngle * 2;
+			float outerStep       = outerAngle / (count - 1);
+
+			Vertex[] verts = new Vertex[count * 2];
+			uint  [] inds  = new uint[(count-1) * 6];
+
+			for (uint i = 0; i < count; i++)
+			{
+				Vec3 innerDir = Vec3.AngleXY(innerStartAngle + i * innerStep, 0.001f);
+				Vec3 outerDir = Vec3.AngleXY(outerStartAngle + i * outerStep, 0.001f);
+				verts[i * 2    ] = new Vertex(innerDir * minDist, Vec3.Forward);
+				verts[i * 2 + 1] = new Vertex(outerDir * maxDist, Vec3.Forward);
+
+				if (i == count - 1) continue;
+				inds[i * 6+2] = i * 2;
+				inds[i * 6+1] = i * 2 + 1;
+				inds[i * 6+0] = (i+1) * 2 + 1;
+
+				inds[i * 6+5] = i * 2;
+				inds[i * 6+4] = (i+1) * 2 + 1;
+				inds[i * 6+3] = (i+1) * 2;
+			}
+
+			if (mesh == null) mesh = new Mesh();
+			mesh.SetVerts(verts);
+			mesh.SetInds (inds);
 		}
 
 		#endregion

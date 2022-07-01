@@ -79,8 +79,8 @@ class DemoHands : ITest
 		handMenu = SK.AddStepper(new HandMenuRadial(
 			new HandRadialLayer("Root",
 				new HandMenuItem("File",   null, null, "File"),
-				new HandMenuItem("Edit",   null, null, "Edit"),
-				new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
+				new HandMenuItem("Search", null, null, "Edit"),
+				new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 				new HandMenuItem("Cancel", null, null)),
 			new HandRadialLayer("File", 
 				new HandMenuItem("New",   null, () => Log.Info("New")),
