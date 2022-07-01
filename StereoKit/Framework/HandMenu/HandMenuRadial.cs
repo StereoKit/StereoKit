@@ -33,6 +33,7 @@ namespace StereoKit.Framework
 		const float midDist  = 0.065f;
 		const float maxDist  = 0.1f;
 		const float minScale = 0.05f;
+		const float sliceGap = 0.002f;
 
 		bool active = false;
 		Pose menuPose;
@@ -41,13 +42,14 @@ namespace StereoKit.Framework
 		HandRadialLayer[] layers;
 		Stack<int>        navStack = new Stack<int>();
 		int               activeLayer;
-		LinePoint[]       circle;
 		float             activation  = 0;
 		float             menuScale   = 0;
 		float             angleOffset = 0;
 
 		Mesh background;
 		Mesh backgroundEdge;
+		Mesh activationButton;
+		Mesh activationRing;
 		#endregion
 
 		#region Public Methods
@@ -60,17 +62,11 @@ namespace StereoKit.Framework
 		/// in this list.</param>
 		public HandMenuRadial(params HandRadialLayer[] menuLayers)
 		{
-			layers      = menuLayers;
-			circle      = new LinePoint[48];
+			layers = menuLayers;
 
-			// Pre-generate circles for the menu
-			float step  = 360.0f / (circle.Length-1);
-			Color color = Color.White * 0.5f;
-			for (int i = 0; i < circle.Length; i++)
-			{
-				Vec3 dir = Vec3.AngleXY(i * step);
-				circle     [i] = new LinePoint(dir * maxDist, color, 2 * Units.mm2m);
-			}
+			float activationBtnRadius = 1 * U.cm;
+			activationButton = GenerateActivationButton(activationBtnRadius);
+			GenerateSliceMesh(360, activationBtnRadius, activationBtnRadius + 0.005f, 0, ref activationRing);
 		}
 
 		/// <summary>Force the hand menu to show at a specific location.
@@ -87,8 +83,8 @@ namespace StereoKit.Framework
 			activeLayer = 0;
 			active      = true;
 
-			GenerateSliceMesh(360 / layers[0].items.Length, minDist, maxDist, ref background);
-			GenerateSliceMesh(360 / layers[0].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
+			GenerateSliceMesh(360 / layers[0].items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / layers[0].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		/// <summary>Closes the menu if it's open! Plays a closing sound.</summary>
@@ -106,10 +102,9 @@ namespace StereoKit.Framework
 		/// <summary>Part of IStepper, you shouldn't be calling this yourself.</summary>
 		public void Step()
 		{
-			Hand hand   = Input.Hand(Handed.Right);
-			bool facing = HandFacingHead(hand);
+			Hand hand = Input.Hand(Handed.Right);
 
-			if (facing && !active)
+			if (!active)
 				StepMenuIndicator(hand);
 
 			if (active)
@@ -130,21 +125,29 @@ namespace StereoKit.Framework
 
 		void StepMenuIndicator(Hand hand)
 		{
-			// Scale the indicator based on the 'activation' of the grip motion
-			activation = Math.Max(0.02f, hand.gripActivation * 0.2f);
+			if (!hand.IsTracked) return;
+
+			Vec3  palmDirection   = hand.palm.Forward.Normalized;
+			Vec3  directionToHead = (Input.Head.position - hand.palm.position).Normalized;
+			float facing          = Vec3.Dot(palmDirection, directionToHead);
+
+			if (facing < 0) return;
 
 			// Show the indicator towards the middle of the fingers that control
 			// the grip motion, the help show the user 
 			menuPose.position = 
-				(hand[FingerId.Ring, JointId.Tip ].position +
-				hand[FingerId.Ring, JointId.Root].position) * 0.5f;
-			menuPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
-			menuPose.position   += menuPose.Forward*U.cm;
+				(hand[FingerId.Middle, JointId.KnuckleMajor].position +
+				 hand[FingerId.Middle, JointId.Root].position) * 0.5f;
+			menuPose.orientation = hand.palm.orientation;// Quat.LookAt(menuPose.position, Input.Head.position);
 
 			// Draw the menu circle!
-			Hierarchy.Push(menuPose.ToMatrix(activation));
-			Lines.Add(circle);
-			Hierarchy.Pop();
+			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
+			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
+			activationRing.Draw(Material.UI, menuPose.ToMatrix(), colorPrimary);
+			menuPose.position += (1- hand.gripActivation) * menuPose.Forward*U.cm*2;
+			activationButton.Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-0.95f)/0.025f))));
+
+			if (facing < 0.975f) return;
 
 			// And if the user grips, show the menu!
 			if (hand.IsJustGripped)
@@ -172,7 +175,7 @@ namespace StereoKit.Framework
 
 			// Calculate the status of the menu!
 			Vec3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
-			Vec3  tipLocal = Hierarchy.ToLocal(tipWorld);
+			Vec3  tipLocal = destPose.ToMatrix().Inverse.Transform(tipWorld);
 			float magSq    = tipLocal.MagnitudeSq;
 			bool  onMenu   = tipLocal.z > -0.02f && tipLocal.z < 0.02f;
 			bool  focused  = onMenu && magSq > minDist * minDist;
@@ -236,8 +239,8 @@ namespace StereoKit.Framework
 			if (activeLayer == -1)
 				Log.Err($"Couldn't find hand menu layer named {name}!");
 
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, ref background);
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		void Back()
@@ -246,8 +249,8 @@ namespace StereoKit.Framework
 			if (navStack.Count > 0)
 				activeLayer = navStack.Pop();
 
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, ref background);
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, ref backgroundEdge);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		void SelectItem(HandMenuItem item, Vec3 at, float fromAngle)
@@ -276,21 +279,9 @@ namespace StereoKit.Framework
 			} else angleOffset = 0;
 		}
 
-		static bool HandFacingHead(Hand hand)
+		static void GenerateSliceMesh(float angle, float minDist, float maxDist, float gap, ref Mesh mesh)
 		{
-			if (!hand.IsTracked)
-				return false;
-
-			Vec3 palmDirection   = hand.palm.Forward.Normalized;
-			Vec3 directionToHead = (Input.Head.position - hand.palm.position).Normalized;
-
-			return Vec3.Dot(palmDirection, directionToHead) > 0.25f;
-		}
-
-		static void GenerateSliceMesh(float angle, float minDist, float maxDist, ref Mesh mesh)
-		{
-			float gap   = 2 * U.mm;
-			int   count = (int)(angle * 0.25f);
+			int count = (int)(angle * 0.25f);
 
 			float innerStartAngle = (gap / (minDist * Units.deg2rad));
 			float innerAngle      = angle - innerStartAngle * 2;
@@ -323,6 +314,68 @@ namespace StereoKit.Framework
 			if (mesh == null) mesh = new Mesh();
 			mesh.SetVerts(verts);
 			mesh.SetInds (inds);
+		}
+
+		static Mesh GenerateActivationButton(float radius)
+		{
+			int      spokes = 36;
+			Vertex[] verts  = new Vertex[spokes + 12];
+			uint  [] inds   = new uint[(spokes-2)*3 + 6*3];
+
+			// A circle of vertices
+			for (uint i = 0; i < spokes; i++)
+				verts[i] = new Vertex(Vec3.AngleXY(i * (360.0f/(spokes))) * radius, Vec3.Forward);
+
+			// No vertex in the center, so we're adding a strip of triangles
+			// across the circle instead
+			for (uint i = 0; i < spokes-2; i++)
+			{
+				uint half = i / 2;
+				if (i%2 == 0) // even
+				{
+					inds[i*3+2] = (uint)((spokes - half) % spokes);
+					inds[i*3+1] = half + 1;
+					inds[i*3  ] = (uint)((spokes - 1) - half);
+				}
+				else // odd
+				{
+					inds[i*3  ] = half + 1;
+					inds[i*3+1] = (uint)(spokes - (half+1));
+					inds[i*3+2] = half + 2;
+				}
+			}
+
+			// Add white bars to indicate a hamburger menu
+			float w = radius / 3;
+			float h = radius / 16;
+			float z = -0.003f;
+			int curr = (spokes - 2) * 3;
+			for (int i = 0; i < 3; i++)
+			{
+				float y = -radius / 3 + i * radius / 3;
+
+				uint a = (uint)(spokes + i * 4);
+				uint b = (uint)(spokes + i * 4 + 1);
+				uint c = (uint)(spokes + i * 4 + 2);
+				uint d = (uint)(spokes + i * 4 + 3);
+				verts[a] = new Vertex(new Vec3(-w, y - h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
+				verts[b] = new Vertex(new Vec3( w, y - h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
+				verts[c] = new Vertex(new Vec3( w, y + h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
+				verts[d] = new Vertex(new Vec3(-w, y + h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
+
+				inds[curr++] = c;
+				inds[curr++] = b;
+				inds[curr++] = a;
+
+				inds[curr++] = d;
+				inds[curr++] = c;
+				inds[curr++] = a;
+			}
+
+			Mesh m = new Mesh();
+			m.SetInds (inds);
+			m.SetVerts(verts);
+			return m;
 		}
 
 		#endregion
