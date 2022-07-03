@@ -395,7 +395,7 @@ bool openxr_init() {
 
 	// Before we call xrCreateSession, lets fire an event for anyone that needs
 	// to set things up!
-	for (size_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
+	for (int32_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
 		xr_callbacks_pre_session_create[i].callback(xr_callbacks_pre_session_create[i].context);
 	}
 	xr_callbacks_pre_session_create.free();

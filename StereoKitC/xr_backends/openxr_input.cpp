@@ -657,7 +657,7 @@ void oxri_update_poses() {
 		// fallback offsets from the grip pose.
 		if (xr_ext_available.EXT_palm_pose) {
 			space_location = { XR_TYPE_SPACE_LOCATION };
-			XrResult res = xrLocateSpace(xrc_space_palm[hand], xr_app_space, xr_time, &space_location);
+			res = xrLocateSpace(xrc_space_palm[hand], xr_app_space, xr_time, &space_location);
 			if (XR_UNQUALIFIED_SUCCESS(res)) {
 				pose_t local_palm;
 				if (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {

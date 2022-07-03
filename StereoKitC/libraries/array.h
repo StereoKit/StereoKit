@@ -238,11 +238,11 @@ struct array_t {
 		});
 	}
 
-	void _array_reorder(void** list, int32_t item_size, int32_t count, int32_t* sort_order) {
+	void _array_reorder(void** list, int32_t item_size, int32_t sort_order_count, int32_t* sort_order) {
 		uint8_t* src    = (uint8_t*)*list;
 		uint8_t* result = (uint8_t*)ARRAY_MALLOC(item_size * capacity);
 
-		for (int32_t i = 0; i < count; i++) {
+		for (int32_t i = 0; i < sort_order_count; i++) {
 			memcpy(&result[i * item_size], &src[sort_order[i] * item_size], item_size);
 		}
 

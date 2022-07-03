@@ -83,7 +83,7 @@ static void
 gather_stats(const mesh_bvh_t *bvh, short depth, int current_node_index, bvh_stats_t *stats, int acc_leaf_size)
 {
     const bvh_node_t& node = bvh->nodes[current_node_index];
-    stats->depth = maxi(stats->depth, depth);
+    stats->depth = (short)maxi(stats->depth, depth);
 
     if (node.is_leaf())
     {
@@ -213,7 +213,7 @@ mesh_bvh_build_recursive(int current_node_index,
             {
                 t = sorted_dimensions[i];
                 sorted_dimensions[i] = sorted_dimensions[j];
-                sorted_dimensions[j] = t;
+                sorted_dimensions[j] = (short)t;
             }
         }
     }
@@ -349,9 +349,11 @@ mesh_bvh_build_recursive(int current_node_index,
 // Build a BVH over the triangles in the given mesh.
 mesh_bvh_t*
 mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
-{    
+{
     // XXX refuse if num triangles is zero?
+#if defined(VERBOSE_STATS)
     const double t0 = time_get_raw();
+#endif
 
     mesh_bvh_t *bvh = sk_calloc_t(mesh_bvh_t, 1);
 
@@ -384,8 +386,6 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     // Compute triangle centroids, used during construction to partition
     // triangles in two groups
 
-    const vert_t *vertices = mesh->verts;
-    const vind_t *indices = mesh->inds;
     const uint32_t num_triangles = mesh->ind_count / 3;
 
     const vec3* triangle_vertices = bvh->collision_data->pts;
@@ -398,6 +398,9 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     }
 
 #ifdef VERBOSE_BUILD
+    const vert_t* vertices = mesh->verts;
+    const vind_t* indices  = mesh->inds;
+
     printf("%d triangles:\n", num_triangles);
     for (int t = 0; t < num_triangles; t++)
     {
@@ -428,7 +431,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 #endif
 
     bbox_grow(mesh_bbox, C_EPSILON);
-    bvh->the_mesh = mesh;    
+    bvh->the_mesh = mesh;
 
     // We pre-allocate an array of BVH nodes, enough to always fit. 
     // XXX After construction is done, and the actual
@@ -452,9 +455,9 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     mesh_bvh_build_recursive(0, nodes, &next_node_index, sorted_triangles,
         acc_leaf_size, triangle_vertices, triangle_centroids, bvh->collision_data);
 
+#if defined(VERBOSE_STATS)
     const double t1 = time_get_raw();
 
-#if defined(VERBOSE_STATS)
     // XXX use log function
     printf("BVH construction done in %.1fms\n", 1000*(t1-t0));
 
@@ -481,7 +484,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     return bvh;
 }
 
-void        
+void
 mesh_bvh_destroy(mesh_bvh_t *bvh)
 {
     free(bvh->nodes);
@@ -490,7 +493,7 @@ mesh_bvh_destroy(mesh_bvh_t *bvh)
 }
 
 // Find closest triangle intersection for the given model-space ray
-bool        
+bool
 mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, uint32_t *out_start_inds, cull_ cull_mode)
 {
     const bvh_node_t *nodes = bvh->nodes;
@@ -502,16 +505,16 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
     float traversal_tmin_stack[TRAVERSAL_STACK_SIZE];
 
     uint32_t left_child;
-    bool traverse_left_child, traverse_right_child;    
+    bool traverse_left_child, traverse_right_child;
     
     float t_left_min, t_right_min;
     float t_left_max, t_right_max;
     float t_hit, t_nearest_hit = FLT_MAX;
     float nearest_dist = FLT_MAX;
-    vec3  pt = {};    
+    vec3  pt = {};
 
     // Stack is initially empty
-    short stack_top = -1;    
+    short stack_top = -1;
 
     // Start at root node
     uint32_t current_node_index = 0;
@@ -561,12 +564,12 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                         // Push right
                         stack_top++;
                         traversal_node_stack[stack_top] = left_child+1;
-                        traversal_tmin_stack[stack_top] = t_right_min;                        
+                        traversal_tmin_stack[stack_top] = t_right_min;
 
                         // Traverse to left
 #ifdef VERBOSE_INTERSECTION
                         printf("traversing left, then right\n");
-#endif                        
+#endif
                         current_node_index = left_child;
                     }
                     else
@@ -577,11 +580,11 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                         stack_top++;
                         traversal_node_stack[stack_top] = left_child;
                         traversal_tmin_stack[stack_top] = t_left_min;
-                        
+
                         // Traverse to right
 #ifdef VERBOSE_INTERSECTION
                         printf("traversing right, then left\n");
-#endif                        
+#endif
                         current_node_index = left_child+1;
                     }
                 }
@@ -601,7 +604,7 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                 // Traverse right only
 #ifdef VERBOSE_INTERSECTION
                 printf("traversing right only\n");
-#endif                
+#endif
                 current_node_index = left_child+1;
                 continue;
             }
@@ -612,7 +615,7 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
 
 #ifdef VERBOSE_INTERSECTION
             printf("Checking %d triangles\n", node.num_triangles);
-#endif            
+#endif
             for (uint32_t t = node.leaf_first; t < node.leaf_first+node.num_triangles; t++)
             {
                 uint32_t triangle = sorted_triangles[t];
@@ -642,8 +645,8 @@ mesh_bvh_intersect(const mesh_bvh_t *bvh, ray_t model_space_ray, ray_t *out_pt, 
                     // Hit will not be closer than best one found so far, no need to check further
                     continue;
                 }
-                
-                pt = model_space_ray.pos + model_space_ray.dir * t_hit;             
+
+                pt = model_space_ray.pos + model_space_ray.dir * t_hit;
 
                 // point in triangle, implementation based on:
                 // https://blackpawn.com/texts/pointinpoly/default.html
