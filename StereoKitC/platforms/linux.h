@@ -21,7 +21,7 @@ void  linux_resize(int width, int height);
 
 bool  linux_get_cursor(vec2 &out_pos);
 float linux_get_scroll();
-void  linux_set_cursor(vec2 window_pos);
+bool  linux_set_cursor(vec2 window_pos);
 
 } // namespace sk
 

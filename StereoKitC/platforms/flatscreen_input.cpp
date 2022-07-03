@@ -67,8 +67,12 @@ void flatscreen_input_update() {
 			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
 			vec2 prev_pt = mouse->pos - mouse->pos_change;
-			input_mouse_data.pos = prev_pt;
-			platform_set_cursor(prev_pt);
+
+			if (platform_set_cursor(prev_pt)) {
+				// If the platform succeeded at moving the cursor back, move our stored mouse position back as well.
+				input_mouse_data.pos = prev_pt;
+			}
+
 		} else {
 			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 		}

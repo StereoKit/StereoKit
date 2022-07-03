@@ -48,6 +48,9 @@ XSetWindowAttributes    x_swa;
 Window                  x_win;
 Window                  x_root;
 
+// Are we X or XWayland?
+bool xwayland = false;
+
 ///////////////////////////////////////////
 // Start input
 ///////////////////////////////////////////
@@ -400,9 +403,26 @@ bool setup_egl_flat() {
 
 ///////////////////////////////////////////
 
+bool check_wayland() {
+	char* sess_type = getenv("XDG_SESSION_TYPE");
+	if (sess_type == NULL) {
+		// We don't want none of this; just assume it's regular X11
+		return false;
+	}
+	const char* wayland = "wayland";
+	if (strcmp(sess_type, wayland) == 0) { // if they're equal,
+		return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
 bool linux_init() {
 	linux_render_sys = systems_find("FrameRender");
 	linux_init_key_lookups();
+
+	xwayland = check_wayland();
 
 	#if !defined(SKG_LINUX_EGL)
 
@@ -470,9 +490,14 @@ float linux_get_scroll() {
 
 ///////////////////////////////////////////
 
-void linux_set_cursor(vec2 window_pos) {
+bool linux_set_cursor(vec2 window_pos) {
+	if (xwayland) {
+		// XWarpPointer doesn't work under XWayland because <mumbles something about permissions>
+		return false;
+	}
 	XWarpPointer(x_dpy, x_win, x_win, 0, 0, 0, 0, window_pos.x,window_pos.y);
 	XFlush(x_dpy);
+	return true;
 }
 
 ///////////////////////////////////////////
