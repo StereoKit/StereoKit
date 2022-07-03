@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../../stereokit.h"
-
 namespace sk {
 
 bool oxri_init        ();

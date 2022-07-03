@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../stereokit.h"
+#include "../stereokit.h"
 
 namespace sk {
 

@@ -3,7 +3,7 @@
 
 #if defined(SK_OS_LINUX)
 
-#include "../../stereokit.h"
+#include "../stereokit.h"
 
 namespace sk {
 
