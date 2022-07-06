@@ -225,6 +225,25 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>Culling is discarding an object from the render pipeline!
+	/// This enum describes how mesh faces get discarded on the graphics
+	/// card. With culling set to none, you can double the number of pixels
+	/// the GPU ends up drawing, which can have a big impact on performance.
+	/// None can be appropriate in cases where the mesh is designed to be
+	/// 'double sided'. Front can also be helpful when you want to flip a
+	/// mesh 'inside-out'!</summary>
+	public enum Cull {
+		/// <summary>Discard if the back of the triangle face is pointing
+		/// towards the camera. This is the default behavior.</summary>
+		Back         = 0,
+		/// <summary>Discard if the front of the triangle face is pointing
+		/// towards the camera. This is opposite the default behavior.</summary>
+		Front,
+		/// <summary>No culling at all! Draw the triangle regardless of which
+		/// way it's pointing.</summary>
+		None,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -392,25 +411,6 @@ namespace StereoKit
 		/// buffer! This usually looks -really- glowy, so it makes for good
 		/// particles or lighting effects.</summary>
 		Add,
-	}
-
-	/// <summary>Culling is discarding an object from the render pipeline!
-	/// This enum describes how mesh faces get discarded on the graphics
-	/// card. With culling set to none, you can double the number of pixels
-	/// the GPU ends up drawing, which can have a big impact on performance.
-	/// None can be appropriate in cases where the mesh is designed to be
-	/// 'double sided'. Front can also be helpful when you want to flip a
-	/// mesh 'inside-out'!</summary>
-	public enum Cull {
-		/// <summary>Discard if the back of the triangle face is pointing
-		/// towards the camera. This is the default behavior.</summary>
-		Back         = 0,
-		/// <summary>Discard if the front of the triangle face is pointing
-		/// towards the camera. This is opposite the default behavior.</summary>
-		Front,
-		/// <summary>No culling at all! Draw the triangle regardless of which
-		/// way it's pointing.</summary>
-		None,
 	}
 
 	/// <summary>Depth test describes how this material looks at and responds
@@ -1015,13 +1015,25 @@ namespace StereoKit
 		Web,
 	}
 
-	/// <summary>This describes the graphics API thatStereoKit is using for rendering.</summary>
+	/// <summary>This describes the graphics API that StereoKit is using for rendering.</summary>
 	public enum BackendGraphics {
-		/// <summary>An invalid default value. Right now, this may likely indicate a variety
-		/// of OpenGL.</summary>
+		/// <summary>An invalid default value.</summary>
 		None,
-		/// <summary>DirectX's Direct3D11 is used for rendering!</summary>
+		/// <summary>DirectX's Direct3D11 is used for rendering! This is used by default on
+		/// Windows.</summary>
 		D3D11,
+		/// <summary>OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
+		/// System) for loading. This is used by default on Linux.</summary>
+		OpenGL_GLX,
+		/// <summary>OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
+		/// for loading. Native developers can configure SK to use this on Windows.</summary>
+		OpenGL_WGL,
+		/// <summary>OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
+		/// Interface) for loading. This is used by default on Android, and native
+		/// developers can configure SK to use this on Linux.</summary>
+		OpenGLES_EGL,
+		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
+		WebGL,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console

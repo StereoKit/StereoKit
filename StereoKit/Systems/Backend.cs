@@ -184,7 +184,7 @@ namespace StereoKit
 
 		/// <summary>When using Direct3D11 for rendering, this contains a
 		/// number of variables that may be useful for doing advanced rendering
-		/// tasks.</summary>
+		/// tasks. This is the default rendering backend on Windows.</summary>
 		public static class D3D11
 		{
 			/// <summary>This is the main `ID3D11Device*` StereoKit uses for
@@ -194,5 +194,54 @@ namespace StereoKit
 			/// for rendering.</summary>
 			public static IntPtr D3DContext => NativeAPI.backend_d3d11_get_d3d_context();
 		}
+
+		/// <summary>When using OpenGL with the WGL loader for rendering, this
+		/// contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is Windows only, and requires
+		/// gloabally defining SKG_FORCE_OPENGL when building the core
+		/// StereoKitC library.</summary>
+		public static class OpenGL_WGL
+		{
+			/// <summary>This is the Handle to Device Context `HDC` StereoKit
+			/// uses with `wglMakeCurrent`.</summary>
+			public static IntPtr HDC => NativeAPI.backend_opengl_wgl_get_hdc();
+			/// <summary>This is the Handle to an OpenGL Rendering Context
+			/// `HGLRC` StereoKit uses with `wglMakeCurrent`.</summary>
+			public static IntPtr HGLRC => NativeAPI.backend_opengl_wgl_get_hglrc();
+		}
+
+		/// <summary>When using OpenGL with the GLX loader for rendering, this
+		/// contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is the default rendering backend for
+		/// Linux.</summary>
+		public static class OpenGL_GLX
+		{
+			/// <summary>This is the `Display*` from X used to create the GLX
+			/// context.</summary>
+			public static IntPtr Display  => NativeAPI.backend_opengl_glx_get_display();
+			/// <summary>This is the `GLXContext` that StereoKit uses with
+			/// `glXMakeCurrent`</summary>
+			public static IntPtr Context  => NativeAPI.backend_opengl_glx_get_context();
+			/// <summary>This is the `GLXDrawable` that StereoKit uses with
+			/// `glXMakeCurrent`.</summary>
+			public static IntPtr Drawable => NativeAPI.backend_opengl_glx_get_drawable();
+		}
+
+		/// <summary>When using OpenGL ES with the EGL loader for rendering,
+		/// this contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is the default rendering backend for
+		/// Android, and Linux builds can be configured to use this with the
+		/// SK_LINUX_EGL cmake option when building the core StereoKitC
+		/// library.</summary>
+		public static class OpenGLES_EGL
+		{
+			/// <summary>This is the `EGLDisplay` StereoKit receives from
+			/// `eglGetDisplay`</summary>
+			public static IntPtr Display => NativeAPI.backend_opengl_egl_get_display();
+			/// <summary>This is the `EGLContext` StereoKit receives from
+			/// `eglCreateContext`.</summary>
+			public static IntPtr Context => NativeAPI.backend_opengl_egl_get_context();
+		}
+		
 	}
 }

@@ -1917,13 +1917,25 @@ typedef enum backend_platform_ {
 	backend_platform_web,
 } backend_platform_;
 
-/*This describes the graphics API thatStereoKit is using for rendering.*/
+/*This describes the graphics API that StereoKit is using for rendering.*/
 typedef enum backend_graphics_ {
-	/*An invalid default value. Right now, this may likely indicate a variety
-	  of OpenGL.*/
+	/*An invalid default value.*/
 	backend_graphics_none,
-	/*DirectX's Direct3D11 is used for rendering!*/
+	/*DirectX's Direct3D11 is used for rendering! This is used by default on
+	  Windows.*/
 	backend_graphics_d3d11,
+	/*OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
+	  System) for loading. This is used by default on Linux.*/
+	backend_graphics_opengl_glx,
+	/*OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
+	  for loading. Native developers can configure SK to use this on Windows.*/
+	backend_graphics_opengl_wgl,
+	/*OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
+	  Interface) for loading. This is used by default on Android, and native
+	  developers can configure SK to use this on Linux.*/
+	backend_graphics_opengles_egl,
+	/*WebGL is used for rendering. This is used by default on Web.*/
+	backend_graphics_webgl,
 } backend_graphics_;
 
 typedef uint64_t openxr_handle_t;
@@ -1947,9 +1959,16 @@ SK_API void             *backend_android_get_java_vm  ();
 SK_API void             *backend_android_get_activity ();
 SK_API void             *backend_android_get_jni_env  ();
 
-SK_API backend_graphics_ backend_graphics_get         ();
-SK_API void             *backend_d3d11_get_d3d_device ();
-SK_API void             *backend_d3d11_get_d3d_context();
+SK_API backend_graphics_ backend_graphics_get           ();
+SK_API void             *backend_d3d11_get_d3d_device   ();
+SK_API void             *backend_d3d11_get_d3d_context  ();
+SK_API void             *backend_opengl_wgl_get_hdc     ();
+SK_API void             *backend_opengl_wgl_get_hglrc   ();
+SK_API void             *backend_opengl_glx_get_context ();
+SK_API void             *backend_opengl_glx_get_display ();
+SK_API void             *backend_opengl_glx_get_drawable();
+SK_API void             *backend_opengl_egl_get_context ();
+SK_API void             *backend_opengl_egl_get_display ();
 
 ///////////////////////////////////////////
 

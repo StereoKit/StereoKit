@@ -503,9 +503,16 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_java_vm ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_activity();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_jni_env ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendGraphics backend_graphics_get();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_device();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_context();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendGraphics backend_graphics_get           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_device   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_d3d11_get_d3d_context  ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_wgl_get_hdc     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_wgl_get_hglrc   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_glx_get_context ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_glx_get_display ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_glx_get_drawable();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_egl_get_context ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_opengl_egl_get_display ();
 
 		///////////////////////////////////////////
 
