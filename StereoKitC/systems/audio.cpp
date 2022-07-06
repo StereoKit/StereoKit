@@ -345,6 +345,8 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
+	memset(au_mix_temp, 0, sizeof(au_mix_temp));
+
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {
 		return false;
 	}
