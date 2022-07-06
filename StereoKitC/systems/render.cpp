@@ -526,10 +526,11 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
 	render_global_buffer.time       = time_getf();
 	render_global_buffer.view_count = view_count;
-	vec3 tip = input_hand(handed_right)->tracked_state & button_state_active ? input_hand(handed_right)->fingers[1][4].position : vec3{0,-1000,0};
-	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
-	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
-	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
+	for (int32_t i = 0; i < handed_max; i++) {
+		const hand_t* hand = input_hand((handed_)i);
+		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		render_global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
+	}
 
 	// TODO: This is a little odd now that textures like this go through the
 	// render_global_textures system.

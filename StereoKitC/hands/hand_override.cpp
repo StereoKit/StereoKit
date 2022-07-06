@@ -63,10 +63,7 @@ void input_hand_override(handed_ hand, const hand_joint_t *hand_joints) {
 		override_enabled = enable;
 
 		input_hand_refresh_system();
-
-		if (enable) {
-			input_hand_update();
-		}
+		input_hand_update();
 	}
 }
 
