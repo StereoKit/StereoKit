@@ -29,6 +29,11 @@ namespace StereoKit.Framework
 	public class HandMenuRadial : IStepper
 	{
 		#region Fields
+		/// <summary>When using the Simulator, this key will activate the menu
+		/// on the current hand, regardless of which direction it is facing.
+		/// </summary>
+		public static Key simulatorKey = Key.Backtick;
+
 		const float minDist  = 0.03f;
 		const float midDist  = 0.065f;
 		const float maxDist  = 0.1f;
@@ -38,13 +43,13 @@ namespace StereoKit.Framework
 		Pose menuPose;
 		Pose destPose;
 
-		HandRadialLayer[] layers;
-		Stack<int>        navStack = new Stack<int>();
-		Handed            activeHand = Handed.Max;
-		int               activeLayer;
-		float             activation  = 0;
-		float             menuScale   = 0;
-		float             angleOffset = 0;
+		HandRadialLayer        root        = null;
+		HandRadialLayer        activeLayer = null;
+		Stack<HandRadialLayer> navStack    = new Stack<HandRadialLayer>();
+		Handed                 activeHand  = Handed.Max;
+		float                  activation  = 0;
+		float                  menuScale   = 0;
+		float                  angleOffset = 0;
 
 		Mesh background;
 		Mesh backgroundEdge;
@@ -56,18 +61,43 @@ namespace StereoKit.Framework
 
 		/// <summary>Creates a hand menu from the provided array of menu 
 		/// layers! HandMenuRadial is an IStepper, so proper usage is to
-		/// add it to the Stepper list via `StereoKitApp.AddStepper`.</summary>
+		/// add it to the Stepper list via `StereoKitApp.AddStepper`. If no
+		/// layers are provided to this constructor, a default root layer will
+		/// be automatically added.</summary>
 		/// <param name="menuLayers">Starting layer is always the first one
 		/// in the list! Layer names in the menu items refer to layer names
 		/// in this list.</param>
 		public HandMenuRadial(params HandRadialLayer[] menuLayers)
 		{
-			layers = menuLayers;
+			root = menuLayers != null && menuLayers.Length > 0
+				? menuLayers[0]
+				: new HandRadialLayer( "Root",
+					new HandMenuItem( "Cancel", null, null, HandMenuAction.Close ) );
+
+			foreach (HandRadialLayer layer in menuLayers)
+			{
+				foreach (HandMenuItem item in layer.items)
+				{
+					if (!string.IsNullOrEmpty(item.layerName))
+					{
+						HandRadialLayer link = Array.Find(menuLayers, m => m.layerName == item.layerName);
+						layer.childLayers.Add(link);
+						link.parent    = layer;
+						link.layerItem = item;
+					}
+				}
+			}
 
 			float activationBtnRadius = 1 * U.cm;
 			activationButton = GenerateActivationButton(activationBtnRadius);
 			GenerateSliceMesh(360, activationBtnRadius, activationBtnRadius + 0.005f, 0, ref activationRing);
 		}
+
+		/// <summary>This returns the root menu layer, this is always the first
+		/// layer added to the list of layers. There should always be a root
+		/// layer, and if the HandMenuRadial is created without any layers, a
+		/// root layer will be added automatically.</summary>
+		public HandRadialLayer RootLayer => root;
 
 		/// <summary>Force the hand menu to show at a specific location.
 		/// This will close the hand menu if it was already open, and resets
@@ -80,11 +110,11 @@ namespace StereoKit.Framework
 			Default.SoundClick.Play(at);
 			destPose.position    = at;
 			destPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
-			activeLayer = 0;
+			activeLayer = root;
 			activeHand  = hand;
 
-			GenerateSliceMesh(360 / layers[0].items.Length, minDist, maxDist, sliceGap, ref background);
-			GenerateSliceMesh(360 / layers[0].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
+			GenerateSliceMesh(360 / activeLayer.items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / activeLayer.items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		/// <summary>Closes the menu if it's open! Plays a closing sound.</summary>
@@ -132,6 +162,20 @@ namespace StereoKit.Framework
 			Hand hand = Input.Hand(handed);
 			if (!hand.IsTracked) return;
 
+			// In the flatscreen simulator, display this menu on backtick
+			if (Backend.XRType == BackendXRType.Simulator)
+			{
+				if (Input.Key(simulatorKey).IsJustActive())
+				{
+					menuPose.position =
+						(hand[FingerId.Middle, JointId.KnuckleMajor].position +
+						 hand[FingerId.Middle, JointId.Root].position) * 0.5f;
+					menuPose.orientation = hand.palm.orientation;
+					Show(hand[FingerId.Index, JointId.Tip].position, handed);
+				}
+				return;
+			}
+
 			Vec3  palmDirection   = hand.palm.Forward.Normalized;
 			Vec3  directionToHead = (Input.Head.position - hand.palm.position).Normalized;
 			float facing          = Vec3.Dot(palmDirection, directionToHead);
@@ -143,7 +187,7 @@ namespace StereoKit.Framework
 			menuPose.position = 
 				(hand[FingerId.Middle, JointId.KnuckleMajor].position +
 				 hand[FingerId.Middle, JointId.Root].position) * 0.5f;
-			menuPose.orientation = hand.palm.orientation;// Quat.LookAt(menuPose.position, Input.Head.position);
+			menuPose.orientation = hand.palm.orientation;
 
 			// Draw the menu circle!
 			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
@@ -169,7 +213,7 @@ namespace StereoKit.Framework
 			menuScale            = SKMath.Lerp (menuScale,            1,                    time);
 
 			// Pre-calculate some circle traversal values
-			HandRadialLayer layer = layers[activeLayer];
+			HandRadialLayer layer = activeLayer;
 			int   count    = layer.items.Length;
 			float step     = 360 / count;
 			float halfStep = step/2;
@@ -179,13 +223,14 @@ namespace StereoKit.Framework
 			Hierarchy.Push(menuPose.ToMatrix(menuScale));
 
 			// Calculate the status of the menu!
-			Vec3  tipWorld = hand[FingerId.Index, JointId.Tip].position;
-			Vec3  tipLocal = destPose.ToMatrix().Inverse.Transform(tipWorld);
-			float magSq    = tipLocal.MagnitudeSq;
-			bool  onMenu   = tipLocal.z > -0.02f && tipLocal.z < 0.02f;
-			bool  focused  = onMenu && magSq > minDist * minDist;
-			bool  selected = onMenu && magSq > midDist * midDist;
-			bool  cancel   = magSq > maxDist*maxDist;
+			Vec3  tipWorld  = hand[FingerId.Index, JointId.Tip].position;
+			Vec3  tipLocal  = destPose.ToMatrix().Inverse.Transform(tipWorld);
+			float magSq     = tipLocal.MagnitudeSq;
+			bool  onMenu    = tipLocal.z > -0.02f && tipLocal.z < 0.02f;
+			bool  focused   = onMenu && magSq > minDist * minDist;
+			bool  selected  = onMenu && magSq > midDist * midDist;
+			bool  cancel    = magSq > maxDist*maxDist;
+			float fitRadius = midDist * Math.Min(90, step) * Units.deg2rad;
 
 			// Find where our finger is pointing to, and draw that
 			float fingerAngle = (float)Math.Atan2(tipLocal.y, tipLocal.x) * Units.rad2deg - (layer.startAngle + angleOffset);
@@ -198,30 +243,16 @@ namespace StereoKit.Framework
 			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
 			for (int i = 0; i < count; i++)
 			{
-				float currAngle = i*step + layer.startAngle + angleOffset;
-				bool  highlight = focused && angleId == i && activation >= 0.99f;
+				float  currAngle = i*step + layer.startAngle + angleOffset;
+				bool   highlight = focused && angleId == i && activation >= 0.99f;
+				float  depth     = highlight ? -0.005f : 0.0f;
+				Vec3   at        = Vec3.AngleXY(currAngle + halfStep) * midDist;
+				at.z = depth;
 
-				float  depth = highlight ? -0.005f : 0.0f;
-				Matrix r     = Matrix.TR(0,0,depth, Quat.FromAngles( 0, 0, currAngle ));
+				Matrix r = Matrix.TR(0,0,depth, Quat.FromAngles( 0, 0, currAngle ));
 				background    .Draw(Material.UI, r, colorCommon  * (highlight ? 2.0f:1.0f));
 				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlight ? 2.0f:1.0f));
-				if (layer.items[i].image != null)
-				{
-					float height = TextStyle.Default.CharHeight;
-					Vec3  offset = new Vec3(0, height * 0.75f, 0);
-					Vec3  at     = Vec3.AngleXY(currAngle + halfStep) * midDist;
-					at.z = depth;
-					Hierarchy.Push(Matrix.TS(at, highlight ? 1.2f : 1));
-						layer.items[i].image.Draw(Matrix.TS(offset, height), TextAlign.Center);
-						Text.Add(layer.items[i].name, Matrix.TS(-offset, .5f), TextAlign.BottomCenter);
-					Hierarchy.Pop();
-				}
-				else
-				{
-					Vec3 at = Vec3.AngleXY(currAngle + halfStep) * midDist;
-					at.z = depth;
-					Text.Add(layer.items[i].name, Matrix.TS(at, highlight ? 0.6f : 0.5f), TextAlign.BottomCenter);
-				}
+				layer.items[i].Draw(at, fitRadius, currAngle, highlight);
 			}
 
 			// Done with local work
@@ -240,12 +271,12 @@ namespace StereoKit.Framework
 		{
 			Default.SoundClick.Play(menuPose.position);
 			navStack.Push(activeLayer);
-			activeLayer = Array.FindIndex(layers, l => l.layerName == name);
-			if (activeLayer == -1)
+			activeLayer = activeLayer.FindChild(name);
+			if (activeLayer == null)
 				Log.Err($"Couldn't find hand menu layer named {name}!");
 
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, sliceGap, ref background);
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
+			GenerateSliceMesh(360 / activeLayer.items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / activeLayer.items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		void Back()
@@ -254,8 +285,8 @@ namespace StereoKit.Framework
 			if (navStack.Count > 0)
 				activeLayer = navStack.Pop();
 
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, minDist, maxDist, sliceGap, ref background);
-			GenerateSliceMesh(360 / layers[activeLayer].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
+			GenerateSliceMesh(360 / activeLayer.items.Length, minDist, maxDist, sliceGap, ref background);
+			GenerateSliceMesh(360 / activeLayer.items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
 		}
 
 		void SelectItem(HandMenuItem item, Vec3 at, float fromAngle)
@@ -276,9 +307,9 @@ namespace StereoKit.Framework
 			destPose.position = plane.Closest(at);
 			activation = 0;
 
-			if (layers[activeLayer].backAngle != 0)
+			if (activeLayer.backAngle != 0)
 			{
-				angleOffset = (fromAngle - layers[activeLayer].backAngle) + 180;
+				angleOffset = (fromAngle - activeLayer.backAngle) + 180;
 				while(angleOffset < 0  ) angleOffset += 360;
 				while(angleOffset > 360) angleOffset -= 360;
 			} else angleOffset = 0;
