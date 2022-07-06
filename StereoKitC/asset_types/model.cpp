@@ -776,7 +776,7 @@ int32_t model_anim_find(model_t model, const char *animation_name) {
 	for (int32_t i = 0; i < model->anim_data.anims.count; i++)
 		if (string_eq(model->anim_data.anims[i].name, animation_name))
 			return i;
-	return false;
+	return -1;
 }
 
 ///////////////////////////////////////////
