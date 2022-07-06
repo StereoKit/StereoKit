@@ -465,7 +465,7 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/ui/stereokit_ui.h" "Tools/include/stereokit.hlsli"
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
   DESTINATION include)
 
 install(
