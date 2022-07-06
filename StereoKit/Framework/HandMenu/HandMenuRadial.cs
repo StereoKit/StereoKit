@@ -35,12 +35,12 @@ namespace StereoKit.Framework
 		const float minScale = 0.05f;
 		const float sliceGap = 0.002f;
 
-		bool active = false;
 		Pose menuPose;
 		Pose destPose;
 
 		HandRadialLayer[] layers;
 		Stack<int>        navStack = new Stack<int>();
+		Handed            activeHand = Handed.Max;
 		int               activeLayer;
 		float             activation  = 0;
 		float             menuScale   = 0;
@@ -73,15 +73,15 @@ namespace StereoKit.Framework
 		/// This will close the hand menu if it was already open, and resets
 		/// it to the root menu layer. Also plays an opening sound.</summary>
 		/// <param name="at">A world space position for the hand menu.</param>
-		public void Show(Vec3 at)
+		public void Show(Vec3 at, Handed hand)
 		{
-			if (active)
+			if (activeHand != Handed.Max)
 				Close();
 			Default.SoundClick.Play(at);
 			destPose.position    = at;
 			destPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
 			activeLayer = 0;
-			active      = true;
+			activeHand  = hand;
 
 			GenerateSliceMesh(360 / layers[0].items.Length, minDist, maxDist, sliceGap, ref background);
 			GenerateSliceMesh(360 / layers[0].items.Length, maxDist, maxDist + 0.005f, sliceGap, ref backgroundEdge);
@@ -90,11 +90,11 @@ namespace StereoKit.Framework
 		/// <summary>Closes the menu if it's open! Plays a closing sound.</summary>
 		public void Close()
 		{
-			if (!active)
+			if (activeHand == Handed.Max)
 				return;
 			Default.SoundUnclick.Play(menuPose.position);
 			menuScale   = minScale;
-			active      = false;
+			activeHand  = Handed.Max;
 			angleOffset = 0;
 			navStack.Clear();
 		}
@@ -102,13 +102,17 @@ namespace StereoKit.Framework
 		/// <summary>Part of IStepper, you shouldn't be calling this yourself.</summary>
 		public void Step()
 		{
-			Hand hand = Input.Hand(Handed.Right);
+			
 
-			if (!active)
-				StepMenuIndicator(hand);
+			if (activeHand == Handed.Max) {
+				for (int i = 0; i < (int)Handed.Max; i++)
+				{
+					StepMenuIndicator((Handed)i);
+				}
+			}
 
-			if (active)
-				StepMenu(hand);
+			if (activeHand != Handed.Max)
+				StepMenu(Input.Hand(activeHand));
 		}
 
 		/// <summary>HandMenuRadial is always Enabled.</summary>
@@ -123,8 +127,9 @@ namespace StereoKit.Framework
 
 		#region Private Methods
 
-		void StepMenuIndicator(Hand hand)
+		void StepMenuIndicator(Handed handed)
 		{
+			Hand hand = Input.Hand(handed);
 			if (!hand.IsTracked) return;
 
 			Vec3  palmDirection   = hand.palm.Forward.Normalized;
@@ -151,7 +156,7 @@ namespace StereoKit.Framework
 
 			// And if the user grips, show the menu!
 			if (hand.IsJustGripped)
-				Show(hand[FingerId.Index, JointId.Tip].position);
+				Show(hand[FingerId.Index, JointId.Tip].position, handed);
 		}
 
 		void StepMenu(Hand hand)
@@ -186,7 +191,7 @@ namespace StereoKit.Framework
 			float fingerAngle = (float)Math.Atan2(tipLocal.y, tipLocal.x) * Units.rad2deg - (layer.startAngle + angleOffset);
 			while (fingerAngle < 0) fingerAngle += 360;
 			int angleId = (int)(fingerAngle / step);
-			Lines.Add(Vec3.Zero, new Vec3(tipLocal.x, tipLocal.y, 0), Color.White * 0.5f, 0.001f);
+			Lines.Add(V.XYZ(0,0,-0.008f), V.XYZ(tipLocal.x, tipLocal.y, -0.008f), Color.White, 0.006f);
 
 			// Now draw each of the menu items!
 			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
