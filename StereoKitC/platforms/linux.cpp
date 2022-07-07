@@ -19,14 +19,6 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 
-#if defined(SKG_LINUX_EGL)
-
-extern EGLDisplay egl_display;
-extern EGLContext egl_context;
-extern EGLConfig  egl_config;
-
-#endif
-
 namespace sk {
 
 ///////////////////////////////////////////
