@@ -39,6 +39,7 @@ namespace StereoKit.Framework
 		const float maxDist  = 0.1f;
 		const float minScale = 0.05f;
 		const float sliceGap = 0.002f;
+		const float outOfViewAngle = 0.5f; // 0.5 is 60 degrees with cos baked in: Math.Cos(60 * Units.deg2rad);
 
 		Pose menuPose;
 		Pose destPose;
@@ -132,13 +133,10 @@ namespace StereoKit.Framework
 		/// <summary>Part of IStepper, you shouldn't be calling this yourself.</summary>
 		public void Step()
 		{
-			
-
-			if (activeHand == Handed.Max) {
+			if (activeHand == Handed.Max)
+			{
 				for (int i = 0; i < (int)Handed.Max; i++)
-				{
 					StepMenuIndicator((Handed)i);
-				}
 			}
 
 			if (activeHand != Handed.Max)
@@ -167,32 +165,33 @@ namespace StereoKit.Framework
 			{
 				if (Input.Key(simulatorKey).IsJustActive())
 				{
-					menuPose.position =
-						(hand[FingerId.Middle, JointId.KnuckleMajor].position +
-						 hand[FingerId.Middle, JointId.Root].position) * 0.5f;
-					menuPose.orientation = hand.palm.orientation;
+					menuPose = hand.palm;
 					Show(hand[FingerId.Index, JointId.Tip].position, handed);
 				}
 				return;
 			}
 
-			Vec3  palmDirection   = hand.palm.Forward.Normalized;
-			Vec3  directionToHead = (Input.Head.position - hand.palm.position).Normalized;
+			// If the hand is not in the field of view, we want to ignore it to
+			// help prevent mis-presses.
+			Vec3 headFwd = Input.Head.Forward;
+			Vec3 handDir = (hand.palm.position - Input.Head.position).Normalized;
+			bool inView  = Vec3.Dot(headFwd, handDir) > outOfViewAngle;
+
+			if (!inView) return;
+
+			// Get information about how directly the hand is facing towards
+			// the user's face.
+			Vec3  palmDirection   = hand.palm.Forward;
+			Vec3  directionToHead = -handDir;
 			float facing          = Vec3.Dot(palmDirection, directionToHead);
 
 			if (facing < 0) return;
 
-			// Show the indicator towards the middle of the fingers that control
-			// the grip motion, the help show the user 
-			menuPose.position = 
-				(hand[FingerId.Middle, JointId.KnuckleMajor].position +
-				 hand[FingerId.Middle, JointId.Root].position) * 0.5f;
-			menuPose.orientation = hand.palm.orientation;
-
-			// Draw the menu circle!
+			// Draw the menu button!
 			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
 			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
 			activationRing.Draw(Material.UI, menuPose.ToMatrix(), colorPrimary);
+			menuPose = hand.palm;
 			menuPose.position += (1- hand.gripActivation) * menuPose.Forward*U.cm*2;
 			activationButton.Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-0.95f)/0.025f))));
 
