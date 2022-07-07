@@ -21,6 +21,8 @@
 
 #if defined(SKG_LINUX_EGL)
 
+#include <EGL/egl.h>
+
 extern EGLDisplay egl_display;
 extern EGLContext egl_context;
 extern EGLConfig  egl_config;
