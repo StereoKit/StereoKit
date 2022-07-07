@@ -56,6 +56,7 @@ namespace StereoKit.Framework
 		Mesh backgroundEdge;
 		Mesh activationButton;
 		Mesh activationRing;
+		Mesh childIndicator;
 		#endregion
 
 		#region Public Methods
@@ -92,6 +93,7 @@ namespace StereoKit.Framework
 			float activationBtnRadius = 1 * U.cm;
 			activationButton = GenerateActivationButton(activationBtnRadius);
 			GenerateSliceMesh(360, activationBtnRadius, activationBtnRadius + 0.005f, 0, ref activationRing);
+			childIndicator = GenerateChildIndicator(maxDist - 0.008f, 0.004f);
 		}
 
 		/// <summary>This returns the root menu layer, this is always the first
@@ -251,7 +253,9 @@ namespace StereoKit.Framework
 				Matrix r = Matrix.TR(0,0,depth, Quat.FromAngles( 0, 0, currAngle ));
 				background    .Draw(Material.UI, r, colorCommon  * (highlight ? 2.0f:1.0f));
 				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlight ? 2.0f:1.0f));
-				layer.items[i].Draw(at, fitRadius, currAngle, highlight);
+				if (layer.items[i].action == HandMenuAction.Layer || layer.items[i].action == HandMenuAction.Back )
+					childIndicator.Draw(Material.UI, Matrix.TR(0, 0, depth, Quat.FromAngles(0, 0, currAngle + halfStep)));
+				layer.items[i].Draw(at, fitRadius, currAngle + halfStep, highlight);
 			}
 
 			// Done with local work
@@ -259,8 +263,9 @@ namespace StereoKit.Framework
 
 			// Execute any actions that were discovered
 
-			// But not if we're still in the process of animating, interaction values 
-			// could be pretty incorrect when we're still lerping around.
+			// But not if we're still in the process of animating, interaction
+			// values could be pretty incorrect when we're still lerping
+			// around.
 			if (activation < 0.99f) return;
 			if (selected)           SelectItem(layer.items[angleId], tipWorld, (angleId + 0.5f) * step);
 			if (cancel)             Close();
@@ -406,6 +411,25 @@ namespace StereoKit.Framework
 				inds[curr++] = c;
 				inds[curr++] = a;
 			}
+
+			Mesh m = new Mesh();
+			m.SetInds (inds);
+			m.SetVerts(verts);
+			return m;
+		}
+
+		static Mesh GenerateChildIndicator(float distance, float radius)
+		{
+			Vertex[] verts = new Vertex[3];
+			uint  [] inds  = new uint  [3];
+
+			verts[0] = new Vertex(V.XYZ(distance,           radius*2, 0), Vec3.Forward);
+			verts[1] = new Vertex(V.XYZ(distance + radius,  0,        0), Vec3.Forward);
+			verts[2] = new Vertex(V.XYZ(distance,          -radius*2, 0), Vec3.Forward);
+
+			inds[0] = 0;
+			inds[1] = 1;
+			inds[2] = 2;
 
 			Mesh m = new Mesh();
 			m.SetInds (inds);
