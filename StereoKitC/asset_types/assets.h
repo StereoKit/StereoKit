@@ -56,6 +56,7 @@ struct asset_task_t {
 	asset_load_action_t *actions;
 	int32_t              action_count;
 	int32_t              action_curr;
+	int32_t              priority;
 	int64_t              sort;
 	asset_job_t          gpu_job;
 	bool32_t             gpu_started;

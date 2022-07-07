@@ -363,6 +363,7 @@ void tex_add_loading_task(tex_t texture, void *load_data, const asset_load_actio
 	task.load_data    = load_data;
 	task.actions      = (asset_load_action_t *)actions;
 	task.action_count = action_count;
+	task.priority     = priority;
 	task.sort         = asset_sort(priority, complexity);
 
 	assets_add_task(task);

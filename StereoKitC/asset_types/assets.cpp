@@ -55,6 +55,9 @@ bool32_t               asset_thread_enabled  = false;
 array_t<asset_task_t*> asset_thread_tasks    = {};
 mtx_t                  asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
+int32_t                asset_tasks_processing= 0;
+int32_t                asset_tasks_priority  = INT_MAX;
+array_t<asset_task_t*> asset_active_tasks    = {};
 
 int32_t asset_thread   (void *);
 void    asset_step_task();
@@ -400,6 +403,7 @@ void assets_shutdown() {
 
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
+	asset_active_tasks.free();
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
@@ -410,6 +414,10 @@ void assets_shutdown() {
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
+
+	asset_tasks_processing = 0;
+	asset_tasks_finished   = 0;
+	asset_tasks_priority   = INT_MAX;
 }
 
 ///////////////////////////////////////////
@@ -456,15 +464,13 @@ int32_t assets_current_task() {
 ///////////////////////////////////////////
 
 int32_t assets_total_tasks() {
-	return asset_thread_tasks.count + asset_tasks_finished;
+	return asset_tasks_processing + asset_tasks_finished;
 }
 
 ///////////////////////////////////////////
 
 int32_t assets_current_task_priority() {
-	if (asset_thread_tasks.count > 0)
-		return (int32_t)asset_thread_tasks[0]->sort;
-	return INT_MAX;
+	return asset_tasks_priority;
 }
 
 ///////////////////////////////////////////
@@ -495,7 +501,81 @@ void assets_add_task(asset_task_t src_task) {
 
 	if (idx < 0) idx = ~idx;
 	asset_thread_tasks.insert(idx, task);
+	asset_tasks_processing += 1;
 	mtx_unlock(&asset_thread_task_mtx);
+}
+
+///////////////////////////////////////////
+
+int32_t assets_calculate_current_priority() {
+	int32_t result = INT_MAX;
+	for (int32_t i = 0; i < asset_active_tasks.count; i++) {
+		if (result > asset_active_tasks[i]->priority)
+			result = asset_active_tasks[i]->priority;
+	}
+	if (asset_thread_tasks.count > 0 && result > asset_thread_tasks[0]->priority) {
+		result = asset_thread_tasks[0]->priority;
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
+asset_task_t* assets_acquire_task() {
+	// Pop out the task we want to work on
+	mtx_lock(&asset_thread_task_mtx);
+	if (asset_thread_tasks.count <= 0) { mtx_unlock(&asset_thread_task_mtx); return nullptr; }
+	asset_task_t* result = nullptr;
+
+	// Find a task that's ready for work
+	for (int32_t i = 0; i < asset_thread_tasks.count; i++) {
+		asset_task_t*        task   = asset_thread_tasks[i];
+		asset_load_action_t* action = &task->actions[task->action_curr];
+		if (action->thread_affinity != asset_thread_gpu || task->gpu_started == false || task->gpu_job.finished) {
+			result = task;
+			asset_thread_tasks.remove(i);
+			asset_active_tasks.add(result);
+			asset_tasks_priority = assets_calculate_current_priority();
+			break;
+		}
+	}
+	mtx_unlock(&asset_thread_task_mtx);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+void assets_return_task(asset_task_t *task) {
+	mtx_lock(&asset_thread_task_mtx);
+	asset_active_tasks.remove(asset_active_tasks.index_of(task));
+	asset_thread_tasks.insert(0, task);
+	mtx_unlock(&asset_thread_task_mtx);
+}
+
+///////////////////////////////////////////
+
+void assets_complete_task(asset_task_t* task) {
+	// Skip putting it back if it's complete :)
+
+	mtx_lock(&asset_thread_task_mtx);
+	asset_active_tasks.remove(asset_active_tasks.index_of(task));
+	asset_tasks_finished   += 1;
+	asset_tasks_processing -= 1;
+	asset_tasks_priority    = assets_calculate_current_priority();
+	mtx_unlock(&asset_thread_task_mtx);
+
+	// If it was successfully loaded, we'll want to notify on_load, but we do
+	// want to skip this if it was removed because of an issue during load.
+	if (task->asset->state >= asset_state_loaded) {
+		mtx_lock(&assets_load_event_lock);
+		assets_load_events.add(task->asset);
+		mtx_unlock(&assets_load_event_lock);
+	}
+
+	if (task->free_data != nullptr) task->free_data(task->asset, task->load_data);
+	assets_releaseref_threadsafe(task->asset);
+	sk_free(task);
 }
 
 ///////////////////////////////////////////
@@ -506,12 +586,8 @@ void assets_task_set_complexity(asset_task_t *task, int32_t complexity) {
 ///////////////////////////////////////////
 
 void asset_step_task() {
-	// Pop out the task we want to work on
-	mtx_lock(&asset_thread_task_mtx);
-	if (asset_thread_tasks.count <= 0) { mtx_unlock(&asset_thread_task_mtx); return; }
-	asset_task_t* task = asset_thread_tasks[0];
-	asset_thread_tasks.remove(0);
-	mtx_unlock(&asset_thread_task_mtx);
+	asset_task_t* task = assets_acquire_task();
+	if (task == nullptr) return;
 
 	asset_load_action_t* action = &task->actions[task->action_curr];
 	if (action->thread_affinity == asset_thread_asset) {
@@ -565,25 +641,9 @@ void asset_step_task() {
 
 	// Put it back in when we're done!
 	if (task->action_curr < task->action_count) {
-		mtx_lock(&asset_thread_task_mtx);
-		asset_thread_tasks.insert(0, task);
-		mtx_unlock(&asset_thread_task_mtx);
+		assets_return_task(task);
 	} else {
-		// Or skip putting it back if it's complete :)
-		asset_tasks_finished += 1;
-
-		// If it was successfully loaded, we'll want to notify on_load, but we
-		// do want to skip this if it was removed because of an issue during
-		// load.
-		if (task->asset->state >= asset_state_loaded) {
-			mtx_lock(&assets_load_event_lock);
-			assets_load_events.add(task->asset);
-			mtx_unlock(&assets_load_event_lock);
-		}
-
-		if (task->free_data != nullptr) task->free_data(task->asset, task->load_data);
-		assets_releaseref_threadsafe(task->asset);
-		sk_free(task);
+		assets_complete_task(task);
 	}
 }
 
@@ -637,7 +697,6 @@ void assets_block_for_priority(int32_t priority) {
 			return;
 		}
 	}
-	
 
 	// This handles if the user passes in INT_MAX
 	int32_t curr_priority = assets_current_task_priority();
