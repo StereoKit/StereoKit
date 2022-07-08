@@ -69,9 +69,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
@@ -174,9 +172,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
