@@ -138,6 +138,7 @@ if (UNIX)
     Threads::Threads
     GLX
     X11
+    Xfixes
     fontconfig )
 
   # Add pthreads

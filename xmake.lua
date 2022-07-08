@@ -115,7 +115,7 @@ target("StereoKitC")
         	add_links("EGL", "GLX", "fontconfig", "pthread")
 			add_defines("SKG_LINUX_EGL")
 		elseif is_config("linux-graphics-backend", "GLX") then
-        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11",  "Xfixes", "pthread")
 			add_defines("SKG_LINUX_GLX")
 		end
     elseif is_plat("android") then
