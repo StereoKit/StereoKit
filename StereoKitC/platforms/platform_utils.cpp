@@ -246,7 +246,7 @@ bool platform_get_cursor(vec2 &out_pos) {
 
 // Returns true if the platform succeeded at moving the cursor; returns false otherwise.
 // Should currently only return false under Linux/XWayland.
-bool platform_set_cursor(vec2 window_pos) {
+void platform_set_cursor(vec2 window_pos) {
 #if defined(SK_OS_WINDOWS_UWP)
 	uwp_set_mouse(window_pos);
 #elif defined(SK_OS_WINDOWS)
@@ -254,12 +254,10 @@ bool platform_set_cursor(vec2 window_pos) {
 	ClientToScreen((HWND)win32_hwnd(), &pt);
 	SetCursorPos  (pt.x, pt.y);
 #elif defined(SK_OS_LINUX)
-	return linux_set_cursor(window_pos);
+	linux_set_cursor(window_pos);
 #elif defined(SK_OS_WEB)
 	web_set_cursor(window_pos);
 #endif
-	// All the platforms except for Linux under Wayland can set the cursor.
-	return true;
 }
 
 ///////////////////////////////////////////
