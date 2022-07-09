@@ -308,10 +308,10 @@ char *assets_file(const char *file_name) {
 		ch++;
 	}
 #elif defined(SK_OS_ANDROID)
-	return file_name;
+	return string_copy(file_name);
 #else
 	if (file_name[0] == platform_path_separator_c)
-		return file_name;
+		return string_copy(file_name);
 #endif
 
 	int   count  = snprintf(nullptr, 0, "%s/%s", sk_settings.assets_folder, file_name);
