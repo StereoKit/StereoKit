@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if !WINDOWS_UWP
+using System.Collections.Generic;
 using StereoKit;
 
 class DemoRecordMic : ITest
@@ -117,3 +118,4 @@ class DemoRecordMic : ITest
 		UI.WindowEnd();
 	}
 }
+#endif
