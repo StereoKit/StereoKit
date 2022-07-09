@@ -34,10 +34,13 @@ sound_t sound_create(const char *filename) {
 	if (result != nullptr)
 		return result;
 
-	const char *sound_file = assets_file(filename);
-	void       *data;
-	size_t      length;
-	if (!platform_read_file(sound_file, &data, &length)) {
+	
+	void*    data;
+	size_t   length;
+	char*    sound_file = assets_file(filename);
+	bool32_t loaded     = platform_read_file(sound_file, &data, &length);
+	sk_free(sound_file);
+	if (!loaded) {
 		log_warnf("Sound file failed to load: %s", filename);
 		return nullptr;
 	}

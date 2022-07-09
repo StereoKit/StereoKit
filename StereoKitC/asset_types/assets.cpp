@@ -295,16 +295,15 @@ void  assets_shutdown_check() {
 
 ///////////////////////////////////////////
 
-char assets_file_buffer[1024];
-const char *assets_file(const char *file_name) {
+char *assets_file(const char *file_name) {
 	if (file_name == nullptr || sk_settings.assets_folder == nullptr || sk_settings.assets_folder[0] == '\0')
-		return file_name;
+		return string_copy(file_name);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	const char *ch = file_name;
 	while (*ch != '\0') {
 		if (*ch == ':') {
-			return file_name;
+			return string_copy(file_name);
 		}
 		ch++;
 	}
@@ -315,8 +314,10 @@ const char *assets_file(const char *file_name) {
 		return file_name;
 #endif
 
-	snprintf(assets_file_buffer, sizeof(assets_file_buffer), "%s/%s", sk_settings.assets_folder, file_name);
-	return assets_file_buffer;
+	int   count  = snprintf(nullptr, 0, "%s/%s", sk_settings.assets_folder, file_name);
+	char *result = sk_malloc_t(char, count + 1);
+	snprintf(result, count+1, "%s/%s", sk_settings.assets_folder, file_name);
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -400,6 +401,7 @@ void assets_shutdown() {
 		}
 	}
 	asset_threads.free();
+
 
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
