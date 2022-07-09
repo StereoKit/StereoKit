@@ -39,7 +39,8 @@ namespace StereoKit.Framework
 		const float maxDist  = 0.1f;
 		const float minScale = 0.05f;
 		const float sliceGap = 0.002f;
-		const float outOfViewAngle = 0.5f; // 0.5 is 60 degrees with cos baked in: Math.Cos(60 * Units.deg2rad);
+		const float outOfViewAngle = 0.866f; // 0.866 is 30 degrees with cos baked in: Math.Cos(30 * Units.deg2rad);
+		const float activationAngle = 0.99f; // 0.99 is 8 degrees with cos baked in: Math.Cos(8 * Units.deg2rad);
 
 		Pose menuPose;
 		Pose destPose;
@@ -112,7 +113,7 @@ namespace StereoKit.Framework
 				Close();
 			Default.SoundClick.Play(at);
 			destPose.position    = at;
-			destPose.orientation = Quat.LookAt(menuPose.position, Input.Head.position);
+			destPose.orientation = Quat.LookAt(at, Input.Head.position);
 			activeLayer = root;
 			activeHand  = hand;
 
@@ -192,12 +193,12 @@ namespace StereoKit.Framework
 			// Draw the menu button!
 			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
 			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
-			activationRing.Draw(Material.UI, menuPose.ToMatrix(), colorPrimary);
 			menuPose = hand.palm;
+			activationRing.Draw(Material.UI, menuPose.ToMatrix(), colorPrimary);
 			menuPose.position += (1- hand.gripActivation) * menuPose.Forward*U.cm*2;
-			activationButton.Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-0.95f)/0.025f))));
+			activationButton.Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-(activationAngle-0.01f))/0.01f))));
 
-			if (facing < 0.975f) return;
+			if (facing < activationAngle) return;
 
 			// And if the user grips, show the menu!
 			if (hand.IsJustGripped)
