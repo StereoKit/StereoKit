@@ -37,7 +37,7 @@ struct render_item_t {
 	XMMATRIX    transform;
 	color128    color;
 	uint64_t    sort_id;
-	skg_mesh_t *mesh;
+	mesh_t      mesh;
 	material_t  material;
 	int32_t     mesh_inds;
 	uint16_t    layer;
@@ -453,7 +453,7 @@ color128 render_get_clear_color_ln() {
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
 	render_item_t item;
-	item.mesh     = &mesh->gpu_mesh;
+	item.mesh     = mesh;
 	item.mesh_inds= mesh->ind_draw;
 	item.material = material;
 	item.color    = color;
@@ -483,7 +483,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		if (vis->visible == false) continue;
 		
 		render_item_t item;
-		item.mesh     = &vis->mesh->gpu_mesh;
+		item.mesh     = vis->mesh;
 		item.mesh_inds= vis->mesh->ind_count;
 		item.material = vis->material;
 		item.color    = color;
@@ -968,12 +968,16 @@ void render_list_pop() {
 
 void render_list_add(const render_item_t *item) {
 	render_lists[render_list_active].queue.add(*item);
+	assets_addref(&item->material->header);
+	assets_addref(&item->mesh->header);
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
 	render_lists[list].queue.add(*item);
+	assets_addref(&item->material->header);
+	assets_addref(&item->mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -1022,7 +1026,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 		// If the material/mesh changed
 		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -1035,7 +1039,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 		render_instance_list.clear();
 	}
 
@@ -1071,7 +1075,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 		// If the mesh changed
 		else if (run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -1084,7 +1088,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 		render_instance_list.clear();
 	}
 
@@ -1114,6 +1118,10 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
+	for (int32_t i = 0; i < render_lists[list].queue.count; i++) {
+		assets_releaseref(&render_lists[list].queue[i].material->header);
+		assets_releaseref(&render_lists[list].queue[i].mesh->header);
+	}
 	render_lists[list].queue.clear();
 	render_lists[list].stats   = {};
 	render_lists[list].prepped = false;
