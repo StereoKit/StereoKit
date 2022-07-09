@@ -522,8 +522,10 @@ bool uwp_start_flat() {
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+	tex_set_id       (uwp_target, "platform/swapchain");
 	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
-	tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
+	tex_t zbuffer = tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
+	tex_set_id       (zbuffer, "platform/swapchain_zbuffer");
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 

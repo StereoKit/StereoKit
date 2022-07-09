@@ -237,8 +237,10 @@ bool win32_start_flat() {
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+	tex_set_id       (win32_target, "platform/swapchain");
 	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
-	tex_add_zbuffer  (win32_target, (tex_format_)depth_fmt);
+	tex_t zbuffer = tex_add_zbuffer (win32_target, (tex_format_)depth_fmt);
+	tex_set_id       (zbuffer, "platform/swapchain_zbuffer");
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
