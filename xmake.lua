@@ -175,6 +175,9 @@ target("StereoKitC")
         if is_plat("android") and has_config("oculus-openxr") then
             os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder)
         end
+        if is_plat("wasm") then
+            os.cp(build_folder.."libStereoKitC.a", dist_folder.."StereoKitC.a")
+        end
 
         os.cp("$(projectdir)/StereoKitC/stereokit.h",    "$(projectdir)/bin/distribute/include/")
         os.cp("$(projectdir)/StereoKitC/stereokit_ui.h", "$(projectdir)/bin/distribute/include/")
