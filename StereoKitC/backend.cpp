@@ -79,6 +79,13 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 
 ///////////////////////////////////////////
 
+int64_t backend_openxr_get_eyes_sample_time() {
+	log_err(backend_err_wrong_backend);
+	return 0;
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_ext_request(const char *extension_name) {
 	if (sk_initialized) {
 		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
