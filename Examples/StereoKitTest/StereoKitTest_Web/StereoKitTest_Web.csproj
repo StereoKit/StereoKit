@@ -3,25 +3,18 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <WasmBuildNative>true</WasmBuildNative>
-    <RunAotCompilation>true</RunAotCompilation>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks> 
-    <EmccExtraLDFlags>-s WARN_ON_UNDEFINED_SYMBOLS=0</EmccExtraLDFlags>
+    <EmccExtraLDFlags>-s FULL_ES3=1</EmccExtraLDFlags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.6" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
   <ItemGroup>
     <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-    <!--<None CopyToOutputDirectory="PreserveNewest" Link="runtimes\browser-wasm\native\libStereoKitC.so"  Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/libStereoKitC.so" />-->
-    <!--<None CopyToOutputDirectory="PreserveNewest" Link="runtimes\wasm\native\StereoKitC.sym" Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/libStereoKitC.sym" />-->
-    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/libStereoKitC.a" />
-    <!--<PackNativeLibrary Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/libStereoKitC.a">
-      <Link>runtimes/browser-wasm/native/libStereoKitC.a</Link>
-    </PackNativeLibrary>-->
+    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/StereoKitC.a" />
   </ItemGroup>
   <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
 
@@ -40,10 +33,6 @@
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
     <SKShader Include="..\..\Assets\**\*.hlsl" BuildRoot="..\..\" BuildTo="Assets" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
