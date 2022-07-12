@@ -5,28 +5,13 @@
 
 namespace sk {
 
-enum asset_type_ {
-	asset_type_none = 0,
-	asset_type_mesh,
-	asset_type_texture,
-	asset_type_shader,
-	asset_type_material,
-	asset_type_model,
-	asset_type_font,
-	asset_type_sprite,
-	asset_type_sound,
-	asset_type_solid,
-};
-
 struct asset_header_t {
 	asset_type_  type;
 	asset_state_ state;
 	uint64_t     id;
 	uint64_t     index;
 	int32_t      refs;
-#if defined(SK_DEBUG)
 	char        *id_text;
-#endif
 };
 
 struct asset_job_t {

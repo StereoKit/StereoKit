@@ -28,6 +28,12 @@ void shader_set_id(shader_t shader, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* shader_get_id(const shader_t shader) {
+	return shader->header.id_text;
+}
+
+///////////////////////////////////////////
+
 const char *shader_get_name(shader_t shader) {
 	return shader->shader.meta->name;
 }

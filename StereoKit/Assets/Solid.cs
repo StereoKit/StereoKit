@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -17,9 +18,18 @@ namespace StereoKit
 	/// velocity for a single frame to travel through space to get to its
 	/// destination, while teleport will simply appear at its destination 
 	/// without touching anything between.</summary>
-	public class Solid
+	public class Solid : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.solid_get_id(_inst));
+			set => NativeAPI.solid_set_id(_inst, value);
+		}
 
 		/// <summary>Creates a Solid physics object and adds it to the 
 		/// physics system.</summary>
@@ -33,7 +43,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create solid!");
 		}
-		private Solid(IntPtr solid)
+		internal Solid(IntPtr solid)
 		{
 			_inst = solid;
 			if (_inst == IntPtr.Zero)

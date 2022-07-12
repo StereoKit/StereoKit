@@ -22,7 +22,7 @@ namespace StereoKit
 	/// order to execute a render command. So if you need speed, and only
 	/// have a single mesh with a precalculated transform matrix, it can be
 	/// faster to render a Mesh instead of a Model!</summary>
-	public class Model
+	public class Model : IAsset
 	{
 		internal IntPtr _inst;
 		private ModelNodeCollection   _nodeCollection;
@@ -33,6 +33,15 @@ namespace StereoKit
 		/// </summary>
 		[Obsolete("For removal in v0.4. Use Nodes/Visuals instead.")]
 		public int SubsetCount => NativeAPI.model_subset_count(_inst);
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.model_get_id(_inst));
+			set => NativeAPI.model_set_id(_inst, value);
+		}
 
 		/// <summary>This is an enumerable collection of all the nodes in this
 		/// Model, ordered non-hierarchically by when they were added. You can

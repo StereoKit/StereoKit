@@ -245,6 +245,12 @@ void font_set_id(font_t font, const char* id) {
 
 ///////////////////////////////////////////
 
+const char* font_get_id(const font_t font) {
+	return font->header.id_text;
+}
+
+///////////////////////////////////////////
+
 void font_addref(font_t font) {
 	assets_addref(&font->header);
 }

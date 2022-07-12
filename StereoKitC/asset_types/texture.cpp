@@ -463,7 +463,7 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t p
 ///////////////////////////////////////////
 
 tex_t tex_create(tex_type_ type, tex_format_ format) {
-	tex_t result = (tex_t)assets_allocate(asset_type_texture);
+	tex_t result = (tex_t)assets_allocate(asset_type_tex);
 	result->type   = type;
 	result->format = format;
 	result->address_mode = tex_address_wrap;
@@ -613,7 +613,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	}
 
 	char id[64];
-	assets_unique_name(asset_type_texture, "zbuffer/", id, sizeof(id));
+	assets_unique_name(asset_type_tex, "zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
 	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
@@ -700,7 +700,7 @@ void tex_set_fallback(tex_t texture, tex_t fallback) {
 ///////////////////////////////////////////
 
 tex_t tex_find(const char *id) {
-	tex_t result = (tex_t)assets_find(id, asset_type_texture);
+	tex_t result = (tex_t)assets_find(id, asset_type_tex);
 	if (result != nullptr) {
 		tex_addref(result);
 		return result;
@@ -712,6 +712,12 @@ tex_t tex_find(const char *id) {
 
 void tex_set_id(tex_t tex, const char *id) {
 	assets_set_id(&tex->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* tex_get_id(const tex_t texture) {
+	return texture->header.id_text;
 }
 
 ///////////////////////////////////////////

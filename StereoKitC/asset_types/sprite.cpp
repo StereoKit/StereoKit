@@ -36,6 +36,12 @@ void sprite_set_id(sprite_t sprite, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* sprite_get_id(const sprite_t sprite) {
+	return sprite->header.id_text;
+}
+
+///////////////////////////////////////////
+
 material_t sprite_create_material(int index_id) {
 	char id[64];
 	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);

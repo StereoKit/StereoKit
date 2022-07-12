@@ -661,39 +661,40 @@ typedef enum cull_ {
 		cull_none,
 } cull_;
 
-SK_API mesh_t   mesh_find            (const char *name);
-SK_API mesh_t   mesh_create          ();
-SK_API mesh_t   mesh_copy            (mesh_t mesh);
-SK_API void     mesh_set_id          (mesh_t mesh, const char *id);
-SK_API void     mesh_addref          (mesh_t mesh);
-SK_API void     mesh_release         (mesh_t mesh);
-SK_API void     mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void     mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
-SK_API bool32_t mesh_get_keep_data   (mesh_t mesh);
-SK_API void     mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
-SK_API void     mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void     mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
-SK_API int32_t  mesh_get_vert_count  (mesh_t mesh);
-SK_API void     mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
-SK_API void     mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
-SK_API int32_t  mesh_get_ind_count   (mesh_t mesh);
-SK_API void     mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
-SK_API void     mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
-SK_API bounds_t mesh_get_bounds      (mesh_t mesh);
-SK_API bool32_t mesh_has_skin        (mesh_t mesh);
-SK_API void     mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
-SK_API void     mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
+SK_API mesh_t      mesh_find            (const char *name);
+SK_API mesh_t      mesh_create          ();
+SK_API mesh_t      mesh_copy            (mesh_t mesh);
+SK_API void        mesh_set_id          (mesh_t mesh, const char *id);
+SK_API const char* mesh_get_id          (const mesh_t mesh);
+SK_API void        mesh_addref          (mesh_t mesh);
+SK_API void        mesh_release         (mesh_t mesh);
+SK_API void        mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void        mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
+SK_API bool32_t    mesh_get_keep_data   (mesh_t mesh);
+SK_API void        mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
+SK_API void        mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void        mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API int32_t     mesh_get_vert_count  (mesh_t mesh);
+SK_API void        mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
+SK_API void        mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
+SK_API int32_t     mesh_get_ind_count   (mesh_t mesh);
+SK_API void        mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
+SK_API void        mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
+SK_API bounds_t    mesh_get_bounds      (mesh_t mesh);
+SK_API bool32_t    mesh_has_skin        (mesh_t mesh);
+SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
+SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
 // TODO: in 0.4 move cull_mode parameter up to directly after out_pt (both functions)
-SK_API bool32_t mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
-SK_API bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
-SK_API bool32_t mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c);
+SK_API bool32_t    mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
+SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
+SK_API bool32_t    mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c);
 
-SK_API mesh_t   mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
-SK_API mesh_t   mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
-SK_API mesh_t   mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
-SK_API mesh_t   mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
-SK_API mesh_t   mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
-SK_API mesh_t   mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t      mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
+SK_API mesh_t      mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
+SK_API mesh_t      mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
+SK_API mesh_t      mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
+SK_API mesh_t      mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t      mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 
 ///////////////////////////////////////////
 
@@ -838,6 +839,7 @@ SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_co
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_files(const char **cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void         tex_set_id              (tex_t texture, const char *id);
+SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count);
 SK_API void         tex_addref              (tex_t texture);
@@ -871,6 +873,7 @@ SK_API font_t       font_find               (const char *id);
 SK_API font_t       font_create             (const char *file);
 SK_API font_t       font_create_files       (const char **files, int32_t file_count);
 SK_API void         font_set_id             (font_t font, const char* id);
+SK_API const char*  font_get_id             (const font_t font);
 SK_API void         font_addref             (font_t font);
 SK_API void         font_release            (font_t font);
 SK_API tex_t        font_get_tex            (font_t font);
@@ -881,7 +884,8 @@ SK_API shader_t     shader_find             (const char *id);
 SK_API shader_t     shader_create_file      (const char *filename);
 SK_API shader_t     shader_create_mem       (void *data, size_t data_size);
 SK_API void         shader_set_id           (shader_t shader, const char *id);
-SK_API const char  *shader_get_name         (shader_t shader);
+SK_API const char*  shader_get_id           (const shader_t shader);
+SK_API const char*  shader_get_name         (shader_t shader);
 SK_API void         shader_addref           (shader_t shader);
 SK_API void         shader_release          (shader_t shader);
 
@@ -1005,6 +1009,7 @@ SK_API material_t        material_create          (shader_t shader);
 SK_API material_t        material_copy            (material_t material);
 SK_API material_t        material_copy_id         (const char *id);
 SK_API void              material_set_id          (material_t material, const char *id);
+SK_API const char*       material_get_id          (const material_t material);
 SK_API void              material_addref          (material_t material);
 SK_API void              material_release         (material_t material);
 SK_API void              material_set_transparency(material_t material, transparency_ mode);
@@ -1162,6 +1167,8 @@ typedef enum solid_type_ {
 
 SK_API solid_t       solid_create                  (const sk_ref(vec3) position, const sk_ref(quat) rotation, solid_type_ type sk_default(solid_type_normal));
 SK_API void          solid_release                 (solid_t solid);
+SK_API void          solid_set_id                  (const solid_t solid, const char *id);
+SK_API const char*   solid_get_id                  (const solid_t solid);
 SK_API void          solid_add_sphere              (solid_t solid, float diameter sk_default(1), float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
 SK_API void          solid_add_box                 (solid_t solid, const sk_ref(vec3) dimensions,float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
 SK_API void          solid_add_capsule             (solid_t solid, float diameter, float height, float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
@@ -1199,6 +1206,7 @@ SK_API model_t       model_create_mesh             (mesh_t mesh, material_t mate
 SK_API model_t       model_create_mem              (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t       model_create_file             (const char *filename, shader_t shader sk_default(nullptr));
 SK_API void          model_set_id                  (model_t model, const char *id);
+SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
 SK_API void          model_draw                    (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
@@ -1287,17 +1295,18 @@ typedef enum sprite_type_ {
 	sprite_type_single
 } sprite_type_;
 
-SK_API sprite_t sprite_create     (tex_t    sprite,      sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
-SK_API sprite_t sprite_create_file(const char *filename, sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
-SK_API void     sprite_set_id     (sprite_t sprite, const char *id);
-SK_API void     sprite_addref     (sprite_t sprite);
-SK_API void     sprite_release    (sprite_t sprite);
-SK_API float    sprite_get_aspect (sprite_t sprite);
-SK_API int32_t  sprite_get_width  (sprite_t sprite);
-SK_API int32_t  sprite_get_height (sprite_t sprite);
-SK_API vec2     sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void     sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
-SK_API void     sprite_draw_at    (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
+SK_API sprite_t    sprite_create     (tex_t    sprite,      sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
+SK_API sprite_t    sprite_create_file(const char *filename, sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
+SK_API void        sprite_set_id     (sprite_t sprite, const char *id);
+SK_API const char* sprite_get_id     (const sprite_t sprite);
+SK_API void        sprite_addref     (sprite_t sprite);
+SK_API void        sprite_release    (sprite_t sprite);
+SK_API float       sprite_get_aspect (sprite_t sprite);
+SK_API int32_t     sprite_get_width  (sprite_t sprite);
+SK_API int32_t     sprite_get_height (sprite_t sprite);
+SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
+SK_API void        sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw_at    (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 
@@ -1403,6 +1412,7 @@ typedef struct sound_inst_t {
 
 SK_API sound_t      sound_find           (const char *id);
 SK_API void         sound_set_id         (sound_t sound, const char *id);
+SK_API const char*  sound_get_id         (const sound_t sound);
 SK_API sound_t      sound_create         (const char *filename);
 SK_API sound_t      sound_create_stream  (float buffer_duration);
 SK_API sound_t      sound_create_samples (const float *samples_at_48000s, uint64_t sample_count);
@@ -2000,11 +2010,46 @@ SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 
 ///////////////////////////////////////////
 
-SK_API void    assets_releaseref_threadsafe(void *asset);
-SK_API int32_t assets_current_task         ();
-SK_API int32_t assets_total_tasks          ();
-SK_API int32_t assets_current_task_priority();
-SK_API void    assets_block_for_priority   (int32_t priority);
+/*A flag for what 'type' an Asset may store.*/
+enum asset_type_ {
+	/*No type, this may come from some kind of invalid Asset id.*/
+	asset_type_none = 0,
+	/*A Mesh.*/
+	asset_type_mesh,
+	/*A Tex.*/
+	asset_type_tex,
+	/*A Shader.*/
+	asset_type_shader,
+	/*A Material.*/
+	asset_type_material,
+	/*A Model.*/
+	asset_type_model,
+	/*A Font.*/
+	asset_type_font,
+	/*A Sprite.*/
+	asset_type_sprite,
+	/*A Sound.*/
+	asset_type_sound,
+	/*A Solid.*/
+	asset_type_solid,
+};
+
+typedef void* asset_t;
+
+SK_API void        assets_releaseref_threadsafe(void *asset);
+SK_API int32_t     assets_current_task         ();
+SK_API int32_t     assets_total_tasks          ();
+SK_API int32_t     assets_current_task_priority();
+SK_API void        assets_block_for_priority   (int32_t priority);
+SK_API int32_t     assets_count                ();
+SK_API asset_t     assets_get_index            (int32_t index);
+SK_API asset_type_ assets_get_type             (int32_t index);
+
+SK_API asset_type_ asset_get_type(asset_t asset);
+SK_API void        asset_set_id  (asset_t asset, const char* id);
+SK_API const char* asset_get_id  (const asset_t asset);
+SK_API void        asset_addref  (asset_t asset);
+SK_API void        asset_release (asset_t asset);
 
 ///////////////////////////////////////////
 

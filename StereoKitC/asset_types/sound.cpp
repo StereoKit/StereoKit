@@ -29,6 +29,12 @@ void sound_set_id(sound_t sound, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* sound_get_id(const sound_t sound) {
+	return sound->header.id_text;
+}
+
+///////////////////////////////////////////
+
 sound_t sound_create(const char *filename) {
 	sound_t result = sound_find(filename);
 	if (result != nullptr)

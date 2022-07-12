@@ -134,6 +134,18 @@ void solid_release(solid_t solid) {
 
 ///////////////////////////////////////////
 
+void solid_set_id(const solid_t solid, const char* id) {
+	assets_set_id(&solid->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* solid_get_id(const solid_t solid) {
+	return solid->header.id_text;
+}
+
+///////////////////////////////////////////
+
 void solid_destroy(solid_t solid) {
 	/*RigidBody *body  = (RigidBody*)solid;
 	for (int i = body->getNbColliders()-1; i >= 0; i--) {

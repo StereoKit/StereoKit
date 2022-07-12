@@ -385,6 +385,12 @@ void mesh_set_id(mesh_t mesh, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* mesh_get_id(const mesh_t mesh) {
+	return mesh->header.id_text;
+}
+
+///////////////////////////////////////////
+
 void mesh_addref(mesh_t mesh) {
 	assets_addref(&mesh->header);
 }

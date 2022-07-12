@@ -115,7 +115,7 @@ namespace StereoKit
 	/// Items drawn with the same Material can be batched together into a 
 	/// single, fast operation on the graphics card, so re-using materials 
 	/// can be extremely beneficial for performance!</summary>
-	public class Material
+	public class Material : IAsset
 	{
 		internal IntPtr _inst;
 
@@ -177,6 +177,12 @@ namespace StereoKit
 		public Shader Shader { 
 			get => new Shader(NativeAPI.material_get_shader(_inst));
 			set => NativeAPI.material_set_shader(_inst, value._inst); }
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id { 
+			get => Marshal.PtrToStringAnsi(NativeAPI.material_get_id(_inst));
+			set => NativeAPI.material_set_id(_inst, value); }
 
 		/// <summary>Creates a material from a shader, and uses the shader's 
 		/// default settings. Uses an auto-generated id.</summary>

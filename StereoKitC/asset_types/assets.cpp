@@ -98,7 +98,7 @@ void *assets_allocate(asset_type_ type) {
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
 	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
-	case asset_type_texture:  size = sizeof(_tex_t);      break;
+	case asset_type_tex:      size = sizeof(_tex_t);      break;
 	case asset_type_shader:   size = sizeof(_shader_t);   break;
 	case asset_type_material: size = sizeof(_material_t); break;
 	case asset_type_model:    size = sizeof(_model_t);    break;
@@ -127,9 +127,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
-#if defined(SK_DEBUG)
 	header->id_text = string_copy(id);
-#endif
 }
 
 ///////////////////////////////////////////
@@ -189,18 +187,14 @@ void assets_releaseref_threadsafe(void *asset) {
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-#if defined(SK_DEBUG)
 		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
-#else
-		log_err("Destroying an asset that still has references!");
-#endif
 		return;
 	}
 
 	// Call asset specific destroy function
 	switch(asset->type) {
 	case asset_type_mesh:     mesh_destroy    ((mesh_t    )asset); break;
-	case asset_type_texture:  tex_destroy     ((tex_t     )asset); break;
+	case asset_type_tex:      tex_destroy     ((tex_t     )asset); break;
 	case asset_type_shader:   shader_destroy  ((shader_t  )asset); break;
 	case asset_type_material: material_destroy((material_t)asset); break;
 	case asset_type_model:    model_destroy   ((model_t   )asset); break;
@@ -220,9 +214,7 @@ void assets_destroy(asset_header_t *asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
-#if defined(SK_DEBUG)
 	sk_free(asset->id_text);
-#endif
 	sk_free(asset);
 }
 
@@ -275,7 +267,7 @@ void  assets_shutdown_check() {
 			const char *type_name = "[unimplemented type name]";
 			switch(assets[i]->type) {
 			case asset_type_mesh:     type_name = "mesh_t";     break;
-			case asset_type_texture:  type_name = "tex_t";      break;
+			case asset_type_tex:      type_name = "tex_t";      break;
 			case asset_type_shader:   type_name = "shader_t";   break;
 			case asset_type_material: type_name = "material_t"; break;
 			case asset_type_model:    type_name = "model_t";    break;
@@ -473,6 +465,59 @@ int32_t assets_total_tasks() {
 
 int32_t assets_current_task_priority() {
 	return asset_tasks_priority;
+}
+
+///////////////////////////////////////////
+
+int32_t assets_count() {
+	return assets.count;
+}
+
+///////////////////////////////////////////
+
+asset_t assets_get_index(int32_t index) {
+	if (index < 0 || index >= assets.count) return nullptr;
+	assets_addref(assets[index]);
+	return assets[index];
+}
+
+///////////////////////////////////////////
+
+asset_type_ assets_get_type(int32_t index) {
+	if (index < 0 || index >= assets.count) return asset_type_none;
+	return assets[index]->type;
+}
+
+///////////////////////////////////////////
+// Asset type                            //
+///////////////////////////////////////////
+
+asset_type_ asset_get_type(asset_t asset) {
+	return ((asset_header_t*)asset)->type;
+}
+
+///////////////////////////////////////////
+
+void asset_set_id(asset_t asset, const char* id) {
+	assets_set_id((asset_header_t*)asset, hash_fnv64_string(id));
+}
+
+///////////////////////////////////////////
+
+const char* asset_get_id(const asset_t asset) {
+	return ((asset_header_t*)asset)->id_text;
+}
+
+///////////////////////////////////////////
+
+void asset_addref(asset_t asset) {
+	assets_addref((asset_header_t*)asset);
+}
+
+///////////////////////////////////////////
+
+void asset_release(asset_t asset) {
+	assets_releaseref((asset_header_t*)asset);
 }
 
 ///////////////////////////////////////////

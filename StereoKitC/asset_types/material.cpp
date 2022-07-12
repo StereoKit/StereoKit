@@ -33,6 +33,12 @@ void material_set_id(material_t material, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* material_get_id(const material_t material) {
+	return material->header.id_text;
+}
+
+///////////////////////////////////////////
+
 inline size_t material_param_size(material_param_ type) {
 	switch (type) {
 	case material_param_float:    return sizeof(float);

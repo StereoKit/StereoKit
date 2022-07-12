@@ -1047,4 +1047,28 @@ namespace StereoKit
 		None,
 	}
 
+	/// <summary>A flag for what 'type' an Asset may store.</summary>
+	public enum AssetType {
+		/// <summary>No type, this may come from some kind of invalid Asset id.</summary>
+		None         = 0,
+		/// <summary>A Mesh.</summary>
+		Mesh,
+		/// <summary>A Tex.</summary>
+		Tex,
+		/// <summary>A Shader.</summary>
+		Shader,
+		/// <summary>A Material.</summary>
+		Material,
+		/// <summary>A Model.</summary>
+		Model,
+		/// <summary>A Font.</summary>
+		Font,
+		/// <summary>A Sprite.</summary>
+		Sprite,
+		/// <summary>A Sound.</summary>
+		Sound,
+		/// <summary>A Solid.</summary>
+		Solid,
+	}
+
 }

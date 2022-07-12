@@ -28,6 +28,12 @@ void model_set_id(model_t model, const char *id) {
 
 ///////////////////////////////////////////
 
+const char* model_get_id(const model_t model) {
+	return model->header.id_text;
+}
+
+///////////////////////////////////////////
+
 model_t model_find(const char *id) {
 	model_t result = (model_t)assets_find(id, asset_type_model);
 	if (result != nullptr) {
