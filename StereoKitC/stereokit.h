@@ -603,7 +603,7 @@ typedef struct gradient_key_t {
 } gradient_key_t;
 
 SK_API gradient_t gradient_create     ();
-SK_API gradient_t gradient_create_keys(const gradient_key_t *keys, int32_t count);
+SK_API gradient_t gradient_create_keys(const gradient_key_t *in_arr_keys, int32_t count);
 SK_API void       gradient_add        (gradient_t gradient, color128 color_linear, float position);
 SK_API void       gradient_set        (gradient_t gradient, int32_t index, color128 color_linear, float position);
 SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
@@ -623,7 +623,7 @@ typedef struct sh_light_t {
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create      (const sh_light_t* lights, int32_t light_count);
+SK_API spherical_harmonics_t sh_create      (const sh_light_t* in_arr_lights, int32_t light_count);
 SK_API void                  sh_brightness  (      sk_ref(spherical_harmonics_t) harmonics, float scale);
 SK_API void                  sh_add         (      sk_ref(spherical_harmonics_t) harmonics, vec3 light_dir, vec3 light_color);
 SK_API color128              sh_lookup      (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
@@ -671,19 +671,19 @@ SK_API void        mesh_release         (mesh_t mesh);
 SK_API void        mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void        mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t    mesh_get_keep_data   (mesh_t mesh);
-SK_API void        mesh_set_data        (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, const vind_t *indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_set_verts       (mesh_t mesh, const vert_t *vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API void        mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
+SK_API void        mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void        mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
 SK_API int32_t     mesh_get_vert_count  (mesh_t mesh);
-SK_API void        mesh_set_inds        (mesh_t mesh, const vind_t *indices, int32_t index_count);
-SK_API void        mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
+SK_API void        mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
+SK_API void        mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
 SK_API int32_t     mesh_get_ind_count   (mesh_t mesh);
 SK_API void        mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
 SK_API void        mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
 SK_API bounds_t    mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t    mesh_has_skin        (mesh_t mesh);
-SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
-SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *bone_transforms, int32_t bone_count);
+SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
+SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
 // TODO: in 0.4 move cull_mode parameter up to directly after out_pt (both functions)
 SK_API bool32_t    mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
 SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
@@ -831,8 +831,8 @@ typedef enum tex_address_ {
 
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
-SK_API tex_t        tex_create_color32      (color32  *data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_color128     (color128 *data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
+SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
+SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_mem          (void *file_data, size_t file_size,      bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file         (const char *file,                       bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
@@ -1381,7 +1381,7 @@ SK_API void                  render_global_texture (int32_t register_slot, tex_t
 SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
-SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int width, int height, float field_of_view_degrees);
+SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
@@ -1850,9 +1850,9 @@ SK_API void                  input_hand_visible   (handed_ hand, bool32_t visibl
 SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material  (handed_ hand, material_t material);
 
-SK_API void                  input_subscribe      (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
-SK_API void                  input_unsubscribe    (input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer));
-SK_API void                  input_fire_event     (input_source_ source, button_state_ event, const sk_ref(pointer_t) pointer);
+SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer));
+SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer));
+SK_API void                  input_fire_event     (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 

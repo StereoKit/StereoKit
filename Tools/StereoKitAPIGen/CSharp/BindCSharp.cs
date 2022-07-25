@@ -1,5 +1,6 @@
 ﻿using CppAst;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -7,6 +8,8 @@ class BindCSharp
 {
 	public static void Bind(CppCompilation ast, string outputFolder)
 	{
+		StereoKitTypes.Parse(ast);
+		
 		StringBuilder enumText = new StringBuilder();
 		enumText.Append(@"// This is a generated file based on stereokit.h! Please don't modify it
 // directly :) Instead, modify the header file, and run the StereoKitAPIGen
@@ -17,7 +20,7 @@ using System;
 namespace StereoKit
 {
 ");
-		string indentPrefix = "\t";
+
 		var ns = ast.Namespaces[0];
 		foreach (var e in ns.Enums)
 		{
@@ -27,23 +30,32 @@ namespace StereoKit
 		enumText.AppendLine("}");
 
 		File.WriteAllText(Path.Combine(outputFolder, "NativeEnums.cs"), enumText.ToString());
-		Console.WriteLine(enumText.ToString());
-	}
 
-	///////////////////////////////////////////
+		
+		StringBuilder fnText = new StringBuilder();
+		fnText.Append(@"// This is a generated file based on stereokit.h! Please don't modify it
+// directly :) Instead, modify the header file, and run the StereoKitAPIGen
+// project.
 
-	static string SnakeToCamel(string name, bool active, int removePrefix)
+using System;
+using System.Runtime.InteropServices;
+
+namespace StereoKit
+{
+	internal static class NativeFunctions
 	{
-		if (NameOverrides.TryGet(name, out string result))
-			return result;
+		const string            dll  = ""StereoKitC"";
+		const CharSet           cSet = CharSet.Ansi;
+		const CallingConvention call = CallingConvention.Cdecl;
+");
 
-		string[] words = name.Substring(removePrefix).Split("_");
-		for (int i = 0; i < words.Length; i++)
-		{
-			if ((i > 0 || active) && words[i].Length>0)
-				words[i] = char.ToUpper( words[i][0]) + words[i].Substring(1);
-		}
-		return string.Join("", words);
+		foreach (var m in ParseModules(ast))
+			m.BuildRawModule(fnText, "\t\t");
+		
+		fnText.AppendLine("	}\r\n}");
+
+		File.WriteAllText(Path.Combine(outputFolder, "NativeFunctions.cs"), fnText.ToString());
+		Console.WriteLine(fnText.ToString());
 	}
 
 	///////////////////////////////////////////
@@ -56,14 +68,14 @@ namespace StereoKit
 		{
 			CppExpression curr = exp;
 			if (exp is CppBinaryExpression) curr = ((CppBinaryExpression)exp).Arguments[1];
-
+			
 			switch(curr.Kind)
 			{
 				case CppExpressionKind.DeclRef: {
-					string name = ((CppRawExpression)curr).Text;
+					string name   = ((CppRawExpression)curr).Text;
 					int    prefix = 0;
 					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
-					result = SnakeToCamel(name, true, prefix) + result;
+					result = CSTypes.SnakeToCamel(name, true, prefix) + result;
 				} break;
 				default: result = curr + result; break;
 			}
@@ -119,7 +131,7 @@ namespace StereoKit
 		for (int i = 0; i < lines.Length; i++)
 		{
 			if (lines[i].StartsWith("obsolete:")) {
-				obsoleteStr = $"\n{new string('\t', indent)}[Obsolete(\"{lines[i].Substring("obsolete:".Length).Trim()}\")]";
+				obsoleteStr = $"\r\n{new string('\t', indent)}[Obsolete(\"{lines[i].Substring("obsolete:".Length).Trim()}\")]";
 				lines[i] = "";
 			}
 			else {
@@ -129,7 +141,7 @@ namespace StereoKit
 		}
 		
 		lines[lines.Length - 1] = lines[lines.Length - 1] + "</summary>";
-		return string.Join("\n", lines) + obsoleteStr;
+		return string.Join("\r\n", lines) + obsoleteStr;
 	}
 
 	///////////////////////////////////////////
@@ -150,13 +162,35 @@ namespace StereoKit
 
 		if (e.Comment != null) enumText.AppendLine(BuildCommentSummary(e.Comment, indentPrefix));
 		if (flags)             enumText.AppendLine($"{prefix}[Flags]");
-		enumText.AppendLine($"{prefix}public enum {SnakeToCamel(e.Name, true, 0)} {{");
+		enumText.AppendLine($"{prefix}public enum {CSTypes.SnakeToCamel(e.Name, true, 0)} {{");
 		foreach (var i in e.Items)
 		{
 			if (i.Comment         != null) enumText.AppendLine(BuildCommentSummary(i.Comment, indentPrefix+1));
-			if (i.ValueExpression == null) enumText.AppendLine($"{prefix}	{SnakeToCamel(i.Name, true, e.Name.Length)},");
-			else                           enumText.AppendLine($"{prefix}	{SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BuildExpression(i.ValueExpression, e.Name)},");
+			if (i.ValueExpression == null) enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length)},");
+			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BuildExpression(i.ValueExpression, e.Name)},");
 		}
 		enumText.AppendLine($"{prefix}}}");
+	}
+
+	///////////////////////////////////////////
+
+	static List<CSModule> ParseModules(CppCompilation ast)
+	{
+		Dictionary<string, CSModule> modules = new Dictionary<string, CSModule>();
+		
+		foreach (var f in ast.Functions)
+		{
+			string[] words = f.Name.Split('_');
+			CSModule mod   = null;
+			if (!modules.TryGetValue(words[0], out mod))
+			{
+				mod = new CSModule(words[0]);
+				modules.Add(words[0], mod);
+			}
+
+			mod.AddFunction(f);
+		}
+
+		return new List<CSModule>(modules.Values);
 	}
 }
