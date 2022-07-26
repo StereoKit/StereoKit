@@ -1,4 +1,6 @@
 ﻿using CppAst;
+using System.Collections.Generic;
+using System.Linq;
 
 ///////////////////////////////////////////
 
@@ -49,22 +51,53 @@ class CSTypes
 	}
 
 	///////////////////////////////////////////
+
+	public static string CallbackType(CppFunctionType fn)
+	{
+		string result = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void
+			? "SKAction"
+			: "SKFunc";
+
+		for (int i = 0; i < fn.Parameters.Count; i++) 
+		{
+			var p = fn.Parameters[i];
+			result += "_" + TypeName(p.Type, "", null).raw;
+		}
+
+		return result;
+	}
+
+	///////////////////////////////////////////
 	
 	public static string CallbackDefinition(CppFunctionType fn)
 	{
+		string ret = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void
+			? "void"
+			: TypeName(fn.ReturnType, "", null).raw;
 
+		string result = $"internal delegate {ret} {CallbackType(fn)}(";
+		for (int i = 0; i < fn.Parameters.Count; i++)
+		{
+			if (i != 0) result += ", ";
+
+			var p = fn.Parameters[i];
+			result += TypeName(p.Type, "", null).raw + " " + p.Name;
+		}
+		result += ");";
+
+		return result;
 	}
 
 	///////////////////////////////////////////
 
-	public static string CallbackName(CppFunctionType fn)
+	public static string CallbackParameter(CppFunctionType fn)
 	{
-		return $"[MarshalAs(UnmanagedType.FunctionPtr)] ";
+		return $"[MarshalAs(UnmanagedType.FunctionPtr)] {CallbackType(fn)}";
 	}
 
 	///////////////////////////////////////////
 
-	public static SKType TypeName(CppType type, string varName)
+	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions)
 	{
 		string name = type.GetDisplayName();
 
@@ -97,9 +130,13 @@ class CSTypes
 				if (refRefType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)refRefType).Kind == CppPrimitiveKind.Void) return new SKType("IntPtr");
 			}
 			// Check for void*
-			if (refType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)refType).Kind      == CppPrimitiveKind.Void) return new SKType("IntPtr");
+			if (refType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)refType).Kind == CppPrimitiveKind.Void) return new SKType("IntPtr");
 			// Check for function pointer
-			if (refType.TypeKind == CppTypeKind.Function  && ((CppPrimitiveType)refType).Kind      == CppPrimitiveKind.Void) return new SKType("IntPtr");
+			if (refType.TypeKind == CppTypeKind.Function)
+			{
+				delegateDefinitions[CallbackType((CppFunctionType)refType)] = CallbackDefinition((CppFunctionType)refType);
+				return new SKType(CallbackParameter((CppFunctionType)refType));
+			}
 			// Check for const *
 			if (refType.TypeKind == CppTypeKind.Qualified && ((CppQualifiedType)refType).Qualifier == CppTypeQualifier.Const)
 			{
@@ -116,8 +153,5 @@ class CSTypes
 		}
 		
 		return new SKType(SnakeToCamel(name, true, 0));
-		//string text = type.GetDisplayName();
-		//if (NameOverrides.TryGet(text, out string result))
-		//	return result;
 	}
 }

@@ -31,9 +31,13 @@ namespace StereoKit
 
 		File.WriteAllText(Path.Combine(outputFolder, "NativeEnums.cs"), enumText.ToString());
 
-		
-		StringBuilder fnText = new StringBuilder();
-		fnText.Append(@"// This is a generated file based on stereokit.h! Please don't modify it
+		StringBuilder fnFileText = new StringBuilder();
+		StringBuilder fnText     = new StringBuilder();
+		Dictionary<string, string> delegates = new Dictionary<string, string>();
+		foreach (var m in ParseModules(ast))
+			m.BuildRawModule(fnText, delegates, "\t\t");
+
+		fnFileText.Append(@"// This is a generated file based on stereokit.h! Please don't modify it
 // directly :) Instead, modify the header file, and run the StereoKitAPIGen
 // project.
 
@@ -47,15 +51,18 @@ namespace StereoKit
 		const string            dll  = ""StereoKitC"";
 		const CharSet           cSet = CharSet.Ansi;
 		const CallingConvention call = CallingConvention.Cdecl;
+
+		///////////////////////////////////////////
+
 ");
 
-		foreach (var m in ParseModules(ast))
-			m.BuildRawModule(fnText, "\t\t");
-		
-		fnText.AppendLine("	}\r\n}");
+		foreach (string d in delegates.Values)
+			fnFileText.AppendLine($"\t\t{d}");
+		fnFileText.Append(fnText);
+		fnFileText.AppendLine("	}\r\n}");
 
-		File.WriteAllText(Path.Combine(outputFolder, "NativeFunctions.cs"), fnText.ToString());
-		Console.WriteLine(fnText.ToString());
+		File.WriteAllText(Path.Combine(outputFolder, "NativeFunctions.cs"), fnFileText.ToString());
+		Console.WriteLine(fnFileText.ToString());
 	}
 
 	///////////////////////////////////////////
