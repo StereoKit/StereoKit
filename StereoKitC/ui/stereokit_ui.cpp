@@ -1581,7 +1581,6 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	if (image_size>0) {
 		color128 final_color = skui_tint;
 		if (!skui_enabled_stack.last()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
-		final_color.a = fmaxf(activation, color_blend);
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 		if (image_layout != ui_btn_layout_center_no_text)
