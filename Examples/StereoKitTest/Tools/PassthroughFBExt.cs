@@ -1,4 +1,10 @@
-﻿using System;
+﻿// This requires an addition to the Android Manifest to work on quest:
+// <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="true" />
+//
+// To work on Quest+Link, you may need to enable beta features in the Oculus
+// app's settings.
+
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit.Framework
