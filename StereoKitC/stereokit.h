@@ -833,7 +833,7 @@ SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_mem          (void *file_data, size_t file_size,      bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_mem          (void *file_data, uint64_t file_size,      bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file         (const char *file,                       bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file_arr     (const char **files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file,       bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
@@ -850,7 +850,7 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*on_load)(tex_
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
-SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
+SK_API void         tex_get_data            (tex_t texture, void *out_data, uint64_t out_data_size);
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
@@ -882,7 +882,7 @@ SK_API tex_t        font_get_tex            (font_t font);
 
 SK_API shader_t     shader_find             (const char *id);
 SK_API shader_t     shader_create_file      (const char *filename);
-SK_API shader_t     shader_create_mem       (void *data, size_t data_size);
+SK_API shader_t     shader_create_mem       (void *data, uint64_t data_size);
 SK_API void         shader_set_id           (shader_t shader, const char *id);
 SK_API const char*  shader_get_id           (const shader_t shader);
 SK_API const char*  shader_get_name         (shader_t shader);
@@ -1048,7 +1048,7 @@ SK_API void              material_set_param_id    (material_t material, uint64_t
 SK_API bool32_t          material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
 SK_API bool32_t          material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
 SK_API void              material_get_param_info  (material_t material, int32_t index, char **out_name, material_param_ *out_type);
-SK_API int               material_get_param_count (material_t material);
+SK_API int32_t           material_get_param_count (material_t material);
 SK_API void              material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t          material_get_shader      (material_t material);
 
@@ -1203,7 +1203,7 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  ();
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename, void *data, size_t data_size, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename, void *data, uint64_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t       model_create_file             (const char *filename, shader_t shader sk_default(nullptr));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
@@ -1480,8 +1480,8 @@ SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_d
 SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  ();
 SK_API bool32_t platform_file_picker_visible();
-SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
-SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, size_t size);
+SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, uint64_t* out_size);
+SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, uint64_t size);
 
 SK_API bool32_t platform_keyboard_get_force_fallback();
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);

@@ -40,7 +40,7 @@ const char *shader_get_name(shader_t shader) {
 
 ///////////////////////////////////////////
 
-shader_t shader_create_mem(void *data, size_t data_size) {
+shader_t shader_create_mem(void *data, uint64_t data_size) {
 	char name[256];
 	if (!skg_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
 		return nullptr;

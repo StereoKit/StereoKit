@@ -93,7 +93,7 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, void *data, size_t data_size, shader_t shader) {
+model_t model_create_mem(const char *filename, void *data, uint64_t data_size, shader_t shader) {
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 

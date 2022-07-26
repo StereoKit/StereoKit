@@ -415,7 +415,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data, int32_t priority) {
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
+tex_t tex_create_mem_type(tex_type_ type, void *data, uint64_t data_size, bool32_t srgb_data, int32_t priority) {
 	tex_t result = tex_create(type);
 
 	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
@@ -456,7 +456,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 
 ///////////////////////////////////////////
 
-tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
+tex_t tex_create_mem(void *data, uint64_t data_size, bool32_t srgb_data, int32_t priority) {
 	return tex_create_mem_type(tex_type_image, data, data_size, srgb_data, priority);
 }
 
@@ -1027,7 +1027,7 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 
 ///////////////////////////////////////////
 
-void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
+void tex_get_data(tex_t texture, void *out_data, uint64_t out_data_size) {
 	assets_block_until(&texture->header, asset_state_loaded);
 	memset(out_data, 0, out_data_size);
 
