@@ -13,7 +13,7 @@ namespace StereoKit
 		/// <summary>This refers to the play boundary, or guardian system
 		/// that the system may have! Not all systems have this, so it's
 		/// always a good idea to check this first!</summary>
-		public static bool HasBounds  => NativeAPI.world_has_bounds();
+		public static bool HasBounds  => NativeAPI.world_has_bounds() > 0;
 		/// <summary>This is the size of a rectangle within the play
 		/// boundary/guardian's space, in meters if one exists. Check
 		/// `World.BoundsPose` for the center point and orientation of the
@@ -113,7 +113,7 @@ namespace StereoKit
 		/// <returns>True if an intersection is detected, false if raycasting
 		/// is disabled, or there was no intersection.</returns>
 		public static bool Raycast(Ray ray, out Ray intersection)
-			=> NativeAPI.world_raycast(ray, out intersection);
+			=> NativeAPI.world_raycast(ray, out intersection) > 0;
 
 		/// <summary>Off by default. This tells StereoKit to load up and
 		/// display an occlusion surface that allows the real world to
@@ -125,8 +125,8 @@ namespace StereoKit
 		/// possible. Loading occlusion data is asynchronous, so occlusion
 		/// may not occur immediately after setting this flag.</summary>
 		public static bool OcclusionEnabled { 
-			get => NativeAPI.world_get_occlusion_enabled();
-			set => NativeAPI.world_set_occlusion_enabled(value); }
+			get => NativeAPI.world_get_occlusion_enabled() > 0;
+			set => NativeAPI.world_set_occlusion_enabled(value?1:0); }
 
 		/// <summary>Off by default. This tells StereoKit to load up 
 		/// collision meshes for the environment, for use with World.Raycast.
@@ -136,8 +136,8 @@ namespace StereoKit
 		/// surfaces may not be available immediately after setting this
 		/// flag.</summary>
 		public static bool RaycastEnabled { 
-			get => NativeAPI.world_get_raycast_enabled();
-			set => NativeAPI.world_set_raycast_enabled(value); }
+			get => NativeAPI.world_get_raycast_enabled() > 0;
+			set => NativeAPI.world_set_raycast_enabled(value?1:0); }
 
 		/// <summary>By default, this is a black(0,0,0,0) opaque unlit
 		/// material that will occlude geometry, but won't show up as visible

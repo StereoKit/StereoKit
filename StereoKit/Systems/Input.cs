@@ -160,12 +160,12 @@ namespace StereoKit
 		/// <summary>Sets whether or not StereoKit should render this hand
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
-		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
+		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value?1:0); } }
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
 		/// </summary>
-		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
+		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value?1:0); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -306,9 +306,9 @@ namespace StereoKit
 			public BtnState type;
 			public Action<InputSource, BtnState, Pointer> callback;
 		}
+		static NativeAPI.SKAction_InputSource_BtnState_Pointer callback;
 		static List<EventListener> listeners   = new List<EventListener>();
 		static bool                initialized = false;
-		static InputEventCallback  callback;
 		static Hand[]              hands       = new Hand[2] { new Hand(), new Hand() };
 		static Controller[]        controllers = new Controller[2] { new Controller(), new Controller() };
 
@@ -411,7 +411,7 @@ namespace StereoKit
 		/// <param name="visible">True, StereoKit renders this. False, it
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
-			=> NativeAPI.input_hand_visible(hand, visible);
+			=> NativeAPI.input_hand_visible(hand, visible?1:0);
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
@@ -420,7 +420,7 @@ namespace StereoKit
 		/// both hands.</param>
 		/// <param name="solid">True? Physics! False? No physics.</param>
 		public static void HandSolid(Handed hand, bool solid)
-			=> NativeAPI.input_hand_solid(hand, solid);
+			=> NativeAPI.input_hand_solid(hand, solid?1:0);
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
@@ -474,15 +474,14 @@ namespace StereoKit
 			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
 			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
 		}
-		static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)
+		static void OnEvent(InputSource source, BtnState evt, in Pointer pointer)
 		{
-			Pointer ptr = Marshal.PtrToStructure<Pointer>(pointer);
 			for (int i = 0; i < listeners.Count; i++)
 			{
 				if ((listeners[i].source & source) > 0 &&
 					(listeners[i].type   & evt) > 0)
 				{
-					listeners[i].callback(source, evt, ptr);
+					listeners[i].callback(source, evt, pointer);
 				}
 			}
 		}
@@ -513,11 +512,6 @@ namespace StereoKit
 			}
 		}
 		public static void FireEvent  (InputSource eventSource, BtnState eventTypes, Pointer pointer)
-		{
-			IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());
-			Marshal.StructureToPtr(pointer, arg, false);
-			NativeAPI.input_fire_event(eventSource, eventTypes, arg);
-			Marshal.FreeCoTaskMem(arg);
-		}
+			=> NativeAPI.input_fire_event(eventSource, eventTypes, pointer);
 	}
 }

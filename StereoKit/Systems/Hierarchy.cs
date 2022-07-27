@@ -32,8 +32,8 @@
 		/// any draw call to ignore any Matrices that are on the Hierarchy
 		/// stack.</summary>
 		public static bool Enabled {
-			get => NativeAPI.hierarchy_is_enabled();
-			set => NativeAPI.hierarchy_set_enabled(value);
+			get => NativeAPI.hierarchy_is_enabled() > 0;
+			set => NativeAPI.hierarchy_set_enabled(value?1:0);
 		}
 
 		/// <summary>Converts a world space point into the local space of the

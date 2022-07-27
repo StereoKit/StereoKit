@@ -57,7 +57,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Ray ray, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(this, ray, out at);
+			=> NativeAPI.plane_ray_intersect(this, ray, out at) > 0;
 
 		/// <summary>Checks the intersection of a line with this plane!
 		/// </summary>
@@ -69,7 +69,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Vec3 lineStart, Vec3 lineEnd, out Vec3 at)
-			=> NativeAPI.plane_line_intersect(this, lineStart, lineEnd, out at);
+			=> NativeAPI.plane_line_intersect(this, lineStart, lineEnd, out at) > 0;
 
 		/// <summary>Finds the closest point on this plane to the given 
 		/// point!</summary>

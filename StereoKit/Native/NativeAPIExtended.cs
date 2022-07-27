@@ -7,7 +7,21 @@ namespace StereoKit
 	internal static partial class NativeAPI
 	{
 		const CharSet cSet = CharSet.Ansi;
+		
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr tex_create_cubemap_file ([In] byte[] equirectangular_file_utf8, int srgb_data, IntPtr out_sh_lighting_info, int priority);
+		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr tex_create_cubemap_files([In] string[] in_arr_cube_face_file_xxyyzz, int srgb_data, IntPtr out_sh_lighting_info, int priority);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr out_sh_lighting_info);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] Color32[] data);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] Color[] data);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, IntPtr data);
 
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   mesh_get_verts          (IntPtr mesh, out IntPtr out_arr_vertices, out int out_vertex_count, Memory reference_mode);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   mesh_get_inds           (IntPtr mesh, out IntPtr out_arr_indices, out int out_index_count, Memory reference_mode);
+
+		[DllImport(dll, CallingConvention = call                 )] public static extern void   input_hand_override     (Handed hand, IntPtr in_arr_hand_joints);
+		
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void  ui_quadrant_size_verts ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);

@@ -655,10 +655,10 @@ typedef enum cull_ {
 	cull_back = 0,
 	/*Discard if the front of the triangle face is pointing
 	  towards the camera. This is opposite the default behavior.*/
-	  cull_front,
-	  /*No culling at all! Draw the triangle regardless of which
-		way it's pointing.*/
-		cull_none,
+	cull_front,
+	/*No culling at all! Draw the triangle regardless of which
+	  way it's pointing.*/
+	cull_none,
 } cull_;
 
 SK_API mesh_t      mesh_find            (const char *name);
@@ -833,7 +833,7 @@ SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_mem          (void *file_data, uint64_t file_size,           bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_mem          (void *data, uint64_t data_size,                bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file         (const char *file_utf8,                         bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file_arr     (const char **in_arr_files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file_utf8,         bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
@@ -850,7 +850,7 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*on_load)(tex_
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
-SK_API void         tex_get_data            (tex_t texture, void *out_data, uint64_t out_data_size);
+SK_API void         tex_get_data            (tex_t texture, void *ref_data, uint64_t data_buffer_size);
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
@@ -1053,7 +1053,7 @@ SK_API void              material_set_shader      (material_t material, shader_t
 SK_API shader_t          material_get_shader      (material_t material);
 
 SK_API material_buffer_t material_buffer_create   (int32_t register_slot, int32_t size);
-SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *data);
+SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
 SK_API void              material_buffer_release  (material_buffer_t buffer);
 
 ///////////////////////////////////////////
@@ -1229,11 +1229,11 @@ SK_API int32_t       model_anim_active             (model_t model);
 SK_API anim_mode_    model_anim_active_mode        (model_t model);
 SK_API float         model_anim_active_time        (model_t model);
 SK_API float         model_anim_active_completion  (model_t model);
-SK_API const char   *model_anim_get_name           (model_t model, int32_t index);
+SK_API const char*   model_anim_get_name           (model_t model, int32_t index);
 SK_API float         model_anim_get_duration       (model_t model, int32_t index);
 
 // TODO: this whole section gets removed in v0.4, prefer the model_node api
-SK_API const char   *model_get_name                (model_t model, int32_t subset);
+SK_API const char*   model_get_name                (model_t model, int32_t subset);
 SK_API material_t    model_get_material            (model_t model, int32_t subset);
 SK_API mesh_t        model_get_mesh                (model_t model, int32_t subset);
 SK_API matrix        model_get_transform           (model_t model, int32_t subset);
@@ -1392,8 +1392,8 @@ SK_API void          hierarchy_push              (const sk_ref(matrix) transform
 SK_API void          hierarchy_pop               ();
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        ();
-SK_API const matrix *hierarchy_to_world          ();
-SK_API const matrix *hierarchy_to_local          ();
+SK_API const matrix* hierarchy_to_world          ();
+SK_API const matrix* hierarchy_to_local          ();
 SK_API vec3          hierarchy_to_local_point    (const sk_ref(vec3  ) world_pt);
 SK_API vec3          hierarchy_to_local_direction(const sk_ref(vec3  ) world_dir);
 SK_API quat          hierarchy_to_local_rotation (const sk_ref(quat  ) world_orientation);
@@ -1437,7 +1437,7 @@ SK_API float        sound_inst_get_volume(sound_inst_t sound_inst);
 ///////////////////////////////////////////
 
 SK_API int32_t      mic_device_count     ();
-SK_API const char  *mic_device_name      (int32_t index);
+SK_API const char*  mic_device_name      (int32_t index);
 SK_API bool32_t     mic_start            (const char *device_name sk_default(nullptr));
 SK_API void         mic_stop             ();
 SK_API sound_t      mic_get_stream       ();
@@ -1476,8 +1476,8 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *out_filename), const file_filter_t *filters, int32_t filter_count);
-SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *out_filename, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  ();
 SK_API bool32_t platform_file_picker_visible();
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, uint64_t* out_size);
@@ -1835,14 +1835,14 @@ typedef enum key_ {
 
 SK_API int32_t               input_pointer_count  (input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t         *input_hand           (handed_ hand);
+SK_API const hand_t*         input_hand           (handed_ hand);
 SK_API void                  input_hand_override  (handed_ hand, const hand_joint_t *in_arr_hand_joints);
-SK_API const controller_t   *input_controller     (handed_ hand);
+SK_API const controller_t*   input_controller     (handed_ hand);
 SK_API button_state_         input_controller_menu();
-SK_API const pose_t         *input_head           ();
-SK_API const pose_t         *input_eyes           ();
+SK_API const pose_t*         input_head           ();
+SK_API const pose_t*         input_eyes           ();
 SK_API button_state_         input_eyes_tracked   ();
-SK_API const mouse_t        *input_mouse          ();
+SK_API const mouse_t*        input_mouse          ();
 SK_API button_state_         input_key            (key_ key);
 SK_API char32_t              input_text_consume   ();
 SK_API void                  input_text_reset     ();
@@ -1850,8 +1850,8 @@ SK_API void                  input_hand_visible   (handed_ hand, bool32_t visibl
 SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material  (handed_ hand, material_t material);
 
-SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer));
-SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer));
+SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_fire_event     (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
@@ -1957,7 +1957,7 @@ SK_API openxr_handle_t   backend_openxr_get_system_id       ();
 SK_API openxr_handle_t   backend_openxr_get_space           ();
 SK_API int64_t           backend_openxr_get_time            ();
 SK_API int64_t           backend_openxr_get_eyes_sample_time();
-SK_API void             *backend_openxr_get_function        (const char *function_name);
+SK_API void*             backend_openxr_get_function        (const char *function_name);
 SK_API bool32_t          backend_openxr_ext_enabled         (const char *extension_name);
 SK_API void              backend_openxr_ext_request         (const char *extension_name);
 SK_API void              backend_openxr_composition_layer   (void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
@@ -1965,20 +1965,20 @@ SK_API void              backend_openxr_composition_layer   (void *XrComposition
 SK_API void              backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context);
 
 SK_API backend_platform_ backend_platform_get         ();
-SK_API void             *backend_android_get_java_vm  ();
-SK_API void             *backend_android_get_activity ();
-SK_API void             *backend_android_get_jni_env  ();
+SK_API void*             backend_android_get_java_vm  ();
+SK_API void*             backend_android_get_activity ();
+SK_API void*             backend_android_get_jni_env  ();
 
 SK_API backend_graphics_ backend_graphics_get           ();
-SK_API void             *backend_d3d11_get_d3d_device   ();
-SK_API void             *backend_d3d11_get_d3d_context  ();
-SK_API void             *backend_opengl_wgl_get_hdc     ();
-SK_API void             *backend_opengl_wgl_get_hglrc   ();
-SK_API void             *backend_opengl_glx_get_context ();
-SK_API void             *backend_opengl_glx_get_display ();
-SK_API void             *backend_opengl_glx_get_drawable();
-SK_API void             *backend_opengl_egl_get_context ();
-SK_API void             *backend_opengl_egl_get_display ();
+SK_API void*             backend_d3d11_get_d3d_device   ();
+SK_API void*             backend_d3d11_get_d3d_context  ();
+SK_API void*             backend_opengl_wgl_get_hdc     ();
+SK_API void*             backend_opengl_wgl_get_hglrc   ();
+SK_API void*             backend_opengl_glx_get_context ();
+SK_API void*             backend_opengl_glx_get_display ();
+SK_API void*             backend_opengl_glx_get_drawable();
+SK_API void*             backend_opengl_egl_get_context ();
+SK_API void*             backend_opengl_egl_get_display ();
 
 ///////////////////////////////////////////
 

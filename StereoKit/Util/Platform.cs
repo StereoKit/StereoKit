@@ -162,7 +162,7 @@ namespace StereoKit
 		public static bool WriteFile(string filename, string data)
 		{ 
 			byte[] bytes = NativeHelper.ToUtf8(data); 
-			return NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), bytes, (UIntPtr)bytes.Length);
+			return NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), bytes, (ulong)bytes.Length) > 0;
 		}
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
@@ -173,7 +173,7 @@ namespace StereoKit
 		/// <param name="data">An array of bytes to write to the file.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, byte[] data)
-			=> NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length);
+			=> NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), data, (ulong)data.Length) > 0;
 
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by

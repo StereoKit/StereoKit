@@ -322,9 +322,6 @@ namespace StereoKit
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
 	}
 
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
-
 	/// <summary>Pointer is an abstraction of a number of different input 
 	/// sources, and a way to surface input events!</summary>
 	[StructLayout(LayoutKind.Sequential)]
@@ -374,16 +371,7 @@ namespace StereoKit
 	public delegate void LogCallback(LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void XRPreSessionCreateCallback(IntPtr context);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length);
 
 	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
 	public enum FingerId

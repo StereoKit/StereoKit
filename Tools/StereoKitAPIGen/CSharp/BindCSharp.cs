@@ -58,7 +58,7 @@ namespace StereoKit
 ");
 
 		foreach (string d in delegates.Values)
-			fnFileText.AppendLine($"\t\t{d}");
+			fnFileText.AppendLine($"\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
 		fnFileText.Append(fnText);
 		fnFileText.AppendLine("	}\r\n}");
 

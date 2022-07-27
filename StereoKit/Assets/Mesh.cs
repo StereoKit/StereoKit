@@ -174,7 +174,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, IntPtr.Zero) > 0;
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out _, Cull.Back) > 0;
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -195,14 +195,14 @@ namespace StereoKit
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds, Cull.Back) > 0;
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, out _, Cull.Back) > 0;
 			modelSpaceAt = intersection.position;
 			return result;
 		}

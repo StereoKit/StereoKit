@@ -72,7 +72,7 @@ class CSTypes
 			var p = fn.Parameters[i];
 			result += "_" + TypeName(p.Type, p.Name, null).raw;
 		}
-
+		
 		return result;
 	}
 
@@ -90,7 +90,7 @@ class CSTypes
 			if (i != 0) result += ", ";
 
 			var p = fn.Parameters[i];
-			result += TypeName(p.Type, p.Name, null).raw + " " + p.Name;
+			result += TypeName(p.Type, p.Name, null).RawName + " " + p.Name;
 		}
 		result += ");";
 
@@ -130,11 +130,21 @@ class CSTypes
 		else if (varName.StartsWith("in_" )) dir = SKTypeDirection.In;
 		else if (varName.StartsWith("ref_")) dir = SKTypeDirection.Ref;
 
+		string name = type.GetDisplayName();
+
+		// Allow for an IntPtr override
+		if (varName.EndsWith("_ptr"))
+			return new SKType("IntPtr", SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
+		
 		if (dir == SKTypeDirection.None && pointer > 0 && constant && varName != "")
 			dir = SKTypeDirection.In;
 
 		if (pointer > 0 && type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Void)
-			return new SKType("IntPtr", dir, array, SKTextType.None, arraySize);
+		{
+			return varName == "data"
+				? new SKType("byte", dir, true, SKTextType.None, arraySize)
+				: new SKType("IntPtr", dir, array, SKTextType.None, arraySize);
+		}
 		if (type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Char)
 		{
 			if (varName.EndsWith("_utf8"))
@@ -143,7 +153,7 @@ class CSTypes
 			}
 			else
 			{
-				return dir == SKTypeDirection.Out
+				return dir == SKTypeDirection.Out || varName == ""
 					? new SKType("IntPtr", "string", dir, array, SKTextType.Ascii, arraySize)
 					: new SKType("string", "string", array ? dir : SKTypeDirection.None, array, SKTextType.Ascii, arraySize);
 			}
@@ -154,11 +164,16 @@ class CSTypes
 			delegateDefinitions[CallbackType((CppFunctionType)type, varName)] = CallbackDefinition((CppFunctionType)type, varName);
 			return new SKType(CallbackParameter((CppFunctionType)type, varName));
 		}
-
-		string name = type.GetDisplayName();
+		
 		if (name == "const char16_t" || name == "char16_t")
 			return new SKType("string", "string", dir == SKTypeDirection.In ? SKTypeDirection.None : dir, array, SKTextType.Utf16, arraySize);
 
+		// pointer return types
+		if (varName == "" && pointer > 0)
+		{
+			return new SKType("IntPtr", SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
+		}
+		
 		return StereoKitTypes.types.Contains(name)
 			? new SKType("IntPtr", SnakeToCamel(name, true, 0))
 			: new SKType(SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);

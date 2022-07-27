@@ -265,10 +265,10 @@ namespace StereoKit
 		{
 			if (colorData == null)
 				colorData = new Color32[Width*Height];
-
+			
 			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
 			IntPtr   pointer = pinnedArray.AddrOfPinnedObject();
-			NativeAPI.tex_get_data(_inst, pointer, (UIntPtr)(colorData.Length * 4));
+			NativeAPI.tex_get_data(_inst, ref pointer, (ulong)colorData.Length * 4);
 			pinnedArray.Free();
 		}
 
@@ -431,7 +431,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData = true, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0, priority);
+			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (ulong)imageFileData.Length, sRGBData?1:0, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
