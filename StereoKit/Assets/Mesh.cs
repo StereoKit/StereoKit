@@ -47,8 +47,8 @@ namespace StereoKit
 		/// you set this to true again later on, it will not contain data 
 		/// until it's set again.</summary>
 		public bool KeepData {
-			get => NativeAPI.mesh_get_keep_data(_inst);
-			set => NativeAPI.mesh_set_keep_data(_inst, value);
+			get => NativeAPI.mesh_get_keep_data(_inst)>0;
+			set => NativeAPI.mesh_set_keep_data(_inst, value?1:0);
 		}
 
 		/// <summary>The number of vertices stored in this Mesh! This is
@@ -96,7 +96,7 @@ namespace StereoKit
 		/// show black if the Normals or Colors are left at their default
 		/// values.</param>
 		public void SetVerts(Vertex[] verts)
-			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
+			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length, 0);
 
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,

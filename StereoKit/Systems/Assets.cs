@@ -9,8 +9,8 @@ namespace StereoKit
 	{
 		internal struct CallbackData
 		{
-			public object              action;
-			public AssetOnLoadCallback callback;
+			public object                           action;
+			public NativeAPI.SKAction_IntPtr_IntPtr callback;
 		}
 
 		/// <summary>This is the index of the current asset loading task. Note

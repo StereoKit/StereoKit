@@ -46,7 +46,7 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	internal static class NativeFunctions
+	internal static partial class NativeAPI
 	{
 		const string            dll   = ""StereoKitC"";
 		const CharSet           ascii = CharSet.Ansi;
@@ -62,8 +62,8 @@ namespace StereoKit
 		fnFileText.Append(fnText);
 		fnFileText.AppendLine("	}\r\n}");
 
-		File.WriteAllText(Path.Combine(outputFolder, "NativeFunctions.cs"), fnFileText.ToString());
-		Console.WriteLine(fnFileText.ToString());
+		File.WriteAllText(Path.Combine(outputFolder, "NativeAPI.cs"), fnFileText.ToString());
+		//Console.WriteLine(fnFileText.ToString());
 	}
 
 	///////////////////////////////////////////
@@ -124,7 +124,7 @@ namespace StereoKit
 			else                                        txt += children[i].ToString();
 			
 			if (!(nextCommand || isCommand) && i+1 < children.Count)
-				txt += "\r\n";
+				txt += "\n";
 		}
 		txt = txt.Replace("&", "&amp;");
 		txt = txt.Replace("<", "&lt;");

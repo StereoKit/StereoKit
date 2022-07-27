@@ -39,7 +39,7 @@ namespace StereoKit
 		/// object exhibit?</param>
 		public Solid(Vec3 position, Quat rotation, SolidType type = SolidType.Normal)
 		{
-			_inst = NativeAPI.solid_create(ref position, ref rotation, type);
+			_inst = NativeAPI.solid_create(in position, in rotation, type);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create solid!");
 		}

@@ -38,7 +38,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Plane plane, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(plane, this, out at);
+			=> NativeAPI.plane_ray_intersect(plane, this, out at) > 0;
 
 		/// <summary>Checks the intersection of this ray with a sphere!
 		/// </summary>
@@ -51,7 +51,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Sphere sphere, out Vec3 at)
-			=> NativeAPI.sphere_ray_intersect(sphere, this, out at);
+			=> NativeAPI.sphere_ray_intersect(sphere, this, out at) > 0;
 
 		/// <summary>Checks the intersection of this ray with a bounding box!
 		/// </summary>
@@ -64,7 +64,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Bounds bounds, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(bounds, this, out at);
+			=> NativeAPI.bounds_ray_intersect(bounds, this, out at) > 0;
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision

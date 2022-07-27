@@ -55,7 +55,7 @@ namespace StereoKit
 		static Action<string>       _filePickerOnSelect;
 		static Action               _filePickerOnCancel;
 		static Action<bool, string> _filePickerOnComplete;
-		static PickerCallback       _filePickerCallback;
+		static NativeAPI.SKAction_IntPtr_int_IntPtr_int _filePickerCallback;
 		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
 			string filename = NativeHelper.FromUtf8(file, fileLength);
@@ -147,7 +147,7 @@ namespace StereoKit
 		/// <summary>This will check if the file picker interface is
 		/// currently visible. Some pickers will never show this, as they
 		/// block the application until the picker has completed.</summary>
-		public static bool FilePickerVisible => NativeAPI.platform_file_picker_visible();
+		public static bool FilePickerVisible => NativeAPI.platform_file_picker_visible() > 0;
 		#endregion
 
 		#region File Save & Load
@@ -185,7 +185,7 @@ namespace StereoKit
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out string data) {
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out ulong length) <= 0)
 				return false;
 
 			data = NativeHelper.FromUtf8(fileData, (int)length);
@@ -215,7 +215,7 @@ namespace StereoKit
 		public static bool ReadFile (string filename, out byte[] data)
 		{
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out ulong length) <= 0)
 				return false;
 
 			data = new byte[(uint)length];
