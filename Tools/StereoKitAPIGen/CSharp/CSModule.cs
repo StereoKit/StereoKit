@@ -37,11 +37,13 @@ class CSModule
 				CppFunctionType fnParam  = (CppFunctionType)((CppPointerType)p.Type).ElementType;
 				CppParameter    subParam = fnParam.Parameters[i];
 				paramType = CSTypes.TypeName(subParam.Type, subParam.Name, delegateText);
+				if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				line += $"{paramType.RawName} {subParam.Name}";
 			}
 			else
 			{
 				paramType = CSTypes.TypeName(p.Type, p.Name, delegateText);
+				if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				line += $"{paramType.RawName} {p.Name}";
 			}
 			if (paramType.text != SKTextType.None) textType = paramType.text;

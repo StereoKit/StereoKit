@@ -28,8 +28,9 @@ struct SKType
 	public SKTypeDirection direction;
 	public SKTextType      text;
 	public bool            array;
-	public SKType(string raw, string final, SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None) { this.text = text; this.raw = raw;   this.final = final; this.direction = dir; this.array = array; }
-	public SKType(string final,             SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None) { this.text = text; this.raw = final; this.final = final; this.direction = dir; this.array = array; }
+	public int             fixedArray;
+	public SKType(string raw, string final, SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None, int fixedArray = 0) { this.fixedArray = fixedArray; this.text = text; this.raw = raw;   this.final = final; this.direction = dir; this.array = array; }
+	public SKType(string final,             SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None, int fixedArray = 0) { this.fixedArray = fixedArray; this.text = text; this.raw = final; this.final = final; this.direction = dir; this.array = array; }
 
 	public string RawName => array
 		? $"{(direction != SKTypeDirection.None ? $"[{(direction == SKTypeDirection.Ref ? "In, Out" : direction)}] " : "")}{raw}[]"
@@ -105,21 +106,25 @@ class CSTypes
 
 	///////////////////////////////////////////
 
-	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions, bool constant, int pointer)
+	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions, bool constant, int pointer, int arraySize)
 	{
 		// const
 		if (type.TypeKind == CppTypeKind.Qualified && ((CppQualifiedType)type).Qualifier == CppTypeQualifier.Const)
-			return TypeName(((CppQualifiedType)type).ElementType, varName, delegateDefinitions, true, pointer);
+			return TypeName(((CppQualifiedType)type).ElementType, varName, delegateDefinitions, true, pointer, arraySize);
 		
 		// *
 		if (type.TypeKind == CppTypeKind.Pointer)
-			return TypeName(((CppPointerType)type).ElementType, varName, delegateDefinitions, constant, pointer + 1);
+			return TypeName(((CppPointerType)type).ElementType, varName, delegateDefinitions, constant, pointer + 1, arraySize);
 
 		// &
 		if (type.TypeKind == CppTypeKind.Reference)
-			return TypeName(((CppReferenceType)type).ElementType, varName, delegateDefinitions, constant, pointer + 1);
+			return TypeName(((CppReferenceType)type).ElementType, varName, delegateDefinitions, constant, pointer + 1, arraySize);
 
-		bool            array = varName.Contains("_arr_");
+		// Fixed size arrays []
+		if (type.TypeKind == CppTypeKind.Array)
+			return TypeName(((CppArrayType)type).ElementType, varName, delegateDefinitions, constant, pointer + 1, ((CppArrayType)type).Size);
+
+		bool            array = varName.Contains("_arr_") || arraySize > 0;
 		SKTypeDirection dir   = SKTypeDirection.None;
 		if      (varName.StartsWith("out_")) dir = SKTypeDirection.Out;
 		else if (varName.StartsWith("in_" )) dir = SKTypeDirection.In;
@@ -129,12 +134,12 @@ class CSTypes
 			dir = SKTypeDirection.In;
 
 		if (type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Void)
-			return new SKType("IntPtr", dir, array);
+			return new SKType("IntPtr", dir, array, SKTextType.None, arraySize);
 		if (type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Char)
 		{
 			return varName.EndsWith("_utf8")
-				? new SKType("byte",   "string", dir, true,  SKTextType.Utf8)
-				: new SKType("string", "string", dir, array, SKTextType.Ascii);
+				? new SKType("byte",   "string", dir, true,  SKTextType.Utf8,  arraySize)
+				: new SKType("string", "string", dir, array, SKTextType.Ascii, arraySize);
 		}
 
 		if (type.TypeKind == CppTypeKind.Function)
@@ -145,13 +150,13 @@ class CSTypes
 
 		string name = type.GetDisplayName();
 		if (name == "const char16_t" || name == "char16_t")
-			return new SKType("string", "string", dir, array, SKTextType.Utf16);
+			return new SKType("string", "string", dir, array, SKTextType.Utf16, arraySize);
 
 		return StereoKitTypes.types.Contains(name)
 			? new SKType("IntPtr", SnakeToCamel(name, true, 0))
-			: new SKType(SnakeToCamel(name, true, 0), dir, array);
+			: new SKType(SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
 	}
 	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions)
-		=> TypeName(type, varName, delegateDefinitions, false, 0);
+		=> TypeName(type, varName, delegateDefinitions, false, 0, 0);
 	
 }
