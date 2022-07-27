@@ -48,9 +48,10 @@ namespace StereoKit
 {
 	internal static class NativeFunctions
 	{
-		const string            dll  = ""StereoKitC"";
-		const CharSet           cSet = CharSet.Ansi;
-		const CallingConvention call = CallingConvention.Cdecl;
+		const string            dll   = ""StereoKitC"";
+		const CharSet           ascii = CharSet.Ansi;
+		const CharSet           utf16 = CharSet.Unicode;
+		const CallingConvention call  = CallingConvention.Cdecl;
 
 		///////////////////////////////////////////
 

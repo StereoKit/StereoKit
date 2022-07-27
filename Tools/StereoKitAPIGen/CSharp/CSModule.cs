@@ -18,14 +18,17 @@ class CSModule
 
 	static void BuildRawFunction(StringBuilder fnText, Dictionary<string, string> delegateText, CppFunction fn)
 	{
-		fnText.Append("[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ");
-		fnText.Append($"{CSTypes.TypeName(fn.ReturnType, "", null).RawName,-20}{fn.Name,-20}(");
-		bool first = true;
-		int i = 0;
+		SKType     returnType = CSTypes.TypeName(fn.ReturnType, "", null);
+		SKTextType textType   = returnType.text;
+
+		string line  = $"{returnType.RawName,-20}{fn.Name,-20}(";
+		bool   first = true;
+		int    i     = 0;
 		foreach (var p in fn.Parameters)
 		{
 			if (first) { first = false; }
-			else { fnText.Append(", "); }
+			else { line += ", "; }
+			SKType paramType;
 
 			// Something kinda weird happening here with function pointer
 			// params, but this code seems to work just fine.
@@ -33,15 +36,28 @@ class CSModule
 			{
 				CppFunctionType fnParam  = (CppFunctionType)((CppPointerType)p.Type).ElementType;
 				CppParameter    subParam = fnParam.Parameters[i];
-				fnText.Append($"{CSTypes.TypeName(subParam.Type, subParam.Name, delegateText).RawName} {subParam.Name}");
+				paramType = CSTypes.TypeName(subParam.Type, subParam.Name, delegateText);
+				line += $"{paramType.RawName} {subParam.Name}";
 			}
 			else
 			{
-				fnText.Append($"{CSTypes.TypeName(p.Type, p.Name, delegateText).RawName} {p.Name}");
+				paramType = CSTypes.TypeName(p.Type, p.Name, delegateText);
+				line += $"{paramType.RawName} {p.Name}";
 			}
+			if (paramType.text != SKTextType.None) textType = paramType.text;
 			i+=1;
 		}
-		fnText.AppendLine(");");
+		line += ");";
+
+		string charSet = textType switch
+		{
+			SKTextType.None  => "",
+			SKTextType.Ascii => ", CharSet = ascii",
+			SKTextType.Utf8  => "",
+			SKTextType.Utf16 => ", CharSet = utf16",
+		};
+		line = $"[DllImport(dll, CallingConvention = call{charSet,-17})] public static extern " + line;
+		fnText.AppendLine(line);
 	}
 
 	///////////////////////////////////////////
