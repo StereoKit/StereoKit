@@ -1243,7 +1243,6 @@ SK_API void          model_set_transform           (model_t model, int32_t subse
 SK_API void          model_remove_subset           (model_t model, int32_t subset);
 SK_API int32_t       model_add_named_subset        (model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t       model_add_subset              (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
-SK_API int32_t       model_add_subset_n            (model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
 SK_API int32_t       model_subset_count            (model_t model);
 
 

@@ -389,7 +389,6 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                model_remove_subset (IntPtr model, int subset);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern int                 model_add_named_subset(IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
 		[DllImport(dll, CallingConvention = call                 )] public static extern int                 model_add_subset    (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
-		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern int                 model_add_subset_n  (IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
 		[DllImport(dll, CallingConvention = call                 )] public static extern int                 model_subset_count  (IntPtr model);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern int                 model_node_add      (IntPtr model, string name, Matrix model_transform, IntPtr mesh, IntPtr material, int solid);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern int                 model_node_add_child(IntPtr model, int parent, string name, Matrix local_transform, IntPtr mesh, IntPtr material, int solid);
