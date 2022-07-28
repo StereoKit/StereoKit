@@ -89,9 +89,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.22
+  VERSION 1.0.24
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG 458984d7f59d1ae6dc1b597d94b02e4f7132eaba # v1.0.22
+  GIT_TAG "release-1.0.24"
 )
 
 ###########################################
