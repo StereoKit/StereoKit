@@ -71,5 +71,4 @@ sh_light_t SHLight
 openxr_handle_t ulong
 asset_t IntPtr
 
-# Definitely need to fix this!
-size_t ulong
+size_t UIntPtr

@@ -207,7 +207,7 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create          (TexType type, TexFormat format);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_color32  ([In] Color32[] in_arr_data, int width, int height, int srgb_data);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_color128 ([In] Color[] in_arr_data, int width, int height, int srgb_data);
-		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_mem      (byte[] data, ulong data_size, int srgb_data, int priority);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_mem      (byte[] data, UIntPtr data_size, int srgb_data, int priority);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_file     ([In] byte[] file_utf8, int srgb_data, int priority);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr              tex_create_file_arr ([In] string[] in_arr_files, int file_count, int srgb_data, int priority);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_create_cubemap_file([In] byte[] equirectangular_file_utf8, int srgb_data, out SphericalHarmonics out_sh_lighting_info, int priority);
@@ -224,7 +224,7 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                tex_set_colors      (IntPtr texture, int width, int height, byte[] data);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                tex_set_color_arr   (IntPtr texture, int width, int height, byte[] data, int data_count, out SphericalHarmonics out_sh_lighting_info, int multisample);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_add_zbuffer     (IntPtr texture, TexFormat format);
-		[DllImport(dll, CallingConvention = call                 )] public static extern void                tex_get_data        (IntPtr texture, ref IntPtr ref_data, ulong data_buffer_size);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                tex_get_data        (IntPtr texture, ref IntPtr ref_data, UIntPtr data_buffer_size);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_gen_color       (Color color, int width, int height, TexType type, TexFormat format);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_gen_cubemap     (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics out_sh_lighting_info);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              tex_gen_cubemap_sh  (in SphericalHarmonics lookup, int face_size, float light_spot_size_pct, float light_spot_intensity);
@@ -256,7 +256,7 @@ namespace StereoKit
 
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr              shader_find         (string id);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              shader_create_file  ([In] byte[] filename_utf8);
-		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              shader_create_mem   (byte[] data, ulong data_size);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              shader_create_mem   (byte[] data, UIntPtr data_size);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern void                shader_set_id       (IntPtr shader, string id);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr              shader_get_id       (IntPtr shader);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr              shader_get_name     (IntPtr shader);
@@ -353,7 +353,7 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_copy          (IntPtr model);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_create        ();
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_create_mesh   (IntPtr mesh, IntPtr material);
-		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_create_mem    ([In] byte[] filename_utf8, byte[] data, ulong data_size, IntPtr shader);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_create_mem    ([In] byte[] filename_utf8, byte[] data, UIntPtr data_size, IntPtr shader);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              model_create_file   ([In] byte[] filename_utf8, IntPtr shader);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern void                model_set_id        (IntPtr model, string id);
 		[DllImport(dll, CallingConvention = call, CharSet = ascii)] public static extern IntPtr              model_get_id        (IntPtr model);
@@ -529,8 +529,8 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                platform_file_picker_sz(PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] SKAction_IntPtr_int_IntPtr_int on_confirm, [In] FileFilter[] in_arr_filters, int filter_count);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                platform_file_picker_close();
 		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_file_picker_visible();
-		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_read_file  ([In] byte[] filename_utf8, out IntPtr out_data, out ulong out_size);
-		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_write_file ([In] byte[] filename_utf8, byte[] data, ulong size);
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_read_file  ([In] byte[] filename_utf8, out IntPtr out_data, out UIntPtr out_size);
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_write_file ([In] byte[] filename_utf8, byte[] data, UIntPtr size);
 		[DllImport(dll, CallingConvention = call                 )] public static extern int                 platform_keyboard_get_force_fallback();
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                platform_keyboard_set_force_fallback(int force_fallback);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                platform_keyboard_show(int visible, TextContext type);

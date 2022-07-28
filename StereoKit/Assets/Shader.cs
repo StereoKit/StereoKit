@@ -49,7 +49,7 @@ namespace StereoKit
 		/// load/compile.</returns>
 		public static Shader FromMemory(in byte[] data)
 		{
-			IntPtr inst = NativeAPI.shader_create_mem(data, (ulong)data.Length);
+			IntPtr inst = NativeAPI.shader_create_mem(data, (UIntPtr)data.Length);
 			return inst == IntPtr.Zero ? null : new Shader(inst);
 		}
 

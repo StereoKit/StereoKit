@@ -107,7 +107,7 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-bool32_t platform_read_file(const char *filename, void **out_data, uint64_t* out_size) {
+bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
 
@@ -193,7 +193,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, uint64_t* out
 
 ///////////////////////////////////////////
 
-bool32_t platform_write_file(const char *filename, void *data, uint64_t size) {
+bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 #if defined(SK_OS_WINDOWS_UWP)
 	// See if we have a Handle cached from the FilePicker that matches this
 	// file name.
