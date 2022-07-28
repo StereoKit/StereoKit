@@ -196,8 +196,8 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			_stepCallback = onStep;
-			_shutdownCallback = new NativeAPI.SKAction(onShutdown);
+			_stepCallback     = onStep;
+			_shutdownCallback = onShutdown == null ? null : new NativeAPI.SKAction(onShutdown);
 			NativeAPI.sk_run(_stepAction, _shutdownCallback);
 		}
 
