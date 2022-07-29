@@ -1,4 +1,5 @@
 ﻿using System;
+using StereoKit;
 
 namespace StereoKit.Framework
 {
@@ -80,8 +81,8 @@ namespace StereoKit.Framework
 				for (uint i = 0; i < cornerResolution; i++)
 				{
 					float ang = (c*90 + (i/(float)(cornerResolution-1))*90) * Units.deg2rad;
-					float x = MathF.Cos(ang);
-					float y = MathF.Sin(ang);
+					float x = SKMath.Cos(ang);
+					float y = SKMath.Sin(ang);
 					Vec3 normal  = V.XY0(x,y);
 					Vec3 top_pos = normal*radius + V.XYZ(0,0,0.5f);
 					Vec3 bot_pos = normal*radius - V.XYZ(0,0,0.5f);
@@ -178,8 +179,8 @@ namespace StereoKit.Framework
 				for (uint i = 0; i < cornerResolution; i++)
 				{
 					float ang = (c*90 + (i/(float)(cornerResolution-1))*90 + angStart) * Units.deg2rad;
-					float x = MathF.Cos(ang);
-					float y = MathF.Sin(ang);
+					float x = SKMath.Cos(ang);
+					float y = SKMath.Sin(ang);
 					Vec3 normal  = V.XY0(x,y);
 					Vec3 top_pos = normal*radius + V.XYZ(0,0,0.5f);
 					Vec3 bot_pos = normal*radius - V.XYZ(0,0,0.5f);
@@ -262,8 +263,8 @@ namespace StereoKit.Framework
 				for (uint i = 0; i < cornerResolution; i++)
 				{
 					float ang = (c*90 + (i/(float)(cornerResolution-1))*90) * Units.deg2rad;
-					float x = MathF.Cos(ang);
-					float y = MathF.Sin(ang);
+					float x = SKMath.Cos(ang);
+					float y = SKMath.Sin(ang);
 					Vec3 normal   = V.XY0(x,y);
 					Vec3 backPos  = normal*radius + V.XYZ(0,0,0.4f);
 					Vec3 FrontPos = normal*radius*0.75f - V.XYZ(0,0,0.5f);
