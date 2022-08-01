@@ -460,6 +460,88 @@ namespace StereoKit
 			Marshal.FreeHGlobal(memory);
 		}
 
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of '0' will be returned.
+		/// </summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise 0.</returns>
+		public float GetFloat(string name) => NativeAPI.material_get_float(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of Vec2.Zero will be
+		/// returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise
+		/// Vec2.Zero.</returns>
+		public Vec2 GetVector2(string name) => NativeAPI.material_get_vector2(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of Vec3.Zero will be
+		/// returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise
+		/// Vec3.Zero.</returns>
+		public Vec3 GetVector3(string name) => NativeAPI.material_get_vector3(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of Vec4.Zero will be
+		/// returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise
+		/// Vec4.Zero.</returns>
+		public Vec4 GetVector4(string name) => NativeAPI.material_get_vector4(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of Color.White will be
+		/// returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise
+		/// Color.White.</returns>
+		public Color GetColor(string name) => NativeAPI.material_get_color(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of '0' will be returned.
+		/// </summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise 0.</returns>
+		public int GetInt(string name) => NativeAPI.material_get_int(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of 'false' will be
+		/// returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise false.
+		/// </returns>
+		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name)>0;
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of '0' will be returned.
+		/// </summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise 0.</returns>
+		public uint GetUInt(string name) => NativeAPI.material_get_uint(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of Matrix.Identity will
+		/// be returned.</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise 
+		/// Matrix.Identity.</returns>
+		public Matrix GetMatrix(string name) => NativeAPI.material_get_matrix(_inst, name);
+
+		/// <summary>Gets the value of a shader parameter with the given name.
+		/// If no parameter is found, a default value of null will be returned.
+		/// </summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <returns>The parameter's value, if present, otherwise null.
+		/// </returns>
+		public Tex GetTexture(string name) {
+			IntPtr result = NativeAPI.material_get_texture(_inst, name);
+			return result == IntPtr.Zero
+				? null
+				: new Tex(result);
+		}
+
 		/// <summary>Looks for a Material asset that's already loaded,
 		/// matching the given id!</summary>
 		/// <param name="materialId">Which Material are you looking for?

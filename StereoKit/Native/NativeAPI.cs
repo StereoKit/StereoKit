@@ -221,6 +221,16 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_uint4       (IntPtr material, string name, uint value1, uint value2, uint value3, uint value4);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_matrix      (IntPtr material, string name, Matrix value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture     (IntPtr material, string name, IntPtr value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  material_get_float       (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  material_get_color       (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec4   material_get_vector4     (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   material_get_vector3     (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   material_get_vector2     (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_int         (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_get_bool        (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint   material_get_uint        (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix material_get_matrix      (IntPtr material, string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_get_texture     (IntPtr material, string name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    material_set_texture_id  (IntPtr material, ulong  id,   IntPtr value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_param       (IntPtr material, string name, MaterialParam type, IntPtr value);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_param_id    (IntPtr material, ulong    id,   MaterialParam type, const void *value);
