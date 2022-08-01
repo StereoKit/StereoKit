@@ -67,6 +67,7 @@ target("StereoKitC")
     add_options("linux-graphics-backend")
     add_options("oculus-openxr")
     set_version("0.3.7-preview.2")
+    set_symbols("debug")
 
     -- 2.5.3 is needed for utils.install.pkgconfig_importfiles
     set_xmakever("2.5.3") 
