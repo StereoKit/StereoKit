@@ -1,7 +1,7 @@
 ---
 layout: default
 title: HandMenuRadial.HandMenuRadial
-description: Creates a hand menu from the provided array of menu layers! HandMenuRadial is an IStepper, so proper usage is to add it to the Stepper list via StereoKitApp.AddStepper.
+description: Creates a hand menu from the provided array of menu layers! HandMenuRadial is an IStepper, so proper usage is to add it to the Stepper list via StereoKitApp.AddStepper. If no layers are provided to this constructor, a default root layer will be automatically added.
 ---
 # [HandMenuRadial]({{site.url}}/Pages/Reference/HandMenuRadial.html).HandMenuRadial
 
@@ -11,7 +11,9 @@ void HandMenuRadial(HandRadialLayer[] menuLayers)
 ```
 Creates a hand menu from the provided array of menu
 layers! HandMenuRadial is an IStepper, so proper usage is to
-add it to the Stepper list via `StereoKitApp.AddStepper`.
+add it to the Stepper list via `StereoKitApp.AddStepper`. If no
+layers are provided to this constructor, a default root layer will
+be automatically added.
 </div>
 
 |  |  |

@@ -24,6 +24,7 @@ a fudgeton of verts! 4 billion or so :)
 |  |  |
 |--|--|
 |[Bounds]({{site.url}}/Pages/Reference/Bounds.html) [Bounds]({{site.url}}/Pages/Reference/Mesh/Bounds.html)|This is a bounding box that encapsulates the Mesh! It's used for collision, visibility testing, UI layout, and probably other things. While it's normally calculated from the mesh vertices, you can also override this to suit your needs.|
+|string [Id]({{site.url}}/Pages/Reference/Mesh/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |int [IndCount]({{site.url}}/Pages/Reference/Mesh/IndCount.html)|The number of indices stored in this Mesh! This is available to you regardless of whether or not KeepData is set.|
 |bool [KeepData]({{site.url}}/Pages/Reference/Mesh/KeepData.html)|Should StereoKit keep the mesh data on the CPU for later access, or collision detection? Defaults to true. If you set this to false before setting data, the data won't be stored. If you call this after setting data, that stored data will be freed! If you set this to true again later on, it will not contain data until it's set again.|
 |int [VertCount]({{site.url}}/Pages/Reference/Mesh/VertCount.html)|The number of vertices stored in this Mesh! This is available to you regardless of whether or not KeepData is set.|

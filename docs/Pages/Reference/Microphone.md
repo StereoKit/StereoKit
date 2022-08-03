@@ -107,3 +107,67 @@ void ShowMicDeviceWindow()
 }
 ```
 
+### Recording Audio Snippets
+A common use case for the microphone would be to record a snippet of
+audio! This demo is a window that will read data from the Microphone,
+and use that to create a sound for playback.
+
+![Audio recording window]({{site.screen_url}}/RecordAudioSnippet.jpg)
+```csharp
+Sound       recordedSound   = null;
+List<float> recordedData    = new List<float>();
+float[]     sampleBuffer    = null;
+bool        recording       = false;
+Pose        recordingWindow = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+
+void RecordAudio()
+{
+	UI.WindowBegin("Recording Panel", ref recordingWindow);
+
+	// This code will begin a new recording, or finish an existing
+	// recording!
+	if (UI.Toggle("Record!", ref recording))
+	{
+		if (recording)
+		{
+			// Clear out our data, and start up the mic!
+			recordedData.Clear();
+			recording = Microphone.Start();
+			if (!recording)
+				Log.Warn("Recording failed to start!");
+		}
+		else
+		{
+			// Stop the mic, and pour our recorded samples into a new Sound
+			Microphone.Stop();
+			recordedSound = Sound.FromSamples(recordedData.ToArray());
+		}
+	}
+
+	// If the mic is recording, every frame we'll want to grab all the data
+	// from the Microphone's audio stream, and store it until we can make
+	// a complete sound from it.
+	if (Microphone.IsRecording)
+	{
+		if (sampleBuffer == null || sampleBuffer.Length < Microphone.Sound.UnreadSamples)
+			sampleBuffer = new float[Microphone.Sound.UnreadSamples];
+		int read = Microphone.Sound.ReadSamples(ref sampleBuffer);
+		recordedData.AddRange(sampleBuffer[0..read]);
+	}
+
+	// Let the user know the current status of our recording code.
+	UI.SameLine();
+	if      (Microphone.IsRecording) UI.Label("recording...");
+	else if (recordedSound != null)  UI.Label($"{recordedSound.Duration:0.#}s");
+	else                             UI.Label("...");
+
+	// If we have a recording, give the user a button that'll play it back!
+	UI.PushEnabled(recordedSound != null);
+	if (UI.Button("Play Recording"))
+		recordedSound.Play(recordingWindow.position);
+	UI.PopEnabled();
+	
+	UI.WindowEnd();
+}
+```
+

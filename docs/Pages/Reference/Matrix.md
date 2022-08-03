@@ -39,6 +39,7 @@ Matrices are prominently used within shaders for mesh transforms!
 |[Quat]({{site.url}}/Pages/Reference/Quat.html) [Rotation]({{site.url}}/Pages/Reference/Matrix/Rotation.html)|A slow function that returns the rotation quaternion embedded in this transform matrix. This is backed by Decompose, so if you need any additional info, it's better to just call Decompose instead.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Scale]({{site.url}}/Pages/Reference/Matrix/Scale.html)|Returns the scale embedded in this transform matrix. Not exactly cheap, requires 3 sqrt calls, but is cheaper than calling Decompose.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Translation]({{site.url}}/Pages/Reference/Matrix/Translation.html)|A fast Property that will return or set the translation component embedded in this transform matrix.|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) [Transposed]({{site.url}}/Pages/Reference/Matrix/Transposed.html)|Creates a matrix that has been transposed! Transposing is like rotating the matrix 90 clockwise, or turning the rows into columns. This can be useful for inverting orthogonal matrices, or converting matrices for use in a math library that uses different conventions!|
 
 ## Instance Methods
 
@@ -48,6 +49,7 @@ Matrices are prominently used within shaders for mesh transforms!
 |[Invert]({{site.url}}/Pages/Reference/Matrix/Invert.html)|Inverts this Matrix! If the matrix takes a point from a -> b, then its inverse takes the point from b -> a.|
 |[Transform]({{site.url}}/Pages/Reference/Matrix/Transform.html)|Transforms a point through the Matrix! This is basically just multiplying a vector (x,y,z,1) with the Matrix.|
 |[TransformNormal]({{site.url}}/Pages/Reference/Matrix/TransformNormal.html)|Transforms a point through the Matrix, but excluding translation! This is great for transforming vectors that are -directions- rather than points in space. Use this to transform normals and directions. The same as multiplying (x,y,z,0) with the Matrix.|
+|[Transpose]({{site.url}}/Pages/Reference/Matrix/Transpose.html)|Transposes this Matrix! Transposing is like rotating the matrix 90 clockwise, or turning the rows into columns. This can be useful for inverting orthogonal matrices, or converting matrices for use in a math library that uses different conventions!|
 
 ## Static Fields and Properties
 

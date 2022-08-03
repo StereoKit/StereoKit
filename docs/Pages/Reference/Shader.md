@@ -18,6 +18,7 @@ sometimes!
 
 |  |  |
 |--|--|
+|string [Id]({{site.url}}/Pages/Reference/Shader/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |string [Name]({{site.url}}/Pages/Reference/Shader/Name.html)|The name of the shader, provided in the shader file itself. Not the filename or id.|
 
 ## Static Fields and Properties

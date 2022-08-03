@@ -31,6 +31,7 @@ another, so you can apply different
 |--|--|
 |float [Aspect]({{site.url}}/Pages/Reference/Sprite/Aspect.html)|The aspect ratio of the sprite! This is width/height. You may also be interested in the NormalizedDimensions property, which are normalized to the 0-1 range.|
 |int [Height]({{site.url}}/Pages/Reference/Sprite/Height.html)|Height of the sprite, in pixels.|
+|string [Id]({{site.url}}/Pages/Reference/Sprite/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [NormalizedDimensions]({{site.url}}/Pages/Reference/Sprite/NormalizedDimensions.html)|Width and height of the sprite, normalized so the maximum value is 1.|
 |int [Width]({{site.url}}/Pages/Reference/Sprite/Width.html)|Width of the sprite, in pixels.|
 

@@ -21,7 +21,7 @@ plus more later on, and you can also create textures procedurally.
 |[Tex]({{site.url}}/Pages/Reference/Tex.html) [FallbackOverride]({{site.url}}/Pages/Reference/Tex/FallbackOverride.html)|This will override the default fallback texutre that gets used before the Tex has finished loading. This is useful for textures with a specific purpose where the normal fallback texture would appear strange, such as a metal/rough map.|
 |[TexFormat]({{site.url}}/Pages/Reference/TexFormat.html) [Format]({{site.url}}/Pages/Reference/Tex/Format.html)|The StereoKit format this texture was initialized with. This will be a blocking call if AssetState is less than LoadedMeta.|
 |int [Height]({{site.url}}/Pages/Reference/Tex/Height.html)|The height of the texture, in pixels. This will be a blocking call if AssetState is less than LoadedMeta.|
-|string [Id]({{site.url}}/Pages/Reference/Tex/Id.html)|Allows you to set the Id of the texture to a specific Id.|
+|string [Id]({{site.url}}/Pages/Reference/Tex/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |[TexSample]({{site.url}}/Pages/Reference/TexSample.html) [SampleMode]({{site.url}}/Pages/Reference/Tex/SampleMode.html)|When sampling a texture that's stretched, or shrunk beyond its screen size, how do we handle figuring out which color to grab from the texture? Default is Linear.|
 |int [Width]({{site.url}}/Pages/Reference/Tex/Width.html)|The width of the texture, in pixels. This will be a blocking call if AssetState is less than LoadedMeta.|
 

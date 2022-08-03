@@ -25,6 +25,7 @@ https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
 |--|--|
 |int [CursorSamples]({{site.url}}/Pages/Reference/Sound/CursorSamples.html)|This is the current position of the playback cursor, measured in samples from the start of the audio data.|
 |float [Duration]({{site.url}}/Pages/Reference/Sound/Duration.html)|This will return the total length of the sound in seconds.|
+|string [Id]({{site.url}}/Pages/Reference/Sound/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |int [TotalSamples]({{site.url}}/Pages/Reference/Sound/TotalSamples.html)|This will return the total number of audio samples used by the sound! StereoKit currently uses 48,000 samples per second for all audio.|
 |int [UnreadSamples]({{site.url}}/Pages/Reference/Sound/UnreadSamples.html)|This is the maximum number of samples in the sound that are currently available for reading via ReadSamples! ReadSamples will reduce this number by the amount of samples read.  This is only really valid for Stream sounds, all other sound types will just return 0.|
 

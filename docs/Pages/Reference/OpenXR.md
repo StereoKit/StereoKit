@@ -28,6 +28,7 @@ as provided here.
 |UInt64 [Instance]({{site.url}}/Pages/Reference/OpenXR/Instance.html)|Type: XrInstance. StereoKit's instance handle, valid after SK.Initialize.|
 |UInt64 [Session]({{site.url}}/Pages/Reference/OpenXR/Session.html)|Type: XrSession. StereoKit's current session handle, this will be valid after SK.Initialize, but the session may not be started quite so early.|
 |UInt64 [Space]({{site.url}}/Pages/Reference/OpenXR/Space.html)|Type: XrSpace. StereoKit's primary coordinate space, valid after SK.Initialize, this will most likely be created from `XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT` or `XR_REFERENCE_SPACE_TYPE_LOCAL`.|
+|UInt64 [SystemId]({{site.url}}/Pages/Reference/OpenXR/SystemId.html)|Type: XrSystemId. This is the id of the device StereoKit is currently using! This is the result of calling `xrGetSystem` with `XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY`.|
 |Int64 [Time]({{site.url}}/Pages/Reference/OpenXR/Time.html)|Type: XrTime. This is the OpenXR time for the current frame, and is available after SK.Initialize.|
 
 ## Static Methods

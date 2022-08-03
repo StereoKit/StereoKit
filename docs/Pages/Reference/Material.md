@@ -20,6 +20,7 @@ can be extremely beneficial for performance!
 |[DepthTest]({{site.url}}/Pages/Reference/DepthTest.html) [DepthTest]({{site.url}}/Pages/Reference/Material/DepthTest.html)|How does this material interact with the ZBuffer? Generally DepthTest.Less would be normal behavior: don't draw objects that are occluded. But this can also be used to achieve some interesting effects, like you could use DepthTest.Greater to draw a glow that indicates an object is behind something.|
 |bool [DepthWrite]({{site.url}}/Pages/Reference/Material/DepthWrite.html)|Should this material write to the ZBuffer? For opaque objects, this generally should be true. But transparent objects writing to the ZBuffer can be problematic and cause draw order issues. Note that turning this off can mean that this material won't get properly accounted for when the MR system is performing late stage reprojection.  Not writing to the buffer can also be faster! :)|
 |[Cull]({{site.url}}/Pages/Reference/Cull.html) [FaceCull]({{site.url}}/Pages/Reference/Material/FaceCull.html)|How should this material cull faces?|
+|string [Id]({{site.url}}/Pages/Reference/Material/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |int [ParamCount]({{site.url}}/Pages/Reference/Material/ParamCount.html)|The number of shader parameters available to this material, includes global shader variables as well as textures.|
 |int [QueueOffset]({{site.url}}/Pages/Reference/Material/QueueOffset.html)|This property will force this material to draw earlier or later in the draw queue. Positive values make it draw later, negative makes it earlier. This can be helpful for tweaking performance! If you know an object is always going to be close to the user and likely to obscure lots of objects (like hands), drawing it earlier can mean objects behind it get discarded much faster! Similarly, objects that are far away (skybox!) can be pushed towards the back of the queue, so they're more likely to be discarded early.|
 |[Shader]({{site.url}}/Pages/Reference/Shader.html) [Shader]({{site.url}}/Pages/Reference/Material/Shader.html)|Gets a link to the Shader that the Material is currently using, or overrides the Shader this material uses.|
@@ -33,7 +34,17 @@ can be extremely beneficial for performance!
 |[Material]({{site.url}}/Pages/Reference/Material/Material.html)|Creates a material from a shader, and uses the shader's default settings. Uses an auto-generated id.|
 |[Copy]({{site.url}}/Pages/Reference/Material/Copy.html)|Creates a new Material asset with the same shader and properties! Draw calls with the new Material will not batch together with this one.|
 |[GetAllParamInfo]({{site.url}}/Pages/Reference/Material/GetAllParamInfo.html)|Gets an enumerable list of all parameter information on the Material. This includes all global shader variables and textures.|
+|[GetBool]({{site.url}}/Pages/Reference/Material/GetBool.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of 'false' will be returned.|
+|[GetColor]({{site.url}}/Pages/Reference/Material/GetColor.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of Color.White will be returned.|
+|[GetFloat]({{site.url}}/Pages/Reference/Material/GetFloat.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of '0' will be returned.|
+|[GetInt]({{site.url}}/Pages/Reference/Material/GetInt.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of '0' will be returned.|
+|[GetMatrix]({{site.url}}/Pages/Reference/Material/GetMatrix.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of Matrix.Identity will be returned.|
 |[GetParamInfo]({{site.url}}/Pages/Reference/Material/GetParamInfo.html)|Gets available shader parameter information for the parameter at the indicated index. Parameters are listed as variables first, then textures.|
+|[GetTexture]({{site.url}}/Pages/Reference/Material/GetTexture.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of null will be returned.|
+|[GetUInt]({{site.url}}/Pages/Reference/Material/GetUInt.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of '0' will be returned.|
+|[GetVector2]({{site.url}}/Pages/Reference/Material/GetVector2.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of Vec2.Zero will be returned.|
+|[GetVector3]({{site.url}}/Pages/Reference/Material/GetVector3.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of Vec3.Zero will be returned.|
+|[GetVector4]({{site.url}}/Pages/Reference/Material/GetVector4.html)|Gets the value of a shader parameter with the given name. If no parameter is found, a default value of Vec4.Zero will be returned.|
 |[SetBool]({{site.url}}/Pages/Reference/Material/SetBool.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
 |[SetColor]({{site.url}}/Pages/Reference/Material/SetColor.html)|Sets a shader parameter with the given name to the provided value. If no parameter is found, nothing happens, and the value is not set!|
 |[SetData]({{site.url}}/Pages/Reference/Material/SetData.html)|This allows you to set more complex shader data types such as structs. Note the SK doesn't guard against setting data of the wrong size here, so pay extra attention to the size of your data here, and ensure it matched up with the shader!|
@@ -73,5 +84,41 @@ enum for compile safety.
 ```csharp
 exampleMaterial[MatParamName.DiffuseTex] = gridTex;
 exampleMaterial[MatParamName.TexScale  ] = 2.0f;
+```
+
+### Assigning an array in a Shader
+This is a bit of a hack until proper shader support for arrays arrives,
+but with a few C# marshalling tricks, we can assign array without too
+much trouble. Look for improvements to this in later versions of
+SteroKit.
+```csharp
+// This struct matches a shader parameter of `float4 offsets[10];`
+[StructLayout(LayoutKind.Sequential)]
+struct ShaderData
+{
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
+	public Vec4[] offsets;
+}
+
+Material arrayMaterial = null;
+public void Initialize()
+{
+	ShaderData shaderData = new ShaderData();
+	shaderData.offsets = new Vec4[10] {
+		V.XYZW(0,0,0,0),
+		V.XYZW(0.2f,0,0,0),
+		V.XYZW(0.4f,0,0,0),
+		V.XYZW(0.4f,0.2f,0,0),
+		V.XYZW(0.4f,0.4f,0,0),
+		V.XYZW(0.4f,0.6f,0,0),
+		V.XYZW(0.2f,0.6f,0,0),
+		V.XYZW(0,0.6f,0,0),
+		V.XYZW(0,0.4f,0,0),
+		V.XYZW(0,0.2f,0,0)};
+	
+	arrayMaterial = new Material(Shader.FromFile("shader_arrays.hlsl"));
+	arrayMaterial[MatParamName.DiffuseTex] = Tex.FromFile("test.png");
+	arrayMaterial.SetData<ShaderData>("offsets", shaderData);
+}
 ```
 

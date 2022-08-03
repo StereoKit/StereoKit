@@ -42,6 +42,7 @@ var documents =
 			]
 			},
 			{name : 'AssetState'},
+			{name : 'AssetType'},
 			{name : 'Backend',
 			 pages: [
 				{name : 'Graphics'},
@@ -123,6 +124,7 @@ var documents =
 				{name : 'IsX2JustPressed'},
 				{name : 'IsX2JustUnPressed'},
 				{name : 'IsX2Pressed'},
+				{name : 'palm'},
 				{name : 'pose'},
 				{name : 'stick'},
 				{name : 'stickClick'},
@@ -189,6 +191,7 @@ var documents =
 			{name : 'Font',
 			 pages: [
 				{name : 'Default'},
+				{name : 'Id'},
 				{name : 'Find'},
 				{name : 'FromFile'},
 			]
@@ -263,6 +266,8 @@ var documents =
 			{name : 'HandMenuRadial',
 			 pages: [
 				{name : 'Enabled'},
+				{name : 'RootLayer'},
+				{name : 'simulatorKey'},
 				{name : 'HandMenuRadial'},
 				{name : 'Close'},
 				{name : 'Initialize'},
@@ -278,6 +283,12 @@ var documents =
 				{name : 'layerName'},
 				{name : 'startAngle'},
 				{name : 'HandRadialLayer'},
+				{name : 'AddChild'},
+				{name : 'AddItem'},
+				{name : 'FindChild'},
+				{name : 'FindItem'},
+				{name : 'RemoveChild'},
+				{name : 'RemoveItem'},
 			]
 			},
 			{name : 'Hierarchy',
@@ -289,6 +300,11 @@ var documents =
 				{name : 'ToLocalDirection'},
 				{name : 'ToWorld'},
 				{name : 'ToWorldDirection'},
+			]
+			},
+			{name : 'IAsset',
+			 pages: [
+				{name : 'Id'},
 			]
 			},
 			{name : 'Input',
@@ -345,6 +361,7 @@ var documents =
 				{name : 'DepthTest'},
 				{name : 'DepthWrite'},
 				{name : 'FaceCull'},
+				{name : 'Id'},
 				{name : 'ParamCount'},
 				{name : 'PBR'},
 				{name : 'PBRClip'},
@@ -361,7 +378,17 @@ var documents =
 				{name : 'Copy'},
 				{name : 'Find'},
 				{name : 'GetAllParamInfo'},
+				{name : 'GetBool'},
+				{name : 'GetColor'},
+				{name : 'GetFloat'},
+				{name : 'GetInt'},
+				{name : 'GetMatrix'},
 				{name : 'GetParamInfo'},
+				{name : 'GetTexture'},
+				{name : 'GetUInt'},
+				{name : 'GetVector2'},
+				{name : 'GetVector3'},
+				{name : 'GetVector4'},
 				{name : 'SetBool'},
 				{name : 'SetColor'},
 				{name : 'SetData'},
@@ -396,6 +423,7 @@ var documents =
 				{name : 'Rotation'},
 				{name : 'Scale'},
 				{name : 'Translation'},
+				{name : 'Transposed'},
 				{name : 'Decompose'},
 				{name : 'Invert'},
 				{name : 'Implicit Conversions'},
@@ -408,6 +436,7 @@ var documents =
 				{name : 'TR'},
 				{name : 'Transform'},
 				{name : 'TransformNormal'},
+				{name : 'Transpose'},
 				{name : 'TRS'},
 				{name : 'TS'},
 			]
@@ -417,6 +446,7 @@ var documents =
 			 pages: [
 				{name : 'Bounds'},
 				{name : 'Cube'},
+				{name : 'Id'},
 				{name : 'IndCount'},
 				{name : 'KeepData'},
 				{name : 'Quad'},
@@ -455,6 +485,7 @@ var documents =
 				{name : 'Anims'},
 				{name : 'AnimTime'},
 				{name : 'Bounds'},
+				{name : 'Id'},
 				{name : 'Nodes'},
 				{name : 'RootNode'},
 				{name : 'SubsetCount'},
@@ -527,12 +558,32 @@ var documents =
 				{name : 'scrollChange'},
 			]
 			},
+			{name : 'OpenGL_GLX',
+			 pages: [
+				{name : 'Context'},
+				{name : 'Display'},
+				{name : 'Drawable'},
+			]
+			},
+			{name : 'OpenGL_WGL',
+			 pages: [
+				{name : 'HDC'},
+				{name : 'HGLRC'},
+			]
+			},
+			{name : 'OpenGLES_EGL',
+			 pages: [
+				{name : 'Context'},
+				{name : 'Display'},
+			]
+			},
 			{name : 'OpenXR',
 			 pages: [
 				{name : 'EyesSampleTime'},
 				{name : 'Instance'},
 				{name : 'Session'},
 				{name : 'Space'},
+				{name : 'SystemId'},
 				{name : 'Time'},
 				{name : 'AddCompositionLayer'},
 				{name : 'ExtEnabled'},
@@ -655,6 +706,7 @@ var documents =
 			{name : 'Shader',
 			 pages: [
 				{name : 'Default'},
+				{name : 'Id'},
 				{name : 'Name'},
 				{name : 'PBR'},
 				{name : 'PBRClip'},
@@ -729,6 +781,7 @@ var documents =
 			{name : 'Solid',
 			 pages: [
 				{name : 'Enabled'},
+				{name : 'Id'},
 				{name : 'Solid'},
 				{name : 'AddBox'},
 				{name : 'AddCapsule'},
@@ -748,6 +801,7 @@ var documents =
 				{name : 'Click'},
 				{name : 'CursorSamples'},
 				{name : 'Duration'},
+				{name : 'Id'},
 				{name : 'TotalSamples'},
 				{name : 'Unclick'},
 				{name : 'UnreadSamples'},
@@ -803,6 +857,7 @@ var documents =
 			 pages: [
 				{name : 'Aspect'},
 				{name : 'Height'},
+				{name : 'Id'},
 				{name : 'NormalizedDimensions'},
 				{name : 'Width'},
 				{name : 'Draw'},

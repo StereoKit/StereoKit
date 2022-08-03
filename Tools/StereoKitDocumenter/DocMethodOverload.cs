@@ -68,14 +68,8 @@ namespace StereoKitDocumenter
 		}
 
 		private static Type GetParentType(DocMethod rootMethod)
-		{
-			Type result = Type.GetType("StereoKit." + rootMethod.parent.name + ", StereoKit");
-			if (result == null)
-				result = Type.GetType("StereoKit.Framework." + rootMethod.parent.name + ", StereoKit");
-			if (result == null)
-				result = Type.GetType("StereoKit.Backend+" + rootMethod.parent.name + ", StereoKit");
-			return result;
-		}
+			=> rootMethod.parent.ClassType;
+
 		private static MethodBase GetMethodInfo(string signature, DocMethod rootMethod)
 		{
 			Type[] paramTypes = string.IsNullOrEmpty(signature) ? new Type[]{ } : StringHelper.SeparateGroupedString(',',signature)

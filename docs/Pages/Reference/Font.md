@@ -11,6 +11,12 @@ data about where, and how large those characters are on the texture.
 
 This asset is used anywhere that text shows up, like in the UI or Text classes!
 
+## Instance Fields and Properties
+
+|  |  |
+|--|--|
+|string [Id]({{site.url}}/Pages/Reference/Font/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
+
 ## Static Fields and Properties
 
 |  |  |

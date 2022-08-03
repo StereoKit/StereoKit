@@ -26,6 +26,7 @@ without touching anything between.
 |  |  |
 |--|--|
 |bool [Enabled]({{site.url}}/Pages/Reference/Solid/Enabled.html)|Is the Solid enabled in the physics simulation? Set this to false if you want to prevent physics from influencing this solid!|
+|string [Id]({{site.url}}/Pages/Reference/Solid/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 
 ## Instance Methods
 
