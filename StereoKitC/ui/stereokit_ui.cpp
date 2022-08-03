@@ -1648,7 +1648,7 @@ bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_
 	vec3 final_pos;
 	vec2 final_size;
 
-	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
 }
 bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char    >(text, image, image_layout, size); }
