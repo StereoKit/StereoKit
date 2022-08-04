@@ -29,7 +29,7 @@ struct sprite_atlas_t {
 	bool32_t          dirty_full;
 };
 
-extern array_t<sprite_atlas_t> sprite_atlases = {};
+extern array_t<sprite_atlas_t> sprite_atlases;
 
 void sprite_destroy(sprite_t sprite);
 

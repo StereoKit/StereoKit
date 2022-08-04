@@ -110,7 +110,7 @@ Example usage:
 
 template <typename T>
 struct array_view_t {
-	void  *data;
+	void   *data;
 	int32_t count;
 
 	int32_t stride;
@@ -202,7 +202,7 @@ struct array_t {
 		return r < 0 ? r : -(r+2);
 	}
 
-	/*template <typename D>
+	template <typename D>
 	int32_t binary_search(D (*get_key)(T item), D item) const {
 		int32_t l = 0, r = count - 1;
 		while (l <= r) {

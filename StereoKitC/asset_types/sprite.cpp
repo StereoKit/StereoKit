@@ -61,7 +61,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->texture = image;
 	result->uvs[0]  = vec2{ 0,0 };
 	result->uvs[1]  = vec2{ 1,1 };
-	result->aspect  = image->width / (float)image->height;
+	result->aspect  = tex_get_width(image) / (float)tex_get_height(image);
 	result->dimensions_normalized = result->aspect > 1
 		? vec2{ 1, 1.f/result->aspect } // Width is larger than height
 		: vec2{ result->aspect, 1 };    // Height is larger than, or equal to width
@@ -101,9 +101,15 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 ///////////////////////////////////////////
 
+int64_t sprite_area(sprite_t sprite) {
+	return (int64_t)tex_get_width(sprite->texture) * (int64_t)tex_get_height(sprite->texture);
+}
+
+///////////////////////////////////////////
+
 void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite) {
 	// Binary insert the sprite so largest items are first in the list!
-	int64_t at = atlas->sprites.binary_search([](sprite_t s) { return (int64_t)tex_get_width(s->texture) * tex_get_height(s->texture); }, (int64_t)tex_get_width(sprite->texture) * tex_get_height(sprite->texture));
+	int32_t at = atlas->sprites.binary_search(sprite_area, sprite_area(sprite));
 	if (at < 0) at = ~at;
 	atlas->sprites.insert(at, sprite);
 
