@@ -1,6 +1,10 @@
 //--name = sk/blit
 //--source = white
 
+//--blit_to = = 0,0,1,1
+
+float4 blit_to;
+
 Texture2D    source   : register(t0);
 SamplerState source_s : register(s0);
 
@@ -38,8 +42,11 @@ struct psIn {
 
 psIn vs(vsIn input) {
 	psIn o;
-	o.pos = input.pos;
-	o.uv  = input.uv;
+	o.pos.zw = input.pos.zw;
+	//o.pos.xy = blit_to.xy + (input.pos.xy * blit_to.zw);
+	//o.pos.xy =  (blit_to.xy + ((input.pos.xy / 2 + float2(1, 1)) * blit_to.zw))*2-float2(1,1);
+	o.pos.xy = (blit_to.xy*2) + (input.pos.xy * blit_to.zw);
+	o.uv     = input.uv; 
 	return o;
 }
 

@@ -8,7 +8,8 @@ using namespace sk;
 
 ///////////////////////////////////////////
 
-sprite_t     sprite;
+sprite_t     sprite1;
+sprite_t     sprite2;
 text_style_t sprite_text_style;
 
 ///////////////////////////////////////////
@@ -18,7 +19,8 @@ void demo_sprites_init() {
 	sprite_text_style = text_make_style(font, 0.1f, { 1,1,1,1 });
 	font_release(font);
 
-	sprite = sprite_create_file("power.png");
+	sprite1 = sprite_create_file("power.png");
+	sprite2 = sprite_create_file("search.png");
 }
 
 ///////////////////////////////////////////
@@ -26,7 +28,7 @@ void demo_sprites_init() {
 void demo_sprites_update() {
 	for (int32_t x = -2; x <= 2; x++) {
 		for (int32_t y = -2; y <= 2; y++) {
-			sprite_draw_at(sprite, matrix_trs({x*0.1f,y*0.1f,-0.5f}, quat_lookat(vec3_zero, -vec3_forward), vec3_one * 0.1f), text_align_center);
+			sprite_draw_at(x%2==0?sprite1:sprite2, matrix_trs({x*0.1f,y*0.1f,-0.5f}, quat_lookat(vec3_zero, -vec3_forward), vec3_one * 0.1f), text_align_center);
 		}
 	}
 }
@@ -34,5 +36,6 @@ void demo_sprites_update() {
 ///////////////////////////////////////////
 
 void demo_sprites_shutdown() {
-	sprite_release(sprite);
+	sprite_release(sprite1);
+	sprite_release(sprite2);
 }

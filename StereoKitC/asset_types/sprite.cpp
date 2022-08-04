@@ -62,12 +62,12 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->uvs[0]  = vec2{ 0,0 };
 	result->uvs[1]  = vec2{ 1,1 };
 	result->aspect  = tex_get_width(image) / (float)tex_get_height(image);
+	result->size    = 1;
 	result->dimensions_normalized = result->aspect > 1
 		? vec2{ 1, 1.f/result->aspect } // Width is larger than height
 		: vec2{ result->aspect, 1 };    // Height is larger than, or equal to width
 
 	if (type == sprite_type_single) {
-		result->size         = 1;
 		result->buffer_index = -1;
 		result->material     = sprite_create_material(sprite_index);
 		material_set_texture(result->material, "diffuse", image);

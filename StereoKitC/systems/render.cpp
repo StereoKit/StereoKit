@@ -136,6 +136,9 @@ mesh_t                  render_sky_mesh        = nullptr;
 material_t              render_sky_mat         = nullptr;
 bool32_t                render_sky_show        = false;
 
+
+array_t<skg_tex_t*>     render_bind_stack = {};
+
 material_t              render_last_material;
 shader_t                render_last_shader;
 mesh_t                  render_last_mesh;
@@ -753,6 +756,7 @@ void render_shutdown() {
 	render_screenshot_list.free();
 	render_viewpoint_list .free();
 	render_instance_list  .free();
+	render_bind_stack     .free();
 
 	for (int32_t i = 0; i < _countof(render_global_textures); i++) {
 		tex_release(render_global_textures[i]);
@@ -791,19 +795,28 @@ void render_blit_rect_px(tex_t to_rendertarget, rect_t rect_pixels, material_t m
 
 ///////////////////////////////////////////
 
-void render_blit_to_bound(material_t material) {
+void render_bind_target_push(tex_t target) {
+	render_bind_stack.add(skg_tex_target_get());
+	skg_tex_target_bind(&target->tex);
+}
+
+///////////////////////////////////////////
+
+void render_bind_target_pop() {
+	skg_tex_target_bind(render_bind_stack.last());
+	render_bind_stack.pop();
+}
+
+///////////////////////////////////////////
+
+void render_blit_to_bound_noclear(material_t material) {
 	material_check_dirty(material);
-
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	float color[4] = { 0,0,0,0 };
-	skg_target_clear(true, color);
-
-	skg_tex_t *target = skg_tex_target_get();
+	skg_tex_t* target = skg_tex_target_get();
 
 	// Setup shader args for the blit operation
 	render_blit_data_t data = {};
-	data.width  = (float)target->width;
-	data.height = (float)target->height;
+	data.width        = (float)target->width;
+	data.height       = (float)target->height;
 	data.pixel_width  = 1.0f / target->width;
 	data.pixel_height = 1.0f / target->height;
 
@@ -812,7 +825,7 @@ void render_blit_to_bound(material_t material) {
 	skg_buffer_bind        (&render_shader_blit, render_list_blit_bind, 0);
 	render_set_material(material);
 	skg_mesh_bind(&render_blit_quad->gpu_mesh);
-	
+
 	// And draw to it!
 	skg_draw(0, 0, render_blit_quad->ind_count, 1);
 
@@ -823,12 +836,21 @@ void render_blit_to_bound(material_t material) {
 
 ///////////////////////////////////////////
 
-void render_blit(tex_t to, material_t material) {
-	skg_tex_t *old_target = skg_tex_target_get();
+void render_blit_to_bound(material_t material) {
 
-	skg_tex_target_bind (&to->tex  );
-	render_blit_to_bound(material  );
-	skg_tex_target_bind (old_target);
+	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
+	float color[4] = { 0,0,0,0 };
+	skg_target_clear(true, color);
+
+	render_blit_to_bound_noclear(material);
+}
+
+///////////////////////////////////////////
+
+void render_blit(tex_t to, material_t material) {
+	render_bind_target_push(to);
+	render_blit_to_bound(material);
+	render_bind_target_pop();
 }
 
 ///////////////////////////////////////////
