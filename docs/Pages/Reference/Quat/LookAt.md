@@ -21,7 +21,7 @@ resting/model space pose.
 |--|--|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookFromPoint|Position of where the 'object' is.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) lookAtPoint|Position of where the 'object' should             be looking towards!|
-|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) upDirection|Look From/At positions describe X and Y             axis rotation well, but leave Z Axiz/Roll undefined. Providing an             upDirection vector helps to indicate roll around the From/At             line. A common up direction would be (0,1,0), to prevent roll.|
+|[Vec3]({{site.url}}/Pages/Reference/Vec3.html) upDirection|Look From/At positions describe X and Y             axis rotation well, but leave Z Axis/Roll undefined. Providing an             upDirection vector helps to indicate roll around the From/At             line. A common up direction would be (0,1,0), to prevent roll.|
 |RETURNS: [Quat]({{site.url}}/Pages/Reference/Quat.html)|A rotation that describes looking from a point, towards another point.|
 
 <div class='signature' markdown='1'>

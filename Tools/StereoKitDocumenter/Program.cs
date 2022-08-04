@@ -3,6 +3,8 @@ using CommandLine.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Xml;
 
 namespace StereoKitDocumenter
@@ -13,7 +15,14 @@ namespace StereoKitDocumenter
 		{
 			[Option('x', "xml", Required = false, HelpText = "Path to your DLL's commentdoc xml file.")]
 			public string XmlDocs { get; set; } = "../../../../../bin/StereoKit.xml";
-			
+
+			[Option('l', "library", Required = false, HelpText = "Path to your DLL.")]
+#if DEBUG
+			public string Library { get; set; } = "../../../../../bin/x64_Debug/StereoKitTest/StereoKit.dll";
+#else
+			public string Library { get; set; } = "../../../../../bin/x64_Release/StereoKitTest/StereoKit.dll";
+#endif
+
 			string pagesOut = "../../../../../docs/Pages/";
 			[Option('o', "out", Required = false, HelpText = "Generated markdown output folder.")]
 			public string PagesOut { get => pagesOut; set { pagesOut = value.Replace('\\','/'); if (!pagesOut.EndsWith("/")) pagesOut += "/"; } }
@@ -23,6 +32,7 @@ namespace StereoKitDocumenter
 		}
 		public static CLIOptions options;
 
+		public static string[]        namespaces = new string[] { };
 		public static List<DocClass>  classes = new List<DocClass>();
 		public static List<DocMethod> methods = new List<DocMethod>();
 		public static List<DocField>  fields  = new List<DocField>();
@@ -30,8 +40,8 @@ namespace StereoKitDocumenter
 		public static List<DocInheritMethod> inheritMethods = new List<DocInheritMethod>();
 		public static List<DocInheritField>  inheritFields  = new List<DocInheritField >();
 
-		public static DocClass GetClass(string name) {
-			DocClass result = classes.Find((a) => a.name == name);
+		public static DocClass GetClass(string nameSpace, string name) {
+			DocClass result = classes.Find((a) => a.nameSpace == nameSpace && a.name == name);
 			if (result == null)
 				throw new Exception($"Couldn't find a class with docs by name of '{name}'. Are you missing a <Summary> for this class?");
 			return result;
@@ -40,6 +50,18 @@ namespace StereoKitDocumenter
 		{
 			result = classes.Find((a) => a.name == name);
 			return result != null;
+		}
+		public static string GetNamespace(string name)
+		{
+			for (int i = 0; i < namespaces.Length; i++)
+			{
+				if (name.StartsWith(namespaces[i]))
+					return namespaces[i];
+			}
+			int index = name.IndexOf('.');
+			if (index != -1)
+				return name[..index];
+			return "";
 		}
 
 		static void Main(string[] args)
@@ -62,6 +84,15 @@ namespace StereoKitDocumenter
 				.WithParsed   (o => options = o)
 				.WithNotParsed(e => DisplayHelp(result, e));
 
+			if (!string.IsNullOrEmpty(options.Library)) {
+				namespaces = Assembly
+					.LoadFile(Path.GetFullPath(options.Library))
+					.GetTypes()
+					.Select  (t => t.Namespace)
+					.Distinct()
+					.OrderByDescending(s=>s.Length)
+					.ToArray ();
+			}
 
 			int tests = RunSKTests();
 			if (tests != 0)
@@ -140,13 +171,28 @@ namespace StereoKitDocumenter
 			return process.ExitCode;
 		}
 
+		static void ParseTypeSig(string signature, out string nameSpace, out string typeName)
+		{
+			nameSpace = GetNamespace(signature);
+			typeName  = signature[(nameSpace.Length > 0 ? nameSpace.Length + 1 : 0)..];
+		}
+		static void ParseMemberSig(string signature, out string nameSpace, out string className, out string member)
+		{
+			nameSpace = GetNamespace(signature);
+			int last  = signature.LastIndexOf('.');
+			member    = signature[(last+1)..];
+			className = signature[(nameSpace.Length > 0 ? nameSpace.Length + 1 : 0)..last];
+		}
+
 		static void ReadClass(string signature, XmlReader reader)
 		{
 			DocClass result = new DocClass();
 
 			// Get names
-			string[] segs = signature.Split('.');
-			result.name = segs[segs.Length-1];
+			ParseTypeSig(signature, out string nameSpace, out string className);
+			result.name      = className;
+			result.nameSpace = nameSpace;
+
 
 			// Read properties
 			while (reader.Read())
@@ -158,17 +204,15 @@ namespace StereoKitDocumenter
 			}
 
 			classes.Add(result);
-			items.Add(result);
+			items  .Add(result);
 		}
 
 		static void ReadField(string signature, XmlReader reader)
 		{
 			// Get names
-			string[] segs = signature.Split('(');
-			string nameSignature = segs[0];
-			segs = nameSignature.Split('.');
+			ParseMemberSig(signature, out string nameSpace, out string className, out string memberName);
 
-			DocField result = new DocField(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
+			DocField result = new DocField(GetClass(nameSpace, className), memberName);
 
 			// Read properties
 			while (reader.Read())
@@ -194,26 +238,24 @@ namespace StereoKitDocumenter
 		static void ReadMethod(string signature, XmlReader reader)
 		{
 			// Get names
-			string[] segs = signature.Split('(');
-			string nameSignature  = segs[0];
-			string paramSignature = segs.Length>1?segs[1] :"";
-			segs = nameSignature.Split('.');
-			if (paramSignature.Length > 0)
-			{
-				int end = paramSignature.IndexOf(')');
-				if (end == -1) end = paramSignature.Length - 1;
-				paramSignature = paramSignature.Substring(0, end);
-			}
+			int    split     = signature.IndexOf('(');
+			string sigType   = split==-1?signature:signature[..split];
+			string sigParams = split==-1?"":signature[(split+1)..signature.IndexOf(')')];
 
-			DocMethod method = methods.Find(a => a.name == segs[segs.Length-1] && a.parent.name == segs[segs.Length-2]);
+			ParseMemberSig(sigType, out string namespaceSig, out string className, out string methodName);
+
+			if (methodName == "Finalize") // Skip deconstructors!
+				return;
+
+			DocMethod method = methods.Find(a => a.name == methodName && a.parent.name == className);
 			if (method == null)
 			{
-				method = new DocMethod(GetClass(segs[segs.Length-2]), segs[segs.Length-1]);
+				method = new DocMethod(GetClass(namespaceSig, className), methodName);
 				methods.Add(method);
 				items.Add(method);
 			}
 
-			DocMethodOverload variant = method.AddOverload(paramSignature);
+			DocMethodOverload variant = method.AddOverload(sigParams);
 
 			// Read properties
 			while (reader.Read())

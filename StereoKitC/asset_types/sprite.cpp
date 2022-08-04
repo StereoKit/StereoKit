@@ -1,6 +1,5 @@
 #include "sprite.h"
 #include "assets.h"
-#include "texture.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../systems/sprite_drawer.h"
@@ -27,7 +26,13 @@ void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite);
 ///////////////////////////////////////////
 
 void sprite_set_id(sprite_t sprite, const char *id) {
-	assets_set_id(sprite->header, id);
+	assets_set_id(&sprite->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* sprite_get_id(const sprite_t sprite) {
+	return sprite->header.id_text;
 }
 
 ///////////////////////////////////////////
@@ -51,7 +56,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	tex_addref(image);
 	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
-	assets_block_until(&image->header, asset_state_loaded_meta);
+	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
 
 	result->texture = image;
 	result->uvs[0]  = vec2{ 0,0 };
@@ -165,7 +170,7 @@ sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char 
 ///////////////////////////////////////////
 
 void sprite_addref(sprite_t sprite) {
-	assets_addref(sprite->header);
+	assets_addref(&sprite->header);
 }
 
 ///////////////////////////////////////////
@@ -173,7 +178,7 @@ void sprite_addref(sprite_t sprite) {
 void sprite_release(sprite_t sprite) {
 	if (sprite == nullptr)
 		return;
-	assets_releaseref(sprite->header);
+	assets_releaseref(&sprite->header);
 }
 
 ///////////////////////////////////////////

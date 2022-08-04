@@ -334,13 +334,14 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-!StereoKitC/lib/bin/**
 !**/Assets/**
 
 # Ignore dependency build related stuff
-Tools/oxr_current.txt
-StereoKitC/lib/bin/**/openxr_loader.lib
-StereoKitC/lib/bin/**/*reactphysics3d.*
+Tools/deps_current.txt
+StereoKitC/lib/include/**
+StereoKitC/lib/bin/**
+# An exception for the Android loader
+!StereoKitC/lib/bin/arm64-v8a/**
 
 # Ignore cached shader blobs
 */Assets/cache

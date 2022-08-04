@@ -25,16 +25,15 @@ Since rendering is atlas based, you also have only one material per
 atlas. So this is why you might wish to put a sprite in one atlas or
 another, so you can apply different
 
-
 ## Instance Fields and Properties
 
 |  |  |
 |--|--|
 |float [Aspect]({{site.url}}/Pages/Reference/Sprite/Aspect.html)|The aspect ratio of the sprite! This is width/height. You may also be interested in the NormalizedDimensions property, which are normalized to the 0-1 range.|
 |int [Height]({{site.url}}/Pages/Reference/Sprite/Height.html)|Height of the sprite, in pixels.|
+|string [Id]({{site.url}}/Pages/Reference/Sprite/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 |[Vec2]({{site.url}}/Pages/Reference/Vec2.html) [NormalizedDimensions]({{site.url}}/Pages/Reference/Sprite/NormalizedDimensions.html)|Width and height of the sprite, normalized so the maximum value is 1.|
 |int [Width]({{site.url}}/Pages/Reference/Sprite/Width.html)|Width of the sprite, in pixels.|
-
 
 ## Instance Methods
 
@@ -42,12 +41,9 @@ another, so you can apply different
 |--|--|
 |[Draw]({{site.url}}/Pages/Reference/Sprite/Draw.html)|Draw the sprite on a quad with the provided transform!|
 
-
-
 ## Static Methods
 
 |  |  |
 |--|--|
 |[FromFile]({{site.url}}/Pages/Reference/Sprite/FromFile.html)|Create a sprite from an image file! This loads a Texture from file, and then uses that Texture as the source for the Sprite.|
 |[FromTex]({{site.url}}/Pages/Reference/Sprite/FromTex.html)|Create a sprite from a Texture object!|
-

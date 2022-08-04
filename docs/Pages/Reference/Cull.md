@@ -13,9 +13,6 @@ None can be appropriate in cases where the mesh is designed to be
 'double sided'. Front can also be helpful when you want to flip a
 mesh 'inside-out'!
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -23,5 +20,3 @@ mesh 'inside-out'!
 |Back|Discard if the back of the triangle face is pointing towards the camera. This is the default behavior.|
 |Front|Discard if the front of the triangle face is pointing towards the camera. This is opposite the default behavior.|
 |None|No culling at all! Draw the triangle regardless of which way it's pointing.|
-
-

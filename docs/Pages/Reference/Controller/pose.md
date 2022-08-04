@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Controller.pose
-description: The grip pose of the controller. This approximately represents the center of the hand's position. Check trackedPos and trackedRot for the current state of the pose data.
+description: The grip pose of the controller. This approximately represents the center of the controller where it's gripped by the user's hand. Check trackedPos and trackedRot for the current state of the pose data.
 ---
 # [Controller]({{site.url}}/Pages/Reference/Controller.html).pose
 
@@ -11,8 +11,9 @@ description: The grip pose of the controller. This approximately represents the 
 
 ## Description
 The grip pose of the controller. This approximately
-represents the center of the hand's position. Check `trackedPos`
-and `trackedRot` for the current state of the pose data.
+represents the center of the controller where it's gripped by the
+user's hand. Check `trackedPos` and `trackedRot` for the current
+state of the pose data.
 
 
 ## Examples

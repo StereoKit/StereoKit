@@ -8,9 +8,6 @@ description: A collection of system key codes, representing keyboard characters 
 A collection of system key codes, representing keyboard
 characters and mouse buttons. Based on VK codes.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -80,6 +77,7 @@ characters and mouse buttons. Based on VK codes.
 |N7|Keyboard top row 7, with shift is '&'.|
 |N8|Keyboard top row 8, with shift is '*'.|
 |N9|Keyboard top row 9, with shift is '('.|
+|None|Doesn't represent a key, generally means this item has not been set to any particular value!|
 |Num0|0 on the numpad, when numlock is on.|
 |Num1|1 on the numpad, when numlock is on.|
 |Num2|2 on the numpad, when numlock is on.|
@@ -117,5 +115,3 @@ characters and mouse buttons. Based on VK codes.
 |X|x/X|
 |Y|y/Y|
 |Z|z/Z|
-
-

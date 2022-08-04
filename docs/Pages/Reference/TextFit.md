@@ -8,9 +8,6 @@ description: This enum describes how text layout behaves within the space it is 
 This enum describes how text layout behaves within the space
 it is given.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -20,5 +17,3 @@ it is given.
 |Overflow|The text will ignore the containing space, and just keep on going.|
 |Squeeze|If the text is too large to fit in the space provided, it will be scaled down to fit inside. This will not scale up.|
 |Wrap|The text will wrap around to the next line down when it reaches the end of the space on the X axis.|
-
-

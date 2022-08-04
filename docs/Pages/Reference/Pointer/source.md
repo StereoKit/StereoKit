@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Pointer.source
-description: What input soure did this pointer come from? This is a bit-flag that contains input family and capability information.
+description: What input source did this pointer come from? This is a bit-flag that contains input family and capability information.
 ---
 # [Pointer]({{site.url}}/Pages/Reference/Pointer.html).source
 
@@ -10,7 +10,7 @@ description: What input soure did this pointer come from? This is a bit-flag tha
 </div>
 
 ## Description
-What input soure did this pointer come from? This is
+What input source did this pointer come from? This is
 a bit-flag that contains input family and capability
 information.
 

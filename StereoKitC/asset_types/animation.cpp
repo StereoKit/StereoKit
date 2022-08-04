@@ -16,7 +16,7 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if (prev_index + 2 < curve->keyframe_count && curve->keyframe_times[prev_index+1] <= t && curve->keyframe_times[prev_index+2] > t) return prev_index + 1;
 	}
 	if (t <= curve->keyframe_times[0] || curve->keyframe_count == 1) return 0;
-	if (t >= curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 1;
+	if (t >= curve->keyframe_times[curve->keyframe_count - 1]) return curve->keyframe_count - 2;
 
 	int32_t l = 0, r = curve->keyframe_count - 1;
 	while (l <= r) {
@@ -24,15 +24,13 @@ int32_t anim_frame(const anim_curve_t *curve, int32_t prev_index, float t) {
 		if      (curve->keyframe_times[mid] <= t && curve->keyframe_times[mid+1] > t) return mid;
 		else if (curve->keyframe_times[mid] < t) l = mid + 1;
 		else if (curve->keyframe_times[mid] > t) r = mid - 1;
-		else log_err("anim_frame 1");
 	}
-	log_err("anim_frame 2");
 	return -1;
 }
 
 ///////////////////////////////////////////
 
-vec3 gltf_cubic_f3(vec3 in_tangent_next, vec3 value, vec3 next_value, vec3 out_tangent, float t, float frame_duration) {
+vec3 gltf_cubic_f3(vec3 value, vec3 in_tangent_next, vec3 out_tangent, vec3 next_value, float t, float frame_duration) {
 	// From the spec https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
 	const float t_2 = t * t;
 	const float t_3 = t_2 * t;
@@ -47,7 +45,7 @@ vec3 gltf_cubic_f3(vec3 in_tangent_next, vec3 value, vec3 next_value, vec3 out_t
 
 ///////////////////////////////////////////
 
-vec4 gltf_cubic_f4(vec4 in_tangent_next, vec4 value, vec4 next_value, vec4 out_tangent, float t, float frame_duration) {
+vec4 gltf_cubic_f4(vec4 value, vec4 in_tangent_next, vec4 out_tangent, vec4 next_value, float t, float frame_duration) {
 	// From the spec https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
 	const float t_2 = t * t;
 	const float t_3 = t_2 * t;
@@ -70,13 +68,17 @@ vec3 anim_curve_sample_f3(const anim_curve_t *curve, int32_t *prev_index, float 
 	vec3   *pts        = (vec3*)curve->keyframe_values;
 	*prev_index = frame;
 
+	if (curve->keyframe_count <= 1) {
+		return pts[0];
+	}
+
 	switch (curve->interpolation) {
 	case anim_interpolation_linear: return vec3_lerp(pts[frame], pts[frame + 1], pct); break;
 	case anim_interpolation_step:   return pts[frame]; break;
 	case anim_interpolation_cubic: {
 		int32_t id      = frame * 3;
 		int32_t id_next = (frame+1) * 3;
-		return gltf_cubic_f3(pts[id_next], pts[id + 1], pts[id_next + 1], pts[id + 2], pct, frame_dur);
+		return gltf_cubic_f3(pts[id + 1], pts[id_next], pts[id + 2], pts[id_next + 1], pct, frame_dur);
 	}break;
 	default: return pts[frame]; break;
 	}
@@ -92,6 +94,10 @@ quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float 
 	quat   *pts        = (quat*)curve->keyframe_values;
 	*prev_index = frame;
 
+	if (curve->keyframe_count <= 1) {
+		return pts[0];
+	}
+
 	switch (curve->interpolation) {
 	case anim_interpolation_linear: return quat_slerp(pts[frame], pts[frame + 1], pct); break;
 	case anim_interpolation_step:   return pts[frame]; break;
@@ -99,7 +105,7 @@ quat anim_curve_sample_f4(const anim_curve_t *curve, int32_t *prev_index, float 
 		vec4   *vecs    = (vec4*)curve->keyframe_values;
 		int32_t id      = frame * 3;
 		int32_t id_next = (frame+1) * 3;
-		vec4    result  = gltf_cubic_f4(vecs[id_next], vecs[id + 1], vecs[id_next + 1], vecs[id + 2], pct, frame_dur);
+		vec4    result  = gltf_cubic_f4(vecs[id + 1], vecs[id_next], vecs[id + 2], vecs[id_next + 1], pct, frame_dur);
 		return { result.x, result.y, result.z, result.w };
 	} break;
 	default: return pts[frame]; break;
@@ -147,11 +153,12 @@ void anim_update_model(model_t model) {
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
 	model->transforms_changed    = true;
+	model->bounds_dirty          = true;
 
 	anim_t *anim = &model->anim_data.anims[model->anim_inst.anim_id];
 	float   time = model_anim_active_time(model);
 
-	for (size_t i = 0; i < anim->curves.count; i++) {
+	for (int32_t i = 0; i < anim->curves.count; i++) {
 		model_node_id node = anim->curves[i].node_id;
 
 		model->anim_inst.node_transforms[node].dirty = true;
@@ -179,7 +186,7 @@ void _anim_inst_check_ready(model_t model) {
 
 	if (inst->node_transforms == nullptr) {
 		inst->node_transforms = sk_malloc_t(anim_transform_t, model->nodes.count);
-		for (size_t i = 0; i < model->nodes.count; i++) {
+		for (int32_t i = 0; i < model->nodes.count; i++) {
 			matrix_decompose(model->nodes[i].transform_local,
 				inst->node_transforms[i].translation,
 				inst->node_transforms[i].scale,
@@ -187,7 +194,7 @@ void _anim_inst_check_ready(model_t model) {
 		}
 	}
 	if (inst->skinned_meshes == nullptr) {
-		inst->skinned_mesh_count = (int32_t)data->skeletons.count;
+		inst->skinned_mesh_count = data->skeletons.count;
 		inst->skinned_meshes     = sk_malloc_t(anim_inst_subset_t, inst->skinned_mesh_count);
 		for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
 			inst->skinned_meshes[i].original_mesh   = model_node_get_mesh(model, data->skeletons[i].skin_node);
@@ -221,16 +228,19 @@ void _anim_update_skin(model_t &model) {
 ///////////////////////////////////////////
 
 void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
-	if (anim_id < 0 || anim_id >= (int32_t)model->anim_data.anims.count) {
+	if (anim_id < 0 || anim_id >= model->anim_data.anims.count) {
 		log_err("Attempted to play an invalid animation id.");
 		return;
 	}
 	_anim_inst_check_ready(model);
 
-	if (model->anim_inst.curve_last_keyframe == nullptr) {
-		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, model->anim_data.anims[anim_id].curves.count);
-		memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * model->anim_data.anims[anim_id].curves.count);
+	int32_t count = model->anim_data.anims[anim_id].curves.count;
+	if (model->anim_inst.curve_last_keyframe == nullptr || model->anim_inst.curve_last_capacity < count) {
+		sk_free(model->anim_inst.curve_last_keyframe);
+		model->anim_inst.curve_last_capacity = count;
+		model->anim_inst.curve_last_keyframe = sk_malloc_t(int32_t, count);
 	}
+	memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * count);
 
 	model->anim_inst.start_time  = time_getf();
 	model->anim_inst.last_update = -1;
@@ -242,12 +252,12 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 
 void anim_inst_destroy(anim_inst_t *inst) {
 	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
-		free(inst->skinned_meshes[i].bone_transforms);
+		sk_free(inst->skinned_meshes[i].bone_transforms);
 		mesh_release(inst->skinned_meshes[i].original_mesh);
 	}
-	free(inst->skinned_meshes);
-	free(inst->curve_last_keyframe);
-	free(inst->node_transforms);
+	sk_free(inst->skinned_meshes);
+	sk_free(inst->curve_last_keyframe);
+	sk_free(inst->node_transforms);
 
 	*inst = {};
 	inst->anim_id = -1;
@@ -256,15 +266,15 @@ void anim_inst_destroy(anim_inst_t *inst) {
 ///////////////////////////////////////////
 
 void anim_data_destroy(anim_data_t *data) {
-	for (size_t i = 0; i < data->anims.count; i++) {
-		for (size_t c = 0; c < data->anims[i].curves.count; c++) {
-			free(data->anims[i].curves[c].keyframe_values);
-			free(data->anims[i].curves[c].keyframe_times);
+	for (int32_t i = 0; i < data->anims.count; i++) {
+		for (int32_t c = 0; c < data->anims[i].curves.count; c++) {
+			sk_free(data->anims[i].curves[c].keyframe_values);
+			sk_free(data->anims[i].curves[c].keyframe_times);
 		}
 		data->anims[i].curves.free();
 	}
-	for (size_t i = 0; i < data->skeletons.count; i++) {
-		free(data->skeletons[i].bone_to_node_map);
+	for (int32_t i = 0; i < data->skeletons.count; i++) {
+		sk_free(data->skeletons[i].bone_to_node_map);
 	}
 	data->anims    .free();
 	data->skeletons.free();
@@ -277,13 +287,13 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 	
 	if (data->anims.count > 0) {
 		result.anims.resize(data->anims.count);
-		for (size_t i = 0; i < data->anims.count; i++) {
+		for (int32_t i = 0; i < data->anims.count; i++) {
 			anim_t &anim_src = data->anims[i];
 			anim_t  anim = {};
 			anim.duration = anim_src.duration;
 			anim.name     = string_copy(anim_src.name);
 			anim.curves.resize(anim_src.curves.count);
-			for (size_t c = 0; c < anim_src.curves.count; c++) {
+			for (int32_t c = 0; c < anim_src.curves.count; c++) {
 				anim_curve_t &curve_src = anim_src.curves[c];
 				anim_curve_t  curve = {};
 				curve.applies_to     = curve_src.applies_to;
@@ -312,7 +322,7 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 
 	if (data->skeletons.count > 0) {
 		result.skeletons.resize(data->skeletons.count);
-		for (size_t i = 0; i < data->skeletons.count; i++) {
+		for (int32_t i = 0; i < data->skeletons.count; i++) {
 			anim_skeleton_t &skel_src = data->skeletons[i];
 			anim_skeleton_t  skel     = {};
 			skel.bone_count       = skel_src.bone_count;

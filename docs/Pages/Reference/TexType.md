@@ -9,9 +9,6 @@ Textures come in various types and flavors! These are bit-flags
 that tell StereoKit what type of texture we want, and how the application
 might use it!
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -23,5 +20,3 @@ might use it!
 |ImageNomips|A standard color image, without any generated mip-maps.|
 |Mips|This texture will generate mip-maps any time the contents change. Mip-maps are a list of textures that are each half the size of the one before them! This is used to prevent textures from 'sparkling' or aliasing in the distance.|
 |Rendertarget|This texture can be rendered to! This is great for textures that might be passed in as a target to Renderer.Blit, or other such situations.|
-
-

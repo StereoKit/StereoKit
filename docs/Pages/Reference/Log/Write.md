@@ -16,7 +16,7 @@ severity level!
 |  |  |
 |--|--|
 |[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) level|Severity level of this log message.|
-|string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
+|string text|Formatted text with color tags! See the Log             class docs for guidance on color tags.|
 |Object[] items|Format arguments.|
 
 <div class='signature' markdown='1'>
@@ -30,7 +30,7 @@ severity level!
 |  |  |
 |--|--|
 |[LogLevel]({{site.url}}/Pages/Reference/LogLevel.html) level|Severity level of this log message.|
-|string text|Formatted text with color tags! See the Log             class docs for for guidance on color tags.|
+|string text|Formatted text with color tags! See the Log             class docs for guidance on color tags.|
 
 
 

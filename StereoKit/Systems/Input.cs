@@ -175,9 +175,17 @@ namespace StereoKit
 	public class Controller
 	{
 		/// <summary>The grip pose of the controller. This approximately
-		/// represents the center of the hand's position. Check `trackedPos`
-		/// and `trackedRot` for the current state of the pose data.</summary>
+		/// represents the center of the controller where it's gripped by the
+		/// user's hand. Check `trackedPos` and `trackedRot` for the current
+		/// state of the pose data.</summary>
 		public Pose pose;
+		/// <summary>This is the pose of the hand's palm on the controller. You
+		/// can use it for rendering items where the hands are when holding a
+		/// controller. This pose's Forward is towards the fingers, and Up is 
+		/// toward the thumbs. On the right hand, X+ goes into the palm, and on
+		/// the left hand, X+ goes out of the palm. This is used by StereoKit
+		/// for placing the hand mesh! </summary>
+		public Pose palm;
 		/// <summary>The aim pose of a controller is where the controller
 		/// 'points' from and to. This is great for pointer rays and far
 		/// interactions.</summary>

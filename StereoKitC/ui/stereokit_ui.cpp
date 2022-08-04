@@ -4,16 +4,14 @@
 #include "../sk_memory.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
-#include "../systems/platform/platform_utils.h"
-#include "../systems/hand/input_hand.h"
+#include "../platforms/platform_utils.h"
+#include "../hands/input_hand.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
 #include <math.h>
 #include <float.h>
-#include <DirectXMath.h>
-using namespace DirectX;
 
 ///////////////////////////////////////////
 
@@ -101,6 +99,7 @@ bool32_t        skui_enable_far_interact = true;
 uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -275,8 +274,8 @@ void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -386,8 +385,8 @@ void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices,
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -473,11 +472,11 @@ float ui_get_gutter() {
 void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	
-	skui_palette[0] = color_to_linear( color );                                                                     // Primary color: Headers, separators, etc.
-	skui_palette[1] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
-	skui_palette[2] = color_to_linear( color_hsv(hsv.x,                  hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	skui_palette[3] = color_to_linear( color_hsv(fmodf(hsv.x + 0.5f, 1), hsv.y * 0.2f,   hsv.z * 0.55f, color.a) ); // Complement color: unused so far?
-	skui_palette[4] = color128{1, 1, 1, 1};                                                                         // Text color
+	skui_palette[0] = color_to_linear( color );                                                    // Primary color: Headers, separators, etc.
+	skui_palette[1] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
+	skui_palette[2] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
+	skui_palette[3] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
+	skui_palette[4] = color128{1, 1, 1, 1};                                                        // Text color
 }
 
 ///////////////////////////////////////////
@@ -671,7 +670,7 @@ bool ui_init() {
 void ui_update() {
 	skui_finger_radius = 0;
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t    *hand    = input_hand((handed_)i);
 		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i]);
 
@@ -737,10 +736,10 @@ void ui_update() {
 
 void ui_update_late() {
 	ui_pop_surface();
-	if (skui_layers.count != 0) log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack.count != 1) log_err("ui: Mismatching number of id push/pop calls!");
-	if (skui_tint_stack.count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
-	if (skui_enabled_stack.count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
+	if (skui_layers                 .count != 0) log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack               .count != 1) log_err("ui: Mismatching number of id push/pop calls!");
+	if (skui_tint_stack             .count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
+	if (skui_enabled_stack          .count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
 	if (skui_preserve_keyboard_stack.count != 1) log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
 }
 
@@ -753,27 +752,29 @@ void ui_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	skui_sl_windows             .free();
-	skui_layers                 .free();
-	skui_id_stack               .free();
-	skui_font_stack             .free();
-	skui_tint_stack             .free();
-	skui_enabled_stack          .free();
-	skui_preserve_keyboard_stack.free();
+	skui_sl_windows              .free();
+	skui_layers                  .free();
+	skui_id_stack                .free();
+	skui_font_stack              .free();
+	skui_tint_stack              .free();
+	skui_enabled_stack           .free();
+	skui_preserve_keyboard_stack .free();
 	skui_preserve_keyboard_ids[0].free();
 	skui_preserve_keyboard_ids[1].free();
-	sound_release(skui_snd_interact);
-	sound_release(skui_snd_uninteract);
-	sound_release(skui_snd_grab);
-	sound_release(skui_snd_ungrab);
-	mesh_release(skui_box);
-	mesh_release(skui_cylinder);
-	mesh_release(skui_box_dbg);
-	material_release(skui_mat);
-	material_release(skui_mat_quad);
-	material_release(skui_mat_dbg);
-	material_release(skui_font_mat);
-	font_release(skui_font);
+	sound_release(skui_snd_interact);   skui_snd_interact   = nullptr;
+	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
+	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
+	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
+	mesh_release(skui_box);      skui_box      = nullptr;
+	mesh_release(skui_cylinder); skui_cylinder = nullptr;
+	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
+	mesh_release(skui_win_top);  skui_win_top  = nullptr;
+	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	material_release(skui_mat);      skui_mat      = nullptr;
+	material_release(skui_mat_quad); skui_mat_quad = nullptr;
+	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
+	material_release(skui_font_mat); skui_font_mat = nullptr;
+	font_release(skui_font); skui_font = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -868,7 +869,7 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 
 	layer_t      &layer    = skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		layer.finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
 		layer.finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
 		layer.pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
@@ -883,7 +884,7 @@ void ui_pop_surface() {
 	skui_layers.pop();
 
 	if (skui_layers.count <= 0) {
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = skui_hand[i].finger_world;
 			skui_hand[i].finger_prev   = skui_hand[i].finger_world_prev;
 			skui_hand[i].pinch_pt      = skui_hand[i].pinch_pt_world;
@@ -891,7 +892,7 @@ void ui_pop_surface() {
 		}
 	} else {
 		layer_t &layer = skui_layers.last();
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = layer.finger_pos[i];
 			skui_hand[i].finger_prev   = layer.finger_prev[i];
 			skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
@@ -1011,6 +1012,30 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 
 ///////////////////////////////////////////
 
+button_state_ ui_last_element_hand_used(handed_ hand) {
+	return button_make_state(
+		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev == skui_last_element,
+		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_active() {
+	return button_make_state(
+		skui_hand[handed_left].active_prev == skui_last_element || skui_hand[handed_right].active_prev == skui_last_element,
+		skui_hand[handed_left].active      == skui_last_element || skui_hand[handed_right].active      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_focused() {
+	return button_make_state(
+		skui_hand[handed_left].focused_prev == skui_last_element || skui_hand[handed_right].focused_prev == skui_last_element,
+		skui_hand[handed_left].focused      == skui_last_element || skui_hand[handed_right].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
 void ui_nextline() {
 	layer_t &layer = skui_layers.last();
 	skui_prev_offset      = layer.offset;
@@ -1052,6 +1077,8 @@ void ui_space(float space) {
 void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+	
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1091,6 +1118,8 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1334,6 +1363,8 @@ bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 	uint64_t id_hash = ui_stack_hash(id);
 	bool     result  = false;
 
+	skui_last_element = id_hash;
+
 	for (int32_t i = 0; i < handed_max; i++) {
 		bool     was_focused = skui_hand[i].focused_prev == id_hash;
 		bounds_t size        = bounds;
@@ -1487,6 +1518,83 @@ bool32_t ui_button_at_16(const char16_t *text, vec3 window_relative_pos, vec2 si
 ///////////////////////////////////////////
 
 template<typename C>
+bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
+	uint64_t      id = ui_stack_hash(text);
+	float         finger_offset;
+	button_state_ state, focus;
+	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
+
+	if (state & button_state_just_active)
+		ui_anim_start(id);
+	float color_blend = state & button_state_active ? 2.f : 1;
+	if (ui_anim_has(id, .2f)) {
+		float t = ui_anim_elapsed(id, .2f);
+		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	}
+
+	float activation = 1 + 1 - (finger_offset / skui_settings.depth);
+	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
+	
+	float pad2       = skui_settings.padding * 2;
+	float pad2gutter = pad2 + skui_settings.gutter;
+	float depth      = finger_offset + 2 * mm2m;
+	vec3  image_at;
+	float image_size;
+	text_align_ image_align;
+	vec3  text_at;
+	vec2  text_size;
+	text_align_ text_align;
+	float aspect = sprite_get_aspect(image);
+	switch (image_layout) {
+	default:
+	case ui_btn_layout_left:
+		image_align = text_align_center_left;
+		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter)*0.5f) / aspect);
+		image_at    = window_relative_pos - vec3{ skui_settings.padding, size.y/2, depth };
+			
+		text_align = text_align_center_right;
+		text_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y/2, depth };
+		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		break;
+	case ui_btn_layout_right:
+		image_align = text_align_center_right;
+		image_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y / 2, depth };
+		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter) * 0.5f) / aspect);
+			
+		text_align = text_align_center_left;
+		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
+		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		break;
+	case ui_btn_layout_center_no_text:
+	case ui_btn_layout_center:
+		image_align = text_align_center;
+		image_size  = fminf(size.y - pad2, (size.x - pad2) / aspect);
+		image_at    = window_relative_pos - vec3{ size.x/2, size.y / 2, depth }; 
+			
+		text_align = text_align_top_center;
+		float y = size.y / 2 + image_size / 2;
+		text_at    = window_relative_pos - vec3{size.x/2, y, depth};
+		text_size  = { size.x-pad2, (size.y-skui_settings.padding*0.25f)-y };
+		break;
+	}
+
+	if (image_size>0) {
+		color128 final_color = skui_tint;
+		if (!skui_enabled_stack.last()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
+	
+		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
+		if (image_layout != ui_btn_layout_center_no_text)
+			ui_text_in(text_at, text_size, text, text_align, text_align_center);
+	}
+	return state & button_state_just_active;
+}
+bool32_t ui_button_img_at   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char>(text, image, image_layout, window_relative_pos, size); }
+bool32_t ui_button_img_at   (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
+bool32_t ui_button_img_at_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
+
+///////////////////////////////////////////
+
+template<typename C>
 bool32_t ui_button_sz_g(const C *text, vec2 size) {
 	vec3 final_pos;
 	vec2 final_size;
@@ -1509,6 +1617,42 @@ bool32_t ui_button_g(const C *text) {
 }
 bool32_t ui_button   (const char     *text) { return ui_button_g<char,     text_size   >(text); }
 bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t, text_size_16>(text); }
+
+///////////////////////////////////////////
+
+template<typename C, vec2(*text_size_t)(const C *text, text_style_t style)>
+bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_layout) {
+	vec3 final_pos;
+	vec2 final_size;
+
+	vec2 size = {};
+	if (image_layout == ui_btn_layout_center || image_layout == ui_btn_layout_center_no_text) {
+		size = { skui_fontsize, skui_fontsize };
+	} else {
+		vec2  txt_size   = text_size_t(text, skui_font_stack.last());
+		float aspect     = sprite_get_aspect(image);
+		float image_size = skui_fontsize * aspect;
+		size = vec2{ txt_size.x + image_size + skui_settings.gutter, skui_fontsize };
+	}
+
+	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+}
+bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char,     text_size   >(text, image, image_layout); }
+bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char16_t, text_size_16>(text, image, image_layout); }
+
+///////////////////////////////////////////
+
+template<typename C>
+bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) {
+	vec3 final_pos;
+	vec2 final_size;
+
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+}
+bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char    >(text, image, image_layout, size); }
+bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size); }
 
 ///////////////////////////////////////////
 
@@ -1983,6 +2127,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	bool result = false;
 	float color = 1;
 
+	skui_last_element = id;
+
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
 	ui_push_surface(movement);
@@ -2024,7 +2170,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			vec3  from_pt             = finger_pos[i];
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
-			if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
+			if (ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
@@ -2208,15 +2354,15 @@ void ui_handle_end() {
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
-	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
+	int32_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;
 		ui_window_t new_window = {};
 		new_window.hash = id;
 		new_window.size = window_size;
-		skui_sl_windows.insert((size_t)index, new_window);
+		skui_sl_windows.insert(index, new_window);
 	}
-	ui_window_t &window = skui_sl_windows[(size_t)index];
+	ui_window_t &window = skui_sl_windows[index];
 	window.type = window_type;
 	
 	// figure out the size of it, based on its window type

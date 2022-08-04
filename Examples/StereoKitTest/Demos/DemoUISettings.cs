@@ -50,9 +50,13 @@ class DemoUISettings : ITest
 
 		UI.WindowBegin("Color", ref colorPose, new Vec2(20, 0) * U.cm);
 
-		UI.HSlider("x", ref colorScheme.v.X, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("y", ref colorScheme.v.Y, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("z", ref colorScheme.v.Z, 0, 1, 0, 18 * U.cm);
+		float h = colorScheme.x;
+		float s = colorScheme.y;
+		float v = colorScheme.z;
+		UI.HSlider("x", ref h, 0, 1, 0, 18 * U.cm);
+		UI.HSlider("y", ref s, 0, 1, 0, 18 * U.cm);
+		UI.HSlider("z", ref v, 0, 1, 0, 18 * U.cm);
+		colorScheme = new Vec3(h, s, v);
 		Color color = Color.HSV(colorScheme.x, colorScheme.y, colorScheme.z);
 		Lines.Add(new Vec3(9, -16, 0) * U.cm, new Vec3(-9, -16, 0) * U.cm, color.ToLinear(), .01f);
 		UI.ColorScheme = color;

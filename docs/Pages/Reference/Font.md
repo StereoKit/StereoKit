@@ -11,8 +11,11 @@ data about where, and how large those characters are on the texture.
 
 This asset is used anywhere that text shows up, like in the UI or Text classes!
 
+## Instance Fields and Properties
 
-
+|  |  |
+|--|--|
+|string [Id]({{site.url}}/Pages/Reference/Font/Id.html)|Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!|
 
 ## Static Fields and Properties
 
@@ -20,11 +23,9 @@ This asset is used anywhere that text shows up, like in the UI or Text classes!
 |--|--|
 |[Font]({{site.url}}/Pages/Reference/Font.html) [Default]({{site.url}}/Pages/Reference/Font/Default.html)|The default font used by StereoKit's text. This varies from platform to platform, but is typically a sans-serif general purpose font, such as Segoe UI.|
 
-
 ## Static Methods
 
 |  |  |
 |--|--|
 |[Find]({{site.url}}/Pages/Reference/Font/Find.html)|Searches the asset list for a font with the given Id, returning null if none is found.|
 |[FromFile]({{site.url}}/Pages/Reference/Font/FromFile.html)|Loads a font and creates a font asset from it.|
-

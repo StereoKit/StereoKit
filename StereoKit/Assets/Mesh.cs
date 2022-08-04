@@ -18,9 +18,18 @@ namespace StereoKit
 	/// Mesh indices are stored as unsigned ints, so you can have a mesh with
 	/// a fudgeton of verts! 4 billion or so :)
 	/// </summary>
-	public class Mesh
+	public class Mesh : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.mesh_get_id(_inst));
+			set => NativeAPI.mesh_set_id(_inst, value);
+		}
 
 		/// <summary>This is a bounding box that encapsulates the Mesh! It's
 		/// used for collision, visibility testing, UI layout, and probably 
@@ -89,9 +98,20 @@ namespace StereoKit
 		public void SetVerts(Vertex[] verts)
 			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
 
+		/// <summary>This marshalls the Mesh's vertex data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
+		/// and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of vertices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public Vertex[] GetVerts()
 		{
 			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(Vertex));
 			Vertex[] result = new Vertex[size];
 			// AHHHHHH
@@ -113,9 +133,20 @@ namespace StereoKit
 		public void SetInds (uint[] inds)
 			=>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
 
+		/// <summary>This marshalls the Mesh's index data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing indices on the
+		/// CPU, and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of indices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public uint[] GetInds()
 		{
 			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(uint));
 			uint[] result = new uint[size];
 			// AHHHHHH
@@ -167,6 +198,15 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
 
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+		{
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
+			modelSpaceAt = intersection.position;
+			return result;
+		}
+		
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should
@@ -177,15 +217,6 @@ namespace StereoKit
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
 			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
-
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
-		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
-		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
-			modelSpaceAt = intersection.position;
-			return result;
-		}
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value

@@ -15,7 +15,7 @@ Loads a font and creates a font asset from it.
 |  |  |
 |--|--|
 |String[] fontFiles|A list of file addresses for the font! For             example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,             StereoKit will look in the next font file in the list.|
-|RETURNS: [Font]({{site.url}}/Pages/Reference/Font.html)|A font from the given files, or null if all of the files failed to load properly! If any of the given files sucessfully loads, then this font will be a valid asset.|
+|RETURNS: [Font]({{site.url}}/Pages/Reference/Font.html)|A font from the given files, or null if all of the files failed to load properly! If any of the given files successfully loads, then this font will be a valid asset.|
 
 
 

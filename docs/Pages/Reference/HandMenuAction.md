@@ -9,9 +9,6 @@ This enum specifies how HandMenuItems should behave
 when selected! This is in addition to the HandMenuItem's
 callback function.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -19,5 +16,3 @@ callback function.
 |Back|Go back to the previous layer.|
 |Close|Close the hand menu entirely! We're finished here.|
 |Layer|Move to another menu layer.|
-
-

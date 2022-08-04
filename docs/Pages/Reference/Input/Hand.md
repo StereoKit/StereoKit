@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Input.Hand
-description: Retreives all the information about the user's hand! StereoKit will always provide hand information, however sometimes that information is simulated, like in the case of a mouse, or controllers.  Note that this is a copy of the hand information, and it's a good chunk of data, so it's a good idea to grab it once and keep it around for the frame, or at least function, rather than asking for it again and again each time you want to touch something.
+description: Retrieves all the information about the user's hand! StereoKit will always provide hand information, however sometimes that information is simulated, like in the case of a mouse, or controllers.  Note that this is a copy of the hand information, and it's a good chunk of data, so it's a good idea to grab it once and keep it around for the frame, or at least function, rather than asking for it again and again each time you want to touch something.
 ---
 # [Input]({{site.url}}/Pages/Reference/Input.html).Hand
 
@@ -9,7 +9,7 @@ description: Retreives all the information about the user's hand! StereoKit will
 ```csharp
 static Hand Hand(Handed handed)
 ```
-Retreives all the information about the user's hand!
+Retrieves all the information about the user's hand!
 StereoKit will always provide hand information, however sometimes
 that information is simulated, like in the case of a mouse, or
 controllers.
@@ -43,6 +43,9 @@ for (int h = 0; h < (int)Handed.Max; h++)
 	// Get the pose for the index fingertip
 	Hand hand      = Input.Hand((Handed)h);
 	Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
+
+	// Skip this hand if it's not tracked
+	if (!hand.IsTracked) continue;
 
 	// Draw the fingertip pose axis if it's inside the volume
 	if (testArea.Contains(fingertip.position))

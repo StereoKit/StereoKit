@@ -17,8 +17,8 @@ way, such as when blitting or rendering to it.
 
 |  |  |
 |--|--|
-|int width|Width in pixels of the texture. Powers of two              are generally best!|
-|int height|Height in pixels of the texture. Powers of              two are generally best!|
+|int width|Width in pixels of the texture. Powers of two             are generally best!|
+|int height|Height in pixels of the texture. Powers of             two are generally best!|
 
 
 

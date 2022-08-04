@@ -1,5 +1,6 @@
 #include "stereokit.h"
 #include "sk_math.h"
+#include "sk_math_dx.h"
 
 #include "systems/render.h"
 
@@ -316,6 +317,16 @@ pose_t matrix_transform_pose(matrix transform, pose_t pose) {
 	return pose_t{
 		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
 		math_fast_to_quat(XMQuaternionMultiply(orient, rot)) };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_transpose(matrix transform) {
+	return matrix{
+		vec4{transform.row[0].x, transform.row[1].x, transform.row[2].x, transform.row[3].x},
+		vec4{transform.row[0].y, transform.row[1].y, transform.row[2].y, transform.row[3].y},
+		vec4{transform.row[0].z, transform.row[1].z, transform.row[2].z, transform.row[3].z},
+		vec4{transform.row[0].w, transform.row[1].w, transform.row[2].w, transform.row[3].w} };
 }
 
 ///////////////////////////////////////////

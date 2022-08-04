@@ -1,15 +1,16 @@
 ---
 layout: default
 title: Tex.Id
-description: Allows you to set the Id of the texture to a specific Id.
+description: Gets or sets the unique identifier of this asset resource! This can be helpful for debugging, managine your assets, or finding them later on!
 ---
 # [Tex]({{site.url}}/Pages/Reference/Tex.html).Id
 
 <div class='signature' markdown='1'>
-string Id{ set }
+string Id{ get set }
 </div>
 
 ## Description
-Allows you to set the Id of the texture to a specific
-Id.
+Gets or sets the unique identifier of this asset resource!
+This can be helpful for debugging, managine your assets, or finding
+them later on!
 

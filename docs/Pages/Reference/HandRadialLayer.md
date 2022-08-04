@@ -8,7 +8,6 @@ description: This class represents a single layer in the HandRadialMenu. Each it
 This class represents a single layer in the HandRadialMenu.
 Each item in the layer is displayed around the radial menu's circle.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -18,15 +17,17 @@ Each item in the layer is displayed around the radial menu's circle.
 |string [layerName]({{site.url}}/Pages/Reference/HandRadialLayer/layerName.html)|Name of the layer, this is used for layer traversal, so make sure you get the spelling right! Perhaps use const strings for these.|
 |float [startAngle]({{site.url}}/Pages/Reference/HandRadialLayer/startAngle.html)|An angle offset for the layer, if you want a specific orientation for the menu's contents. Note this may not behave as expected if you're setting this manually and using the backAngle as well.|
 
-
 ## Instance Methods
 
 |  |  |
 |--|--|
 |[HandRadialLayer]({{site.url}}/Pages/Reference/HandRadialLayer/HandRadialLayer.html)|Creates a menu layer, this overload will calculate a backAngle if there are any back actions present in the item list.|
-
-
-
+|[AddChild]({{site.url}}/Pages/Reference/HandRadialLayer/AddChild.html)|This adds a menu layer as a child item of this layer.|
+|[AddItem]({{site.url}}/Pages/Reference/HandRadialLayer/AddItem.html)|This appends a new menu item to the end of the menu's list.|
+|[FindChild]({{site.url}}/Pages/Reference/HandRadialLayer/FindChild.html)|Find a child menu layer by name.|
+|[FindItem]({{site.url}}/Pages/Reference/HandRadialLayer/FindItem.html)|Find a menu item by name.|
+|[RemoveChild]({{site.url}}/Pages/Reference/HandRadialLayer/RemoveChild.html)|Finds the layer in the list of child layers, and removes it, if it exists.|
+|[RemoveItem]({{site.url}}/Pages/Reference/HandRadialLayer/RemoveItem.html)|Finds the item in the list, and removes it, if it exists.|
 
 ## Examples
 
@@ -45,8 +46,8 @@ that!
 handMenu = SK.AddStepper(new HandMenuRadial(
 	new HandRadialLayer("Root",
 		new HandMenuItem("File",   null, null, "File"),
-		new HandMenuItem("Edit",   null, null, "Edit"),
-		new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
+		new HandMenuItem("Search", null, null, "Edit"),
+		new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 		new HandMenuItem("Cancel", null, null)),
 	new HandRadialLayer("File", 
 		new HandMenuItem("New",   null, () => Log.Info("New")),

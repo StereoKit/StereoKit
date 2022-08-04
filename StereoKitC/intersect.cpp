@@ -125,6 +125,49 @@ bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radi
 
 ///////////////////////////////////////////
 
+bounds_t bounds_grow_to_fit_pt(bounds_t bounds, vec3 pt) {
+	vec3 half = bounds.dimensions / 2;
+	vec3 min  = bounds.center     - half;
+	vec3 max  = bounds.center     + half;
+	if      (pt.x > max.x) max.x = pt.x;
+	else if (pt.x < min.x) min.x = pt.x;
+	if      (pt.y > max.y) max.y = pt.y;
+	else if (pt.y < min.y) min.y = pt.y;
+	if      (pt.z > max.z) max.z = pt.z;
+	else if (pt.z < min.z) min.z = pt.z;
+	
+	bounds_t result;
+	result.center     = vec3_lerp(min, max, 0.5f);
+	result.dimensions = max - min;
+	return result;
+}
+
+///////////////////////////////////////////
+
+bounds_t bounds_grow_to_fit_box(bounds_t bounds, bounds_t box, const matrix* opt_transform) {
+	vec3 half = bounds.dimensions / 2;
+	vec3 min  = bounds.center - half;
+	vec3 max  = bounds.center + half;
+	
+	for (int32_t i = 0; i < 8; i++) {
+		vec3 pt = bounds_corner(box, i);
+		if (opt_transform) pt = matrix_transform_pt(*opt_transform, pt);
+		if      (pt.x > max.x) max.x = pt.x;
+		else if (pt.x < min.x) min.x = pt.x;
+		if      (pt.y > max.y) max.y = pt.y;
+		else if (pt.y < min.y) min.y = pt.y;
+		if      (pt.z > max.z) max.z = pt.z;
+		else if (pt.z < min.z) min.z = pt.z;
+	}
+
+	bounds_t result;
+	result.center     = vec3_lerp(min, max, 0.5f);
+	result.dimensions = max - min;
+	return result;
+}
+
+///////////////////////////////////////////
+
 vec3 ray_point_closest(ray_t ray, vec3 pt) {
 	float t = vec3_dot(pt - ray.pos, ray.dir);
 	return ray.pos + ray.dir * t;

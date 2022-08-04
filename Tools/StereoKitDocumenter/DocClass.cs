@@ -7,6 +7,7 @@ namespace StereoKitDocumenter
 {
 	class DocClass : IDocItem
 	{
+		public string nameSpace;
 		public string name;
 		public string summary;
 		public List<DocMethod>  methods  = new List<DocMethod>();
@@ -20,7 +21,7 @@ namespace StereoKitDocumenter
 					: name; } }
 		public string FileName  => Path.Combine(Program.options.PagesOut+"Reference/", Name+".md");
 		public string UrlName   => $"{{{{site.url}}}}/Pages/Reference/{Name}.html";
-		public Type   ClassType => Type.GetType("StereoKit." + name + ", StereoKit") ?? Type.GetType("StereoKit.Framework." + name + ", StereoKit") ?? Type.GetType("StereoKit.Backend+" + name + ", StereoKit");
+		public Type   ClassType => Type.GetType($"{nameSpace}.{name.Replace('.', '+')}, StereoKit");
 		public bool   IsEnum    => ClassType.IsEnum;
 
 		public void AddExample(DocExample aExample) => examples.Add(aExample);

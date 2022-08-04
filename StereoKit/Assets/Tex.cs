@@ -9,16 +9,21 @@ namespace StereoKit
 	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
 	/// plus more later on, and you can also create textures procedurally.
 	/// </summary>
-	public class Tex
+	public class Tex : IAsset
 	{
 		#region Fields and Properties
 
 		internal IntPtr                    _inst;
 		private  List<Assets.CallbackData> _callbacks;
 
-		/// <summary>Allows you to set the Id of the texture to a specific
-		/// Id.</summary>
-		public string Id { set => NativeAPI.tex_set_id(_inst, value); }
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.tex_get_id(_inst));
+			set => NativeAPI.tex_set_id(_inst, value);
+		}
 
 		/// <summary> The width of the texture, in pixels. This will be a
 		/// blocking call if AssetState is less than LoadedMeta. </summary>

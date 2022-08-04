@@ -44,6 +44,45 @@ frame you want this text to be visible.
 
 <div class='signature' markdown='1'>
 ```csharp
+static void Add(string text, Matrix transform, TextStyle style, Color vertexTintLinear, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every
+frame you want this text to be visible.
+</div>
+
+|  |  |
+|--|--|
+|string text|What text should be drawn?|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform|A Matrix representing the transform of the             text mesh! Try Matrix.TRS.|
+|[TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) style|Style information for rendering, see             Text.MakeStyle or the TextStyle object.|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position|How should the text's bounding rectangle be             positioned relative to the transform?|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align|How should the text be aligned within the             text's bounding rectangle?|
+|float offX|An additional offset on the X axis.|
+|float offY|An additional offset on the Y axis.|
+|float offZ|An additional offset on the Z axis.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) vertexTintLinear|The vertex color of the text gets             multiplied by this color. This is a linear color value, not a gamma             corrected color value.|
+
+<div class='signature' markdown='1'>
+```csharp
+static void Add(string text, Matrix transform, Color vertexTintLinear, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every
+frame you want this text to be visible.
+</div>
+
+|  |  |
+|--|--|
+|string text|What text should be drawn?|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform|A Matrix representing the transform of the             text mesh! Try Matrix.TRS.|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position|How should the text's bounding rectangle be             positioned relative to the transform?|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align|How should the text be aligned within the             text's bounding rectangle?|
+|float offX|An additional offset on the X axis.|
+|float offY|An additional offset on the Y axis.|
+|float offZ|An additional offset on the Z axis.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) vertexTintLinear|The vertex color of the text gets             multiplied by this color. This is a linear color value, not a gamma             corrected color value.|
+
+<div class='signature' markdown='1'>
+```csharp
 static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position, TextAlign align, float offX, float offY, float offZ)
 ```
 Renders text at the given location! Must be called every
@@ -83,6 +122,51 @@ frame you want this text to be visible.
 |float offX|An additional offset on the X axis.|
 |float offY|An additional offset on the Y axis.|
 |float offZ|An additional offset on the Z axis.|
+|RETURNS: float|Returns the vertical space used by this text.|
+
+<div class='signature' markdown='1'>
+```csharp
+static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Color vertexTintLinear, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every
+frame you want this text to be visible.
+</div>
+
+|  |  |
+|--|--|
+|string text|What text should be drawn?|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform|A Matrix representing the transform of the             text mesh! Try Matrix.TRS.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|This is the Hierarchy space rectangle that the             text should try to fit inside of. This allows for text wrapping or             scaling based on the value provided to the 'fit' parameter.|
+|[TextFit]({{site.url}}/Pages/Reference/TextFit.html) fit|Describe how the text should behave when one of             its size dimensions conflicts with the provided 'size' parameter.|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position|How should the text's bounding rectangle be             positioned relative to the transform?|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align|How should the text be aligned within the             text's bounding rectangle?|
+|float offX|An additional offset on the X axis.|
+|float offY|An additional offset on the Y axis.|
+|float offZ|An additional offset on the Z axis.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) vertexTintLinear|The vertex color of the text gets             multiplied by this color. This is a linear color value, not a gamma             corrected color value.|
+|RETURNS: float|Returns the vertical space used by this text.|
+
+<div class='signature' markdown='1'>
+```csharp
+static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Color vertexTintLinear, TextAlign position, TextAlign align, float offX, float offY, float offZ)
+```
+Renders text at the given location! Must be called every
+frame you want this text to be visible.
+</div>
+
+|  |  |
+|--|--|
+|string text|What text should be drawn?|
+|[Matrix]({{site.url}}/Pages/Reference/Matrix.html) transform|A Matrix representing the transform of the             text mesh! Try Matrix.TRS.|
+|[Vec2]({{site.url}}/Pages/Reference/Vec2.html) size|This is the Hierarchy space rectangle that the             text should try to fit inside of. This allows for text wrapping or             scaling based on the value provided to the 'fit' parameter.|
+|[TextFit]({{site.url}}/Pages/Reference/TextFit.html) fit|Describe how the text should behave when one of             its size dimensions conflicts with the provided 'size' parameter.|
+|[TextStyle]({{site.url}}/Pages/Reference/TextStyle.html) style|Style information for rendering, see             Text.MakeStyle or the TextStyle object.|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) position|How should the text's bounding rectangle be             positioned relative to the transform?|
+|[TextAlign]({{site.url}}/Pages/Reference/TextAlign.html) align|How should the text be aligned within the             text's bounding rectangle?|
+|float offX|An additional offset on the X axis.|
+|float offY|An additional offset on the Y axis.|
+|float offZ|An additional offset on the Z axis.|
+|[Color]({{site.url}}/Pages/Reference/Color.html) vertexTintLinear|The vertex color of the text gets             multiplied by this color. This is a linear color value, not a gamma             corrected color value.|
 |RETURNS: float|Returns the vertical space used by this text.|
 
 

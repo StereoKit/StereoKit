@@ -18,7 +18,7 @@ wish to pair it with a PushTint.
 
 |  |  |
 |--|--|
-|bool enabled|Should the following elements be enabled and             interactible?|
+|bool enabled|Should the following elements be enabled and             interactable?|
 
 
 

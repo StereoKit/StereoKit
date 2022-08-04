@@ -8,9 +8,6 @@ description: A bit-flag enum for describing alignment or positioning. Items can 
 A bit-flag enum for describing alignment or positioning.
 Items can be combined using the '|' operator, like so:
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -30,5 +27,3 @@ Items can be combined using the '|' operator, like so:
 |YBottom|On the y axis, this item should start on the bottom.|
 |YCenter|On the y axis, the item should be centered.|
 |YTop|On the y axis, this item should start at the top.|
-
-

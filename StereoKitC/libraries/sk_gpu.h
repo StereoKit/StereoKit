@@ -283,6 +283,7 @@ typedef struct skg_shader_meta_t {
 #if   defined(SKG_DIRECT3D11)
 
 
+#define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 #include <dxgi1_6.h>
 
@@ -650,9 +651,6 @@ SKG_API void                    skg_shader_meta_release        (skg_shader_meta_
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <math.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #include <stdio.h>
 
@@ -3060,7 +3058,7 @@ bool skg_capability(skg_cap_ capability) {
 		return false;
 #else
 #pragma clang diagnostic push
-// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
+		// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
 #pragma clang diagnostic ignored "-Wtautological-pointer-compare"
 		return glPolygonMode != nullptr;
 #pragma clang diagnostic pop

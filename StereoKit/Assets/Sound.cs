@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace StereoKit
@@ -16,11 +17,18 @@ namespace StereoKit
 	/// system tray, navigate to "Spatial sound", and choose "Windows Sonic
 	/// for Headphones." For more information, visit 
 	/// https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound </summary>
-	public class Sound
+	public class Sound : IAsset
 	{
 		internal IntPtr _inst;
 
-		public string Id { set { NativeAPI.sound_set_id(_inst, value); } }
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.sound_get_id(_inst));
+			set => NativeAPI.sound_set_id(_inst, value);
+		}
 
 		/// <summary>This will return the total length of the sound in
 		/// seconds.</summary>

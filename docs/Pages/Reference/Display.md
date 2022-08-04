@@ -9,9 +9,6 @@ TODO: remove this in v0.4
 This describes the type of display tech used on a Mixed
 Reality device. This will be replaced by `DisplayBlend` in v0.4.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -22,5 +19,3 @@ Reality device. This will be replaced by `DisplayBlend` in v0.4.
 |None|Default value, when using this as a search type, it will fall back to default behavior which defers to platform preference.|
 |Opaque|This display is opaque, with no view into the real world! This is equivalent to a VR headset, or a PC screen.|
 |Passthrough|Use Display.Blend instead, to be removed in v0.4|
-
-

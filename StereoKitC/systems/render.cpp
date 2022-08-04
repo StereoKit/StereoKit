@@ -1,10 +1,9 @@
 #include "render.h"
-#include "render_sort.h"
 #include "world.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
 #include "../stereokit.h"
@@ -16,8 +15,8 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../systems/platform/flatscreen_input.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/flatscreen_input.h"
+#include "../platforms/platform_utils.h"
 
 #pragma warning(push)
 #pragma warning(disable : 26451 26819 6386 6385 )
@@ -28,18 +27,28 @@
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
-// Matrix math functions and objects
-#if defined(SK_OS_LINUX)
-// Different include path on Linux to hint clangd where the file actually is
-#include "../lib/include_no_win/DirectXMath.h" 
-#else
-#include <DirectXMath.h>
-#endif
 using namespace DirectX;
 
 namespace sk {
 
 ///////////////////////////////////////////
+
+struct render_item_t {
+	XMMATRIX    transform;
+	color128    color;
+	uint64_t    sort_id;
+	mesh_t      mesh;
+	material_t  material;
+	int32_t     mesh_inds;
+	uint16_t    layer;
+};
+
+struct _render_list_t {
+	array_t<render_item_t> queue;
+	render_stats_t         stats;
+	render_list_state_     state;
+	bool                   prepped;
+};
 
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -146,6 +155,11 @@ void          render_check_screenshots();
 void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
+void          render_list_add         (const render_item_t *item);
+void          render_list_add_to      (render_list_t list, const render_item_t *item);
+
+void          radix_sort7             (render_item_t *a, size_t count);
+void          radix_sort_clean        ();
 
 ///////////////////////////////////////////
 
@@ -253,20 +267,20 @@ const char *render_fmt_name(tex_format_ format) {
 
 ///////////////////////////////////////////
 
-skg_tex_fmt_ render_preferred_depth_fmt() {
+tex_format_ render_preferred_depth_fmt() {
 	depth_mode_ mode = sk_get_settings().depth_mode;
 	switch (mode) {
 	case depth_mode_balanced:
 #if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_ANDROID)
-		return skg_tex_fmt_depth16;
+		return tex_format_depth16;
 #else
-		return skg_tex_fmt_depth32;
+		return tex_format_depth32;
 #endif
 		break;
-	case depth_mode_d16:     return skg_tex_fmt_depth16;
-	case depth_mode_d32:     return skg_tex_fmt_depth32;
-	case depth_mode_stencil: return skg_tex_fmt_depthstencil;
-	default: return skg_tex_fmt_depth16;
+	case depth_mode_d16:     return tex_format_depth16;
+	case depth_mode_d32:     return tex_format_depth32;
+	case depth_mode_stencil: return tex_format_depthstencil;
+	default: return tex_format_depth16;
 	}
 }
 
@@ -439,7 +453,7 @@ color128 render_get_clear_color_ln() {
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
 	render_item_t item;
-	item.mesh     = &mesh->gpu_mesh;
+	item.mesh     = mesh;
 	item.mesh_inds= mesh->ind_draw;
 	item.material = material;
 	item.color    = color;
@@ -464,12 +478,12 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 	}
 
 	anim_update_model(model);
-	for (size_t i = 0; i < model->visuals.count; i++) {
+	for (int32_t i = 0; i < model->visuals.count; i++) {
 		const model_visual_t *vis = &model->visuals[i];
 		if (vis->visible == false) continue;
 		
 		render_item_t item;
-		item.mesh     = &vis->mesh->gpu_mesh;
+		item.mesh     = vis->mesh;
 		item.mesh_inds= vis->mesh->ind_count;
 		item.material = vis->material;
 		item.color    = color;
@@ -512,10 +526,11 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
 	render_global_buffer.time       = time_getf();
 	render_global_buffer.view_count = view_count;
-	vec3 tip = input_hand(handed_right)->tracked_state & button_state_active ? input_hand(handed_right)->fingers[1][4].position : vec3{0,-1000,0};
-	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
-	tip = input_hand(handed_left)->tracked_state & button_state_active ? input_hand(handed_left)->fingers[1][4].position : vec3{0,-1000,0};
-	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
+	for (int32_t i = 0; i < handed_max; i++) {
+		const hand_t* hand = input_hand((handed_)i);
+		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		render_global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
+	}
 
 	// TODO: This is a little odd now that textures like this go through the
 	// render_global_textures system.
@@ -528,13 +543,13 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	material_buffer_set_data(render_shader_globals, &render_global_buffer);
 
 	// Activate any material buffers we have
-	for (size_t i = 0; i < _countof(material_buffers); i++) {
+	for (int32_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
 			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
 	}
 
 	// Activate any global textures we have
-	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+	for (int32_t i = 0; i < _countof(render_global_textures); i++) {
 		if (render_global_textures[i] != nullptr) {
 			skg_tex_t *tex = render_global_textures[i]->fallback == nullptr
 				? &render_global_textures[i]->tex
@@ -560,7 +575,7 @@ void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
 
 	skg_tex_t *old_target = skg_tex_target_get();
-	for (size_t i = 0; i < render_screenshot_list.count; i++) {
+	for (int32_t i = 0; i < render_screenshot_list.count; i++) {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
 
@@ -611,13 +626,13 @@ void render_check_screenshots() {
 			memcpy(top_line, bot_line, line_size);
 			memcpy(bot_line, tmp,      line_size);
 		}
-		free(tmp);
+		sk_free(tmp);
 #endif
 		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
-		free(buffer);
-		free(render_screenshot_list[i].filename);
+		sk_free(buffer);
+		sk_free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
 	skg_tex_target_bind(old_target);
@@ -629,7 +644,7 @@ void render_check_viewpoints() {
 	if (render_viewpoint_list.count == 0) return;
 
 	skg_tex_t *old_target = skg_tex_target_get();
-	for (size_t i = 0; i < render_viewpoint_list.count; i++) {
+	for (int32_t i = 0; i < render_viewpoint_list.count; i++) {
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_viewpoint_list[i].rendertarget->tex);
 
@@ -730,7 +745,7 @@ void render_update() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (size_t i = 0; i < render_lists.count; i++) {
+	for (int32_t i = 0; i < render_lists.count; i++) {
 		render_list_release(i);
 	}
 	render_lists          .free();
@@ -739,8 +754,9 @@ void render_shutdown() {
 	render_viewpoint_list .free();
 	render_instance_list  .free();
 
-	for (size_t i = 0; i < _countof(render_global_textures); i++) {
+	for (int32_t i = 0; i < _countof(render_global_textures); i++) {
 		tex_release(render_global_textures[i]);
+		render_global_textures[i] = nullptr;
 	}
 	material_release       (render_sky_mat);
 	mesh_release           (render_sky_mesh);
@@ -856,7 +872,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_lists[(size_t)render_list_active].stats.swaps_material++;
+	render_lists[render_list_active].stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -881,7 +897,7 @@ void render_set_material(material_t material) {
 
 skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
 	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = (int32_t)list.count - offset;
+	int32_t size  = list.count - offset;
 	int32_t start = offset;
 
 	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
@@ -940,7 +956,7 @@ void render_get_device(void **device, void **context) {
 ///////////////////////////////////////////
 
 render_list_t render_list_create() {
-	int64_t id = render_lists.index_where(&_render_list_t::state, render_list_state_destroyed);
+	int32_t id = render_lists.index_where(&_render_list_t::state, render_list_state_destroyed);
 	if (id == -1)
 		id = render_lists.add({});
 	return id;
@@ -949,16 +965,16 @@ render_list_t render_list_create() {
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	render_lists[(size_t)list].queue.free();
-	render_lists[(size_t)list] = {};
-	render_lists[(size_t)list].state = render_list_state_destroyed;
+	render_lists[list].queue.free();
+	render_lists[list] = {};
+	render_lists[list].state = render_list_state_destroyed;
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
 	render_list_active = render_list_stack.add(list);
-	render_lists[(size_t)list].state = render_list_state_used;
+	render_lists[list].state = render_list_state_used;
 }
 
 ///////////////////////////////////////////
@@ -971,13 +987,17 @@ void render_list_pop() {
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	render_lists[(size_t)render_list_active].queue.add(*item);
+	render_lists[render_list_active].queue.add(*item);
+	assets_addref(&item->material->header);
+	assets_addref(&item->mesh->header);
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	render_lists[(size_t)list].queue.add(*item);
+	render_lists[list].queue.add(*item);
+	assets_addref(&item->material->header);
+	assets_addref(&item->mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -1003,7 +1023,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 ///////////////////////////////////////////
 
 void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1013,7 +1033,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	render_list_prep(list_id);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
@@ -1026,7 +1046,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 		// If the material/mesh changed
 		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -1039,7 +1059,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, run_start->material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 		render_instance_list.clear();
 	}
 
@@ -1049,7 +1069,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 ///////////////////////////////////////////
 
 void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1062,7 +1082,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	material_check_dirty(override_material);
 
 	render_item_t *run_start = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
@@ -1075,7 +1095,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 		// If the mesh changed
 		else if (run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+			render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 			render_instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -1088,7 +1108,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (render_instance_list.count > 0) {
-		render_list_execute_run(list, override_material, run_start->mesh, run_start->mesh_inds, view_count);
+		render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
 		render_instance_list.clear();
 	}
 
@@ -1098,7 +1118,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 ///////////////////////////////////////////
 
 void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &render_lists[(size_t)list_id];
+	_render_list_t *list = &render_lists[list_id];
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1106,7 +1126,7 @@ void render_list_prep(render_list_t list_id) {
 
 	// Make sure the material buffers are all up-to-date
 	material_t curr = nullptr;
-	for (size_t i = 0; i < list->queue.count; i++) {
+	for (int32_t i = 0; i < list->queue.count; i++) {
 		if (curr == list->queue[i].material) continue;
 		curr = list->queue[i].material;
 		material_check_dirty(curr);
@@ -1118,10 +1138,131 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	render_lists[(size_t)list].queue.clear();
-	render_lists[(size_t)list].stats   = {};
-	render_lists[(size_t)list].prepped = false;
-	render_lists[(size_t)list].state   = render_list_state_empty;
+	for (int32_t i = 0; i < render_lists[list].queue.count; i++) {
+		assets_releaseref(&render_lists[list].queue[i].material->header);
+		assets_releaseref(&render_lists[list].queue[i].mesh->header);
+	}
+	render_lists[list].queue.clear();
+	render_lists[list].stats   = {};
+	render_lists[list].prepped = false;
+	render_lists[list].state   = render_list_state_empty;
+}
+
+///////////////////////////////////////////
+// Radix render sorting!                 //
+///////////////////////////////////////////
+
+// https://travisdowns.github.io/blog/2019/05/22/sorting.html
+
+#if _WIN32
+#include <intrin.h>
+#endif
+
+const size_t   RADIX_BITS   = 8;
+const size_t   RADIX_SIZE   = (size_t)1 << RADIX_BITS;
+const size_t   RADIX_LEVELS = (63 / RADIX_BITS) + 1;
+const uint64_t RADIX_MASK   = RADIX_SIZE - 1;
+
+using freq_array_type = size_t [RADIX_LEVELS][RADIX_SIZE];
+
+// Since this sort is specifically for the render queue, we'll reserve a
+// chunk of memory that sticks around, and resizes if it's too small.
+render_item_t *radix_queue_area = nullptr;
+size_t         radix_queue_size = 0;
+
+void radix_sort_clean() {
+	sk_free(radix_queue_area);
+	radix_queue_area = nullptr;
+	radix_queue_size = 0;
+}
+
+// never inline just to make it show up easily in profiles (inlining this lengthly function doesn't
+// really help anyways)
+static void count_frequency(render_item_t *a, size_t count, freq_array_type freqs) {
+	for (size_t i = 0; i < count; i++) {
+		uint64_t value = a[i].sort_id;
+		for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
+			freqs[pass][value & RADIX_MASK]++;
+			value >>= RADIX_BITS;
+		}
+	}
+}
+
+/**
+* Determine if the frequencies for a given level are "trivial".
+* 
+* Frequencies are trivial if only a single frequency has non-zero
+* occurrences. In that case, the radix step just acts as a copy so we can
+* skip it.
+*/
+static bool is_trivial(size_t freqs[RADIX_SIZE], size_t count) {
+	for (size_t i = 0; i < RADIX_SIZE; i++) {
+		size_t freq = freqs[i];
+		if (freq != 0) {
+			return freq == count;
+		}
+	}
+	assert(count == 0); // we only get here if count was zero
+	return true;
+}
+
+void radix_sort7(render_item_t *a, size_t count) {
+	// Resize up if needed
+	if (radix_queue_size < count) {
+		sk_free(radix_queue_area);
+		radix_queue_area = sk_malloc_t(render_item_t, count);
+		radix_queue_size = count;
+	}
+	freq_array_type freqs = {};
+	count_frequency(a, count, freqs);
+
+	render_item_t *from = a, *to = radix_queue_area;
+
+	for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
+
+		if (is_trivial(freqs[pass], count)) {
+			// this pass would do nothing, just skip it
+			continue;
+		}
+
+		uint64_t shift = pass * RADIX_BITS;
+
+		// array of pointers to the current position in each queue, which we set up based on the
+		// known final sizes of each queue (i.e., "tighly packed")
+		render_item_t *queue_ptrs[RADIX_SIZE], *next = to;
+		for (size_t i = 0; i < RADIX_SIZE; i++) {
+			queue_ptrs[i] = next;
+			next += freqs[pass][i];
+		}
+
+		// copy each element into the appropriate queue based on the current RADIX_BITS sized
+		// "digit" within it
+		for (size_t i = 0; i < count; i++) {
+			render_item_t value = from[i];
+			size_t        index = (value.sort_id >> shift) & RADIX_MASK;
+			*queue_ptrs[index]++ = value;
+#ifdef _MSC_VER
+	#if defined(_M_ARM) || defined(_M_ARM64)
+			__prefetch (queue_ptrs[index] + 1);
+	#else
+			_m_prefetch(queue_ptrs[index] + 1);
+	#endif
+#else
+			__builtin_prefetch(queue_ptrs[index] + 1);
+#endif
+		}
+
+		// swap from and to areas
+		render_item_t *tmp = to;
+		to   = from;
+		from = tmp;
+	}
+
+	// because of the last swap, the "from" area has the sorted payload: if it's
+	// not the original array "a", do a final copy
+	if (from != a) {
+		memcpy(a, from, count*sizeof(render_item_t));
+	}
 }
 
 } // namespace sk

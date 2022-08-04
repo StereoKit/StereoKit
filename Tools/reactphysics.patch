@@ -1,0 +1,551 @@
+From 0f5bb4c134b3eef8db60fd329d4c9a2247b9cd0d Mon Sep 17 00:00:00 2001
+From: Nick Klingensmith <programmerpichu@gmail.com>
+Date: Mon, 13 Jun 2022 20:49:23 -0700
+Subject: [PATCH] Remove warnings and errors
+
+---
+ include/reactphysics3d/containers/Deque.h     |   1 +
+ include/reactphysics3d/engine/Material.h      |   7 +-
+ include/reactphysics3d/engine/PhysicsCommon.h |   2 +-
+ include/reactphysics3d/engine/PhysicsWorld.h  |  19 +-
+ include/reactphysics3d/utils/DefaultLogger.h  | 200 +-----------------
+ src/collision/shapes/ConcaveMeshShape.cpp     |  62 +-----
+ src/collision/shapes/ConvexMeshShape.cpp      |  41 +---
+ src/collision/shapes/HeightFieldShape.cpp     |  17 +-
+ src/engine/PhysicsWorld.cpp                   |  10 +-
+ src/systems/CollisionDetectionSystem.cpp      |   4 +-
+ 10 files changed, 18 insertions(+), 345 deletions(-)
+
+diff --git a/include/reactphysics3d/containers/Deque.h b/include/reactphysics3d/containers/Deque.h
+index 8c4f55e2..d981d060 100644
+--- a/include/reactphysics3d/containers/Deque.h
++++ b/include/reactphysics3d/containers/Deque.h
+@@ -114,6 +114,7 @@ class Deque {
+             }
+             else {
+                 assert(false);
++                return mChunks[0][0];
+             }
+         }
+ 
+diff --git a/include/reactphysics3d/engine/Material.h b/include/reactphysics3d/engine/Material.h
+index 5a2a998f..b1120be1 100644
+--- a/include/reactphysics3d/engine/Material.h
++++ b/include/reactphysics3d/engine/Material.h
+@@ -153,12 +153,7 @@ RP3D_FORCE_INLINE void Material::setMassDensity(decimal massDensity) {
+ // Return a string representation for the material
+ RP3D_FORCE_INLINE std::string Material::to_string() const {
+ 
+-    std::stringstream ss;
+-
+-    ss << "frictionCoefficient=" << (mFrictionCoefficientSqrt * mFrictionCoefficientSqrt) << std::endl;
+-    ss << "bounciness=" << mBounciness << std::endl;
+-
+-    return ss.str();
++    return "";
+ }
+ 
+ }
+diff --git a/include/reactphysics3d/engine/PhysicsCommon.h b/include/reactphysics3d/engine/PhysicsCommon.h
+index 2505fb7d..0a682118 100644
+--- a/include/reactphysics3d/engine/PhysicsCommon.h
++++ b/include/reactphysics3d/engine/PhysicsCommon.h
+@@ -260,7 +260,7 @@ RP3D_FORCE_INLINE void PhysicsCommon::setLogger(Logger* logger) {
+ }
+ 
+ // Use this macro to log something
+-#define RP3D_LOG(physicsWorldName, level, category, message, filename, lineNumber) if (reactphysics3d::PhysicsCommon::getLogger() != nullptr) PhysicsCommon::getLogger()->log(level, physicsWorldName, category, message, filename, lineNumber)
++#define RP3D_LOG(physicsWorldName, level, category, message, filename, lineNumber)
+ 
+ }
+ 
+diff --git a/include/reactphysics3d/engine/PhysicsWorld.h b/include/reactphysics3d/engine/PhysicsWorld.h
+index 3462506d..d4780ab6 100644
+--- a/include/reactphysics3d/engine/PhysicsWorld.h
++++ b/include/reactphysics3d/engine/PhysicsWorld.h
+@@ -140,24 +140,7 @@ class PhysicsWorld {
+ 
+             /// Return a string with the world settings
+             std::string to_string() const {
+-
+-                std::stringstream ss;
+-
+-                ss << "worldName=" << worldName << std::endl;
+-                ss << "gravity=" << gravity.to_string() << std::endl;
+-                ss << "persistentContactDistanceThreshold=" << persistentContactDistanceThreshold << std::endl;
+-                ss << "defaultFrictionCoefficient=" << defaultFrictionCoefficient << std::endl;
+-                ss << "defaultBounciness=" << defaultBounciness << std::endl;
+-                ss << "restitutionVelocityThreshold=" << restitutionVelocityThreshold << std::endl;
+-                ss << "isSleepingEnabled=" << isSleepingEnabled << std::endl;
+-                ss << "defaultVelocitySolverNbIterations=" << defaultVelocitySolverNbIterations << std::endl;
+-                ss << "defaultPositionSolverNbIterations=" << defaultPositionSolverNbIterations << std::endl;
+-                ss << "defaultTimeBeforeSleep=" << defaultTimeBeforeSleep << std::endl;
+-                ss << "defaultSleepLinearVelocity=" << defaultSleepLinearVelocity << std::endl;
+-                ss << "defaultSleepAngularVelocity=" << defaultSleepAngularVelocity << std::endl;
+-                ss << "cosAngleSimilarContactManifold=" << cosAngleSimilarContactManifold << std::endl;
+-
+-                return ss.str();
++                return "";
+             }
+         };
+ 
+diff --git a/include/reactphysics3d/utils/DefaultLogger.h b/include/reactphysics3d/utils/DefaultLogger.h
+index f4d2e927..b72b82a6 100644
+--- a/include/reactphysics3d/utils/DefaultLogger.h
++++ b/include/reactphysics3d/utils/DefaultLogger.h
+@@ -98,47 +98,13 @@ class DefaultLogger : public Logger {
+ 
+                 /// Return the header to write at the beginning of the stream
+                 virtual std::string getHeader() const override {
+-
+-                    // Get current date
+-                    auto now = std::chrono::system_clock::now();
+-                    auto time = std::chrono::system_clock::to_time_t(now);
+-
+-                    std::stringstream ss;
+-                    ss << "ReactPhysics3D Logs" << std::endl;
+-                    ss << "ReactPhysics3D Version: " << RP3D_VERSION << std::endl;
+-                    ss << "Date: " << std::put_time(std::localtime(&time), "%Y-%m-%d") << std::endl;
+-                    ss << "---------------------------------------------------------" << std::endl;
+-
+-                    return ss.str();
++                    return "";
+                 }
+ 
+                 /// Format a log message
+                 virtual std::string format(const time_t& time, const std::string& physicsWorldName, const std::string& message,
+                                            Level level, Category category, const char* filename, int lineNumber) override {
+-                    std::stringstream ss;
+-
+-                    // Time
+-                    ss << std::put_time(std::localtime(&time), "%X") << " ";
+-
+-                    // World
+-                    ss << "World:" << physicsWorldName << std::endl;
+-
+-                    // Level
+-                    ss << getLevelName(level) << " ";
+-
+-                    // Category
+-                    ss << getCategoryName(category) << " ";
+-
+-                    // Message
+-                    ss << message << std::endl;
+-
+-                    // Filename
+-                    ss << " (in file " << std::string(filename);
+-
+-                    // Line number
+-                    ss << " at line " << std::to_string(lineNumber) << ")";
+-
+-                    return ss.str();
++                    return "";
+                 }
+         };
+ 
+@@ -148,106 +114,16 @@ class DefaultLogger : public Logger {
+ 
+                 /// Return the header to write at the beginning of the stream
+                 virtual std::string getHeader() const override {
+-
+-                    // Get current date
+-                    auto now = std::chrono::system_clock::now();
+-                    auto time = std::chrono::system_clock::to_time_t(now);
+-
+-                    std::stringstream ss;
+-                    ss << "<!DOCTYPE HTML>" << std::endl;
+-                    ss << "<html>" << std::endl;
+-                    ss << "<head>" << std::endl;
+-                    ss << "<title>ReactPhysics3D Logs</title>" << std::endl;
+-                    ss << "<style>" << generateCSS() << "</style>" << std::endl;
+-                    ss << "</head>" << std::endl;
+-                    ss << "<body>" << std::endl;
+-                    ss << "<h1>ReactPhysics3D Logs</h1>" << std::endl;
+-                    ss << "<div class='general_info'>" << std::endl;
+-                    ss << "<p>ReactPhysics3D version: " << RP3D_VERSION << "</p>" << std::endl;
+-                    ss << "<p>Date: " << std::put_time(std::localtime(&time), "%Y-%m-%d") << "</p>" << std::endl;
+-                    ss << "</div>" << std::endl;
+-                    ss << "<hr>";
+-
+-                    return ss.str();
++                    return "";
+                 }
+ 
+                 /// Return the tail to write at the end of the stream
+                 virtual std::string getTail() const override {
+-
+-                    std::stringstream ss;
+-
+-                    ss << "</body>" << std::endl;
+-                    ss << "</html>" << std::endl;
+-
+-                    return ss.str();
++                    return "";
+                 }
+ 
+             std::string generateCSS() const {
+-                return "body {"
+-                       "  background-color: #e6e6e6;"
+-                       "  font-family: SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace; "
+-                       "} "
+-                      "body > div { clear:both; } "
+-                      "body > div > div { float: left; } "
+-                      "h1 {"
+-                      "  margin: 5px 5px 5px 5px;"
+-                      "} "
+-                      ".general_info > p {"
+-                        "margin: 5px;"
+-                        "font-weight: bold;"
+-                      "} "
+-                      ".line { "
+-                        "font-size: 13px; "
+-                        "color: #212529; "
+-                        "margin: 5px 5px 5px 5px; "
+-                        "padding: 5px 0px 5px 0px; "
+-                      "} "
+-                      ".time { "
+-                         "margin-right: 20px; "
+-                         "width: 5%; "
+-                      "} "
+-                      ".world-name { "
+-                         "margin-right: 20px; "
+-                         "width: 5%; "
+-                      "}"
+-                      ".level { "
+-                         "margin-right: 20px; "
+-                         "width: 10%; "
+-                      "}"
+-                      ".category { "
+-                         "margin-right: 20px; "
+-                         "width: 10%; "
+-                         "font-weight: bold; "
+-                      "}"
+-                      ".message { "
+-                         "margin-right: 20px; "
+-                        "color: #2e2e2e; "
+-                        "word-wrap: break-word; "
+-                        "width: 40%; "
+-                      "} "
+-                      ".file { "
+-                         "margin-right: 20px; "
+-                         "word-wrap: break-word; "
+-                         "width: 20%; "
+-                      "}"
+-                      ".body > .category, .body > .message { "
+-                        "color: #00994d;"
+-                      "} "
+-                      ".world > .category, .world > .message { "
+-                        "color: #3477DB; "
+-                      "} "
+-                      ".joint .category, .joint > .message { "
+-                        "color: #bf8040; "
+-                      "} "
+-                      ".collider .category, .collider > .message { "
+-                        "color: #9933ff; "
+-                      "} "
+-                      ".warning { "
+-                        "color: #ff9900 !important; "
+-                      "} "
+-                      ".error { "
+-                        "color: red !important; "
+-                      "} ";
++                return "";
+             }
+ 
+             /// Convert a string to lower case
+@@ -273,44 +149,7 @@ class DefaultLogger : public Logger {
+                 virtual std::string format(const time_t& time, const std::string& physicsWorldName, const std::string& message, Level level,
+                                            Category category, const char* filename, int lineNumber) override {
+ 
+-                    std::stringstream ss;
+-
+-                    ss << "<div class='line " + toLowerCase(getCategoryName(category)) + " " + toLowerCase(getLevelName(level)) + "'>";
+-
+-                    // Time
+-                    ss << "<div class='time'>";
+-                    ss << std::put_time(std::localtime(&time), "%X");
+-                    ss << "</div>";
+-
+-                    // Message
+-                    ss << "<div class='world-name'>";
+-                    ss << physicsWorldName;
+-                    ss << "</div>";
+-
+-                    // Level
+-                    ss << "<div class='level'>";
+-                    ss << getLevelName(level);
+-                    ss << "</div>";
+-
+-                    // Category
+-                    ss << "<div class='category'>";
+-                    ss << getCategoryName(category);
+-                    ss << "</div>";
+-
+-                    // Message
+-                    ss << "<div class='message " << toLowerCase(getCategoryName(category)) <<
+-                          " " + toLowerCase(getLevelName(level)) << "'>" << std::endl;
+-                    ss << message;
+-                    ss << "</div>";
+-
+-                    // Filename + line number
+-                    ss << "<div class='file'> (in file " << std::string(filename) <<
+-                          " at line " << std::to_string(lineNumber) << ")" << std::endl;
+-                    ss << "</div>";
+-
+-                    ss << "</div>";
+-
+-                    return ss.str();
++                    return "";
+                 }
+         };
+ 
+@@ -359,35 +198,16 @@ class DefaultLogger : public Logger {
+                 FileDestination(const std::string& filePath, uint maxLevelFlag, Formatter* formatter)
+                    :Destination(maxLevelFlag, formatter), mFilePath(filePath),
+                     mFileStream(filePath, std::ios::binary) {
+-
+-                    if(!mFileStream.is_open()) {
+-                        throw(std::runtime_error("ReactPhysics3D Logger: Unable to open an output stream to file " + mFilePath));
+-                    }
+-
+-                    // Write the header
+-                    mFileStream << formatter->getHeader() << std::endl;
+                 }
+ 
+                 /// Destructor
+                 virtual ~FileDestination() override {
+-
+-                    // Write the tail
+-                    mFileStream << formatter->getTail() << std::endl;
+-
+-                    if (mFileStream.is_open()) {
+-
+-                        // Close the stream
+-                        mFileStream.close();
+-                    }
+                 }
+ 
+                 /// Write a message into the output stream
+                 virtual void write(const time_t& time, const std::string& physicsWorldName, const std::string& message, Level level, Category category,
+                                    const char* filename, int lineNumber) override {
+ 
+-                    if (static_cast<int>(level) <= static_cast<int>(maxLevelFlag)) {
+-                        mFileStream << formatter->format(time, physicsWorldName, message, level, category, filename, lineNumber) << std::endl;
+-                    }
+                 }
+ 
+                 /// Return the size in bytes of the type
+@@ -410,24 +230,16 @@ class DefaultLogger : public Logger {
+                 StreamDestination(std::ostream& outputStream, uint maxlevelFlag, Formatter* formatter)
+                    :Destination(maxlevelFlag, formatter), mOutputStream(outputStream) {
+ 
+-                    // Writer the head
+-                    mOutputStream << formatter->getHeader() << std::endl;
+                 }
+ 
+                 /// Destructor
+                 virtual ~StreamDestination() override {
+-
+-                    // Writer the tail
+-                    mOutputStream << formatter->getTail() << std::endl;
+                 }
+ 
+                 /// Write a message into the output stream
+                 virtual void write(const time_t& time, const std::string& physicsWorldName, const std::string& message, Level level, Category category,
+                                    const char* filename, int lineNumber) override {
+ 
+-                    if (static_cast<int>(level) <= static_cast<int>(maxLevelFlag)) {
+-                        mOutputStream << formatter->format(time, physicsWorldName, message, level, category, filename, lineNumber) << std::endl << std::flush;
+-                    }
+                 }
+ 
+                 /// Return the size in bytes of the type
+diff --git a/src/collision/shapes/ConcaveMeshShape.cpp b/src/collision/shapes/ConcaveMeshShape.cpp
+index 3c4294c3..e80f3f5e 100644
+--- a/src/collision/shapes/ConcaveMeshShape.cpp
++++ b/src/collision/shapes/ConcaveMeshShape.cpp
+@@ -283,65 +283,5 @@ void ConcaveMeshRaycastCallback::raycastTriangles() {
+ 
+ // Return the string representation of the shape
+ std::string ConcaveMeshShape::to_string() const {
+-
+-    std::stringstream ss;
+-
+-    ss << "ConcaveMeshShape{" << std::endl;
+-    ss << "nbSubparts=" << mTriangleMesh->getNbSubparts() << std::endl;
+-
+-    // Vertices array
+-    for (uint32 subPart=0; subPart<mTriangleMesh->getNbSubparts(); subPart++) {
+-
+-        // Get the triangle vertex array of the current sub-part
+-        TriangleVertexArray* triangleVertexArray = mTriangleMesh->getSubpart(subPart);
+-
+-        ss << "subpart" << subPart << "={" << std::endl;
+-        ss << "nbVertices=" << triangleVertexArray->getNbVertices() << std::endl;
+-        ss << "nbTriangles=" << triangleVertexArray->getNbTriangles() << std::endl;
+-
+-        ss << "vertices=[";
+-
+-        // For each triangle of the concave mesh
+-        for (uint32 v=0; v<triangleVertexArray->getNbVertices(); v++) {
+-
+-            Vector3 vertex;
+-            triangleVertexArray->getVertex(v, &vertex);
+-
+-            ss << vertex.to_string() << ", ";
+-        }
+-
+-        ss << "], " << std::endl;
+-
+-        ss << "normals=[";
+-
+-        // For each triangle of the concave mesh
+-        for (uint32 v=0; v<triangleVertexArray->getNbVertices(); v++) {
+-
+-            Vector3 normal;
+-            triangleVertexArray->getNormal(v, &normal);
+-
+-            ss << normal.to_string() << ", ";
+-        }
+-
+-        ss << "], " << std::endl;
+-
+-        ss << "triangles=[";
+-
+-        // For each triangle of the concave mesh
+-        // For each triangle of the concave mesh
+-        for (uint32 triangleIndex=0; triangleIndex<triangleVertexArray->getNbTriangles(); triangleIndex++) {
+-
+-            uint32 indices[3];
+-
+-            triangleVertexArray->getTriangleVerticesIndices(triangleIndex, indices);
+-
+-            ss << "(" << indices[0] << "," << indices[1] << "," << indices[2] << "), ";
+-        }
+-
+-        ss << "], " << std::endl;
+-
+-        ss << "}" << std::endl;
+-    }
+-
+-    return ss.str();
++    return "";
+ }
+diff --git a/src/collision/shapes/ConvexMeshShape.cpp b/src/collision/shapes/ConvexMeshShape.cpp
+index d57f0135..75c0557c 100644
+--- a/src/collision/shapes/ConvexMeshShape.cpp
++++ b/src/collision/shapes/ConvexMeshShape.cpp
+@@ -205,45 +205,6 @@ bool ConvexMeshShape::testPointInside(const Vector3& localPoint, Collider* /*col
+ 
+ // Return the string representation of the shape
+ std::string ConvexMeshShape::to_string() const {
+-
+-    std::stringstream ss;
+-    ss << "ConvexMeshShape{" << std::endl;
+-    ss << "nbVertices=" << mPolyhedronMesh->getNbVertices() << std::endl;
+-    ss << "nbFaces=" << mPolyhedronMesh->getNbFaces() << std::endl;
+-
+-    ss << "vertices=[";
+-
+-    for (uint32 v=0; v < mPolyhedronMesh->getNbVertices(); v++) {
+-
+-        Vector3 vertex = mPolyhedronMesh->getVertex(v);
+-        ss << vertex.to_string();
+-        if (v != mPolyhedronMesh->getNbVertices() - 1) {
+-            ss << ", ";
+-        }
+-    }
+-
+-    ss << "], faces=[";
+-
+-    HalfEdgeStructure halfEdgeStruct = mPolyhedronMesh->getHalfEdgeStructure();
+-    for (uint32 f=0; f < mPolyhedronMesh->getNbFaces(); f++) {
+-
+-        const HalfEdgeStructure::Face& face = halfEdgeStruct.getFace(f);
+-
+-        ss << "[";
+-
+-        for (uint32 v=0; v < face.faceVertices.size(); v++) {
+-
+-            ss << face.faceVertices[v];
+-            if (v != face.faceVertices.size() - 1) {
+-               ss << ",";
+-            }
+-        }
+-
+-        ss << "]";
+-    }
+-
+-    ss << "]}";
+-
+-    return ss.str();
++    return "";
+ }
+ 
+diff --git a/src/collision/shapes/HeightFieldShape.cpp b/src/collision/shapes/HeightFieldShape.cpp
+index 1cf5d4e3..d82dc41c 100644
+--- a/src/collision/shapes/HeightFieldShape.cpp
++++ b/src/collision/shapes/HeightFieldShape.cpp
+@@ -444,20 +444,5 @@ Vector3 HeightFieldShape::getVertexAt(int x, int y) const {
+ 
+ // Return the string representation of the shape
+ std::string HeightFieldShape::to_string() const {
+-
+-    std::stringstream ss;
+-
+-    ss << "HeightFieldShape{" << std::endl;
+-
+-    ss << "nbColumns=" << mNbColumns << std::endl;
+-    ss << ", nbRows=" << mNbRows << std::endl;
+-    ss << ", width=" << mWidth << std::endl;
+-    ss << ", length=" << mLength << std::endl;
+-    ss << ", minHeight=" << mMinHeight << std::endl;
+-    ss << ", maxHeight=" << mMaxHeight << std::endl;
+-    ss << ", upAxis=" << mUpAxis << std::endl;
+-    ss << ", integerHeightScale=" << mIntegerHeightScale << std::endl;
+-    ss << "}";
+-
+-    return ss.str();
++    return "";
+ }
+diff --git a/src/engine/PhysicsWorld.cpp b/src/engine/PhysicsWorld.cpp
+index c442452e..c110c8f0 100644
+--- a/src/engine/PhysicsWorld.cpp
++++ b/src/engine/PhysicsWorld.cpp
+@@ -79,15 +79,11 @@ PhysicsWorld::PhysicsWorld(MemoryManager& memoryManager, PhysicsCommon& physicsC
+ 
+     // Automatically generate a name for the world
+     if (mName == "") {
+-
+-        std::stringstream ss;
+-        ss << "world";
+-
+         if (mNbWorlds > 0) {
+-            ss << mNbWorlds;
++            mName = "world" + mNbWorlds;
++        } else {
++            mName = "world";
+         }
+-
+-        mName = ss.str();
+     }
+ 
+ #ifdef IS_RP3D_PROFILING_ENABLED
+diff --git a/src/systems/CollisionDetectionSystem.cpp b/src/systems/CollisionDetectionSystem.cpp
+index a61b4ee4..8d2f2ec5 100644
+--- a/src/systems/CollisionDetectionSystem.cpp
++++ b/src/systems/CollisionDetectionSystem.cpp
+@@ -499,8 +499,8 @@ void CollisionDetectionSystem::computeConvexVsConcaveMiddlePhase(OverlappingPair
+     const bool isCollider2Trigger = mCollidersComponents.mIsTrigger[collider2Index];
+     reportContacts = reportContacts && !isCollider1Trigger && !isCollider2Trigger;
+ 
+-    CollisionShape* shape1;
+-    CollisionShape* shape2;
++    CollisionShape* shape1 = nullptr;
++    CollisionShape* shape2 = nullptr;
+ 
+     if (overlappingPair.isShape1Convex) {
+         shape1 = convexShape;
+-- 
+2.28.0.windows.1
+

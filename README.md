@@ -1,7 +1,7 @@
 <p align="center"><img src="/Tools/img/StereoKitWideBackground.svg" alt="StereoKit Logo" height="160"></p>
 <p align="center">
-    <a href="https://github.com/maluoi/stereokit/branches"><img src="https://img.shields.io/github/last-commit/maluoi/stereokit/develop" /></a>
-    <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/maluoi/stereokit" /></a>
+    <a href="https://github.com/StereoKit/StereoKit/branches"><img src="https://img.shields.io/github/last-commit/StereoKit/StereoKit/develop" /></a>
+    <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/StereoKit/StereoKit" /></a>
     <a href="https://www.nuget.org/packages/StereoKit/"><img src="https://img.shields.io/nuget/v/StereoKit" /></a>
     <a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates"><img src="https://img.shields.io/visual-studio-marketplace/i/NickKlingensmith.StereoKitTemplates" /></a>
 </p>
@@ -12,12 +12,12 @@ The getting started guide [can be found here](https://stereokit.net/Pages/Guides
 
 Interested in news and updates about StereoKit? Maybe just looking for some extra help?
 
-- Submit bugs on the [Issues tab](https://github.com/maluoi/StereoKit/issues), and ask questions in the [Discussions tab](https://github.com/maluoi/StereoKit/discussions)!
+- Submit bugs on the [Issues tab](https://github.com/StereoKit/StereoKit/issues), and ask questions in the [Discussions tab](https://github.com/StereoKit/StereoKit/discussions)!
 - Follow [koujaku](https://twitter.com/koujaku/) on Twitter for development news.
 - Drop into the [Discord channel](https://discord.gg/jtZpfS7nyK) for discussion, help and updates.
 - Check out [this blog](https://playdeck.net/project/stereokit) for occasional substantial updates!
 
-![Screenshot](/Tools/img/FeatureImage.jpg)
+![Screenshot](/docs/img/screenshots/FeatureImage.jpg)
 
 ## StereoKit Features
 
@@ -30,7 +30,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Skeletal/skinned animation
 - Flat screen MR simulator with input emulation for easy development
 - Builds your application to device in seconds, not minutes
-- Runtime asset loading
+- Runtime asset loading and cross-platform file picking
 - Physics
 - [Documentation](https://stereokit.net/) generated directly from the source code, including screenshots
 
@@ -59,19 +59,13 @@ StereoKit focuses on getting you productive with the least amount of code possib
 ```CSharp
 using StereoKit;
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        SK.Initialize(new SKSettings{ appName = "Project" });
+SK.Initialize(new SKSettings{ appName = "Project" });
 
-        Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
+Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
 
-        SK.Run(() => {
-            helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
-        });
-    }
-}
+SK.Run(() => {
+    helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
+});
 ```
 
 ![Hello World](/Tools/img/StereoKitMin.gif)
@@ -95,6 +89,6 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 
 And some of my own libraries that I maintain separately from this repository.
 
-- [sk_gpu.h](https://github.com/maluoi/sk_gpu) - cross platform graphics API
+- [sk_gpu.h](https://github.com/StereoKit/sk_gpu) - cross platform graphics API
 - [ferr_hash.h](https://github.com/maluoi/header-libs) - string and data hashing
 - [array.h](https://github.com/maluoi/header-libs) - dynamic arrays

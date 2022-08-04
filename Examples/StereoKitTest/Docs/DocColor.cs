@@ -55,10 +55,27 @@ class DocColor : ITest
 		/// :End:
 	}
 
+	bool DocsHex()
+	{
+		/// :CodeSample: Color Color32 Color32.Hex Color.Hex
+		/// ### Creating color from hex values
+		Color   hex128 = Color  .Hex(0xFF0000FF); // Opaque Red
+		Color32 hex32  = Color32.Hex(0x00FF00FF); // Opaque Green
+		/// :End:
+
+		if (hex128.r != 1 && hex128.g != 0 && hex128.b != 0 && hex128.a != 1)
+			return false;
+		if (hex32.r != 0 && hex32.g != 255 && hex32.b != 0 && hex32.a != 255)
+			return false;
+
+		return true;
+	}
+
 	public void Initialize()
 	{
 		DocsColor128();
 		DocsColor32();
+		Tests.Test(DocsHex);
 	}
 
 	public void Shutdown() { }

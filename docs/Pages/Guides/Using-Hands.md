@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Guides Using Hands
-description: Using Hands
+title: Using Hands
+description: StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices! For ex...
 ---
 
 # Using Hands
@@ -118,5 +118,5 @@ public static void DrawPointers()
 	}
 }
 ```
-The code in context for this document can be found [on Github here](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DemoHands.cs)!
+The code in context for this document can be found [on Github here](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DemoHands.cs)!
 

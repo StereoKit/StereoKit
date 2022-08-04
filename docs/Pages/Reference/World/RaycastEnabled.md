@@ -1,7 +1,7 @@
 ---
 layout: default
 title: World.RaycastEnabled
-description: Off by default. This tells StereoKit to load up collision meshes for the environment, for use with World.Raycast. Check SK.System.worldRaycastPresent to see if raycasting can be enabled. This will reset itself to false if raycasting isn't possible. Loading raycasting data is asynchronous, so collision surfaces may not be abailable immediately after setting this flag.
+description: Off by default. This tells StereoKit to load up collision meshes for the environment, for use with World.Raycast. Check SK.System.worldRaycastPresent to see if raycasting can be enabled. This will reset itself to false if raycasting isn't possible. Loading raycasting data is asynchronous, so collision surfaces may not be available immediately after setting this flag.
 ---
 # [World]({{site.url}}/Pages/Reference/World.html).RaycastEnabled
 
@@ -15,7 +15,7 @@ collision meshes for the environment, for use with World.Raycast.
 Check SK.System.worldRaycastPresent to see if raycasting can be
 enabled. This will reset itself to false if raycasting isn't
 possible. Loading raycasting data is asynchronous, so collision
-surfaces may not be abailable immediately after setting this
+surfaces may not be available immediately after setting this
 flag.
 
 

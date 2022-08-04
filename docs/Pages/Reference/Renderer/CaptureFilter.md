@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Renderer.CaptureFilter
-description: This is the current render layer mask for Mixed Reality Capture, or 2nd person observer rendering. By default, this is directly linked to Renderer.LayerFilter, but this behaviour can be overriden via Renderer.OverrideCaptureFilter.
+description: This is the current render layer mask for Mixed Reality Capture, or 2nd person observer rendering. By default, this is directly linked to Renderer.LayerFilter, but this behavior can be overridden via Renderer.OverrideCaptureFilter.
 ---
 # [Renderer]({{site.url}}/Pages/Reference/Renderer.html).CaptureFilter
 
@@ -12,6 +12,6 @@ static [RenderLayer]({{site.url}}/Pages/Reference/RenderLayer.html) CaptureFilte
 ## Description
 This is the current render layer mask for Mixed Reality
 Capture, or 2nd person observer rendering. By default, this is
-directly linked to Renderer.LayerFilter, but this behaviour can be
-overriden via `Renderer.OverrideCaptureFilter`.
+directly linked to Renderer.LayerFilter, but this behavior can be
+overridden via `Renderer.OverrideCaptureFilter`.
 

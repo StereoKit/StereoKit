@@ -10,7 +10,6 @@ excluding scale! CAUTION: the default value of a Pose includes a
 completely zero Quat, which can cause problems. Use `Pose.Identity`
 instead of `new Pose()` for creating a default pose.
 
-
 ## Instance Fields and Properties
 
 |  |  |
@@ -22,7 +21,6 @@ instead of `new Pose()` for creating a default pose.
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Right]({{site.url}}/Pages/Reference/Pose/Right.html)|Calculates the right (+X) direction from this pose. This is done by multiplying the orientation with Vec3.Right.|
 |[Vec3]({{site.url}}/Pages/Reference/Vec3.html) [Up]({{site.url}}/Pages/Reference/Pose/Up.html)|Calculates the up (+Y) direction from this pose. This is done by multiplying the orientation with Vec3.Up.|
 
-
 ## Instance Methods
 
 |  |  |
@@ -30,17 +28,14 @@ instead of `new Pose()` for creating a default pose.
 |[Pose]({{site.url}}/Pages/Reference/Pose/Pose.html)|Basic initialization constructor! Just copies in the provided values directly.|
 |[ToMatrix]({{site.url}}/Pages/Reference/Pose/ToMatrix.html)|Converts this pose into a transform matrix, incorporating a provided scale value.|
 
-
 ## Static Fields and Properties
 
 |  |  |
 |--|--|
 |[Pose]({{site.url}}/Pages/Reference/Pose.html) [Identity]({{site.url}}/Pages/Reference/Pose/Identity.html)|A default, empty pose. Positioned at zero, and using Quat.Identity for orientation.|
 
-
 ## Static Methods
 
 |  |  |
 |--|--|
 |[Lerp]({{site.url}}/Pages/Reference/Pose/Lerp.html)|Interpolates between two poses! t is unclamped, so values outside of (0,1) will extrapolate their position.|
-

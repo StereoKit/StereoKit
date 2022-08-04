@@ -7,9 +7,6 @@ description: Index values for each finger! From 0-4, from thumb to little finger
 
 Index values for each finger! From 0-4, from thumb to little finger.
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -19,8 +16,6 @@ Index values for each finger! From 0-4, from thumb to little finger.
 |Middle|Finger 2, next to the index finger.|
 |Ring|Finger 3! What does one do with this finger? I guess... wear rings on it?|
 |Thumb|Finger 0.|
-
-
 
 ## Examples
 
@@ -36,6 +31,9 @@ for (int h = 0; h < (int)Handed.Max; h++)
 	// Get the pose for the index fingertip
 	Hand hand      = Input.Hand((Handed)h);
 	Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
+
+	// Skip this hand if it's not tracked
+	if (!hand.IsTracked) continue;
 
 	// Draw the fingertip pose axis if it's inside the volume
 	if (testArea.Contains(fingertip.position))

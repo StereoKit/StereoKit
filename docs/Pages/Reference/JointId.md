@@ -8,9 +8,6 @@ description: Here's where hands get crazy! Technical terms, and watch out for th
 Here's where hands get crazy! Technical terms, and watch out for
 the thumbs!
 
-
-
-
 ## Enum Values
 
 |  |  |
@@ -20,8 +17,6 @@ the thumbs!
 |KnuckleMinor|Joint 3. The joints right below the fingertip!|
 |Root|Joint 0. This is at the base of the hand, right above the wrist. For the thumb, Root and KnuckleMajor have the same value.|
 |Tip|Joint 4. The end/tip of each finger!|
-
-
 
 ## Examples
 
@@ -37,6 +32,9 @@ for (int h = 0; h < (int)Handed.Max; h++)
 	// Get the pose for the index fingertip
 	Hand hand      = Input.Hand((Handed)h);
 	Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
+
+	// Skip this hand if it's not tracked
+	if (!hand.IsTracked) continue;
 
 	// Draw the fingertip pose axis if it's inside the volume
 	if (testArea.Contains(fingertip.position))

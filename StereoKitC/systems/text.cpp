@@ -1,10 +1,9 @@
 #include "text.h"
 #include "../stereokit.h"
 #include "../asset_types/font.h"
-#include "../asset_types/material.h"
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
-#include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
@@ -87,7 +86,7 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 		inds[c+5] = q;
 	}
 	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	free(inds);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -119,8 +118,8 @@ text_style_t text_make_style_shader(font_t font, float character_height, shader_
 ///////////////////////////////////////////
 
 text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
-	uint32_t       id     = (uint32_t)(font->header.id << 16 | material->header.id);
-	size_t         index  = 0;
+	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
+	int32_t        index  = 0;
 	text_buffer_t *buffer = nullptr;
 
 	if (font == nullptr) {
@@ -128,7 +127,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	}
 	
 	// Find or make a buffer for this style
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		if (text_buffers[i].id == id) {
 			buffer = &text_buffers[i];
 			index  = i;
@@ -500,7 +499,7 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 void text_update() {
 	font_update_fonts();
 
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -516,12 +515,12 @@ void text_update() {
 ///////////////////////////////////////////
 
 void text_shutdown() {
-	for (size_t i = 0; i < text_buffers.count; i++) {
+	for (int32_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		mesh_release(buffer.mesh);
 		font_release(buffer.font);
 		material_release(buffer.material);
-		free(buffer.verts);
+		sk_free(buffer.verts);
 	}
 
 	text_styles .free();

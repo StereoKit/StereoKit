@@ -1,10 +1,12 @@
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
-#include "../asset_types/mesh.h"
-#include "platform/openxr.h"
+#include "../asset_types/assets.h"
+#include "../asset_types/mesh_.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_extensions.h"
 #include "render.h"
 
 #include <float.h>
@@ -105,7 +107,7 @@ bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
 	ray_t   result     = {};
 	float   result_mag = FLT_MAX;
 	int32_t result_id  = -1;
-	for (size_t i = 0; i < xr_scene_colliders.count; i++) {
+	for (int32_t i = 0; i < xr_scene_colliders.count; i++) {
 		ray_t intersection = {};
 		ray_t local_ray    = matrix_transform_ray(xr_scene_colliders[i].inv_transform, ray);
 		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, &intersection)) {
@@ -113,7 +115,7 @@ bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
 			if (result_mag > intersection_mag) {
 				result_mag        = intersection_mag;
 				*out_intersection = intersection;
-				result_id         = (int32_t)i;
+				result_id         = i;
 			}
 		}
 	}
@@ -278,7 +280,7 @@ void world_request_update(scene_request_info_t info) {
 ///////////////////////////////////////////
 
 void world_update_meshes(array_t<scene_mesh_t> *mesh_list) {
-	for (size_t i = 0; i < mesh_list->count; i++) {
+	for (int32_t i = 0; i < mesh_list->count; i++) {
 		scene_mesh_t &mesh = mesh_list->get(i);
 		if (mesh.references == 0) {
 			mesh_list->remove(i);
@@ -303,9 +305,9 @@ void world_update_meshes(array_t<scene_mesh_t> *mesh_list) {
 		}
 		uint32_t v_count = v_buffer.vertexCountOutput;
 		uint32_t i_count = i_buffer.indexCountOutput;
-		if (world_vbuffer_tmp.capacity < v_count) world_vbuffer_tmp.resize(v_count);
-		if (world_verts_tmp  .capacity < v_count) world_verts_tmp  .resize(v_count);
-		if (world_ibuffer_tmp.capacity < i_count) world_ibuffer_tmp.resize(i_count);
+		if ((uint32_t)world_vbuffer_tmp.capacity < v_count) world_vbuffer_tmp.resize((int32_t)v_count);
+		if ((uint32_t)world_verts_tmp  .capacity < v_count) world_verts_tmp  .resize((int32_t)v_count);
+		if ((uint32_t)world_ibuffer_tmp.capacity < i_count) world_ibuffer_tmp.resize((int32_t)i_count);
 		i_buffer.indices             = world_ibuffer_tmp.data;
 		v_buffer.vertices            = world_vbuffer_tmp.data;
 		i_buffer.indexCapacityInput  = i_count;
@@ -317,7 +319,7 @@ void world_update_meshes(array_t<scene_mesh_t> *mesh_list) {
 		}
 
 		if (mesh.mesh == nullptr) mesh.mesh = mesh_create();
-		for (size_t v = 0; v < v_count; v++) {
+		for (uint32_t v = 0; v < v_count; v++) {
 			world_verts_tmp[v] = { *(vec3 *)&v_buffer.vertices[v], {0,1,0}, {}, {255,255,255,255} };
 		}
 		mesh_calculate_normals(world_verts_tmp.data, v_count, i_buffer.indices, i_count);
@@ -330,13 +332,13 @@ void world_update_meshes(array_t<scene_mesh_t> *mesh_list) {
 ///////////////////////////////////////////
 
 int32_t world_mesh_get_or_add(uint64_t buffer_id) {
-	for (size_t i = 0; i < xr_meshes.count; i++) {
+	for (int32_t i = 0; i < xr_meshes.count; i++) {
 		if (xr_meshes[i].buffer_id == buffer_id) {
 			xr_meshes[i].references += 1;
-			return (int32_t)i;
+			return i;
 		}
 	}
-	return (int32_t)xr_meshes.add(scene_mesh_t{ buffer_id, mesh_create(), 1 });
+	return xr_meshes.add(scene_mesh_t{ buffer_id, mesh_create(), 1 });
 }
 
 ///////////////////////////////////////////
@@ -357,14 +359,14 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 	components.components             = sk_malloc_t(XrSceneComponentMSFT, components.componentCountOutput);
 	if (XR_FAILED(xr_extensions.xrGetSceneComponentsMSFT(xr_scene, &info, &components))) {
 		log_warn("xrGetSceneComponentsMSFT failed");
-		free(components.components);
-		free(meshes.sceneMeshes);
+		sk_free(components.components);
+		sk_free(meshes.sceneMeshes);
 		return;
 	}
 
 	// Find the location of these meshes
 	XrUuidMSFT *component_ids = sk_malloc_t(XrUuidMSFT, components.componentCountOutput);
-	for (size_t i = 0; i < components.componentCountOutput; i++) {
+	for (uint32_t i = 0; i < components.componentCountOutput; i++) {
 		component_ids[i] = components.components[i].id;
 	}
 	XrSceneComponentLocationsMSFT   locations   = { XR_TYPE_SCENE_COMPONENT_LOCATIONS_MSFT };
@@ -376,13 +378,13 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 	locate_info.componentIdCount = components.componentCountOutput;
 	locate_info.componentIds     = component_ids;
 	xr_extensions.xrLocateSceneComponentsMSFT(xr_scene, &locate_info, &locations);
-	free(component_ids);
+	sk_free(component_ids);
 
 	mesh_list->clear();
-	if (mesh_list->capacity < meshes.sceneMeshCount)
+	if (mesh_list->capacity < (int32_t)meshes.sceneMeshCount)
 		mesh_list->resize(meshes.sceneMeshCount);
 
-	for (size_t i = 0; i < meshes.sceneMeshCount; i++) {
+	for (uint32_t i = 0; i < meshes.sceneMeshCount; i++) {
 		pose_t pose = { vec3_zero, quat_identity };
 		if (locations.locations[i].flags & XR_SPACE_LOCATION_POSITION_VALID_BIT)
 			pose.position = *(vec3 *)&locations.locations[i].pose.position;
@@ -403,9 +405,9 @@ void world_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_inst
 		mesh_list->add(inst);
 	}
 
-	free(locations.locations);
-	free(components.components);
-	free(meshes.sceneMeshes);
+	sk_free(locations.locations);
+	sk_free(components.components);
+	sk_free(meshes.sceneMeshes);
 }
 
 ///////////////////////////////////////////
@@ -468,7 +470,7 @@ void world_update() {
 	}
 
 	if (xr_scene_next_req.occlusion && xr_scene_material != nullptr) {
-		for (size_t i = 0; i < xr_scene_visuals.count; i++) {
+		for (int32_t i = 0; i < xr_scene_visuals.count; i++) {
 			render_add_mesh(xr_scene_visuals[i].mesh_ref, xr_scene_material, xr_scene_visuals[i].transform);
 		}
 	}
