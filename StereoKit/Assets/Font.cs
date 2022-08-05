@@ -27,6 +27,7 @@ namespace StereoKit {
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty font!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Font()
 		{
 			if (_inst != IntPtr.Zero)

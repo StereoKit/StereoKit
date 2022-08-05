@@ -206,6 +206,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty material!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Material()
 		{
 			if (_inst != IntPtr.Zero)

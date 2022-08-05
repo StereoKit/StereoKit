@@ -116,6 +116,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty texture!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)

@@ -135,6 +135,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty model!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)

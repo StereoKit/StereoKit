@@ -35,6 +35,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty shader!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)

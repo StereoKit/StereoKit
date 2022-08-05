@@ -75,6 +75,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty mesh!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
 			if (_inst != IntPtr.Zero)
