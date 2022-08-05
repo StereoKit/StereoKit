@@ -12,8 +12,8 @@ sprite_t ui_search_sprite;
 ///////////////////////////////////////////
 
 void demo_ui_init() {
-	ui_sprite        = sprite_create_file("StereoKitWide.png", sprite_type_single);
-	ui_search_sprite = sprite_create_file("search.png",        sprite_type_single);
+	ui_sprite        = sprite_create_file("StereoKitWide.png");
+	ui_search_sprite = sprite_create_file("search.png");
 }
 
 ///////////////////////////////////////////

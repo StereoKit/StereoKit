@@ -43,10 +43,11 @@ struct psIn {
 psIn vs(vsIn input) {
 	psIn o;
 	o.pos.zw = input.pos.zw;
-	//o.pos.xy = blit_to.xy + (input.pos.xy * blit_to.zw);
-	//o.pos.xy =  (blit_to.xy + ((input.pos.xy / 2 + float2(1, 1)) * blit_to.zw))*2-float2(1,1);
-	o.pos.xy = (blit_to.xy*2) + (input.pos.xy * blit_to.zw);
-	o.uv     = input.uv; 
+	o.pos.xy = float2(0.5, 0.5) + input.pos.xy * 0.5;
+	o.pos.xy = blit_to.xy + (o.pos.xy * blit_to.zw);
+	o.pos.xy = (o.pos.xy - float2(0.5, 0.5)) * 2;
+	o.pos.y  = -o.pos.y;
+	o.uv     = float2(input.uv.x, 1-input.uv.y);
 	return o;
 }
 

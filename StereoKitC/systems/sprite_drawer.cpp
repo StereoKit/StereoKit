@@ -58,80 +58,50 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t *buffer) {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_add(sprite_t sprite, const matrix &at, color32 color) {
-
-
-	// Check if this one does get batched
-	if (sprite->buffer_index == -1) {
-		// Just plop a quad onto the render queue
-		render_add_mesh(sprite_quad_old, sprite->material, at, color32_to_128(color));
-		return;
-	}
-
-	sprite_buffer_t *buffer = &sprite_buffers[sprite->buffer_index];
-	float            width  = (sprite->uvs[1].x - sprite->uvs[0].x) * sprite->size;
-	float            height = (sprite->uvs[1].y - sprite->uvs[0].y) * sprite->size;
-
-	// Resize array if we need more room for this
-	sprite_buffer_ensure_capacity(buffer);
-
-	// Get the heirarchy based transform
-	XMMATRIX tr;
-	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.last().transform, at, tr);
-	} else {
-		math_matrix_to_fast(at, &tr);
-	}
-	
-	// Add a sprite quad
-	int32_t offset = buffer->vert_count;
-	vec3    normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
-	buffer->verts[offset + 0] = { matrix_mul_point(tr, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
-	buffer->verts[offset + 1] = { matrix_mul_point(tr, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
-	buffer->verts[offset + 2] = { matrix_mul_point(tr, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };
-	buffer->verts[offset + 3] = { matrix_mul_point(tr, vec3{0,     height, 0}), normal, vec2{sprite->uvs[0].x, sprite->uvs[1].y}, color };
-	buffer->vert_count += 4;
-}
-
-
-///////////////////////////////////////////
-
 void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_position, color32 color) {
-	vec3 offset = vec3_zero;
-	if      (anchor_position & text_align_x_left  ) offset.x = -sprite->aspect/2;
-	else if (anchor_position & text_align_x_right ) offset.x =  sprite->aspect/2;
-	if      (anchor_position & text_align_y_bottom) offset.y =  0.5f;
-	else if (anchor_position & text_align_y_top   ) offset.y = -0.5f;
+
 		
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
+		vec3 offset = vec3_zero;
+		if      (anchor_position & text_align_x_left  ) offset.x = -sprite->aspect/2;
+		else if (anchor_position & text_align_x_right ) offset.x =  sprite->aspect/2;
+		if      (anchor_position & text_align_y_bottom) offset.y =  0.5f;
+		else if (anchor_position & text_align_y_top   ) offset.y = -0.5f;
+
 		// Just plop a quad onto the render queue
 		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {sprite->aspect, 1, 1}) * at, color32_to_128(color));
 		return;
 	} else {
 		sprite_buffer_t* buffer = &sprite_buffers[sprite->buffer_index];
-		float            width  = (sprite->uvs[1].x - sprite->uvs[0].x) * sprite->size;
-		float            height = (sprite->uvs[1].y - sprite->uvs[0].y) * sprite->size;
+		float            width  = sprite->size * sprite->aspect;
+		float            height = sprite->size;
+
+
+		//vec3 offset = vec3_zero;
+		if      (anchor_position & text_align_x_left  ) offset.x = -width /2.0f;
+		else if (anchor_position & text_align_x_right ) offset.x =  width /2.0f;
+		if      (anchor_position & text_align_y_bottom) offset.y =  height/2.0f;
+		else if (anchor_position & text_align_y_top   ) offset.y = -height/2.0f;
 
 		// Resize array if we need more room for this
 		sprite_buffer_ensure_capacity(buffer);
 
-		// Get the heirarchy based transform
+		// Get the hierarchy based transform
 		XMMATRIX tr;
 		if (hierarchy_enabled) {
-			matrix_mul(hierarchy_stack.last().transform, at, tr);
+			matrix_mul(at, hierarchy_stack.last().transform, tr);
 		} else {
 			math_matrix_to_fast(at, &tr);
 		}
 
 		// Add a sprite quad
-		offset = vec3_zero;
 		int32_t start  = buffer->vert_count;
 		vec3    normal = vec3_normalize(matrix_transform_dir(at, vec3_forward));
-		buffer->verts[start + 0] = { matrix_mul_point(tr, vec3{offset.x,       offset.y,        0}), normal, sprite->uvs[0],                           color };
-		buffer->verts[start + 1] = { matrix_mul_point(tr, vec3{offset.x+width, offset.y,        0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
-		buffer->verts[start + 2] = { matrix_mul_point(tr, vec3{offset.x+width, offset.y+height, 0}), normal, sprite->uvs[1],                           color };
-		buffer->verts[start + 3] = { matrix_mul_point(tr, vec3{offset.x,       offset.y+height, 0}), normal, vec2{sprite->uvs[0].x, sprite->uvs[1].y}, color };
+		buffer->verts[start + 0] = { matrix_mul_point(tr, vec3{offset.x,       offset.y,        0}), normal, sprite->uvs[1],                           color };
+		buffer->verts[start + 1] = { matrix_mul_point(tr, vec3{offset.x+width, offset.y,        0}), normal, vec2{sprite->uvs[0].x, sprite->uvs[1].y}, color };
+		buffer->verts[start + 2] = { matrix_mul_point(tr, vec3{offset.x+width, offset.y+height, 0}), normal, sprite->uvs[0],                           color };
+		buffer->verts[start + 3] = { matrix_mul_point(tr, vec3{offset.x,       offset.y+height, 0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
 		buffer->vert_count += 4;
 	}
 }
@@ -141,6 +111,7 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 bool sprite_drawer_init() {
 	sprite_quad     = mesh_find(default_id_mesh_quad);
 	sprite_blit_mat = material_create(sk_default_shader_blit);
+	material_set_cull(sprite_blit_mat, cull_none);	
 
 	// Default rendering quad
 	sprite_quad_old = mesh_create();
@@ -162,20 +133,7 @@ bool sprite_drawer_init() {
 
 void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
 	render_bind_target_push(target);
-	for (size_t i = 0; i < sprites.count; i++)
-	{
-		vec4 blit_to = {
-			sprites[i]->uvs[0].x,
-			sprites[i]->uvs[0].y,
-			sprites[i]->uvs[1].x,
-			sprites[i]->uvs[1].y };
-		vec2 a = {
-			(blit_to.x * 2) + (-1 * blit_to.z),
-			(blit_to.y * 2) + (-1 * blit_to.w) };
-		vec2 b = {
-			(blit_to.x * 2) + ( 1 * blit_to.z),
-			(blit_to.y * 2) + ( 1 * blit_to.w) };
-		
+	for (size_t i = 0; i < sprites.count; i++) {
 		material_set_texture(sprite_blit_mat, "source", sprites[i]->texture);
 		material_set_vector4(sprite_blit_mat, "blit_to", {
 			sprites[i]->uvs[0].x, 
@@ -191,14 +149,22 @@ void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
 
 void sprite_drawer_update() {
 	for (size_t i = 0; i < sprite_atlases.count; i++) {
-		if (sprite_atlases[i].dirty_full) {
-			log_info("updating atlas 1!");
-			sprite_drawer_update_atlas(sprite_atlases[i].texture, sprite_atlases[i].sprites);
-			sprite_atlases[i].dirty_full = false;
-		} else if (sprite_atlases[i].dirty_queue.count > 0) {
-			log_info("updating atlas 2!");
-			sprite_drawer_update_atlas(sprite_atlases[i].texture, sprite_atlases[i].dirty_queue);
-			sprite_atlases[i].dirty_queue.clear();
+		sprite_atlas_t* atlas = &sprite_atlases[i];
+		if (atlas->rects.w != tex_get_width (atlas->texture) ||
+			atlas->rects.h != tex_get_height(atlas->texture)) {
+
+			tex_set_colors(atlas->texture, atlas->rects.w, atlas->rects.h, nullptr);
+		}
+
+		if (atlas->dirty_full) {
+			sprite_drawer_update_atlas(atlas->texture, atlas->sprites);
+			atlas->dirty_full = false;
+			// Clear out the dirty queue in case there were a few there before
+			// we filled up.
+			atlas->dirty_queue.clear();
+		} else if (atlas->dirty_queue.count > 0) {
+			sprite_drawer_update_atlas(atlas->texture, atlas->dirty_queue);
+			atlas->dirty_queue.clear();
 		}
 	}
 
@@ -209,8 +175,7 @@ void sprite_drawer_update() {
 
 		mesh_set_verts    (buffer.mesh, buffer.verts, buffer.vert_count, false);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
-
-		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
+		mesh_draw         (buffer.mesh, buffer.material, matrix_identity);
 		buffer.vert_count = 0;
 	}
 }

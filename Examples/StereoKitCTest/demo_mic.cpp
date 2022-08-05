@@ -38,7 +38,7 @@ void demo_mic_init() {
 
 	window_pose = pose_t{ {0.5f,0,-0.5f}, quat_lookat(vec3_zero, {-1,0,1}) };
 
-	mic_sprite      = sprite_create_file("mic_icon.png", sprite_type_single);
+	mic_sprite      = sprite_create_file("mic_icon.png");
 	mic_visual_mesh = mesh_find       (default_id_mesh_sphere);
 	mic_visual_mat  = material_copy_id(default_id_material_unlit);
 	material_set_transparency(mic_visual_mat, transparency_blend);

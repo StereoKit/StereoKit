@@ -52,11 +52,28 @@ material_t sprite_create_material(int index_id) {
 
 ///////////////////////////////////////////
 
-sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
-	tex_addref(image);
-	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
+sprite_t sprite_find(const char* id) {
+	sprite_t result = (sprite_t)assets_find(id, asset_type_sprite);
+	if (result != nullptr) {
+		sprite_addref(result);
+		return result;
+	}
+	return nullptr;
+}
 
-	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
+///////////////////////////////////////////
+
+sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
+	char id[128];
+	snprintf(id, sizeof(id), "atlas_%s/%llu", atlas_id, ((asset_header_t*)image)->id);
+	sprite_t result = sprite_find(id);
+	if (result != nullptr)
+		return result;
+
+	tex_addref(image);
+	result = (_sprite_t*)assets_allocate(asset_type_sprite);
+
+	assets_block_until((asset_header_t*)image, asset_state_loaded);
 
 	result->texture = image;
 	result->uvs[0]  = vec2{ 0,0 };
@@ -101,29 +118,36 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 ///////////////////////////////////////////
 
-int64_t sprite_area(sprite_t sprite) {
-	return (int64_t)tex_get_width(sprite->texture) * (int64_t)tex_get_height(sprite->texture);
+int64_t sprite_area_inv(sprite_t sprite) {
+	return -(int64_t)tex_get_width(sprite->texture) * (int64_t)tex_get_height(sprite->texture);
 }
 
 ///////////////////////////////////////////
 
 void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite) {
 	// Binary insert the sprite so largest items are first in the list!
-	int32_t at = atlas->sprites.binary_search(sprite_area, sprite_area(sprite));
+	int32_t at = atlas->sprites.binary_search(sprite_area_inv, sprite_area_inv(sprite));
 	if (at < 0) at = ~at;
 	atlas->sprites.insert(at, sprite);
 
 	// Add the sprite to the atlas and queue it for rendering
-	int32_t rect = rect_atlas_add(&atlas->rects, tex_get_width(sprite->texture), tex_get_height(sprite->texture));
-	if (rect != -1) {
-		if (atlas->dirty_full == false)
-			atlas->dirty_queue.add(sprite);
+	int32_t rect_id = rect_atlas_add(&atlas->rects, tex_get_width(sprite->texture), tex_get_height(sprite->texture));
+	if (rect_id != -1) {
+		recti_t rect = atlas->rects.packed[rect_id];
+		sprite->uvs[0] =                  vec2{ rect.x / (float)atlas->rects.w, rect.y / (float)atlas->rects.h };
+		sprite->uvs[1] = sprite->uvs[0] + vec2{ rect.w / (float)atlas->rects.w, rect.h / (float)atlas->rects.h };
+
+		if (atlas->dirty_full == false) {
+			at = atlas->dirty_queue.binary_search(sprite_area_inv, sprite_area_inv(sprite));
+			if (at < 0) at = ~at;
+			atlas->dirty_queue.insert(at, sprite);
+		}
 		return;
 	}
 
 	// The atlas was full, so we need to rebuild the atlas completely!
 	atlas->dirty_full = true;
-	bool full = rect == -1;
+	bool full = rect_id == -1;
 	while (full) {
 		// Resize it to be a bit bigger than it was before, and at least bigger
 		// than the sprite we're trying to add!
@@ -148,17 +172,15 @@ void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite) {
 		full = false;
 		for (size_t i = 0; i < atlas->sprites.count; i++)
 		{
-			sprite_t curr = atlas->sprites[i];
-			int32_t  r    = rect_atlas_add(&atlas->rects, tex_get_width(curr->texture), tex_get_height(curr->texture));
-			if (r == -1) { full = true; break; }
+			sprite_t curr      = atlas->sprites[i];
+			int32_t  curr_rect = rect_atlas_add(&atlas->rects, tex_get_width(curr->texture), tex_get_height(curr->texture));
+			if (curr_rect == -1) { full = true; break; }
 
-			recti_t rect = atlas->rects.packed[r];
+			recti_t rect = atlas->rects.packed[curr_rect];
 			curr->uvs[0] =                vec2{ rect.x/(float)new_w, rect.y/(float)new_h };
 			curr->uvs[1] = curr->uvs[0] + vec2{ rect.w/(float)new_w, rect.h/(float)new_h };
 		}
 	}
-
-	tex_set_colors(atlas->texture, atlas->rects.w, atlas->rects.h, nullptr);
 }
 
 ///////////////////////////////////////////
@@ -214,6 +236,28 @@ vec2 sprite_get_dimensions_normalized(sprite_t sprite) {
 ///////////////////////////////////////////
 
 void sprite_destroy(sprite_t sprite) {
+	// Remove the sprite from the atlas!
+	if (sprite->buffer_index != -1) {
+		sprite_atlas_t *atlas = &sprite_atlases[sprite->buffer_index];
+
+		int32_t x   = sprite->uvs[0].x * atlas->rects.w;
+		int32_t y   = sprite->uvs[0].y * atlas->rects.h;
+		int32_t idx = -1;
+		for (size_t i = 0; i < atlas->rects.packed.count; i++)
+		{
+			if (atlas->rects.packed[i].x == x && atlas->rects.packed[i].y == y) {
+				idx = i;
+				break;
+			}
+		}
+		if (idx != -1)
+			rect_atlas_remove(&atlas->rects, idx);
+		int32_t index = atlas->dirty_queue.index_of(sprite);
+		if (index != -1) atlas->dirty_queue.remove(index);
+		index = atlas->sprites.index_of(sprite);
+		if (index != -1) atlas->sprites.remove(index);
+	}
+
 	tex_release     (sprite->texture);
 	material_release(sprite->material);
 	*sprite = {};
@@ -222,7 +266,7 @@ void sprite_destroy(sprite_t sprite) {
 ///////////////////////////////////////////
 
 void sprite_draw(sprite_t sprite, const matrix &transform, color32 color) {
-	sprite_drawer_add(sprite, transform, color);
+	sprite_drawer_add_at(sprite, transform, text_align_top_right, color);
 }
 
 ///////////////////////////////////////////
