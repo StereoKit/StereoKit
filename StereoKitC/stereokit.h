@@ -2021,7 +2021,7 @@ SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
 ///////////////////////////////////////////
 
 /*A flag for what 'type' an Asset may store.*/
-enum asset_type_ {
+typedef enum asset_type_ {
 	/*No type, this may come from some kind of invalid Asset id.*/
 	asset_type_none = 0,
 	/*A Mesh.*/
@@ -2042,7 +2042,7 @@ enum asset_type_ {
 	asset_type_sound,
 	/*A Solid.*/
 	asset_type_solid,
-};
+} asset_type_;
 
 typedef void* asset_t;
 
