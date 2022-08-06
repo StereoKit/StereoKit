@@ -74,7 +74,7 @@ sound_t sound_create_stream(float buffer_duration) {
 	result->buffer.data     = sk_malloc_t(float, (size_t)result->buffer.capacity);
 	memset(result->buffer.data, 0, (size_t)(result->buffer.capacity * sizeof(float)));
 	mtx_init(&result->data_lock, mtx_plain);
-	ma_pcm_rb_init(AU_SAMPLE_FORMAT, 1, result->buffer.capacity, result->buffer.data, nullptr, &result->stream_buffer);
+	ma_pcm_rb_init(AU_SAMPLE_FORMAT, 1, (ma_uint32)result->buffer.capacity, result->buffer.data, nullptr, &result->stream_buffer);
 
 	return result;
 }
@@ -121,7 +121,7 @@ void sound_write_samples(sound_t sound, const float *samples, uint64_t sample_co
 	ma_uint32 writable = 0;
 	void*     write_to = nullptr;
 	while (written < sample_count) {
-		writable = sample_count - written;
+		writable = (ma_uint32)sample_count - written;
 		
 		ma_result res = ma_pcm_rb_acquire_write(&sound->stream_buffer, &writable, &write_to);
 		if (res != MA_SUCCESS) { break; }
@@ -150,7 +150,7 @@ uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_c
 	ma_uint32 readable  = 0;
 	void*     read_from = nullptr;
 	while (read < sample_count) {
-		readable = sample_count - read;
+		readable = (ma_uint32)sample_count - read;
 		
 		ma_result res = ma_pcm_rb_acquire_read(&sound->stream_buffer, &readable, &read_from);
 		if (res != MA_SUCCESS) { break; }
