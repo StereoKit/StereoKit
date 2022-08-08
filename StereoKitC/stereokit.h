@@ -1988,6 +1988,7 @@ SK_API void             *backend_opengl_glx_get_context ();
 SK_API void             *backend_opengl_glx_get_display ();
 SK_API void             *backend_opengl_glx_get_drawable();
 SK_API void             *backend_opengl_egl_get_context ();
+SK_API void             *backend_opengl_egl_get_config  ();
 SK_API void             *backend_opengl_egl_get_display ();
 
 ///////////////////////////////////////////
