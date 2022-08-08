@@ -362,7 +362,7 @@ bool openxr_init() {
 		"xrGetInstanceProperties failed [%s]");
 
 	// The Leap hand tracking layer seems to supercede the built-in extensions.
-	if (has_leap_layer == false) {
+	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
 		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
 			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
 			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");

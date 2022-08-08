@@ -243,6 +243,7 @@ typedef struct XrExtInfo {
 extern XrExtInfo xr_ext_available;
 
 #define CHECK_EXT(name, available) else if (!minimum_exts && available && strcmp("XR_"#name, exts[i].extensionName) == 0) {xr_ext_available.name = true; result.add("XR_"#name);}
+#define CHECK_NAME(name, available) else if (strcmp("XR_"#name, exts[i].extensionName) == 0) {xr_ext_available.name = true;}
 inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_exts, bool minimum_exts, void (*on_available)(const char *name)) {
 	array_t<const char *> result = {};
 
@@ -268,6 +269,12 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 			bool found = false;
 			for (int32_t e = 0; e < extra_exts.count; e++) {
 				if (strcmp(extra_exts[e], exts[i].extensionName) == 0) {
+					if (false) {}
+					FOR_EACH_EXT_ALL    (CHECK_NAME)
+					FOR_EACH_EXT_UWP    (CHECK_NAME)
+					FOR_EACH_EXT_ANDROID(CHECK_NAME)
+					FOR_EACH_EXT_LINUX  (CHECK_NAME)
+					FOR_EACH_EXT_DEBUG  (CHECK_NAME)
 					result.add(extra_exts[e]);
 					found = true;
 					break;
@@ -282,6 +289,7 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 }
 
 #undef CHECK_EXT
+#undef CHECK_NAME
 #undef DEFINE_EXT_INFO
 #undef EXT_AVAILABLE_UWP
 #undef EXT_AVAILABLE_ANDROID
