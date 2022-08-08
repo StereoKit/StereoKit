@@ -32,6 +32,7 @@ void demo_mic_init() {
 	mic_start();
 	mic_input = mic_get_stream();
 
+	mic_device_names.clear();
 	for (int32_t i = 0; i < mic_device_count(); i++) {
 		mic_device_names.push_back(mic_device_name(i));
 	}
