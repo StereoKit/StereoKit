@@ -240,6 +240,16 @@ void* backend_opengl_egl_get_context(){
 	return skg_get_platform_data()._egl_context;
 #endif
 }
+///////////////////////////////////////////
+
+void* backend_opengl_egl_get_config(){
+#if !defined(_SKG_GL_LOAD_EGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._egl_config;
+#endif
+}
 
 ///////////////////////////////////////////
 
