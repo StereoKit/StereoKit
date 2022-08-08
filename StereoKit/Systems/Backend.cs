@@ -66,9 +66,17 @@ namespace StereoKit
 			/// frame, and is available after SK.Initialize.</summary>
 			public static long Time => NativeAPI.backend_openxr_get_time();
 
-			/// <summary>Type: XrTime. This is the OpenXR time of the eye tracker
-			/// sample associated with the current value of <see cref="Input.Eyes"/>.</summary>
+			/// <summary>Type: XrTime. This is the OpenXR time of the eye
+			/// tracker sample associated with the current value of
+			/// <see cref="Input.Eyes"/>.</summary>
 			public static long EyesSampleTime => NativeAPI.backend_openxr_get_eyes_sample_time();
+
+			/// <summary>Tells StereoKit to request only the extensions that
+			/// are absolutely critical to StereoKit. You can still request
+			/// extensions via `OpenXR.RequestExt`, and this can be used to
+			/// opt-in to extensions that StereoKit would normally request
+			/// automatically.</summary>
+			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value?1:0); }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be

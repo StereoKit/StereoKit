@@ -67,8 +67,9 @@ XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
 
-array_t<const char*> xr_exts_user   = {};
-array_t<uint64_t>    xr_exts_loaded = {};
+array_t<const char*> xr_exts_user    = {};
+array_t<uint64_t>    xr_exts_loaded  = {};
+bool32_t             xr_minimum_exts = false;
 
 array_t<context_callback_t> xr_callbacks_pre_session_create = {};
 
@@ -210,7 +211,7 @@ bool openxr_init() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, [](const char *ext) {log_diagf("available: %s", ext);});
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_minimum_exts, [](const char *ext) {log_diagf("available: %s", ext);});
 	extensions.each([](const char *&ext) { 
 		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
 		xr_exts_loaded.add(hash_fnv64_string(ext));
@@ -608,6 +609,12 @@ void openxr_shutdown() {
 		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
 		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
 	}
+
+	xr_minimum_exts = false;
+
+	xr_exts_loaded.free();
+	xr_exts_user  .free();
+	xr_callbacks_pre_session_create.free();
 }
 
 ///////////////////////////////////////////
@@ -985,6 +992,17 @@ void backend_openxr_ext_request(const char *extension_name) {
 	}
 
 	xr_exts_user.add(string_copy(extension_name));
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		return;
+	}
+
+	xr_minimum_exts = use_minimum_exts;
 }
 
 ///////////////////////////////////////////
