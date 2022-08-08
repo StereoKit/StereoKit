@@ -963,7 +963,7 @@ void *backend_openxr_get_function(const char *function_name) {
 		log_err("backend_openxr_get_function must be called after StereoKit initialization!");
 
 	void   (*fn)()  = nullptr;
-	XrResult result = xrGetInstanceProcAddr(xr_instance, function_name, &fn);
+	XrResult result = xrGetInstanceProcAddr(xr_instance, function_name, (PFN_xrVoidFunction*)&fn);
 	if (XR_FAILED(result)) {
 		log_errf("Failed to find OpenXR function '%s' [%s]", function_name, openxr_string(result));
 		return nullptr;
