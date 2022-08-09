@@ -48,7 +48,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
