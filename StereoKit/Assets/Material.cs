@@ -168,6 +168,12 @@ namespace StereoKit
 		public int QueueOffset {
 			get => NativeAPI.material_get_queue_offset(_inst);
 			set => NativeAPI.material_set_queue_offset(_inst, value); }
+		/// <summary>Allows you to chain Materials together in a form of
+		/// multi-pass rendering! Any time the Material is used, the chained
+		/// Materials will also be used to draw the same item.</summary>
+		public Material Chain {
+			get { IntPtr mat = NativeAPI.material_get_chain(_inst); return mat == IntPtr.Zero ? null : new Material(mat); }
+			set { NativeAPI.material_set_chain(_inst, value?._inst ?? IntPtr.Zero); } }
 		/// <summary>The number of shader parameters available to this 
 		/// material, includes global shader variables as well as textures.
 		/// </summary>

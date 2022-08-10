@@ -453,18 +453,23 @@ color128 render_get_clear_color_ln() {
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
 	render_item_t item;
-	item.mesh     = mesh;
-	item.mesh_inds= mesh->ind_draw;
-	item.material = material;
-	item.color    = color;
-	item.sort_id  = render_queue_id(material, mesh);
-	item.layer    = (uint16_t)layer;
+	item.mesh      = mesh;
+	item.mesh_inds = mesh->ind_draw;
+	item.color     = color;
+	item.layer     = (uint16_t)layer;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, item.transform);
 	} else {
 		math_matrix_to_fast(transform, &item.transform);
 	}
-	render_list_add(&item);
+
+	material_t curr = material;
+	while (curr != nullptr) {
+		item.material = curr;
+		item.sort_id  = render_queue_id(material, mesh);
+		render_list_add(&item);
+		curr = curr->chain;
+	}
 }
 
 ///////////////////////////////////////////
@@ -483,14 +488,19 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		if (vis->visible == false) continue;
 		
 		render_item_t item;
-		item.mesh     = vis->mesh;
-		item.mesh_inds= vis->mesh->ind_count;
-		item.material = vis->material;
-		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, vis->mesh);
-		item.layer    = (uint16_t)layer;
+		item.mesh      = vis->mesh;
+		item.mesh_inds = vis->mesh->ind_count;
+		item.color     = color;
+		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
-		render_list_add(&item);
+
+		material_t curr = vis->material;
+		while (curr != nullptr) {
+			item.material = curr;
+			item.sort_id = render_queue_id(item.material, vis->mesh);
+			render_list_add(&item);
+			curr = curr->chain;
+		}
 	}
 
 	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {

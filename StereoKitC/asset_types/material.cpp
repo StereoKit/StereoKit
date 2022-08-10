@@ -200,6 +200,7 @@ void material_release(material_t material) {
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
+	if (material->chain) material_release(material->chain);
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i].tex != nullptr)
 			tex_release(material->args.textures[i].tex);
@@ -311,6 +312,19 @@ void material_set_queue_offset(material_t material, int32_t offset) {
 
 ///////////////////////////////////////////
 
+void material_set_chain(material_t material, material_t chain_material) {
+	if (material == chain_material) {
+		log_warn("Chain material can't be recursive!");
+		return;
+	}
+
+	if (chain_material ) material_addref (chain_material);
+	if (material->chain) material_release(material->chain);
+	material->chain = chain_material;
+}
+
+///////////////////////////////////////////
+
 transparency_ material_get_transparency(material_t material) { 
 	return material->alpha_mode;
 }
@@ -343,6 +357,13 @@ bool32_t material_get_depth_write(material_t material) {
 
 int32_t material_get_queue_offset(material_t material) {
 	return material->queue_offset;
+}
+
+///////////////////////////////////////////
+
+material_t material_get_chain(material_t material) {
+	if (material->chain) material_addref(material->chain);
+	return material->chain;
 }
 
 ///////////////////////////////////////////

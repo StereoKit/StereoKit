@@ -1018,12 +1018,14 @@ SK_API void              material_set_wireframe   (material_t material, bool32_t
 SK_API void              material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
 SK_API void              material_set_depth_write (material_t material, bool32_t write_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
+SK_API void              material_set_chain       (material_t material, material_t chain_material);
 SK_API transparency_     material_get_transparency(material_t material);
 SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
 SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
+SK_API material_t        material_get_chain       (material_t material);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
 SK_API void              material_set_vector2     (material_t material, const char *name, vec2     value);
 SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);

@@ -33,6 +33,7 @@ struct _material_t {
 	bool32_t          depth_write;
 	int32_t           queue_offset;
 	skg_pipeline_t    pipeline;
+	material_t        chain;
 };
 
 struct _material_buffer_t {
