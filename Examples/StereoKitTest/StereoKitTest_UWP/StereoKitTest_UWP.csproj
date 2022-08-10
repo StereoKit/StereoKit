@@ -86,10 +86,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.MixedReality.QR">
-      <Version>0.5.2092</Version>
+      <Version>0.5.3019</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.9</Version>
+      <Version>6.2.14</Version>
     </PackageReference>
   </ItemGroup>
 
