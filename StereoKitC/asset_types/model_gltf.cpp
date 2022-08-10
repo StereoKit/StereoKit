@@ -808,7 +808,7 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	if (node_id == -1) {
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
 	}
-	node_map->add(node, node_id);
+	node_map->set(node, node_id);
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);

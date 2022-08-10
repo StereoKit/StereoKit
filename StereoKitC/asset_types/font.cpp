@@ -408,11 +408,13 @@ void font_upsize_texture(font_t font) {
 	// size. We'll copy glyph by glyph to make sorting easier later on.
 	uint8_t *new_data = sk_malloc_t(uint8_t, new_w*new_h);
 	memset(new_data, 0, new_w * new_h);
-	for (int32_t i = 0; i < font->glyph_map.items.count; i++) {
-		font_char_t ch     = font->glyph_map.items[i];
+	for (int32_t i = 0; i < font->glyph_map.capacity; i++) {
+		if (font->glyph_map.items[i].hash == 0) continue;
+		
+		font_char_t ch     = font->glyph_map.items[i].value;
 		font_char_t new_ch = ch;
 		font_char_reuv(&new_ch, scale_x, scale_y);
-		font->glyph_map.items[i] = new_ch;
+		font->glyph_map.items[i].value = new_ch;
 
 		// Copy memory
 		recti_t src = {
@@ -425,8 +427,8 @@ void font_upsize_texture(font_t font) {
 		}
 	}
 	// Update the rest of our rectangles
-	for (int32_t i = 32; i < 128;                             i++) font_char_reuv(&font->characters         [i], scale_x, scale_y);
-	for (int32_t i = 0;  i < font->character_map.items.count; i++) font_char_reuv(&font->character_map.items[i], scale_x, scale_y);
+	for (int32_t i = 32; i < 128;                       i++) font_char_reuv(&font->characters         [i],       scale_x, scale_y);
+	for (int32_t i = 0;  i < font->character_map.count; i++) font_char_reuv(&font->character_map.items[i].value, scale_x, scale_y);
 	
 	// This could be a faster copy, but may not make a big difference. Also
 	// doesn't allow for copying to new locations.
@@ -468,21 +470,21 @@ font_glyph_t font_find_glyph(font_t font, char32_t character) {
 int32_t font_add_character(font_t font, char32_t character) {
 	int32_t      index   = -1;
 	font_glyph_t glyph   = font_find_glyph(font, character);
-	if (glyph.idx == 0) return font->character_map.add(character, font->characters['?']);
+	if (glyph.idx == 0) return font->character_map.set(character, font->characters['?']);
 
 	int32_t g_index = font->glyph_map.contains(glyph);
 	if (g_index >= 0) {
 		if (character < 128) {
-			font->characters[character] = font->glyph_map.items[g_index];
+			font->characters[character] = font->glyph_map.items[g_index].value;
 			index = -1;
-		} else index = font->character_map.add(character, font->glyph_map.items[g_index]);
+		} else index = font->character_map.set(character, font->glyph_map.items[g_index].value);
 	} else {
 		font_char_t ch = font_place_glyph(font, glyph);
 		if (character < 128) {
 			font->characters[character] = ch;
 			index = -1;
-		} else index = font->character_map.add(character, ch);
-		font->glyph_map   .add(glyph, ch);
+		} else index = font->character_map.set(character, ch);
+		font->glyph_map   .set(glyph, ch);
 		font->update_queue.add(glyph);
 	}
 	return index;
@@ -498,7 +500,7 @@ const font_char_t *font_get_glyph(font_t font, char32_t character) {
 	if (index < 0) {
 		index = font_add_character(font, character);
 	}
-	return &font->character_map.items[index];
+	return &font->character_map.items[index].value;
 }
 
 ///////////////////////////////////////////

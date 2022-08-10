@@ -259,10 +259,19 @@ struct array_t {
 // hashmap_t                        //
 //////////////////////////////////////
 
+const float   _hashmap_search_dist_pct = 0.001f;
+const int32_t _hashmap_search_dist_min = 3;
+
 template <typename K, typename T>
 struct hashmap_t {
-	array_t<uint64_t> hashes;
-	array_t<T>        items;
+	struct entry_t {
+		uint64_t hash;
+		K        key;
+		T        value;
+	};
+	entry_t* items;
+	int32_t  count;
+	int32_t  capacity;
 
 	uint64_t _hash(const K &key) const {
 		uint64_t       hash  = 14695981039346656037UL;
@@ -272,36 +281,105 @@ struct hashmap_t {
 		return hash;
 	}
 
-	int32_t add(const K &key, const T &value) {
-		uint64_t hash = _hash(key);
-		int32_t  id   = hashes.binary_search(hash);
-		if (id < 0) {
-			id = ~id;
-			hashes.insert(id, hash );
-			items .insert(id, value);
+	void resize(int32_t size) {
+		if (size < count)
+			size = count;
+		if (size == capacity) return;
+		
+		entry_t* old_items    = items;
+		int32_t  old_capacity = capacity;
+		items    = (entry_t*)ARRAY_MALLOC(sizeof(entry_t) * size);
+		capacity = size;
+		count    = 0;
+
+		memset(items, 0, sizeof(entry_t) * size);
+		for (int32_t i = 0; i < old_capacity; i++) {
+			if (old_items[i].hash == 0) continue;
+			set(old_items[i].key, old_items[i].value);
 		}
-		return id;
+		
+		ARRAY_FREE(old_items);
 	}
-	int32_t add_or_set(const K &key, const T &value) {
-		uint64_t hash = _hash(key);
-		int32_t  id   = hashes.binary_search(hash);
-		if (id < 0) {
-			id = ~id;
-			hashes.insert(id, hash );
-			items .insert(id, value);
-		} else {
-			hashes[id] = hash;
-			items [id] = value;
+	
+	int32_t set(const K &key, const T &value) {
+		if (count+1 >= capacity) {
+			resize(capacity == 0 ? 4 : capacity * 2);
 		}
+
+		// When this searches _past_ a certain distance for a free slot, then
+		// we should resize the hashmap.
+		int32_t search_distance = capacity * _hashmap_search_dist_pct;
+		if (search_distance < _hashmap_search_dist_min)
+			search_distance = _hashmap_search_dist_min;
+		
+		// Find the first slot that is empty or has the same key.
+		uint64_t hash = _hash(key);
+		int32_t  id   = hash % capacity;
+		while (items[id].hash != 0 && search_distance > 0) {
+			if (items[id].hash == hash && memcmp(&items[id].key, &key, sizeof(K)) == 0)
+				break;
+			id              += 1;
+			search_distance -= 1;
+			if (id >= capacity) id = 0;
+		}
+
+		// We didn't find a slot in range, resize and try again!
+		if (items[id].hash != 0 && items[id].hash != hash) {
+			resize(capacity * 2);
+			id = set(key, value);
+			return id;
+		}
+
+		// Increment the count if we found a totally empty slot.
+		if (items[id].hash != hash) count += 1;
+		
+		items[id].hash  = hash;
+		items[id].key   = key;
+		items[id].value = value;
 		return id;
 	}
 
-	T       *get      (const K &key)                         const { int32_t id = hashes.binary_search(_hash(key)); return id<0 ? nullptr       : &items[id]; }
-	const T &get_or   (const K &key, const T &default_value) const { int32_t id = hashes.binary_search(_hash(key)); return id<0 ? default_value :  items[id]; }
-	int32_t  contains (const K &key)                         const { return hashes.binary_search(_hash(key)); }
-	void     free     ()                                           { hashes.free(); items.free(); }
-	void     remove   (const K& key)                               { int32_t id = hashes.binary_search(_hash(key)); if (id >= 0) { hashes.remove(id); items.remove(id); } }
-	void     remove_at(const int32_t at)                           { if (at >= 0) { hashes.remove(at); items.remove(at); } }
+	int32_t contains(const K& key)  {
+		if (capacity == 0) return -1;
+		
+		uint64_t hash = _hash(key);
+		int32_t  id   = hash % capacity;
+
+		int32_t search_distance = capacity * _hashmap_search_dist_pct;
+		if (search_distance < _hashmap_search_dist_min)
+			search_distance = _hashmap_search_dist_min;
+
+		while (search_distance >= 0) {
+			if (items[id].hash == 0) return -1;
+			if (memcmp(&items[id].key, &key, sizeof(K)) == 0)
+				return id;
+
+			id              += 1;
+			search_distance -= 1;
+			if (id >= capacity) id = 0;
+		}
+		return -1;
+	}
+
+	T *get(const K &key)  {
+		int32_t id = contains(key);
+		if (id == -1)
+			return nullptr;
+		return id == -1
+			? nullptr
+			: &items[id].value;
+	}
+	
+	const T* get_or(const K& key, const T& default_value)  {
+		int32_t id = contains(key);
+		return id == -1
+			? default_value
+			: &items[id].value;
+	}
+	
+	void     free     ()                                           { ARRAY_FREE(items); *this = {}; }
+	void     remove   (const K& key)                               { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; } }
+	void     remove_at(const int32_t at)                           { if (items[at].hash != 0) { count--; } items[at].hash = 0; }
 };
 
 //////////////////////////////////////
