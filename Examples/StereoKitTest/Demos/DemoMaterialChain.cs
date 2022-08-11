@@ -22,7 +22,7 @@ class DemoMaterialChain : ITest
 	{
 		Material shellMaterial = new Material(Shader.FromFile("inflatable.hlsl"));
 		shellMaterial.FaceCull = Cull.Front;
-		shellMaterial[MatParamName.ColorTint] = Color.Black;
+		shellMaterial[MatParamName.ColorTint] = Color.HSV(0.1f, 0.7f, 1);
 
 		outlineMaterial = Material.Default.Copy();
 		outlineMaterial.Chain = shellMaterial;
