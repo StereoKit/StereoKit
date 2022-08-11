@@ -395,6 +395,11 @@ target_link_libraries( StereoKitC
 ###########################################
 
 if (SK_BUILD_TESTS)
+  file(GLOB_RECURSE SK_TEST_ASSETS ${CMAKE_SOURCE_DIR}/Examples/Assets/*)
+  source_group("assets" FILES ${SK_TEST_ASSETS})
+  set_property(SOURCE ${SK_TEST_ASSETS} PROPERTY VS_COPY_TO_OUT_DIR PreserveNewest)
+  set_property(SOURCE ${SK_TEST_ASSETS} PROPERTY VS_DEPLOYMENT_LOCATION Assets)
+
   add_executable( StereoKitCTest
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/demo_envmap.h
@@ -431,6 +436,7 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/skt_lighting.cpp
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl.h
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl.h
+	${SK_TEST_ASSETS}
   )
 
   target_link_libraries( StereoKitCTest
@@ -440,6 +446,13 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  #set (source      ${CMAKE_SOURCE_DIR}/Examples/Assets)
+  #set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)
+  #add_custom_command(
+  #  TARGET StereoKitCTest
+  #  COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
+  #  COMMENT "Copy resources from ${source} => ${destination}")
 endif()
 
 ###########################################
