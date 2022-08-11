@@ -72,7 +72,7 @@ if(SK_PHYSICS)
   CPMAddPackage(
     NAME reactphysics3d
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
     EXCLUDE_FROM_ALL YES
   )
   # Something in reactphysics3d seems to require -fPIC
@@ -130,7 +130,7 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
 endforeach(SHADER)
 
 ###########################################
-## Platform Specific Library Linking     ##
+## Platform Specific Settings            ##
 ###########################################
 
 if (UNIX)
@@ -159,6 +159,10 @@ elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
 endif()
 
 if(NOT SK_PHYSICS)
@@ -351,15 +355,16 @@ add_library(StereoKitC ${LIBRARY_TYPE}
 
 # Set up Visual Studio folders/filters for a more organized
 # workspace there.
-source_group("code"        FILES ${SK_SRC_CODE})
-source_group("asset_types" FILES ${SK_SRC_ASSET_TYPES})
-source_group("libraries"   FILES ${SK_SRC_LIBRARIES})
-source_group("systems"     FILES ${SK_SRC_SYSTEMS})
-source_group("hands"       FILES ${SK_SRC_HANDS})
-source_group("platform"    FILES ${SK_SRC_PLATFORMS})
-source_group("xr_backends" FILES ${SK_SRC_XR_BACKENDS})
-source_group("tools"       FILES ${SK_SRC_TOOLS})
-source_group("ui"          FILES ${SK_SRC_UI})
+source_group("code"            FILES ${SK_SRC_CODE})
+source_group("asset_types"     FILES ${SK_SRC_ASSET_TYPES})
+source_group("libraries"       FILES ${SK_SRC_LIBRARIES})
+source_group("systems"         FILES ${SK_SRC_SYSTEMS})
+source_group("hands"           FILES ${SK_SRC_HANDS})
+source_group("platform"        FILES ${SK_SRC_PLATFORMS})
+source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
+source_group("tools"           FILES ${SK_SRC_TOOLS})
+source_group("ui"              FILES ${SK_SRC_UI})
+source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (UNIX)
   # DirectXMath on Linux needs a few extra files
