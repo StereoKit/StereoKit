@@ -43,8 +43,14 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 
 #include <stdint.h>
+#ifdef SK_FFI
+#include <stddef.h>
+typedef __uint_least16_t char16_t;
+typedef __uint_least32_t char32_t;
+#else
 #include <math.h>
 #include <uchar.h>
+#endif
 
 #ifdef __cplusplus
 namespace sk {
