@@ -44,11 +44,9 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 
 #include <stdint.h>
 #include <uchar.h>
-#ifdef __cplusplus
-#include <math.h>
-#endif
 
 #ifdef __cplusplus
+#include <math.h> // For C++ math operator overloading
 namespace sk {
 #endif
 
