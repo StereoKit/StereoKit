@@ -17,7 +17,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Drop into the [Discord channel](https://discord.gg/jtZpfS7nyK) for discussion, help and updates.
 - Check out [this blog](https://playdeck.net/project/stereokit) for occasional substantial updates!
 
-![Screenshot](/docs/img/screenshots/FeatureImage.jpg)
+![Screenshot](/Tools/screenshots/FeatureImage.jpg)
 
 ## StereoKit Features
 
