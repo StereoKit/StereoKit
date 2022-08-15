@@ -466,7 +466,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	material_t curr = material;
 	while (curr != nullptr) {
 		item.material = curr;
-		item.sort_id  = render_queue_id(material, mesh);
+		item.sort_id  = render_queue_id(curr, mesh);
 		render_list_add(&item);
 		curr = curr->chain;
 	}
@@ -497,7 +497,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		material_t curr = vis->material;
 		while (curr != nullptr) {
 			item.material = curr;
-			item.sort_id = render_queue_id(item.material, vis->mesh);
+			item.sort_id  = render_queue_id(curr, vis->mesh);
 			render_list_add(&item);
 			curr = curr->chain;
 		}
