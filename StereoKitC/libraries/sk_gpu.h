@@ -1144,30 +1144,58 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	ID3DBlob   *compiled = nullptr;
 	const void *buffer;
 	size_t      buffer_size;
+	HRESULT     hr = E_FAIL;
 	if (shader_size >= 4 && memcmp(file_data, "DXBC", 4) == 0) {
 		buffer      = file_data;
 		buffer_size = shader_size;
 	} else {
+		// Compile a text HLSL shader file to bytecode
 		ID3DBlob *errors;
 		const char *entrypoint = "", *target = "";
 		switch (type) {
 			case skg_stage_vertex:  entrypoint = "vs"; target = "vs_5_0"; break;
 			case skg_stage_pixel:   entrypoint = "ps"; target = "ps_5_0"; break;
 			case skg_stage_compute: entrypoint = "cs"; target = "cs_5_0"; break; }
-		if (FAILED(D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, entrypoint, target, flags, 0, &compiled, &errors))) {
-			skg_log(skg_log_warning, "D3DCompile failed:");
-			skg_log(skg_log_warning, (char *)errors->GetBufferPointer());
+		hr = D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, entrypoint, target, flags, 0, &compiled, &errors);
+		if (errors) {
+			skg_log(skg_log_warning, "D3DCompile errors:");
+			skg_log(skg_log_warning, (char*)errors->GetBufferPointer());
+			errors->Release();
 		}
-		if (errors) errors->Release();
+		if (FAILED(hr)) {
+			char text[128];
+			snprintf(text, sizeof(text), "D3DCompile failed: 0x%X", hr);
+			skg_log(skg_log_warning, text);
+
+			if (compiled) compiled->Release();
+			return {};
+		}
 
 		buffer      = compiled->GetBufferPointer();
 		buffer_size = compiled->GetBufferSize();
 	}
 
-	switch(type) {
-	case skg_stage_vertex  : d3d_device->CreateVertexShader (buffer, buffer_size, nullptr, (ID3D11VertexShader **)&result._shader); break;
-	case skg_stage_pixel   : d3d_device->CreatePixelShader  (buffer, buffer_size, nullptr, (ID3D11PixelShader  **)&result._shader); break;
-	case skg_stage_compute : d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
+	// Create a shader from HLSL bytecode
+	hr = E_FAIL;
+	switch (type) {
+	case skg_stage_vertex  : hr = d3d_device->CreateVertexShader (buffer, buffer_size, nullptr, (ID3D11VertexShader **)&result._shader); break;
+	case skg_stage_pixel   : hr = d3d_device->CreatePixelShader  (buffer, buffer_size, nullptr, (ID3D11PixelShader  **)&result._shader); break;
+	case skg_stage_compute : hr = d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
+	}
+	if (FAILED(hr)) {
+		char text[128];
+		snprintf(text, sizeof(text), "CreateXShader failed: 0x%X", hr);
+		skg_log(skg_log_warning, text);
+
+		if (compiled) compiled->Release();
+		if (result._shader) {
+			switch (type) {
+			case skg_stage_vertex:  ((ID3D11VertexShader *)result._shader)->Release(); break;
+			case skg_stage_pixel:   ((ID3D11PixelShader  *)result._shader)->Release(); break;
+			case skg_stage_compute: ((ID3D11ComputeShader*)result._shader)->Release(); break;
+			}
+		}
+		return {};
 	}
 
 	if (type == skg_stage_vertex) {
