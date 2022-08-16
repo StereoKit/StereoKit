@@ -1134,13 +1134,6 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	skg_shader_stage_t result = {};
 	result.type = type;
 
-	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#if !defined(NDEBUG)
-	flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
-#else
-	flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
 	ID3DBlob   *compiled = nullptr;
 	const void *buffer;
 	size_t      buffer_size;
@@ -1149,6 +1142,13 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 		buffer      = file_data;
 		buffer_size = shader_size;
 	} else {
+		DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
+#if !defined(NDEBUG)
+		flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
+#else
+		flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
 		// Compile a text HLSL shader file to bytecode
 		ID3DBlob *errors;
 		const char *entrypoint = "", *target = "";
