@@ -518,7 +518,9 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
+  #if !defined(SKG_LINUX_EGL)
 	linux_events();
+  #endif
 }
 
 ///////////////////////////////////////////
