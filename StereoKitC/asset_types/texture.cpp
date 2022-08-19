@@ -645,7 +645,7 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, bool32_t owned, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned) {
 	texture->owned = owned;
 	
 	if (texture->owned && skg_tex_is_valid(&texture->tex))

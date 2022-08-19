@@ -357,8 +357,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 		native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[s].image;
 #endif
 		if (display.swapchain_color.surface_layers == 1) {
-			tex_set_surface(display.swapchain_color.textures[s], native_surface_col,   true, tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
-			tex_set_surface(display.swapchain_depth.textures[s], native_surface_depth, true, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
+			tex_set_surface(display.swapchain_color.textures[s], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
+			tex_set_surface(display.swapchain_depth.textures[s], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
 			tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
 		} else {
 			for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
