@@ -10,6 +10,7 @@ namespace sk {
 struct _tex_t {
 	asset_header_t header;
 	tex_t          fallback;
+	bool32_t       owned;
 
 	// Metadata fields
 	int32_t        width;
