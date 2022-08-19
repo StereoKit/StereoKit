@@ -510,9 +510,12 @@ void linux_shutdown() {
 
 void linux_step_begin_xr() {
   #if defined(SKG_LINUX_EGL)
-	if(!sk_settings.disable_desktop_input_window)
-  #endif
+	if(!sk_settings.disable_desktop_input_window) {
 		linux_events();
+	}
+  #else
+	linux_events();
+  #endif
 }
 
 ///////////////////////////////////////////
