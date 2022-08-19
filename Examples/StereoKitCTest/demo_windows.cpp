@@ -82,7 +82,7 @@ void demo_windows_init() {
 		win.texture  = tex_create();
 		win.pose     = pose_t{ vec3{0,0,-0.5f} + vec3{0.04f, 0.04f, -0.04f} *mirror_windows.size(), quat_lookat(vec3_zero, {0,0,1}) };
 		strncpy(win.name, text, sizeof(win.name));
-		tex_set_surface(win.texture, shared_tex, tex_type_image_nomips, format, 0, 0, 1);
+		tex_set_surface(win.texture, shared_tex, true, tex_type_image_nomips, format, 0, 0, 1);
 		tex_set_address(win.texture, tex_address_clamp);
 		material_set_texture(win.material, "diffuse", win.texture);
 		mirror_windows.push_back(win);

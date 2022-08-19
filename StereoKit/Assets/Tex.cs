@@ -259,8 +259,8 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
-		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count);
+		public void SetNativeSurface(IntPtr nativeTexture, bool owned, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1)
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, owned?1:0, type, native_fmt, width, height, surface_count);
 
 		public void GetColors(ref Color32[] colorData)
 		{

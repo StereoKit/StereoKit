@@ -70,7 +70,7 @@ bool duplication_next_frame(IDXGIOutputDuplication *duplication, tex_t frame_tex
 
 	if (tex_asset_state(frame_tex) == asset_state_loaded) {
 		duplication->ReleaseFrame();
-		tex_set_surface(frame_tex, nullptr, tex_type_image_nomips, 0, 0, 0, 1);
+		tex_set_surface(frame_tex, nullptr, true, tex_type_image_nomips, 0, 0, 0, 1);
 	}
 
 	IDXGIResource          *desktop_resource = nullptr;
@@ -84,7 +84,7 @@ bool duplication_next_frame(IDXGIOutputDuplication *duplication, tex_t frame_tex
 	desktop_resource->Release();
 	if (FAILED(hr)) { return false; }
 
-	tex_set_surface(frame_tex, desktop_image, tex_type_image_nomips, 0, 0, 0, 1);
+	tex_set_surface(frame_tex, desktop_image, true, tex_type_image_nomips, 0, 0, 0, 1);
 
 	return true;
 }
