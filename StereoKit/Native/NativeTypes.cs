@@ -374,6 +374,17 @@ namespace StereoKit
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>
 		public float scrollChange;
+		
+		/// <summary>Ray representing the position and orientation that the
+		/// current Input.Mouse.pos is pointing in.</summary>
+		public Ray Ray
+		{
+			get
+			{
+				NativeAPI.ray_from_mouse(pos, out Ray ray);
+				return ray;
+			}
+		}
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
