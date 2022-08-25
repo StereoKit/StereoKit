@@ -6,7 +6,6 @@ namespace StereoKit
 {
 	/// <summary>This class represents a sound effect! Excellent for blips
 	/// and bloops and little clips that you might play around your scene.
-	/// Not great for long streams of audio like you might see in a podcast.
 	/// Right now, this supports .wav, .mp3, and procedurally generated 
 	/// noises!
 	/// 
