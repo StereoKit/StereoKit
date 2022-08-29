@@ -123,8 +123,8 @@ vec4                    render_lighting[9]     = {};
 spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
-render_layer_           render_primary_filter  = render_layer_all;
-render_layer_           render_capture_filter  = render_layer_all;
+render_layer_           render_primary_filter  = render_layer_all_first_person;
+render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
 tex_t                   render_global_textures[16] = {};
 

@@ -65,6 +65,13 @@ namespace StereoKit
 					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
 					result = SnakeToCamel(name, true, prefix) + result;
 				} break;
+				case CppExpressionKind.UnaryOperator: {
+					CppExpression arg = ((CppUnaryExpression)curr).Arguments[0];
+					string name = arg.ToString();
+					int    prefix = 0;
+					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
+					result = ((CppUnaryExpression)curr).Operator + SnakeToCamel(name, true, prefix) + result;
+				} break;
 				default: result = curr + result; break;
 			}
 
