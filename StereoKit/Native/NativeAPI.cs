@@ -188,6 +188,7 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_addref          (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_find            (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_create          (IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_copy            (IntPtr material);

@@ -15,7 +15,14 @@ namespace StereoKit
 		/// style, so you can override certain features! Note that if you're
 		/// creating TextStyles with manually provided Materials, this 
 		/// Material may not be unique to this style.</summary>
-		public Material Material => new Material(NativeAPI.text_style_get_material(this));
+		public Material Material
+		{
+			get {
+				var materialPtr = NativeAPI.text_style_get_material(this);
+				NativeAPI.material_addref(materialPtr);
+				return new Material(materialPtr);
+			}
+		}
 
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
