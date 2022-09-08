@@ -266,6 +266,7 @@ void material_set_shader(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 shader_t material_get_shader(material_t material) {
+	shader_addref(material->shader);
 	return material->shader;
 }
 

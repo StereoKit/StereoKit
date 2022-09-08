@@ -602,7 +602,7 @@ void render_check_screenshots() {
 		color32 *buffer = (color32*)sk_malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_add_zbuffer  (render_capture_surface);
+		tex_release(tex_add_zbuffer(render_capture_surface));
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);

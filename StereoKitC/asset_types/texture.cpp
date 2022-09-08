@@ -621,6 +621,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
 	
+	tex_addref(texture->depth_buffer);
 	return texture->depth_buffer;
 }
 
