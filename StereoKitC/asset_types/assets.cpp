@@ -57,6 +57,7 @@ mtx_t                  asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
 int32_t                asset_tasks_processing= 0;
 int32_t                asset_tasks_priority  = INT_MAX;
+cnd_t                  asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
 int32_t asset_thread   (void *);
@@ -320,6 +321,7 @@ bool assets_init() {
 	mtx_init(&assets_job_lock,                 mtx_plain);
 	mtx_init(&asset_thread_task_mtx,           mtx_plain);
 	mtx_init(&assets_load_event_lock,          mtx_plain);
+	cnd_init(&asset_tasks_available);
 
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);
@@ -386,6 +388,7 @@ void assets_update() {
 
 void assets_shutdown() {
 	asset_thread_enabled = false;
+	cnd_broadcast(&asset_tasks_available);
 	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
 			assets_update();
@@ -404,6 +407,7 @@ void assets_shutdown() {
 	mtx_destroy(&assets_multithread_destroy_lock);
 	mtx_destroy(&assets_job_lock);
 	mtx_destroy(&assets_load_event_lock);
+	cnd_destroy(&asset_tasks_available);
 
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
@@ -550,6 +554,9 @@ void assets_add_task(asset_task_t src_task) {
 	asset_thread_tasks.insert(idx, task);
 	asset_tasks_processing += 1;
 	mtx_unlock(&asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) cnd_broadcast(&asset_tasks_available);
+	else                              cnd_signal   (&asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -700,12 +707,18 @@ int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
 	thread->id      = thrd_id_current();
 	thread->running = true;
+	 
+	mtx_t wait_mtx;
+	mtx_init(&wait_mtx, mtx_plain);
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
 		asset_step_task();
-		thrd_yield();
+
+		if (asset_thread_enabled && asset_thread_tasks.count == 0)
+			cnd_wait(&asset_tasks_available, &wait_mtx);
 	}
 
+	mtx_destroy(&wait_mtx);
 	thread->running = false;
 	return 0;
 }
