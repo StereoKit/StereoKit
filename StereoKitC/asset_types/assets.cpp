@@ -128,6 +128,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
+	sk_free(header->id_text);
 	header->id_text = string_copy(id);
 }
 
@@ -192,6 +193,10 @@ void assets_destroy(asset_header_t *asset) {
 		return;
 	}
 
+	// destroy functions will often zero out their contents for safety, so we
+	// need to free the id text first
+	sk_free(asset->id_text);
+
 	// Call asset specific destroy function
 	switch(asset->type) {
 	case asset_type_mesh:     mesh_destroy    ((mesh_t    )asset); break;
@@ -215,7 +220,6 @@ void assets_destroy(asset_header_t *asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
-	sk_free(asset->id_text);
 	sk_free(asset);
 }
 

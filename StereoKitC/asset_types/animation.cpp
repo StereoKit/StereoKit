@@ -272,6 +272,7 @@ void anim_data_destroy(anim_data_t *data) {
 			sk_free(data->anims[i].curves[c].keyframe_times);
 		}
 		data->anims[i].curves.free();
+		sk_free(data->anims[i].name);
 	}
 	for (int32_t i = 0; i < data->skeletons.count; i++) {
 		sk_free(data->skeletons[i].bone_to_node_map);

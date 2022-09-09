@@ -119,6 +119,7 @@ void font_source_release(int32_t id) {
 	font_sources[id].references -= 1;
 	if (font_sources[id].references == 0) {
 		sk_free(font_sources[id].file);
+		sk_free(font_sources[id].name);
 		font_sources[id].file = nullptr;
 		font_sources[id].info = {};
 	}
@@ -278,6 +279,7 @@ void font_destroy(font_t font) {
 	rect_atlas_destroy(&font->atlas);
 	sk_free           ( font->atlas_data);
 	font->character_map.free();
+	font->glyph_map    .free();
 	font->update_queue .free();
 	font->font_ids     .free();
 
