@@ -110,8 +110,8 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 	if (count < 2) return;
 	thickness *= 0.5f;
 	
-	vec3 curr = hierarchy_to_world_point(points[0]);
-	vec3 next = hierarchy_to_world_point(points[1]);
+	vec3 curr     = hierarchy_to_world_point(points[0]);
+	vec3 next     = hierarchy_to_world_point(points[1]);
 	vec3 prev_dir = vec3_normalize(next - curr);
 	vec3 curr_dir = prev_dir;
 	vec3 prev     = curr - curr_dir;
@@ -147,8 +147,8 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 void line_add_listv(const line_point_t *points, int32_t count) {
 	if (count < 2) return;
 	
-	vec3 curr = hierarchy_to_world_point(points[0].pt);
-	vec3 next = hierarchy_to_world_point(points[1].pt);
+	vec3 curr     = hierarchy_to_world_point(points[0].pt);
+	vec3 next     = hierarchy_to_world_point(points[1].pt);
 	vec3 prev_dir = vec3_normalize(next - curr);
 	vec3 curr_dir = prev_dir;
 	vec3 prev     = curr - curr_dir;
@@ -171,6 +171,7 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 		vert_t verts[2] = {
 			vert_t{ curr, next, { points[i].thickness * 0.5f,0}, points[i].color },
 			vert_t{ curr, next, {-points[i].thickness * 0.5f,1}, points[i].color }, };
+		line_verts.add_range(verts, 2);
 
 		prev     = curr;
 		curr     = next;
