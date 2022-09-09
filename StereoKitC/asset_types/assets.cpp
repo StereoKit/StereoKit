@@ -605,6 +605,9 @@ void assets_return_task(asset_task_t *task) {
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
 	asset_thread_tasks.insert(0, task);
 	mtx_unlock(&asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) cnd_broadcast(&asset_tasks_available);
+	else                              cnd_signal   (&asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -742,7 +745,6 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_update();
-		thrd_yield();
 	}
 }
 
@@ -764,7 +766,6 @@ void assets_block_for_priority(int32_t priority) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_update();
-		thrd_yield();
 		curr_priority = assets_current_task_priority();
 	}
 }
