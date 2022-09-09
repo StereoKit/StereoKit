@@ -80,7 +80,7 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	color32 line_color  = color_to_32(color_lab(lab.x * powf(0.8f,  contrast_boost), lab.y, lab.z, 1));
 	color32 line2_color = color_to_32(color_lab(lab.x * powf(0.75f, contrast_boost), lab.y, lab.z, 1));
 
-	color32 *data   = sk_malloc_t(color32, size * size);
+	color32 *data = sk_malloc_t(color32, size * size);
 	for (int32_t y = 0; y < size; y++) {
 		int ydist  = abs(slice_half    - ((y + slice_half   ) % slice_size));
 		int ydist2 = abs(slice_quarter - ((y + slice_quarter) % slice_half));
@@ -97,6 +97,8 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	}
 
 	tex_set_colors(result, size, size, data);
+	sk_free(data);
+
 	return result;
 }
 

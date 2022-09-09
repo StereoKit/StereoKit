@@ -668,10 +668,10 @@ typedef enum cull_ {
 	cull_back = 0,
 	/*Discard if the front of the triangle face is pointing
 	  towards the camera. This is opposite the default behavior.*/
-	  cull_front,
-	  /*No culling at all! Draw the triangle regardless of which
-		way it's pointing.*/
-		cull_none,
+	cull_front,
+	/*No culling at all! Draw the triangle regardless of which
+	  way it's pointing.*/
+	cull_none,
 } cull_;
 
 SK_API mesh_t      mesh_find            (const char *name);
