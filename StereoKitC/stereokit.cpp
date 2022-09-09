@@ -339,6 +339,8 @@ void sk_shutdown() {
 
 	systems_shutdown();
 	sk_initialized = false;
+
+	sk_mem_log_allocations();
 }
 
 ///////////////////////////////////////////
