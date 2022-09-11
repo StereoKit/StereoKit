@@ -254,6 +254,7 @@ void anim_inst_destroy(anim_inst_t *inst) {
 	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
 		sk_free(inst->skinned_meshes[i].bone_transforms);
 		mesh_release(inst->skinned_meshes[i].original_mesh);
+		mesh_release(inst->skinned_meshes[i].modified_mesh);
 	}
 	sk_free(inst->skinned_meshes);
 	sk_free(inst->curve_last_keyframe);

@@ -216,6 +216,10 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 	// And assign the skin!
 	mesh_set_skin(sk_mesh, bone_ids, bone_id_ct, weights, weight_ct, bone_trs, bone_tr_ct);
 
+	sk_free(bone_ids);
+	sk_free(weights);
+	sk_free(bone_trs);
+
 	return true;
 }
 

@@ -486,6 +486,13 @@ void mesh_destroy(mesh_t mesh) {
 	sk_free(mesh->collision_data.planes);
 	if (mesh->bvh_data)
 		mesh_bvh_destroy(mesh->bvh_data);
+
+	sk_free(mesh->skin_data.bone_ids);
+	sk_free(mesh->skin_data.bone_inverse_transforms);
+	sk_free(mesh->skin_data.bone_transforms);
+	sk_free(mesh->skin_data.deformed_verts);
+	sk_free(mesh->skin_data.weights);
+
 	*mesh = {};
 }
 
