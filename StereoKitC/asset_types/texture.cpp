@@ -673,6 +673,13 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 ///////////////////////////////////////////
 
+void* tex_get_surface(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded);
+	return skg_tex_get_native(&texture->tex);
+}
+
+///////////////////////////////////////////
+
 void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_index) {
 	if (skg_tex_is_valid(&texture->tex))
 		skg_tex_destroy (&texture->tex);
@@ -976,6 +983,14 @@ int32_t tex_get_anisotropy(tex_t texture) {
 
 ///////////////////////////////////////////
 
+int32_t tex_get_mips(tex_t texture) {
+	return (texture->type & tex_type_mips)
+		? skg_mip_count(tex_get_width(texture), tex_get_height(texture))
+		: 1;
+}
+
+///////////////////////////////////////////
+
 size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
@@ -1033,23 +1048,35 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 ///////////////////////////////////////////
 
 void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
+	tex_get_data_mip(texture, out_data, out_data_size, 0);
+}
+
+///////////////////////////////////////////
+
+void tex_get_data_mip(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
+	if (mip_level > tex_get_mips(texture)) {
+		log_warn("Cannot retrieve invalid mip-level!");
+		return;
+	}
+
 	assets_block_until(&texture->header, asset_state_loaded);
-	memset(out_data, 0, out_data_size);
 
 	struct tex_data_job_t {
-		tex_t texture;
-		void *out_data;
-		size_t out_data_size;
+		tex_t   texture;
+		void*   out_data;
+		size_t  out_data_size;
+		int32_t mip_level;
 	};
-	tex_data_job_t job_data = { texture, out_data, out_data_size };
+	tex_data_job_t job_data = { texture, out_data, out_data_size, mip_level };
 
 	bool32_t result = assets_execute_gpu([](void *data) {
 		tex_data_job_t *job_data = (tex_data_job_t *)data;
-		return (bool32_t)skg_tex_get_contents(&job_data->texture->tex, job_data->out_data, job_data->out_data_size);
+		return (bool32_t)skg_tex_get_mip_contents(&job_data->texture->tex, job_data->mip_level, job_data->out_data, job_data->out_data_size);
 	}, &job_data);
 
 	if (!result) {
 		log_warn("Couldn't get texture contents!");
+		memset(out_data, 0, out_data_size);
 	}
 }
 

@@ -855,6 +855,7 @@ SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned sk_default(true));
+SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API asset_state_ tex_asset_state         (const tex_t texture);
@@ -864,7 +865,9 @@ SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+// TODO: For v0.4, combine these two functions
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
+SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
@@ -877,6 +880,7 @@ SK_API void         tex_set_address         (tex_t texture, tex_address_ address
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
 SK_API int32_t      tex_get_anisotropy      (tex_t texture);
+SK_API int32_t      tex_get_mips            (tex_t texture);
 SK_API void         tex_set_loading_fallback(tex_t loading_texture);
 SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);

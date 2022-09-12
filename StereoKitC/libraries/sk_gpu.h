@@ -557,6 +557,7 @@ SKG_API void                skg_tex_set_contents_arr     (      skg_tex_t *tex, 
 SKG_API bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
 SKG_API bool                skg_tex_get_mip_contents     (      skg_tex_t *tex, int32_t mip_level, void *ref_data, size_t data_size);
 SKG_API bool                skg_tex_get_mip_contents_arr (      skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size);
+SKG_API void*               skg_tex_get_native           (const skg_tex_t *tex);
 SKG_API void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
 SKG_API void                skg_tex_clear                (skg_bind_t bind);
 SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target);
@@ -1129,7 +1130,6 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 
 ///////////////////////////////////////////
 
-#include <stdio.h>
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
 	skg_shader_stage_t result = {};
 	result.type = type;
@@ -2092,6 +2092,12 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		copy_tex->Release();
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void* skg_tex_get_native(const skg_tex_t* tex) {
+	return tex->_texture;
 }
 
 ///////////////////////////////////////////
@@ -4133,6 +4139,12 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	}
 
 	return result == 0;
+}
+
+///////////////////////////////////////////
+
+void* skg_tex_get_native(const skg_tex_t* tex) {
+	return (void*)((uint64_t)tex->_texture);
 }
 
 ///////////////////////////////////////////
