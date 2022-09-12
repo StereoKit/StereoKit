@@ -199,6 +199,9 @@
     <ClCompile Include="xr_backends\openxr_view.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\unicode.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

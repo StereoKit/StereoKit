@@ -148,6 +148,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="libraries\stb_image.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\tinycthread.cpp" />
+    <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\flatscreen_input.cpp" />

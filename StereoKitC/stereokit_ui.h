@@ -86,6 +86,7 @@ SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API bool32_t ui_has_keyboard_focus  ();
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();

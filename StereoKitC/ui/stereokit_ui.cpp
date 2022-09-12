@@ -1816,7 +1816,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		platform_keyboard_show(true,type);
 		skui_input_blink  = time_getf();
 		skui_input_target = id_hash;
-		skui_input_carat  = skui_input_carat_end = utf_charlen(buffer);
+		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
 
@@ -1852,20 +1852,24 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 				if (skui_input_carat != skui_input_carat_end) {
 					int32_t start = mini(skui_input_carat, skui_input_carat_end);
 					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
-					utf_remove_chars(buffer + start, count);
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
 					skui_input_carat_end = skui_input_carat = start;
+					result = true;
 				} else if (skui_input_carat > 0) {
 					skui_input_carat_end = skui_input_carat = skui_input_carat - 1;
-					utf_remove_chars(buffer + skui_input_carat, 1);
+					utf_remove_chars(utf_advance_chars(buffer, skui_input_carat), 1);
+					result = true;
 				}
 			} else if (curr == 0x7f) {
 				if (skui_input_carat != skui_input_carat_end) {
 					int32_t start = mini(skui_input_carat, skui_input_carat_end);
 					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
-					utf_remove_chars(buffer + start, count);
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
 					skui_input_carat_end = skui_input_carat = start;
+					result = true;
 				} else if (skui_input_carat >= 0) {
-					utf_remove_chars(buffer + skui_input_carat, 1);
+					utf_remove_chars(utf_advance_chars(buffer, skui_input_carat), 1);
+					result = true;
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
@@ -1885,10 +1889,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 				if (skui_input_carat != skui_input_carat_end) {
 					int32_t start = mini(skui_input_carat, skui_input_carat_end);
 					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
-					utf_remove_chars(buffer + start, count);
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
 					skui_input_carat_end = skui_input_carat = start;
 				}
-				utf_insert_char(buffer, buffer_size, buffer + skui_input_carat, add);
+				utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_carat), add);
 				skui_input_carat += 1;
 				skui_input_carat_end = skui_input_carat;
 				result = true;
@@ -1929,6 +1933,12 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, 
 }
 bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
 	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size, type);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_has_keyboard_focus() {
+	return skui_input_target != 0;
 }
 
 ///////////////////////////////////////////
