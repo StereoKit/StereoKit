@@ -148,15 +148,29 @@ void _sk_free_d(void* memory, const char* filename, int32_t line) {
 
 void sk_mem_log_allocations() {
 	mem_info_t* mem = mem_tracker_root;
+	size_t  total = 0;
+	size_t  max   = 0;
+	int32_t count = 0;
 	while (mem != nullptr) {
 		const char *filename = strrchr(mem->filename, '/');
 		if (filename == nullptr) filename = strrchr(mem->filename, '\\');
 		if (filename == nullptr) filename = mem->filename;
 		else                     filename += 1;
 
-		printf("%s #%d - %s - %d\n", filename, mem->line, mem->type, (int32_t)mem->bytes);
+		total += mem->bytes;
+		if (max < mem->bytes)
+			max = mem->bytes;
+		count += 1;
+
+		printf("%s #%d - %s - %d", filename, mem->line, mem->type, (int32_t)mem->bytes);
+		if (strcmp(filename, "stref.cpp") == 0)
+			printf(" - %s\n", mem + 1);
+		else
+			printf("\n");
+
 		mem = mem->next;
 	}
+	printf("%d allocations, total memory: %.2fmb, largest allocation: %.2fmb\n", count, total/(1024.0f * 1024.0f), max/(1024.0f * 1024.0f));
 }
 #endif
 

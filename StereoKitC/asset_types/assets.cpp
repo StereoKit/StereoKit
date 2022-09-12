@@ -386,6 +386,12 @@ void assets_update() {
 	mtx_unlock(&assets_load_event_lock);
 	assets_load_call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
 	assets_load_call_list.clear();
+
+#if defined(SK_DEBUG_MEM)
+	if (input_key(key_p) & button_state_just_active) {
+		sk_mem_log_allocations();
+	}
+#endif
 }
 
 ///////////////////////////////////////////
@@ -401,6 +407,9 @@ void assets_shutdown() {
 	}
 	asset_threads.free();
 
+#if defined(SK_DEBUG_MEM)
+	assets_shutdown_check();
+#endif
 
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
@@ -416,6 +425,7 @@ void assets_shutdown() {
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
+	assets               .free();
 
 	asset_tasks_processing = 0;
 	asset_tasks_finished   = 0;
