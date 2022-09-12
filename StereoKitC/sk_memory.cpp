@@ -75,6 +75,11 @@ void *sk_malloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 		abort();
 	}
 
+	// This can be a really handy way to debug a specific allocation!
+	//if (bytes == 13851053 && line == 182) {
+	//	printf("break\n");
+	//}
+
 	mem_info_t* info = (mem_info_t*)result;
 	*info = {};
 	info->bytes    = bytes;
