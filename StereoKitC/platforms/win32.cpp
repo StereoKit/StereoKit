@@ -74,7 +74,7 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
 	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;

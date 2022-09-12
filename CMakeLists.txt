@@ -251,6 +251,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stb_truetype.h
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
+  StereoKitC/libraries/unicode.h
+  StereoKitC/libraries/unicode.cpp
   StereoKitC/libraries/tinycthread.h
   StereoKitC/libraries/tinycthread.cpp )
 

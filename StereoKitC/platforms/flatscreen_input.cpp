@@ -1,4 +1,5 @@
 #include "../_stereokit.h"
+#include "../stereokit_ui.h" // for ui_has_keyboard_focus
 #include "platform_utils.h"
 #include "flatscreen_input.h"
 
@@ -45,12 +46,15 @@ void flatscreen_input_update() {
 
 		// Get key based movement
 		vec3 movement = {};
-		if (input_key(key_w) & button_state_active) movement += vec3_forward;
-		if (input_key(key_s) & button_state_active) movement -= vec3_forward;
-		if (input_key(key_d) & button_state_active) movement += vec3_right;
-		if (input_key(key_a) & button_state_active) movement -= vec3_right;
-		if (input_key(key_e) & button_state_active) movement += vec3_up;
-		if (input_key(key_q) & button_state_active) movement -= vec3_up;
+		if (!ui_has_keyboard_focus()) {
+			// Don't do keyboard movement if the UI is using the keyboard!
+			if (input_key(key_w) & button_state_active) movement += vec3_forward;
+			if (input_key(key_s) & button_state_active) movement -= vec3_forward;
+			if (input_key(key_d) & button_state_active) movement += vec3_right;
+			if (input_key(key_a) & button_state_active) movement -= vec3_right;
+			if (input_key(key_e) & button_state_active) movement += vec3_up;
+			if (input_key(key_q) & button_state_active) movement -= vec3_up;
+		}
 		if (vec3_magnitude_sq( movement ) != 0)
 			movement = vec3_normalize(movement);
 
