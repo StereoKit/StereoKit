@@ -1846,7 +1846,6 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		uint32_t curr = input_text_consume();
 		while (curr != 0) {
 			uint32_t add = '\0';
-			log_infof("%d", curr);
 
 			if (curr == key_backspace) {
 				if (skui_input_carat != skui_input_carat_end) {

@@ -121,12 +121,12 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 			curr_dir = vec3_normalize(next - curr);
 
 			vind_t inds[6] = {
-				line_verts.count + 0,
-				line_verts.count + 2,
-				line_verts.count + 3,
-				line_verts.count + 0,
-				line_verts.count + 3,
-				line_verts.count + 1, };
+				(vind_t)line_verts.count + 0,
+				(vind_t)line_verts.count + 2,
+				(vind_t)line_verts.count + 3,
+				(vind_t)line_verts.count + 0,
+				(vind_t)line_verts.count + 3,
+				(vind_t)line_verts.count + 1, };
 			line_inds.add_range(inds, 6);
 		} else {
 			next = curr + (curr - prev);
@@ -158,12 +158,12 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 			curr_dir = vec3_normalize(next - curr);
 
 			vind_t inds[6] = {
-				line_verts.count + 0,
-				line_verts.count + 2,
-				line_verts.count + 3,
-				line_verts.count + 0,
-				line_verts.count + 3,
-				line_verts.count + 1, };
+				(vind_t)line_verts.count + 0,
+				(vind_t)line_verts.count + 2,
+				(vind_t)line_verts.count + 3,
+				(vind_t)line_verts.count + 0,
+				(vind_t)line_verts.count + 3,
+				(vind_t)line_verts.count + 1, };
 			line_inds.add_range(inds, 6);
 		} else {
 			next = curr + (curr - prev);

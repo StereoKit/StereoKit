@@ -176,10 +176,10 @@ size_t utf_charlen(const char* str_utf8) {
 	
 	// Single byte UTF8 characters all start with 0b0, so anything smaller than
 	// 0b1 must be single byte!
-	const char single_byte = 0b10000000;
+	const char single_byte = (char)0b10000000;
 	// The first byte of multibyte UTF8 characters all begin with 0b11, so
 	// anything larger than 0b10111111 is a multibye character indicator!
-	const char multi_byte = 0b10111111;
+	const char multi_byte = (char)0b10111111;
 	
 	size_t      result = 0;
 	const char* curr   = str_utf8;
@@ -213,10 +213,10 @@ const char* utf_at_char(const char* str_utf8, int32_t index) {
 
 	// Single byte UTF8 characters all start with 0b0, so anything smaller than
 	// 0b1 must be single byte!
-	const char single_byte = 0b10000000;
+	const char single_byte = (char)0b10000000;
 	// The first byte of multibyte UTF8 characters all begin with 0b11, so
 	// anything larger than 0b10111111 is a multibye character indicator!
-	const char multi_byte = 0b10111111;
+	const char multi_byte = (char)0b10111111;
 
 	size_t      result = 0;
 	const char* curr   = str_utf8;
@@ -261,10 +261,12 @@ bool utf_remove_chars(char* at_utf8, int32_t count) {
 		curr = at_utf8 + remove;
 	}
 
-	size_t  len  = strlen(at_utf8)+1;
-	int32_t copy = len < remove ? remove : len;
-	for (int32_t i = 0; i < copy; i++) 
+	size_t len  = strlen(at_utf8)+1;
+	size_t copy = len < remove ? remove : len;
+	for (size_t i = 0; i < copy; i++)
 		at_utf8[i] = at_utf8[i + remove];
+
+	return remove != 0;
 }
 
 ///////////////////////////////////////////
@@ -292,7 +294,7 @@ bool utf_insert_char(const char* buffer_utf8_start, size_t buffer_length, char* 
 	if (buffer_length - (at_utf8 - buffer_utf8_start) < units) return false;
 
 	// Shift the string to make room for the new character
-	size_t len = strlen(at_utf8);
+	int32_t len = (int32_t)strlen(at_utf8);
 	for (int32_t i = len + units; i >= units; i--)
 		at_utf8[i] = at_utf8[i - units];
 
@@ -316,10 +318,12 @@ bool utf_remove_chars(char16_t* at_utf16, int32_t codepoint_count) {
 		curr = at_utf16 + remove;
 	}
 	
-	size_t  len  = strlen(at_utf16)+1;
-	int32_t copy = len < remove ? remove : len;
-	for (int32_t i = 0; i < copy; i++) 
+	size_t len  = strlen(at_utf16)+1;
+	size_t copy = len < remove ? remove : len;
+	for (size_t i = 0; i < copy; i++) 
 		at_utf16[i] = at_utf16[i + remove];
+
+	return remove != 0;
 }
 
 ///////////////////////////////////////////
@@ -388,7 +392,7 @@ bool utf_insert_char(const char16_t* buffer_utf16_start, size_t buffer_length, c
 	if (buffer_length - (at_utf16 - buffer_utf16_start) < units) return false;
 
 	// Shift the string to make room for the new character
-	size_t len = strlen(at_utf16);
+	int32_t len = (int32_t)strlen(at_utf16);
 	for (int32_t i = len+units; i >= units; i--)
 		at_utf16[i] = at_utf16[i - units];
 
