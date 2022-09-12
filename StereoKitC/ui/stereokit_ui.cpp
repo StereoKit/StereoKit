@@ -1913,7 +1913,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	
 	float line      = ui_line_height() * 0.5f;
 	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
-	if (skui_input_carat != skui_input_carat_end) {
+	if (skui_input_target == id_hash && skui_input_carat != skui_input_carat_end) {
 		vec2  carat_end = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat_end, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
 		float left      = fmaxf(carat_pos.x, carat_end.x);
 		float right     = fminf(carat_pos.x, carat_end.x);
