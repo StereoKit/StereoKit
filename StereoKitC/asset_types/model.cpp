@@ -412,6 +412,8 @@ void model_destroy(model_t model) {
 	anim_data_destroy(&model->anim_data);
 	for (int32_t i = 0; i < model->nodes.count; i++) {
 		sk_free(model->nodes[i].name);
+		model->nodes[i].info.each([](char*& val) { sk_free(val); });
+		model->nodes[i].info.free();
 	}
 	for (int32_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
@@ -583,6 +585,12 @@ const char* model_node_get_name(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
+const char* model_node_get_info(model_t model, model_node_id node, const char* info_key_u8) {
+	return *model->nodes[node].info.get(info_key_u8);
+}
+
+///////////////////////////////////////////
+
 bool32_t model_node_get_solid(model_t model, model_node_id node) {
 	return model->nodes[node].solid;
 }
@@ -642,6 +650,18 @@ void model_node_set_name(model_t model, model_node_id node, const char* name) {
 		name = tmp_name;
 	}
 	model->nodes[node].name = string_copy(name);
+}
+
+///////////////////////////////////////////
+
+void model_node_set_info(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	int32_t at = model->nodes[node].info.contains(info_key_u8);
+	if (at != -1) {
+		sk_free(model->nodes[node].info.items[at].value);
+		model->nodes[node].info.items[at].value = string_copy(info_value_u8);
+	} else {
+		model->nodes[node].info.set(info_key_u8, string_copy(info_value_u8));
+	}
 }
 
 ///////////////////////////////////////////

@@ -28,6 +28,9 @@ matrix gltf_build_node_matrix (cgltf_node *curr);
 matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
 void   gltf_add_warning       (array_t<const char *> *warnings, const char *text);
 
+// This needs to be in cgltf.cpp due to the location of the json parser
+void gltf_parse_extras(model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+
 ///////////////////////////////////////////
 
 void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
@@ -813,6 +816,16 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
 	}
 	node_map->set(node, node_id);
+
+	// Copy the GLTF's extras into a dictionary
+	int64_t extras_size_i = (int64_t)node->extras.end_offset - (int64_t)node->extras.start_offset;
+	size_t  extras_size   = extras_size_i < 0 ? 0 : extras_size_i;
+	if (extras_size > 0) {
+		char* extras_json = sk_malloc_t(char, extras_size+1);
+		cgltf_copy_extras_json(data, &node->extras, extras_json, &extras_size);
+		gltf_parse_extras(model, node_id, extras_json, extras_size);
+		sk_free(extras_json);
+	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);
