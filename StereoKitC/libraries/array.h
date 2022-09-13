@@ -380,7 +380,7 @@ struct hashmap_t {
 	}
 	
 	void free     ()                 { ARRAY_FREE(items); *this = {}; }
-	void remove   (const K& key)     { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; } }
+	bool remove   (const K& key)     { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; } return at != -1; }
 	void remove_at(const int32_t at) { if (items[at].hash != 0) { count--; } items[at].hash = 0; }
 };
 
@@ -515,7 +515,7 @@ struct dictionary_t {
 	
 	void each     (void (*e)(T&))    { for (int32_t i = 0; i < count; i++) if (items[i].hash != 0) e(items[i].value); }
 	void free     ()                 { for(int i=0;i<capacity;i+=1) {if (items[i].hash != 0) ARRAY_FREE(items[i].key); } ARRAY_FREE(items); *this = {}; }
-	void remove   (const char* key)  { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; ARRAY_FREE(items[at].key); } }
+	bool remove   (const char* key)  { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; ARRAY_FREE(items[at].key); } return at != -1; }
 	void remove_at(const int32_t at) { if (items[at].hash != 0) { count--; } items[at].hash = 0; }
 };
 

@@ -412,8 +412,7 @@ void model_destroy(model_t model) {
 	anim_data_destroy(&model->anim_data);
 	for (int32_t i = 0; i < model->nodes.count; i++) {
 		sk_free(model->nodes[i].name);
-		model->nodes[i].info.each([](char*& val) { sk_free(val); });
-		model->nodes[i].info.free();
+		model_node_info_clear(model, i);
 	}
 	for (int32_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
@@ -585,12 +584,6 @@ const char* model_node_get_name(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-const char* model_node_get_info(model_t model, model_node_id node, const char* info_key_u8) {
-	return *model->nodes[node].info.get(info_key_u8);
-}
-
-///////////////////////////////////////////
-
 bool32_t model_node_get_solid(model_t model, model_node_id node) {
 	return model->nodes[node].solid;
 }
@@ -650,18 +643,6 @@ void model_node_set_name(model_t model, model_node_id node, const char* name) {
 		name = tmp_name;
 	}
 	model->nodes[node].name = string_copy(name);
-}
-
-///////////////////////////////////////////
-
-void model_node_set_info(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
-	int32_t at = model->nodes[node].info.contains(info_key_u8);
-	if (at != -1) {
-		sk_free(model->nodes[node].info.items[at].value);
-		model->nodes[node].info.items[at].value = string_copy(info_value_u8);
-	} else {
-		model->nodes[node].info.set(info_key_u8, string_copy(info_value_u8));
-	}
 }
 
 ///////////////////////////////////////////
@@ -754,6 +735,62 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 	_model_node_update_transforms(model, node);
 	model->transforms_changed = true;
 	model->bounds_dirty       = true;
+}
+
+///////////////////////////////////////////
+
+const char* model_node_info_get(model_t model, model_node_id node, const char* info_key_u8) {
+	return *model->nodes[node].info.get(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_set(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	dictionary_t<char*>* info = &model->nodes[node].info;
+	int32_t              at   = info->contains(info_key_u8);
+	if (at != -1) {
+		sk_free(info->items[at].value);
+		info->items[at].value = string_copy(info_value_u8);
+	} else {
+		info->set(info_key_u8, string_copy(info_value_u8));
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_remove(model_t model, model_node_id node, const char* info_key_u8) {
+	return model->nodes[node].info.remove(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_clear(model_t model, model_node_id node) {
+	model->nodes[node].info.each([](char*& val) { sk_free(val); });
+	model->nodes[node].info.free();
+}
+
+///////////////////////////////////////////
+
+int32_t model_node_info_count(model_t model, model_node_id node) {
+	return model->nodes[node].info.count;
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_iterate(model_t model, model_node_id node, int32_t* ref_iterator, const char** out_key_utf8, const char** out_value_utf8) {
+	dictionary_t<char*> *info = &model->nodes[node].info;
+
+	if (*ref_iterator >= info->capacity) return false;
+	while (info->items[*ref_iterator].hash == 0) {
+		*ref_iterator = *ref_iterator + 1;
+		if (*ref_iterator >= info->capacity) return false;
+	}
+
+	if (out_key_utf8   != nullptr) *out_key_utf8   = info->items[*ref_iterator].key;
+	if (out_value_utf8 != nullptr) *out_value_utf8 = info->items[*ref_iterator].value;
+	*ref_iterator = *ref_iterator + 1;
+
+	return true;
 }
 
 ///////////////////////////////////////////

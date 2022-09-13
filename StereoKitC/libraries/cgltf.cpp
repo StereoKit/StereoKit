@@ -40,17 +40,17 @@ void gltf_parse_extras(model_t model, model_node_id node, const char *extras_jso
 	for (int32_t i = 1; i < token_ct; i+=1) {
 		if (tokens[i].type == JSMN_STRING) {
 			if (tokens[i].size == 1) {
-				stref_t key     = { extras_json + tokens[i  ].start, tokens[i  ].end-tokens[i  ].start };
-				stref_t val     = { extras_json + tokens[i+1].start, tokens[i+1].end-tokens[i+1].start };
+				stref_t key     = { extras_json + tokens[i  ].start, (uint32_t)(tokens[i  ].end-tokens[i  ].start) };
+				stref_t val     = { extras_json + tokens[i+1].start, (uint32_t)(tokens[i+1].end-tokens[i+1].start) };
 				char*   key_str = stref_copy(key);
 				char*   val_str = stref_copy(val);
-				model_node_set_info(model, node, key_str, val_str);
+				model_node_info_set(model, node, key_str, val_str);
 				sk_free(key_str);
 				sk_free(val_str);
 			} else {
 				stref_t key     = { extras_json + tokens[i].start, tokens[i].end - tokens[i].start };
 				char*   key_str = stref_copy(key);
-				model_node_set_info(model, node, key_str, "true");
+				model_node_info_set(model, node, key_str, "true");
 				sk_free(key_str);
 			}
 		} else if (tokens[i].type == JSMN_OBJECT) {

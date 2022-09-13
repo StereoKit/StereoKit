@@ -335,7 +335,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_iterate            (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_root           (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_name           (IntPtr model, int node);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_info           (IntPtr model, int node, [In] byte[] info_key_u8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_solid          (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_get_visible        (IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_get_material       (IntPtr model, int node);
@@ -343,15 +342,20 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_model(IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_node_get_transform_local(IntPtr model, int node);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_name           (IntPtr model, int node, string name);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_info           (IntPtr model, int node, [In] byte[] info_key_u8, [In] byte[] info_value_u8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_solid          (IntPtr model, int node, int solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_visible        (IntPtr model, int node, int visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_material       (IntPtr model, int node, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_mesh           (IntPtr model, int node, IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_model(IntPtr model, int node, Matrix transform_model_space);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_set_transform_local(IntPtr model, int node, Matrix transform_local_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_node_info_get           (IntPtr model, int node, [In] byte[] info_key_u8);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_info_set           (IntPtr model, int node, [In] byte[] info_key_u8, [In] byte[] info_value_u8);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_remove        (IntPtr model, int node, [In] byte[] info_key_u8);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_info_clear         (IntPtr model, int node);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_count         (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_iterate       (IntPtr model, int node, ref int ref_iterator, out IntPtr out_key_utf8, out IntPtr out_value_utf8);
 
-		///////////////////////////////////////////
+		 ///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create     (IntPtr sprite,   SpriteType type = SpriteType.Atlased, string atlas_id = "default");
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create_file([In] byte[] filename_utf8, SpriteType type = SpriteType.Atlased, string atlas_id = "default");

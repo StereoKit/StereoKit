@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -543,6 +542,13 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_model._inst, _nodeId));
 			set => NativeAPI.model_node_set_name(_model._inst, _nodeId, value);
 		}
+
+		/// <summary>A collection of key/value pairs that add additional
+		/// information to this node. If this comes from a GLTF model, this
+		/// will be populated with the contents of the "extras" section of the
+		/// node.</summary>
+		public ModelNodeInfoCollection Info => new ModelNodeInfoCollection(_model._inst, _nodeId);
+
 		/// <summary>A flag that indicates the Mesh for this node will be used
 		/// in ray intersection tests. This flag is ignored if no Mesh is 
 		/// attached.</summary>
@@ -606,7 +612,7 @@ namespace StereoKit
 		/// <returns>Null if this key does not exist, or a string with data
 		/// otherwise.</returns>
 		public string GetInfo(string key)
-			=> NativeHelper.FromUtf8(NativeAPI.model_node_get_info(_model._inst, _nodeId, NativeHelper.ToUtf8(key)));
+			=> NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key)));
 
 		/// <summary>Set a Key/Value pair associated with this ModelNode. This
 		/// is auto-populated from the GLTF extras, and you can also add your
@@ -614,7 +620,7 @@ namespace StereoKit
 		/// <param name="key">The dictionary key to look up.</param>
 		/// <param name="value"></param>
 		public void SetInfo(string key, string value)
-			=> NativeAPI.model_node_set_info(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+			=> NativeAPI.model_node_info_set(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
 		/// hierarchy tree. If it cannot, then it remains the same. </summary>
@@ -684,6 +690,90 @@ namespace StereoKit
 		}
 
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_model, nodeId) : null;
+	}
+
+	/// <summary>A collection of key/value string pairs adding additional
+	/// information to the ModelNode.</summary>
+	public struct ModelNodeInfoCollection : IEnumerable<KeyValuePair<string, string>>
+	{
+		IntPtr _model;
+		int    _nodeId;
+		internal ModelNodeInfoCollection(IntPtr model, int node)
+		{
+			_model  = model;
+			_nodeId = node;
+		}
+
+		/// <summary>A quick way to get values via their keys. Note that since
+		/// Info is a property, the 'set' part of this operator doesn't work.
+		/// Try using the Add function instead.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>Associated value, or null if not found.</returns>
+		public string this[string key] {
+			get => NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)));
+			set => NativeAPI.model_node_info_set(_model, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+		}
+
+		/// <summary>An enumerable for the keys in this collection.</summary>
+		public IEnumerable<string> Keys { 
+			get {
+				int iterator = 0;
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out _) > 0)
+					yield return NativeHelper.FromUtf8(key);
+			}
+		}
+		/// <summary>An enumerable for the values in this collection.</summary>
+		public IEnumerable<string> Values
+		{
+			get
+			{
+				int iterator = 0;
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out _, out IntPtr val) > 0)
+					yield return NativeHelper.FromUtf8(val);
+			}
+		}
+
+		/// <summary>The number of key/value pairs in the collection.</summary>
+		public int Count => NativeAPI.model_node_info_count(_model, _nodeId);
+
+		/// <summary>Adds a key/value pair, or replaces an existing key/value
+		/// pair.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <param name="val">Value to associate with the key.</param>
+		public void Add(string key, string val) => this[key] = val;
+
+
+		/// <summary>Finds the value associated with the given key, returns
+		/// null if the key is not present.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>Associated value, or null if not found.</returns>
+		public string Get(string key) => this[key];
+
+		/// <summary>Clears all key/value pairs from the collection.</summary>
+		public void Clear() => NativeAPI.model_node_info_clear(_model, _nodeId);
+
+		/// <summary>Finds if the key is present in the collection with a
+		/// non-null value.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>True if found, false if not.</returns>
+		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)) != IntPtr.Zero;
+
+		/// <summary>Removes a specific key/value pair from the collection, if
+		/// present.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>True if found and removed, false if not.</returns>
+		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key)) > 0;
+
+		/// <summary>The enumerator for the collection's KeyValuePairs.</summary>
+		/// <returns>Each consecutive pair in the collection.</returns>
+		public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+		{
+			int iterator = 0;
+			while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out IntPtr val)>0)
+				yield return new KeyValuePair<string, string>(NativeHelper.FromUtf8(key), NativeHelper.FromUtf8(val));
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
 	/// <summary>An enumerable for Model's ModelNodes</summary>
