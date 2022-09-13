@@ -599,6 +599,23 @@ namespace StereoKit
 			_nodeId = nodeId;
 		}
 
+		/// <summary>Get a Key/Value pair associated with this ModelNode. This
+		/// is auto-populated from the GLTF extras, and you can also add your
+		/// own items here as well.</summary>
+		/// <param name="key">The dictionary key to look up.</param>
+		/// <returns>Null if this key does not exist, or a string with data
+		/// otherwise.</returns>
+		public string GetInfo(string key)
+			=> NativeHelper.FromUtf8(NativeAPI.model_node_get_info(_model._inst, _nodeId, NativeHelper.ToUtf8(key)));
+
+		/// <summary>Set a Key/Value pair associated with this ModelNode. This
+		/// is auto-populated from the GLTF extras, and you can also add your
+		/// own items here as well.</summary>
+		/// <param name="key">The dictionary key to look up.</param>
+		/// <param name="value"></param>
+		public void SetInfo(string key, string value)
+			=> NativeAPI.model_node_set_info(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+
 		/// <summary>Advances this ModelNode class to the next Sibling in the
 		/// hierarchy tree. If it cannot, then it remains the same. </summary>
 		/// <returns>True if it moved to the Sibling, false if there was no
