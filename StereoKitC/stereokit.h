@@ -1292,6 +1292,7 @@ SK_API model_node_id model_node_visual_index       (model_t model, int32_t index
 SK_API model_node_id model_node_iterate            (model_t model, model_node_id node);
 SK_API model_node_id model_node_get_root           (model_t model);
 SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
+SK_API const char*   model_node_get_info           (model_t model, model_node_id node, const char *info_key_u8);
 SK_API bool32_t      model_node_get_solid          (model_t model, model_node_id node);
 SK_API bool32_t      model_node_get_visible        (model_t model, model_node_id node);
 SK_API material_t    model_node_get_material       (model_t model, model_node_id node);
@@ -1299,6 +1300,7 @@ SK_API mesh_t        model_node_get_mesh           (model_t model, model_node_id
 SK_API matrix        model_node_get_transform_model(model_t model, model_node_id node);
 SK_API matrix        model_node_get_transform_local(model_t model, model_node_id node);
 SK_API void          model_node_set_name           (model_t model, model_node_id node, const char* name);
+SK_API void          model_node_set_info           (model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8);
 SK_API void          model_node_set_solid          (model_t model, model_node_id node, bool32_t    solid);
 SK_API void          model_node_set_visible        (model_t model, model_node_id node, bool32_t    visible);
 SK_API void          model_node_set_material       (model_t model, model_node_id node, material_t  material);
