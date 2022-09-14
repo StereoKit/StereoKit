@@ -19,13 +19,15 @@ namespace StereoKitTest
 
 	class DemoSky : ITest
 	{
-		static List<Light> lights      = new List<Light>();
-		static Pose        windowPose  = new Pose(0, 0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
-		static LightMode   mode        = LightMode.Lights;
-		static Tex         cubemap     = null;
+		static List<Light> lights         = new List<Light>();
+		static Tex         cubemap        = null;
 		static bool        cubelightDirty = false;
-		static Pose        previewPose = new Pose(0, -0.1f, -0.3f, Quat.LookDir(-Vec3.Forward));
+        static string      cubemapFile    = "";
 
+        Pose       windowPose    = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+		Pose       previewPose   = new Pose(0.9f, -0.1f, -0.1f, Quat.LookDir(-1,0,1));
+		Pose       lightToolPose = new Pose(0.7f, -0.1f, -0.3f, Quat.Identity);
+		LightMode  mode          = LightMode.Lights;
 		Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 		Mesh       lightMesh     = Mesh.GenerateSphere(1);
 		Material   lightProbeMat = Default.Material;
@@ -35,15 +37,17 @@ namespace StereoKitTest
 		public void Shutdown() => Platform.FilePickerClose();
 		public void Update()
 		{
-			UI.WindowBegin("Direction", ref windowPose, new Vec2(20 * U.cm, 0));
+			UI.WindowBegin("Lighting Source", ref windowPose);
 			UI.Label("Mode");
+			UI.SameLine();
 			if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
 			UI.SameLine();
 			if (UI.Radio("Image",  mode == LightMode.Image))  mode = LightMode.Image;
 
+			UI.HSeparator();
+
 			if (mode == LightMode.Lights)
 			{ 
-				UI.Label("Lights");
 				if (UI.Button("Add"))
 				{
 					lights.Add(new Light { 
@@ -52,7 +56,6 @@ namespace StereoKitTest
 					UpdateLights();
 				}
 
-				UI.SameLine();
 				if (UI.Button("Remove") && lights.Count > 1)
 				{ 
 					lights.RemoveAt(lights.Count-1);
@@ -62,12 +65,14 @@ namespace StereoKitTest
 
 			if (mode == LightMode.Image)
 			{
-				UI.Label("Image");
-				if (!Platform.FilePickerVisible && UI.Button("Open"))
+				if (!Platform.FilePickerVisible && UI.Button("Browse"))
 					ShowPicker();
+				UI.Label(cubemapFile);
 			}
 
-			if (UI.Button("Print SH"))
+			UI.HSeparator();
+
+			if (UI.Button("Print Lighting Code"))
 			{
 				Vec3[] c = Renderer.SkyLight.ToArray();
 				string shStr = "new SphericalHarmonics(new Vec3[]{";
@@ -79,10 +84,12 @@ namespace StereoKitTest
 
 			UI.WindowEnd();
 
-			lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
+			
 			UI.Handle("Preview", ref previewPose, previewModel.Bounds*0.1f);
 			previewModel.Draw(previewPose.ToMatrix(0.1f));
 
+			Hierarchy.Push(lightToolPose.ToMatrix());
+			lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
 			if (mode == LightMode.Lights)
 			{ 
 				bool needsUpdate = false;
@@ -92,6 +99,7 @@ namespace StereoKitTest
 				if (needsUpdate)
 					UpdateLights();
 			}
+			Hierarchy.Pop();
 
 			if (cubelightDirty && cubemap.AssetState == AssetState.Loaded) {
 				Renderer.SkyLight = cubemap.CubemapLighting;
@@ -135,7 +143,8 @@ namespace StereoKitTest
 
 		void LoadSkyImage(string file)
 		{
-			cubemap = Tex.FromCubemapEquirectangular(file);
+			cubemapFile = Path.GetFileName(file);
+			cubemap     = Tex.FromCubemapEquirectangular(file);
 
 			Renderer.SkyTex = cubemap;
 			cubelightDirty  = true;
