@@ -262,7 +262,6 @@ inline vec2 text_char_at_g(const C *text, text_style_t style, int32_t char_index
 
 	// Core loop for drawing the text
 	vec2     bounds_min = step.start - step.bounds;
-	bool     clip       = fit & text_fit_clip; 
 	char32_t c          = 0;
 	int32_t  count      = 0;
 	if (*text != '\0')

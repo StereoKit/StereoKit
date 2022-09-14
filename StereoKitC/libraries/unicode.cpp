@@ -176,13 +176,13 @@ size_t utf_charlen(const char* str_utf8) {
 	
 	// Single byte UTF8 characters all start with 0b0, so anything smaller than
 	// 0b1 must be single byte!
-	const char single_byte = (char)0b10000000;
+	const unsigned char single_byte = (unsigned char)0b10000000;
 	// The first byte of multibyte UTF8 characters all begin with 0b11, so
 	// anything larger than 0b10111111 is a multibye character indicator!
-	const char multi_byte = (char)0b10111111;
+	const unsigned char multi_byte = (unsigned char)0b10111111;
 	
-	size_t      result = 0;
-	const char* curr   = str_utf8;
+	size_t               result = 0;
+	const unsigned char* curr   = (unsigned char*)str_utf8;
 	while (*curr != '\0') {
 		if (*curr < single_byte || *curr > multi_byte) { result += 1; }
 		curr++;
@@ -213,15 +213,15 @@ const char* utf_at_char(const char* str_utf8, int32_t index) {
 
 	// Single byte UTF8 characters all start with 0b0, so anything smaller than
 	// 0b1 must be single byte!
-	const char single_byte = (char)0b10000000;
+	const unsigned char single_byte = (unsigned char)0b10000000;
 	// The first byte of multibyte UTF8 characters all begin with 0b11, so
 	// anything larger than 0b10111111 is a multibye character indicator!
-	const char multi_byte = (char)0b10111111;
+	const unsigned char multi_byte = (unsigned char)0b10111111;
 
-	size_t      result = 0;
-	const char* curr   = str_utf8;
+	size_t               result = 0;
+	const unsigned char* curr   = (unsigned char*)str_utf8;
 	while (*curr != '\0') {
-		if (result == index) return curr;
+		if (result == index) return (char*)curr;
 		if (*curr < single_byte || *curr > multi_byte) { result += 1; }
 		curr++;
 	}

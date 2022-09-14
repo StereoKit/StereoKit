@@ -48,7 +48,7 @@ void gltf_parse_extras(model_t model, model_node_id node, const char *extras_jso
 				sk_free(key_str);
 				sk_free(val_str);
 			} else {
-				stref_t key     = { extras_json + tokens[i].start, tokens[i].end - tokens[i].start };
+				stref_t key     = { extras_json + tokens[i].start, (uint32_t)(tokens[i].end - tokens[i].start) };
 				char*   key_str = stref_copy(key);
 				model_node_info_set(model, node, key_str, "true");
 				sk_free(key_str);
