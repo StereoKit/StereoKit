@@ -17,6 +17,9 @@ class DocHand : ITest
 			Hand hand      = Input.Hand((Handed)h);
 			Pose fingertip = hand[FingerId.Index, JointId.Tip].Pose;
 
+			// Skip this hand if it's not tracked
+			if (!hand.IsTracked) continue;
+
 			// Draw the fingertip pose axis if it's inside the volume
 			if (testArea.Contains(fingertip.position))
 				Lines.AddAxis(fingertip);

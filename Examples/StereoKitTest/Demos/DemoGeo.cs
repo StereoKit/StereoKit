@@ -91,7 +91,7 @@ class DemoGeo : ITest
 		demoPlaneMesh  = planeMesh;
 		demoPlaneModel = planeModel;
 
-		/// :CodeSample: Mesh.SetVerts Mesh.SetInds
+		/// :CodeSample: Mesh.SetVerts Mesh.SetInds Mesh.SetData
 		/// ### Procedurally generating a wavy grid
 		/// 
 		/// ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
@@ -119,12 +119,12 @@ class DemoGeo : ITest
 			// value!
 			verts[x+y*gridSize] = new Vertex(
 				new Vec3(
-					x/gridMaxF-0.5f, 
-					SKMath.Sin((x+y) * 0.7f)*0.1f, 
+					x/gridMaxF-0.5f,
+					SKMath.Sin((x+y) * 0.7f)*0.1f,
 					y/gridMaxF-0.5f),
 				new Vec3(
-					-SKMath.Cos((x+y) * 0.7f), 
-					1, 
+					-SKMath.Cos((x+y) * 0.7f),
+					1,
 					-SKMath.Cos((x+y) * 0.7f)).Normalized,
 				new Vec2(
 					x / gridMaxF,
@@ -146,8 +146,7 @@ class DemoGeo : ITest
 			}
 		} }
 		demoProcMesh = new Mesh();
-		demoProcMesh.SetVerts(verts);
-		demoProcMesh.SetInds (inds);
+		demoProcMesh.SetData(verts, inds);
 		/// :End:
 	}
 

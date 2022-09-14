@@ -38,7 +38,6 @@ struct anim_t {
 	char                 *name;
 	float                 duration;
 	array_t<anim_curve_t> curves;
-	void                 *anim_memory;
 };
 
 struct anim_data_t {
@@ -67,6 +66,7 @@ struct anim_inst_t {
 	float               last_update;
 	anim_mode_          mode;
 	int32_t            *curve_last_keyframe;
+	int32_t             curve_last_capacity;
 	anim_inst_subset_t *skinned_meshes;
 	anim_transform_t   *node_transforms;
 };

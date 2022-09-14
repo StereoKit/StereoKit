@@ -68,7 +68,7 @@ void physics_update() {
 
 #if !defined(SK_PHYSICS_PASSTHROUGH)
 	// Calculate move velocities for objects that need to be at their destination by the end of this function!
-	for (size_t i = 0; i < solid_moves.count; i++) {
+	for (int32_t i = 0; i < solid_moves.count; i++) {
 		solid_move_t &move = solid_moves[i];
 		RigidBody    *body = (RigidBody*)move.solid->data;
 
@@ -98,13 +98,13 @@ void physics_update() {
 	}
 
 	// Reset moved objects back to their original values, and clear out our list
-	for (size_t i = 0; i < solid_moves.count; i++) {
+	for (int32_t i = 0; i < solid_moves.count; i++) {
 		RigidBody *body = (RigidBody*)solid_moves[i].solid->data;
 		body->setLinearVelocity (vec3_sk_to_rp(solid_moves[i].old_velocity));
 		body->setAngularVelocity(vec3_sk_to_rp(solid_moves[i].old_rot_velocity));
 	}
 #else
-	for (size_t i = 0; i < solid_moves.count; i++) {
+	for (int32_t i = 0; i < solid_moves.count; i++) {
 		solid_moves[i].solid->pos = solid_moves[i].dest;
 		solid_moves[i].solid->rot = solid_moves[i].dest_rot;
 	}
@@ -129,7 +129,19 @@ void solid_release(solid_t solid) {
 	if (solid == nullptr)
 		return;
 
-	assets_releaseref(solid->header);
+	assets_releaseref(&solid->header);
+}
+
+///////////////////////////////////////////
+
+void solid_set_id(const solid_t solid, const char* id) {
+	assets_set_id(&solid->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* solid_get_id(const solid_t solid) {
+	return solid->header.id_text;
 }
 
 ///////////////////////////////////////////

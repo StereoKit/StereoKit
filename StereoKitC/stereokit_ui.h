@@ -59,6 +59,13 @@ typedef enum ui_pad_ {
 	ui_pad_outside,
 } ui_pad_;
 
+typedef enum ui_btn_layout_ {
+	ui_btn_layout_left,
+	ui_btn_layout_right,
+	ui_btn_layout_center,
+	ui_btn_layout_center_no_text,
+} ui_btn_layout_;
+
 typedef struct ui_settings_t {
 	float padding;
 	float gutter;
@@ -79,6 +86,7 @@ SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API bool32_t ui_has_keyboard_focus  ();
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();
@@ -103,6 +111,10 @@ SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
 
+SK_API button_state_ ui_last_element_hand_used(handed_ hand);
+SK_API button_state_ ui_last_element_active   ();
+SK_API button_state_ ui_last_element_focused  ();
+
 SK_API vec2     ui_area_remaining(); // TODO: remove in v0.4, prefer ui_layout_remaining
 SK_API void     ui_nextline      ();
 SK_API void     ui_sameline      ();
@@ -120,6 +132,8 @@ SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds);
 SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);  // TODO: remove in v0.4
 SK_API bool32_t      ui_button_at         (const char     *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_at_16      (const char16_t *text, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_button_img_at     (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_button_img_at_16  (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_button_round_at_16(const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
@@ -142,6 +156,10 @@ SK_API bool32_t ui_button         (const char     *text);
 SK_API bool32_t ui_button_16      (const char16_t *text);
 SK_API bool32_t ui_button_sz      (const char     *text, vec2 size);
 SK_API bool32_t ui_button_sz_16   (const char16_t *text, vec2 size);
+SK_API bool32_t ui_button_img     (const char     *text, sprite_t image, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_button_img_16  (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_button_img_sz   (const char    *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size);
+SK_API bool32_t ui_button_img_sz_16(const char16_t*text, sprite_t image, ui_btn_layout_ image_layout, vec2 size);
 SK_API bool32_t ui_button_round   (const char     *id, sprite_t image, float diameter sk_default(0));
 SK_API bool32_t ui_button_round_16(const char16_t *id, sprite_t image, float diameter sk_default(0));
 SK_API bool32_t ui_toggle         (const char     *text, sk_ref(bool32_t) pressed);

@@ -1,3 +1,6 @@
+#ifndef _STEREOKIT_HLSLI
+#define _STEREOKIT_HLSLI
+
 ///////////////////////////////////////////
 
 cbuffer StereoKitBuffer : register(b1) {
@@ -102,3 +105,7 @@ float FingerGlow(float3 world_pos, float3 world_norm) {
 	glow.x = pow(saturate(1 - glow.x / 0.12), 2);
 	return (glow.x * 0.2) + (glow.y * glow.x);
 }
+
+///////////////////////////////////////////
+
+#endif

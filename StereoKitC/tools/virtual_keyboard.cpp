@@ -81,7 +81,7 @@ void send_key_data(const char16_t* charkey,key_ key) {
 ///////////////////////////////////////////
 
 void remove_last_clicked_keys() {
-	for (size_t i = 0; i < keyboard_pressed_keys.count; i++) {
+	for (int32_t i = 0; i < keyboard_pressed_keys.count; i++) {
 		input_keyboard_inject_release(keyboard_pressed_keys[0]);
 		keyboard_pressed_keys.remove(0);
 	}

@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System.Collections.Generic;
 
 class DocModel : ITest
 {
@@ -72,9 +73,57 @@ class DocModel : ITest
 		return true;
 	}
 
+	bool TestModelInfo()
+	{
+		Model model = new Model();
+
+		/// :CodeSample: ModelNode.Info ModelNodeInfoCollection.Add ModelNodeInfoCollection.Remove
+		/// ### Modifying ModelNode.Info
+		/// While ModelNode.Info is automatically populated from a GLTF's
+		/// "extras", you can also embed or modify with your own data as well.
+		ModelNode modelNode = model.AddNode("empty", Matrix.Identity);
+		modelNode.Info.Add("a", "1");
+		modelNode.Info.Add("b", "2");
+		modelNode.Info.Add("c", "3");
+		modelNode.Info.Add("c", "10"); // overwrite 'c's value
+		modelNode.Info.Remove("b");
+		/// :End:
+
+		/// :CodeSample: ModelNode.Info ModelNodeInfoCollection.Keys ModelNodeInfoCollection.Values
+		/// ### Iterating through ModelNode.Info
+		/// You can choose to iterate through different parts of ModelNode.Info
+		/// using foreach loops.
+		foreach (ModelNode node in model.Nodes)
+		{
+			foreach (KeyValuePair<string, string> kvp in node.Info)
+				Log.Info($"{kvp.Key} - {kvp.Value}");
+
+			foreach (string key in node.Info.Keys)
+				Log.Info($"key: {key} - {node.Info[key]}");
+
+			foreach (string val in node.Info.Values)
+				Log.Info($"value: {val}");
+		}
+		/// :End:
+
+		if (modelNode.Info.Count != 2) return false;
+		if (modelNode.Info["a"] != "1") return false;
+		if (modelNode.Info["c"] != "10") return false;
+
+		modelNode.Info.Clear();
+
+		if (modelNode.Info.Count != 0) return false;
+
+		modelNode.Info.Add("c", "4");
+		if (modelNode.Info["c"] != "4") return false;
+
+		return true;
+	}
+
 	public void Initialize()
 	{
 		Tests.Test(TestModel);
+		Tests.Test(TestModelInfo);
 	}
 	public void Shutdown  (){}
 	public void Update    ()

@@ -14,6 +14,7 @@ void scene_set_active(scene_t scene) {
 void scene_shutdown() {
 	if (scene_curr.shutdown != nullptr)
 		scene_curr.shutdown();
+	scene_curr = {};
 }
 void scene_update() {
 	if (scene_next.init != nullptr) {

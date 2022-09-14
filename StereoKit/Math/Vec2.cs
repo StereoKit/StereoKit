@@ -270,6 +270,6 @@ namespace StereoKit
 		/// inspect the vector in debug mode. Looks like "[x, y]"</summary>
 		/// <returns>A string that looks like "[x, y]"</returns>
 		public override string ToString()
-			=> string.Format("[{0:0.00}, {1:0.00}]", x, y);
+			=> string.Format("[{0:0.##}, {1:0.##}]", x, y);
 	}
 }

@@ -133,7 +133,7 @@ class DemoQRCode : ITest
 		}
 	}
 	/// And that's all there is to it! You can find all this code
-	/// in context [here on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoQRCode.cs).
+	/// in context [here on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoQRCode.cs).
 	/// :End:
 }
 #endif

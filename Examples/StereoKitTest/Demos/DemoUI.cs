@@ -99,7 +99,7 @@ class DemoUI : ITest
 		/// Any UI method will return true on the frame when their value or
 		/// state has changed.
 		/// 
-		if (UI.ButtonRound("Exit", powerSprite))
+		if (UI.ButtonImg("Exit", powerSprite))
 			SK.Quit();
 		/// 
 		/// And for every begin, there must also be an end! StereoKit will
@@ -215,7 +215,7 @@ class DemoUI : ITest
 		/// out the [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
 		/// 
 		/// If you'd like to see the complete code for this sample, 
-		/// [check it out on Github](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
+		/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
 		/// :End:
 
 

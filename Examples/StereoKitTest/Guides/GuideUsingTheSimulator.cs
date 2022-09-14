@@ -75,7 +75,7 @@ class GuideUsingTheSimulator : ITest
 		/// 
 		/// A number of functions are present that can make unit test and
 		/// complex input simulation possible. For a full example of this,
-		/// the [DebugToolWindow](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
+		/// the [DebugToolWindow](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DebugToolWindow.cs)
 		/// in the Test project has a number of sample utilities for
 		/// recording and playing back input.
 		/// 

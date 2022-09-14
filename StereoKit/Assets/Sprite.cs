@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace StereoKit
@@ -22,10 +23,19 @@ namespace StereoKit
 	/// Since rendering is atlas based, you also have only one material per
 	/// atlas. So this is why you might wish to put a sprite in one atlas or
 	/// another, so you can apply different</summary>
-	public class Sprite
+	public class Sprite : IAsset
 	{
 		internal IntPtr _inst;
 
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.sprite_get_id(_inst));
+			set => NativeAPI.sprite_set_id(_inst, value);
+		}
+		
 		/// <summary>The aspect ratio of the sprite! This is width/height. 
 		/// You may also be interested in the NormalizedDimensions property, 
 		/// which are normalized to the 0-1 range.</summary>
@@ -45,6 +55,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty sprite!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sprite()
 		{
 			if (_inst != IntPtr.Zero)

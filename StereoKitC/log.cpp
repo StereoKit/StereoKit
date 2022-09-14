@@ -3,7 +3,7 @@
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
-#include "systems/platform/platform_utils.h"
+#include "platforms/platform_utils.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -181,17 +181,17 @@ void log_write(log_ level, const char *text) {
 
 	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
 	if (log_colors != log_colors_none) {
-		free(colored_text);
+		sk_free(colored_text);
 		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
 	}
 	// Send the plain-text version out to the listeners as well
-	for (size_t i = 0; i < log_listeners.count; i++) {
+	for (int32_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i](level, colored_text);
 	}
 	platform_debug_output(level, colored_text);
-	free(colored_text);
+	sk_free(colored_text);
 
-	free(full_text);
+	sk_free(full_text);
 
 	if (level == log_error)
 		platform_print_callstack();
@@ -207,7 +207,7 @@ void _log_writef(log_ level, const char* text, va_list args) {
 	vsnprintf(buffer, length + 2, text, copy);
 
 	log_write(level, buffer);
-	free(buffer);
+	sk_free(buffer);
 	va_end(copy);
 }
 
@@ -271,7 +271,7 @@ void log_fail_reason(int32_t confidence, log_ log_as, const char *fail_reason) {
 	if (confidence <= log_fail_confidence)
 		return;
 
-	free(log_fail_reason_str);
+	sk_free(log_fail_reason_str);
 	log_fail_confidence = confidence;
 	log_fail_reason_str = string_copy(fail_reason);
 }
@@ -288,7 +288,7 @@ void log_fail_reasonf(int32_t confidence, log_ log_as, const char *fail_reason, 
 	vsnprintf(buffer, length + 2, fail_reason, copy);
 
 	log_fail_reason(confidence, log_as, buffer);
-	free(buffer);
+	sk_free(buffer);
 	va_end(copy);
 	va_end(args);
 }
@@ -306,7 +306,7 @@ void log_show_any_fail_reason() {
 ///////////////////////////////////////////
 
 void log_clear_any_fail_reason() {
-	free(log_fail_reason_str);
+	sk_free(log_fail_reason_str);
 	log_fail_confidence = -1;
 	log_fail_reason_str = nullptr;
 }
@@ -320,7 +320,7 @@ void log_subscribe(void (*on_log)(log_, const char*)) {
 ///////////////////////////////////////////
 
 void log_unsubscribe(void (*on_log)(log_, const char*)) {
-	for (size_t i = 0; i < log_listeners.count; i++) {
+	for (int32_t i = 0; i < log_listeners.count; i++) {
 		if (log_listeners[i] == on_log) {
 			log_listeners.remove(i);
 			break;

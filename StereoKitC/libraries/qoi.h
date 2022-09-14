@@ -509,7 +509,7 @@ void *qoi_encode(const void *data, const qoi_desc *desc, int *out_len) {
 }
 
 int qoi_info(const void *data, int size, qoi_desc *desc) {
-	int p;
+	int p = 0;
 	const unsigned char *bytes;
 	unsigned int header_magic;
 

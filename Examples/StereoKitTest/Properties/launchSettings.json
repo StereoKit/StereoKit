@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "StereoKitTest": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    },
+    "StereoKitTest Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "-test -screenfolder ../../../Tools/Screenshots/"
+    }
+  }
+}

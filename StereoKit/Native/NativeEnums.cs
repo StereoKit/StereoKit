@@ -152,12 +152,24 @@ namespace StereoKit
 		/// <summary>The default VFX layer, StereoKit draws some non-standard
 		/// mesh content using this flag, such as lines.</summary>
 		Vfx          = 1 << 10,
+		/// <summary>For items that should only be drawn from the first person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 1st person viewpoint.</summary>
+		FirstPerson  = 1 << 11,
+		/// <summary>For items that should only be drawn from the third person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 3rd person viewpoint.</summary>
+		ThirdPerson  = 1 << 12,
 		/// <summary>This is a flag that specifies all possible layers. If you
 		/// want to render all layers, then this is the layer filter
 		/// you would use. This is the default for render filtering.</summary>
 		All          = 0xFFFF,
 		/// <summary>This is a combination of all layers that are not the VFX layer.</summary>
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
+		/// <summary>All layers except for the third person layer.</summary>
+		AllFirstPerson = All & ~ThirdPerson,
+		/// <summary>All layers except for the first person layer.</summary>
+		AllThirdPerson = All & ~FirstPerson,
 	}
 
 	/// <summary>This tells about the app's current focus state, whether it's active and
@@ -225,6 +237,25 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>Culling is discarding an object from the render pipeline!
+	/// This enum describes how mesh faces get discarded on the graphics
+	/// card. With culling set to none, you can double the number of pixels
+	/// the GPU ends up drawing, which can have a big impact on performance.
+	/// None can be appropriate in cases where the mesh is designed to be
+	/// 'double sided'. Front can also be helpful when you want to flip a
+	/// mesh 'inside-out'!</summary>
+	public enum Cull {
+		/// <summary>Discard if the back of the triangle face is pointing
+		/// towards the camera. This is the default behavior.</summary>
+		Back         = 0,
+		/// <summary>Discard if the front of the triangle face is pointing
+		/// towards the camera. This is opposite the default behavior.</summary>
+		Front,
+		/// <summary>No culling at all! Draw the triangle regardless of which
+		/// way it's pointing.</summary>
+		None,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -268,66 +299,66 @@ namespace StereoKit
 		/// the time you're dealing with color images! Matches well with the
 		/// Color32 struct! If you're storing normals, rough/metal, or
 		/// anything else, use Rgba32Linear.</summary>
-		Rgba32,
+		Rgba32       = 1,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rgba32Linear,
+		Rgba32Linear = 2,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Bgra32,
+		Bgra32       = 3,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Bgra32Linear,
+		Bgra32Linear = 4,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rg11b10,
+		Rg11b10      = 5,
 		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
 		/// per-channel in linear color space. This is what you'll want most
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
-		Rgb10a2,
+		Rgb10a2      = 6,
 		/// <summary>TODO: remove during major version update</summary>
-		Rgba64,
-		Rgba64s,
-		Rgba64f,
+		Rgba64       = 7,
+		Rgba64s      = 8,
+		Rgba64f      = 9,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
 		/// expensive. Don't use this unless you know -exactly- what you're
 		/// doing.</summary>
-		Rgba128,
+		Rgba128      = 10,
 		/// <summary>A single channel of data, with 8 bits per-pixel! This
 		/// can be great when you're only using one channel, and want to
 		/// reduce memory usage. Values in the shader are always 0.0-1.0.</summary>
-		R8,
+		R8           = 11,
 		/// <summary>A single channel of data, with 16 bits per-pixel! This
 		/// is a good format for height maps, since it stores a fair bit of
 		/// information in it. Values in the shader are always 0.0-1.0.</summary>
-		R16,
+		R16          = 12,
 		/// <summary>A single channel of data, with 32 bits per-pixel! This
 		/// basically treats each pixel as a generic float, so you can do all
 		/// sorts of strange and interesting things with this.</summary>
-		R32,
+		R32          = 13,
 		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
 		/// to store stencil information! Stencil data can be used for things
 		/// like clipping effects, deferred rendering, or shadow effects.</summary>
-		DepthStencil,
+		DepthStencil = 14,
 		/// <summary>32 bits of data per depth value! This is pretty detailed,
 		/// and is excellent for experiences that have a very far view
 		/// distance.</summary>
-		Depth32,
+		Depth32      = 15,
 		/// <summary>16 bits of depth is not a lot, but it can be enough if
 		/// your far clipping plane is pretty close. If you're seeing lots of
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Depth16,
+		Depth16      = 16,
 		/// <summary>16 bits of depth is not a lot, but it can be enough if
 		/// your far clipping plane is pretty close. If you're seeing lots of
 		/// flickering where two objects overlap, you either need to bring
@@ -392,25 +423,6 @@ namespace StereoKit
 		/// buffer! This usually looks -really- glowy, so it makes for good
 		/// particles or lighting effects.</summary>
 		Add,
-	}
-
-	/// <summary>Culling is discarding an object from the render pipeline!
-	/// This enum describes how mesh faces get discarded on the graphics
-	/// card. With culling set to none, you can double the number of pixels
-	/// the GPU ends up drawing, which can have a big impact on performance.
-	/// None can be appropriate in cases where the mesh is designed to be
-	/// 'double sided'. Front can also be helpful when you want to flip a
-	/// mesh 'inside-out'!</summary>
-	public enum Cull {
-		/// <summary>Discard if the back of the triangle face is pointing
-		/// towards the camera. This is the default behavior.</summary>
-		Back         = 0,
-		/// <summary>Discard if the front of the triangle face is pointing
-		/// towards the camera. This is opposite the default behavior.</summary>
-		Front,
-		/// <summary>No culling at all! Draw the triangle regardless of which
-		/// way it's pointing.</summary>
-		None,
 	}
 
 	/// <summary>Depth test describes how this material looks at and responds
@@ -478,9 +490,10 @@ namespace StereoKit
 		Vector3      = 4,
 		/// <summary>A 4 component vector composed of floating point values.</summary>
 		Vector4      = 5,
-		[Obsolete("Replaced by MaterialParam.Vector4")]
+
 		/// <summary>A 4 component vector composed of floating point values.
 		/// TODO: Remove in v0.4</summary>
+		[Obsolete("Replaced by MaterialParam.Vector4")]
 		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix       = 6,
@@ -756,6 +769,8 @@ namespace StereoKit
 	/// <summary>A collection of system key codes, representing keyboard
 	/// characters and mouse buttons. Based on VK codes.</summary>
 	public enum Key {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
 		None         = 0x00,
 		/// <summary>Left mouse button.</summary>
 		MouseLeft    = 0x01,
@@ -1012,13 +1027,25 @@ namespace StereoKit
 		Web,
 	}
 
-	/// <summary>This describes the graphics API thatStereoKit is using for rendering.</summary>
+	/// <summary>This describes the graphics API that StereoKit is using for rendering.</summary>
 	public enum BackendGraphics {
-		/// <summary>An invalid default value. Right now, this may likely indicate a variety
-		/// of OpenGL.</summary>
+		/// <summary>An invalid default value.</summary>
 		None,
-		/// <summary>DirectX's Direct3D11 is used for rendering!</summary>
+		/// <summary>DirectX's Direct3D11 is used for rendering! This is used by default on
+		/// Windows.</summary>
 		D3D11,
+		/// <summary>OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
+		/// System) for loading. This is used by default on Linux.</summary>
+		OpenGL_GLX,
+		/// <summary>OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
+		/// for loading. Native developers can configure SK to use this on Windows.</summary>
+		OpenGL_WGL,
+		/// <summary>OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
+		/// Interface) for loading. This is used by default on Android, and native
+		/// developers can configure SK to use this on Linux.</summary>
+		OpenGLES_EGL,
+		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
+		WebGL,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console
@@ -1030,6 +1057,30 @@ namespace StereoKit
 		/// <summary>Scrape out any color annotations, so logs are all completely
 		/// plain text.</summary>
 		None,
+	}
+
+	/// <summary>A flag for what 'type' an Asset may store.</summary>
+	public enum AssetType {
+		/// <summary>No type, this may come from some kind of invalid Asset id.</summary>
+		None         = 0,
+		/// <summary>A Mesh.</summary>
+		Mesh,
+		/// <summary>A Tex.</summary>
+		Tex,
+		/// <summary>A Shader.</summary>
+		Shader,
+		/// <summary>A Material.</summary>
+		Material,
+		/// <summary>A Model.</summary>
+		Model,
+		/// <summary>A Font.</summary>
+		Font,
+		/// <summary>A Sprite.</summary>
+		Sprite,
+		/// <summary>A Sound.</summary>
+		Sound,
+		/// <summary>A Solid.</summary>
+		Solid,
 	}
 
 }

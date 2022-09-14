@@ -173,7 +173,7 @@ class GuideDrawing : ITest
 		/// So... that was also pretty simple! The only real trick with Models
 		/// is getting one in the first place, but even that's not too hard.
 		/// There's a lot you can do with a Model beyond just drawing it, so
-		/// for more details on that, check out [the Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
+		/// for more details on that, check out [the Model guide](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
 		/// 
 		/// But here's the quick list of where you can get a Model to begin
 		/// with:
@@ -222,11 +222,11 @@ class GuideDrawing : ITest
 		/// tricks to be learned, but this is a great start! There's treasures
 		/// in the documentation, so hunt around in there for more samples. You
 		/// may also be interested in the [Materials guide]({{site.url}}/Pages/Guides/Working-with-Materials.html)
-		/// for advanced rendering code, or the [Model guide](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) 
+		/// for advanced rendering code, or the [Model guide](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) 
 		/// (coming soon), for managing your visible content!
 		/// 
 		/// If you'd like to see all the code for this document,
-		/// [check it out here!](https://github.com/maluoi/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideDrawing.cs)
+		/// [check it out here!](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideDrawing.cs)
 		/// :End:
 		Tests.Screenshot("Drawing_Defaults.jpg",      600, 600,     V.XYZ(   0,     0,  1.2f), Vec3.Zero);
 		Tests.Screenshot("Drawing_MatrixCombine.jpg", 600, 600,     V.XYZ(  10,     0,  2   ), V.XYZ(10, 0,0));

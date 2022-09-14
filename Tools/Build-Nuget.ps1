@@ -7,6 +7,12 @@ param(
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
 function Get-ScriptName { return $MyInvocation.ScriptName }
 
+# In case we only want to build a subset of the package
+$buildWindows    = $true
+$buildWindowsUWP = $true
+$buildLinux      = $true
+$buildAndroid    = $true
+
 # Get the Visual Studio executable for building
 $vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
 $vsVersionRange = '[16.0,18.0)'
@@ -144,11 +150,11 @@ if ($pre -ne 0) {
 
 # Notify of build, and output the version
 Write-Host @"
-   _____ _                      _  ___ _   
-  / ____| |                    | |/ (_) |  
- | (___ | |_ ___ _ __ ___  ___ | ' / _| |_ 
-  \___ \| __/ _ \ '__/ _ \/ _ \|  < | | __|
-  ____) | ||  __/ | |  __/ (_) | . \| | |_ 
+   _____ _                      _  __  _   
+  / ____| |                    | |/ ( ) |  
+ | (___ | |_ ___ _ __ ___  ___ |   / _| |_ 
+  \___ \| __/ _ \  __/ _ \/   \|  < | | __|
+  ____) | ||  __/ | |  __/ ( ) |   \| | |_ 
  |_____/ \__\___|_|  \___|\___/|_|\_\_|\__| 
 "@ -NoNewline -ForegroundColor White
 Write-Host "v$version`n" -ForegroundColor Cyan
@@ -177,156 +183,163 @@ Write-Host 'Cleaned'
 
 #### Build Windows ########################
 
-Write-Host @"
+if ($buildWindows) {
+    Write-Host @"
 
-__      ___         _               
-\ \    / (_)_ _  __| |_____ __ _____
- \ \/\/ /| | ' \/ _' / _ \ V  V (_-<
-  \_/\_/ |_|_||_\__,_\___/\_/\_//__/
+__      __          _               
+\ \    / ( )_ _  __| |_____ __ _____
+ \ \/\/ /| | ' \/ _  / _ \ V  V (_-<
+  \_/\_/ |_|_||_\__ _\___/\_/\_//__/
 
 "@ -ForegroundColor White
 
-# Platform specific shader compile for shaders bundled in the platform binary!
-Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
-& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+    # Platform specific shader compile for shaders bundled in the platform binary!
+    Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'x' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
-# Build Win32 first
-Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
-$result = Build -mode "Release|X64" -project "StereoKitC"
-if ($result -ne 0) {
-    Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
-#Write-Host "--- Beginning build: Win32 ARM64 ---" -ForegroundColor green
-#$result = Build -mode "Release|ARM64" -project "StereoKitC"
-#if ($result -ne 0) {
-#    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
-#    exit
-#}
-#Write-Host "--- Finished building: Win32 ARM64 ---" -ForegroundColor green
-
-# Build UWP next
-Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
-$result = Build -mode "Release|X64" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
-Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
-$result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
-Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
-$result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
-if ($result -ne 0) {
-    Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
-
-#### Execute Windows Tests ########################
-
-# Run tests!
-if ($fast -eq $false) {
-    Write-Host "`nRunning Windows Tests!"
-    if ( Test -ne 0 ) {
-        Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
+    # Build Win32 first
+    Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
+    $result = Build -mode "Release|X64" -project "StereoKitC"
+    if ($result -ne 0) {
+        Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
         Pop-Location
         exit
     }
-    Write-Host 'Tests passed!' -ForegroundColor green
-} else {
-    Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
+    Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
+    #Write-Host "--- Beginning build: Win32 ARM64 ---" -ForegroundColor green
+    #$result = Build -mode "Release|ARM64" -project "StereoKitC"
+    #if ($result -ne 0) {
+    #    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
+    #    exit
+    #}
+    #Write-Host "--- Finished building: Win32 ARM64 ---" -ForegroundColor green
+
+    # Build UWP next
+    if ($buildWindowsUWP) {
+        Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
+        $result = Build -mode "Release|X64" -project "StereoKitC_UWP"
+        if ($result -ne 0) {
+            Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
+            Pop-Location
+            exit
+        }
+        Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
+        Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
+        $result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
+        if ($result -ne 0) {
+            Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
+            Pop-Location
+            exit
+        }
+        Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
+        Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
+        $result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
+        if ($result -ne 0) {
+            Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
+            Pop-Location
+            exit
+        }
+        Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
+    }
+
+    #### Execute Windows Tests ########################
+
+    # Run tests!
+    if ($fast -eq $false) {
+        Write-Host "`nRunning Windows Tests!"
+        if ( Test -ne 0 ) {
+            Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
+            Pop-Location
+            exit
+        }
+        Write-Host 'Tests passed!' -ForegroundColor green
+    } else {
+        Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
+    }
 }
 
 #### Build Linux ##########################
+if ($buildLinux) {
+    Write-Host @"
 
-Write-Host @"
-
-  _    _              
+  _                   
  | |  (_)_ _ _  ___ __
  | |__| | ' \ || \ \ /
  |____|_|_||_\_,_/_\_\
                       
 "@ -ForegroundColor White
 
-# Platform specific shader compile for shaders bundled in the platform binary!
-Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
-& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+    # Platform specific shader compile for shaders bundled in the platform binary!
+    Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'g' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
-# Find the correct WSL folder
-$linux_folder = ''+$PSScriptRoot
-$linux_folder = $linux_folder.replace('\', '/')
-$linux_folder = $linux_folder.replace(':', '')
-$linux_folder = '/mnt/'+$linux_folder
-Write-Output $linux_folder
+    # Find the correct WSL folder
+    $linux_folder = ''+$PSScriptRoot
+    $linux_folder = $linux_folder.replace('\', '/')
+    $linux_folder = $linux_folder.replace(':', '')
+    $linux_folder = '/mnt/'+$linux_folder
+    Write-Output $linux_folder
 
-# Linux, via WSL
-Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
-if ($fast -eq $false) {
-    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
-} else {
-    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
-}
-if ($LASTEXITCODE -ne 0) {
-    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
+    # Linux, via WSL
+    Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
+    if ($fast -eq $false) {
+        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
+    } else {
+        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
+        exit
+    }
+    Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
 
 
-Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
-if ($fast -eq $false) {
-    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
-} else {
-    cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
+    Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
+    if ($fast -eq $false) {
+        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
+    } else {
+        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
+        exit
+    }
+    Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
 }
-if ($LASTEXITCODE -ne 0) {
-    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
 
 #### Build Android ########################
 
-Write-Host @"
+if ($buildAndroid) {
+    Write-Host @"
 
-    _           _         _    _ 
-   /_\  _ _  __| |_ _ ___(_)__| |
+    _           _              _ 
+   /_\  _ _  __| |_ _ ___( )__| |
   / _ \| ' \/ _' | '_/ _ \ / _' |
  /_/ \_\_||_\__,_|_| \___/_\__,_|
                       
 "@ -ForegroundColor White
 
-# Platform specific shader compile for shaders bundled in the platform binary!
-Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
-& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+    # Platform specific shader compile for shaders bundled in the platform binary!
+    Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
+    & 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'e' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
 
-# Do cross platform build code first
-Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
-xmake f -p android -a arm64-v8a -m release -y --oculus-openxr=y
-if ($fast -eq $false) {
-    xmake -r
-} else {
-    xmake
+    # Do cross platform build code first
+    Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
+    xmake f -p android -a arm64-v8a -m release -y --oculus-openxr=y
+    if ($fast -eq $false) {
+        xmake -r
+    } else {
+        xmake
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
+        exit
+    }
+    Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
 }
-if ($LASTEXITCODE -ne 0) {
-    Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
-    exit
-}
-Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
 
 #### Assemble NuGet Package ###############
 
@@ -334,8 +347,8 @@ Write-Host @"
 
   _  _       ___     _   
  | \| |_  _ / __|___| |_ 
- | .' | || | (_ / -_)  _|
- |_|\_|\_,_|\___\___|\__|
+ |    | || | (_ / -_)  _|
+ |_|\_|\___|\___\___|\__|
                       
 "@ -ForegroundColor White
 
@@ -375,7 +388,7 @@ if ($upload) {
 
 # Put the shaders back to cross-platform to make dev a little nicer!
 Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundColor green
-& 'Tools/skshaderc.exe' '-O3' '-h' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
+& 'Tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'xge' '-i' 'Tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green
 

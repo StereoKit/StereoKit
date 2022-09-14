@@ -283,6 +283,7 @@ typedef struct skg_shader_meta_t {
 #if   defined(SKG_DIRECT3D11)
 
 
+#define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 #include <dxgi1_6.h>
 
@@ -556,6 +557,7 @@ SKG_API void                skg_tex_set_contents_arr     (      skg_tex_t *tex, 
 SKG_API bool                skg_tex_get_contents         (      skg_tex_t *tex, void *ref_data, size_t data_size);
 SKG_API bool                skg_tex_get_mip_contents     (      skg_tex_t *tex, int32_t mip_level, void *ref_data, size_t data_size);
 SKG_API bool                skg_tex_get_mip_contents_arr (      skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size);
+SKG_API void*               skg_tex_get_native           (const skg_tex_t *tex);
 SKG_API void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
 SKG_API void                skg_tex_clear                (skg_bind_t bind);
 SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target);
@@ -650,9 +652,6 @@ SKG_API void                    skg_shader_meta_release        (skg_shader_meta_
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <math.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #include <stdio.h>
 
@@ -1131,45 +1130,72 @@ void skg_mesh_destroy(skg_mesh_t *mesh) {
 
 ///////////////////////////////////////////
 
-#include <stdio.h>
 skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
 	skg_shader_stage_t result = {};
 	result.type = type;
 
-	DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#if !defined(NDEBUG)
-	flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
-#else
-	flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
 	ID3DBlob   *compiled = nullptr;
 	const void *buffer;
 	size_t      buffer_size;
+	HRESULT     hr = E_FAIL;
 	if (shader_size >= 4 && memcmp(file_data, "DXBC", 4) == 0) {
 		buffer      = file_data;
 		buffer_size = shader_size;
 	} else {
+		DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
+#if !defined(NDEBUG)
+		flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
+#else
+		flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+		// Compile a text HLSL shader file to bytecode
 		ID3DBlob *errors;
 		const char *entrypoint = "", *target = "";
 		switch (type) {
 			case skg_stage_vertex:  entrypoint = "vs"; target = "vs_5_0"; break;
 			case skg_stage_pixel:   entrypoint = "ps"; target = "ps_5_0"; break;
 			case skg_stage_compute: entrypoint = "cs"; target = "cs_5_0"; break; }
-		if (FAILED(D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, entrypoint, target, flags, 0, &compiled, &errors))) {
-			skg_log(skg_log_warning, "D3DCompile failed:");
-			skg_log(skg_log_warning, (char *)errors->GetBufferPointer());
+		hr = D3DCompile(file_data, shader_size, nullptr, nullptr, nullptr, entrypoint, target, flags, 0, &compiled, &errors);
+		if (errors) {
+			skg_log(skg_log_warning, "D3DCompile errors:");
+			skg_log(skg_log_warning, (char*)errors->GetBufferPointer());
+			errors->Release();
 		}
-		if (errors) errors->Release();
+		if (FAILED(hr)) {
+			char text[128];
+			snprintf(text, sizeof(text), "D3DCompile failed: 0x%X", hr);
+			skg_log(skg_log_warning, text);
+
+			if (compiled) compiled->Release();
+			return {};
+		}
 
 		buffer      = compiled->GetBufferPointer();
 		buffer_size = compiled->GetBufferSize();
 	}
 
-	switch(type) {
-	case skg_stage_vertex  : d3d_device->CreateVertexShader (buffer, buffer_size, nullptr, (ID3D11VertexShader **)&result._shader); break;
-	case skg_stage_pixel   : d3d_device->CreatePixelShader  (buffer, buffer_size, nullptr, (ID3D11PixelShader  **)&result._shader); break;
-	case skg_stage_compute : d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
+	// Create a shader from HLSL bytecode
+	hr = E_FAIL;
+	switch (type) {
+	case skg_stage_vertex  : hr = d3d_device->CreateVertexShader (buffer, buffer_size, nullptr, (ID3D11VertexShader **)&result._shader); break;
+	case skg_stage_pixel   : hr = d3d_device->CreatePixelShader  (buffer, buffer_size, nullptr, (ID3D11PixelShader  **)&result._shader); break;
+	case skg_stage_compute : hr = d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
+	}
+	if (FAILED(hr)) {
+		char text[128];
+		snprintf(text, sizeof(text), "CreateXShader failed: 0x%X", hr);
+		skg_log(skg_log_warning, text);
+
+		if (compiled) compiled->Release();
+		if (result._shader) {
+			switch (type) {
+			case skg_stage_vertex:  ((ID3D11VertexShader *)result._shader)->Release(); break;
+			case skg_stage_pixel:   ((ID3D11PixelShader  *)result._shader)->Release(); break;
+			case skg_stage_compute: ((ID3D11ComputeShader*)result._shader)->Release(); break;
+			}
+		}
+		return {};
 	}
 
 	if (type == skg_stage_vertex) {
@@ -2066,6 +2092,12 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		copy_tex->Release();
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void* skg_tex_get_native(const skg_tex_t* tex) {
+	return tex->_texture;
 }
 
 ///////////////////////////////////////////
@@ -3060,7 +3092,7 @@ bool skg_capability(skg_cap_ capability) {
 		return false;
 #else
 #pragma clang diagnostic push
-// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
+		// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
 #pragma clang diagnostic ignored "-Wtautological-pointer-compare"
 		return glPolygonMode != nullptr;
 #pragma clang diagnostic pop
@@ -4107,6 +4139,12 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	}
 
 	return result == 0;
+}
+
+///////////////////////////////////////////
+
+void* skg_tex_get_native(const skg_tex_t* tex) {
+	return (void*)((uint64_t)tex->_texture);
 }
 
 ///////////////////////////////////////////

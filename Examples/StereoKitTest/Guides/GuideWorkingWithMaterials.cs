@@ -94,7 +94,7 @@ class GuideWorkingWithMaterials : ITest
 	/// best to be somewhat familiar with the Shader that the Material is
 	/// using.
 	/// 
-	/// For example, Material.Default uses [this Shader](https://github.com/maluoi/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
+	/// For example, Material.Default uses [this Shader](https://github.com/StereoKit/StereoKit/blob/master/StereoKitC/shaders_builtin/shader_builtin_default.hlsl),
 	/// and you can see the parameters listed at the top:
 	/// ```csharp
 	/// //--color:color = 1,1,1,1

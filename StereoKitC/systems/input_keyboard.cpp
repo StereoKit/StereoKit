@@ -1,6 +1,6 @@
 #include "input.h"
 #include "input_keyboard.h"
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
 
@@ -17,7 +17,7 @@ struct keyboard_t {
 	uint8_t                   keys[key_MAX];
 	array_t<keyboard_event_t> events;
 	array_t<char32_t>         characters;
-	uint32_t                  queue_counter;
+	int32_t                   queue_counter;
 };
 
 ///////////////////////////////////////////
@@ -56,7 +56,7 @@ void input_keyboard_update() {
 
 	// Clear any just_in/active flags that were set on the last frame
 	array_t<keyboard_event_t> &evts = input_key_data.events;
-	for (size_t i = 0; i < evts.count; i++) {
+	for (int32_t i = 0; i < evts.count; i++) {
 		if (evts[i].down)
 			input_key_data.keys[evts[i].key] &= ~button_state_just_active;
 		else
@@ -75,7 +75,7 @@ void input_keyboard_update() {
 
 	// Set key activity flags based on the new event queue
 	evts = input_key_data.events;
-	for (size_t i = 0; i < evts.count; i++) {
+	for (int32_t i = 0; i < evts.count; i++) {
 		keyboard_event_t &evt = evts.get(i);
 		if (evt.down) {
 			input_key_data.keys[evt.key] |= button_state_just_active | button_state_active;

@@ -50,6 +50,12 @@ namespace StereoKit
 			/// be started quite so early.</summary>
 			public static ulong Session => NativeAPI.backend_openxr_get_session();
 
+			/// <summary>Type: XrSystemId. This is the id of the device
+			/// StereoKit is currently using! This is the result of calling
+			/// `xrGetSystem` with `XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY`.
+			/// </summary>
+			public static ulong SystemId => NativeAPI.backend_openxr_get_system_id();
+
 			/// <summary>Type: XrSpace. StereoKit's primary coordinate space,
 			/// valid after SK.Initialize, this will most likely be created
 			/// from `XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT` or
@@ -60,9 +66,17 @@ namespace StereoKit
 			/// frame, and is available after SK.Initialize.</summary>
 			public static long Time => NativeAPI.backend_openxr_get_time();
 
-			/// <summary>Type: XrTime. This is the OpenXR time of the eye tracker
-			/// sample associated with the current value of <see cref="Input.Eyes"/>.</summary>
+			/// <summary>Type: XrTime. This is the OpenXR time of the eye
+			/// tracker sample associated with the current value of
+			/// <see cref="Input.Eyes"/>.</summary>
 			public static long EyesSampleTime => NativeAPI.backend_openxr_get_eyes_sample_time();
+
+			/// <summary>Tells StereoKit to request only the extensions that
+			/// are absolutely critical to StereoKit. You can still request
+			/// extensions via `OpenXR.RequestExt`, and this can be used to
+			/// opt-in to extensions that StereoKit would normally request
+			/// automatically.</summary>
+			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value?1:0); }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
@@ -125,6 +139,36 @@ namespace StereoKit
 				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
 				Marshal.FreeHGlobal(ptr);
 			}
+
+			private static event Action _onPreCreateSession;
+			private static bool         _onPreCreateSessionRegistered = false;
+			private static void _OnPreCreateSession(IntPtr context)
+			{
+				_onPreCreateSession();
+				_onPreCreateSession           = null;
+				_onPreCreateSessionRegistered = false;
+			}
+
+			public static event Action OnPreCreateSession {
+				add {
+					if (_onPreCreateSessionRegistered == false)
+					{
+						_onPreCreateSessionRegistered = true;
+						NativeAPI.backend_openxr_add_callback_pre_session_create(_OnPreCreateSession, IntPtr.Zero);
+					}
+					_onPreCreateSession += value;
+				}
+				remove => _onPreCreateSession -= value;
+			}
+
+			internal static void CleanupInitialize()
+			{
+				// If OpenXR was not the backend, the callback events could
+				// still contain callbacks with capture data! So we want to
+				// free all those up.
+				_onPreCreateSession           = null;
+				_onPreCreateSessionRegistered = false;
+			}
 		}
 
 		/// <summary>This class contains variables that may be useful for
@@ -146,10 +190,66 @@ namespace StereoKit
 			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
 		}
 
+		/// <summary>When using Direct3D11 for rendering, this contains a
+		/// number of variables that may be useful for doing advanced rendering
+		/// tasks. This is the default rendering backend on Windows.</summary>
 		public static class D3D11
 		{
+			/// <summary>This is the main `ID3D11Device*` StereoKit uses for
+			/// rendering.</summary>
 			public static IntPtr D3DDevice  => NativeAPI.backend_d3d11_get_d3d_device();
+			/// <summary>This is the main `ID3D11DeviceContext*` StereoKit uses
+			/// for rendering.</summary>
 			public static IntPtr D3DContext => NativeAPI.backend_d3d11_get_d3d_context();
 		}
+
+		/// <summary>When using OpenGL with the WGL loader for rendering, this
+		/// contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is Windows only, and requires
+		/// gloabally defining SKG_FORCE_OPENGL when building the core
+		/// StereoKitC library.</summary>
+		public static class OpenGL_WGL
+		{
+			/// <summary>This is the Handle to Device Context `HDC` StereoKit
+			/// uses with `wglMakeCurrent`.</summary>
+			public static IntPtr HDC => NativeAPI.backend_opengl_wgl_get_hdc();
+			/// <summary>This is the Handle to an OpenGL Rendering Context
+			/// `HGLRC` StereoKit uses with `wglMakeCurrent`.</summary>
+			public static IntPtr HGLRC => NativeAPI.backend_opengl_wgl_get_hglrc();
+		}
+
+		/// <summary>When using OpenGL with the GLX loader for rendering, this
+		/// contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is the default rendering backend for
+		/// Linux.</summary>
+		public static class OpenGL_GLX
+		{
+			/// <summary>This is the `Display*` from X used to create the GLX
+			/// context.</summary>
+			public static IntPtr Display  => NativeAPI.backend_opengl_glx_get_display();
+			/// <summary>This is the `GLXContext` that StereoKit uses with
+			/// `glXMakeCurrent`</summary>
+			public static IntPtr Context  => NativeAPI.backend_opengl_glx_get_context();
+			/// <summary>This is the `GLXDrawable` that StereoKit uses with
+			/// `glXMakeCurrent`.</summary>
+			public static IntPtr Drawable => NativeAPI.backend_opengl_glx_get_drawable();
+		}
+
+		/// <summary>When using OpenGL ES with the EGL loader for rendering,
+		/// this contains a number of variables that may be useful for doing
+		/// advanced rendering tasks. This is the default rendering backend for
+		/// Android, and Linux builds can be configured to use this with the
+		/// SK_LINUX_EGL cmake option when building the core StereoKitC
+		/// library.</summary>
+		public static class OpenGLES_EGL
+		{
+			/// <summary>This is the `EGLDisplay` StereoKit receives from
+			/// `eglGetDisplay`</summary>
+			public static IntPtr Display => NativeAPI.backend_opengl_egl_get_display();
+			/// <summary>This is the `EGLContext` StereoKit receives from
+			/// `eglCreateContext`.</summary>
+			public static IntPtr Context => NativeAPI.backend_opengl_egl_get_context();
+		}
+		
 	}
 }

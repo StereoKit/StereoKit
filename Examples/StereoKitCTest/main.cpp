@@ -17,6 +17,7 @@ using namespace sk;
 #include "demo_envmap.h"
 #include "demo_windows.h"
 #include "demo_desktop.h"
+#include "demo_bvh.h"
 
 #include <stdio.h>
 
@@ -84,7 +85,12 @@ scene_t demos[] = {
 		demo_envmap_init,
 		demo_envmap_update,
 		demo_envmap_shutdown,
-	},
+	}, {
+        "BVH",
+        demo_bvh_init,
+        demo_bvh_update,
+        demo_bvh_shutdown,
+    },
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 	{
 		"Windows",
@@ -150,7 +156,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[2]);
+	scene_set_active(demos[1]);
 
 	sk_run(common_update, common_shutdown);
 
@@ -205,8 +211,10 @@ void common_update() {
 			scene_set_active(demos[i]);
 		}
 	}
+#if !defined(__EMSCRIPTEN__)
 	ui_hseparator();
 	if (ui_button("Exit")) sk_quit();
+#endif
 	ui_window_end();
 
 	ruler_window();

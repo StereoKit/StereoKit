@@ -37,6 +37,12 @@ backend_xr_type_ BackendXRType
 backend_xr_type_webxr WebXR
 backend_xr_type_openxr OpenXR
 backend_graphics_d3d11 D3D11
+
+backend_graphics_opengl_glx OpenGL_GLX
+backend_graphics_opengl_wgl OpenGL_WGL
+backend_graphics_opengles_egl OpenGLES_EGL
+backend_graphics_webgl WebGL
+
 display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState

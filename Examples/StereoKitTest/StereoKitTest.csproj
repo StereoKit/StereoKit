@@ -34,6 +34,12 @@
 	</ItemGroup>
 	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 
+	<!-- Error out if StereoKitC hasn't successfully built! -->
+	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
+		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
+		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+	</Target>
+
 	<!-- Copy assets, and build the app's shaders into the final app folder -->
 	<ItemGroup>
 		<Content Include="..\Assets\**">

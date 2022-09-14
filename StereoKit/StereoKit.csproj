@@ -5,24 +5,26 @@
 		<Platforms>x64;ARM64;ARM;Any CPU</Platforms>
 		<OutputPath>..\bin\</OutputPath>
 		<DocumentationFile>..\bin\StereoKit.xml</DocumentationFile>
+
+		<NoWarn>1701;1702;1573</NoWarn>
 	</PropertyGroup>
 
 	<!-- References -->
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-		<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="$(SKTest) != 'True'">
+		<!--<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="$(SKTest) != 'True'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="$(SKTest) != 'True'">
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
+		</ProjectReference>-->
 	</ItemGroup>
 
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.6-preview.6</Version>
+		<Version>0.3.7-preview.3</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -32,7 +34,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>OpenXR C# AR VR MR XR MixedReality HoloLens</PackageTags>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources >
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
