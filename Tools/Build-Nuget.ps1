@@ -49,7 +49,7 @@ function Test {
         return $LASTEXITCODE
     }
     Push-Location -Path "$PSScriptRoot\..\bin\x64_Release\StereoKitTest"
-    & '.\StereoKitTest.exe' '-test' '-screenfolder' "$PSScriptRoot/Tools/Screenshots/" | Write-Host
+    & '.\StereoKitTest.exe' '-test' '-screenfolder' "$PSScriptRoot/Screenshots/" | Write-Host
     Pop-Location
     return $LASTEXITCODE
 }
