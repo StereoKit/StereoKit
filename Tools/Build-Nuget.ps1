@@ -44,12 +44,12 @@ function Build {
 ###########################################
 
 function Test {
-    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitDocumenter' | Out-Null
+    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitTest' | Out-Null
     if ($LASTEXITCODE -ne 0) {
         return $LASTEXITCODE
     }
-    Push-Location -Path 'Tools/StereoKitDocumenter/bin/Release/net6.0/'
-    & '.\StereoKitDocumenter.exe' | Write-Host
+    Push-Location -Path "$PSScriptRoot\..\bin\x64_Release\StereoKitTest"
+    & '.\StereoKitTest.exe' '-test' '-screenfolder' "$PSScriptRoot/Tools/Screenshots/" | Write-Host
     Pop-Location
     return $LASTEXITCODE
 }
