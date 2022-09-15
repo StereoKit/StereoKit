@@ -50,6 +50,11 @@ struct text_stepper_t {
 array_t<_text_style_t> text_styles  = {};
 array_t<text_buffer_t> text_buffers = {};
 
+template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
+float text_step_height(const C* text, int32_t* out_length, const text_stepper_t& step);
+template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
+void text_step_next_line(const C* start, text_stepper_t& step);
+
 ///////////////////////////////////////////
 
 inline bool text_is_space(char32_t c) {
