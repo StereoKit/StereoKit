@@ -28,7 +28,13 @@ material_t material_find(const char *id) {
 ///////////////////////////////////////////
 
 void material_set_id(material_t material, const char *id) {
-	assets_set_id(material->header, id);
+	assets_set_id(&material->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* material_get_id(const material_t material) {
+	return material->header.id_text;
 }
 
 ///////////////////////////////////////////
@@ -80,7 +86,7 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		material->args.texture_count = meta->resource_count;
 		material->args.textures      = sk_malloc_t(shaderargs_tex_t, meta->resource_count);
 		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
-		for (size_t i = 0; i < meta->resource_count; i++) {
+		for (uint32_t i = 0; i < meta->resource_count; i++) {
 			shaderargs_tex_t *tex_arg     = &material->args.textures[i];
 			tex_t             default_tex = nullptr;
 
@@ -180,7 +186,7 @@ material_t material_copy_id(const char *id) {
 ///////////////////////////////////////////
 
 void material_addref(material_t material) {
-	assets_addref(material->header);
+	assets_addref(&material->header);
 }
 
 ///////////////////////////////////////////
@@ -188,20 +194,21 @@ void material_addref(material_t material) {
 void material_release(material_t material) {
 	if (material == nullptr)
 		return;
-	assets_releaseref(material->header);
+	assets_releaseref(&material->header);
 }
 
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
+	if (material->chain) material_release(material->chain);
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i].tex != nullptr)
 			tex_release(material->args.textures[i].tex);
 	}
 	shader_release(material->shader);
 	skg_pipeline_destroy(&material->pipeline);
-	free(material->args.buffer);
-	free(material->args.textures);
+	sk_free(material->args.buffer);
+	sk_free(material->args.textures);
 	*material = {};
 }
 
@@ -243,8 +250,8 @@ void material_set_shader(material_t material, shader_t shader) {
 		if (old_shader != nullptr)
 			shader_release(old_shader);
 		skg_pipeline_destroy(&material->pipeline);
-		free(old_buffer);
-		free(old_textures);
+		sk_free(old_buffer);
+		sk_free(old_textures);
 	}
 
 	material->shader   = shader;
@@ -259,6 +266,7 @@ void material_set_shader(material_t material, shader_t shader) {
 ///////////////////////////////////////////
 
 shader_t material_get_shader(material_t material) {
+	shader_addref(material->shader);
 	return material->shader;
 }
 
@@ -305,6 +313,19 @@ void material_set_queue_offset(material_t material, int32_t offset) {
 
 ///////////////////////////////////////////
 
+void material_set_chain(material_t material, material_t chain_material) {
+	if (material == chain_material) {
+		log_warn("Chain material can't be recursive!");
+		return;
+	}
+
+	if (chain_material ) material_addref (chain_material);
+	if (material->chain) material_release(material->chain);
+	material->chain = chain_material;
+}
+
+///////////////////////////////////////////
+
 transparency_ material_get_transparency(material_t material) { 
 	return material->alpha_mode;
 }
@@ -337,6 +358,13 @@ bool32_t material_get_depth_write(material_t material) {
 
 int32_t material_get_queue_offset(material_t material) {
 	return material->queue_offset;
+}
+
+///////////////////////////////////////////
+
+material_t material_get_chain(material_t material) {
+	if (material->chain) material_addref(material->chain);
+	return material->chain;
 }
 
 ///////////////////////////////////////////
@@ -582,11 +610,89 @@ bool32_t material_set_texture(material_t material, const char *name, tex_t value
 
 ///////////////////////////////////////////
 
+float material_get_float(material_t material, const char* name) {
+	float* matparam = (float*)_material_get_ptr(material, name, sizeof(float));
+	return matparam != nullptr ? *matparam : 0.0f;
+}
+
+///////////////////////////////////////////
+
+vec2 material_get_vector2(material_t material, const char* name) {
+	vec2* matparam = (vec2*)_material_get_ptr(material, name, sizeof(vec2));
+	return matparam != nullptr ? *matparam : vec2{};
+}
+
+///////////////////////////////////////////
+
+vec3 material_get_vector3(material_t material, const char* name) {
+	vec3* matparam = (vec3*)_material_get_ptr(material, name, sizeof(vec3));
+	return matparam != nullptr ? *matparam : vec3{};
+}
+
+///////////////////////////////////////////
+
+color128 material_get_color(material_t material, const char* name) {
+	color128* matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
+	return matparam != nullptr ? *matparam : color128{1,1,1,1};
+}
+
+///////////////////////////////////////////
+
+vec4 material_get_vector4(material_t material, const char* name) {
+	vec4* matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
+	return matparam != nullptr ? *matparam : vec4{};
+}
+
+///////////////////////////////////////////
+
+int32_t material_get_int(material_t material, const char* name) {
+	int32_t* matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t));
+	return matparam != nullptr ? *matparam : 0;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_bool(material_t material, const char* name) {
+	uint32_t* matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
+	return matparam != nullptr ? *matparam : false;
+}
+
+///////////////////////////////////////////
+
+uint32_t material_get_uint(material_t material, const char* name) {
+	uint32_t* matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
+	return matparam != nullptr ? *matparam : 0;
+}
+
+///////////////////////////////////////////
+
+matrix material_get_matrix(material_t material, const char* name) {
+	matrix* matparam = (matrix*)_material_get_ptr(material, name, sizeof(matrix));
+	return matparam != nullptr ? *matparam : matrix_identity;
+}
+
+///////////////////////////////////////////
+
+tex_t material_get_texture(material_t material, const char* name) {
+	uint64_t id = hash_fnv64_string(name);
+	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		const skg_shader_resource_t* resource = &material->shader->shader.meta->resources[i];
+		if (resource->name_hash == id) {
+			tex_t result = material->args.textures[i].tex;
+			tex_addref(result);
+			return result;
+		}
+	}
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 bool32_t material_has_param(material_t material, const char *name, material_param_ type) {
 	uint64_t id = hash_fnv64_string(name);
 
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 			if (material->shader->shader.meta->resources[i].name_hash == id)
 				return true;
 		}
@@ -628,7 +734,7 @@ bool32_t material_get_param(material_t material, const char *name, material_para
 
 bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
-		for (size_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
+		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 			if (material->shader->shader.meta->resources[i].name_hash == id) {
 				memcpy(out_value, &material->args.textures[i], sizeof(tex_t));
 				return true;

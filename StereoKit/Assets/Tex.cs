@@ -9,16 +9,21 @@ namespace StereoKit
 	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
 	/// plus more later on, and you can also create textures procedurally.
 	/// </summary>
-	public class Tex
+	public class Tex : IAsset
 	{
 		#region Fields and Properties
 
 		internal IntPtr                    _inst;
 		private  List<Assets.CallbackData> _callbacks;
 
-		/// <summary>Allows you to set the Id of the texture to a specific
-		/// Id.</summary>
-		public string Id { set => NativeAPI.tex_set_id(_inst, value); }
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.tex_get_id(_inst));
+			set => NativeAPI.tex_set_id(_inst, value);
+		}
 
 		/// <summary> The width of the texture, in pixels. This will be a
 		/// blocking call if AssetState is less than LoadedMeta. </summary>
@@ -26,6 +31,10 @@ namespace StereoKit
 		/// <summary> The height of the texture, in pixels. This will be a
 		/// blocking call if AssetState is less than LoadedMeta. </summary>
 		public int Height => NativeAPI.tex_get_height(_inst);
+		/// <summary>The number of mip-map levels this texture has. This will
+		/// be 1 if the texture doesn't have mip mapping enabled. This will be
+		/// a blocking call if AssetState is less than LoadedMeta.</summary>
+		public int Mips => NativeAPI.tex_get_mips(_inst);
 		/// <summary> The StereoKit format this texture was initialized with.
 		/// This will be a blocking call if AssetState is less than LoadedMeta.
 		/// </summary>
@@ -111,6 +120,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty texture!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Tex()
 		{
 			if (_inst != IntPtr.Zero)
@@ -253,18 +263,86 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
-		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count);
+		/// <summary>This function is dependent on the graphics backend! It
+		/// will take a texture resource for the current graphics backend (D3D
+		/// or GL) and wrap it in a StereoKit texture for use within StereoKit.
+		/// This is a bit of an advanced feature.</summary>
+		/// <param name="nativeTexture">For D3D, this should be an
+		/// ID3D11Texture2D*, and for GL, this should be a uint32_t from a
+		/// glGenTexture call, coerced into the IntPtr.</param>
+		/// <param name="type">The image flags that tell SK how to treat the
+		/// texture, this should match up with the settings the texture was
+		/// originally created with. If SK can figure the appropriate settings,
+		/// it _may_ override the value provided here.</param>
+		/// <param name="native_fmt">The texture's format using the graphics
+		/// backend's value, not SK's. This should match up with the settings
+		/// the texture was originally created with. If SK can figure the
+		/// appropriate settings, it _may_ override the value provided here.
+		/// </param>
+		/// <param name="width">Width of the texture. This should match up with
+		/// the settings the texture was originally created with. If SK can
+		/// figure the appropriate settings, it _may_ override the value
+		/// provided here.</param>
+		/// <param name="height">Height of the texture. This should match up
+		/// with the settings the texture was originally created with. If SK
+		/// can figure the appropriate settings, it _may_ override the value
+		/// provided here.</param>
+		/// <param name="surface_count">Texture array surface count. This
+		/// should match up with the settings the texture was originally
+		/// created with. If SK can figure the appropriate settings, it _may_
+		/// override the value provided here.</param>
+		/// <param name="owned">Should ownership of this texture resource be
+		/// passed on to StereoKit? If so, StereoKit may delete it when it's
+		/// finished with it. If this is not desired, pass in false.</param>
+		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned?1:0);
 
-		public void GetColors(ref Color32[] colorData)
+		/// <summary>This will return the texture's native resource for use
+		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
+		/// and for GL, this will be a uint32_t from a glGenTexture call,
+		/// coerced into the IntPtr. This call will block execution until the
+		/// texture is loaded, if it is not already.</summary>
+		/// <returns>For D3D, this will be an ID3D11Texture2D*, and for GL,
+		/// this will be a uint32_t from a glGenTexture call, coerced into the
+		/// IntPtr.</returns>
+		public IntPtr GetNativeSurface()
+			=> NativeAPI.tex_get_surface(_inst);
+
+		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// can be a very slow operation, so use it cautiously. If the color
+		/// array is the correct size, it will not be re-allocated.</summary>
+		/// <param name="colorData">An array of colors that will be filled out
+		/// with the texture's data. It can be null, or an incorrect size. If
+		/// so, it will be reallocated to the correct size.</param>
+		/// <param name="mipLevel">Retreives the color data for a specific
+		/// mip-mapping level. This function will log a fail and return a black
+		/// array if an invalid mip-level is provided.</param>
+		public void GetColors(ref Color32[] colorData, int mipLevel = 0)
 		{
-			if (colorData == null)
-				colorData = new Color32[Width*Height];
+			int count = Width * Height;
+			if (colorData == null || colorData.Length != count)
+				colorData = new Color32[count];
 
 			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
-			IntPtr   pointer = pinnedArray.AddrOfPinnedObject();
-			NativeAPI.tex_get_data(_inst, pointer, (UIntPtr)(colorData.Length * 4));
+			IntPtr   pointer     = pinnedArray.AddrOfPinnedObject();
+			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(count * 4), mipLevel);
 			pinnedArray.Free();
+		}
+		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// can be a very slow operation, so use it cautiously.</summary>
+		/// <param name="mipLevel">Retreives the color data for a specific
+		/// mip-mapping level. This function will log a fail and return a black
+		/// array if an invalid mip-level is provided.</param>
+		/// <returns>The texture's color values in an array sized Width*Height.
+		/// </returns>
+		public Color32[] GetColors(int mipLevel = 0)
+		{
+			Color32[] result      = new Color32[Width * Height];
+			GCHandle  pinnedArray = GCHandle.Alloc(result, GCHandleType.Pinned);
+			IntPtr    pointer     = pinnedArray.AddrOfPinnedObject();
+			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(result.Length * 4), mipLevel);
+			pinnedArray.Free();
+			return result;
 		}
 
 		/// <summary>Set the texture's size without providing any color data.

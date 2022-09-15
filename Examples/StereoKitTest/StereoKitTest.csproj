@@ -36,6 +36,12 @@
 		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
 	</ItemGroup>
 
+	<!-- Error out if StereoKitC hasn't successfully built! -->
+	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
+		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
+		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+	</Target>
+
 	<!-- This guide file shouldn't be compiled -->
 	<ItemGroup>
 		<Compile Remove="Guides\GuideGettingStarted.cs" />

@@ -1,10 +1,11 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "libraries/sk_gpu.h"
-#include "systems/platform/platform_utils.h"
+#include "platforms/platform_utils.h"
 
 namespace sk {
 
+const char* backend_err_wrong_backend = "Backend functions only work with the correct backend! Please check your backend info before calling.";
 
 ///////////////////////////////////////////
 
@@ -30,42 +31,49 @@ backend_xr_type_ backend_xr_get_type() {
 ///////////////////////////////////////////
 
 openxr_handle_t backend_openxr_get_instance() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 	return 0;
 }
 
 ///////////////////////////////////////////
 
 openxr_handle_t backend_openxr_get_session() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
+	return 0;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_system_id() {
+	log_err(backend_err_wrong_backend);
 	return 0;
 }
 
 ///////////////////////////////////////////
 
 openxr_handle_t backend_openxr_get_space() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 	return 0;
 }
 
 ///////////////////////////////////////////
 
 int64_t backend_openxr_get_time() {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 	return 0;
 }
 
 ///////////////////////////////////////////
 
 void *backend_openxr_get_function(const char *function_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 	return nullptr;
 }
 
 ///////////////////////////////////////////
 
 bool32_t backend_openxr_ext_enabled(const char *extension_name) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 	return false;
 }
 
@@ -80,8 +88,26 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 ///////////////////////////////////////////
 
+void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
+	if (sk_initialized) {
+		log_err("backend_openxr_use_minimum_exts must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
+	if (sk_initialized) {
+		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
-	log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	log_err(backend_err_wrong_backend);
 }
 
 ///////////////////////////////////////////
@@ -107,9 +133,9 @@ backend_platform_ backend_platform_get() {
 ///////////////////////////////////////////
 
 #if !defined(SK_OS_ANDROID)
-void *backend_android_get_java_vm () { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
-void *backend_android_get_activity() { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
-void *backend_android_get_jni_env () { log_err("backend_ platform functions only work on the correct platform!"); return nullptr; }
+void *backend_android_get_java_vm () { log_err(backend_err_wrong_backend); return nullptr; }
+void *backend_android_get_activity() { log_err(backend_err_wrong_backend); return nullptr; }
+void *backend_android_get_jni_env () { log_err(backend_err_wrong_backend); return nullptr; }
 #endif
 
 ///////////////////////////////////////////
@@ -117,7 +143,15 @@ void *backend_android_get_jni_env () { log_err("backend_ platform functions only
 backend_graphics_ backend_graphics_get() {
 #if defined(SKG_DIRECT3D11)
 	return backend_graphics_d3d11;
-#elif defined(SKG_OPENGL)
+#elif defined(_SKG_GL_LOAD_WGL)
+	return backend_graphics_opengl_wgl;
+#elif defined(_SKG_GL_LOAD_GLX)
+	return backend_graphics_opengl_glx;
+#elif defined(_SKG_GL_LOAD_EGL)
+	return backend_graphics_opengles_egl;
+#elif defined(_SKG_GL_WEB)
+	return backend_graphics_webgl;
+#else
 	return backend_graphics_none;
 #endif
 }
@@ -126,7 +160,7 @@ backend_graphics_ backend_graphics_get() {
 
 void *backend_d3d11_get_d3d_device() {
 #if !defined(SKG_DIRECT3D11)
-	log_err("backend_d3d11_ functions only work when D3D11 is the backend!");
+	log_err(backend_err_wrong_backend);
 	return nullptr;
 #else
 	void *d3d_device;
@@ -140,13 +174,100 @@ void *backend_d3d11_get_d3d_device() {
 
 void *backend_d3d11_get_d3d_context() {
 #if !defined(SKG_DIRECT3D11)
-	log_err("backend_d3d11_ functions only work when D3D11 is the backend!");
+	log_err(backend_err_wrong_backend);
 	return nullptr;
 #else
 	void *d3d_device;
 	void *d3d_context;
 	render_get_device((void **)&d3d_device, (void **)&d3d_context);
 	return d3d_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_wgl_get_hdc() {
+#if !defined(_SKG_GL_LOAD_WGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._gl_hdc;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_wgl_get_hglrc() {
+#if !defined(_SKG_GL_LOAD_WGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._gl_hrc;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_glx_get_context(){
+#if !defined(_SKG_GL_LOAD_GLX)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._glx_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_glx_get_display(){
+#if !defined(_SKG_GL_LOAD_GLX)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._x_display;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_glx_get_drawable(){
+#if !defined(_SKG_GL_LOAD_GLX)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._glx_drawable;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_egl_get_context(){
+#if !defined(_SKG_GL_LOAD_EGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._egl_context;
+#endif
+}
+///////////////////////////////////////////
+
+void* backend_opengl_egl_get_config(){
+#if !defined(_SKG_GL_LOAD_EGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._egl_config;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_opengl_egl_get_display() {
+#if !defined(_SKG_GL_LOAD_EGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._egl_display;
 #endif
 }
 

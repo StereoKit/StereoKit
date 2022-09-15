@@ -19,6 +19,13 @@ namespace StereoKit.Framework
 			Add(inst); 
 			return inst;
 		}
+		public object Add(Type type)
+		{
+			IStepper inst = Activator.CreateInstance(type) as IStepper;
+			if (inst == null) return null;
+			Add(inst);
+			return inst;
+		}
 		public T Add<T>(T stepper) where T:IStepper 
 		{
 			// Add the stepper to the list
@@ -38,10 +45,20 @@ namespace StereoKit.Framework
 			_steppers.ForEach(s => s.Initialize());
 		}
 
-		public void Remove<T>() where T:IStepper
-			=> _steppers.RemoveAll(s=> typeof(T).IsAssignableFrom(s.GetType()));
+		public void Remove<T>() => Remove(typeof(T));
+		public void Remove(Type type)
+		{
+			_steppers.RemoveAll(s => {
+				bool remove = type.IsAssignableFrom(s.GetType());
+				if (remove) s.Shutdown();
+				return remove;
+			});
+		}
 		public void Remove(IStepper stepper)
-			=> _steppers.Remove(stepper);
+		{
+			if (_steppers.Remove(stepper))
+				stepper.Shutdown();
+		}
 
 
 		public void Step()

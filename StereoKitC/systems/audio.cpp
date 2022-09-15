@@ -3,7 +3,7 @@
 
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
 #include "../libraries/miniaudio.h"
 #include "../libraries/stref.h"
@@ -69,9 +69,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
@@ -174,9 +172,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
@@ -316,7 +312,7 @@ bool32_t mic_start(const char *device_name) {
 void mic_stop() {
 	if (!au_recording) return;
 
-	free(au_mic_name);
+	sk_free(au_mic_name);
 	au_mic_name = nullptr;
 	ma_device_stop  (&au_mic_device);
 	ma_device_uninit(&au_mic_device);
@@ -345,6 +341,8 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
+	memset(au_mix_temp, 0, sizeof(au_mix_temp));
+
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {
 		return false;
 	}
@@ -420,6 +418,16 @@ void audio_update() {
 ///////////////////////////////////////////
 
 void audio_shutdown() {
+	// Stop any sounds that are still playing
+	for (int32_t i = 0; i < _countof(au_active_sounds); i++) {
+		if (au_active_sounds[i].sound != nullptr) {
+			sound_inst_t inst;
+			inst._id   = au_active_sounds[i].id;
+			inst._slot = (int16_t)i;
+			sound_inst_stop(inst);
+		}
+	}
+
 	mic_stop();
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	isac_destroy();

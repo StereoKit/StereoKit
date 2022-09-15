@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace StereoKit
 {
 	/// <summary>This class represents a sound effect! Excellent for blips
 	/// and bloops and little clips that you might play around your scene.
-	/// Not great for long streams of audio like you might see in a podcast.
 	/// Right now, this supports .wav, .mp3, and procedurally generated 
 	/// noises!
 	/// 
@@ -16,11 +16,18 @@ namespace StereoKit
 	/// system tray, navigate to "Spatial sound", and choose "Windows Sonic
 	/// for Headphones." For more information, visit 
 	/// https://docs.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound </summary>
-	public class Sound
+	public class Sound : IAsset
 	{
 		internal IntPtr _inst;
 
-		public string Id { set { NativeAPI.sound_set_id(_inst, value); } }
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.sound_get_id(_inst));
+			set => NativeAPI.sound_set_id(_inst, value);
+		}
 
 		/// <summary>This will return the total length of the sound in
 		/// seconds.</summary>
@@ -49,6 +56,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty sound!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sound()
 		{
 			if (_inst != IntPtr.Zero)

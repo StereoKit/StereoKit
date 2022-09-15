@@ -4,16 +4,14 @@
 #include "../sk_memory.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
-#include "../systems/platform/platform_utils.h"
-#include "../systems/hand/input_hand.h"
+#include "../platforms/platform_utils.h"
+#include "../hands/input_hand.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
 #include <math.h>
 #include <float.h>
-#include <DirectXMath.h>
-using namespace DirectX;
 
 ///////////////////////////////////////////
 
@@ -101,6 +99,7 @@ bool32_t        skui_enable_far_interact = true;
 uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -275,8 +274,8 @@ void ui_quadrant_mesh(mesh_t *mesh, float padding, int32_t quadrant_slices) {
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -386,8 +385,8 @@ void ui_quadrant_mesh_half(mesh_t *mesh, float padding, int32_t quadrant_slices,
 
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -671,7 +670,7 @@ bool ui_init() {
 void ui_update() {
 	skui_finger_radius = 0;
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t    *hand    = input_hand((handed_)i);
 		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i]);
 
@@ -737,10 +736,10 @@ void ui_update() {
 
 void ui_update_late() {
 	ui_pop_surface();
-	if (skui_layers.count != 0) log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack.count != 1) log_err("ui: Mismatching number of id push/pop calls!");
-	if (skui_tint_stack.count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
-	if (skui_enabled_stack.count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
+	if (skui_layers                 .count != 0) log_err("ui: Mismatching number of Begin/End calls!");
+	if (skui_id_stack               .count != 1) log_err("ui: Mismatching number of id push/pop calls!");
+	if (skui_tint_stack             .count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
+	if (skui_enabled_stack          .count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
 	if (skui_preserve_keyboard_stack.count != 1) log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
 }
 
@@ -753,27 +752,29 @@ void ui_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	skui_sl_windows             .free();
-	skui_layers                 .free();
-	skui_id_stack               .free();
-	skui_font_stack             .free();
-	skui_tint_stack             .free();
-	skui_enabled_stack          .free();
-	skui_preserve_keyboard_stack.free();
+	skui_sl_windows              .free();
+	skui_layers                  .free();
+	skui_id_stack                .free();
+	skui_font_stack              .free();
+	skui_tint_stack              .free();
+	skui_enabled_stack           .free();
+	skui_preserve_keyboard_stack .free();
 	skui_preserve_keyboard_ids[0].free();
 	skui_preserve_keyboard_ids[1].free();
-	sound_release(skui_snd_interact);
-	sound_release(skui_snd_uninteract);
-	sound_release(skui_snd_grab);
-	sound_release(skui_snd_ungrab);
-	mesh_release(skui_box);
-	mesh_release(skui_cylinder);
-	mesh_release(skui_box_dbg);
-	material_release(skui_mat);
-	material_release(skui_mat_quad);
-	material_release(skui_mat_dbg);
-	material_release(skui_font_mat);
-	font_release(skui_font);
+	sound_release(skui_snd_interact);   skui_snd_interact   = nullptr;
+	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
+	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
+	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
+	mesh_release(skui_box);      skui_box      = nullptr;
+	mesh_release(skui_cylinder); skui_cylinder = nullptr;
+	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
+	mesh_release(skui_win_top);  skui_win_top  = nullptr;
+	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	material_release(skui_mat);      skui_mat      = nullptr;
+	material_release(skui_mat_quad); skui_mat_quad = nullptr;
+	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
+	material_release(skui_font_mat); skui_font_mat = nullptr;
+	font_release(skui_font); skui_font = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -868,7 +869,7 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 
 	layer_t      &layer    = skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
-	for (size_t i = 0; i < handed_max; i++) {
+	for (int32_t i = 0; i < handed_max; i++) {
 		layer.finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
 		layer.finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
 		layer.pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
@@ -883,7 +884,7 @@ void ui_pop_surface() {
 	skui_layers.pop();
 
 	if (skui_layers.count <= 0) {
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = skui_hand[i].finger_world;
 			skui_hand[i].finger_prev   = skui_hand[i].finger_world_prev;
 			skui_hand[i].pinch_pt      = skui_hand[i].pinch_pt_world;
@@ -891,7 +892,7 @@ void ui_pop_surface() {
 		}
 	} else {
 		layer_t &layer = skui_layers.last();
-		for (size_t i = 0; i < handed_max; i++) {
+		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = layer.finger_pos[i];
 			skui_hand[i].finger_prev   = layer.finger_prev[i];
 			skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
@@ -1011,6 +1012,30 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 
 ///////////////////////////////////////////
 
+button_state_ ui_last_element_hand_used(handed_ hand) {
+	return button_make_state(
+		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev == skui_last_element,
+		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_active() {
+	return button_make_state(
+		skui_hand[handed_left].active_prev == skui_last_element || skui_hand[handed_right].active_prev == skui_last_element,
+		skui_hand[handed_left].active      == skui_last_element || skui_hand[handed_right].active      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_focused() {
+	return button_make_state(
+		skui_hand[handed_left].focused_prev == skui_last_element || skui_hand[handed_right].focused_prev == skui_last_element,
+		skui_hand[handed_left].focused      == skui_last_element || skui_hand[handed_right].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
 void ui_nextline() {
 	layer_t &layer = skui_layers.last();
 	skui_prev_offset      = layer.offset;
@@ -1052,6 +1077,8 @@ void ui_space(float space) {
 void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+	
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1091,6 +1118,8 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
+
+	skui_last_element = id;
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!skui_interact_enabled) {
@@ -1334,6 +1363,8 @@ bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 	uint64_t id_hash = ui_stack_hash(id);
 	bool     result  = false;
 
+	skui_last_element = id_hash;
+
 	for (int32_t i = 0; i < handed_max; i++) {
 		bool     was_focused = skui_hand[i].focused_prev == id_hash;
 		bounds_t size        = bounds;
@@ -1550,7 +1581,6 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	if (image_size>0) {
 		color128 final_color = skui_tint;
 		if (!skui_enabled_stack.last()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
-		final_color.a = fmaxf(activation, color_blend);
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 		if (image_layout != ui_btn_layout_center_no_text)
@@ -1618,7 +1648,7 @@ bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_
 	vec3 final_pos;
 	vec2 final_size;
 
-	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
 }
 bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char    >(text, image, image_layout, size); }
@@ -1759,6 +1789,13 @@ inline bool    utf_is_start     (char16_t ch) { return utf16_is_start(ch); }
 inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { return utf8_encode_append (buffer, size, ch); }
 inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }
 
+inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at   (text, style, char_index, opt_size, fit, position, align); }
+inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
+
+int32_t skui_input_carat     = 0;
+int32_t skui_input_carat_end = 0;
+float   skui_input_blink     = 0;
+
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
 	vec3 final_pos;
@@ -1777,7 +1814,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	if (state & button_state_just_active) {
 		platform_keyboard_show(true,type);
+		skui_input_blink  = time_getf();
 		skui_input_target = id_hash;
+		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
 
@@ -1809,11 +1848,26 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			uint32_t add = '\0';
 
 			if (curr == key_backspace) {
-				size_t len = strlen(buffer);
-				while (len > 0 && !utf_is_start(buffer[len - 1]))
-					len--;
-				if (len > 0) {
-					buffer[len - 1] = '\0';
+				if (skui_input_carat != skui_input_carat_end) {
+					int32_t start = mini(skui_input_carat, skui_input_carat_end);
+					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
+					skui_input_carat_end = skui_input_carat = start;
+					result = true;
+				} else if (skui_input_carat > 0) {
+					skui_input_carat_end = skui_input_carat = skui_input_carat - 1;
+					utf_remove_chars(utf_advance_chars(buffer, skui_input_carat), 1);
+					result = true;
+				}
+			} else if (curr == 0x7f) {
+				if (skui_input_carat != skui_input_carat_end) {
+					int32_t start = mini(skui_input_carat, skui_input_carat_end);
+					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
+					skui_input_carat_end = skui_input_carat = start;
+					result = true;
+				} else if (skui_input_carat >= 0) {
+					utf_remove_chars(utf_advance_chars(buffer, skui_input_carat), 1);
 					result = true;
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
@@ -1830,23 +1884,44 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			}
 
 			if (add != '\0') {
-				utf_encode_append(buffer, buffer_size, add);
+				// Remove any selected
+				if (skui_input_carat != skui_input_carat_end) {
+					int32_t start = mini(skui_input_carat, skui_input_carat_end);
+					int32_t count = maxi(skui_input_carat, skui_input_carat_end) - start;
+					utf_remove_chars(utf_advance_chars(buffer, start), count);
+					skui_input_carat_end = skui_input_carat = start;
+				}
+				utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_carat), add);
+				skui_input_carat += 1;
+				skui_input_carat_end = skui_input_carat;
 				result = true;
 			}
 
 			curr = input_text_consume();
 		}
+		if      (input_key(key_shift) & button_state_active && input_key(key_left ) & button_state_just_active) { skui_input_blink = time_getf(); skui_input_carat = maxi(0, skui_input_carat - 1); }
+		else if (input_key(key_left ) & button_state_just_active)                                               { skui_input_blink = time_getf(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = maxi(0, skui_input_carat - 1); skui_input_carat_end = skui_input_carat; }
+		if      (input_key(key_shift) & button_state_active && input_key(key_right) & button_state_just_active) { skui_input_blink = time_getf(); skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); }
+		else if (input_key(key_right) & button_state_just_active)                                               { skui_input_blink = time_getf(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); skui_input_carat_end = skui_input_carat; }
 	}
 
 	// Render the input UI
+	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y - skui_settings.padding * 2 };
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
-	ui_text_in(              final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, {final_size.x-skui_settings.padding*2,final_size.y-skui_settings.padding*2}, buffer, text_align_top_left, text_align_center_left);
+	ui_text_in(              final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, text_bounds, buffer, text_align_top_left, text_align_center_left);
 	
+	float line      = ui_line_height() * 0.5f;
+	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
+	if (skui_input_target == id_hash && skui_input_carat != skui_input_carat_end) {
+		vec2  carat_end = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat_end, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
+		float left      = fmaxf(carat_pos.x, carat_end.x);
+		float right     = fminf(carat_pos.x, carat_end.x);
+		ui_cube(final_pos - vec3{ skui_settings.padding - left, skui_settings.padding - carat_pos.y, skui_settings.depth/2 + 1*mm2m }, vec3{ -(right-left), line, line * 0.01f }, skui_mat, skui_palette[3]);
+	}
 	// Show a blinking text carat
-	if (skui_input_target == id_hash && (int)(time_getf()*2)%2==0) {
-		float carat_at = skui_settings.padding + fminf(text_size_t(buffer, skui_font_stack.last()).x, final_size.x - skui_settings.padding * 2);
-		float line     = ui_line_height() * 0.5f;
-		ui_cube(final_pos - vec3{ carat_at,final_size.y*0.5f-line*0.5f,skui_settings.depth/2 }, vec3{ line * 0.2f, line, line * 0.2f }, skui_mat, skui_palette[4]);
+	if (skui_input_target == id_hash && (int)((time_getf()-skui_input_blink)*2)%2==0) {
+		
+		ui_cube(final_pos - vec3{ skui_settings.padding - carat_pos.x, skui_settings.padding - carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, skui_mat, skui_palette[4]);
 	}
 
 	return result;
@@ -1857,6 +1932,12 @@ bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, 
 }
 bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
 	return ui_input_g<char16_t, text_size_16>(id, buffer, buffer_size, size, type);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_has_keyboard_focus() {
+	return skui_input_target != 0;
 }
 
 ///////////////////////////////////////////
@@ -2097,6 +2178,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	bool result = false;
 	float color = 1;
 
+	skui_last_element = id;
+
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
 	ui_push_surface(movement);
@@ -2138,7 +2221,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			vec3  from_pt             = finger_pos[i];
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
-			if (ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, box)) {
+			if (ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
@@ -2322,15 +2405,15 @@ void ui_handle_end() {
 template<typename C, vec2 (*text_size_t)(const C *text, text_style_t style)>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	uint64_t id = ui_push_id(text);
-	int64_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
+	int32_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;
 		ui_window_t new_window = {};
 		new_window.hash = id;
 		new_window.size = window_size;
-		skui_sl_windows.insert((size_t)index, new_window);
+		skui_sl_windows.insert(index, new_window);
 	}
-	ui_window_t &window = skui_sl_windows[(size_t)index];
+	ui_window_t &window = skui_sl_windows[index];
 	window.type = window_type;
 	
 	// figure out the size of it, based on its window type

@@ -79,8 +79,8 @@ class DemoHands : ITest
 		handMenu = SK.AddStepper(new HandMenuRadial(
 			new HandRadialLayer("Root",
 				new HandMenuItem("File",   null, null, "File"),
-				new HandMenuItem("Edit",   null, null, "Edit"),
-				new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
+				new HandMenuItem("Search", null, null, "Edit"),
+				new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 				new HandMenuItem("Cancel", null, null)),
 			new HandRadialLayer("File", 
 				new HandMenuItem("New",   null, () => Log.Info("New")),
@@ -323,5 +323,5 @@ class DemoHands : ITest
 }
 
 /// :CodeDoc: Guides Using Hands
-/// The code in context for this document can be found [on Github here](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DemoHands.cs)!
+/// The code in context for this document can be found [on Github here](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoHands.cs)!
 /// :End:

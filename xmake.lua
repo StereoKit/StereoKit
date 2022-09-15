@@ -39,7 +39,7 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("wasm") then
-    add_requires("openxr_loader 1.0.22", {verify = false, configs = {vs_runtime="MD", shared=false}})
+    add_requires("openxr_loader 1.0.24", {verify = false, configs = {vs_runtime="MD", shared=false}})
     add_requires("reactphysics3d 0.9.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
 
@@ -66,19 +66,8 @@ target("StereoKitC")
     add_options("uwp")
     add_options("linux-graphics-backend")
     add_options("oculus-openxr")
-    set_version("0.3.6-preview.6")
-    set_kind("shared")
+    set_version("0.3.7-preview.4")
     set_symbols("debug")
-    if is_plat("windows") then
-        set_languages("cxx17")
-        add_cxflags(is_mode("debug") and "/MDd" or "/MD")
-        add_links("windowsapp", "user32", "comdlg32")
-        if has_config("uwp") then
-            add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
-        end
-    else
-        set_languages("cxx11")
-    end
 
     -- 2.5.3 is needed for utils.install.pkgconfig_importfiles
     set_xmakever("2.5.3") 
@@ -89,16 +78,19 @@ target("StereoKitC")
     add_files("StereoKitC/libraries/*.cpp") 
     add_files("StereoKitC/tools/*.cpp") 
     add_files("StereoKitC/systems/*.cpp") 
-    add_files("StereoKitC/systems/hand/*.cpp") 
-    add_files("StereoKitC/systems/platform/*.cpp") 
+    add_files("StereoKitC/hands/*.cpp") 
+    add_files("StereoKitC/platforms/*.cpp") 
+    add_files("StereoKitC/xr_backends/*.cpp") 
     add_files("StereoKitC/asset_types/*.cpp")
     add_files("StereoKitC/ui/*.cpp")
     add_includedirs("StereoKitC/lib/include")
     add_includedirs("StereoKitC/lib/include_no_win")
 
+    -- Packages used by StereoKit
+
     add_packages("reactphysics3d")
+    -- On Android, we have a precompiled binary provided by Oculus
     if not is_plat("wasm") then
-        -- On Android, we have a precompiled binary provided by Oculus
         if has_config("oculus-openxr") and is_plat("android") then
             add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
             add_links("openxr_loader")
@@ -107,22 +99,31 @@ target("StereoKitC")
         end
     end
 
+    -- Platform specific options
 
-    -- Pick our flavor of OpenGL
-    if is_plat("linux") then
+    if is_plat("windows") then
+        set_languages("cxx17")
+        add_cxflags(is_mode("debug") and "/MDd" or "/MD")
+        add_links("windowsapp", "user32", "comdlg32")
+        if has_config("uwp") then
+            add_defines("_WINRT_DLL", "_WINDLL", "__WRL_NO_DEFAULT_LIB__")
+        end
+
+    elseif is_plat("linux") then
+        -- Pick our flavor of OpenGL
 		if is_config("linux-graphics-backend", "EGL") then
         	add_links("EGL", "GLX", "fontconfig", "pthread")
 			add_defines("SKG_LINUX_EGL")
 		elseif is_config("linux-graphics-backend", "GLX") then
-        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11", "pthread")
+        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11",  "Xfixes", "pthread")
 			add_defines("SKG_LINUX_GLX")
 		end
+
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
-    end
 
-    -- Emscripten stuff, this doesn't actually work yet
-    if is_plat("wasm") then
+    elseif is_plat("wasm") then
+        set_kind("static")
         add_ldflags(
             "-s FULL_ES3=1",
             "-s ASSERTIONS=1",
@@ -134,6 +135,20 @@ target("StereoKitC")
             --"-s -Oz",
             "-s ENVIRONMENT=web")
         add_defines("_XM_NO_INTRINSICS_", "SK_PHYSICS_PASSTHROUGH")
+    end
+
+    -- Platform exceptions
+
+    if not is_plat("windows") then
+        set_languages("cxx11")
+    end
+    if not is_plat("wasm") then
+        set_kind("shared")
+        if is_mode("debug") then
+            -- wasm/emscripten v2.0.23 doesn't support debug flags, but we use
+            -- v2.0.23 because Visual Studio requires it to work with C#.
+            set_symbols("debug")
+        end
     end
 
     -- Copy finished files over to the bin directory
@@ -188,7 +203,7 @@ if has_config("tests") and is_plat("linux", "windows", "wasm") then
                 "-s FULL_ES3=1",
                 "-s ALLOW_MEMORY_GROWTH=1",
                 "-s FORCE_FILESYSTEM=1",
-                "--preload-file Examples/Assets",
+                "--preload-file Examples/Assets@/Assets",
                 "-s -Oz",
                 "-s ENVIRONMENT=web")
 

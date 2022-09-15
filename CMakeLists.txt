@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.6" LANGUAGES CXX C)
+project(StereoKit VERSION "0.3.7" LANGUAGES CXX C)
 
 # Default build configuration to RelWithDebInfo 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
@@ -72,7 +72,7 @@ if(SK_PHYSICS)
   CPMAddPackage(
     NAME reactphysics3d
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
     EXCLUDE_FROM_ALL YES
   )
   # Something in reactphysics3d seems to require -fPIC
@@ -89,9 +89,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.22
+  VERSION 1.0.24
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG 458984d7f59d1ae6dc1b597d94b02e4f7132eaba # v1.0.22
+  GIT_TAG "release-1.0.24"
 )
 
 ###########################################
@@ -130,7 +130,7 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
 endforeach(SHADER)
 
 ###########################################
-## Platform Specific Library Linking     ##
+## Platform Specific Settings            ##
 ###########################################
 
 if (UNIX)
@@ -138,6 +138,7 @@ if (UNIX)
     Threads::Threads
     GLX
     X11
+    Xfixes
     fontconfig )
 
   # Add pthreads
@@ -158,6 +159,10 @@ elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
 endif()
 
 if(NOT SK_PHYSICS)
@@ -204,6 +209,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/material.h
   StereoKitC/asset_types/material.cpp
   StereoKitC/asset_types/mesh.h
+  StereoKitC/asset_types/mesh_.h
   StereoKitC/asset_types/mesh.cpp
   StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
@@ -218,6 +224,7 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/sprite.h
   StereoKitC/asset_types/sprite.cpp
   StereoKitC/asset_types/texture.h
+  StereoKitC/asset_types/texture_.h
   StereoKitC/asset_types/texture.cpp )
 
 set(SK_SRC_LIBRARIES
@@ -244,12 +251,18 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stb_truetype.h
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
+  StereoKitC/libraries/unicode.h
+  StereoKitC/libraries/unicode.cpp
   StereoKitC/libraries/tinycthread.h
   StereoKitC/libraries/tinycthread.cpp )
 
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
+  StereoKitC/systems/bbox.h
+  StereoKitC/systems/bbox.cpp
+  StereoKitC/systems/bvh.h
+  StereoKitC/systems/bvh.cpp  
   StereoKitC/systems/defaults.h
   StereoKitC/systems/defaults.cpp
   StereoKitC/systems/input.h
@@ -272,42 +285,44 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/world.cpp )
 
 set(SK_SRC_HANDS
-  StereoKitC/systems/hand/hand_mouse.h
-  StereoKitC/systems/hand/hand_mouse.cpp
-  StereoKitC/systems/hand/hand_override.h
-  StereoKitC/systems/hand/hand_override.cpp
-  StereoKitC/systems/hand/hand_oxr_articulated.h
-  StereoKitC/systems/hand/hand_oxr_articulated.cpp
-  StereoKitC/systems/hand/hand_oxr_controller.h
-  StereoKitC/systems/hand/hand_oxr_controller.cpp
-  StereoKitC/systems/hand/hand_poses.h
-  StereoKitC/systems/hand/input_hand.h
-  StereoKitC/systems/hand/input_hand.cpp )
+  StereoKitC/hands/hand_mouse.h
+  StereoKitC/hands/hand_mouse.cpp
+  StereoKitC/hands/hand_override.h
+  StereoKitC/hands/hand_override.cpp
+  StereoKitC/hands/hand_oxr_articulated.h
+  StereoKitC/hands/hand_oxr_articulated.cpp
+  StereoKitC/hands/hand_oxr_controller.h
+  StereoKitC/hands/hand_oxr_controller.cpp
+  StereoKitC/hands/hand_poses.h
+  StereoKitC/hands/input_hand.h
+  StereoKitC/hands/input_hand.cpp )
 
-set(SK_SRC_PLATFORM
-  StereoKitC/systems/platform/android.cpp
-  StereoKitC/systems/platform/android.h
-  StereoKitC/systems/platform/flatscreen_input.h
-  StereoKitC/systems/platform/flatscreen_input.cpp
-  StereoKitC/systems/platform/linux.h
-  StereoKitC/systems/platform/linux.cpp
-  StereoKitC/systems/platform/openxr.h
-  StereoKitC/systems/platform/openxr.cpp
-  StereoKitC/systems/platform/openxr_extensions.h
-  StereoKitC/systems/platform/openxr_input.h
-  StereoKitC/systems/platform/openxr_input.cpp
-  StereoKitC/systems/platform/openxr_view.h
-  StereoKitC/systems/platform/openxr_view.cpp
-  StereoKitC/systems/platform/platform.h
-  StereoKitC/systems/platform/platform.cpp
-  StereoKitC/systems/platform/platform_utils.h
-  StereoKitC/systems/platform/platform_utils.cpp
-  StereoKitC/systems/platform/web.h
-  StereoKitC/systems/platform/web.cpp  
-  StereoKitC/systems/platform/uwp.h
-  StereoKitC/systems/platform/uwp.cpp  
-  StereoKitC/systems/platform/win32.h
-  StereoKitC/systems/platform/win32.cpp )
+set(SK_SRC_PLATFORMS
+  StereoKitC/platforms/android.cpp
+  StereoKitC/platforms/android.h
+  StereoKitC/platforms/flatscreen_input.h
+  StereoKitC/platforms/flatscreen_input.cpp
+  StereoKitC/platforms/linux.h
+  StereoKitC/platforms/linux.cpp
+  StereoKitC/platforms/platform.h
+  StereoKitC/platforms/platform.cpp
+  StereoKitC/platforms/platform_utils.h
+  StereoKitC/platforms/platform_utils.cpp
+  StereoKitC/platforms/web.h
+  StereoKitC/platforms/web.cpp  
+  StereoKitC/platforms/uwp.h
+  StereoKitC/platforms/uwp.cpp  
+  StereoKitC/platforms/win32.h
+  StereoKitC/platforms/win32.cpp )
+
+set(SK_SRC_XR_BACKENDS
+  StereoKitC/xr_backends/openxr.h
+  StereoKitC/xr_backends/openxr.cpp
+  StereoKitC/xr_backends/openxr_extensions.h
+  StereoKitC/xr_backends/openxr_input.h
+  StereoKitC/xr_backends/openxr_input.cpp
+  StereoKitC/xr_backends/openxr_view.h
+  StereoKitC/xr_backends/openxr_view.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h
@@ -334,21 +349,24 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_LIBRARIES}
   ${SK_SRC_SYSTEMS}
   ${SK_SRC_HANDS}
-  ${SK_SRC_PLATFORM}
+  ${SK_SRC_PLATFORMS}
+  ${SK_SRC_XR_BACKENDS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
 # Set up Visual Studio folders/filters for a more organized
 # workspace there.
-source_group("code"        FILES ${SK_SRC_CODE})
-source_group("asset_types" FILES ${SK_SRC_ASSET_TYPES})
-source_group("libraries"   FILES ${SK_SRC_LIBRARIES})
-source_group("systems"     FILES ${SK_SRC_SYSTEMS})
-source_group("hands"       FILES ${SK_SRC_HANDS})
-source_group("platform"    FILES ${SK_SRC_PLATFORM})
-source_group("tools"       FILES ${SK_SRC_TOOLS})
-source_group("ui"          FILES ${SK_SRC_UI})
+source_group("code"            FILES ${SK_SRC_CODE})
+source_group("asset_types"     FILES ${SK_SRC_ASSET_TYPES})
+source_group("libraries"       FILES ${SK_SRC_LIBRARIES})
+source_group("systems"         FILES ${SK_SRC_SYSTEMS})
+source_group("hands"           FILES ${SK_SRC_HANDS})
+source_group("platform"        FILES ${SK_SRC_PLATFORMS})
+source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
+source_group("tools"           FILES ${SK_SRC_TOOLS})
+source_group("ui"              FILES ${SK_SRC_UI})
+source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (UNIX)
   # DirectXMath on Linux needs a few extra files
@@ -387,6 +405,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
+    Examples/StereoKitCTest/demo_bvh.h
+    Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_desktop.h
     Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h

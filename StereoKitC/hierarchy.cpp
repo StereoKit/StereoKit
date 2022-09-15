@@ -20,7 +20,7 @@ void hierarchy_push(const matrix &transform) {
 	hierarchy_stack.add(hierarchy_item_t{transform, matrix_identity, false});
 	hierarchy_enabled = hierarchy_userenabled;
 
-	size_t size = hierarchy_stack.count;
+	int32_t size = hierarchy_stack.count;
 	if (size > 1)
 		matrix_mul(hierarchy_stack[size - 1].transform, hierarchy_stack[size - 2].transform, hierarchy_stack[size - 1].transform);
 }

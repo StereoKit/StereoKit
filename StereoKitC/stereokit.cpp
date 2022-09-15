@@ -17,13 +17,13 @@
 #include "systems/world.h"
 #include "systems/defaults.h"
 #include "asset_types/animation.h"
-#include "systems/platform/win32.h"
-#include "systems/platform/uwp.h"
-#include "systems/platform/android.h"
-#include "systems/platform/web.h"
-#include "systems/platform/openxr.h"
-#include "systems/platform/platform.h"
-#include "systems/platform/platform_utils.h"
+#include "platforms/win32.h"
+#include "platforms/uwp.h"
+#include "platforms/android.h"
+#include "platforms/web.h"
+#include "platforms/platform.h"
+#include "platforms/platform_utils.h"
+#include "xr_backends/openxr.h"
 
 namespace sk {
 
@@ -36,7 +36,7 @@ bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
-bool32_t      sk_running     = true;
+bool32_t      sk_running     = false;
 bool32_t      sk_initialized = false;
 bool32_t      sk_first_step  = false;
 thrd_id_t     sk_init_thread = {};
@@ -71,7 +71,35 @@ system_info_t sk_system_info() {
 ///////////////////////////////////////////
 
 const char *sk_version_name() {
-	return SK_VERSION;
+	return SK_VERSION " "
+#if defined(SK_OS_WEB)
+		"Web"
+#elif defined(SK_OS_ANDROID)
+		"Android"
+#elif defined(SK_OS_LINUX)
+		"Linux"
+#elif defined(SK_OS_WINDOWS)
+		"Win32"
+#elif defined(SK_OS_WINDOWS_UWP)
+		"UWP"
+#else
+		"MysteryPlatform"
+#endif
+		
+		" "
+		
+#if defined(__x86_64__) || defined(_M_X64)
+		"x64"
+#elif defined(__aarch64__) || defined(_M_ARM64)
+		"ARM64"
+#elif defined(_M_ARM)
+		"ARM"
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(_M_IX86)
+		"x86"
+#else
+		"MysteryArchitecture"
+#endif
+	;
 }
 
 ///////////////////////////////////////////
@@ -134,7 +162,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Rest of the systems
 	system_t sys_defaults = { "Defaults" };
-	const char *default_deps[] = { "Platform" };
+	const char *default_deps[] = { "Platform", "Assets" };
 	sys_defaults.init_dependencies     = default_deps;
 	sys_defaults.init_dependency_count = _countof(default_deps);
 	sys_defaults.func_initialize       = defaults_init;
@@ -185,7 +213,10 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_renderer);
 
 	system_t sys_assets = { "Assets" };
+	const char* assets_deps       [] = {"Platform"};
 	const char *assets_update_deps[] = {"FrameRender"};
+	sys_assets.init_dependencies       = assets_deps;
+	sys_assets.init_dependency_count   = _countof(assets_deps);
 	sys_assets.update_dependencies     = assets_update_deps;
 	sys_assets.update_dependency_count = _countof(assets_update_deps);
 	sys_assets.func_initialize         = assets_init;
@@ -285,6 +316,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	app_system    = systems_find("App");
 	app_init_time = stm_now();
+	sk_running    = sk_initialized;
 	return sk_initialized;
 }
 
@@ -307,6 +339,8 @@ void sk_shutdown() {
 
 	systems_shutdown();
 	sk_initialized = false;
+
+	sk_mem_log_allocations();
 }
 
 ///////////////////////////////////////////
@@ -330,8 +364,8 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active)
-		platform_sleep(sk_settings.disable_unfocused_sleep ? 1 : 100);
+	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
+		platform_sleep(100);
 	return sk_running;
 }
 
@@ -427,6 +461,7 @@ display_mode_ sk_active_display_mode() { return sk_display_mode; }
 
 ///////////////////////////////////////////
 
+double time_get_raw          (){ return stm_sec(stm_now()); }
 float  time_getf_unscaled    (){ return sk_timevf_us; };
 double time_get_unscaled     (){ return sk_timev_us; };
 float  time_getf             (){ return sk_timevf; };

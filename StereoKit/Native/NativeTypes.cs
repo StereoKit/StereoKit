@@ -66,6 +66,12 @@ namespace StereoKit
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
+		/// <summary>By default, StereoKit will open a desktop window for
+		/// keyboard input due to lack of XR-native keyboard APIs on many
+		/// platforms. If you don't want this, you can disable it with
+		/// this setting!</summary>
+		public  bool disableDesktopInputWindow { get { return _disableDesktopInputWindow > 0; } set { _disableDesktopInputWindow = value ? 1 : 0; } }
+		private int _disableDesktopInputWindow;
 		/// <summary>By default, StereoKit will slow down when the
 		/// application is out of focus. This is useful for saving processing
 		/// power while the app is out-of-focus, but may not always be
@@ -368,10 +374,24 @@ namespace StereoKit
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>
 		public float scrollChange;
+		
+		/// <summary>Ray representing the position and orientation that the
+		/// current Input.Mouse.pos is pointing in.</summary>
+		public Ray Ray
+		{
+			get
+			{
+				NativeAPI.ray_from_mouse(pos, out Ray ray);
+				return ray;
+			}
+		}
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPreSessionCreateCallback(IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
@@ -519,16 +539,33 @@ namespace StereoKit
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>A maximum enum value to allow for iterating through enum
+		/// values.</summary>
 		Max,
 	}
 
+	/// <summary>Theme color categories to pair with `UI.SetThemeColor`.
+	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>This is the main accent color used by window headers,
+		/// separators, etc.</summary>
 		Primary = 0,
+		/// <summary>This is a background sort of color that should generally
+		/// be dark. Used by window bodies and backgrounds of certain elements.
+		/// </summary>
 		Background,
+		/// <summary>A normal UI element color, for elements like buttons and
+		/// sliders.</summary>
 		Common,
+		/// <summary>Not really used anywhere at the moment, maybe for the
+		/// UI.Panel.</summary>
 		Complement,
+		/// <summary>Text color! This should generally be really bright, and at
+		/// the very least contrast-ey.</summary>
 		Text,
+		/// <summary>A maximum enum value to allow for iterating through enum
+		/// values.</summary>
 		Max,
 	}
 

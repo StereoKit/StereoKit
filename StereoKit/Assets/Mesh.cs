@@ -18,9 +18,18 @@ namespace StereoKit
 	/// Mesh indices are stored as unsigned ints, so you can have a mesh with
 	/// a fudgeton of verts! 4 billion or so :)
 	/// </summary>
-	public class Mesh
+	public class Mesh : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.mesh_get_id(_inst));
+			set => NativeAPI.mesh_set_id(_inst, value);
+		}
 
 		/// <summary>This is a bounding box that encapsulates the Mesh! It's
 		/// used for collision, visibility testing, UI layout, and probably 
@@ -66,32 +75,79 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty mesh!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
-		/// <summary>Assigns the vertices for this Mesh! This will create a
-		/// vertex buffer object on the graphics card right away. If you're
-		/// calling this a second time, the buffer will be marked as dynamic
-		/// and re-allocated. If you're calling this a third time, the buffer
-		/// will only re-allocate if the buffer is too small, otherwise it 
-		/// just copies in the data!</summary>
+		/// <summary>Assigns the vertices and indices for this Mesh! This will
+		/// create a vertex buffer and index buffer object on the graphics
+		/// card. If you're calling this a second time, the buffers will be
+		/// marked as dynamic and re-allocated. If you're calling this a third
+		/// time, the buffer will only re-allocate if the buffer is too small,
+		/// otherwise it just copies in the data!
 		/// 
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
 		/// values.
-		/// <param name="verts">An array of vertices to add to the mesh.
+		/// 
+		/// Calling SetData is slightly more efficient than calling SetVerts
+		/// and SetInds separately.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
 		/// values.</param>
-		public void SetVerts(Vertex[] verts)
-			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. Since this does
+		/// require iterating through all the verts with some logic, there is
+		/// performance cost to doing this. If you're updating a mesh
+		/// frequently or need all the performance you can get, setting this to
+		/// false is a nice way to gain some speed!</param>
+		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds ? 1 : 0);
 
+		/// <summary>Assigns the vertices for this Mesh! This will create a
+		/// vertex buffer object on the graphics card. If you're
+		/// calling this a second time, the buffer will be marked as dynamic
+		/// and re-allocated. If you're calling this a third time, the buffer
+		/// will only re-allocate if the buffer is too small, otherwise it 
+		/// just copies in the data!
+		/// 
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.</param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. Since this does
+		/// require iterating through all the verts with some logic, there is
+		/// performance cost to doing this. If you're updating a mesh
+		/// frequently or need all the performance you can get, setting this to
+		/// false is a nice way to gain some speed!</param>
+		public void SetVerts(Vertex[] vertices, bool calculateBounds = true)
+			=> NativeAPI.mesh_set_verts(_inst, vertices, vertices.Length, calculateBounds?1:0);
+
+		/// <summary>This marshalls the Mesh's vertex data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
+		/// and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of vertices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public Vertex[] GetVerts()
 		{
 			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(Vertex));
 			Vertex[] result = new Vertex[size];
 			// AHHHHHH
@@ -102,20 +158,31 @@ namespace StereoKit
 
 		/// <summary>Assigns the face indices for this Mesh! Faces are always
 		/// triangles, there are only ever three indices per face. This
-		/// function will create a index buffer object on the graphics card
-		/// right away. If you're calling this a second time, the buffer will
-		/// be marked as dynamic and re-allocated. If you're calling this a
-		/// third time, the buffer will only re-allocate if the buffer is too
-		/// small, otherwise it just copies in the data!</summary>
-		/// <param name="inds">A list of face indices, must be a multiple of
+		/// function will create a index buffer object on the graphics card. If
+		/// you're calling this a second time, the buffer will be marked as
+		/// dynamic and re-allocated. If you're calling this a third time, the
+		/// buffer will only re-allocate if the buffer is too small, otherwise
+		/// it just copies in the data!</summary>
+		/// <param name="indices">A list of face indices, must be a multiple of
 		/// 3. Each index represents a vertex from the array assigned using
 		/// SetVerts.</param>
-		public void SetInds (uint[] inds)
-			=>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
+		public void SetInds (uint[] indices)
+			=>NativeAPI.mesh_set_inds(_inst, indices, indices.Length);
 
+		/// <summary>This marshalls the Mesh's index data into an array. If
+		/// KeepData is false, then the Mesh is _not_ storing indices on the
+		/// CPU, and this information will _not_ be available.
+		/// 
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of indices representing the Mesh, or null if
+		/// KeepData is false.</returns>
 		public uint[] GetInds()
 		{
 			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
+			if (ptr == IntPtr.Zero)
+				return null;
+
 			int szStruct = Marshal.SizeOf(typeof(uint));
 			uint[] result = new uint[size];
 			// AHHHHHH
@@ -167,6 +234,15 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
 
+		// TODO: Remove in v0.4
+		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
+		{
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
+			modelSpaceAt = intersection.position;
+			return result;
+		}
+		
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should
@@ -177,15 +253,6 @@ namespace StereoKit
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
 			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
-
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
-		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
-		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
-			modelSpaceAt = intersection.position;
-			return result;
-		}
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value

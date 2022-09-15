@@ -65,12 +65,19 @@ namespace StereoKit
 					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
 					result = SnakeToCamel(name, true, prefix) + result;
 				} break;
+				case CppExpressionKind.UnaryOperator: {
+					CppExpression arg = ((CppUnaryExpression)curr).Arguments[0];
+					string name = arg.ToString();
+					int    prefix = 0;
+					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
+					result = ((CppUnaryExpression)curr).Operator + SnakeToCamel(name, true, prefix) + result;
+				} break;
 				default: result = curr + result; break;
 			}
-								
+
 			if (exp is CppBinaryExpression) {
 				result = ((CppBinaryExpression)exp).Operator + " " + result;
-				exp = ((CppBinaryExpression)exp).Arguments[0];
+				exp    = ((CppBinaryExpression)exp).Arguments[0];
 				result = " " + result;
 			} else {
 				exp = null;
@@ -114,19 +121,22 @@ namespace StereoKit
 		string   prefix = new string('\t', indent) + "/// ";
 		string[] lines  = txt.Split("\n");
 		bool     first  = true;
+		string   obsoleteStr = "";
 
 		for (int i = 0; i < lines.Length; i++)
 		{
-			if (lines[i].StartsWith("obsolete:"))
-				lines[i] = $"{new string('\t', indent)}[Obsolete(\"{lines[i].Substring("obsolete:".Length).Trim()}\")]";
-			else { 
-				lines[i] = prefix + (first?"<summary>":"") + lines[i];
+			if (lines[i].StartsWith("obsolete:")) {
+				obsoleteStr = $"\n{new string('\t', indent)}[Obsolete(\"{lines[i].Substring("obsolete:".Length).Trim()}\")]";
+				lines[i] = "";
+			}
+			else {
+				lines[i] = prefix + (first ? "<summary>" : "") + lines[i];
 				first = false;
 			}
 		}
 		
 		lines[lines.Length - 1] = lines[lines.Length - 1] + "</summary>";
-		return string.Join("\n", lines);
+		return string.Join("\n", lines) + obsoleteStr;
 	}
 
 	///////////////////////////////////////////

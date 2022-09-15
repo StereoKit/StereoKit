@@ -47,7 +47,7 @@ namespace StereoKit
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
 		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Color colorGamma)
-			=> NativeAPI.text_make_style(font._fontInst, characterHeightMeters, colorGamma);
+			=> NativeAPI.text_make_style(font._inst, characterHeightMeters, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -68,7 +68,7 @@ namespace StereoKit
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
 		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Shader shader, Color colorGamma)
-			=> NativeAPI.text_make_style_shader(font._fontInst, characterHeightMeters, shader._inst, colorGamma);
+			=> NativeAPI.text_make_style_shader(font._inst, characterHeightMeters, shader._inst, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -96,7 +96,7 @@ namespace StereoKit
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
 		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Material material, Color colorGamma)
-			=> NativeAPI.text_make_style_mat(font._fontInst, characterHeightMeters, material._inst, colorGamma);
+			=> NativeAPI.text_make_style_mat(font._inst, characterHeightMeters, material._inst, colorGamma);
 
 		/// <summary>Renders text at the given location! Must be called every
 		/// frame you want this text to be visible.</summary>

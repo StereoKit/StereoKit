@@ -3,7 +3,7 @@
   <Import Project="..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
   <Import Project="..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
   <Import Project="..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
-  <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props')" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{45af7827-11ca-4691-a063-8c78fb0be1ec}</ProjectGuid>
     <ProjectName>StereoKitC_UWP</ProjectName>
@@ -18,6 +18,7 @@
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
+    <ReadOnlyProject>true</ReadOnlyProject>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ItemGroup Label="ProjectConfigurations">
@@ -75,44 +76,9 @@
     <Import Project="PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+  <PropertyGroup>
     <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>StereoKitC</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>StereoKitC</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>StereoKitC</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>StereoKitC</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>StereoKitC</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>StereoKitC</TargetName>
@@ -140,44 +106,9 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-    <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
-    </PreBuildEvent>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
-    </PreBuildEvent>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
@@ -186,75 +117,38 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</CompileAsWinRT>
     </ClCompile>
     <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-    <Link>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">reactphysics3d.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
     <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
+      <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
 xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Configuration)\" /d /k /y</Command>
+      <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
-    </PreBuildEvent>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
-    </PreBuildEvent>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-OpenXR.ps1"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP
+"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(SolutionDir)Tools\include" "$(SolutionDir)StereoKitC\shaders_builtin\*.hlsl"</Command>
+      <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\*.cpp" />
-    <ClCompile Include="..\libraries\*.cpp" />
-    <ClCompile Include="..\libraries\*.c" />
-    <ClCompile Include="..\tools\*.cpp" />
-    <ClCompile Include="..\asset_types\*.cpp" />
-    <ClCompile Include="..\systems\*.cpp" />
-    <ClCompile Include="..\systems\platform\*.cpp" />
-    <ClCompile Include="..\systems\hand\*.cpp" />
-    <ClCompile Include="..\shaders_builtin\*.cpp" />
-    <ClCompile Include="..\ui\*.cpp" />
-    <ClInclude Include="..\*.h" />
-    <ClInclude Include="..\libraries\*.h" />
-    <ClInclude Include="..\tools\*.h" />
-    <ClInclude Include="..\asset_types\*.h" />
-    <ClInclude Include="..\systems\*.h" />
-    <ClInclude Include="..\systems\platform\*.h" />
-    <ClInclude Include="..\systems\hand\*.h" />
-    <ClInclude Include="..\shaders_builtin\*.h" />
-    <ClInclude Include="..\ui\*.h" />
+    <_WildCardClCompile Include="..\**\*.cpp" Exclude="..\StereoKitC_UWP\**\*.cpp;..\lib\**\*.cpp"/>
   </ItemGroup>
+  <Target Name="AddWildCardItems" AfterTargets="BuildGenerateSources">
+    <ItemGroup>
+      <ClCompile Include="@(_WildCardClCompile)" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets')" />
     <Import Project="..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
     <Import Project="..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
@@ -263,8 +157,8 @@ powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(Solut
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props'))" />
-    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props'))" />

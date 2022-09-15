@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../stereokit.h"
-#include "../libraries/stb_truetype.h"
 #include "../libraries/array.h"
 #include "../rect_atlas.h"
 #include "assets.h"

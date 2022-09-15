@@ -86,6 +86,7 @@ SK_API void     ui_set_color           (color128      color);
 SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API bool32_t ui_has_keyboard_focus  ();
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();
@@ -109,6 +110,10 @@ SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
+
+SK_API button_state_ ui_last_element_hand_used(handed_ hand);
+SK_API button_state_ ui_last_element_active   ();
+SK_API button_state_ ui_last_element_focused  ();
 
 SK_API vec2     ui_area_remaining(); // TODO: remove in v0.4, prefer ui_layout_remaining
 SK_API void     ui_nextline      ();

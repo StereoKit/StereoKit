@@ -1,4 +1,10 @@
-﻿using System;
+﻿// This requires an addition to the Android Manifest to work on quest:
+// <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="true" />
+//
+// To work on Quest+Link, you may need to enable beta features in the Oculus
+// app's settings.
+
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit.Framework
@@ -19,7 +25,7 @@ namespace StereoKit.Framework
 		public bool Available => extAvailable;
 		public bool Enabled { get => extAvailable && enabled; set => enabled = value; }
 		public bool EnabledPassthrough { get => enabledPassthrough; set {
-			if (enabledPassthrough != value) {
+			if (Available && enabledPassthrough != value) {
 				enabledPassthrough = value;
 				if ( enabledPassthrough) StartPassthrough();
 				if (!enabledPassthrough) EndPassthrough();
@@ -129,8 +135,11 @@ namespace StereoKit.Framework
 			Success = 0,
 		}
 
+#pragma warning disable 0169 // handle is not "used", but required for interop
 		struct XrPassthroughFB      { ulong handle; }
 		struct XrPassthroughLayerFB { ulong handle; }
+#pragma warning restore 0169
+
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB
 		{

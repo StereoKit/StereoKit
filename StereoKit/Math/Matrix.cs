@@ -116,9 +116,24 @@ namespace StereoKit
 		/// <returns>An inverse matrix of the current one.</returns>
 		public Matrix Inverse { get { Matrix4x4.Invert(m, out Matrix4x4 result); return result; } }
 
+		/// <summary>Creates a matrix that has been transposed! Transposing is
+		/// like rotating the matrix 90 clockwise, or turning the rows into
+		/// columns. This can be useful for inverting orthogonal matrices, or
+		/// converting matrices for use in a math library that uses different
+		/// conventions!</summary>
+		public Matrix Transposed => Matrix4x4.Transpose(m);
+
 		/// <summary>Inverts this Matrix! If the matrix takes a point from a
 		/// -> b, then its inverse takes the point from b -> a.</summary>
 		public void Invert() => Matrix4x4.Invert(m, out m);
+
+		/// <summary>Transposes this Matrix! Transposing is like rotating the
+		/// matrix 90 clockwise, or turning the rows into columns. This can be
+		/// useful for inverting orthogonal matrices, or converting matrices
+		/// for use in a math library that uses different conventions!
+		/// </summary>
+		public void Transpose() => this = Matrix4x4.Transpose(m);
+
 		/// <summary>Transforms a point through the Matrix! This is basically 
 		/// just multiplying a vector (x,y,z,1) with the Matrix.</summary>
 		/// <param name="point">The point to transform.</param>

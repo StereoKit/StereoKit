@@ -1,5 +1,6 @@
 #include "../stereokit.h"
-#include "../systems/platform/platform_utils.h"
+#include "../sk_memory.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/stref.h"
 #include "shader.h"
 #include "assets.h"
@@ -22,7 +23,13 @@ shader_t shader_find(const char *id) {
 ///////////////////////////////////////////
 
 void shader_set_id(shader_t shader, const char *id) {
-	assets_set_id(shader->header, id);
+	assets_set_id(&shader->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* shader_get_id(const shader_t shader) {
+	return shader->header.id_text;
 }
 
 ///////////////////////////////////////////
@@ -75,9 +82,11 @@ shader_t shader_create_file(const char *filename) {
 	// Load from file
 	void  *data;
 	size_t size;
-	bool   loaded = platform_read_file(assets_file(final_file), &data, &size);
+	char*  asset_filename = assets_file(final_file);
+	bool   loaded         = platform_read_file(asset_filename, &data, &size);
 	if (!loaded) log_warnf("Shader file failed to load: %s", filename);
-	free(with_ext);
+	sk_free(asset_filename);
+	sk_free(with_ext);
 
 	return loaded 
 		? shader_create_mem(data, size)
@@ -87,7 +96,7 @@ shader_t shader_create_file(const char *filename) {
 ///////////////////////////////////////////
 
 void shader_addref(shader_t shader) {
-	assets_addref(shader->header);
+	assets_addref(&shader->header);
 }
 
 ///////////////////////////////////////////
@@ -95,7 +104,7 @@ void shader_addref(shader_t shader) {
 void shader_release(shader_t shader) {
 	if (shader == nullptr)
 		return;
-	assets_releaseref(shader->header);
+	assets_releaseref(&shader->header);
 }
 
 ///////////////////////////////////////////

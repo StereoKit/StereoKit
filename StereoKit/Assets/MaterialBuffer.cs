@@ -59,6 +59,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				throw new ArgumentException("Bad slot id, see log.");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~MaterialBuffer()
 		{
 			Marshal.FreeHGlobal(_localMemory);

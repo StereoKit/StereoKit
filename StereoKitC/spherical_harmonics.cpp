@@ -1,6 +1,6 @@
 #include "spherical_harmonics.h"
 #include "sk_math.h"
-#include "asset_types/texture.h"
+#include "asset_types/texture_.h"
 
 namespace sk {
 
@@ -133,7 +133,7 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 	}
 
 	float count = face_size * face_size * 6.f;
-	for (size_t i = 0; i < 9; i++)
+	for (int32_t i = 0; i < 9; i++)
 		result.coefficients[i] /= count;
 
 	// Apply windowing to prevent overshooting

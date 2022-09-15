@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit {
 	/// <summary>This class represents a text font asset! On the back-end, this asset
@@ -7,20 +8,30 @@ namespace StereoKit {
 	/// 
 	/// This asset is used anywhere that text shows up, like in the UI or Text classes!
 	/// </summary>
-	public class Font
+	public class Font : IAsset
 	{
-		internal IntPtr _fontInst;
+		internal IntPtr _inst;
 
-		private Font(IntPtr font)
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
 		{
-			_fontInst = font;
-			if (_fontInst == IntPtr.Zero)
+			get => Marshal.PtrToStringAnsi(NativeAPI.font_get_id(_inst));
+			set => NativeAPI.font_set_id(_inst, value);
+		}
+
+		internal Font(IntPtr font)
+		{
+			_inst = font;
+			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty font!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Font()
 		{
-			if (_fontInst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_fontInst);
+			if (_inst != IntPtr.Zero)
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>Searches the asset list for a font with the given Id, returning null if
