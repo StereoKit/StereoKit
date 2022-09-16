@@ -50,6 +50,7 @@
 		<None Include="Guides\GuideGettingStarted.cs" />
 	</ItemGroup>
 
+	<Import Project="$(ProjectDir)..\..\StereoKit\StereoKit.props" />
 	<Import Project="$(ProjectDir)..\..\StereoKit\SKAssets.targets" />
 	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 </Project>

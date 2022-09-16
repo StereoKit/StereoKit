@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project>
+	<PropertyGroup>
+		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
+		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
+		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
+	</PropertyGroup>
+	
+	<Target Name="StereoKitProperties" BeforeTargets="BeforeBuild">
+		<PropertyGroup>
+			<!--These variables are not populated outside of Targets-->
+			<SKBuildPlatform                                                                                       >Desktop</SKBuildPlatform>
+			<SKBuildPlatform Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKBuildPlatform>
+			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKBuildPlatform>
+			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='windows'">CoreWindows</SKBuildPlatform>
+			<SKBuildPlatform Condition="'$(TargetPlatformIdentifier)'=='UAP'"                                      >UWP</SKBuildPlatform>
+			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp'"  >Core</SKBuildNET>
+			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"  >Mono</SKBuildNET>
+			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
+			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
+		</PropertyGroup>
+	</Target>
+
+</Project>

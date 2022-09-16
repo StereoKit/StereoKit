@@ -3,6 +3,7 @@
 <!-- Reference from here: http://reedbeta.com/blog/custom-toolchain-with-msbuild/ 
      And another interesting ref over here: https://github.com/lexxmark/winflexbison/blob/master/custom_build_rules/win_bison_only/win_bison_custom_build.targets -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
 	<ItemGroup>
 		<!-- Include definitions from SKShader.xml, which defines the SKShader item. -->
 		<PropertyPageSchema Include="$(MSBuildThisFileDirectory)SKShader.xml" />
@@ -16,10 +17,6 @@
 	<PropertyGroup>
 		<SKShadercExe Condition="'$(OS)'=='Windows_NT'">skshaderc.exe</SKShadercExe>
 		<SKShadercExe Condition="'$(OS)'!='Windows_NT'">skshaderc</SKShadercExe>
-
-		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
-		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
-		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
 	</PropertyGroup>
 
 	<!-- Automatically include shaders -->
@@ -28,6 +25,7 @@
 			<RelFile>%(RecursiveDir)%(Filename)%(Extension)</RelFile>
 			<RelFolder>%(RecursiveDir)</RelFolder>
 		</SKShader>
+		<!-- This doesn't currently account for shader include files. -->
 		<UpToDateCheckInput Include="$(SKAssetFolder)/**/*.hlsl"/>
 	</ItemGroup>
 
