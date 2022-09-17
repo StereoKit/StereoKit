@@ -1,16 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-	<ItemGroup Condition="'$(SKCopyAssets)' == 'True'">
+	<ItemGroup Condition="'$(SKCopyAssets)'=='True'">
 		<None Remove="$(SKAssetFolder)/**"/>
-		<Content Condition="'$(SKBuildPlatform)'!='Android' and '$(UseMaui)'!='true'" Include="$(SKAssetFolder)/**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+
+		<SKContent Include="$(SKAssetFolder)/**">
 			<Link>$(SKAssetDestination)/%(RecursiveDir)%(Filename)%(Extension)</Link>
-		</Content>
-		<AndroidAsset Condition="'$(SKBuildPlatform)'=='Android'" Include="$(SKAssetFolder)/**">
+		</SKContent>
+
+		<AndroidAsset Include="$(SKAssetFolder)/**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
 		</AndroidAsset>
 	</ItemGroup>
 
+	<Target Name="StereoKitCopy" Condition="'$(SKCopyAssets)'=='True'" AfterTargets="StereoKitProperties" BeforeTargets="AssignTargetPaths">
+		<Copy
+			Condition="'$(UseMaui)' == 'false' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
+			SourceFiles="@(SKContent)"
+			DestinationFiles="$(OutDir)/%(SKContent.Link)"
+			SkipUnchangedFiles="true">
+		</Copy>
+		
+		<Message Importance="high" Text="[StereoKit NuGet] Content : @(SKContent)"/>
+	</Target>
 </Project>
