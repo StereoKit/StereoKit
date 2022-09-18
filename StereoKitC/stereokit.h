@@ -1520,6 +1520,7 @@ SK_API void     platform_file_picker_close  ();
 SK_API bool32_t platform_file_picker_visible();
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
 SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, size_t size);
+SK_API bool32_t platform_write_file_text    (const char *filename_utf8,  const char* text_utf8);
 
 SK_API bool32_t platform_keyboard_get_force_fallback();
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);

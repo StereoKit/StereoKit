@@ -193,7 +193,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 
 ///////////////////////////////////////////
 
-bool32_t platform_write_file(const char *filename, void *data, size_t size) {
+bool32_t _platform_write_file(const char* filename, void* data, size_t size, bool32_t binary) {
 #if defined(SK_OS_WINDOWS_UWP)
 	// See if we have a Handle cached from the FilePicker that matches this
 	// file name.
@@ -203,12 +203,12 @@ bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	int32_t  wsize     = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
-	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
+	wchar_t* wfilename = sk_malloc_t(wchar_t, wsize);
 	MultiByteToWideChar(CP_UTF8, 0, filename, -1, wfilename, wsize);
-	FILE *fp = _wfopen(wfilename, L"wb");
+	FILE* fp = _wfopen(wfilename, binary?L"wb":L"w");
 	sk_free(wfilename);
 #else
-	FILE *fp = fopen(filename, "wb");
+	FILE* fp = fopen(filename, binary?"wb":"w");
 #endif
 	if (fp == nullptr) {
 		log_diagf("platform_read_file can't write %s", filename);
@@ -219,6 +219,14 @@ bool32_t platform_write_file(const char *filename, void *data, size_t size) {
 	fclose(fp);
 
 	return true;
+}
+
+bool32_t platform_write_file(const char *filename, void *data, size_t size) {
+	return _platform_write_file(filename, data, size, true);
+}
+
+bool32_t platform_write_file_text(const char* filename, const char *text) {
+	return _platform_write_file(filename, (void*)text, strlen(text), false);
 }
 
 ///////////////////////////////////////////
