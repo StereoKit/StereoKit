@@ -202,6 +202,15 @@ namespace StereoKit
 		public static float AngleBetween(Vec2 a, Vec2 b)
 			=> (float)Math.Atan2(a.v.X*b.v.Y - a.v.Y*b.v.X, Vector2.Dot(a.v, b.v)) * Units.rad2deg;
 
+		/// <summary>Creates a normalized delta vector that points out from
+		/// an origin point to a target point!</summary>
+		/// <param name="to">The target point.</param>
+		/// <param name="from">And the origin point!</param>
+		/// <returns>Direction from one point to another.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Direction(Vec2 to, Vec2 from)
+			=> (to.v - from.v).Normalize();
+
 		/// <summary>Calculates the distance between two points in space!
 		/// Make sure they're in the same coordinate space! Uses a Sqrt, so
 		/// it's not blazing fast, prefer DistanceSq when possible.</summary>
