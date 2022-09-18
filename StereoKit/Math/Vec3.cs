@@ -200,13 +200,22 @@ namespace StereoKit
 		public bool InRadius(Vec3 pt, float radius)
 			=> (v - pt.v).LengthSquared() < radius * radius;
 
-		/// <summary>Calculates the distance between two points in space!
-		/// Make sure they're in the same coordinate space! Uses a Sqrt, so
-		/// it's not blazing fast, prefer DistanceSq when possible.</summary>
-		/// <param name="a">The first point.</param>
-		/// <param name="b">And the second point!</param>
-		/// <returns>Distance between the two points.</returns>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>Calculates the normalized vector delta that points from 
+    /// an origin point to a target point!</summary>
+    /// <param name="to">The target point.</param>
+    /// <param name="from">And the origin point!</param>
+    /// <returns>Direction from one point to another.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vec3 Direction(Vec3 to, Vec3 from)
+      => (to - from).Normalized;
+
+    /// <summary>Calculates the distance between two points in space!
+    /// Make sure they're in the same coordinate space! Uses a Sqrt, so
+    /// it's not blazing fast, prefer DistanceSq when possible.</summary>
+    /// <param name="a">The first point.</param>
+    /// <param name="b">And the second point!</param>
+    /// <returns>Distance between the two points.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Distance(Vec3 a, Vec3 b)
 			=> (a.v-b.v).Length();
 
