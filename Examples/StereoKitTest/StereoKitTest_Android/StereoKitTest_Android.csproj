@@ -26,6 +26,7 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
+    <SKOpenXRLoader>Oculus</SKOpenXRLoader>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -82,7 +83,11 @@
     <Compile Include="..\Demos\*.cs" />
     <Compile Include="..\Tools\*.cs" />
   </ItemGroup>
+  
+  <Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
+  <Import Project="$(SolutionDir)StereoKit\SKAssets.targets" />
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+
   <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
     <AndroidAsset Include="$(SolutionDir)Examples\Assets\**">
@@ -141,7 +146,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>x86_64</Abi>
     </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libopenxr_loader.so">
+    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\xr_$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
@@ -155,8 +160,6 @@
   <PropertyGroup>
     <PreBuildEvent>cd $(SolutionDir)
 xmake f -p android -a arm64-v8a -y -m $(ConfigurationName) --oculus-openxr=y
-xmake
-xmake f -p android -a x86_64 -y -m $(ConfigurationName) --oculus-openxr=n
 xmake</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

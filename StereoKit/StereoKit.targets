@@ -5,8 +5,9 @@
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="AfterBuild" Condition="'$(OutputType)'!='Library'">
+	<Target Name="StereoKitLibraries" BeforeTargets="AfterBuild" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
+		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $SKOpenXRLoader:$(SKOpenXRLoader) version of the Android OpenXR loader."/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
@@ -53,10 +54,12 @@
 	</Target>
 	
 	<!-- Link libraries directly in Xamarin and Maui Android projects. -->
-	<ItemGroup Condition= "'$(SKBuildPlatform)'=='Android'">
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libStereoKitC.so"/>
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libopenxr_loader.so" />
-	</ItemGroup>
+	<Target Name="StereoKitAndroid" AfterTargets="StereoKitProperties" BeforeTargets="BeforeBuild">
+		<ItemGroup Condition= "'$(SKBuildPlatform)'=='Android'">
+			<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libStereoKitC.so"/>
+			<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/xr_$(SKOpenXRLoader.ToLower())/libopenxr_loader.so" />
+		</ItemGroup>
+	</Target>
 
 	<!-- This adds .NET Core support to MAUI multi-target style projects,
 	     MAUI's UI doesn't really support .NET Core/Linux, but SK does. -->

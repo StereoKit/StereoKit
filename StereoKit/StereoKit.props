@@ -4,6 +4,7 @@
 		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
 		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
 		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
+		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Standard</SKOpenXRLoader>
 	</PropertyGroup>
 	
 	<Target Name="StereoKitProperties" BeforeTargets="BeforeBuild">
