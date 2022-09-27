@@ -12,19 +12,20 @@
 	<uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
-	<!-- Generic OpenXR permissions -->
+	<!-- Generic OpenXR items -->
+	<uses-feature    android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
 	<uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM"/>
 	<uses-permission android:name="org.khronos.openxr.permission.OPENXR" />
+	<queries>
+		<provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
+	</queries>
 
-	<!-- Vive Focus features  -->
-	<uses-feature android:name="wave.feature.handtracking" android:required="true"/>
-	<uses-feature android:name="wave.feature.tracker" android:required="true"/>
+	<!-- Vive specific items  -->
+	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
+	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
 
-	<!-- Oculus permissions -->
+	<!-- Oculus specific items -->
 	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
-	
-	<!-- Oculus features -->
-	<uses-feature android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
-	<uses-feature android:name="oculus.software.handtracking"     android:required="false" />
-	<uses-feature android:name="com.oculus.feature.PASSTHROUGH"   android:required="true" />
+	<uses-feature    android:name="oculus.software.handtracking"   android:required="false" />
+	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH" android:required="false" />
 </manifest>
