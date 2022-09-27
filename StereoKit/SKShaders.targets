@@ -60,16 +60,16 @@
 	</Target>
 
 	<!-- Ensure shader binaries get properly included in the build process -->
-	<Target Name="SKShaderCopy" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="SKShaderBuild">
+	<Target Name="SKShaderCopy" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="SKShaderBuild;StereoKitProperties">
 		<ItemGroup>
-			<Content Condition="'$(TargetFrameworkIdentifier)'!='MonoAndroid'" Include="%(SKShader.Outputs)">
+			<Content Condition="'$(SKBuildPlatform)'!='Android'" Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<Link>$(SKOutDir)/%(SKShader.RelativeName)</Link>
 			</Content>
 			
-			<AndroidAsset Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'" Include="%(SKShader.Outputs)">
+			<AndroidAsset Condition="'$(SKBuildPlatform)'=='Android'" Include="%(SKShader.Outputs)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-				<Link>$(SKOutDir)/%(SKShader.RelativeName)</Link>
+				<Link>%(SKShader.RelativeName)</Link>
 			</AndroidAsset>
 		</ItemGroup>
 	</Target>

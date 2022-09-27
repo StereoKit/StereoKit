@@ -27,6 +27,8 @@
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
     <SKOpenXRLoader>Oculus</SKOpenXRLoader>
+    <SKAssetFolder>..\..\Assets</SKAssetFolder>
+    <SKAssetDestination>Assets</SKAssetDestination>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -94,7 +96,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
-    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
