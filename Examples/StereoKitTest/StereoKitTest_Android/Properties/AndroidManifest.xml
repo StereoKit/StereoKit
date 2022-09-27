@@ -8,11 +8,22 @@
 	</application>
 
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
 	<uses-permission android:name="android.permission.RECORD_AUDIO" />
 	<uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
+	<!-- Generic OpenXR permissions -->
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM"/>
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR" />
+
+	<!-- Vive Focus features  -->
+	<uses-feature android:name="wave.feature.handtracking" android:required="true"/>
+	<uses-feature android:name="wave.feature.tracker" android:required="true"/>
+
+	<!-- Oculus permissions -->
+	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
+	
+	<!-- Oculus features -->
 	<uses-feature android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
 	<uses-feature android:name="oculus.software.handtracking"     android:required="false" />
 	<uses-feature android:name="com.oculus.feature.PASSTHROUGH"   android:required="true" />

@@ -23,7 +23,7 @@ namespace StereoKitTest_Android
 	// https://github.com/spurious/SDL-mirror/blob/6fe5bd1536beb197de493c9b55d16e516219c58f/android-project/app/src/main/java/org/libsdl/app/SDLActivity.java#L1663
 	// https://github.com/MonoGame/MonoGame/blob/31dca640482bc0c27aec8e51d6369612ce8577a2/MonoGame.Framework/Platform/Android/MonoGameAndroidGameView.cs
 	[Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
-	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
+	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", "org.khronos.openxr.intent.category.IMMERSIVE_HMD", Intent.CategoryLauncher })]
 	public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 	{
 		App  app;
