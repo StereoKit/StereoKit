@@ -442,6 +442,13 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  set (source      ${CMAKE_SOURCE_DIR}/Examples/Assets)
+  set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)
+  add_custom_command(
+    TARGET StereoKitCTest
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
+    COMMENT "Copy resources from ${source} => ${destination}")
 endif()
 
 ###########################################

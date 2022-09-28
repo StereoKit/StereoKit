@@ -721,7 +721,7 @@ void ui_update() {
 		}
 		skui_hand[i].ray_discard = false;
 	}
-	skui_finger_radius /= handed_max;
+	skui_finger_radius /= (float)handed_max;
 
 	ui_push_surface(pose_identity);
 
