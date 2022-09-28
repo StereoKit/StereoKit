@@ -77,6 +77,7 @@
 		<Content Pack="true" Include="StereoKit.props"   PackagePath="build\" />
 		<Content Pack="true" Include="SKAssets.targets"  PackagePath="build\" />
 		<Content Pack="true" Include="SKShaders.targets" PackagePath="build\" />
+		<Content Pack="true" Include="SKMaui.targets"    PackagePath="build\" />
 		<Content Pack="true" Include="SKShader.xml"      PackagePath="build\" />
 	</ItemGroup>
 </Project>

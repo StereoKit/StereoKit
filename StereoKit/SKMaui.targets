@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- This adds .NET Core support to MAUI multi-target style projects,
+	     MAUI's UI doesn't really support .NET Core/Linux, but SK does. -->
+	<PropertyGroup Condition="'$(SingleProject)' == 'true'">
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'==''">Platforms\</NetCoreRootProjectFolder>
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'!=''">$(PlatformsProjectFolder)</NetCoreRootProjectFolder>
+		<EnableDefaultNetCoreItems>false</EnableDefaultNetCoreItems>
+		<NetCoreProjectFolder Condition=" '$(NetCoreProjectFolder)' == '' ">$(NetCoreRootProjectFolder)NetCore\</NetCoreProjectFolder>
+		<NetCoreProjectFolder>$([MSBuild]::EnsureTrailingSlash('$(NetCoreProjectFolder)'))</NetCoreProjectFolder>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(UseMaui)' == 'true'">
+		<MauiPlatformSpecificFolder Include="$(NetCoreProjectFolder)" TargetPlatformIdentifier="" />
+	</ItemGroup>
+	
+	<Target Name="SKMauiCore" BeforeTargets="_MauiRemovePlatformCompileItems" Condition="'$(SKBuildPlatform)'=='Desktop' and '$(SingleProject)' == 'true' and '$(UseMaui)' == 'true' and ('$(SKNetCoreMultiTarget)' == 'true' or '$(SKNetCoreMultiTarget)' == '')">
+		<Message Importance="high" Text="[StereoKit NuGet] Adding .NET Core multi-target support."/>
+		<ItemGroup>
+			<!-- This 'Include' property is the magical key to the kingdom!!
+			     The core problem is an order of operations issue, and putting
+			     this in the Target fixes things. The 'Update' attribute won't
+			     work in Targets though, so we're technically duplicating the
+			     Compile element here. That's okay though, because the
+			     previous duplicate has been excluded! -->
+			<Compile
+				Include="$(NetCoreProjectFolder)**/*.cs">
+				<ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+			</Compile>
+		</ItemGroup>
+	</Target>
+
+</Project>

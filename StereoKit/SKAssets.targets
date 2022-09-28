@@ -21,7 +21,5 @@
 			DestinationFiles="$(OutDir)/%(SKContent.Link)"
 			SkipUnchangedFiles="true">
 		</Copy>
-		
-		<Message Importance="high" Text="[StereoKit NuGet] Content : @(SKContent)"/>
 	</Target>
 </Project>

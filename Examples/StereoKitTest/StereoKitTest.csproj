@@ -21,10 +21,13 @@
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_Android\**" />
 		<Compile Remove="StereoKitTest_UWP\**" />
+		<Compile Remove="StereoKitTest_Maui\**" />
 		<EmbeddedResource Remove="StereoKitTest_Android\**" />
 		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
+		<EmbeddedResource Remove="StereoKitTest_Maui\**" />
 		<None Remove="StereoKitTest_Android\**" />
 		<None Remove="StereoKitTest_UWP\**" />
+		<None Remove="StereoKitTest_Maui\**" />
 	</ItemGroup>
 	
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
