@@ -12,7 +12,7 @@
 		<SKAssetDestination>Assets</SKAssetDestination>
 	</PropertyGroup>
 	
-	<!-- IF YOU ARE LOOKING AT THIS FOLDER AS REFERENCE, I recommend that you
+	<!-- IF YOU ARE LOOKING AT THIS FILE AS REFERENCE, I recommend that you
 	     do not. This file 'emulates' the NuGet package's behavior, since we
 	     can't directly reference a NuGet output without lots of pain and
 	     suffering. Check here instead: https://stereokit.net/Pages/Guides/Learning-Resources.html -->

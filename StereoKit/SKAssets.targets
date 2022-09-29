@@ -15,11 +15,16 @@
 	</ItemGroup>
 
 	<Target Name="StereoKitCopy" Condition="'$(SKCopyAssets)'=='True'" AfterTargets="StereoKitProperties" BeforeTargets="AssignTargetPaths">
+		<Message 
+			Condition  = "'$(UseMaui)' != 'true' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
+			Importance = "high"
+			Text       = "[StereoKit NuGet] Copying assets folder $SKAssetFolder:$(SKAssetFolder)"/>
+		
 		<Copy
-			Condition="'$(UseMaui)' == 'false' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
-			SourceFiles="@(SKContent)"
-			DestinationFiles="$(OutDir)/%(SKContent.Link)"
-			SkipUnchangedFiles="true">
+			Condition          = "'$(UseMaui)' != 'true' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
+			SourceFiles        = "@(SKContent)"
+			DestinationFiles   = "$(OutDir)/%(SKContent.Link)"
+			SkipUnchangedFiles = "true">
 		</Copy>
 	</Target>
 </Project>
