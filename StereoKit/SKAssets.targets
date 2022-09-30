@@ -6,11 +6,13 @@
 
 		<SKContent Include="$(SKAssetFolder)/**">
 			<Link>$(SKAssetDestination)/%(RecursiveDir)%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
 		</SKContent>
 
 		<AndroidAsset Include="$(SKAssetFolder)/**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
 		</AndroidAsset>
 	</ItemGroup>
 

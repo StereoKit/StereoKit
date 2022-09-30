@@ -78,12 +78,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\App.cs" />
-    <Compile Include="..\DebugToolWindow.cs" />
-    <Compile Include="..\ITest.cs" />
-    <Compile Include="..\Tests.cs" />
-    <Compile Include="..\Demos\*.cs" />
-    <Compile Include="..\Tools\*.cs" />
+    <Compile Include="..\App.cs" Visible="false"/>
+    <Compile Include="..\DebugToolWindow.cs" Visible="false"/>
+    <Compile Include="..\ITest.cs" Visible="false"/>
+    <Compile Include="..\Tests.cs" Visible="false"/>
+    <Compile Include="..\Demos\*.cs" Visible="false"/>
+    <Compile Include="..\Tools\*.cs" Visible="false"/>
   </ItemGroup>
   
   <Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
