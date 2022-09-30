@@ -20,7 +20,9 @@ sk_gpu.h
 //#define SKG_FORCE_DIRECT3D11
 //#define SKG_FORCE_OPENGL
 
-#if   defined( SKG_FORCE_DIRECT3D11 )
+#if   defined( SKG_FORCE_NULL )
+#define SKG_NULL
+#elif defined( SKG_FORCE_DIRECT3D11 )
 #define SKG_DIRECT3D11
 #elif defined( SKG_FORCE_OPENGL )
 #define SKG_OPENGL
@@ -473,6 +475,64 @@ typedef struct skg_platform_data_t {
 	void *_glx_context;
 #endif
 } skg_platform_data_t;
+
+#elif defined(SKG_NULL)
+
+
+///////////////////////////////////////////
+
+typedef struct skg_buffer_t {
+	skg_use_           use;
+	skg_buffer_type_   type;
+	uint32_t           stride;
+} skg_buffer_t;
+
+typedef struct skg_computebuffer_t {
+	skg_read_          read_write;
+	skg_buffer_t       buffer;
+} skg_computebuffer_t;
+
+typedef struct skg_mesh_t {
+} skg_mesh_t;
+
+typedef struct skg_shader_stage_t {
+	skg_stage_         type;
+} skg_shader_stage_t;
+
+typedef struct skg_shader_t {
+	skg_shader_meta_t* meta;
+} skg_shader_t;
+
+typedef struct skg_pipeline_t {
+	skg_transparency_  transparency;
+	skg_cull_          cull;
+	bool               wireframe;
+	bool               depth_write;
+	bool               scissor;
+	skg_depth_test_    depth_test;
+	skg_shader_meta_t* meta;
+} skg_pipeline_t;
+
+typedef struct skg_tex_t {
+	int32_t            width;
+	int32_t            height;
+	int32_t            array_count;
+	int32_t            array_start;
+	int32_t            multisample;
+	skg_use_           use;
+	skg_tex_type_      type;
+	skg_tex_fmt_       format;
+	skg_mip_           mips;
+} skg_tex_t;
+
+typedef struct skg_swapchain_t {
+	int32_t            width;
+	int32_t            height;
+} skg_swapchain_t;
+
+typedef struct skg_platform_data_t {
+} skg_platform_data_t;
+
 #endif
 
 ///////////////////////////////////////////
@@ -4288,6 +4348,33 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 
 #endif
 
+#ifdef SKG_NULL
+///////////////////////////////////////////
+// Null Implementation                   //
+///////////////////////////////////////////
+
+skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_size, skg_stage_ type) {
+	skg_shader_stage_t result = {};
+	result.type = type;
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
+}
+
+///////////////////////////////////////////
+
+skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader) {
+	skg_shader_t result = {};
+	result.meta = meta;
+	skg_shader_meta_reference(result.meta);
+	return result;
+}
+
+#endif
 ///////////////////////////////////////////
 // Common Code                           //
 ///////////////////////////////////////////
