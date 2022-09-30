@@ -115,6 +115,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="asset_types\anchor.cpp" />
     <ClCompile Include="asset_types\animation.cpp" />
     <ClCompile Include="asset_types\assets.cpp" />
     <ClCompile Include="asset_types\font.cpp" />
@@ -180,10 +181,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="tools\virtual_keyboard.cpp" />
     <ClCompile Include="ui\stereokit_ui.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
+    <ClCompile Include="xr_backends\openxr_anchors.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
     <ClCompile Include="xr_backends\openxr_view.cpp" />
+    <ClCompile Include="xr_backends\simxr_anchors.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="asset_types\anchor.h" />
     <ClInclude Include="asset_types\animation.h" />
     <ClInclude Include="asset_types\assets.h" />
     <ClInclude Include="asset_types\font.h" />
@@ -266,9 +270,11 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="tools\virtual_keyboard.h" />
     <ClInclude Include="tools\virtual_keyboard_layouts.h" />
     <ClInclude Include="xr_backends\openxr.h" />
+    <ClInclude Include="xr_backends\openxr_anchors.h" />
     <ClInclude Include="xr_backends\openxr_extensions.h" />
     <ClInclude Include="xr_backends\openxr_input.h" />
     <ClInclude Include="xr_backends\openxr_view.h" />
+    <ClInclude Include="xr_backends\simxr_anchors.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>

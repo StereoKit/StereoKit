@@ -202,6 +202,15 @@
     <ClCompile Include="libraries\unicode.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\anchor.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\openxr_anchors.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\simxr_anchors.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -461,6 +470,15 @@
       <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\openxr_view.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="asset_types\anchor.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_anchors.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\simxr_anchors.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>
