@@ -153,9 +153,16 @@ target("StereoKitC")
     after_build(function(target)
         if is_plat("windows") then
             dist_os = has_config("uwp") and "UWP" or "Win32"
+        elseif is_plat("linux") then
+            dist_os = "Linux"
+        elseif is_plat("android") then
+            dist_os = "Android"
+        elseif is_plat("wasm") then
+            dist_os = "WASM"
         else
             dist_os = "$(os)"
         end
+
         build_folder = target:targetdir().."/"
         dist_folder  = "$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)/"
 
