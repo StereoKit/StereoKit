@@ -42,10 +42,43 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		matrix to_local   = matrix_invert(render_get_cam_root());
-		pose_t local_head = matrix_transform_pose(to_local, *input_head());
-		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
+		vec3 at;
+		if (ui_last_element_active() & button_state_active) {
+			log_info("Last element active");
+			// If there was a UI element focused, we'll use that
+			at = hierarchy_to_world_point( ui_layout_last().center );
+		} else {
+			bool active_left  = input_hand(handed_left )->tracked_state & button_state_active;
+			bool active_right = input_hand(handed_right)->tracked_state & button_state_active;
+
+			if (active_left && active_right) {
+				// Both hands are active, pick the hand that's the most high
+				// and outstretched.
+				vec3  pl       = input_hand(handed_left)->fingers[1][4].position;
+				vec3  pr       = input_hand(handed_right)->fingers[1][4].position;
+				vec3  head     = input_head()->position;
+				float dist_l   = vec3_distance(pl, head);
+				float dist_r   = vec3_distance(pr, head);
+				float height_l = pl.y - pr.y;
+				float height_r = pr.y - pl.y;
+				at = dist_l + height_l / 2.0f > dist_r + height_r / 2.0f ? pl : pr;
+			} else if (active_left) {
+				at = input_hand(handed_left)->fingers[1][4].position;
+			} else if (active_right) {
+				at = input_hand(handed_right)->fingers[1][4].position;
+			} else {
+				// Head based fallback!
+				at = input_head()->position + input_head()->orientation * vec3_forward * 0.35f;
+			}
+		}
+
+		vec3 dir = at - input_head()->position;
+		at = input_head()->position + dir * 0.7f;
+
+		matrix to_local = matrix_invert(render_get_cam_root());
+		vec3   local_at = matrix_transform_pt(to_local, at);
+		keyboard_pose.position    = local_at + vec3{ 0, -.1f, 0 };
+		keyboard_pose.orientation = quat_lookat(vec3_zero, matrix_transform_dir(to_local, -dir));
 	}
 
 	// Reset the keyboard to its default state
