@@ -1813,7 +1813,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
 
 	if (state & button_state_just_active) {
-		platform_keyboard_show_at(true, skui_hand[hand].finger_world, type);
+		platform_keyboard_show(true,type);
 		skui_input_blink  = time_getf();
 		skui_input_target = id_hash;
 		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
@@ -1835,7 +1835,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 				const ui_hand_t& h = skui_hand[i];
 				if (h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) { 
 					skui_input_target = 0;
-					platform_keyboard_show_at(false, vec3_zero, type);
+					platform_keyboard_show(false, type);
 				}
 			}
 		}
@@ -1872,13 +1872,13 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 				}
 			} else if (curr == 0x0D) { // Enter, carriage return
 				skui_input_target = 0;
-				platform_keyboard_show_at(false, vec3_zero, type);
+				platform_keyboard_show(false, type);
 				result = true;
 			} else if (curr == 0x0A) { // Shift+Enter, linefeed
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
 				skui_input_target = 0;
-				platform_keyboard_show_at(false, vec3_zero, type);
+				platform_keyboard_show(false, type);
 			} else {
 				add = curr;
 			}
