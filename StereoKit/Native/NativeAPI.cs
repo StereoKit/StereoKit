@@ -470,6 +470,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_set_force_fallback(int force_fallback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int  platform_keyboard_visible           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show              (int show, TextContext inputType);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show_at           (int show, Vec3 at_world, TextContext inputType);
 
 		///////////////////////////////////////////
 

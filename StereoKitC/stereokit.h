@@ -1525,6 +1525,7 @@ SK_API bool32_t platform_write_file_text    (const char *filename_utf8,  const c
 SK_API bool32_t platform_keyboard_get_force_fallback();
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
+SK_API void     platform_keyboard_show_at           (bool32_t visible, vec3 at_world, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           ();
 
 ///////////////////////////////////////////

@@ -404,6 +404,40 @@ void platform_keyboard_set_force_fallback(bool32_t force_fallback) {
 ///////////////////////////////////////////
 
 void platform_keyboard_show(bool32_t visible, text_context_ type) {
+	if (visible == false) {
+		platform_keyboard_show_at(visible, vec3_zero, type);
+		return;
+	}
+
+	// Figure out which hand this is most likely associated with
+	vec3 at           = vec3_zero;
+	bool active_left  = input_hand(handed_left)->tracked_state & button_state_active;
+	bool active_right = input_hand(handed_right)->tracked_state & button_state_active;
+
+	if (active_left && active_right) {
+		vec3  pl       = input_hand(handed_left)->fingers[1][4].position;
+		vec3  pr       = input_hand(handed_right)->fingers[1][4].position;
+		vec3  head     = input_head()->position;
+		float dist_l   = vec3_distance(pl, head);
+		float dist_r   = vec3_distance(pr, head);
+		float height_l = pl.y - pr.y;
+		float height_r = pr.y - pl.y;
+		at = dist_l + height_l / 2.0f > dist_r + height_r / 2.0f ? pl : pr;
+	} else if (active_left) {
+		at = input_hand(handed_left)->fingers[1][4].position;
+	} else if (active_right) {
+		at = input_hand(handed_right)->fingers[1][4].position;
+	} else {
+		// Head based fallback!
+		at = input_head()->position + input_head()->orientation * vec3_forward * 0.5f;
+	}
+
+	platform_keyboard_show_at(visible, at, type);
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show_at(bool32_t visible, vec3 from_world, text_context_ type) {
 #if defined(SK_OS_WINDOWS_UWP)
 	// UWP handles soft keyboards on its own quite nicely!
 	if (!force_fallback_keyboard) {
@@ -426,7 +460,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	else if (sk_active_display_mode() != display_mode_flatscreen &&
 	         (input_last_physical_keypress < 0 || (time_getf()-input_last_physical_keypress) > physical_interact_timeout) ) {
 
-		virtualkeyboard_open(visible, type);
+		virtualkeyboard_open(visible, type, from_world);
 	}
 }
 

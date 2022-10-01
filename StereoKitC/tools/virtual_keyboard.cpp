@@ -37,15 +37,18 @@ void virtualkeyboard_reset_modifiers() {
 
 ///////////////////////////////////////////
 
-void virtualkeyboard_open(bool32_t open, text_context_ type) {
+void virtualkeyboard_open(bool32_t open, text_context_ type, vec3 from_world) {
 	if (open == keyboard_open && type == keyboard_text_context) return;
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		matrix to_local   = matrix_invert(render_get_cam_root());
-		pose_t local_head = matrix_transform_pose(to_local, *input_head());
-		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
+		vec3 dir = from_world - input_head()->position;
+		vec3 at  = input_head()->position + dir * 0.8f;
+
+		matrix to_local = matrix_invert(render_get_cam_root());
+		vec3   local_at = matrix_transform_pt(to_local, at);
+		keyboard_pose.position    = local_at + vec3{0, -.1f, 0};
+		keyboard_pose.orientation = quat_lookat(vec3_zero, matrix_transform_dir(to_local, -dir));
 	}
 
 	// Reset the keyboard to its default state

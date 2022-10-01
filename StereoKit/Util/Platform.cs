@@ -49,6 +49,23 @@ namespace StereoKit
 		/// TextContext provided.</param>
 		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
 			=> NativeAPI.platform_keyboard_show(show?1:0, inputType);
+
+		/// <summary>Request or hide a soft keyboard for the user to type on.
+		/// StereoKit will surface OS provided soft keyboards where available,
+		/// and use a fallback keyboard when not. On systems with physical
+		/// keyboards, soft keyboards generally will not be shown if the user
+		/// has interacted with their physical keyboard recently.</summary>
+		/// <param name="show">Tells whether or not to open or close the soft
+		/// keyboard.</param>
+		/// <param name="atWorld">Where the event to show the keyboard came
+		/// from, in world space. This parameter may be ignored, and will
+		/// likely not be the exact location of the keyboard.</param>
+		/// <param name="inputType">Soft keyboards can change layout to
+		/// optimize for the type of text that's required. StereoKit will
+		/// request the soft keyboard layout that most closely represents the
+		/// TextContext provided.</param>
+		public static void KeyboardShow(bool show, Vec3 atWorld, TextContext inputType = TextContext.Text)
+			=> NativeAPI.platform_keyboard_show_at(show ? 1 : 0, atWorld, inputType);
 		#endregion
 
 		#region File Picker
