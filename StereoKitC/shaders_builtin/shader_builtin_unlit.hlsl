@@ -2,8 +2,11 @@
 
 //--name = sk/unlit
 //--color:color = 1, 1, 1, 1
+//--tex_scale   = 1
 //--diffuse     = white
+
 float4       color;
+float        tex_scale;
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -28,7 +31,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float3 world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
 	o.pos        = mul(float4(world,         1), sk_viewproj[o.view_id]);
 
-	o.uv    = input.uv;
+	o.uv    = input.uv * tex_scale;
 	o.color = input.col * color * sk_inst[id].color;
 	return o;
 }
