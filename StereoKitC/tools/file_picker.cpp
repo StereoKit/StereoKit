@@ -238,10 +238,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 
 	file_picker_open_folder(fp_path.folder);
 
-	const pose_t *head = input_head();
-	vec3          pos  = head->position + head->orientation*vec3_forward*.5f + head->orientation*vec3_up*0.2f;
-	fp_win_pose = { pos, quat_lookat(pos, head->position) };
-
+	fp_win_pose  = ui_popup_pose({0,-0.1f,0});
 	fp_call_data = callback_data;
 	fp_callback  = on_confirm;
 	fp_mode = mode;
