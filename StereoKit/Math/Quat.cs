@@ -167,6 +167,35 @@ namespace StereoKit
 		public static Quat Difference(Quat a, Quat b) 
 			=> NativeAPI.quat_difference(a, b);
 
+		/// <summary>Creates a quaternion that goes from one rotation to
+		/// another.</summary>
+		/// <param name="from">The origin rotation.</param>
+		/// <param name="to">And the target rotation!</param>
+		/// <returns>The quaternion between from and to.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Quat Delta(Quat from, Quat to) 
+			=> NativeAPI.quat_difference(from, to);
+
+		/// <summary>Creates a rotation that goes from one direction to
+		/// another. Which is comes in handy when trying to roll
+		/// something around with position data.</summary> 
+		/// <param name="from">The origin direction.</param>
+		/// <param name="to">And the target direction!</param>
+		/// <returns>The quaternion between from and to.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Quat Delta(Vec3 from, Vec3 to) {
+			Vec3 vec = Vec3.Cross(from, to);
+			return new Quat(vec.x, vec.y, vec.z, 1 + Vec3.Dot(from, to)).Normalized;
+		}
+
+		/// <summary>Rotates a quaternion making it relative to another
+		/// rotation while preserving it's "Length"!</summary>
+		/// <param name="to">The relative quaternion.</param>
+		/// <returns>This quaternion made relative to another rotation.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Quat Relative(Quat to) => to * q * Quaternion.Inverse(to);
+
 		/// <summary>Creates a Roll/Pitch/Yaw rotation (applied in that
 		/// order) from the provided angles in degrees!</summary>
 		/// <param name="pitchXDeg">Pitch is rotation around the x axis,
