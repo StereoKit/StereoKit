@@ -167,32 +167,28 @@ namespace StereoKit
 		public static Quat Difference(Quat a, Quat b) 
 			=> NativeAPI.quat_difference(a, b);
 
-		/// <summary>Creates a quaternion that goes to one rotation from 
-		/// another. Just like when you are working with vectors: 
-		/// delta = to - from</summary>
-		/// <param name="to">The target rotation.</param>
-		/// <param name="from">And the origin rotation!</param>
-		/// <returns>Quaternion that goes to one rotation from another.
-		/// </returns>
+		/// <summary>Creates a quaternion that goes from one rotation to
+		/// another.</summary>
+		/// <param name="from">The origin rotation.</param>
+		/// <param name="to">And the target rotation!</param>
+		/// <returns>The quaternion between from and to.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Delta(Quat from, Quat to) 
 			=> NativeAPI.quat_difference(from, to);
 
-		/// <summary>Creates a rotation that goes to one direction from 
-		/// another. Just like when you are working with 
-		/// vectors: delta = to - from. Super handy when converting a 
-		/// relative position delta into a quaternion!</summary>
-		/// <param name="to">The target direction.</param>
-		/// <param name="from">And the origin direction!</param>
-		/// <returns>Quaternion that goes to one direction from another.
-		/// </returns>
+		/// <summary>Creates a rotation that goes from one direction to
+		/// another. Which is comes in handy when trying to roll
+		/// something around with position data.</summary> 
+		/// <param name="from">The origin direction.</param>
+		/// <param name="to">And the target direction!</param>
+		/// <returns>The quaternion between from and to.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Delta(Vec3 from, Vec3 to) {
 			Vec3 vec = Vec3.Cross(from, to);
 			return new Quat(vec.x, vec.y, vec.z, 1 + Vec3.Dot(from, to)).Normalized;
 		}
 
-		/// <summary>Rotates a quaternion making it relative to another 
+		/// <summary>Rotates a quaternion making it relative to another
 		/// rotation while preserving it's "Length"!</summary>
 		/// <param name="to">The relative quaternion.</param>
 		/// <returns>This quaternion made relative to another rotation.
