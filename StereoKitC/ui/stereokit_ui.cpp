@@ -96,6 +96,7 @@ ui_hand_t       skui_hand[2] = {};
 float           skui_finger_radius = 0;
 bool32_t        skui_show_volumes = false;
 bool32_t        skui_enable_far_interact = true;
+ui_move_        skui_system_move_type = ui_move_face_user;
 uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
@@ -437,6 +438,18 @@ void ui_enable_far_interact(bool32_t enable) {
 
 bool32_t ui_far_interact_enabled() {
 	return skui_enable_far_interact;
+}
+
+///////////////////////////////////////////
+
+ui_move_ ui_system_get_move_type() {
+	return skui_system_move_type;
+}
+
+///////////////////////////////////////////
+
+void ui_system_set_move_type(ui_move_ move_type) {
+	skui_system_move_type = move_type;
 }
 
 ///////////////////////////////////////////
@@ -1938,6 +1951,49 @@ bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, 
 
 bool32_t ui_has_keyboard_focus() {
 	return skui_input_target != 0;
+}
+
+///////////////////////////////////////////
+
+pose_t ui_popup_pose(vec3 shift) {
+	vec3 at;
+	if (ui_last_element_active() & button_state_active) {
+		// If there was a UI element focused, we'll use that
+		at = hierarchy_to_world_point( ui_layout_last().center );
+	} else {
+		bool active_left  = input_hand(handed_left )->tracked_state & button_state_active;
+		bool active_right = input_hand(handed_right)->tracked_state & button_state_active;
+
+		if (active_left && active_right) {
+			// Both hands are active, pick the hand that's the most high
+			// and outstretched.
+			vec3  pl       = input_hand(handed_left )->fingers[1][4].position;
+			vec3  pr       = input_hand(handed_right)->fingers[1][4].position;
+			vec3  head     = input_head()->position;
+			float dist_l   = vec3_distance(pl, head);
+			float dist_r   = vec3_distance(pr, head);
+			float height_l = pl.y - pr.y;
+			float height_r = pr.y - pl.y;
+			at = dist_l + height_l / 2.0f > dist_r + height_r / 2.0f ? pl : pr;
+		} else if (active_left) {
+			at = input_hand(handed_left)->fingers[1][4].position;
+		} else if (active_right) {
+			at = input_hand(handed_right)->fingers[1][4].position;
+		} else {
+			// Head based fallback!
+			at = input_head()->position + input_head()->orientation * vec3_forward * 0.35f;
+		}
+	}
+
+	vec3 dir = at - input_head()->position;
+	at = input_head()->position + dir * 0.7f;
+
+	matrix to_local = matrix_invert(render_get_cam_root());
+	vec3   local_at = matrix_transform_pt(to_local, at);
+
+	return pose_t {
+		local_at + shift,
+		quat_lookat(vec3_zero, matrix_transform_dir(to_local, -dir)) };
 }
 
 ///////////////////////////////////////////
