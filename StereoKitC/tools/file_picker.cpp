@@ -356,7 +356,7 @@ void file_picker_finish() {
 void file_picker_update() {
 	if (fp_show) {
 		ui_push_id("_skp");
-		ui_window_begin(fp_title, fp_win_pose, { .46f,0 });
+		ui_window_begin(fp_title, fp_win_pose, { .46f,0 }, ui_win_normal, ui_system_get_move_type());
 
 		// Show the current directory address bar!
 		float   line_height       = ui_line_height();

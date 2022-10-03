@@ -96,6 +96,7 @@ ui_hand_t       skui_hand[2] = {};
 float           skui_finger_radius = 0;
 bool32_t        skui_show_volumes = false;
 bool32_t        skui_enable_far_interact = true;
+ui_move_        skui_system_move_type = ui_move_face_user;
 uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
@@ -437,6 +438,18 @@ void ui_enable_far_interact(bool32_t enable) {
 
 bool32_t ui_far_interact_enabled() {
 	return skui_enable_far_interact;
+}
+
+///////////////////////////////////////////
+
+ui_move_ ui_system_get_move_type() {
+	return skui_system_move_type;
+}
+
+///////////////////////////////////////////
+
+void ui_system_set_move_type(ui_move_ move_type) {
+	skui_system_move_type = move_type;
 }
 
 ///////////////////////////////////////////

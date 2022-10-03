@@ -103,7 +103,7 @@ void virtualkeyboard_update() {
 	remove_last_clicked_keys();
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body);
+	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body, ui_system_get_move_type());
 
 	// Check layer keys for switching between keyboard layout layers
 	int layer_index = 0;

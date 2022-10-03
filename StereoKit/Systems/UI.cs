@@ -35,6 +35,11 @@ namespace StereoKit
 		/// visible. This is enabled by default. </summary>
 		public static bool EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
 
+		/// <summary>This is the UIMove that is provided to UI windows that
+		/// StereoKit itself manages, such as the fallback filepicker and
+		/// soft keyboard.</summary>
+		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
+
 		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
 

@@ -79,6 +79,8 @@ SK_API void     ui_quadrant_size_mesh  (mesh_t ref_mesh, float overflow_percent)
 SK_API void     ui_show_volumes        (bool32_t      show);
 SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
+SK_API ui_move_ ui_system_get_move_type();
+SK_API void     ui_system_set_move_type(ui_move_ move_type);
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API float    ui_get_padding         ();
 SK_API float    ui_get_gutter          ();
