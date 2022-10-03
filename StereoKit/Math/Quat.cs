@@ -175,7 +175,7 @@ namespace StereoKit
 		/// <returns>Quaternion that goes to one rotation from another.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat Delta(Quat to, Quat from) 
+		public static Quat Delta(Quat from, Quat to) 
 			=> NativeAPI.quat_difference(from, to);
 
 		/// <summary>Creates a rotation that goes to one direction from 
@@ -187,9 +187,9 @@ namespace StereoKit
 		/// <returns>Quaternion that goes to one direction from another.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat Delta(Vec3 to, Vec3 from) {
-			Vec3 vec = Vec3.Cross(to, from);
-			return new Quat(vec.x, vec.y, vec.z, 1 + Vec3.Dot(to, from)).Normalized;
+		public static Quat Delta(Vec3 from, Vec3 to) {
+			Vec3 vec = Vec3.Cross(from, to);
+			return new Quat(vec.x, vec.y, vec.z, 1 + Vec3.Dot(from, to)).Normalized;
 		}
 
 		/// <summary>Rotates a quaternion making it relative to another 
