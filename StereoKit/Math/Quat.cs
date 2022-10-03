@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -163,6 +164,7 @@ namespace StereoKit
 		/// <param name="b">Ending rotation.</param>
 		/// <returns>A rotation that will take a point from rotation a, to
 		/// rotation b.</returns>
+		[Obsolete("Replaced by Quat.Delta. Delta behaves the same, but is clearer.")]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Difference(Quat a, Quat b) 
 			=> NativeAPI.quat_difference(a, b);
@@ -173,7 +175,7 @@ namespace StereoKit
 		/// <param name="to">And the target rotation!</param>
 		/// <returns>The quaternion between from and to.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat Delta(Quat from, Quat to) 
+		public static Quat Delta(Quat from, Quat to)
 			=> NativeAPI.quat_difference(from, to);
 
 		/// <summary>Creates a rotation that goes from one direction to
@@ -194,7 +196,7 @@ namespace StereoKit
 		/// <returns>This quaternion made relative to another rotation.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Quat Relative(Quat to) => to * q * Quaternion.Inverse(to);
+		public Quat Relative(Quat to) => to.q * q * Quaternion.Inverse(to.q);
 
 		/// <summary>Creates a Roll/Pitch/Yaw rotation (applied in that
 		/// order) from the provided angles in degrees!</summary>

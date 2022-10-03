@@ -2,17 +2,10 @@
 
 class DocQuat : ITest
 {
-	Pose spherePose;
-	Quat sphereDelta;
-	Vec3 oldPalmPos;
-
 	Material matDev;
 
 	public void Initialize() 
 	{
-		spherePose = new Pose(-1,0,1, Quat.Identity);
-		sphereDelta = Quat.Identity;
-
 		matDev = Material.Default.Copy();
 		matDev.SetTexture("diffuse", Tex.DevTex);
 	}
@@ -40,11 +33,17 @@ class DocQuat : ITest
 
 		/// :End:
 
+		SpinningSphere();
+	}
 
-		/// :CodeSample: Quat.Delta
-		
+	/// :CodeSample: Quat.Delta
+	Pose spherePose  = new Pose(-1, 0, 1, Quat.Identity);
+	Quat sphereDelta = Quat.Identity;
+	Vec3 oldPalmPos;
+	void SpinningSphere()
+	{
 		// Draw a sphere that you can spin around with your right hand!
-		Vec3 palmPos = Input.Hand(1).palm.position - spherePose.position;
+		Vec3 palmPos = Input.Hand(Handed.Right).palm.position - spherePose.position;
 		if (palmPos.Length < 0.3f)
 		{
 			sphereDelta = Quat.Delta(oldPalmPos.Normalized, palmPos.Normalized);
@@ -52,7 +51,6 @@ class DocQuat : ITest
 		spherePose.orientation = sphereDelta * spherePose.orientation;
 		oldPalmPos = palmPos;
 		Mesh.Sphere.Draw(matDev, spherePose.ToMatrix(0.5f));
-
-		/// :End:
 	}
+	/// :End:
 }
