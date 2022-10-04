@@ -2,6 +2,9 @@
 
 class DemoUnicode : ITest
 {
+	string title       = "Unicode Text";
+	string description = "";
+
 	Model atlasModel;
 	Model clipboard = Model.FromFile("Clipboard.glb", Shader.UI);
 
@@ -44,5 +47,7 @@ class DemoUnicode : ITest
 
 		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
 		Tests.Screenshot("Unicode.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
+
+		Demo.ShowSummary(title, description);
 	}
 }
