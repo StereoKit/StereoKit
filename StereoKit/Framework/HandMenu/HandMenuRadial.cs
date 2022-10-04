@@ -40,7 +40,7 @@ namespace StereoKit.Framework
 		const float minScale = 0.05f;
 		const float sliceGap = 0.002f;
 		const float outOfViewAngle = 0.866f; // 0.866 is 30 degrees with cos baked in: Math.Cos(30 * Units.deg2rad);
-		const float activationAngle = 0.99f; // 0.99 is 8 degrees with cos baked in: Math.Cos(8 * Units.deg2rad);
+		const float activationAngle = 0.978f; // 0.978 is 12 degrees with cos baked in: Math.Cos(12 * Units.deg2rad);
 
 		Pose menuPose;
 		Pose destPose;
