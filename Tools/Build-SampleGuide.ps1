@@ -19,6 +19,8 @@ Foreach-Object {
     if (!$title) {
         return
     }
+    $desc = $desc.replace('\n', '
+/// ')
 
     $demoGuide += "/// ## [$title](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/$($_.Name))
 /// 
@@ -37,4 +39,4 @@ Foreach-Object {
 }
 
 $demoGuide += '/// :End:'
-$demoGuide | Out-File -FilePath '../Examples/StereoKitTest/Guides/GuideSamples.cs'
+Set-Content -Path '../Examples/StereoKitTest/Guides/GuideSamples.cs' -Value $demoGuide
