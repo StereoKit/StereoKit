@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-/// :CodeDoc: Guides 3 Using The Simulator
+/// :CodeDoc: Guides 5 Using The Simulator
 /// # Using the Simulator
 /// 
 /// As a developer, you can't realistically spend all of your development in
