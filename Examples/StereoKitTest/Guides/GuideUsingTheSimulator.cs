@@ -25,6 +25,7 @@
 /// - Scroll Wheel - Moves the hand toward or away from the user.
 /// - Shift + Right - Mouse-look / rotate the head.
 /// - Left Alt - [Eye tracking](({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Ctrl + Shift - Switch between controlling left hand, right hand, or no hand.
 /// 
 /// To move around in space, you'll find controls that should be familiar to
 /// those that play first-person games! Hold Left Shift to enable this.

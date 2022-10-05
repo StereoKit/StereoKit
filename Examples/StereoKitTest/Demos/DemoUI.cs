@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides 2 User Interface
+﻿/// :CodeDoc: Guides 3 User Interface
 /// # Building UI in StereoKit
 /// 
 /// StereoKit uses an immediate mode UI system. Basically, you define the UI 
