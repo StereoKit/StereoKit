@@ -1,4 +1,4 @@
-﻿/// :CodeDoc: Guides 3 Learning Resources
+﻿/// :CodeDoc: Guides 2 Learning Resources
 /// # Learning Resources
 /// 
 /// Outside of the resources here on the StereoKit site, there's a number of
