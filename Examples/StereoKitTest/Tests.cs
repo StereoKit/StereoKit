@@ -12,7 +12,7 @@ public static class Tests
 	static ITest activeScene;
 	static ITest nextScene;
 	static int   testIndex  = 0;
-	static int   runFrames  = -1;
+	static int   runFrames  = 2;
 	static float runSeconds = 0;
 	static int   sceneFrame = 0;
 	static float sceneTime  = 0;
@@ -108,7 +108,7 @@ public static class Tests
 		Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
 
 		sceneFrame = 0;
-		runFrames  = -1;
+		runFrames  = 2;
 		runSeconds = 0;
 		ActiveTest = result;
 	}
