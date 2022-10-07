@@ -272,7 +272,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 	out_view.view_count       = 0;
 	out_view.views            = sk_malloc_t(XrView, out_view.view_cap);
 	out_view.view_layers      = sk_malloc_t(XrCompositionLayerProjectionView, out_view.view_cap);
-	out_view.view_depths      = sk_malloc_t(XrCompositionLayerDepthInfoKHR, out_view.view_cap);
+	out_view.view_depths      = sk_malloc_t(XrCompositionLayerDepthInfoKHR,   out_view.view_cap);
 	out_view.view_transforms  = sk_malloc_t(matrix, out_view.view_cap);
 	out_view.view_projections = sk_malloc_t(matrix, out_view.view_cap);
 	for (uint32_t i = 0; i < out_view.view_cap; i++) {
@@ -296,8 +296,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 	// Check if the latest configuration is different from what we've already
 	// set up.
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
-	int w = display.view_configs[0].recommendedImageRectWidth;
-	int h = display.view_configs[0].recommendedImageRectHeight;
+	int w = display.view_configs[0].recommendedImageRectWidth  * 1;
+	int h = display.view_configs[0].recommendedImageRectHeight * 1;
 	if (   w == display.swapchain_color.width
 		&& h == display.swapchain_color.height) {
 		return true;
@@ -305,7 +305,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 	log_diagf("Setting view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d", openxr_view_name(display.type), w, h);
 
 	// Create the new swapchaines for the current size
-	int samples = display.view_configs[0].recommendedSwapchainSampleCount;
+	int samples = 4;// display.view_configs[0].recommendedSwapchainSampleCount;
 	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, samples)) return false;
 	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, samples)) return false;
 
