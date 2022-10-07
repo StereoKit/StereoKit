@@ -833,12 +833,9 @@ int32_t skg_init(const char *, void *adapter_id) {
 			filter.DenyList.pIDList = hide;
 			d3d_info->ClearStorageFilter();
 			d3d_info->AddStorageFilterEntries(&filter);
-			d3d_info->SetBreakOnID(D3D11_MESSAGE_ID_DEVICE_IASETVERTEXBUFFERS_BUFFERS_EMPTY, true);
 		}
-		else { skg_log(skg_log_warning, "No debug info :("); }
 		d3d_debug->Release();
 	}
-	else { skg_log(skg_log_warning, "No debug info :("); }
 
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
 	desc_rasterizer.FillMode = D3D11_FILL_SOLID;

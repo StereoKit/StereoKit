@@ -403,6 +403,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
+    Examples/StereoKitCTest/demo_aliasing.h
+    Examples/StereoKitCTest/demo_aliasing.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_bvh.h

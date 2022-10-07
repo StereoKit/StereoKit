@@ -27,6 +27,7 @@ struct swapchain_t {
 	XrSwapchain handle;
 	int32_t     width;
 	int32_t     height;
+	int32_t     multisample;
 	uint32_t    surface_count;
 	uint32_t    surface_layers;
 	XrSwapchainImage *images;
@@ -35,10 +36,17 @@ struct swapchain_t {
 void swapchain_delete(swapchain_t &swapchain) {
 	for (size_t s = 0; s < swapchain.surface_count * swapchain.surface_layers; s++) {
 		tex_release(swapchain.textures[s]);
+		swapchain.textures[s] = nullptr;
 	}
-	xrDestroySwapchain(swapchain.handle);
-	sk_free(swapchain.images);
-	sk_free(swapchain.textures);
+	if (swapchain.handle) {
+		xrDestroySwapchain(swapchain.handle);
+		swapchain.handle = XR_NULL_HANDLE;
+	}
+	sk_free(swapchain.images  ); swapchain.images   = nullptr;
+	sk_free(swapchain.textures); swapchain.textures = nullptr;
+
+	swapchain.surface_count = 0;
+	swapchain.surface_layers = 0;
 }
 
 ///////////////////////////////////////////
@@ -50,6 +58,8 @@ struct device_display_t {
 	bool32_t                     active;
 	int64_t color_format;
 	int64_t depth_format;
+	float   render_scale;
+	int32_t multisample;
 
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
@@ -280,6 +290,13 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		out_view.view_layers[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		out_view.view_depths[i] = { XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR };
 	}
+	if (view_type != XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
+		out_view.multisample  = render_get_multisample();
+		out_view.render_scale = render_get_scaling();
+	} else {
+		out_view.multisample  = 1;
+		out_view.render_scale = 1;
+	}
 
 	bool needs_swapchain_now = view_type != XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
 	if (needs_swapchain_now && !openxr_update_swapchains(out_view)) {
@@ -296,18 +313,20 @@ bool openxr_update_swapchains(device_display_t &display) {
 	// Check if the latest configuration is different from what we've already
 	// set up.
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
-	int w = display.view_configs[0].recommendedImageRectWidth  * 1;
-	int h = display.view_configs[0].recommendedImageRectHeight * 1;
+	int w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
+	int h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	int s = display.multisample;
 	if (   w == display.swapchain_color.width
-		&& h == display.swapchain_color.height) {
+		&& h == display.swapchain_color.height
+		&& s == display.swapchain_color.multisample) {
 		return true;
 	}
-	log_diagf("Setting view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d", openxr_view_name(display.type), w, h);
 
 	// Create the new swapchaines for the current size
-	int samples = 4;// display.view_configs[0].recommendedSwapchainSampleCount;
-	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, samples)) return false;
-	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, samples)) return false;
+	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, s)) return false;
+	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, s)) return false;
+
+	log_diagf("Set view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d<~BLK>@<~clr>%d<~BLK>msaa<~clr>", openxr_view_name(display.type), display.swapchain_color.width, display.swapchain_color.height, display.swapchain_color.multisample);
 
 	// If shaders can't select layers from a texture array, we'll have to
 	// seprate the layers into individual render targets.
@@ -381,6 +400,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 ///////////////////////////////////////////
 
 bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count) {
+	swapchain_delete(out_swapchain);
+
 	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
 	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
 	XrSwapchainCreateInfo swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
@@ -415,6 +436,7 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	// a depth buffer for each generated texture here as well with make_surfacedata.
 	out_swapchain.width         = swapchain_info.width;
 	out_swapchain.height        = swapchain_info.height;
+	out_swapchain.multisample   = swapchain_info.sampleCount;
 	out_swapchain.handle        = handle;
 	if (out_swapchain.surface_count != surface_count) {
 		out_swapchain.surface_count = surface_count;
@@ -581,6 +603,11 @@ bool openxr_render_frame() {
 				openxr_update_swapchains(xr_displays[i]);
 			}
 		}
+	}
+	if (xr_displays.count > 0 && (xr_displays[0].render_scale != render_get_scaling() || xr_displays[0].multisample != render_get_multisample())) {
+		xr_displays[0].render_scale = render_get_scaling();
+		xr_displays[0].multisample  = render_get_multisample();
+		openxr_update_swapchains(xr_displays[0]);
 	}
 
 	// Must be called before any rendering is done! This can return some interesting flags, like

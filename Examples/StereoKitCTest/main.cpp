@@ -18,6 +18,7 @@ using namespace sk;
 #include "demo_windows.h"
 #include "demo_desktop.h"
 #include "demo_bvh.h"
+#include "demo_aliasing.h"
 
 #include <stdio.h>
 
@@ -86,11 +87,16 @@ scene_t demos[] = {
 		demo_envmap_update,
 		demo_envmap_shutdown,
 	}, {
-        "BVH",
-        demo_bvh_init,
-        demo_bvh_update,
-        demo_bvh_shutdown,
-    },
+		"BVH",
+		demo_bvh_init,
+		demo_bvh_update,
+		demo_bvh_shutdown,
+	}, {
+		"Aliasing",
+		demo_aliasing_init,
+		demo_aliasing_update,
+		demo_aliasing_shutdown,
+	},
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 	{
 		"Windows",
