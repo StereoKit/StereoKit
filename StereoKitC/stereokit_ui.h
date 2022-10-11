@@ -79,6 +79,8 @@ SK_API void     ui_quadrant_size_mesh  (mesh_t ref_mesh, float overflow_percent)
 SK_API void     ui_show_volumes        (bool32_t      show);
 SK_API void     ui_enable_far_interact (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled();
+SK_API ui_move_ ui_system_get_move_type();
+SK_API void     ui_system_set_move_type(ui_move_ move_type);
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API float    ui_get_padding         ();
 SK_API float    ui_get_gutter          ();
@@ -87,6 +89,7 @@ SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gam
 SK_API color128 ui_get_theme_color     (ui_color_ color_type);
 SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
 SK_API bool32_t ui_has_keyboard_focus  ();
+SK_API pose_t   ui_popup_pose          (vec3 shift);
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();

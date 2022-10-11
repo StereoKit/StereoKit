@@ -35,6 +35,11 @@ namespace StereoKit
 		/// visible. This is enabled by default. </summary>
 		public static bool EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
 
+		/// <summary>This is the UIMove that is provided to UI windows that
+		/// StereoKit itself manages, such as the fallback filepicker and
+		/// soft keyboard.</summary>
+		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
+
 		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
 
@@ -844,6 +849,19 @@ namespace StereoKit
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
 			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, Vec2.Zero);
+
+		/// <summary>This creates a Pose that is friendly towards UI popup
+		/// windows, or windows that are created due to some type of user
+		/// interaction. The fallback file picker and soft keyboard both use
+		/// this function to position themselves!</summary>
+		/// <param name="shift">A positional shift from the default location,
+		/// this is useful to account for the height of the window, and center
+		/// or offset this pose. A value of [0,-0.1,0] may be a good starting
+		/// point.</param>
+		/// <returns>A pose between the UI or hand that is currently active,
+		/// and the user's head. Good for popup windows.</returns>
+		public static Pose PopupPose(Vec3 shift)
+			=> NativeAPI.ui_popup_pose(shift);
 
 		/// <summary>This will reposition the vertices to work well with
 		/// quadrant resizing shaders. The mesh should generally be centered

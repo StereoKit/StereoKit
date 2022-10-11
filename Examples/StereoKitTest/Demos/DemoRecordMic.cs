@@ -4,10 +4,8 @@ using StereoKit;
 
 class DemoRecordMic : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "A common use case for the microphone would be to record a snippet of audio! This demo shows reading data from the Microphone, and using that to create a sound for playback.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Record Mic";
+	string description = "A common use case for the microphone would be to record a snippet of audio! This demo shows reading data from the Microphone, and using that to create a sound for playback.";
 
 	/// :CodeSample: Microphone Microphone.Start Sound.ReadSamples Sound.FromSamples 
 	/// ### Recording Audio Snippets
@@ -82,8 +80,7 @@ class DemoRecordMic : ITest
 
 		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(-0.08f, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 	}
 
 	Pose     micSelectPose   = new Pose(0.7f, 0, -0.3f, Quat.LookDir(-1, 0, 1));

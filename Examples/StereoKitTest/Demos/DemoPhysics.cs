@@ -4,15 +4,13 @@ using System.Linq;
 
 class DemoPhysics : ITest
 {
+	string      title       = "Physics";
+	string      description = "StereoKit supports some basic rigidbody physics simulation. See the 'Solid' class in the docs.\n\nUse the panel to add or clear physics objects from the scene, and make a fist to interact with them yourself!";
+
 	Solid       floorSolid;
 	Model       gltf;
 	List<Solid> objects     = new List<Solid>();
 	Pose        optionsPose = new Pose(0.5f, 0,-0.5f, Quat.LookDir(-1,0,1));
-
-	Matrix      descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string      description = "StereoKit supports some basic rigidbody physics simulation. See the 'Solid' class in the docs.\n\nUse the panel to add or clear physics objects from the scene, and make a fist to interact with them yourself!";
-	Matrix      titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
-	string      title       = "Physics";
 
 	public void Initialize()
 	{
@@ -59,8 +57,7 @@ class DemoPhysics : ITest
 			objects.Clear();
 		UI.WindowEnd();
 
-		Text.Add(title,       titlePose);
-		Text.Add(description, descPose, V.XY(0.4f,0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 	}
 
 	public void Shutdown()

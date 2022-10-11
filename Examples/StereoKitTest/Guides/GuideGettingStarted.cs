@@ -14,6 +14,10 @@
 /// - **Enable Developer Mode (for UWP/HoloLens)**
 ///   - Windows Settings->Update and Security->For Developers->Developer Mode
 /// 
+/// > **Native code developers** can check out [this guide]({{site.url}}/Pages/Guides/Getting-Started-Native.html) for using StereoKit from C/C++.
+/// >
+/// > **VS Code** developers can check out [this guide]({{site.url}}/Pages/Guides/Getting-Started-VS-Code.html) for some VS Code specific information.
+/// 
 /// This short video goes through the pre-requisites for building StereoKit's
 /// hello world! You can find a [UWP/HoloLens specific version here](https://www.youtube.com/watch?v=U_7VNIcPQaM)
 /// as well.
@@ -35,8 +39,6 @@
 ///   - UWP is for HoloLens 2, and can run on Windows desktop. UWP can be slower to compile, and is no longer receiving updates from the .Net team.
 /// - _[Cross Platform/Universal Template (in development)](https://github.com/StereoKit/SKTemplate-Universal)_
 ///   - This is an early version still in project format. It works with .Net Core, UWP, and Xamarin(Android/Quest) all at once via a DLL shared between multiple platform specific projects.
-/// - **[Native C/C++ Template](https://github.com/StereoKit/SKTemplate-CMake)**
-///   - StereoKit does provide a C API, but experienced developers should only choose this if the benefits outweigh the lack of C API documentation.
 /// 
 /// For an overview of the initial code in the .Net Core and UWP templates,
 /// check out this video!

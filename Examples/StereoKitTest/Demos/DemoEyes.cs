@@ -4,10 +4,8 @@ using System.Collections.Generic;
 
 class DemoEyes : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "If the hardware supports it, and permissions are granted, eye tracking is as simple as grabbing Input.Eyes!\n\nThis scene is raycasting your eye ray at the indicated plane, and the dot's red/green color indicates eye tracking availability! On flatscreen you can simulate eye tracking with Alt+Mouse.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Eye Tracking";
+	string description = "If the hardware supports it, and permissions are granted, eye tracking is as simple as grabbing Input.Eyes!\n\nThis scene is raycasting your eye ray at the indicated plane, and the dot's red/green color indicates eye tracking availability! On flatscreen you can simulate eye tracking with Alt+Mouse.";
 
 	List<LinePoint> points = new List<LinePoint>();
 	Vec3 previous;
@@ -55,16 +53,15 @@ class DemoEyes : ITest
 
 		Lines.Add(points.ToArray());
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 
 		if (Backend.XRType == BackendXRType.OpenXR)
 		{
 			if (Backend.OpenXR.EyesSampleTime != lastEyesSampleTime)
-            {
+			{
 				lastEyesSampleTime = Backend.OpenXR.EyesSampleTime;
 				uniqueSamplesCount++;
-            }
+			}
 
 			double sampleFrequency = uniqueSamplesCount / (DateTime.UtcNow - demoStartTime).TotalSeconds;
 			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.55f, -0.1f)) * quadPose);
