@@ -45,6 +45,16 @@ namespace StereoKit
 			get => NativeAPI.render_get_filter();
 		}
 
+		public static float Scaling {
+			get => NativeAPI.render_get_scaling();
+			set => NativeAPI.render_set_scaling(value);
+		}
+
+		public static int Multisample {
+			get => NativeAPI.render_get_multisample();
+			set => NativeAPI.render_set_multisample(value);
+		}
+
 		/// <summary>This tells if CaptureFilter has been overridden to a
 		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
 		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
