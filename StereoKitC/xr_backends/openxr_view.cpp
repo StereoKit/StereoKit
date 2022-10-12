@@ -315,6 +315,11 @@ bool openxr_update_swapchains(device_display_t &display) {
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
 	int w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
 	int h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	if (display.render_scale != 1.0f) {
+		const int32_t quantize = 32;
+		w = (w / quantize) * quantize;
+		h = (h / quantize) * quantize;
+	}
 	int s = display.multisample;
 	if (   w == display.swapchain_color.width
 		&& h == display.swapchain_color.height
