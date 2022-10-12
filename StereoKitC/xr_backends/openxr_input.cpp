@@ -371,8 +371,8 @@ bool oxri_init() {
 	// microsoft/hand_interaction
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_hand_interaction
 	if (xr_ext_available.MSFT_hand_interaction) {
-		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
+		xrStringToPath(xr_instance, "/user/hand/left/input/select/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/select/value", &path_trigger[1]);
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
 			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
