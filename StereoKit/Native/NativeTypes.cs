@@ -539,6 +539,13 @@ namespace StereoKit
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>Refers to UI.ButtonRound elements.</summary>
+		ButtonRound,
+		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
+		Panel,
+		/// <summary>Refers to the text position indicator carat on text input
+		/// elements.</summary>
+		Carat,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
