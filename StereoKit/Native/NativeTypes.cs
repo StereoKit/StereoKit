@@ -496,6 +496,18 @@ namespace StereoKit
 		VariablePinch
 	}
 
+	/// <summary>Determines when this UI function returns true.</summary>
+	public enum UINotify
+	{
+		/// <summary>This function returns true any time the values has 
+		/// changed!</summary>
+		Change,
+		/// <summary>This function returns true when the user has finished
+		/// interacting with it. This does not guarantee the value has changed.
+		/// </summary>
+		Finalize,
+	}
+
 	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
 	/// element visual.</summary>
 	public enum UIVisual
