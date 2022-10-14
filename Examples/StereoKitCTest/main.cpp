@@ -12,6 +12,7 @@ using namespace sk;
 #include "demo_lines.h"
 #include "demo_picker.h"
 #include "demo_world.h"
+#include "demo_anchors.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
@@ -70,6 +71,11 @@ scene_t demos[] = {
 		demo_world_init,
 		demo_world_update,
 		demo_world_shutdown,
+	}, {
+		"Anchors",
+		demo_anchors_init,
+		demo_anchors_update,
+		demo_anchors_shutdown,
 	}, {
 		"Lighting",
 		demo_lighting_init,
