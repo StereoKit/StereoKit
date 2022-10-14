@@ -661,7 +661,8 @@ bool ui_init() {
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
 
-	skui_mat      = material_find(default_id_material_ui);
+	skui_mat = material_copy_id(default_id_material_ui);
+	material_set_bool(skui_mat, "ui_tint", true);
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
 	ui_set_element_visual(ui_vis_default,      skui_box,      skui_mat_quad, { skui_settings.padding * 0.75f, skui_settings.padding * 0.75f });
 	ui_set_element_visual(ui_vis_window_head,  skui_win_top,  nullptr);
