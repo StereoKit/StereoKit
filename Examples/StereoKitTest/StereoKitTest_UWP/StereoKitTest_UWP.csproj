@@ -18,15 +18,18 @@
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
-    <IntermediateOutputPath>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\StereoKitTest_UWP\</IntermediateOutputPath>
-    <OutputPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitTest_UWP\</OutputPath>
-
+    <IntermediateOutputPath>..\..\..\bin\intermediate\$(Platform)_$(Configuration)\StereoKitTest_UWP\</IntermediateOutputPath>
+    <OutputPath>..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitTest_UWP\</OutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <NoWarn>;2008</NoWarn>
     <ErrorReport>prompt</ErrorReport>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <SKAssetFolder>..\..\Assets</SKAssetFolder>
+    <SKAssetDestination>Assets</SKAssetDestination>
   </PropertyGroup>
-
+  <Import Project="..\..\..\StereoKit\StereoKit.props" />
+  <Import Project="..\..\..\StereoKit\SKAssets.targets" />
+  <Import Project="..\..\..\StereoKit\SKShaders.targets" />
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -103,21 +106,9 @@
       <Name>StereoKit</Name>
     </ProjectReference>
   </ItemGroup>
-
-  <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
-  <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <ItemGroup>
-    <Content Include="$(SolutionDir)Examples\Assets\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
-    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
-  </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
-
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

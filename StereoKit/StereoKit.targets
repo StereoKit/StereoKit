@@ -62,12 +62,4 @@
 		</ItemGroup>
 	</Target>
 
-	<!-- Some debug logging for the properties here -->
-	<Target Name="StereoKitVars" BeforeTargets="AfterBuild">
-		<Message Importance="high" Text="[StereoKit NuGet] TargetFramework            : $(TargetFramework)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] TargetFrameworkIdentifier  : $(TargetFrameworkIdentifier)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] GetTargetPlatformIdentifier: $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKBuildPlatform            : $(SKBuildPlatform)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKBuildNET                 : $(SKBuildNET)"/>
-	</Target>
 </Project>
