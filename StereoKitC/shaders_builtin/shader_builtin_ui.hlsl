@@ -11,7 +11,7 @@ struct vsIn {
 	float4 pos  : SV_Position;
 	float3 norm : NORMAL0;
 	float2 uv   : TEXCOORD0;
-	float4 col  : COLOR0;
+	float4 color: COLOR0;
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
@@ -27,13 +27,12 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.view_id = id % sk_view_count;
 	id        = id / sk_view_count;
 
-	o.world = mul(input .pos, sk_inst    [id].world);
-	o.pos   = mul(o.world,    sk_viewproj[o.view_id]);
-
+	o.world  = mul(input .pos, sk_inst    [id].world);
+	o.pos    = mul(o.world,    sk_viewproj[o.view_id]);
 	o.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
 	o.uv         = input.uv;
-	o.color      = color * input.col * sk_inst[id].color * sk_inst[id].color.a;
+	o.color      = lerp(color, sk_inst[id].color, input.color.a) * sk_inst[id].color.a; //color * input.col * sk_inst[id].color * sk_inst[id].color.a;
 	o.color.rgb *= Lighting(o.normal);
 
 	return o;
