@@ -20,7 +20,9 @@ typedef struct anchor_system_t {
 	int32_t       priority;
 
 	bool32_t (*on_enable        )(void* context);
-	void     (*on_destroy_anchor)(void* context, anchor_t anchor, void *data);
+	bool32_t (*on_create        )(void* context, pose_t pose);
+	void     (*on_destroy_anchor)(void* context, anchor_t anchor, void* data);
+	void     (*on_clear_stored  )(void* context);
 } anchor_system_t;
 
 void           anchor_destroy        (anchor_t anchor);

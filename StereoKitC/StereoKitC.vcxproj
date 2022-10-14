@@ -184,7 +184,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="xr_backends\openxr_anchors.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
     <ClCompile Include="xr_backends\openxr_view.cpp" />
-    <ClCompile Include="xr_backends\simxr_anchors.cpp" />
+    <ClCompile Include="xr_backends\stage_anchor.cpp" />
+    <ClCompile Include="xr_backends\xr_backend_simxr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\anchor.h" />
@@ -274,7 +275,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="xr_backends\openxr_extensions.h" />
     <ClInclude Include="xr_backends\openxr_input.h" />
     <ClInclude Include="xr_backends\openxr_view.h" />
-    <ClInclude Include="xr_backends\simxr_anchors.h" />
+    <ClInclude Include="xr_backends\stage_anchor.h" />
+    <ClInclude Include="xr_backends\xr_backend_simxr.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>

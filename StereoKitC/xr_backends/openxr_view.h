@@ -14,6 +14,7 @@ namespace sk {
 bool openxr_views_create ();
 void openxr_views_destroy();
 void openxr_views_render (XrTime time);
+bool openxr_render_frame ();
 
 void xr_compositor_layers_clear();
 

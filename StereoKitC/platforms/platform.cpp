@@ -9,6 +9,7 @@
 #include "android.h"
 #include "web.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/xr_backend_simxr.h"
 
 #include "../libraries/sk_gpu.h"
 
@@ -143,7 +144,7 @@ bool platform_set_mode(display_mode_ mode) {
 		// Init OpenXR
 		if (result) {
 #if defined(SK_XR_OPENXR)
-			result = openxr_init ();
+			result = xr_backend_oxr_init ();
 #else
 			result = true;
 #endif
@@ -175,6 +176,10 @@ bool platform_set_mode(display_mode_ mode) {
 #elif defined(SK_OS_WEB)
 		result = web_start_flat    ();
 #endif
+
+		if (result) {
+			result = xr_backend_simxr_init();
+		}
 	}
 
 	return result;
@@ -199,7 +204,7 @@ void platform_step_begin() {
 #endif
 
 #if defined(SK_XR_OPENXR)
-		openxr_step_begin();
+		xr_backend_oxr_step_begin();
 #else
 #endif
 	} break;
@@ -215,6 +220,7 @@ void platform_step_begin() {
 #elif defined(SK_OS_WEB)
 		web_step_begin_flat    ();
 #endif
+		xr_backend_simxr_step_begin();
 	} break;
 	}
 	platform_utils_update();
@@ -227,7 +233,7 @@ void platform_step_end() {
 	case display_mode_none: break;
 	case display_mode_mixedreality:
 #if defined(SK_XR_OPENXR)
-		openxr_step_end();
+		xr_backend_oxr_step_end();
 #else
 #endif
 		break;
@@ -243,6 +249,7 @@ void platform_step_end() {
 #elif defined(SK_OS_WEB)
 		web_step_end_flat    ();
 #endif
+		xr_backend_simxr_step_end();
 	} break;
 	}
 }
@@ -254,11 +261,12 @@ void platform_stop_mode() {
 	case display_mode_none: break;
 	case display_mode_mixedreality:
 #if defined(SK_XR_OPENXR)
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 #else
 #endif
 		break;
 	case display_mode_flatscreen: {
+		xr_backend_simxr_shutdown();
 #if   defined(SK_OS_ANDROID)
 		android_stop_flat();
 #elif defined(SK_OS_LINUX)

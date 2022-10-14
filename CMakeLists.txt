@@ -322,7 +322,13 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_input.h
   StereoKitC/xr_backends/openxr_input.cpp
   StereoKitC/xr_backends/openxr_view.h
-  StereoKitC/xr_backends/openxr_view.cpp )
+  StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/openxr_anchors.h
+  StereoKitC/xr_backends/openxr_anchors.cpp
+  StereoKitC/xr_backends/stage_anchor.h
+  StereoKitC/xr_backends/stage_anchor.cpp
+  StereoKitC/xr_backends/xr_backend_simxr.h
+  StereoKitC/xr_backends/xr_backend_simxr.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h

@@ -1503,6 +1503,7 @@ typedef enum anchor_props_ {
 	anchor_props_sharable   = 6 << 0,
 	anchor_props_dimensions = 7 << 0,
 } anchor_properties_;
+SK_MakeFlag(anchor_props_);
 // Fallback Unstaged World Anchor: anchor_props_creatable
 // Stage Anchor: anchor_props_creatable | anchor_props_storable
 // HL2 World Anchor: anchor_props_creatable
@@ -1527,8 +1528,8 @@ SK_API void           anchor_set_id         (anchor_t anchor, const char* asset_
 SK_API const char*    anchor_get_id         (const anchor_t anchor);
 SK_API void           anchor_addref         (anchor_t anchor);
 SK_API void           anchor_release        (anchor_t anchor);
-SK_API anchor_t       anchor_create         (const char* name, pose_t pose);
-SK_API anchor_t       anchor_create_type    (anchor_type_id type, const char* name, pose_t pose);
+SK_API anchor_t       anchor_create         (pose_t pose);
+SK_API anchor_t       anchor_create_type    (anchor_type_id type, pose_t pose);
 SK_API anchor_type_   anchor_get_type       (const anchor_t anchor);
 SK_API anchor_type_id anchor_get_type_id    (const anchor_t anchor);
 SK_API anchor_props_  anchor_get_properties (const anchor_t anchor);
@@ -1543,6 +1544,8 @@ SK_API anchor_type_id anchors_type_count    ();
 SK_API anchor_type_t  anchors_type_get      (anchor_type_id id);
 SK_API bool32_t       anchors_type_enable   (anchor_type_id id);
 SK_API void           anchors_set_default   (anchor_type_id id);
+SK_API anchor_type_id anchors_get_default   (anchor_type_id id);
+SK_API void           anchors_clear_stored  (anchor_type_id id);
 
 ///////////////////////////////////////////
 

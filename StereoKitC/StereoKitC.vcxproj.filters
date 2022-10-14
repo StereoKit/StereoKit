@@ -208,7 +208,10 @@
     <ClCompile Include="xr_backends\openxr_anchors.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\simxr_anchors.cpp">
+    <ClCompile Include="xr_backends\stage_anchor.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\xr_backend_simxr.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
   </ItemGroup>
@@ -478,7 +481,10 @@
     <ClInclude Include="xr_backends\openxr_anchors.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\simxr_anchors.h">
+    <ClInclude Include="xr_backends\stage_anchor.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\xr_backend_simxr.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>

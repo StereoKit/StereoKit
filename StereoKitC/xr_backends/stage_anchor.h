@@ -7,6 +7,7 @@
 
 namespace sk {
 
-void simxr_anchors_init();
+void stage_anchor_init();
+void stage_anchor_shutdown();
 
 } // namespace sk

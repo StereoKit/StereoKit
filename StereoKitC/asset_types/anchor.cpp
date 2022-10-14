@@ -21,8 +21,8 @@ anchor_type_id             anch_default_type = -1;
 anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, void* data) {
 	anchor_t result = (anchor_t)assets_allocate(asset_type_anchor);
 	result->source_system = system_id;
-	result->pose = pose;
-	result->data = data;
+	result->pose          = pose;
+	result->data          = data;
 	anch_list.add(result);
 
 	anchor_mark_dirty(result);
@@ -187,6 +187,23 @@ void anchors_set_default(anchor_type_id id) {
 		anch_default_type = id;
 	} else {
 		log_errf("Default anchor type must be creatable!");
+	}
+}
+
+///////////////////////////////////////////
+
+anchor_type_id anchors_get_default(anchor_type_id id) {
+	return anch_default_type;
+}
+
+///////////////////////////////////////////
+
+void anchors_clear_stored(anchor_type_id id) {
+	if (anch_systems[id].info.properties & anchor_props_storable) {
+		if (anch_systems[id].on_clear_stored)
+			anch_systems[id].on_clear_stored(anch_systems[id].context);
+	} else {
+		log_errf("Anchor type must be storable!");
 	}
 }
 

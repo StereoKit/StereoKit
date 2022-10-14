@@ -9,6 +9,8 @@
 #include "openxr_extensions.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
+#include "openxr_anchors.h"
+#include "stage_anchor.h"
 
 #include "../sk_memory.h"
 #include "../log.h"
@@ -82,6 +84,9 @@ XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
+
+void openxr_poll_events ();
+void openxr_poll_actions();
 
 XrReferenceSpaceType openxr_preferred_space ();
 void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
@@ -194,7 +199,7 @@ XrTime openxr_acquire_time() {
 
 ///////////////////////////////////////////
 
-bool openxr_init() {
+bool xr_backend_oxr_init() {
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
 	xrGetInstanceProcAddr(
@@ -255,7 +260,7 @@ bool openxr_init() {
 		const char *err_name = openxr_string(result);
 
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -302,7 +307,7 @@ bool openxr_init() {
 	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_inform, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -451,7 +456,7 @@ bool openxr_init() {
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -465,7 +470,7 @@ bool openxr_init() {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -476,7 +481,7 @@ bool openxr_init() {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -490,7 +495,7 @@ bool openxr_init() {
 	}
 
 	if (!openxr_views_create() || !oxri_init()) {
-		openxr_shutdown();
+		xr_backend_oxr_shutdown();
 		return false;
 	}
 
@@ -514,6 +519,9 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	stage_anchor_init();
+	oxr_anchor_msft_init();
 
 	return true;
 }
@@ -594,8 +602,11 @@ XrReferenceSpaceType openxr_preferred_space() {
 
 ///////////////////////////////////////////
 
-void openxr_shutdown() {
+void xr_backend_oxr_shutdown() {
 	if (xr_instance) {
+		oxr_anchor_msft_shutdown();
+		stage_anchor_shutdown();
+
 		// Shut down the input!
 		oxri_shutdown();
 
@@ -619,7 +630,7 @@ void openxr_shutdown() {
 
 ///////////////////////////////////////////
 
-void openxr_step_begin() {
+void xr_backend_oxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
@@ -627,7 +638,7 @@ void openxr_step_begin() {
 
 ///////////////////////////////////////////
 
-void openxr_step_end() {
+void xr_backend_oxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 

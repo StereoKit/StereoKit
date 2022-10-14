@@ -170,6 +170,13 @@ namespace sk {
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSpatialAnchorStoreConnectionMSFT)  \
+	_(xrDestroySpatialAnchorStoreConnectionMSFT) \
+	_(xrPersistSpatialAnchorMSFT)                \
+	_(xrEnumeratePersistedSpatialAnchorNamesMSFT)\
+	_(xrCreateSpatialAnchorFromPersistedNameMSFT)\
+	_(xrUnpersistSpatialAnchorMSFT)              \
+	_(xrClearSpatialAnchorStoreMSFT)             \
 	_(xrCreateSceneObserverMSFT)                 \
 	_(xrDestroySceneObserverMSFT)                \
 	_(xrCreateSceneMSFT)                         \
