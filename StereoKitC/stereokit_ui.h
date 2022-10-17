@@ -26,6 +26,11 @@ typedef enum ui_confirm_ {
 	ui_confirm_variable_pinch
 } ui_confirm_;
 
+typedef enum ui_notify_ {
+	ui_notify_change,
+	ui_notify_finalize,
+} ui_notify_;
+
 typedef enum ui_vis_ {
 	ui_vis_none = 0,
 	ui_vis_default,
@@ -41,6 +46,9 @@ typedef enum ui_vis_ {
 	ui_vis_slider_line,
 	ui_vis_slider_push,
 	ui_vis_slider_pinch,
+	ui_vis_button_round,
+	ui_vis_panel,
+	ui_vis_carat,
 	ui_vis_max,
 } ui_vis_;
 
@@ -142,10 +150,10 @@ SK_API bool32_t      ui_button_round_at_16(const char16_t *text, sprite_t image,
 SK_API bool32_t      ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_toggle_at_16      (const char16_t *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
 SK_API void          ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t      ui_hslider_at        (const char     *id,   sk_ref(float) value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t      ui_hslider_at_16     (const char16_t *id,   sk_ref(float) value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t      ui_hslider_at_f64    (const char     *id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t      ui_hslider_at_f64_16 (const char16_t *id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push));
+SK_API bool32_t      ui_hslider_at        (const char     *id,   sk_ref(float)  value, float min,  float max,  float step,  vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t      ui_hslider_at_16     (const char16_t *id,   sk_ref(float)  value, float min,  float max,  float step,  vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t      ui_hslider_at_f64    (const char     *id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t      ui_hslider_at_f64_16 (const char16_t *id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 
 SK_API void     ui_hseparator     ();
 SK_API void     ui_label          (const char     *text, bool32_t use_padding sk_default(true));
@@ -174,10 +182,10 @@ SK_API void     ui_model          (model_t model, vec2 ui_size, float model_scal
 SK_API bool32_t ui_input          (const char     *id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API bool32_t ui_input_16       (const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API void     ui_progress_bar   (float percent, float width sk_default(0));
-SK_API bool32_t ui_hslider        (const char     *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t ui_hslider_16     (const char16_t *id, sk_ref(float) value, float min, float max, float step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t ui_hslider_f64    (const char     *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
-SK_API bool32_t ui_hslider_f64_16 (const char16_t *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push));
+SK_API bool32_t ui_hslider        (const char     *id, sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_16     (const char16_t *id, sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_f64    (const char     *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_f64_16 (const char16_t *id, sk_ref(double) value, double min, double max, double step sk_default(0), float width sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_handle_begin   (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API bool32_t ui_handle_begin_16(const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API void     ui_handle_end     ();

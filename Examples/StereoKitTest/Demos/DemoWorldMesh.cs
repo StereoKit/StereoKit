@@ -2,7 +2,10 @@
 
 class DemoWorldMesh : ITest
 {
-	Pose     windowPose        = new Pose(Vec3.Forward, Quat.LookDir(-Vec3.Forward));
+	string title       = "World Mesh";
+	string description = "";
+
+	Pose     windowPose        = Demo.contentPose.Pose;
 	Material occlusionMaterial;
 	Material oldMaterial;
 	bool     settingsWireframe = true;
@@ -62,5 +65,7 @@ class DemoWorldMesh : ITest
 			if (World.Raycast(fingerRay, out Ray at))
 				Mesh.Sphere.Draw(Material.Default, Matrix.TS(at.position, 0.03f), new Color(1, 0, 0));
 		}
+
+		Demo.ShowSummary(title, description);
 	}
 }

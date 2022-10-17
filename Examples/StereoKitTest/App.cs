@@ -79,6 +79,11 @@ class App
 
 		if (!Tests.IsTesting)
 			SK.AddStepper(new RenderCamera(new Pose(0.3f, 0, .5f, Quat.FromAngles(0,-90,0)), 1000, 1000));
+
+		if (Tests.IsTesting)
+		{
+			UI.EnableFarInteract = false;
+		}
 	}
 
 	//////////////////////

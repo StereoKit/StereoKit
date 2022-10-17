@@ -553,9 +553,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
-			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
@@ -574,9 +576,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -599,9 +603,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -624,9 +630,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.

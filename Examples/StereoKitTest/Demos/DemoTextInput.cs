@@ -2,6 +2,9 @@
 
 class DemoTextInput : ITest
 {
+	string title       = "Text Input";
+	string description = "";
+
 	Pose windowPose = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
 	string text    = "Edit me";
 	string textUri = "https://stereokit.net";
@@ -44,7 +47,7 @@ class DemoTextInput : ITest
 			Platform.KeyboardShow(openKeyboard);
 
 		UI.WindowEnd();
+
+		Demo.ShowSummary(title, description);
 	}
-
-
 }

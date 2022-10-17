@@ -1,12 +1,12 @@
 ﻿using StereoKit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 class DemoLineRender : ITest
 {
+	string title       = "Line Render";
+	string description = "";
+
 	struct Body
 	{
 		public Vec3    position;
@@ -18,7 +18,7 @@ class DemoLineRender : ITest
 	}
 
 	int    trailId = 0;
-	Vec3   center = new Vec3(0.4f,0,-0.4f);
+	Vec3   center  = Demo.contentPose.Translation;
 	Body[] bodies;
 
 	public void Initialize()
@@ -88,5 +88,7 @@ class DemoLineRender : ITest
 			Lines.Add(bodies[i].trail.ToArray());
 		}
 		trailId = (trailId + 1) % bodies.Length;
+
+		Demo.ShowSummary(title, description);
 	}
 }

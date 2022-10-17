@@ -2,6 +2,9 @@
 
 class DemoText : ITest
 {
+	string title       = "Text";
+	string description = "";
+
 	TextAlign alignX      = TextAlign.XLeft;
 	TextAlign alignY      = TextAlign.YTop;
 	Pose      alignWindow = new Pose(0.4f, 0, 0, Quat.LookDir(-1, 0, 1));
@@ -29,7 +32,7 @@ class DemoText : ITest
 
 	public void Update()
 	{
-		Hierarchy.Push(Matrix.T(0, 0, -0.3f));
+		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 
 		UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * U.cm);
 		Vec2 size = new Vec2(5 * U.cm, UI.LineHeight);
@@ -89,5 +92,7 @@ class DemoText : ITest
 		Hierarchy.Pop();
 
 		Hierarchy.Pop();
+
+		Demo.ShowSummary(title, description);
 	}
 }

@@ -2,6 +2,9 @@
 
 class DemoRayMesh : ITest
 {
+	string title       = "Ray -> Mesh";
+	string description = "";
+
 	/// :CodeSample: Ray.Intersect Mesh.Intersect
 	/// ### Ray Mesh Intersection
 	/// Here's an example of casting a Ray at a mesh someplace in world space,
@@ -15,7 +18,7 @@ class DemoRayMesh : ITest
 	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
 	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
 
-	public void Update()
+	public void StepRayMesh()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
 		UI.Handle("Box",  ref boxPose,  boxMesh.Bounds);
@@ -45,11 +48,18 @@ class DemoRayMesh : ITest
 				Lines.Add(cPt, aPt, new Color32(0,255,0,255), 0.005f);
 			}
 		}
+
 	}
 	/// :End:
 
 	public void Initialize() {
 		Tests.Screenshot("RayMeshIntersect.jpg", 600, 600, 90, new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
+	}
+
+	public void Update()
+	{
+		StepRayMesh();
+		Demo.ShowSummary(title, description);
 	}
 
 	public void Shutdown  () { }
