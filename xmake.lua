@@ -179,8 +179,8 @@ target("StereoKitC")
         os.cp(build_folder.."*.sym", dist_folder)
         -- Oculus' pre-built OpenXR loader
         if is_plat("android") and has_config("oculus-openxr") then
-            os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder.."xr_oculus/")
-            os.cp(target:pkgs()["openxr_loader"]:get("libfiles"), dist_folder.."xr_standard/")
+            os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder.."oculus/")
+            os.cp(target:pkgs()["openxr_loader"]:get("libfiles"), dist_folder.."standard/")
         end
 
         os.cp("$(projectdir)/StereoKitC/stereokit.h",    "$(projectdir)/bin/distribute/include/")

@@ -5,28 +5,22 @@
 		<None Remove="$(SKAssetFolder)/**"/>
 
 		<SKContent Include="$(SKAssetFolder)/**">
-			<Link>$(SKAssetDestination)/%(RecursiveDir)%(Filename)%(Extension)</Link>
-			<Visible>false</Visible>
-		</SKContent>
-
-		<AndroidAsset Include="$(SKAssetFolder)/**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<Visible>false</Visible>
-		</AndroidAsset>
+		</SKContent>
 	</ItemGroup>
 
-	<Target Name="StereoKitCopy" Condition="'$(SKCopyAssets)'=='True'" AfterTargets="StereoKitProperties" BeforeTargets="AssignTargetPaths">
-		<Message 
-			Condition  = "'$(UseMaui)' != 'true' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
-			Importance = "high"
-			Text       = "[StereoKit NuGet] Copying assets folder $SKAssetFolder:$(SKAssetFolder)"/>
-		
-		<Copy
-			Condition          = "'$(UseMaui)' != 'true' or ('$(UseMaui)' == 'true' and ('$(SKBuildPlatform)'=='Desktop' or '$(SKBuildPlatform)'=='CoreWindows'))"
-			SourceFiles        = "@(SKContent)"
-			DestinationFiles   = "$(OutDir)/%(SKContent.Link)"
-			SkipUnchangedFiles = "true">
-		</Copy>
+	<Target Name="StereoKitCopy" AfterTargets="StereoKitProperties" BeforeTargets="AssignTargetPaths">
+		<ItemGroup>
+			<Content Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>$(SKAssetDestination)/%(SKContent.Link)</Link>
+			</Content>
+
+			<AndroidAsset Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>%(SKContent.Link)</Link>
+			</AndroidAsset>
+		</ItemGroup>
 	</Target>
 </Project>

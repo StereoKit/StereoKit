@@ -31,19 +31,19 @@
 
 	<!-- This target builds all SKShader items. This is skipped for Library
 	     type projects. -->
-	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths">
+	<Target Name="SKShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="StereoKitProperties">
+
 		<!-- For debug builds, include shader debug info -->
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
 			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
-			<SKOutDir Condition="'$(SKOutDir)'==''">$(SKAssetDestination)</SKOutDir>
 		</PropertyGroup>
 		
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../Tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../Tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKOutDir)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
-				<Outputs>$(IntermediateOutputPath)$(SKOutDir)/%(SKShader.RelFile).sks</Outputs>
+				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../Tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../Tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
 		</ItemGroup>
@@ -60,17 +60,11 @@
 	</Target>
 
 	<!-- Ensure shader binaries get properly included in the build process -->
-	<Target Name="SKShaderCopy" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="SKShaderBuild;StereoKitProperties">
+	<Target Name="SKShaderCopy" BeforeTargets="StereoKitCopy" DependsOnTargets="SKShaderBuild">
 		<ItemGroup>
-			<Content Condition="'$(SKBuildPlatform)'!='Android'" Include="%(SKShader.Outputs)">
-				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-				<Link>$(SKOutDir)/%(SKShader.RelativeName)</Link>
-			</Content>
-			
-			<AndroidAsset Condition="'$(SKBuildPlatform)'=='Android'" Include="%(SKShader.Outputs)">
-				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<SKContent Include="$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks">
 				<Link>%(SKShader.RelativeName)</Link>
-			</AndroidAsset>
+			</SKContent>
 		</ItemGroup>
 	</Target>
 </Project>

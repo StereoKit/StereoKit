@@ -58,7 +58,7 @@
 	<Target Name="StereoKitAndroid" Condition="'$(SKBuildPlatform)'=='Android'" AfterTargets="StereoKitProperties" BeforeTargets="BeforeBuild">
 		<ItemGroup>
 			<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libStereoKitC.so"/>
-			<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/xr_$(SKOpenXRLoader.ToLower())/libopenxr_loader.so" />
+			<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so" />
 		</ItemGroup>
 	</Target>
 
