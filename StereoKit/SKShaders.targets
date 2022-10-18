@@ -62,7 +62,7 @@
 	<!-- Ensure shader binaries get properly included in the build process -->
 	<Target Name="SKShaderCopy" BeforeTargets="StereoKitCopy" DependsOnTargets="SKShaderBuild">
 		<ItemGroup>
-			<SKContent Include="$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks">
+			<SKContent Condition="'%(SKShader.RelFile)'!=''" Include="$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks">
 				<Link>%(SKShader.RelativeName)</Link>
 			</SKContent>
 		</ItemGroup>
