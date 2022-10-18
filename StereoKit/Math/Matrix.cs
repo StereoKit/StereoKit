@@ -57,7 +57,7 @@ namespace StereoKit
 		/// <summary>Multiplies two matrices together! This is a great way to
 		/// combine transform operations. Note that StereoKit's matrices are
 		/// row-major, and multiplication order is important! To translate,
-		/// then scale, multiple in order of 'translate * scale'.</summary>
+		/// then scale, multiply in order of 'translate * scale'.</summary>
 		/// <param name="a">First Matrix.</param>
 		/// <param name="b">Second Matrix.</param>
 		/// <returns>Result of matrix multiplication.</returns>
