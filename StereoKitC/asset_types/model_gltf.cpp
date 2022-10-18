@@ -880,6 +880,7 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		if (data->nodes[i].skin == nullptr) continue;
 		cgltf_skin *skin = data->nodes[i].skin;
+    cgltf_node *node = &data->nodes[i];
 
     // Each GLTF skin node has an sk_mesh node for each of its primitives.
     for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
