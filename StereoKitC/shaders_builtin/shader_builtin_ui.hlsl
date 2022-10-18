@@ -2,8 +2,10 @@
 
 //--name = sk/default_ui
 //--color:color = 1, 1, 1, 1
+//--ui_tint     = 0
 //--diffuse     = white
 float4       color;
+bool         ui_tint;
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -32,7 +34,8 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
 	o.uv         = input.uv;
-	o.color      = lerp(color, sk_inst[id].color, input.color.a) * sk_inst[id].color.a; //color * input.col * sk_inst[id].color * sk_inst[id].color.a;
+	o.color      = ui_tint == true ? lerp(color, sk_inst[id].color, input.color.a) : (color * input.color * sk_inst[id].color);
+	o.color      = o.color * sk_inst[id].color.a;
 	o.color.rgb *= Lighting(o.normal);
 
 	return o;
