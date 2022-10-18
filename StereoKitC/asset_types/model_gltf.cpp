@@ -43,7 +43,7 @@ void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
 
 ///////////////////////////////////////////
 
-bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
+bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const char *filename) {
 	if (node->skin == nullptr)
 		return false;
 	if (node->mesh->primitives_count > 1) {
@@ -52,7 +52,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 	}
 	
 	cgltf_mesh      *m = node->mesh;
-	cgltf_primitive *p = &m->primitives[0];
+	cgltf_primitive *p = &m->primitives[primitive_id];
 
 	uint16_t *bone_ids   = nullptr;
 	int32_t   bone_id_ct = 0;
@@ -802,15 +802,14 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader, warnings);
 		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, node_transform, mesh, material);
+    if (node->skin) 
+      gltf_parseskin(model_node_get_mesh(model, new_node), node, (int)p, filename);
 		if (node_id == -1)
 			node_id = new_node;
 
 		mesh_release    (mesh);
 		material_release(material);
 	}
-
-	if (node->skin && node_id != -1)
-		gltf_parseskin(model_node_get_mesh(model, node_id), node, filename);
 
 	if (node_id == -1) {
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
@@ -882,14 +881,17 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		if (data->nodes[i].skin == nullptr) continue;
 		cgltf_skin *skin = data->nodes[i].skin;
 
-		anim_skeleton_t skel = {};
-		skel.bone_count       = (int32_t)skin->joints_count;
-		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
-		skel.skin_node        = *node_map.get(&data->nodes[i]);
-		for (int32_t b = 0; b < skel.bone_count; b++) {
-			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
-		}
-		model->anim_data.skeletons.add(skel);
+    // Each GLTF skin node has an sk_mesh node for each of its primitives.
+    for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+      anim_skeleton_t skel = {};
+      skel.bone_count       = (int32_t)skin->joints_count;
+      skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
+      skel.skin_node        = *node_map.get(&data->nodes[i]) + (int)p;
+      for (int32_t b = 0; b < skel.bone_count; b++) {
+        skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+      }
+      model->anim_data.skeletons.add(skel);
+    }
 	}
 
 	for (int32_t i = 0; i < warnings.count; i++) {
