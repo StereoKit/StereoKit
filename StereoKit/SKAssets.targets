@@ -1,23 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-	<ItemGroup Condition="'$(SKCopyAssets)'=='True'">
-		<None Remove="$(SKAssetFolder)/**"/>
-
-		<SKContent Include="$(SKAssetFolder)/**">
-			<Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-			<Visible>false</Visible>
-		</SKContent>
-	</ItemGroup>
-
-	<Target Name="StereoKitCopy" AfterTargets="StereoKitProperties" BeforeTargets="AssignTargetPaths">
+	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_Properties" BeforeTargets="AssignTargetPaths">
+		<ItemGroup Condition="'$(SKCopyAssets)'=='True'">
+			<SKContent Include="$(SKAssetFolder)/**">
+				<Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+				<Visible>false</Visible>
+			</SKContent>
+		</ItemGroup>
+		
 		<ItemGroup>
-			<Content Include="%(SKContent.Identity)">
+			<MauiAsset Condition="'$(UseMaui)'=='true'">
+				<LogicalName>$(SKAssetDestination)/%(SKContent.Link)</LogicalName>
+			</MauiAsset>
+
+			<Content Condition="'$(SKBuildPlatform)'!='Android' and '$(UseMaui)'!='true'" Include="%(SKContent.Identity)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<Link>$(SKAssetDestination)/%(SKContent.Link)</Link>
 			</Content>
 
-			<AndroidAsset Include="%(SKContent.Identity)">
+			<AndroidAsset Condition="'$(SKBuildPlatform)'=='Android' and '$(UseMaui)'!='true'" Include="%(SKContent.Identity)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<Link>%(SKContent.Link)</Link>
 			</AndroidAsset>
