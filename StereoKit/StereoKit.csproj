@@ -49,8 +49,8 @@
 		<!-- Android Libraries -->
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so"             PackagePath="runtimes\android-arm64\native" />
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\StereoKitC.sym"               PackagePath="runtimes\android-arm64\native" />
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\oculus\libopenxr_loader.so"   PackagePath="runtimes\android-arm64\native\oculus" />
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\standard\libopenxr_loader.so" PackagePath="runtimes\android-arm64\native\standard" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\oculus\libopenxr_loader.so"   PackagePath="android_openxr_loaders\oculus" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\standard\libopenxr_loader.so" PackagePath="android_openxr_loaders\standard" />
 
 		<!-- Linux Libraries -->
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so"   PackagePath="runtimes\linux-x64\native\" />

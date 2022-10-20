@@ -7,7 +7,7 @@
 		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Standard</SKOpenXRLoader>
 	</PropertyGroup>
 	
-	<Target Name="StereoKitProperties" BeforeTargets="BeforeBuild">
+	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">
 		<PropertyGroup>
 			<!--These variables are not populated outside of Targets-->
 			<SKBuildPlatform                                                                                       >Desktop</SKBuildPlatform>

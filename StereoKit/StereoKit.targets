@@ -6,9 +6,9 @@
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="AfterBuild" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
+	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
-		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $SKOpenXRLoader:$(SKOpenXRLoader) version of the Android OpenXR loader."/>
+		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) ($SKOpenXRLoader) version of the Android OpenXR loader."/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
@@ -55,11 +55,13 @@
 	</Target>
 	
 	<!-- Link libraries directly in Xamarin and Maui Android projects. -->
-	<Target Name="StereoKitAndroid" Condition="'$(SKBuildPlatform)'=='Android'" AfterTargets="StereoKitProperties" BeforeTargets="BeforeBuild">
-		<ItemGroup>
-			<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/libStereoKitC.so"/>
-			<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64/native/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so" />
-		</ItemGroup>
-	</Target>
+	<ItemGroup>
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../runtimes/android-arm64/native/libStereoKitC.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+	</ItemGroup>
 
 </Project>

@@ -15,7 +15,7 @@
 		<MauiPlatformSpecificFolder Include="$(NetCoreProjectFolder)" TargetPlatformIdentifier="" />
 	</ItemGroup>
 	
-	<Target Name="SKMauiCore" BeforeTargets="_MauiRemovePlatformCompileItems" Condition="'$(SKBuildPlatform)'=='Desktop' and '$(SingleProject)' == 'true' and '$(UseMaui)' == 'true' and ('$(SKNetCoreMultiTarget)' == 'true' or '$(SKNetCoreMultiTarget)' == '')">
+	<Target Name="StereoKit_MauiCore" BeforeTargets="_MauiRemovePlatformCompileItems" Condition="'$(SKBuildPlatform)'=='Desktop' and '$(SingleProject)' == 'true' and '$(UseMaui)' == 'true' and ('$(SKNetCoreMultiTarget)' == 'true' or '$(SKNetCoreMultiTarget)' == '')">
 		<Message Importance="high" Text="[StereoKit NuGet] Adding .NET Core multi-target support."/>
 		<ItemGroup>
 			<!-- This 'Include' property is the magical key to the kingdom!!
