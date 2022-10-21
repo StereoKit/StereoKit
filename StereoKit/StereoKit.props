@@ -5,6 +5,7 @@
 		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
 		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
 		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Standard</SKOpenXRLoader>
+		<SKShowDebugVars    Condition="'$(SKShowDebugVars)'    == ''">false</SKShowDebugVars>
 	</PropertyGroup>
 	
 	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">
@@ -21,15 +22,16 @@
 			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
 		</PropertyGroup>
 
-		<Message Importance="high" Text="[StereoKit NuGet] SKAssetFolder              : $(SKAssetFolder)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] TargetFramework            : $(TargetFramework)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] TargetFrameworkIdentifier  : $(TargetFrameworkIdentifier)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] GetTargetPlatformIdentifier: $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKBuildPlatform            : $(SKBuildPlatform)"/>
-		<Message Importance="high" Text="[StereoKit NuGet] SKBuildNET                 : $(SKBuildNET)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetFolder              : $(SKAssetFolder)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFramework            : $(TargetFramework)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFrameworkIdentifier  : $(TargetFrameworkIdentifier)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] GetTargetPlatformIdentifier: $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKBuildPlatform            : $(SKBuildPlatform)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKBuildNET                 : $(SKBuildNET)"/>
 	</Target>
 
 </Project>
