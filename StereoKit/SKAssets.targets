@@ -10,23 +10,25 @@
 		</ItemGroup>
 	</Target>
 
-	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_Properties" BeforeTargets="AssignTargetPaths">
+	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind" BeforeTargets="AssignTargetPaths">
 		<!--Different frameworks use different methods for adding content to
 		    the final application.-->
 		<ItemGroup>
 			<!--MAUI-->
 			<MauiAsset Condition="'$(UseMaui)'=='true'" Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<LogicalName>%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</LogicalName>
+				<Link>$(SKAssetDestination)/%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
 			</MauiAsset>
 
 			<!--Xamarin-->
-			<AndroidAsset Condition="'$(SKBuildPlatform)'=='Android' and '$(UseMaui)'!='true'" Include="%(SKContent.Identity)">
+			<AndroidAsset Condition="'$(UseMaui)'!='true' and '$(SKBuildPlatform)'=='Android'" Include="%(SKContent.Identity)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<Link>%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
 			</AndroidAsset>
 
 			<!--Everyone else-->
-			<Content Condition="'$(SKBuildPlatform)'!='Android' and '$(UseMaui)'!='true'" Include="%(SKContent.Identity)">
+			<Content Condition="'$(UseMaui)'!='true' and '$(SKBuildPlatform)'!='Android'" Include="%(SKContent.Identity)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 				<Link>$(SKAssetDestination)/%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
 			</Content>
