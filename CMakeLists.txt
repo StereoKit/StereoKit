@@ -123,7 +123,7 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
@@ -158,6 +158,7 @@ if (UNIX)
 elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
+    Comdlg32
     WindowsApp) # Required for ISAC spatial audio code
 endif()
 
