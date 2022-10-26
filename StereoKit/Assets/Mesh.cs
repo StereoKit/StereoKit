@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -321,6 +321,48 @@ namespace StereoKit
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0)
 			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions));
+
+		/// <summary>Generates a circle on the XZ axis facing up that is
+		/// optionally subdivided, pre-sized to the given diameter. UV
+		/// coordinates corespond to a unit circle centered at 0.5, 0.5! That is, 
+		/// the right-most point on the circle has UV coordinates 1, 0.5 and the
+		/// top-most point has UV coordinates 0.5, 1.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
+		/// <param name="diameter">The diameter of the circle in meters, or 
+		/// 2*radius. This is the full length from one side to the other.
+		/// </param>
+		/// <param name="subdivisions">How many additional triangles compose
+		/// the circle? More is smoother, but less performant.</param>
+		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
+		public static Mesh GenerateCircle(float diameter, int subdivisions = 16)
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, subdivisions));
+
+		/// <summary>Generates a circle with an arbitrary orientation that is
+		/// optionally subdivided, pre-sized to the given diameter. UV 
+		/// coordinates start at the top left indicated with 
+		/// 'planeTopDirection' and corespond to a unit circle centered at 
+		/// 0.5, 0.5.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
+		/// <param name="diameter">The diameter of the circle in meters, or 
+		/// 2*radius. This is the full length from one side to the other.
+		/// </param>
+		/// <param name="planeNormal">What is the normal of the surface this
+		/// circle is generated on?</param>
+		/// <param name="planeTopDirection">A normal defines the plane, but 
+		/// this is technically a rectangle on the 
+		/// plane. So which direction is up? It's important for UVs, but 
+		/// doesn't need to be exact. This function takes the planeNormal as
+		/// law, and uses this vector to find the right and up vectors via
+		/// cross-products.</param>
+		/// <param name="subdivisions">How many additional triangles compose
+		/// the circle? More is smoother, but less performant.</param>
+		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
+		public static Mesh GenerateCircle(float diameter, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 16)
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, subdivisions));
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,

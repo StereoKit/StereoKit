@@ -681,8 +681,8 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t divisions) {
-	vind_t spokes = maxi(0, (int32_t)divisions) + 3;
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+	vind_t spokes = maxi(0, (int32_t)subdivisions) + 3;
 	mesh_t result = mesh_create();
 
 	int vert_count = spokes;
@@ -704,7 +704,7 @@ mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_directi
 
 		pt->norm = plane_normal;
 		pt->pos  = radius * ((right * xp) + (up * yp));
-		pt->uv   = {xp,yp};
+		pt->uv   = {((xp+1)/2),((yp+1)/2)};
 		pt->col  = {255,255,255,255};
 	}
 

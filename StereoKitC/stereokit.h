@@ -703,7 +703,7 @@ SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ra
 SK_API bool32_t    mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c);
 
 SK_API mesh_t      mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0));
-SK_API mesh_t      mesh_gen_circle      (float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t divisions sk_default(0));
+SK_API mesh_t      mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(16));
 SK_API mesh_t      mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
 SK_API mesh_t      mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
 SK_API mesh_t      mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
