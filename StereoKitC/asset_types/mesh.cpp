@@ -681,6 +681,58 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 ///////////////////////////////////////////
 
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t divisions) {
+	vind_t spokes = maxi(0, (int32_t)divisions) + 3;
+	mesh_t result = mesh_create();
+
+	int vert_count = spokes;
+	int ind_count  = (spokes - 2) * 3;
+	vert_t* verts  = sk_malloc_t(vert_t, vert_count);
+	vind_t* inds   = sk_malloc_t(vind_t, ind_count);
+
+	vec3 right = vec3_cross(plane_top_direction, plane_normal);
+	vec3 up    = vec3_cross(right, plane_normal);
+
+	// Make a circle of vertices
+	for (vind_t i = 0; i < spokes; i++) {
+		float angle = i * (M_PI*2 / spokes);
+
+		vert_t *pt   = &verts[i];
+		float radius = diameter / 2;
+		float xp     = cosf(angle);
+		float yp     = sinf(angle);
+
+		pt->norm = plane_normal;
+		pt->pos  = radius * ((right * xp) + (up * yp));
+		pt->uv   = {xp,yp};
+		pt->col  = {255,255,255,255};
+	}
+
+	// No vertex in the center, so we're adding a strip of triangles
+	// across the circle instead
+	for (vind_t i = 0; i < spokes - 2; i++) {
+		uint32_t half = i / 2;
+		if (i%2 == 0) { // even
+			inds[i*3+2] = (spokes - half) % spokes;
+			inds[i*3+1] = half + 1;
+			inds[i*3  ] = (spokes - 1) - half;
+		}
+		else { // odd
+			inds[i*3  ] = half + 1;
+			inds[i*3+1] = spokes - (half + 1);
+			inds[i*3+2] = half + 2;
+		}
+	}
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
 mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
