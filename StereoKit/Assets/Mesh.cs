@@ -280,7 +280,7 @@ namespace StereoKit
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
-		/// coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
+		/// coordinates start at 0,0 at the -X,-Z corner, and go to 1,1 at the
 		/// +X,+Z corner!
 		/// 
 		/// NOTE: This generates a completely new Mesh asset on the GPU, and
