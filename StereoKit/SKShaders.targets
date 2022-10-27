@@ -31,14 +31,14 @@
 
 	<!-- This target builds all SKShader items. This is skipped for Library
 	     type projects. -->
-	<Target Name="StereoKit_ShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" DependsOnTargets="StereoKit_Properties">
+	<Target Name="StereoKit_ShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" AfterTargets="StereoKit_Properties">
 
 		<!-- For debug builds, include shader debug info -->
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
 			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
 		</PropertyGroup>
-		
+
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
@@ -60,7 +60,7 @@
 	</Target>
 
 	<!-- Ensure shader binaries get properly included in the build process -->
-	<Target Name="StereoKit_ShaderCopy" BeforeTargets="StereoKit_ContentCopy" DependsOnTargets="StereoKit_ShaderBuild">
+	<Target Name="StereoKit_ShaderCopy" BeforeTargets="StereoKit_ContentCopy" AfterTargets="StereoKit_ShaderBuild">
 		<ItemGroup>
 			<SKContent Condition="'%(SKShader.RelFile)'!=''" Include="$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks">
 				<Link>%(SKShader.RelativeName)</Link>
