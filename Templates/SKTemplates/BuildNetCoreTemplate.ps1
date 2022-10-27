@@ -60,6 +60,6 @@ Build `
     -replaceArray [System.Collections.ArrayList]@( `
         'SKTemplate_Maui',                      '$safeprojectname$',`
         '2C92FB1D-FDD8-4151-9291-8F1118FCF501', '$guid1$',`
-        'CN=User Name',                         'CN=$username$')
+        'User_Name',                            '$username$')
 
 Pop-Location

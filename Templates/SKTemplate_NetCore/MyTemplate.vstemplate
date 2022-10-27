@@ -1,7 +1,7 @@
 <VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
   <TemplateData>
     <Name>StereoKit .Net Core</Name>
-    <Description>A starter template for Mixed Reality desktop VR projects using StereoKit and the .Net Core framework!</Description>
+    <Description>A starter template for Mixed Reality desktop VR projects using StereoKit and .Net Core! Super fast iteration times, and great for Windows and Linux based headsets.</Description>
     <ProjectType>CSharp</ProjectType>
     <ProjectSubType>
     </ProjectSubType>
@@ -13,7 +13,7 @@
     <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
     <CreateInPlace>true</CreateInPlace>
     <LanguageTag>csharp</LanguageTag>
-    <PlatformTag>windows</PlatformTag>
+    <PlatformTag>Windows,Linux</PlatformTag>
     <ProjectTypeTag>desktop</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <PreviewImage>__PreviewImage.png</PreviewImage>
