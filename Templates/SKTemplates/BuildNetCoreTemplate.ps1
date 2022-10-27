@@ -1,57 +1,65 @@
 Param([string]$folder)
 
-# Replace names in the NetCore project
-$from = 'SKTemplate_NetCore_Name'
-$to   = '$safeprojectname$'
+function Build {
+    param($srcFolder, $dstFolder, $dstZip, $replaceArray)
 
-$project = 'SKTemplate_NetCore\'
-$out     = $folder+'SKTemplate_NetCore\templatized\'
-New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
-Get-ChildItem ($folder+$project+"*.*") | 
-Foreach-Object {
-    ((Get-Content -path $_.FullName -Raw) -replace $from,$to) | Set-Content -Path ($out+$_.Name)
+    # Ensure the destination folder exists and is empty
+    New-Item -Path $dstFolder -ItemType "directory" -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force $dstFolder
+
+    Get-ChildItem "$srcFolder*.*" -Recurse | 
+    Foreach-Object {
+        # Skip any pre-built content
+        if ($_.FullName.Contains('\bin\') -or $_.FullName.Contains('\obj\') -or $_.FullName.EndsWith('.user')) {
+            return
+        }
+
+        # Get the destination name and ensure its folder exists
+        $relativeName = $_.FullName.Substring($_.FullName.IndexOf($srcFolder) + $srcFolder.Length)
+        $directory    = [System.IO.Path]::GetDirectoryName($relativeName)
+        New-Item -Path ($dstFolder+$directory) -ItemType "directory" -ErrorAction SilentlyContinue
+
+        # Load, string replace, and write file
+        $fileContent = Get-Content -path $_.FullName -Raw
+        for ($i = 0; $i -lt $replaceArray.Count; $i+=2) {
+            $fileContent = $fileContent.Replace($replaceArray[$i], $replaceArray[$i+1])
+        }
+        Set-Content -Path ($dstFolder+$relativeName) -Value $fileContent
+    }
+
+    # Zip the result and delete the folder!
+    Compress-Archive -Path ($dstFolder+'\*') -DestinationPath $dstZip -Force
+    Remove-Item -Recurse -Force $dstFolder
 }
 
-#...Assets shouldn't have any strings that need replaced
-$project = 'SKTemplate_NetCore\Assets\'
-$out     = $folder+'SKTemplate_NetCore\templatized\'
-New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
-Copy-Item ($folder+$project) -Destination $out -Recurse -Force
+###########################################
 
-# Replace names in the UWP project
-$from1 = 'SKTemplate_UWP_Name'
-$to1   = '$safeprojectname$'
-$from2 = 'EB50E752-CF5E-4E7D-B81D-26A67CFCC6F2'
-$to2   = '$guid1$'
-$from3 = 'a1d049e3-609d-456e-a2a3-ea2e06f20b1d'
-$to3   = '$guid2$'
-$from4 = 'CN=niklinge'
-$to4   = 'CN=$username$'
+Push-Location -Path '..'
 
-#...Root project folder
-$project = 'SKTemplate_UWP\'
-$out     = $folder+'SKTemplate_UWP\templatized\'
-New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
-Get-ChildItem ($folder+$project+"*.*") | 
-Foreach-Object {
-    ((Get-Content -path $_.FullName -Raw) -replace $from1,$to1 -replace $from2,$to2 -replace $from3,$to3 -replace $from4,$to4) | Set-Content -Path ($out+$_.Name)
-}
+Build `
+    -srcFolder ($folder+'SKTemplate_NetCore\') `
+    -dstFolder ($folder+'SKTemplate_NetCore_templatized\') `
+    -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit .Net Core.zip") `
+    -replaceArray [System.Collections.ArrayList]@( `
+        'SKTemplate_NetCore_Name', '$safeprojectname$')
 
-#...Properties folder
-$project = 'SKTemplate_UWP\Properties\'
-$out     = $folder+'SKTemplate_UWP\templatized\Properties\'
-New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
-Get-ChildItem ($folder+$project+"*.*") | 
-Foreach-Object {
-    ((Get-Content -path $_.FullName -Raw) -replace $from1,$to1 -replace $from2,$to2) | Set-Content -Path ($out+$_.Name)
-}
+Build `
+    -srcFolder ($folder+'SKTemplate_UWP\') `
+    -dstFolder ($folder+'SKTemplate_UWP_templatized\') `
+    -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit UWP.zip") `
+    -replaceArray [System.Collections.ArrayList]@( `
+        'SKTemplate_UWP_Name',                  '$safeprojectname$',`
+        'EB50E752-CF5E-4E7D-B81D-26A67CFCC6F2', '$guid1$',`
+        'a1d049e3-609d-456e-a2a3-ea2e06f20b1d', '$guid2$',`
+        'CN=niklinge',                          'CN=$username$')
 
-#...Assets shouldn't have any strings that need replaced
-$project = 'SKTemplate_UWP\Assets\'
-$out     = $folder+'SKTemplate_UWP\templatized\'
-New-Item -Path ($out) -ItemType "directory" -ErrorAction SilentlyContinue
-Copy-Item ($folder+$project) -Destination $out -Recurse -Force
+Build `
+    -srcFolder ($folder+'SKTemplate_Maui\') `
+    -dstFolder ($folder+'SKTemplate_Maui_templatized\') `
+    -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit Multitarget.zip") `
+    -replaceArray [System.Collections.ArrayList]@( `
+        'SKTemplate_Maui',                      '$safeprojectname$',`
+        '2C92FB1D-FDD8-4151-9291-8F1118FCF501', '$guid1$',`
+        'CN=User Name',                         'CN=$username$')
 
-# Now Zip everything, and put them in the templates folder!
-Compress-Archive -Path ($folder+"SKTemplate_NetCore\templatized\*.*"),($folder+"SKTemplate_NetCore\templatized\Assets\") -DestinationPath ($folder+"SKTemplates\ProjectTemplates\StereoKit .Net Core.zip") -Force
-Compress-Archive -Path ($folder+"SKTemplate_UWP\templatized\*.*"),($folder+"SKTemplate_UWP\templatized\Assets\"),($folder+"SKTemplate_UWP\templatized\Properties\") -DestinationPath ($folder+"SKTemplates\ProjectTemplates\StereoKit UWP.zip") -Force
+Pop-Location

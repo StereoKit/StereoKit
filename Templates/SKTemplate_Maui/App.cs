@@ -4,10 +4,10 @@ namespace SKTemplate_Maui;
 
 public class App
 {
-	public SKSettings Settings => new SKSettings { 
-		appName           = "StereoKit Template",
+	public SKSettings Settings => new SKSettings {
+		appName           = "SKTemplate_Maui",
 		assetsFolder      = "Assets",
-		displayPreference = DisplayMode.Flatscreen
+		displayPreference = DisplayMode.MixedReality
 	};
 
 	Pose  cubePose = new Pose(0, 0, -0.5f, Quat.Identity);
