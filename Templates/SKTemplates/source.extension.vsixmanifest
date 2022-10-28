@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="StereoKitTemplates.4506f751-7385-4f5a-acbb-5d4a821407fc" Version="1.6" Language="en-US" Publisher="Nick Klingensmith" />
+        <Identity Id="StereoKitTemplates.4506f751-7385-4f5a-acbb-5d4a821407fc" Version="1.8" Language="en-US" Publisher="Nick Klingensmith" />
         <DisplayName>StereoKit Templates</DisplayName>
         <Description xml:space="preserve">Starter templates for Mixed Reality projects using StereoKit and C#!</Description>
+        <MoreInfo>https://stereokit.net</MoreInfo>
         <Icon>StereoKitLogo64.png</Icon>
-        <Tags>C#;StereoKit;MR;Windows</Tags>
+        <Tags>C#;StereoKit;MR;Windows;Linux;Android</Tags>
     </Metadata>
     <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)">
-            <ProductArchitecture>x86</ProductArchitecture>
-        </InstallationTarget>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.3, 18.0)">
             <ProductArchitecture>amd64</ProductArchitecture>
         </InstallationTarget>
     </Installation>
@@ -20,8 +18,9 @@
     <Assets>
         <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\StereoKit .Net Core.zip" />
         <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="File" Path="ProjectTemplates" d:TargetPath="ProjectTemplates\StereoKit UWP.zip" />
+        <Asset d:Source="File" Path="ProjectTemplates" Type="Microsoft.VisualStudio.ProjectTemplate" d:TargetPath="ProjectTemplates\StereoKit Multitarget.zip" />
     </Assets>
     <Prerequisites>
-        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[16.0,18.0)" DisplayName="Visual Studio core editor" />
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.3,18.0)" DisplayName="Visual Studio core editor" />
     </Prerequisites>
 </PackageManifest>

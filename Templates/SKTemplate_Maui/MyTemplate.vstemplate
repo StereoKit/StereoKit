@@ -11,9 +11,14 @@
     <ProvideDefaultName>true</ProvideDefaultName>
     <LocationField>Enabled</LocationField>
     <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <CreateInPlace>true</CreateInPlace>
     <LanguageTag>csharp</LanguageTag>
-    <PlatformTag>Windows,Linux,Android</PlatformTag>
-    <ProjectTypeTag>MAUI,Desktop,Mobile</ProjectTypeTag>
+    <PlatformTag>Windows</PlatformTag>
+    <PlatformTag>Linux</PlatformTag>
+    <PlatformTag>Android</PlatformTag>
+    <ProjectTypeTag>MAUI</ProjectTypeTag>
+    <ProjectTypeTag>Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Mobile</ProjectTypeTag>
     <Icon>__TemplateIcon.png</Icon>
     <PreviewImage>__PreviewImage.png</PreviewImage>
   </TemplateData>
@@ -37,7 +42,7 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="MainApplication.cs">MainApplication.cs</ProjectItem>
           <Folder Name="Resources" TargetFolderName="Resources">
             <Folder Name="values" TargetFolderName="values">
-              <ProjectItem ReplaceParameters="true" TargetFileName="colors.xml">color.xml</ProjectItem>
+              <ProjectItem ReplaceParameters="true" TargetFileName="colors.xml">colors.xml</ProjectItem>
             </Folder>
           </Folder>
         </Folder>
