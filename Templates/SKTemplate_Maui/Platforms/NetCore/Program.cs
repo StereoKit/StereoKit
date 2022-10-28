@@ -1,4 +1,5 @@
-﻿using StereoKit;
+﻿using System;
+using StereoKit;
 
 namespace SKTemplate_Maui;
 

@@ -20,7 +20,7 @@ public class App
 		// Create assets used by the app
 		cube = Model.FromMesh(
 			Mesh.GenerateRoundedCube(Vec3.One * 0.1f, 0.02f),
-			Default.MaterialUI); 
+			Default.MaterialUI);
 
 		floorMaterial = new Material(Shader.FromFile("floor.hlsl"));
 		floorMaterial.Transparency = Transparency.Blend;
