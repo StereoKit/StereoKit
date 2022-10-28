@@ -24,27 +24,20 @@
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="SKTemplate_Maui.csproj" File="SKTemplate_Maui.csproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true" TargetFileName="App.cs">App.cs</ProjectItem>
       <Folder Name="Assets" TargetFolderName="Assets">
-        <ProjectItem ReplaceParameters="false" TargetFileName="floor.hlsl">floor.hlsl</ProjectItem>
-        <ProjectItem ReplaceParameters="false" TargetFileName="AboutAssets.txt">AboutAssets.txt</ProjectItem>
-      </Folder>
-      <Folder Name="Resources" TargetFolderName="Resources">
-        <Folder Name="AppIcon" TargetFolderName="AppIcon">
-          <ProjectItem ReplaceParameters="false" TargetFileName="appicon.svg">appicon.svg</ProjectItem>
-          <ProjectItem ReplaceParameters="false" TargetFileName="appiconfg.svg">appiconfg.svg</ProjectItem>
-        </Folder>
+        <ProjectItem ReplaceParameters="true" TargetFileName="AboutAssets.txt">AboutAssets.txt</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="floor.hlsl">floor.hlsl</ProjectItem>
       </Folder>
       <Folder Name="Platforms" TargetFolderName="Platforms">
         <Folder Name="Android" TargetFolderName="Android">
-          <ProjectItem ReplaceParameters="true" TargetFileName="AndroidManifest.xml">AndroidManifest.xml</ProjectItem>
-          <ProjectItem ReplaceParameters="true" TargetFileName="MainActivity.cs">MainActivity.cs</ProjectItem>
-          <ProjectItem ReplaceParameters="true" TargetFileName="MainApplication.cs">MainApplication.cs</ProjectItem>
           <Folder Name="Resources" TargetFolderName="Resources">
             <Folder Name="values" TargetFolderName="values">
               <ProjectItem ReplaceParameters="true" TargetFileName="colors.xml">colors.xml</ProjectItem>
             </Folder>
           </Folder>
+          <ProjectItem ReplaceParameters="true" TargetFileName="AndroidManifest.xml">AndroidManifest.xml</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="MainActivity.cs">MainActivity.cs</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="MainApplication.cs">MainApplication.cs</ProjectItem>
         </Folder>
         <Folder Name="NetCore" TargetFolderName="NetCore">
           <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
@@ -55,6 +48,13 @@
           <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
         </Folder>
       </Folder>
+      <Folder Name="Resources" TargetFolderName="Resources">
+        <Folder Name="AppIcon" TargetFolderName="AppIcon">
+          <ProjectItem ReplaceParameters="false" TargetFileName="appicon.svg">appicon.svg</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="appiconfg.svg">appiconfg.svg</ProjectItem>
+        </Folder>
+      </Folder>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.cs">App.cs</ProjectItem>
     </Project>
   </TemplateContent>
 </VSTemplate>

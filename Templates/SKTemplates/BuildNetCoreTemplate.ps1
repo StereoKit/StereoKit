@@ -1,5 +1,7 @@
 Param([string]$folder)
 
+###########################################
+
 function Build {
     param($srcFolder, $dstFolder, $dstZip, $replaceArray)
 
@@ -34,32 +36,28 @@ function Build {
 
 ###########################################
 
-Push-Location -Path '..'
-
 Build `
     -srcFolder ($folder+'SKTemplate_NetCore\') `
     -dstFolder ($folder+'SKTemplate_NetCore_templatized\') `
     -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit .Net Core.zip") `
-    -replaceArray [System.Collections.ArrayList]@( `
-        'SKTemplate_NetCore_Name', '$safeprojectname$')
+    -replaceArray ([System.Collections.ArrayList]@( `
+        'SKTemplate_NetCore_Name', '$safeprojectname$'))
 
 Build `
     -srcFolder ($folder+'SKTemplate_UWP\') `
     -dstFolder ($folder+'SKTemplate_UWP_templatized\') `
     -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit UWP.zip") `
-    -replaceArray [System.Collections.ArrayList]@( `
+    -replaceArray ([System.Collections.ArrayList]@( `
         'SKTemplate_UWP_Name',                  '$safeprojectname$',`
         'EB50E752-CF5E-4E7D-B81D-26A67CFCC6F2', '$guid1$',`
         'a1d049e3-609d-456e-a2a3-ea2e06f20b1d', '$guid2$',`
-        'CN=niklinge',                          'CN=$username$')
+        'CN=niklinge',                          'CN=$username$'))
 
 Build `
     -srcFolder ($folder+'SKTemplate_Maui\') `
     -dstFolder ($folder+'SKTemplate_Maui_templatized\') `
     -dstZip    ($folder+"SKTemplates\ProjectTemplates\StereoKit Multitarget.zip") `
-    -replaceArray [System.Collections.ArrayList]@( `
+    -replaceArray ([System.Collections.ArrayList]@( `
         'SKTemplate_Maui',                      '$safeprojectname$',`
         '2C92FB1D-FDD8-4151-9291-8F1118FCF501', '$guid1$',`
-        'User_Name',                            '$username$')
-
-Pop-Location
+        'User_Name',                            '$username$'))
