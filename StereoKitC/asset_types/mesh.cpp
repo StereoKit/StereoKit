@@ -633,7 +633,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions, bool32_t double_sided) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
@@ -641,6 +641,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
 	vert_t *verts = sk_malloc_t(vert_t, vert_count);
 	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
@@ -657,6 +663,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			right * ((xp - 0.5f) * dimensions.x) +
 			up    * ((yp - 0.5f) * dimensions.y), 
 			plane_normal, {xp,yp}, {255,255,255,255} };
+
+		// The flip side of the plane has the same position and UV but a flipped normal
+		if (double_sided) {
+			verts[x + y*subd + vert_count/2]      = verts[x + y*subd];
+			verts[x + y*subd + vert_count/2].norm = -plane_normal;
+		}
 	} }
 
 	// make indices
@@ -671,6 +683,20 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] = (x+1) + (y+1) * subd;
 			inds[ind++] =  x    +  y    * subd;
 	} }
+
+	if (double_sided) {
+		for (vind_t y = 0; y < subd-1; y++) {
+		for (vind_t x = 0; x < subd-1; x++) {
+				// We flip the winding for the flip side
+				inds[ind++] = (x+1) +  y    * subd + vert_count/2;
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+		} }
+	}
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 

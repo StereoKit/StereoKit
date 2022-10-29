@@ -292,9 +292,11 @@ namespace StereoKit
 		/// <param name="subdivisions">Use this to add extra slices of 
 		/// vertices across the plane. This can be useful for some types of
 		/// vertex-based effects!</param>
+		/// <param name="doubleSided">Should both sides of the plane be 
+		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
-		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions));
+		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided));
 
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
@@ -318,9 +320,11 @@ namespace StereoKit
 		/// <param name="subdivisions">Use this to add extra slices of 
 		/// vertices across the plane. This can be useful for some types of
 		/// vertex-based effects!</param>
+		/// <param name="doubleSided">Should both sides of the plane be 
+		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
-		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions));
+		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided));
 
 		/// <summary>Generates a circle on the XZ axis facing up that is 
 		/// pre-sized to the given diameter. UV coordinates corespond to a unit 
