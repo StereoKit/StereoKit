@@ -681,21 +681,27 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
-	vind_t spokes = maxi(0, (int32_t)subdivisions) + 3;
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t spokes, bool32_t double_sided) {
+	vind_t spoke_count = maxi(3, (int32_t)spokes);
 	mesh_t result = mesh_create();
 
-	int vert_count = spokes;
-	int ind_count  = (spokes - 2) * 3;
-	vert_t* verts  = sk_malloc_t(vert_t, vert_count);
-	vind_t* inds   = sk_malloc_t(vind_t, ind_count);
+	int vert_count = spoke_count;
+	int ind_count  = (spoke_count - 2) * 3;
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
+	vert_t* verts = sk_malloc_t(vert_t, vert_count);
+	vind_t* inds  = sk_malloc_t(vind_t, ind_count);
 
 	vec3 right = vec3_cross(plane_top_direction, plane_normal);
 	vec3 up    = vec3_cross(right, plane_normal);
 
 	// Make a circle of vertices
-	for (vind_t i = 0; i < spokes; i++) {
-		float angle = i * (M_PI*2 / spokes);
+	for (vind_t i = 0; i < spoke_count; i++) {
+		float angle = i * (M_PI*2 / spoke_count);
 
 		vert_t *pt   = &verts[i];
 		float radius = diameter / 2;
@@ -706,21 +712,53 @@ mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_directi
 		pt->pos  = radius * ((right * xp) + (up * yp));
 		pt->uv   = {((xp+1)/2),((yp+1)/2)};
 		pt->col  = {255,255,255,255};
+
+		// The flip side of the circle has the same position and UV but a flipped normal
+		if (double_sided) {
+			vert_t* flip_pt = &verts[i + vert_count/2];
+
+			flip_pt->norm = -plane_normal;
+			flip_pt->pos  = pt->pos;
+			flip_pt->uv   = pt->uv;
+			flip_pt->col  = pt->col;
+		}
 	}
 
 	// No vertex in the center, so we're adding a strip of triangles
 	// across the circle instead
-	for (vind_t i = 0; i < spokes - 2; i++) {
+	for (vind_t i = 0; i < spoke_count - 2; i++) {
 		uint32_t half = i / 2;
 		if (i%2 == 0) { // even
-			inds[i*3+2] = (spokes - half) % spokes;
-			inds[i*3+1] = half + 1;
-			inds[i*3  ] = (spokes - 1) - half;
+			vind_t ind1 = (spoke_count - half) % spoke_count;
+			vind_t ind2 = half + 1;
+			vind_t ind3 = (spoke_count - 1) - half;
+
+			inds[i*3+2] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3  ] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind3;
+			}
 		}
 		else { // odd
-			inds[i*3  ] = half + 1;
-			inds[i*3+1] = spokes - (half + 1);
-			inds[i*3+2] = half + 2;
+			vind_t ind1 = half + 1;
+			vind_t ind2 = spoke_count - (half + 1);
+			vind_t ind3 = half + 2;
+
+			inds[i * 3] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3+2] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind3;
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+			}
 		}
 	}
 
