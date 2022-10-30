@@ -102,7 +102,7 @@ namespace StereoKit
 		public Matrix ToMatrix() 
 			=> Matrix.TR(position, orientation);
 
-		/// <summary>Interpolates between two poses! t is unclamped, so values outside of (0,1) will
+		/// <summary>Interpolates between two poses! It is unclamped, so values outside of (0,1) will
 		/// extrapolate their position.</summary>
 		/// <param name="a">Starting pose, or percent == 0</param>
 		/// <param name="b">Ending pose, or percent == 1</param>
