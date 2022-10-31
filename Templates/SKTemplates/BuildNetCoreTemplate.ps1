@@ -23,8 +23,11 @@ function Build {
 
         # Load, string replace, and write file
         $fileContent = Get-Content -path $_.FullName -Raw
-        for ($i = 0; $i -lt $replaceArray.Count; $i+=2) {
-            $fileContent = $fileContent.Replace($replaceArray[$i], $replaceArray[$i+1])
+        # Only string replace in some files
+        if (-not $_.FullName.EndsWith('.vstemplate')) {
+            for ($i = 0; $i -lt $replaceArray.Count; $i+=2) {
+                $fileContent = $fileContent.Replace($replaceArray[$i], $replaceArray[$i+1])
+            }
         }
         Set-Content -Path ($dstFolder+$relativeName) -Value $fileContent
     }
