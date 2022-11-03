@@ -153,7 +153,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data_mip        (IntPtr texture, IntPtr out_data, UIntPtr out_data_size, int mip_level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_color           (Color color, int width, int height, TexType type, TexFormat format);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_particle        (int width, int height, float roundness, IntPtr gradient);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution, float light_spot_size_pct, float light_spot_intensity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat  tex_get_format      (IntPtr texture);

@@ -870,6 +870,7 @@ SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format s
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
+SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
 SK_API tex_format_  tex_get_format          (tex_t texture);
