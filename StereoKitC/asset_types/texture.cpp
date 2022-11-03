@@ -1146,6 +1146,50 @@ tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ typ
 
 ///////////////////////////////////////////
 
+tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_t gradient_linear) {
+	if (roundness < 0.00001f)
+		roundness = 0.00001f;
+
+	gradient_t grad = gradient_linear;
+	if (gradient_linear == nullptr) {
+		gradient_key_t keys[2] = {
+			{ {1,1,1,0}, 0 },
+			{ {1,1,1,1}, 1 }
+		};
+		grad = gradient_create_keys(keys, 2);
+	}
+	// Create an array of color values the size of our texture
+	color32* color_data = sk_malloc_t(color32, width * height);
+	color32* color_curr = color_data;
+
+	vec2  center   = { width / 2.0f, height / 2.0f };
+	float max_dist = fminf(width, height) / 2.0f;
+	float power    = roundness * 2;
+	for (int32_t px_y=0; px_y<height; px_y++) {
+		for (int32_t px_x=0; px_x<width; px_x++) {
+			// Constrain the point to the top right quadrant
+			vec2 pt = {
+				fabsf(px_x - center.x) / max_dist,
+				fabsf(px_y - center.y) / max_dist};
+			float minkowski_dist = powf(powf(pt.x, power) + powf(pt.y, power), 1.0f / power);
+
+			color_data[px_x + px_y*width] = gradient_get32(grad, 1-minkowski_dist);
+		}
+	}
+
+	// And upload it to the GPU
+	tex_t result = tex_create(tex_type_image, tex_format_rgba32_linear);
+	tex_set_colors(result, width, height, color_data);
+
+	sk_free(color_data);
+	if (gradient_linear == nullptr)
+		gradient_release(grad);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
 	if (result == nullptr) {

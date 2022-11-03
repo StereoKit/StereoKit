@@ -1,4 +1,4 @@
-﻿using StereoKit;
+using StereoKit;
 
 class DemoGeo : ITest
 {
@@ -15,6 +15,8 @@ class DemoGeo : ITest
 	Model demoCylinderModel = null;
 	Mesh  demoPlaneMesh  = null;
 	Model demoPlaneModel = null;
+	Mesh  demoCircleMesh = null;
+	Model demoCircleModel = null;
 
 	Mesh  demoProcMesh = null;
 
@@ -89,6 +91,20 @@ class DemoGeo : ITest
 		demoPlaneMesh  = planeMesh;
 		demoPlaneModel = planeModel;
 
+		/// :CodeSample: Mesh.GenerateCircle
+		/// ### Generating a Mesh and Model
+		/// 
+		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
+		/// Here's a quick example of generating a mesh! You can store it in just a
+		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
+		Mesh  circleMesh  = Mesh.GenerateCircle(0.4f);
+		Model circleModel = Model.FromMesh(circleMesh, Default.Material);
+		/// :End:
+		demoCircleMesh  = circleMesh;
+		demoCircleModel = circleModel;
+
 		/// :CodeSample: Mesh.SetVerts Mesh.SetInds Mesh.SetData
 		/// ### Procedurally generating a wavy grid
 		/// 
@@ -156,8 +172,24 @@ class DemoGeo : ITest
 	{
 		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
 
-		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.3f, -0.25f, -0.3f), V.XYZ(0.5f, -0.25f, -0.5f));
+		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.29f, -0.29f, -0.29f), V.XYZ(0.5f, -0.29f, -0.5f));
 		Tests.Screenshot("ProceduralGrid.jpg",     600, 600, Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
+
+		// Circle!
+		Mesh  circleMesh = demoCircleMesh;
+		Model circleModel = demoCircleModel;
+
+		/// :CodeSample: Mesh.GenerateCircle
+		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
+		/// here's a short example! For the Mesh, you'll need to create your own material, 
+		/// we just loaded up the default Material here.
+		Matrix circleTransform = Matrix.T(-.5f, -1.5f, 0);
+		circleMesh.Draw(Default.Material, circleTransform);
+
+		circleTransform = Matrix.T(.5f, -1.5f, 0);
+		circleModel.Draw(circleTransform);
+		/// :End:
+
 
 		// Plane!
 		Mesh  planeMesh  = demoPlaneMesh;

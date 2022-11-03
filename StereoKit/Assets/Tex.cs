@@ -308,13 +308,13 @@ namespace StereoKit
 		public IntPtr GetNativeSurface()
 			=> NativeAPI.tex_get_surface(_inst);
 
-		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously. If the color
 		/// array is the correct size, it will not be re-allocated.</summary>
 		/// <param name="colorData">An array of colors that will be filled out
 		/// with the texture's data. It can be null, or an incorrect size. If
 		/// so, it will be reallocated to the correct size.</param>
-		/// <param name="mipLevel">Retreives the color data for a specific
+		/// <param name="mipLevel">Retrieves the color data for a specific
 		/// mip-mapping level. This function will log a fail and return a black
 		/// array if an invalid mip-level is provided.</param>
 		public void GetColors(ref Color32[] colorData, int mipLevel = 0)
@@ -328,9 +328,9 @@ namespace StereoKit
 			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(count * 4), mipLevel);
 			pinnedArray.Free();
 		}
-		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously.</summary>
-		/// <param name="mipLevel">Retreives the color data for a specific
+		/// <param name="mipLevel">Retrieves the color data for a specific
 		/// mip-mapping level. This function will log a fail and return a black
 		/// array if an invalid mip-level is provided.</param>
 		/// <returns>The texture's color values in an array sized Width*Height.
@@ -631,6 +631,30 @@ namespace StereoKit
 		public static Tex GenColor(Color color, int width, int height, TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32)
 		{
 			IntPtr tex = NativeAPI.tex_gen_color(color, width, height, type, format);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
+		}
+
+		/// <summary>Generates a 'radial' gradient that works well for
+		/// particles, blob shadows, glows, or various other things. The
+		/// roundness can be used to change the shape from round, '1', to
+		/// star-like, '0'. Default color is transparent white to opaque white,
+		/// but this can be configured by providing a Gradient of your own.
+		/// </summary>
+		/// <param name="width">Width of the desired texture, in pixels.
+		/// </param>
+		/// <param name="height">Width of the desired texture, in pixels.
+		/// </param>
+		/// <param name="roundness0to1">Where 0 is a cross, or star-like shape,
+		/// and 1 is a circle. This is clamped to a minimum of 0.00001, but
+		/// values above 1 are still valid, and will just make the shape a
+		/// square near infinity.</param>
+		/// <param name="gradientLinear">A color gradient that starts with the
+		/// background/outside at 0, and progresses to the center at 1.</param>
+		/// <returns>A texture object containing an RGBA linear texture.
+		/// </returns>
+		public static Tex GenParticle(int width, int height, float roundness0to1= 1, Gradient gradientLinear = null)
+		{
+			IntPtr tex = NativeAPI.tex_gen_particle(width, height, roundness0to1, gradientLinear==null?IntPtr.Zero:gradientLinear._inst);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
