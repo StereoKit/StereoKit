@@ -45,6 +45,11 @@ typedef struct context_callback_t {
 	void *context;
 } context_callback_t;
 
+typedef struct poll_event_callback_t {
+	void (*callback)(void* XrEventDataBuffer);
+	void *context;
+} poll_event_callback_t;
+
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
 	"",
@@ -71,7 +76,8 @@ array_t<const char*> xr_exts_user    = {};
 array_t<uint64_t>    xr_exts_loaded  = {};
 bool32_t             xr_minimum_exts = false;
 
-array_t<context_callback_t> xr_callbacks_pre_session_create = {};
+array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
+array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
 
 bool   xr_has_bounds        = false;
 vec2   xr_bounds_size       = {};
@@ -697,6 +703,11 @@ void openxr_poll_events() {
 			break;
 		default: break;
 		}
+
+		for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+			xr_callbacks_poll_event[i].callback(&event_buffer);
+		}
+
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
 }
@@ -1014,6 +1025,33 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 	}
 
 	xr_callbacks_pre_session_create.add({ on_pre_session_create, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* XrEventDataBuffer), void* context) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	xr_callbacks_poll_event.add({ on_poll_event, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* XrEventDataBuffer)) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+		if (xr_callbacks_poll_event[i].callback == on_poll_event || on_poll_event == nullptr) {
+			xr_callbacks_poll_event.remove(i);
+			return;
+		}
+	}
 }
 
 } // namespace sk
