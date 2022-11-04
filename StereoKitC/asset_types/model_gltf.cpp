@@ -507,18 +507,28 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
-		void         *buffer = nullptr;
-		cgltf_options options = {};
+		char* start = strchr(image->uri, ',');
+		if (start != nullptr && start - image->uri >= 7 && strncmp(start - 7, ";base64", 7) == 0) {
+			void*         buffer  = nullptr;
+			cgltf_options options = {};
 
-		char*  start = strchr(image->uri, ',') + 1; // start of base64 data
-		char*  end   = strchr(image->uri, '=');     // end of base64 data
-		size_t size = ((end-start) * 6) / 8;        // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
-		cgltf_load_buffer_base64(&options, size, start, &buffer);
+			char*  base64_start = start + 1;
+			size_t base64_len   = strlen(base64_start);
 
-		if (buffer != nullptr) {
-			result = tex_create_mem(buffer, size, srgb_data, priority);
-			tex_set_id(result, id);
-			sk_free(buffer);
+			// A base64 string may end with 0, 1 or 2 '=' padding characters,
+			// padding is present to ensure data is a multiple of 3.
+			size_t base64_size = 3 * (base64_len / 4);
+			if (base64_len >= 1 && base64_start[base64_len-1] == '=') { base64_size -= 1; }
+			if (base64_len >= 2 && base64_start[base64_len-2] == '=') { base64_size -= 1; }
+
+			 // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
+			cgltf_load_buffer_base64(&options, base64_size, base64_start, &buffer);
+
+			if (buffer != nullptr) {
+				result = tex_create_mem(buffer, base64_size, srgb_data, priority);
+				tex_set_id(result, id);
+				sk_free(buffer);
+			}
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
