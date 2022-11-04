@@ -8,7 +8,7 @@
 	     platforms that require it. -->
 	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
-		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) ($SKOpenXRLoader) version of the Android OpenXR loader."/>
+		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
