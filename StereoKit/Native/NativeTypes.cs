@@ -394,6 +394,9 @@ namespace StereoKit
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPollEventCallback(IntPtr XrEventDataBuffer);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]

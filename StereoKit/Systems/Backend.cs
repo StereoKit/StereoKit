@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -168,6 +169,38 @@ namespace StereoKit
 				// free all those up.
 				_onPreCreateSession           = null;
 				_onPreCreateSessionRegistered = false;
+			}
+
+			private struct XRPollEventCallbackData
+			{
+				public Action<IntPtr>      action;
+				public XRPollEventCallback callback;
+			}
+
+			private static List<XRPollEventCallbackData> _xrPollEventCallbacks;
+
+			/// <summary>This event gets published each time xrPollEvent results in XR_SUCCESS.</summary>
+			public static event Action<IntPtr> OnPollEvent
+			{
+				add
+				{
+					if (_xrPollEventCallbacks == null) _xrPollEventCallbacks = new List<XRPollEventCallbackData>();
+
+					XRPollEventCallback callback = (XrEventDataBuffer) => { value(XrEventDataBuffer); };
+					_xrPollEventCallbacks.Add(new XRPollEventCallbackData { action = value, callback = callback });
+
+					NativeAPI.backend_openxr_add_callback_poll_event(callback, IntPtr.Zero);
+				}
+				remove
+				{
+					if (_xrPollEventCallbacks == null) throw new NullReferenceException();
+
+					int i = _xrPollEventCallbacks.FindIndex(d => d.action == value);
+					if (i < 0) throw new KeyNotFoundException();
+
+					NativeAPI.backend_openxr_remove_callback_poll_event(_xrPollEventCallbacks[i].callback);
+					_xrPollEventCallbacks.RemoveAt(i);
+				}
 			}
 		}
 
