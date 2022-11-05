@@ -50,6 +50,7 @@ sk_gpu.h
 		#else
 			#define _SKG_GL_DESKTOP
 			#define _SKG_GL_LOAD_GLX
+			#define _SKG_GL_MAKE_FUNCTIONS
 		#endif
 	#elif defined(_WIN32)
 		#define _SKG_GL_DESKTOP
@@ -1868,7 +1869,7 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		// This struct is a union, but all elements follow the same order in
 		// the struct. Texture2DArray is representative of the union with the
 		// most data in it, so if we fill it properly, all others should also
-		// be filled correctly. *Fingers crossed it stays that way*
+		// be filled correctly.
 		res_desc.Texture2DArray.FirstArraySlice = array_start;
 		res_desc.Texture2DArray.ArraySize       = tex->array_count;
 		res_desc.Texture2DArray.MipLevels       = mip_count;
@@ -1876,13 +1877,25 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		if (tex->type == skg_tex_type_cubemap) {
 			res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 		} else if (tex->array_count > 1) {
-			res_desc.ViewDimension = tex->multisample > 1
-				? D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY
-				: D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			if (tex->multisample > 1) {
+				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				res_desc.Texture2DMSArray.ArraySize       = tex->array_count;
+				res_desc.Texture2DMSArray.FirstArraySlice = array_start;
+			} else {
+				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+				res_desc.Texture2DArray.ArraySize       = tex->array_count;
+				res_desc.Texture2DArray.FirstArraySlice = array_start;
+				res_desc.Texture2DArray.MipLevels       = mip_count;
+				res_desc.Texture2DArray.MostDetailedMip = 0;
+			}
 		} else {
-			res_desc.ViewDimension = tex->multisample > 1 
-				? D3D11_SRV_DIMENSION_TEXTURE2DMS
-				: D3D11_SRV_DIMENSION_TEXTURE2D;
+			if (tex->multisample > 1) {
+				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+			} else {
+				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				res_desc.Texture2D.MipLevels       = mip_count;
+				res_desc.Texture2D.MostDetailedMip = 0;
+			}
 		}
 
 		if (use_in_shader && FAILED(d3d_device->CreateShaderResourceView(tex->_texture, &res_desc, &tex->_resource))) {
@@ -1895,13 +1908,23 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		stencil_desc.Texture2DArray.FirstArraySlice = array_start;
 		stencil_desc.Texture2DArray.ArraySize       = tex->array_count;
 		if (tex->type == skg_tex_type_cubemap || tex->array_count > 1) {
-			stencil_desc.ViewDimension = tex->multisample > 1
-				? D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY
-				: D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+			if (tex->multisample > 1) {
+				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+				stencil_desc.Texture2DMSArray.ArraySize       = tex->array_count;
+				stencil_desc.Texture2DMSArray.FirstArraySlice = array_start;
+			} else {
+				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+				stencil_desc.Texture2DArray.ArraySize       = tex->array_count;
+				stencil_desc.Texture2DArray.FirstArraySlice = array_start;
+				stencil_desc.Texture2DArray.MipSlice        = 0;
+			}
 		} else {
-			stencil_desc.ViewDimension = tex->multisample > 1 
-				? D3D11_DSV_DIMENSION_TEXTURE2DMS
-				: D3D11_DSV_DIMENSION_TEXTURE2D;
+			if (tex->multisample > 1) {
+				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+			} else {
+				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+				stencil_desc.Texture2D.MipSlice = 0;
+			}
 		}
 		if (FAILED(d3d_device->CreateDepthStencilView(tex->_texture, &stencil_desc, &tex->_depth_view))) {
 			skg_log(skg_log_critical, "Create Depth Stencil View error!");
@@ -1915,13 +1938,23 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		target_desc.Texture2DArray.FirstArraySlice = array_start;
 		target_desc.Texture2DArray.ArraySize       = tex->array_count;
 		if (tex->type == skg_tex_type_cubemap || tex->array_count > 1) {
-			target_desc.ViewDimension = tex->multisample > 1
-				? D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY
-				: D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+			if (tex->multisample > 1) {
+				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
+				target_desc.Texture2DMSArray.ArraySize       = tex->array_count;
+				target_desc.Texture2DMSArray.FirstArraySlice = array_start;
+			} else {
+				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+				target_desc.Texture2DArray.ArraySize       = tex->array_count;
+				target_desc.Texture2DArray.FirstArraySlice = array_start;
+				target_desc.Texture2DArray.MipSlice        = 0;
+			}
 		} else {
-			target_desc.ViewDimension = tex->multisample > 1
-				? D3D11_RTV_DIMENSION_TEXTURE2DMS
-				: D3D11_RTV_DIMENSION_TEXTURE2D;
+			if (tex->multisample > 1) {
+				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
+			} else {
+				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+				target_desc.Texture2D.MipSlice = 0;
+			}
 		}
 
 		if (FAILED(d3d_device->CreateRenderTargetView(tex->_texture, &target_desc, &tex->_target_view))) {
@@ -2370,13 +2403,12 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	EGLContext egl_context;
 	EGLConfig  egl_config;
 #elif defined(_SKG_GL_LOAD_GLX)
-	#include <GL/glxew.h>
+	#include <X11/Xutil.h>
+	#include <X11/Xlib.h>
+	#include <dlfcn.h>
 
 	Display     *xDisplay;
 	XVisualInfo *visualInfo;
-	GLXFBConfig  glxFBConfig;
-	GLXDrawable  glxDrawable;
-	GLXContext   glxContext;
 #elif defined(_SKG_GL_LOAD_WGL)
 	#pragma comment(lib, "opengl32.lib")
 	#define WIN32_LEAN_AND_MEAN
@@ -2392,29 +2424,61 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 ///////////////////////////////////////////
 
 #ifdef _SKG_GL_LOAD_WGL
-#define WGL_DRAW_TO_WINDOW_ARB            0x2001
-#define WGL_SUPPORT_OPENGL_ARB            0x2010
-#define WGL_DOUBLE_BUFFER_ARB             0x2011
-#define WGL_ACCELERATION_ARB              0x2003
-#define WGL_FULL_ACCELERATION_ARB         0x2027
-#define WGL_PIXEL_TYPE_ARB                0x2013
-#define WGL_COLOR_BITS_ARB                0x2014
-#define WGL_DEPTH_BITS_ARB                0x2022
-#define WGL_STENCIL_BITS_ARB              0x2023
-#define WGL_TYPE_RGBA_ARB                 0x202B
-#define WGL_SAMPLE_BUFFERS_ARB            0x2041
-#define WGL_SAMPLES_ARB                   0x2042
-#define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
-#define WGL_CONTEXT_FLAGS_ARB             0x2094
-#define WGL_CONTEXT_PROFILE_MASK_ARB      0x9126
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
-#define WGL_CONTEXT_DEBUG_BIT_ARB         0x0001
+	#define WGL_DRAW_TO_WINDOW_ARB            0x2001
+	#define WGL_SUPPORT_OPENGL_ARB            0x2010
+	#define WGL_DOUBLE_BUFFER_ARB             0x2011
+	#define WGL_ACCELERATION_ARB              0x2003
+	#define WGL_FULL_ACCELERATION_ARB         0x2027
+	#define WGL_PIXEL_TYPE_ARB                0x2013
+	#define WGL_COLOR_BITS_ARB                0x2014
+	#define WGL_DEPTH_BITS_ARB                0x2022
+	#define WGL_STENCIL_BITS_ARB              0x2023
+	#define WGL_TYPE_RGBA_ARB                 0x202B
+	#define WGL_SAMPLE_BUFFERS_ARB            0x2041
+	#define WGL_SAMPLES_ARB                   0x2042
+	#define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
+	#define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
+	#define WGL_CONTEXT_FLAGS_ARB             0x2094
+	#define WGL_CONTEXT_PROFILE_MASK_ARB      0x9126
+	#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+	#define WGL_CONTEXT_DEBUG_BIT_ARB         0x0001
 
-typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
-wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
-wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+	typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+	typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
+	wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
+	wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+#endif
+
+#ifdef _SKG_GL_LOAD_GLX
+	#define GLX_RENDER_TYPE                  0x8011
+	#define GLX_RGBA_TYPE                    0x8014
+	#define GLX_CONTEXT_MAJOR_VERSION_ARB    0x2091
+	#define GLX_CONTEXT_MINOR_VERSION_ARB    0x2092
+	#define GLX_CONTEXT_PROFILE_MASK_ARB     0x9126
+	#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+
+	typedef XID GLXDrawable;
+	typedef struct __GLXFBConfig* GLXFBConfig;
+	typedef struct __GLXcontext*  GLXContext;
+	typedef void (*__GLXextproc)(void);
+
+	typedef GLXContext   (*glXCreateContext_proc)          (Display* dpy, XVisualInfo* vis, GLXContext shareList, Bool direct);
+	typedef GLXContext   (*glXCreateContextAttribsARB_proc)(Display* dpy, GLXFBConfig, GLXContext, Bool, const int*);
+	typedef void         (*glXDestroyContext_proc)         (Display* dpy, GLXContext);
+	typedef Bool         (*glXMakeCurrent_proc)            (Display* dpy, GLXDrawable, GLXContext);
+	typedef void         (*glXSwapBuffers_proc)            (Display* dpy, GLXDrawable);
+	typedef __GLXextproc (*glXGetProcAddress_proc)         (const char* procName);
+
+	glXCreateContext_proc           glXCreateContext;
+	glXCreateContextAttribsARB_proc glXCreateContextAttribsARB;
+	glXDestroyContext_proc          glXDestroyContext;
+	glXMakeCurrent_proc             glXMakeCurrent;
+	glXSwapBuffers_proc             glXSwapBuffers;
+	glXGetProcAddress_proc          glXGetProcAddress;
+
+	GLXFBConfig  glxFBConfig;
+	GLXDrawable  glxDrawable;
+	GLXContext   glxContext;
 #endif
 
 #ifdef _SKG_GL_MAKE_FUNCTIONS
@@ -2688,6 +2752,10 @@ GLE(void,     glDispatchCompute,         uint32_t num_groups_x, uint32_t num_gro
 GLE(const char *, glGetString,           uint32_t name) \
 GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 
+#define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
+GL_API
+#undef GLE
+
 #if defined(_SKG_GL_LOAD_WGL)
 	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
 	// Some GL functions can only be loaded with wglGetProcAddress, and others
@@ -2702,11 +2770,9 @@ GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 	}
 #elif defined(_SKG_GL_LOAD_EGL)
 	#define gl_get_function(x) eglGetProcAddress(x)
+#elif defined(_SKG_GL_LOAD_GLX)
+	#define gl_get_function(x) glXGetProcAddress(x)
 #endif
-
-#define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
-GL_API
-#undef GLE
 
 static void gl_load_extensions( ) {
 #define GLE(ret, name, ...) name = (name##_proc *) gl_get_function(#name); if (name == nullptr) skg_log(skg_log_info, "Couldn't load gl function " #name);
@@ -2929,14 +2995,22 @@ int32_t gl_init_egl() {
 
 int32_t gl_init_glx() {
 #ifdef _SKG_GL_LOAD_GLX
-	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
-	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
-
-	glewExperimental=true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		skg_log(skg_log_critical, "Failed to initialize GLEW");
+	// Load the OpenGL library
+	void* lib = dlopen("libGL.so.1", RTLD_LAZY|RTLD_GLOBAL);
+	if (lib == nullptr) lib = dlopen("libGL.so", RTLD_LAZY|RTLD_GLOBAL);
+	if (lib == nullptr) {
+		skg_log(skg_log_critical, "Unable to load GL!");
 		return -1;
 	}
+	glXCreateContext           = (glXCreateContext_proc)          dlsym(lib, "glXCreateContext");
+	glXCreateContextAttribsARB = (glXCreateContextAttribsARB_proc)dlsym(lib, "glXCreateContextAttribsARB");
+	glXDestroyContext          = (glXDestroyContext_proc)         dlsym(lib, "glXDestroyContext");
+	glXMakeCurrent             = (glXMakeCurrent_proc)            dlsym(lib, "glXMakeCurrent");
+	glXSwapBuffers             = (glXSwapBuffers_proc)            dlsym(lib, "glXSwapBuffers");
+	glXGetProcAddress          = (glXGetProcAddress_proc)         dlsym(lib, "glXGetProcAddress");
+
+	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, true);
+	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
 
 	int ctx_attribute_list[] = {
 		GLX_RENDER_TYPE,               GLX_RGBA_TYPE,
@@ -2948,7 +3022,7 @@ int32_t gl_init_glx() {
 		GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0
 	};
-	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, GL_TRUE, ctx_attribute_list);
+	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, true, ctx_attribute_list);
 	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
 

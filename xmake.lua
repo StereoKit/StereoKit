@@ -27,11 +27,11 @@ package("openxr_loader")
     add_deps("cmake")
 
     if is_plat("linux") then
-        add_syslinks("stdc++fs", "jsoncpp")
+        add_syslinks("stdc++fs")
     end
     
     on_install("linux", "windows", "android", function (package)
-        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF"})
+        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF","-DBUILD_WITH_SYSTEM_JSONCPP=OFF"})
     end)
 package_end()
 
@@ -115,7 +115,7 @@ target("StereoKitC")
         	add_links("EGL", "GLX", "fontconfig", "pthread")
 			add_defines("SKG_LINUX_EGL")
 		elseif is_config("linux-graphics-backend", "GLX") then
-        	add_links("GL", "GLEW", "GLX", "fontconfig", "X11",  "Xfixes", "pthread")
+        	add_links("GL", "dl", "GLX", "fontconfig", "X11",  "Xfixes", "pthread")
 			add_defines("SKG_LINUX_GLX")
 		end
 

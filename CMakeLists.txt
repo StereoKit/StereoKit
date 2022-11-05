@@ -92,6 +92,8 @@ CPMAddPackage(
   VERSION 1.0.24
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG "release-1.0.24"
+  OPTIONS
+  "BUILD_WITH_SYSTEM_JSONCPP OFF"
 )
 
 ###########################################
@@ -151,9 +153,8 @@ if (UNIX)
     list(APPEND LINUX_LIBS EGL)
   else()
     add_definitions("-DSKG_LINUX_GLX")
-    find_package(GLEW REQUIRED)
     find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL GLEW)
+    list(APPEND LINUX_LIBS GL dl)
   endif()
 elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
