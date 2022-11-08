@@ -155,8 +155,8 @@ namespace StereoKit
 		/// <param name="onStep">A callback where you put your application 
 		/// code! This gets called between StereoKit systems, after frame 
 		/// setup, but before render.</param>
-		/// <returns>If an exit message is received from the platform, this 
-		/// function will return false.</returns>
+		/// <returns>If an exit message is received from the platform, or
+		/// `SK.Quit()` is called, this function will return false.</returns>
 		public static bool Step(Action onStep = null)
 		{
 			_stepCallback = onStep;
@@ -181,8 +181,8 @@ namespace StereoKit
 		/// <summary>This passes application execution over to StereoKit. 
 		/// This continuously steps all StereoKit systems, and inserts user
 		/// code via callback between the appropriate system updates. Once
-		/// execution completes, it properly calls the shutdown callback and
-		/// shuts down StereoKit for you.
+		/// execution completes, or `SK.Quit` is called, it properly calls the
+		/// shutdown callback and shuts down StereoKit for you.
 		/// 
 		/// Using this method is important for compatibility with WASM and is
 		/// the preferred method of controlling the main loop, over 
