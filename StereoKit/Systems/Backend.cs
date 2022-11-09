@@ -186,7 +186,7 @@ namespace StereoKit
 				{
 					if (_xrPollEventCallbacks == null) _xrPollEventCallbacks = new List<XRPollEventCallbackData>();
 
-					XRPollEventCallback callback = (XrEventDataBuffer) => { value(XrEventDataBuffer); };
+					XRPollEventCallback callback = (_, XrEventDataBuffer) => { value(XrEventDataBuffer); };
 					_xrPollEventCallbacks.Add(new XRPollEventCallbackData { action = value, callback = callback });
 
 					NativeAPI.backend_openxr_add_callback_poll_event(callback, IntPtr.Zero);

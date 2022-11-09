@@ -2004,9 +2004,9 @@ SK_API void              backend_openxr_ext_request         (const char *extensi
 SK_API void              backend_openxr_use_minimum_exts    (bool32_t use_minimum_exts);
 SK_API void              backend_openxr_composition_layer   (void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
 
-SK_API void              backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context),   void* context);
-SK_API void              backend_openxr_add_callback_poll_event        (void (*on_poll_event)(void* XrEventDataBuffer), void* context);
-SK_API void              backend_openxr_remove_callback_poll_event     (void (*on_poll_event)(void* XrEventDataBuffer));
+SK_API void              backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context);
+SK_API void              backend_openxr_add_callback_poll_event        (void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context);
+SK_API void              backend_openxr_remove_callback_poll_event     (void (*on_poll_event)(void* context, void* XrEventDataBuffer));
 
 SK_API backend_platform_ backend_platform_get         ();
 SK_API void             *backend_android_get_java_vm  ();

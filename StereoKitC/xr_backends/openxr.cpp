@@ -46,7 +46,7 @@ typedef struct context_callback_t {
 } context_callback_t;
 
 typedef struct poll_event_callback_t {
-	void (*callback)(void* XrEventDataBuffer);
+	void (*callback)(void* context, void* XrEventDataBuffer);
 	void *context;
 } poll_event_callback_t;
 
@@ -705,7 +705,7 @@ void openxr_poll_events() {
 		}
 
 		for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
-			xr_callbacks_poll_event[i].callback(&event_buffer);
+			xr_callbacks_poll_event[i].callback(xr_callbacks_poll_event[i].context, &event_buffer);
 		}
 
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
@@ -1029,7 +1029,7 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 
 ///////////////////////////////////////////
 
-void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* XrEventDataBuffer), void* context) {
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
 	if (backend_xr_get_type() != backend_xr_type_openxr) {
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 		return;
@@ -1040,7 +1040,7 @@ void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* XrEventD
 
 ///////////////////////////////////////////
 
-void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* XrEventDataBuffer)) {
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
 	if (backend_xr_get_type() != backend_xr_type_openxr) {
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 		return;
