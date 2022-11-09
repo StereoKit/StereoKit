@@ -135,7 +135,15 @@ endforeach(SHADER)
 ## Platform Specific Settings            ##
 ###########################################
 
-if (UNIX)
+if (ANDROID)
+  find_library(ANDROID_LOG_LIBRARY log)
+  find_library(ANDROID_LIBRARY_LIBRARY android)
+  find_library(ANDROID_EGL_LIBRARY egl)
+  set(ANDROID_LIBS
+    ${ANDROID_EGL_LIBRARY}
+    ${ANDROID_LIBRARY_LIBRARY}
+    ${ANDROID_LOG_LIBRARY})
+elseif (UNIX)
   set(LINUX_LIBS
     Threads::Threads
     GLX
@@ -390,6 +398,7 @@ target_link_libraries( StereoKitC
     ${PHYSICS_LIB}
     openxr_loader
     ${LINUX_LIBS}
+    ${ANDROID_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
 )
