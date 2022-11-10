@@ -8,12 +8,16 @@ using namespace sk;
 
 sprite_t ui_sprite;
 sprite_t ui_search_sprite;
+sprite_t ui_toggle_off;
+sprite_t ui_toggle_on;
 
 ///////////////////////////////////////////
 
 void demo_ui_init() {
 	ui_sprite        = sprite_create_file("StereoKitWide.png", sprite_type_single);
 	ui_search_sprite = sprite_create_file("search.png",        sprite_type_single);
+	ui_toggle_off    = sprite_create_file("toggle_off.png",    sprite_type_single);
+	ui_toggle_on     = sprite_create_file("toggle_on.png",     sprite_type_single);
 }
 
 ///////////////////////////////////////////
@@ -33,6 +37,9 @@ void demo_ui_update() {
 	static ui_btn_layout_ layout = ui_btn_layout_left;
 	if (ui_button_img("Find", ui_search_sprite, layout))
 		layout = (ui_btn_layout_)((layout + 1) % 3);
+
+	static bool32_t tog = false;
+	if (ui_toggle_img("Toggle", tog, ui_toggle_off, ui_toggle_on, ui_btn_layout_left)) {}
 	
 	static float val = 0.5f;
 	static float val2 = 0.5f;
@@ -67,4 +74,6 @@ void demo_ui_shutdown() {
 	// Release everything
 	sprite_release(ui_sprite);
 	sprite_release(ui_search_sprite);
+	sprite_release(ui_toggle_off);
+	sprite_release(ui_toggle_on);
 }
