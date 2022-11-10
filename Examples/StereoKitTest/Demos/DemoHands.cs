@@ -258,6 +258,7 @@ class DemoHands : ITest
 				Lines.AddAxis(hand[finger, joint].Pose);
 			}}
 			Lines.AddAxis(hand.palm);
+			Lines.AddAxis(hand.wrist);
 		}
 	}
 
