@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace SKTemplate_Maui;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, Exported = true)]
-[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
+[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 {
 	App                app;
