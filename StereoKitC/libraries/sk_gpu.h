@@ -2452,6 +2452,8 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #ifdef _SKG_GL_LOAD_GLX
 	#define GLX_RENDER_TYPE                  0x8011
 	#define GLX_RGBA_TYPE                    0x8014
+	#define GLX_CONTEXT_FLAGS_ARB            0x2094
+	#define GLX_CONTEXT_DEBUG_BIT_ARB        0x0001
 	#define GLX_CONTEXT_MAJOR_VERSION_ARB    0x2091
 	#define GLX_CONTEXT_MINOR_VERSION_ARB    0x2092
 	#define GLX_CONTEXT_PROFILE_MASK_ARB     0x9126
