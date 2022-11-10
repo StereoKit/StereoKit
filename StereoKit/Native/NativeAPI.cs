@@ -536,6 +536,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_use_minimum_exts(int use_minimum_exts);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_composition_layer(IntPtr XrCompositionLayerBaseHeader, int layer_size, int sort_order);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_add_callback_pre_session_create([MarshalAs(UnmanagedType.FunctionPtr)] XRPreSessionCreateCallback on_pre_session_create, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_add_callback_poll_event        ([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback on_poll_event, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_remove_callback_poll_event     ([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback on_poll_event);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendPlatform backend_platform_get        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_java_vm ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_activity();

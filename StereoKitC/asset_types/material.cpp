@@ -16,6 +16,10 @@ _material_buffer_t material_buffers[14] = {};
 
 ///////////////////////////////////////////
 
+void material_copy_pipeline(material_t dest, const material_t src);
+
+///////////////////////////////////////////
+
 material_t material_find(const char *id) {
 	material_t result = (material_t)assets_find(id, asset_type_material);
 	if (result != nullptr) {
@@ -162,16 +166,23 @@ material_t material_copy(material_t material) {
 		if (result->args.textures[i].tex != nullptr)
 			tex_addref(result->args.textures[i].tex);
 	}
+	if (result->chain != nullptr) material_addref(result->chain);
 
 	// Copy over the material's pipeline
 	result->pipeline = skg_pipeline_create(&material->shader->shader);
-	skg_pipeline_set_cull        (&result->pipeline, skg_pipeline_get_cull        (&material->pipeline));
-	skg_pipeline_set_transparency(&result->pipeline, skg_pipeline_get_transparency(&material->pipeline));
-	skg_pipeline_set_wireframe   (&result->pipeline, skg_pipeline_get_wireframe   (&material->pipeline));
-	skg_pipeline_set_depth_test  (&result->pipeline, skg_pipeline_get_depth_test  (&material->pipeline));
-	skg_pipeline_set_depth_write (&result->pipeline, skg_pipeline_get_depth_write (&material->pipeline));
+	material_copy_pipeline(result, material);
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void material_copy_pipeline(material_t dest, const material_t src) {
+	material_set_cull        (dest, src->cull);
+	material_set_depth_test  (dest, src->depth_test);
+	material_set_depth_write (dest, src->depth_write);
+	material_set_transparency(dest, src->alpha_mode);
+	material_set_wireframe   (dest, src->wireframe);
 }
 
 ///////////////////////////////////////////
@@ -256,11 +267,7 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	material->shader   = shader;
 	material->pipeline = skg_pipeline_create(&material->shader->shader);
-	material_set_cull        (material, material->cull);
-	material_set_depth_test  (material, material->depth_test);
-	material_set_depth_write (material, material->depth_write);
-	material_set_transparency(material, material->alpha_mode);
-	material_set_wireframe   (material, material->wireframe);
+	material_copy_pipeline(material, material);
 }
 
 ///////////////////////////////////////////

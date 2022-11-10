@@ -421,8 +421,8 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 		0,
 		handedness == handed_right ?  90.f : -90.f,
 		handedness == handed_right ? -90.f :  90.f) * orientation;
-	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
-	hand.wrist.orientation = hand.palm.orientation;
+	hand.wrist.orientation = hand.fingers[2][0].orientation;
+	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
 }
 
 ///////////////////////////////////////////
