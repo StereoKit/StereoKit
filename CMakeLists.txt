@@ -397,9 +397,10 @@ target_link_libraries( StereoKitC
     ${PHYSICS_LIB}
     openxr_loader
     ${LINUX_LIBS}
-    ${ANDROID_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+  PUBLIC
+    ${ANDROID_LIBS}
 )
 
 ###########################################
