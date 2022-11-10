@@ -149,6 +149,8 @@ SK_API bool32_t      ui_button_round_at   (const char     *text, sprite_t image,
 SK_API bool32_t      ui_button_round_at_16(const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter);
 SK_API bool32_t      ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_toggle_at_16      (const char16_t *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_toggle_img_at     (const char*     text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t      ui_toggle_img_at_16  (const char16_t* text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
 SK_API void          ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_hslider_at        (const char     *id,   sk_ref(float)  value, float min,  float max,  float step,  vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t      ui_hslider_at_16     (const char16_t *id,   sk_ref(float)  value, float min,  float max,  float step,  vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));

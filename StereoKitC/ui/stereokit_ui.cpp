@@ -1700,6 +1700,16 @@ bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { r
 ///////////////////////////////////////////
 
 template<typename C>
+bool32_t ui_toggle_img_at_g(const C* text, bool32_t* pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
+	return false;
+}
+bool32_t ui_toggle_img_at   (const char*     text, bool32_t* pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char    >(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
+bool32_t ui_toggle_img_at   (const char16_t* text, bool32_t* pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char16_t>(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
+bool32_t ui_toggle_img_at_16(const char16_t* text, bool32_t* pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char16_t>(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); };
+
+///////////////////////////////////////////
+
+template<typename C>
 bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
