@@ -155,6 +155,7 @@ bool android_start_post_xr() {
 ///////////////////////////////////////////
 
 bool android_start_flat() {
+	sk_info.display_type = display_opaque;
 	if (android_window) {
 		android_create_swapchain();
 	}

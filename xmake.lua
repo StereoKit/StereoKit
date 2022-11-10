@@ -30,8 +30,11 @@ package("openxr_loader")
         add_syslinks("stdc++fs")
     end
     
-    on_install("linux", "windows", "android", function (package)
-        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF","-DBUILD_WITH_SYSTEM_JSONCPP=OFF"})
+    on_install("linux", "windows", function (package)
+        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=OFF", "-DBUILD_WITH_SYSTEM_JSONCPP=OFF"})
+    end)
+    on_install("android", function (package)
+        import("package.tools.cmake").install(package, {"-DDYNAMIC_LOADER=ON", "-DBUILD_WITH_SYSTEM_JSONCPP=OFF"})
     end)
 package_end()
 
@@ -39,7 +42,7 @@ package_end()
 
 -- On Android, we have a precompiled binary provided by Oculus
 if not is_plat("wasm") then
-    add_requires("openxr_loader 1.0.24", {verify = false, configs = {vs_runtime="MD", shared=false}})
+    add_requires("openxr_loader 1.0.24", {verify = false, configs = {vs_runtime="MD", shared=is_plat("android")}})
     add_requires("reactphysics3d 0.9.0", {verify = false, configs = {vs_runtime="MD", shared=false}})
 end
 
@@ -91,12 +94,7 @@ target("StereoKitC")
     add_packages("reactphysics3d")
     -- On Android, we have a precompiled binary provided by Oculus
     if not is_plat("wasm") then
-        if has_config("oculus-openxr") and is_plat("android") then
-            add_linkdirs("StereoKitC/lib/bin/$(arch)/$(mode)")
-            add_links("openxr_loader")
-        else
-            add_packages("openxr_loader")
-        end
+        add_packages("openxr_loader")
     end
 
     -- Platform specific options
@@ -155,9 +153,16 @@ target("StereoKitC")
     after_build(function(target)
         if is_plat("windows") then
             dist_os = has_config("uwp") and "UWP" or "Win32"
+        elseif is_plat("linux") then
+            dist_os = "Linux"
+        elseif is_plat("android") then
+            dist_os = "Android"
+        elseif is_plat("wasm") then
+            dist_os = "WASM"
         else
             dist_os = "$(os)"
         end
+
         build_folder = target:targetdir().."/"
         dist_folder  = "$(projectdir)/bin/distribute/bin/"..dist_os.."/$(arch)/$(mode)/"
 
@@ -174,7 +179,8 @@ target("StereoKitC")
         os.cp(build_folder.."*.sym", dist_folder)
         -- Oculus' pre-built OpenXR loader
         if is_plat("android") and has_config("oculus-openxr") then
-            os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder)
+            os.cp("StereoKitC/lib/bin/$(arch)/$(mode)/libopenxr_loader.so", dist_folder.."oculus/")
+            os.cp(target:pkgs()["openxr_loader"]:get("libfiles"), dist_folder.."standard/")
         end
 
         os.cp("$(projectdir)/StereoKitC/stereokit.h",    "$(projectdir)/bin/distribute/include/")

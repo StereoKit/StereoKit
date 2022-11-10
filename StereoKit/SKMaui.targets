@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- This adds .NET Core support to MAUI multi-target style projects,
+	     MAUI's UI doesn't really support .NET Core/Linux, but SK does. -->
+	<PropertyGroup Condition="'$(SingleProject)' == 'true'">
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'==''">Platforms/</NetCoreRootProjectFolder>
+		<NetCoreRootProjectFolder Condition="'$(PlatformsProjectFolder)'!=''">$(PlatformsProjectFolder)</NetCoreRootProjectFolder>
+		<EnableDefaultNetCoreItems>false</EnableDefaultNetCoreItems>
+		<NetCoreProjectFolder Condition=" '$(NetCoreProjectFolder)' == '' ">$(NetCoreRootProjectFolder)NetCore/</NetCoreProjectFolder>
+		<NetCoreProjectFolder>$([MSBuild]::EnsureTrailingSlash('$(NetCoreProjectFolder)'))</NetCoreProjectFolder>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(UseMaui)' == 'true'">
+		<MauiPlatformSpecificFolder Include="$(NetCoreProjectFolder)" TargetPlatformIdentifier="" />
+	</ItemGroup>
+
+	<Target Name="StereoKit_MauiCore" AfterTargets="StereoKit_ContentFind" BeforeTargets="_MauiRemovePlatformCompileItems" Condition="'$(SKBuildPlatform)'=='Desktop' and '$(SingleProject)' == 'true' and '$(UseMaui)' == 'true' and ('$(SKNetCoreMultiTarget)' == 'true' or '$(SKNetCoreMultiTarget)' == '')">
+		<Message Importance="high" Text="[StereoKit NuGet] Adding .NET Core multi-target support."/>
+		<ItemGroup>
+
+			<!-- Remove other platform specific code. -->
+			<Compile Remove="$(NetCoreRootProjectFolder)/**/*.cs" />
+
+			<!-- Include the .Net Core specific code -->
+			<Compile
+				Include="$(NetCoreProjectFolder)**/*.cs">
+				<ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+			</Compile>
+
+			<!-- Turn MauiAssets into Content for copying. -->
+			<Content Include="%(MauiAsset.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>$(SKAssetDestination)/%(MauiAsset.LogicalName)</Link>
+			</Content>
+
+		</ItemGroup>
+	</Target>
+
+</Project>
