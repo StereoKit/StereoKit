@@ -3,7 +3,7 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <Platform      Condition="'$(Platform)' == ''">x64</Platform>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
     <ProjectGuid>{6AAC0A23-0742-4689-B65D-0B2F5291FB39}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -12,60 +12,53 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22621.0</TargetPlatformVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
-    <IntermediateOutputPath>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\StereoKitTest_UWP\</IntermediateOutputPath>
-    <OutputPath>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\StereoKitTest_UWP\</OutputPath>
-
+    <IntermediateOutputPath>..\..\..\bin\intermediate\$(Platform)_$(Configuration)\StereoKitTest_UWP\</IntermediateOutputPath>
+    <OutputPath>..\..\..\bin\$(Platform)_$(Configuration)_UWP\StereoKitTest_UWP\</OutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <NoWarn>;2008</NoWarn>
     <ErrorReport>prompt</ErrorReport>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <SKAssetFolder>..\..\Assets</SKAssetFolder>
+    <SKAssetDestination>Assets</SKAssetDestination>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <DefineConstants>DEBUG;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Platform)' == 'ARM64'">
     <PlatformTarget>ARM64</PlatformTarget>
     <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Platform)' == 'x64'">
     <PlatformTarget>x64</PlatformTarget>
     <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
   </PropertyGroup>
-  
   <PropertyGroup Condition="'$(Platform)' == 'ARM'">
     <PlatformTarget>ARM</PlatformTarget>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Platform)' == 'Win32'">
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
-
   <PropertyGroup>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
-
   <ItemGroup>
-    <Compile Include="..\*.cs" />
-    <Compile Include="..\Demos\*.cs" />
-    <Compile Include="..\Tools\*.cs" />
-    <Compile Include="..\Tests\*.cs" />
-    <Compile Include="..\Docs\*.cs" />
+    <Compile Include="..\*.cs" Visible="false" />
+    <Compile Include="..\Demos\*.cs" Visible="false" />
+    <Compile Include="..\Tools\*.cs" Visible="false" />
+    <Compile Include="..\Tests\*.cs" Visible="false" />
+    <Compile Include="..\Docs\*.cs" Visible="false" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -83,16 +76,21 @@
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
-
+  <PropertyGroup>
+    <SKAssetFolder>..\..\Assets</SKAssetFolder>
+    <SKAssetDestination>Assets</SKAssetDestination>
+  </PropertyGroup>
+  <Import Project="..\..\..\StereoKit\StereoKit.props" />
+  <Import Project="..\..\..\StereoKit\SKAssets.targets" />
+  <Import Project="..\..\..\StereoKit\SKShaders.targets" />
   <ItemGroup>
     <PackageReference Include="Microsoft.MixedReality.QR">
       <Version>0.5.3019</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.14</Version>
+      <Version>6.2.9</Version>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
       <Project>{45af7827-11ca-4691-a063-8c78fb0be1ec}</Project>
@@ -103,27 +101,15 @@
       <Name>StereoKit</Name>
     </ProjectReference>
   </ItemGroup>
-
-  <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
-  <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <ItemGroup>
-    <Content Include="$(SolutionDir)Examples\Assets\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
-    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
-  </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
-
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
-  <Target Name="AfterBuild">
+  <Target Name="AfterBuild"> 
   </Target>
   -->
 </Project>
