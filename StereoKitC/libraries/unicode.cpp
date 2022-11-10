@@ -196,8 +196,8 @@ size_t utf_charlen(const char16_t* str_utf16) {
 	size_t          result = 0;
 	const char16_t* curr   = str_utf16;
 	while (*curr != '\0') {
-		// Pairs start with a value in the 0xD800�0xDBFF range
-		// Singles have a value in the 0x0000�0xD7FF, 0xE000�0xFFFF ranges
+		// Pairs start with a value in the 0xD800-0xDBFF range
+		// Singles have a value in the 0x0000-0xD7FF, 0xE000-0xFFFF ranges
 		if (*curr < 0xDC00 || *curr > 0xDFFF) { result += 1; }
 		curr++;
 	}
@@ -235,8 +235,8 @@ const char16_t* utf_at_char(const char16_t* str_utf16, int32_t index) {
 	const char16_t* curr = str_utf16;
 	while (*curr != '\0') {
 		if (result == index) return curr;
-		// Pairs start with a value in the 0xD800�0xDBFF range
-		// Singles have a value in the 0x0000�0xD7FF, 0xE000�0xFFFF ranges
+		// Pairs start with a value in the 0xD800-0xDBFF range
+		// Singles have a value in the 0x0000-0xD7FF, 0xE000-0xFFFF ranges
 		if (*curr < 0xDC00 || *curr > 0xDFFF) { result += 1; }
 		curr++;
 	}
