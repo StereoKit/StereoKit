@@ -53,6 +53,56 @@ if(FORCE_COLORED_OUTPUT)
 	endif()
 endif()
 
+
+###########################################
+## Platform Specific Settings            ##
+###########################################
+
+if (ANDROID)
+  set(ANDROID_LOG_LIBRARY log)
+  set(ANDROID_LIBS
+    log
+    android
+    EGL)
+elseif (UNIX)
+  set(LINUX_LIBS
+    Threads::Threads
+    GLX
+    X11
+    Xfixes
+    fontconfig )
+
+  # Add pthreads
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+
+  # Add OpenGL, and account for the SK_LINUX_EGL option
+  if(SK_LINUX_EGL)
+    add_definitions("-DSKG_LINUX_EGL")
+    list(APPEND LINUX_LIBS EGL)
+  else()
+    add_definitions("-DSKG_LINUX_GLX")
+    find_package(X11 REQUIRED)
+    list(APPEND LINUX_LIBS GL dl)
+  endif()
+elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+  set(WINDOWS_LIBS
+    Comdlg32
+    WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
+endif()
+
+if(NOT SK_PHYSICS)
+  message("-- Building without physics!")
+  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
+else()
+  message("-- Building with physics!")
+endif()
+
 ###########################################
 ## Dependencies                          ##
 ###########################################
@@ -130,57 +180,6 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
 endforeach(SHADER)
-
-###########################################
-## Platform Specific Settings            ##
-###########################################
-
-if (ANDROID)
-  find_library(ANDROID_LOG_LIBRARY log)
-  find_library(ANDROID_LIBRARY_LIBRARY android)
-  find_library(ANDROID_EGL_LIBRARY egl)
-  set(ANDROID_LIBS
-    ${ANDROID_EGL_LIBRARY}
-    ${ANDROID_LIBRARY_LIBRARY}
-    ${ANDROID_LOG_LIBRARY})
-elseif (UNIX)
-  set(LINUX_LIBS
-    Threads::Threads
-    GLX
-    X11
-    Xfixes
-    fontconfig )
-
-  # Add pthreads
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
-
-  # Add OpenGL, and account for the SK_LINUX_EGL option
-  if(SK_LINUX_EGL)
-    add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL)
-  else()
-    add_definitions("-DSKG_LINUX_GLX")
-    find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL dl)
-  endif()
-elseif(WIN32)
-  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
-    Comdlg32
-    WindowsApp) # Required for ISAC spatial audio code
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  add_definitions("-DWINDOWS_UWP")
-endif()
-
-if(NOT SK_PHYSICS)
-  message("-- Building without physics!")
-  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
-else()
-  message("-- Building with physics!")
-endif()
 
 ###########################################
 ## StereoKitC                            ##
