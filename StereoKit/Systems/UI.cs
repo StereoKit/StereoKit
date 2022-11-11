@@ -440,6 +440,116 @@ namespace StereoKit
 			return false;
 		}
 
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> Toggle(text, ref value, image, image, imageLayout);
+
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
+		{
+			int iVal = value?1:0;
+			if (NativeAPI.ui_toggle_img_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout))
+			{
+				value = iVal>0?true:false;
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec2 size)
+			=> Toggle(text, ref value, image, image, imageLayout, size);
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
+		{
+			int iVal = value ? 1 : 0;
+			if (NativeAPI.ui_toggle_img_sz_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, size))
+			{
+				value = iVal > 0 ? true : false;
+				return true;
+			}
+			return false;
+		}
+
 		/// <inheritdoc cref="Toggle(string, ref bool)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
@@ -461,6 +571,8 @@ namespace StereoKit
 		/// <param name="text">Text to display on the Toggle and id for
 		/// tracking element state. MUST be unique within current hierarchy.
 		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -473,6 +585,62 @@ namespace StereoKit
 		{
 			int iVal = value ? 1 : 0;
 			if (NativeAPI.ui_toggle_at_16(text, ref iVal, topLeftCorner, size))
+			{
+				value = iVal > 0 ? true : false;
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> ToggleAt(text, ref value, image, image, imageLayout, topLeftCorner, size);
+
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		{
+			int iVal = value ? 1 : 0;
+			if (NativeAPI.ui_toggle_img_at_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, topLeftCorner, size))
 			{
 				value = iVal > 0 ? true : false;
 				return true;
