@@ -1160,10 +1160,9 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 	}
 	// Create an array of color values the size of our texture
 	color32* color_data = sk_malloc_t(color32, width * height);
-	color32* color_curr = color_data;
 
 	vec2  center   = { width / 2.0f, height / 2.0f };
-	float max_dist = fminf(width, height) / 2.0f;
+	float max_dist = fminf((float)width, (float)height) / 2.0f;
 	float power    = roundness * 2;
 	for (int32_t px_y=0; px_y<height; px_y++) {
 		for (int32_t px_x=0; px_x<width; px_x++) {

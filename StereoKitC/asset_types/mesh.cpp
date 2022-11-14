@@ -727,7 +727,7 @@ mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_directi
 
 	// Make a circle of vertices
 	for (vind_t i = 0; i < spoke_count; i++) {
-		float angle = i * (M_PI*2 / spoke_count);
+		float angle = i * ((float)M_PI*2.0f / spoke_count);
 
 		vert_t *pt   = &verts[i];
 		float radius = diameter / 2;

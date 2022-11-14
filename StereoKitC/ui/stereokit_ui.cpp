@@ -1978,9 +1978,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		float left      = fmaxf(carat_pos.x, carat_end.x);
 		float right     = fminf(carat_pos.x, carat_end.x);
 
-		vec3   size = vec3{ -(right - left), line, line * 0.01f };
-		vec3   pos  = (final_pos - vec3{ skui_settings.padding - left, skui_settings.padding - carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - size / 2;
-		matrix mx   = matrix_trs(pos, quat_identity, size);
+		vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
+		vec3   pos = (final_pos - vec3{ skui_settings.padding - left, skui_settings.padding - carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
+		matrix mx  = matrix_trs(pos, quat_identity, sz);
 		mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
 	}
 	// Show a blinking text carat
