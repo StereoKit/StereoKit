@@ -19,8 +19,9 @@
 		<SKShadercExe Condition="'$(OS)'!='Windows_NT'">skshaderc</SKShadercExe>
 	</PropertyGroup>
 
-	<!-- Automatically include shaders -->
-	<ItemGroup>
+	<!-- Automatically include shaders, library projects should not compile
+	     shader files -->
+	<ItemGroup Condition="'$(OutputType)'!='Library'">
 		<SKShader Include="$(SKAssetFolder)/**/*.hlsl">
 			<RelFile>%(RecursiveDir)%(Filename)%(Extension)</RelFile>
 			<RelFolder>%(RecursiveDir)</RelFolder>
