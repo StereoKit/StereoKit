@@ -25,14 +25,14 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_getf_unscaled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_get_unscaled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_getf();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_get();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_elapsedf_unscaled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_elapsed_unscaled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_elapsedf();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_elapsed();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_totalf_unscaled();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_total_unscaled();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_totalf();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_total();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_stepf_unscaled();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_step_unscaled();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_stepf();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_step();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_scale(double scale);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_set_time(double total_seconds, double frame_elapsed_seconds=0);
 

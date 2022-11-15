@@ -65,8 +65,8 @@ void flatscreen_input_update() {
 		}
 		if (fltscr_mouse_look) {
 			const mouse_t *mouse = input_mouse();
-			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_elapsedf();
-			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_elapsedf();
+			fltscr_head_rot.y -= mouse->pos_change.x * fltscr_rot_speed.x * time_stepf_unscaled();
+			fltscr_head_rot.x -= mouse->pos_change.y * fltscr_rot_speed.y * time_stepf_unscaled();
 			fltscr_head_rot.x = fmaxf(-89.9f, fminf(fltscr_head_rot.x, 89.9f));
 			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 
@@ -79,7 +79,7 @@ void flatscreen_input_update() {
 			orientation = quat_from_angles(fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z);
 		}
 		// Apply movement to the camera
-		fltscr_head_pos += orientation * movement * time_elapsedf() * fltscr_move_speed;
+		fltscr_head_pos += orientation * movement * time_stepf_unscaled() * fltscr_move_speed;
 		fltscr_transform = matrix_trs(fltscr_head_pos, orientation);
 		render_set_cam_root(render_get_cam_root());
 	} else {

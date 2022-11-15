@@ -534,7 +534,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 	// Copy in the other global shader variables
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
-	render_global_buffer.time       = time_getf();
+	render_global_buffer.time       = time_totalf();
 	render_global_buffer.view_count = view_count;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);

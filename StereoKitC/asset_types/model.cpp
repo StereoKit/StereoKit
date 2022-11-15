@@ -824,7 +824,7 @@ void model_set_anim_time(model_t model, float time) {
 		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
 	} else {
-		model->anim_inst.start_time = time_getf() - time;
+		model->anim_inst.start_time = time_totalf() - time;
 	}
 }
 
@@ -871,9 +871,9 @@ float model_anim_active_time(model_t model) {
 
 	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 	switch (model->anim_inst.mode) {
-	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
-	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
-	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_manual: return fminf(                model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_totalf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_totalf() - model->anim_inst.start_time, max_time);
 	default:               return 0;
 	}
 }

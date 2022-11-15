@@ -339,15 +339,26 @@ SK_API app_focus_    sk_app_focus          ();
 
 ///////////////////////////////////////////
 
-SK_API double        time_get_raw          ();
-SK_API float         time_getf_unscaled    ();
-SK_API double        time_get_unscaled     ();
-SK_API float         time_getf             ();
-SK_API double        time_get              ();
-SK_API float         time_elapsedf_unscaled();
-SK_API double        time_elapsed_unscaled ();
-SK_API float         time_elapsedf         ();
-SK_API double        time_elapsed          ();
+// TODO: remove `get` and `elapsed` in v0.4
+SK_API SK_DEPRECATED double        time_get_raw          ();
+SK_API SK_DEPRECATED float         time_getf_unscaled    ();
+SK_API SK_DEPRECATED double        time_get_unscaled     ();
+SK_API SK_DEPRECATED float         time_getf             ();
+SK_API SK_DEPRECATED double        time_get              ();
+SK_API SK_DEPRECATED float         time_elapsedf_unscaled();
+SK_API SK_DEPRECATED double        time_elapsed_unscaled ();
+SK_API SK_DEPRECATED float         time_elapsedf         ();
+SK_API SK_DEPRECATED double        time_elapsed          ();
+
+SK_API double        time_total_raw        ();
+SK_API float         time_totalf_unscaled  ();
+SK_API double        time_total_unscaled   ();
+SK_API float         time_totalf           ();
+SK_API double        time_total            ();
+SK_API float         time_stepf_unscaled   ();
+SK_API double        time_step_unscaled    ();
+SK_API float         time_stepf            ();
+SK_API double        time_step             ();
 SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
 

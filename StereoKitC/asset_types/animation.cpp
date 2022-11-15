@@ -149,7 +149,7 @@ void anim_update_model(model_t model) {
 	// Don't update more than once per frame
 	float curr_time = model->anim_inst.mode == anim_mode_manual 
 		? model->anim_inst.start_time
-		: time_getf();
+		: time_totalf();
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
 	model->transforms_changed    = true;
@@ -242,7 +242,7 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 	}
 	memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * count);
 
-	model->anim_inst.start_time  = time_getf();
+	model->anim_inst.start_time  = time_totalf();
 	model->anim_inst.last_update = -1;
 	model->anim_inst.anim_id     = anim_id;
 	model->anim_inst.mode        = mode;

@@ -57,7 +57,7 @@ namespace StereoKit.Framework
 			UI.HandleBegin("at",   ref at,   new Bounds(Vec3.One*0.02f), true);
 			UI.ToggleAt("On", ref _previewing, new Vec3(4, -2, 0) * U.cm, new Vec2(8 * U.cm, UI.LineHeight));
 			if (_previewing && UI.ToggleAt("Record", ref _recording, new Vec3(4, -6, 0)*U.cm, new Vec2(8*U.cm, UI.LineHeight))) {
-				_frameTime  = Time.ElapsedUnscaledf;
+				_frameTime  = Time.StepUnscaledf;
 				_frameIndex = 0;
 			}
 			UI.HandleEnd();
@@ -66,7 +66,7 @@ namespace StereoKit.Framework
 			float fov        = 10 + Math.Max(0, Math.Min(1, (Vec3.Distance(from.position, at.position) - 0.1f) / 0.2f)) * 110;
 			Vec3  previewAt  = at.position + at.orientation * Vec3.Up * 0.06f;
 			Vec3  renderFrom = at.position + (at.position - from.position).Normalized * 0.06f;
-			_renderFrom = Pose.Lerp(_renderFrom, new Pose(renderFrom, Quat.LookDir(at.position - from.position)), Time.Elapsedf * damping);
+			_renderFrom = Pose.Lerp(_renderFrom, new Pose(renderFrom, Quat.LookDir(at.position - from.position)), Time.Stepf * damping);
 
 			Lines.Add(from.position, at.position, Color.White, 0.005f);
 			from.orientation = at.orientation = Quat.LookDir(from.position-at.position);

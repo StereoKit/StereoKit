@@ -106,7 +106,7 @@ class DemoLines : ITest
 			Vec3      prev  = drawPoints[drawPoints.Count - 2].pt;
 			Vec3      dir   = (prev - (drawPoints.Count > 2 ? drawPoints[drawPoints.Count - 3].pt : drawPoints[drawPoints.Count - 1].pt)).Normalized;
 			float     dist  = Vec3.Distance(prev, tip);
-			float     speed = Vec3.Distance(tip, prevTip) * Time.Elapsedf;
+			float     speed = Vec3.Distance(tip, prevTip) * Time.Stepf;
 			LinePoint here  = new LinePoint(tip, activeColor, Math.Max(1-speed/0.0003f,0.1f) * lineSize);
 
 			if ((Vec3.Dot( dir, (tip-prev).Normalized ) < 0.99f && dist > 0.01f) || dist > 0.05f) { 

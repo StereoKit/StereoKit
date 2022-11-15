@@ -90,7 +90,7 @@ void demo_mic_update() {
 		}
 
 		// And draw the volume indicator!
-		mic_intensity = mic_intensity + (mic_intensity_dest - mic_intensity) * time_elapsedf() * 16;
+		mic_intensity = mic_intensity + (mic_intensity_dest - mic_intensity) * time_stepf() * 16;
 		float    scale = 0.1f + 0.1f*mic_intensity;
 		color128 color = { 1,1,1, fmaxf(0.1f,mic_intensity) };
 		render_add_mesh(mic_visual_mesh, mic_visual_mat, matrix_trs({0,0,-0.5f}, quat_identity, vec3_one*scale), color);

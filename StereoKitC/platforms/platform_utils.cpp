@@ -424,7 +424,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	const float physical_interact_timeout = 60 * 5; // 5 minutes
 	if (visible == false) virtualkeyboard_open(false, type);
 	else if (sk_active_display_mode() != display_mode_flatscreen &&
-	         (input_last_physical_keypress < 0 || (time_getf()-input_last_physical_keypress) > physical_interact_timeout) ) {
+	         (input_last_physical_keypress < 0 || (time_totalf_unscaled()-input_last_physical_keypress) > physical_interact_timeout) ) {
 
 		virtualkeyboard_open(visible, type);
 	}

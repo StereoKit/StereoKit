@@ -403,7 +403,7 @@ inline bounds_t ui_size_box(vec3 top_left, vec3 dimensions) {
 inline void ui_anim_start(uint64_t id) {
 	if (skui_anim_id != id) {
 		skui_anim_id = id;
-		skui_anim_time = time_getf_unscaled();
+		skui_anim_time = time_totalf_unscaled();
 	}
 }
 
@@ -411,7 +411,7 @@ inline void ui_anim_start(uint64_t id) {
 
 inline bool ui_anim_has(uint64_t id, float duration) {
 	if (id == skui_anim_id) {
-		if ((time_getf_unscaled() - skui_anim_time) < duration)
+		if ((time_totalf_unscaled() - skui_anim_time) < duration)
 			return true;
 		skui_anim_id = 0;
 	}
@@ -421,7 +421,7 @@ inline bool ui_anim_has(uint64_t id, float duration) {
 ///////////////////////////////////////////
 
 inline float ui_anim_elapsed(uint64_t id, float duration = 1, float max = 1) {
-	return skui_anim_id == id ? fminf(max, (time_getf_unscaled() - skui_anim_time) / duration) : 0;
+	return skui_anim_id == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time) / duration) : 0;
 }
 
 ///////////////////////////////////////////
@@ -725,7 +725,7 @@ void ui_update() {
 		// draw hand rays
 		skui_hand[i].ray_visibility = math_lerp(skui_hand[i].ray_visibility,
 			was_ray_enabled && skui_enable_far_interact && skui_hand[i].ray_enabled && !skui_hand[i].ray_discard ? 1.0f : 0.0f,
-			20.0f * time_elapsedf_unscaled());
+			20.0f * time_stepf_unscaled());
 		if (skui_hand[i].focused_prev != 0) skui_hand[i].ray_visibility = 0;
 		if (skui_hand[i].ray_visibility > 0.004f) {
 			ray_t       r     = input_get_pointer(input_hand_pointer_id[i])->ray;
@@ -1875,7 +1875,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	if (state & button_state_just_active) {
 		platform_keyboard_show(true,type);
-		skui_input_blink  = time_getf();
+		skui_input_blink  = time_totalf_unscaled();
 		skui_input_target = id_hash;
 		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
@@ -1960,10 +1960,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 			curr = input_text_consume();
 		}
-		if      (input_key(key_shift) & button_state_active && input_key(key_left ) & button_state_just_active) { skui_input_blink = time_getf(); skui_input_carat = maxi(0, skui_input_carat - 1); }
-		else if (input_key(key_left ) & button_state_just_active)                                               { skui_input_blink = time_getf(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = maxi(0, skui_input_carat - 1); skui_input_carat_end = skui_input_carat; }
-		if      (input_key(key_shift) & button_state_active && input_key(key_right) & button_state_just_active) { skui_input_blink = time_getf(); skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); }
-		else if (input_key(key_right) & button_state_just_active)                                               { skui_input_blink = time_getf(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); skui_input_carat_end = skui_input_carat; }
+		if      (input_key(key_shift) & button_state_active && input_key(key_left ) & button_state_just_active) { skui_input_blink = time_totalf_unscaled(); skui_input_carat = maxi(0, skui_input_carat - 1); }
+		else if (input_key(key_left ) & button_state_just_active)                                               { skui_input_blink = time_totalf_unscaled(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = maxi(0, skui_input_carat - 1); skui_input_carat_end = skui_input_carat; }
+		if      (input_key(key_shift) & button_state_active && input_key(key_right) & button_state_just_active) { skui_input_blink = time_totalf_unscaled(); skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); }
+		else if (input_key(key_right) & button_state_just_active)                                               { skui_input_blink = time_totalf_unscaled(); if (skui_input_carat_end == skui_input_carat) skui_input_carat = mini((int32_t)utf_charlen(buffer), skui_input_carat + 1); skui_input_carat_end = skui_input_carat; }
 	}
 
 	// Render the input UI
@@ -1984,7 +1984,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
 	}
 	// Show a blinking text carat
-	if (skui_input_target == id_hash && (int)((time_getf()-skui_input_blink)*2)%2==0) {
+	if (skui_input_target == id_hash && (int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
 
 		ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, skui_settings.padding - carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
 	}
