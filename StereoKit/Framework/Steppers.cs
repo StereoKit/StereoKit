@@ -28,12 +28,14 @@ namespace StereoKit.Framework
 		}
 		public T Add<T>(T stepper) where T:IStepper 
 		{
-			// Add the stepper to the list
-			_steppers.Add(stepper);
-
-			// And initialize the stepper!
+			// Initialize the stepper! If called from a separate thread, this
+			// needs to happen first, otherwise there's a chance the Step may
+			// happen before Initialize
 			if (SK.IsInitialized)
 				stepper.Initialize();
+
+			// Add the stepper to the list
+			_steppers.Add(stepper);
 
 			return stepper;
 		}
