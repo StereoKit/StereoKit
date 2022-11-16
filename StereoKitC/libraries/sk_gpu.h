@@ -1629,8 +1629,15 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 
 	swapchain->width  = width;
 	swapchain->height = height;
-	swapchain->_swapchain->ResizeBuffers(0, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
-
+	HRESULT hr = swapchain->_swapchain->ResizeBuffers(0, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't resize swapchain: 0x%08X", hr);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			hr = d3d_device->GetDeviceRemovedReason();
+			skg_logf(skg_log_critical, "Device removed reason: 0x%08X", hr);
+		}
+	}
+	
 	ID3D11Texture2D *back_buffer;
 	swapchain->_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 	swapchain->_target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, width, height, 1);
@@ -1645,7 +1652,14 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 ///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
-	swapchain->_swapchain->Present(1, 0);
+	HRESULT hr = swapchain->_swapchain->Present(1, 0);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't present swapchain: 0x%08X", hr);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			hr = d3d_device->GetDeviceRemovedReason();
+			skg_logf(skg_log_critical, "Device removed reason: 0x%08X", hr);
+		}
+	}
 }
 
 ///////////////////////////////////////////
