@@ -8,7 +8,7 @@ class DemoLines : ITest
 	string description = "";
 	
 	Model paletteModel = Model.FromFile("Palette.glb", Default.ShaderUI);
-	Pose  palettePose  = Demo.contentPose * new Pose(-0.2f, 0, 0, Quat.FromAngles(-45,0,0));
+	Pose  palettePose  = Demo.contentPose * new Pose(-0.2f, -0.15f, 0, Quat.FromAngles(-45,0,0));
 	Color activeColor  = Color.White;
 	float lineSize     = 0.02f;
 
@@ -17,7 +17,7 @@ class DemoLines : ITest
 
 	public void Update()
 	{
-		Hierarchy.Push(Matrix.T(0.1f, 0, 0) * Demo.contentPose);
+		Hierarchy.Push(Matrix.T(0.1f, -0.2f, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0, 0, 0));
 		/// :CodeSample: Lines.Add
 		Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
