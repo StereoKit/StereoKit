@@ -194,23 +194,33 @@ class App
 	/// your application!
 	/// 
 	/// Here's the code for the window, and log tracking.
-	static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-	static List<string> logList = new List<string>();
-	static string       logText = "";
+	static Pose         logPose   = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+	static List<string> logList   = new List<string>();
+	static int          logIndex  = 0;
+	static string       logString = "";
 	static void OnLog(LogLevel level, string text)
 	{
-		if (logList.Count > 15)
-			logList.RemoveAt(logList.Count - 1);
-		logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...\n");
-
-		logText = "";
-		for (int i = 0; i < logList.Count; i++)
-			logText += logList[i];
+		logList.Insert(0, text.Length < 100 ? text : text.Substring(0, 100) + "...\n");
+		UpdateLogStr(logIndex);
 	}
+
+	static void UpdateLogStr(int index)
+	{
+		logIndex  = Math.Max(Math.Min(index, logList.Count-1), 0);
+		logString = "";
+		for (int i = logIndex; i < logIndex + 15 && i < logList.Count; i++)
+			logString += logList[i];
+	}
+
 	static void LogWindow()
 	{
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-		UI.Text(logText);
+		if (UI.Button("v")) UpdateLogStr(logIndex + 15);
+		UI.SameLine();
+		if (UI.Button("^")) UpdateLogStr(logIndex - 15);
+		UI.HSeparator();
+
+		UI.Text(logString);
 		UI.WindowEnd();
 	}
 	/// :End:
