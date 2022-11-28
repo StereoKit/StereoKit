@@ -36,6 +36,11 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 
 		Run(Handle);
 	}
+	protected override void OnDestroy()
+	{
+		SK.Quit();
+		base.OnDestroy();
+	}
 	public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
 	{
 		Microsoft.Maui.ApplicationModel.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
