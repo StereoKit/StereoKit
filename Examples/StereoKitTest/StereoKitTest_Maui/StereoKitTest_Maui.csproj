@@ -28,6 +28,7 @@
 		<SKOpenXRLoader>Oculus</SKOpenXRLoader>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
 	</PropertyGroup>
 
 	<ItemGroup>

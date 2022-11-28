@@ -29,6 +29,7 @@
     <SKOpenXRLoader>Oculus</SKOpenXRLoader>
     <SKAssetFolder>..\..\Assets</SKAssetFolder>
     <SKAssetDestination>Assets</SKAssetDestination>
+    <SKShowDebugVars>true</SKShowDebugVars>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -143,7 +144,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\xr_$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
+    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
