@@ -6,6 +6,7 @@
 		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
 		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Oculus</SKOpenXRLoader>
 		<SKShowDebugVars    Condition="'$(SKShowDebugVars)'    == ''">false</SKShowDebugVars>
+		<SKAutoFindShaders  Condition="'$(SKAutoFindShaders)'  == ''">True</SKAutoFindShaders>
 	</PropertyGroup>
 	
 	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">
@@ -26,6 +27,7 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetFolder              : $(SKAssetFolder)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFramework            : $(TargetFramework)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFrameworkIdentifier  : $(TargetFrameworkIdentifier)"/>

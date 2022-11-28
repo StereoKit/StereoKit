@@ -17,11 +17,12 @@
 	<PropertyGroup>
 		<SKShadercExe Condition="'$(OS)'=='Windows_NT'">skshaderc.exe</SKShadercExe>
 		<SKShadercExe Condition="'$(OS)'!='Windows_NT'">skshaderc</SKShadercExe>
+		<SKAutoFindShaders Condition="'$(SKAutoFindShaders)' == ''">True</SKAutoFindShaders>
 	</PropertyGroup>
 
 	<!-- Automatically include shaders, library projects should not compile
 	     shader files -->
-	<ItemGroup Condition="'$(OutputType)'!='Library'">
+	<ItemGroup Condition="'$(SKAutoFindShaders)'=='True'">
 		<SKShader Include="$(SKAssetFolder)/**/*.hlsl">
 			<RelFile>%(RecursiveDir)%(Filename)%(Extension)</RelFile>
 			<RelFolder>%(RecursiveDir)</RelFolder>
