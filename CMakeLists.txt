@@ -238,6 +238,7 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/cgltf.cpp
