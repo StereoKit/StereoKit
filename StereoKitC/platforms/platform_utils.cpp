@@ -23,7 +23,9 @@
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h>
@@ -34,7 +36,9 @@
 #ifdef SK_OS_WINDOWS
 #include "win32.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
