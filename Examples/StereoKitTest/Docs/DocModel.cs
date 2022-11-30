@@ -14,12 +14,10 @@ class DocModel : ITest
 			Mesh   .GenerateCube(Vec3.One),
 			Default.Material);
 		/// :End:
-		/// :CodeSample: Model.AddSubset
-		model.AddSubset(
+		model.AddNode("Sphere",
+			Matrix .T(0, 1, 0),
 			Mesh   .GenerateSphere(1),
-			Default.Material,
-			Matrix .T(0,1,0));
-		/// :End:
+			Default.Material);
 
 		/// :CodeSample: Model Model.Visuals Mesh.VertCount Mesh.IndCount
 		/// ### Counting the Vertices and Triangles in a Model
@@ -39,10 +37,10 @@ class DocModel : ITest
 		Log.Info($"Model stats: {vertCount} vertices, {triCount} triangles");
 		/// :End:
 
-		int lastSubset = model.AddSubset(
+		ModelNode lastSubset = model.AddNode("LastSubset",
+			Matrix.T(0, 1, 0),
 			Mesh   .GenerateCube(new Vec3(0.5f,1,0.5f)),
-			Default.Material,
-			Matrix .T(0, 1, 0));
+			Default.Material);
 
 		testModel = model;
 
@@ -56,17 +54,14 @@ class DocModel : ITest
 			model.Bounds.dimensions.z != 1)
 			return false;
 
-		model.RemoveSubset(lastSubset);
-
-		/// :CodeSample: Model.SubsetCount Model.GetMaterial Model.SetMaterial
-		for (int i = 0; i < model.SubsetCount; i++)
+		/// :CodeSample: ModelNode.Material
+		foreach (ModelNode node in model.Nodes)
 		{
-			// GetMaterial will often returned a shared resource, so 
-			// copy it if you don't wish to change all assets that 
-			// share it.
-			Material mat = model.GetMaterial(i).Copy();
+			// ModelNode.Material will often returned a shared resource, so
+			// copy it if you don't wish to change all assets that share it.
+			Material mat = node.Material.Copy();
 			mat[MatParamName.ColorTint] = Color.HSV(0, 1, 1);
-			model.SetMaterial(i, mat);
+			node.Material = mat;
 		}
 		/// :End:
 
