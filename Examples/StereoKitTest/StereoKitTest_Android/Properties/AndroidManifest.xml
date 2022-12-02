@@ -3,8 +3,9 @@
 	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
 
 	<application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/AppTheme">
-		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2"/>
+		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
+		<meta-data android:name="pvr.app.type" android:value="vr" /> <!-- Pico -->
 	</application>
 
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -25,7 +26,14 @@
 	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
 
 	<!-- Oculus specific items -->
-	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" />
-	<uses-feature    android:name="oculus.software.handtracking"   android:required="false" />
-	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH" android:required="false" />
+	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" android:required="false"/>
+	<uses-feature    android:name="oculus.software.handtracking"        android:required="false"/>
+	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH"      android:required="false"/>
+	<uses-feature    android:name="com.oculus.software.body_tracking"   android:required="false"/>
+	<uses-permission android:name="com.oculus.permission.BODY_TRACKING" android:required="false"/>
+	<uses-feature    android:name="oculus.software.face_tracking"       android:required="false"/>
+	<uses-permission android:name="com.oculus.permission.FACE_TRACKING" android:required="false"/>
+	<uses-feature    android:name="oculus.software.eye_tracking"        android:required="false"/>
+	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"  android:required="false"/>
+	<uses-feature    android:name="com.oculus.experimental.enabled"     android:required="false"/>
 </manifest>
