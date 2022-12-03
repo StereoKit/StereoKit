@@ -141,6 +141,8 @@ SK_API button_state_ ui_volumei_at_16     (const char16_t *id, bounds_t bounds, 
 SK_API bool32_t      ui_volume_at         (const char     *id, bounds_t bounds); // TODO: remove in v0.4
 SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds); // TODO: remove in v0.4
 SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);  // TODO: remove in v0.4
+SK_API void          ui_text_at           (const char*     text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
+SK_API void          ui_text_at_16        (const char16_t* text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_at         (const char     *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_at_16      (const char16_t *text, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t      ui_button_img_at     (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
@@ -164,6 +166,8 @@ SK_API void     ui_label_sz       (const char     *text, vec2 size);
 SK_API void     ui_label_sz_16    (const char16_t *text, vec2 size);
 SK_API void     ui_text           (const char     *text, text_align_ text_align sk_default(text_align_top_left));
 SK_API void     ui_text_16        (const char16_t *text, text_align_ text_align sk_default(text_align_top_left));
+SK_API void     ui_text_sz        (const char     *text, text_align_ text_align, text_fit_ fit, vec2 size);
+SK_API void     ui_text_sz_16     (const char16_t *text, text_align_ text_align, text_fit_ fit, vec2 size);
 SK_API void     ui_image          (sprite_t image, vec2 size);
 SK_API bool32_t ui_button         (const char     *text);
 SK_API bool32_t ui_button_16      (const char16_t *text);

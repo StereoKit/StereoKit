@@ -12,6 +12,7 @@ class DemoUITearsheet : ITest
 
 	public void Initialize()
 	{
+		Tests.RunForFrames(2);
 	}
 
 	public void Shutdown()
@@ -95,6 +96,15 @@ class DemoUITearsheet : ITest
 
 		UI.HSeparator();
 
+		Vec2 size = new Vec2(0.14f, 0.03f);
+		UI.Text("UI.Text with a size overload + Clip",     TextAlign.TopLeft, TextFit.Clip,     size);
+		UI.Text("UI.Text with a size overload + Exact",    TextAlign.TopLeft, TextFit.Exact,    size);
+		UI.Text("UI.Text with a size overload + Overflow", TextAlign.TopLeft, TextFit.Overflow, size);
+		UI.Text("UI.Text with a size overload + Squeeze",  TextAlign.TopLeft, TextFit.Squeeze,  size);
+		UI.Text("UI.Text with a size overload + Wrap",     TextAlign.TopLeft, TextFit.Wrap,     size);
+
+		UI.HSeparator();
+
 		UI.Label("UI.Input");
 		UI.SameLine();
 		UI.Input("Input", ref textInput);
@@ -109,7 +119,13 @@ class DemoUITearsheet : ITest
 		ShowButtonWindow();
 		ShowSliderWindow();
 		ShowTextWindow();
+
+		Vec3 off  = new Vec3(-0.3f, -0.2f, 0);
+		Vec3 at   = Hierarchy.ToWorld(Vec3.Zero + off);
+		Vec3 from = Hierarchy.ToWorld(new Vec3(0,0,-0.5f) + off);
 		Hierarchy.Pop();
+
+		Tests.Screenshot("Tests/UITearsheet.jpg", 1, 1000, 500, 60, from, at);
 		Demo.ShowSummary(title, description);
 	}
 }

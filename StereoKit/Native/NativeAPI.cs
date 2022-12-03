@@ -634,6 +634,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState ui_volumei_at_16     (string id, Bounds bounds, UIConfirm interact_type, out Handed out_opt_hand, out BtnState out_opt_focus_state);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_volume_at_16      (string id, Bounds bounds);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern BtnState ui_interact_volume_at(Bounds bounds, out Handed out_hand);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void     ui_text_at_16        (string text, TextAlign text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_at_16      (string text, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_img_16     (string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_button_round_at_16(string text, IntPtr image_sprite, Vec3 window_relative_pos, float diameter);
@@ -647,6 +648,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16       (string text, bool use_padding);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16    (string text, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_16        (string text, TextAlign text_align);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_sz_16     (string text, TextAlign text_align, TextFit fit, Vec2 size);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image          (IntPtr sprite_image, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16      (string text);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16   (string text, Vec2 size);

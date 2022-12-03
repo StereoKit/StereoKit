@@ -271,6 +271,48 @@ namespace StereoKit
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
 
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
+			=> NativeAPI.ui_text_sz_16(text, textAlign, fit, size);
+
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
+
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the

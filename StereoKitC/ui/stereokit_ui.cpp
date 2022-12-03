@@ -144,11 +144,9 @@ mesh_t        ui_get_mesh                (ui_vis_ element_visual);
 material_t    ui_get_material            (ui_vis_ element_visual);
 void          ui_draw_el                 (ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, float focus);
 
-// Base render types
-void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align);
-void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align);
-
-vec2 text_size(const char16_t* text_utf16, text_style_t style) { return text_size_16(text_utf16, style); }
+float ui_text_in(const char*     text_utf8,  text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size);
+float ui_text_in(const char16_t* text_utf16, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size);
+vec2  text_size (const char16_t* text_utf16, text_style_t style) { return text_size_16(text_utf16, style); }
 
 ///////////////////////////////////////////
 
@@ -1396,15 +1394,6 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 }
 
 ///////////////////////////////////////////
-
-template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear)>
-inline void ui_text_in_g(vec3 start, vec2 size, const C *text, text_align_ position, text_align_ align) {
-	text_add_in_t(text, matrix_identity, size, text_fit_squeeze, skui_font_stack.last(), position, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{1, 1, 1, 1} : color128{.5f, .5f, .5f, 1});
-}
-void ui_text_in(vec3 start, vec2 size, const char     *text, text_align_ position, text_align_ align) { ui_text_in_g<char,     text_add_in >(start, size, text, position, align); }
-void ui_text_in(vec3 start, vec2 size, const char16_t *text, text_align_ position, text_align_ align) { ui_text_in_g<char16_t, text_add_in_16>(start, size, text, position, align); }
-
-///////////////////////////////////////////
 ///////////   UI Components   /////////////
 ///////////////////////////////////////////
 
@@ -1424,7 +1413,7 @@ void ui_label_sz_g(const C *text, vec2 size) {
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	ui_text_in(final_pos - vec3{0,0,skui_settings.depth/2}, final_size, text, text_align_top_left, text_align_center_left);
+	ui_text_at(text, text_align_center_left, text_fit_squeeze, final_pos - vec3{0,0,skui_settings.depth/2}, final_size);
 }
 void ui_label_sz   (const char     *text, vec2 size) { ui_label_sz_g<char    >(text, size); }
 void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(text, size); }
@@ -1439,25 +1428,49 @@ void ui_label_g(const C *text, bool32_t use_padding) {
 	ui_layout_reserve_sz(txt_size, use_padding, &final_pos, &final_size);
 
 	float pad = use_padding ? skui_settings.gutter : 0;
-	ui_text_in(final_pos - vec3{pad,0,skui_settings.depth/2}, final_size, text, text_align_top_left, text_align_center_left);
+	ui_text_at(text, text_align_center_left, text_fit_squeeze, final_pos - vec3{pad,0,skui_settings.depth/2}, final_size);
 }
 void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char    >(text, use_padding); }
 void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t>(text, use_padding); }
 
 ///////////////////////////////////////////
 
-template<typename C, float (*text_add_in_t )(const C *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear)>
+float ui_text_in  (const char*     text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size) { return text_add_in   (text, matrix_identity, size, fit, skui_font_stack.last(), position, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+float ui_text_in  (const char16_t* text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size) { return text_add_in_16(text, matrix_identity, size, fit, skui_font_stack.last(), position, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+
+///////////////////////////////////////////
+
+void ui_text_at   (const char*     text, text_align_ align, text_fit_ fit, vec3 start, vec2 size) { text_add_in   (text, matrix_identity, size, fit, skui_font_stack.last(), text_align_top_left, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+void ui_text_at   (const char16_t* text, text_align_ align, text_fit_ fit, vec3 start, vec2 size) { text_add_in_16(text, matrix_identity, size, fit, skui_font_stack.last(), text_align_top_left, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+void ui_text_at_16(const char16_t* text, text_align_ align, text_fit_ fit, vec3 start, vec2 size) { text_add_in_16(text, matrix_identity, size, fit, skui_font_stack.last(), text_align_top_left, align, start.x, start.y, start.z, skui_enabled_stack.last() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+
+///////////////////////////////////////////
+
+template<typename C>
+void ui_text_sz_g(const C *text, text_align_ text_align, text_fit_ fit, vec2 size) {
+	vec3 offset = skui_layers.last().offset;
+	vec3 at     = offset - vec3{ 0, 0, skui_settings.depth / 4 };
+
+	ui_text_at(text, text_align, fit, at, size);
+	ui_layout_reserve(size);
+}
+void ui_text_sz   (const char     *text, text_align_ text_align, text_fit_ fit, vec2 size) { ui_text_sz_g<char    >(text, text_align, fit, size); }
+void ui_text_sz_16(const char16_t *text, text_align_ text_align, text_fit_ fit, vec2 size) { ui_text_sz_g<char16_t>(text, text_align, fit, size); }
+
+///////////////////////////////////////////
+
+template<typename C>
 void ui_text_g(const C *text, text_align_ text_align) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_layout_remaining().x, 0 };
 
 	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
-	size.y = text_add_in_t(text, matrix_identity, size, text_fit_wrap, skui_font_stack.last(), text_align_top_left, text_align, at.x, at.y, at.z, {1,1,1,1});
+	size.y = ui_text_in(text, text_align_top_left, text_align, text_fit_wrap, at, size);
 
 	ui_layout_reserve(size);
 }
-void ui_text   (const char     *text, text_align_ text_align) { ui_text_g<char,     text_add_in   >(text, text_align); }
-void ui_text_16(const char16_t *text, text_align_ text_align) { ui_text_g<char16_t, text_add_in_16>(text, text_align); }
+void ui_text   (const char     *text, text_align_ text_align) { ui_text_g<char    >(text, text_align); }
+void ui_text_16(const char16_t *text, text_align_ text_align) { ui_text_g<char16_t>(text, text_align); }
 
 ///////////////////////////////////////////
 
@@ -1495,7 +1508,7 @@ bool32_t ui_button_at_g(const C *text, vec3 window_relative_pos, vec2 size) {
 
 	float activation = 1 + 1-(finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, ui_color_common, fmaxf(activation,color_blend));
-	ui_text_in(               window_relative_pos - vec3{ size.x/2, size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_text_at(text, text_align_center, text_fit_squeeze, window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2});
 
 	return state & button_state_just_active;
 }
@@ -1556,7 +1569,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 		if (image_layout != ui_btn_layout_center_no_text)
-			ui_text_in(text_at, text_size, text, text_align, text_align_center);
+			ui_text_in(text, text_align, text_align_center, text_fit_squeeze, text_at, text_size);
 	}
 }
 
@@ -1679,8 +1692,8 @@ bool32_t ui_toggle_at_g(const C *text, bool32_t &pressed, vec3 window_relative_p
 	}
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
-	ui_draw_el(ui_vis_toggle, window_relative_pos,  vec3{ size.x,    size.y,   finger_offset }, ui_color_common, color_blend);
-	ui_text_in(               window_relative_pos - vec3{ size.x/2,  size.y/2, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2}, text, text_align_center, text_align_center);
+	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x, size.y, finger_offset }, ui_color_common, color_blend);
+	ui_text_at(text, text_align_center, text_fit_squeeze, window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2});
 
 	return state & button_state_just_active;
 }
@@ -1969,7 +1982,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	// Render the input UI
 	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y - skui_settings.padding * 2 };
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
-	ui_text_in(              final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, text_bounds, buffer, text_align_top_left, text_align_center_left);
+	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, text_bounds);
 	
 	float line      = ui_line_height() * 0.5f;
 	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
@@ -2549,7 +2562,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	if (window.type & ui_win_head) {
 		vec2 size = text_size(text, skui_font_stack.last());
 		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
-		ui_text_in(at, size, text, text_align_top_left, text_align_center_left);
+		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
 		if (skui_layers.last().max_x > at.x - size.x - skui_settings.padding)
 			skui_layers.last().max_x = at.x - size.x - skui_settings.padding;
