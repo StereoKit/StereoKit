@@ -121,8 +121,6 @@ namespace StereoKit
 			if (result) { 
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
-
-				_steppers.InitializeSteppers();
 			}
 
 			Backend.OpenXR.CleanupInitialize();
