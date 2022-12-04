@@ -6,9 +6,16 @@ namespace StereoKit.Framework
 {
 	internal class Steppers
 	{
-		List           <IStepper> _steppers = new List<IStepper>();
-		ConcurrentQueue<IStepper> _remove   = new ConcurrentQueue<IStepper>();
-		ConcurrentQueue<IStepper> _add      = new ConcurrentQueue<IStepper>();
+		enum   ActionType { Add, Remove }
+		struct StepperAction
+		{
+			public IStepper   stepper;
+			public ActionType type;
+			public StepperAction(IStepper stepper, ActionType type) { this.stepper = stepper; this.type = type; }
+		}
+
+		List           <IStepper>      _steppers = new List<IStepper>();
+		ConcurrentQueue<StepperAction> _actions  = new ConcurrentQueue<StepperAction>();
 
 		public void Shutdown()
 		{
@@ -19,19 +26,19 @@ namespace StereoKit.Framework
 		public T Add<T>() where T : IStepper
 		{ 
 			T inst = Activator.CreateInstance<T>();
-			_add.Enqueue(inst);
+			_actions.Enqueue(new StepperAction(inst, ActionType.Add));
 			return inst;
 		}
 		public object Add(Type type)
 		{
 			IStepper inst = Activator.CreateInstance(type) as IStepper;
 			if (inst == null) return null;
-			_add.Enqueue(inst);
+			_actions.Enqueue(new StepperAction(inst, ActionType.Add));
 			return inst;
 		}
 		public T Add<T>(T stepper) where T:IStepper 
 		{
-			_add.Enqueue(stepper);
+			_actions.Enqueue(new StepperAction(stepper, ActionType.Add));
 			return stepper;
 		}
 
@@ -41,32 +48,34 @@ namespace StereoKit.Framework
 			foreach(IStepper s in _steppers)
 			{
 				if (type.IsAssignableFrom(s.GetType()))
-					_remove.Enqueue(s);
+					_actions.Enqueue(new StepperAction(s, ActionType.Remove));
 			}
 		}
 		public void Remove(IStepper stepper)
 		{
-			_remove.Enqueue(stepper);
+			_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
 		}
 
 
 		public void Step()
 		{
-			while (_add.TryDequeue(out IStepper a))
+			while (_actions.TryDequeue(out StepperAction action))
 			{
-				a.Initialize();
-				_steppers.Add(a);
-			}
-			while (_remove.TryDequeue(out IStepper r))
-			{
-				_steppers.Remove(r);
-				r.Shutdown();
+				switch (action.type)
+				{
+					case ActionType.Add:
+						action.stepper.Initialize();
+						_steppers.Add(action.stepper);
+						break;
+					case ActionType.Remove:
+						_steppers.Remove(action.stepper);
+						action.stepper.Shutdown();
+						break;
+				}
 			}
 
-			for (int i = 0; i < _steppers.Count; i++)
-			{
-				_steppers[i].Step();
-			}
+			foreach (IStepper stepper in _steppers)
+				stepper.Step();
 		}
 	}
 }
