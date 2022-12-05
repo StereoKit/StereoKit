@@ -71,7 +71,6 @@ extern XrSessionState xr_session_state;
 extern XrSystemId xr_system_id;
 extern bool       xr_has_articulated_hands;
 extern bool       xr_has_hand_meshes;
-extern bool       xr_has_depth_lsr;
 extern bool       xr_has_bounds;
 extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
