@@ -17,12 +17,7 @@ namespace StereoKit.Framework
 		List           <IStepper>      _steppers = new List<IStepper>();
 		ConcurrentQueue<StepperAction> _actions  = new ConcurrentQueue<StepperAction>();
 
-		public void Shutdown()
-		{
-			_steppers.ForEach(s => s.Shutdown());
-			_steppers.Clear();
-		}
-
+		// Add steppers via the threadsafe action queue
 		public T Add<T>() where T : IStepper
 		{ 
 			T inst = Activator.CreateInstance<T>();
@@ -42,13 +37,14 @@ namespace StereoKit.Framework
 			return stepper;
 		}
 
+		// Remove steppers via the threadsafe action queue
 		public void Remove<T>() => Remove(typeof(T));
 		public void Remove(Type type)
 		{
-			foreach(IStepper s in _steppers)
+			foreach(IStepper stepper in _steppers)
 			{
-				if (type.IsAssignableFrom(s.GetType()))
-					_actions.Enqueue(new StepperAction(s, ActionType.Remove));
+				if (type.IsAssignableFrom(stepper.GetType()))
+					_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
 			}
 		}
 		public void Remove(IStepper stepper)
@@ -56,9 +52,10 @@ namespace StereoKit.Framework
 			_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
 		}
 
-
 		public void Step()
 		{
+			// Execute all stepper actions on the main thread in the order they
+			// were given.
 			while (_actions.TryDequeue(out StepperAction action))
 			{
 				switch (action.type)
@@ -76,6 +73,13 @@ namespace StereoKit.Framework
 
 			foreach (IStepper stepper in _steppers)
 				stepper.Step();
+		}
+
+		public void Shutdown()
+		{
+			_actions = new ConcurrentQueue<StepperAction>();
+			_steppers.ForEach(s => s.Shutdown());
+			_steppers.Clear();
 		}
 	}
 }
