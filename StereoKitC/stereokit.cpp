@@ -37,6 +37,7 @@ sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
 bool32_t      sk_running     = false;
+bool32_t      sk_stepping    = false;
 bool32_t      sk_initialized = false;
 bool32_t      sk_first_step  = false;
 thrd_id_t     sk_init_thread = {};
@@ -335,6 +336,11 @@ void sk_set_window_xam(void *window) {
 ///////////////////////////////////////////
 
 void sk_shutdown() {
+	if (sk_is_stepping()) {
+		log_err("sk_shutdown should only be called for cleanup, please use sk_quit to exit the app!");
+		abort();
+	}
+
 	log_show_any_fail_reason();
 
 	systems_shutdown();
@@ -358,6 +364,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	// TODO: remove this in v0.4 when sk_step is formally replaced by sk_run
 	sk_assert_thread_valid();
 	sk_first_step = true;
+	sk_stepping   = true;
 	
 	sk_app_update_func = app_update;
 	sk_update_timer();
@@ -366,6 +373,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
 		platform_sleep(100);
+	sk_stepping = false;
 	return sk_running;
 }
 
@@ -454,6 +462,10 @@ void sk_assert_thread_valid() {
 		abort();
 	}
 }
+
+///////////////////////////////////////////
+
+bool32_t sk_is_stepping() { return sk_stepping; }
 
 ///////////////////////////////////////////
 
