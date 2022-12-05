@@ -61,12 +61,12 @@ namespace StereoKit.Framework
 				switch (action.type)
 				{
 					case ActionType.Add:
-						action.stepper.Initialize();
-						_steppers.Add(action.stepper);
+						if (action.stepper.Initialize())
+							_steppers.Add(action.stepper);
 						break;
 					case ActionType.Remove:
-						_steppers.Remove(action.stepper);
-						action.stepper.Shutdown();
+						if (_steppers.Remove(action.stepper))
+							action.stepper.Shutdown();
 						break;
 				}
 			}
