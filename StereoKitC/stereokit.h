@@ -330,6 +330,7 @@ SK_API void          sk_quit               ();
 SK_API bool32_t      sk_step               (void (*app_update)(void));
 SK_API void          sk_run                (void (*app_update)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_update)(void *update_data), void *update_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
+SK_API bool32_t      sk_is_stepping        ();
 SK_API display_mode_ sk_active_display_mode();
 SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();

@@ -121,8 +121,6 @@ namespace StereoKit
 			if (result) { 
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
-
-				_steppers.InitializeSteppers();
 			}
 
 			Backend.OpenXR.CleanupInitialize();
@@ -130,10 +128,16 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Shuts down all StereoKit initialized systems. Release
-		/// your own StereoKit created assets before calling this.</summary>
+		/// <summary>Cleans up all StereoKit initialized systems. Release your
+		/// own StereoKit created assets before calling this. This is for
+		/// cleanup only, and should not be used to exit the application, use
+		/// SK.Quit for that instead. Calling this function is unnecessary if
+		/// using SK.Run, as it is called automatically there.</summary>
 		public static void Shutdown()
 		{
+			if (NativeAPI.sk_is_stepping() > 0)
+				throw new Exception("SK.Shutdown is for cleanup and should not be used within SK.Step/Run, please use SK.Quit to exit your app!");
+
 			if (IsInitialized)
 			{
 				_steppers.Shutdown();
@@ -142,8 +146,8 @@ namespace StereoKit
 			}
 		}
 
-		/// <summary>Lets StereoKit know it should quit! It'll finish the 
-		/// current frame, and after that Step will return that it wants to 
+		/// <summary>Lets StereoKit know it should quit! It'll finish the
+		/// current frame, and after that Step will return that it wants to
 		/// exit.</summary>
 		public static void Quit()
 		{
@@ -152,8 +156,8 @@ namespace StereoKit
 
 		/// <summary> Steps all StereoKit systems, and inserts user code via
 		/// callback between the appropriate system updates. </summary>
-		/// <param name="onStep">A callback where you put your application 
-		/// code! This gets called between StereoKit systems, after frame 
+		/// <param name="onStep">A callback where you put your application
+		/// code! This gets called between StereoKit systems, after frame
 		/// setup, but before render.</param>
 		/// <returns>If an exit message is received from the platform, or
 		/// `SK.Quit()` is called, this function will return false.</returns>
