@@ -486,6 +486,13 @@ void mesh_destroy(mesh_t mesh) {
 	sk_free(mesh->collision_data.planes);
 	if (mesh->bvh_data)
 		mesh_bvh_destroy(mesh->bvh_data);
+
+	sk_free(mesh->skin_data.bone_ids);
+	sk_free(mesh->skin_data.bone_inverse_transforms);
+	sk_free(mesh->skin_data.bone_transforms);
+	sk_free(mesh->skin_data.deformed_verts);
+	sk_free(mesh->skin_data.weights);
+
 	*mesh = {};
 }
 
@@ -626,7 +633,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions, bool32_t double_sided) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
@@ -634,6 +641,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
 	vert_t *verts = sk_malloc_t(vert_t, vert_count);
 	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
@@ -650,6 +663,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			right * ((xp - 0.5f) * dimensions.x) +
 			up    * ((yp - 0.5f) * dimensions.y), 
 			plane_normal, {xp,yp}, {255,255,255,255} };
+
+		// The flip side of the plane has the same position and UV but a flipped normal
+		if (double_sided) {
+			verts[x + y*subd + vert_count/2]      = verts[x + y*subd];
+			verts[x + y*subd + vert_count/2].norm = -plane_normal;
+		}
 	} }
 
 	// make indices
@@ -664,6 +683,110 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] = (x+1) + (y+1) * subd;
 			inds[ind++] =  x    +  y    * subd;
 	} }
+
+	if (double_sided) {
+		for (vind_t y = 0; y < subd-1; y++) {
+		for (vind_t x = 0; x < subd-1; x++) {
+				// We flip the winding for the flip side
+				inds[ind++] = (x+1) +  y    * subd + vert_count/2;
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+		} }
+	}
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t spokes, bool32_t double_sided) {
+	vind_t spoke_count = maxi(3, (int32_t)spokes);
+	mesh_t result = mesh_create();
+
+	int vert_count = spoke_count;
+	int ind_count  = (spoke_count - 2) * 3;
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
+	vert_t* verts = sk_malloc_t(vert_t, vert_count);
+	vind_t* inds  = sk_malloc_t(vind_t, ind_count);
+
+	vec3 right = vec3_cross(plane_top_direction, plane_normal);
+	vec3 up    = vec3_cross(right, plane_normal);
+
+	// Make a circle of vertices
+	for (vind_t i = 0; i < spoke_count; i++) {
+		float angle = i * ((float)M_PI*2.0f / spoke_count);
+
+		vert_t *pt   = &verts[i];
+		float radius = diameter / 2;
+		float xp     = cosf(angle);
+		float yp     = sinf(angle);
+
+		pt->norm = plane_normal;
+		pt->pos  = radius * ((right * xp) + (up * yp));
+		pt->uv   = {((xp+1)/2),((yp+1)/2)};
+		pt->col  = {255,255,255,255};
+
+		// The flip side of the circle has the same position and UV but a flipped normal
+		if (double_sided) {
+			vert_t* flip_pt = &verts[i + vert_count/2];
+
+			flip_pt->norm = -plane_normal;
+			flip_pt->pos  = pt->pos;
+			flip_pt->uv   = pt->uv;
+			flip_pt->col  = pt->col;
+		}
+	}
+
+	// No vertex in the center, so we're adding a strip of triangles
+	// across the circle instead
+	for (vind_t i = 0; i < spoke_count - 2; i++) {
+		uint32_t half = i / 2;
+		if (i%2 == 0) { // even
+			vind_t ind1 = (spoke_count - half) % spoke_count;
+			vind_t ind2 = half + 1;
+			vind_t ind3 = (spoke_count - 1) - half;
+
+			inds[i*3+2] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3  ] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind3;
+			}
+		}
+		else { // odd
+			vind_t ind1 = half + 1;
+			vind_t ind2 = spoke_count - (half + 1);
+			vind_t ind3 = half + 2;
+
+			inds[i * 3] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3+2] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind3;
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+			}
+		}
+	}
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 

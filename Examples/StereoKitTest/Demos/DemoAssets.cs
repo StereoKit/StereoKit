@@ -4,10 +4,8 @@ using System.Collections.Generic;
 
 class DemoAssets : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "If you need to take a peek at what's currently loaded, StereoKit has a couple tools in the Assets class!\n\nThis demo is just a quick illustration of how to enumerate through your Assets.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Asset Enumeration";
+	string description = "If you need to take a peek at what's currently loaded, StereoKit has a couple tools in the Assets class!\n\nThis demo is just a quick illustration of how to enumerate through your Assets.";
 
 	/// :CodeSample: Assets Assets.Type
 	/// ### Simple Asset Browser
@@ -93,7 +91,6 @@ class DemoAssets : ITest
 
 		Tests.Screenshot("TinyAssetBrowser.jpg", 1, 400, 400, 90, filterWindow.position + V.XYZ(-0.16f, -0.16f, 0.16f), filterWindow.position - V.XYZ(0, 0.16f, 0));
 
-		Text.Add(title,       titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 	}
 }

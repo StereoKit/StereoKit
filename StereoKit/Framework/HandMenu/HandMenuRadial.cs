@@ -40,7 +40,7 @@ namespace StereoKit.Framework
 		const float minScale = 0.05f;
 		const float sliceGap = 0.002f;
 		const float outOfViewAngle = 0.866f; // 0.866 is 30 degrees with cos baked in: Math.Cos(30 * Units.deg2rad);
-		const float activationAngle = 0.99f; // 0.99 is 8 degrees with cos baked in: Math.Cos(8 * Units.deg2rad);
+		const float activationAngle = 0.978f; // 0.978 is 12 degrees with cos baked in: Math.Cos(12 * Units.deg2rad);
 
 		Pose menuPose;
 		Pose destPose;
@@ -208,7 +208,7 @@ namespace StereoKit.Framework
 		void StepMenu(Hand hand)
 		{
 			// Animate the menu a bit
-			float time = Math.Min(1, Time.Elapsedf * 24);
+			float time = Math.Min(1, Time.StepUnscaledf * 24);
 			menuPose.position    = Vec3  .Lerp (menuPose.position,    destPose.position,    time);
 			menuPose.orientation = Quat  .Slerp(menuPose.orientation, destPose.orientation, time);
 			activation           = SKMath.Lerp (activation,           1,                    time);

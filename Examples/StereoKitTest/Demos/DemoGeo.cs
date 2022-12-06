@@ -1,11 +1,9 @@
-﻿using StereoKit;
+using StereoKit;
 
 class DemoGeo : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "Generating a Mesh or Model via code can be an important task, and StereoKit provides a number of tools to make this pretty easy! In addition to the Default meshes, you can also generate a number of shapes, seen here. (See the Mesh.Gen functions)\n\nIf the provided shapes aren't enough, it's also pretty easy to procedurally assemble a mesh of your own from vertices and indices! That's the wavy surface all the way to the right.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Mesh Generation";
+	string description = "Generating a Mesh or Model via code can be an important task, and StereoKit provides a number of tools to make this pretty easy! In addition to the Default meshes, you can also generate a number of shapes, seen here. (See the Mesh.Gen functions)\n\nIf the provided shapes aren't enough, it's also pretty easy to procedurally assemble a mesh of your own from vertices and indices! That's the wavy surface all the way to the right.";
 
 	Mesh  demoCubeMesh  = null;
 	Model demoCubeModel = null;
@@ -17,6 +15,8 @@ class DemoGeo : ITest
 	Model demoCylinderModel = null;
 	Mesh  demoPlaneMesh  = null;
 	Model demoPlaneModel = null;
+	Mesh  demoCircleMesh = null;
+	Model demoCircleModel = null;
 
 	Mesh  demoProcMesh = null;
 
@@ -91,7 +91,21 @@ class DemoGeo : ITest
 		demoPlaneMesh  = planeMesh;
 		demoPlaneModel = planeModel;
 
-		/// :CodeSample: Mesh.SetVerts Mesh.SetInds
+		/// :CodeSample: Mesh.GenerateCircle
+		/// ### Generating a Mesh and Model
+		/// 
+		/// ![Procedural Geometry Demo]({{site.url}}/img/screenshots/ProceduralGeometry.jpg)
+		/// 
+		/// Here's a quick example of generating a mesh! You can store it in just a
+		/// Mesh, or you can attach it to a Model for easier rendering later on.
+		// Do this in your initialization
+		Mesh  circleMesh  = Mesh.GenerateCircle(0.4f);
+		Model circleModel = Model.FromMesh(circleMesh, Default.Material);
+		/// :End:
+		demoCircleMesh  = circleMesh;
+		demoCircleModel = circleModel;
+
+		/// :CodeSample: Mesh.SetVerts Mesh.SetInds Mesh.SetData
 		/// ### Procedurally generating a wavy grid
 		/// 
 		/// ![Wavy Grid]({{site.url}}/img/screenshots/ProceduralGrid.jpg)
@@ -119,12 +133,12 @@ class DemoGeo : ITest
 			// value!
 			verts[x+y*gridSize] = new Vertex(
 				new Vec3(
-					x/gridMaxF-0.5f, 
-					SKMath.Sin((x+y) * 0.7f)*0.1f, 
+					x/gridMaxF-0.5f,
+					SKMath.Sin((x+y) * 0.7f)*0.1f,
 					y/gridMaxF-0.5f),
 				new Vec3(
-					-SKMath.Cos((x+y) * 0.7f), 
-					1, 
+					-SKMath.Cos((x+y) * 0.7f),
+					1,
 					-SKMath.Cos((x+y) * 0.7f)).Normalized,
 				new Vec2(
 					x / gridMaxF,
@@ -146,8 +160,7 @@ class DemoGeo : ITest
 			}
 		} }
 		demoProcMesh = new Mesh();
-		demoProcMesh.SetVerts(verts);
-		demoProcMesh.SetInds (inds);
+		demoProcMesh.SetData(verts, inds);
 		/// :End:
 	}
 
@@ -159,8 +172,24 @@ class DemoGeo : ITest
 	{
 		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
 
-		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.3f, -0.25f, -0.3f), V.XYZ(0.5f, -0.25f, -0.5f));
+		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.29f, -0.29f, -0.29f), V.XYZ(0.5f, -0.29f, -0.5f));
 		Tests.Screenshot("ProceduralGrid.jpg",     600, 600, Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
+
+		// Circle!
+		Mesh  circleMesh = demoCircleMesh;
+		Model circleModel = demoCircleModel;
+
+		/// :CodeSample: Mesh.GenerateCircle
+		/// Drawing both a Mesh and a Model generated this way is reasonably simple, 
+		/// here's a short example! For the Mesh, you'll need to create your own material, 
+		/// we just loaded up the default Material here.
+		Matrix circleTransform = Matrix.T(-.5f, -1.5f, 0);
+		circleMesh.Draw(Default.Material, circleTransform);
+
+		circleTransform = Matrix.T(.5f, -1.5f, 0);
+		circleModel.Draw(circleTransform);
+		/// :End:
+
 
 		// Plane!
 		Mesh  planeMesh  = demoPlaneMesh;
@@ -253,7 +282,6 @@ class DemoGeo : ITest
 
 		Hierarchy.Pop();
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 	}
 }

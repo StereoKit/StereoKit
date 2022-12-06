@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Import Project="$(MSBuildThisFileDirectory)SKAssets.targets" />
 	<Import Project="$(MSBuildThisFileDirectory)SKShaders.targets" />
+	<Import Project="$(MSBuildThisFileDirectory)SKMaui.targets" />
 
-	<!-- Copy the package's native libraries into the project, since it doesn't
-	     seem you can link directly to libraries in the package folder. Except
-	     for UWP, this is the one thing UWP seems to get right automatically. -->
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild" Condition="'$(OutputType)'!='Library' or ('$(TargetFrameworkIdentifier)'=='MonoAndroid' and '$(TargetPlatformIdentifier)'!='UAP') or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
-		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries into the project at $(BaseIntermediateOutputPath)lib"/>
+	<!-- Copy the package's native libraries into the project, for those
+	     platforms that require it. -->
+	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
+		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
+		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
 
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
@@ -15,36 +17,55 @@
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 		
-		<ItemGroup>
-			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/**/*.*" />
+		<ItemGroup Condition="'$(SKBuildPlatform)'=='Desktop'">
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-arm64/*.*" />
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-x64/*.*" />
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/win-x64/*.*" />
 		</ItemGroup>
 		<Copy
 			SourceFiles        = "@(SKSourceFolder)"
 			DestinationFolder  = "$(BaseIntermediateOutputPath)lib/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
 
-		<!-- .Net Core 2.x behaves fine using the above for publishing, but
-		not for development. So! This is a manual copy that happens by default
-		on other versions of .Net Core.-->
+		<!-- .NET Core 2.x behaves fine using the above for publishing, but
+		     not for development. So! This is a manual copy that happens by
+		     default on other versions of .Net Core.-->
 		<Copy
-			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETCoreApp' and $(TargetFrameworkVersion.StartsWith('v2.'))"
+			Condition          = "'$(SKBuildNET)'=='Core' and $(TargetFrameworkVersion.StartsWith('v2.'))"
 			SourceFiles        = "@(SKSourceFolder)"
 			DestinationFolder  = "$(OutputPath)runtimes/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
 
 		<!-- .NET Framework projects also seem to have the same issue. This
-		doesn't work for Publish, however. -->
+		     doesn't work for Publish, however. -->
 		<Copy
-			Condition          = "'$(TargetFrameworkIdentifier)'=='.NETFramework'"
+			Condition          = "'$(SKBuildNET)'=='Framework'"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
+
+	</Target>
+
+	<Target Name="StereoKit_LibraryCoreWindows" AfterTargets="AfterBuild" BeforeTargets="Build" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='CoreWindows'">
+		<!-- .NET MAUI's windows projects pretend they're UWP, and grab UWP
+		     binaries automatically, instead of the more appropriate Win32
+		     ones. Here, we're over-writing the DLL that was automatically
+		     picked by Maui.-->
+		<Copy
+			Condition          = "'$(SKBuildPlatform)'=='CoreWindows'"
 			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 	</Target>
 
-	<!-- Link libraries to Xamarin or Maui Android projects.  -->
-	<ItemGroup Condition= "'$(TargetFrameworkIdentifier)'=='MonoAndroid' or ('$(TargetFrameworkIdentifier)'=='.NETCoreApp' and '$(TargetPlatformIdentifier)'=='Android')">
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libStereoKitC.so"/>
-		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(BaseIntermediateOutputPath)lib/android-arm64-v8a/native/libopenxr_loader.so" />
+	<!-- Link libraries directly in Xamarin and Maui Android projects. -->
+	<ItemGroup>
+		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../runtimes/android-arm64/native/libStereoKitC.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
 	</ItemGroup>
 
 </Project>

@@ -76,7 +76,7 @@ bool world_is_su_needed(scene_request_info_t info) {
 bool world_check_needs_update(scene_request_info_t info) {
 	switch (info.refresh_type) {
 	case world_refresh_area:  return !vec3_in_radius(input_head()->position, info.center, info.radius * 0.5f);
-	case world_refresh_timer: return (time_getf() - xr_scene_last_refresh) >= info.refresh_interval;
+	case world_refresh_timer: return (time_totalf_unscaled() - xr_scene_last_refresh) >= info.refresh_interval;
 	default: return false;
 	}
 }
@@ -239,7 +239,7 @@ void world_request_update(scene_request_info_t info) {
 		return;
 
 	xr_scene_last_req.center = input_head()->position;
-	xr_scene_last_refresh    = time_getf();
+	xr_scene_last_refresh    = time_totalf_unscaled();
 
 	if (xr_scene_observer == XR_NULL_HANDLE) {
 		XrSceneObserverCreateInfoMSFT create_info = { (XrStructureType)XR_TYPE_SCENE_OBSERVER_CREATE_INFO_MSFT };

@@ -35,10 +35,11 @@ namespace StereoKit
 			set => NativeAPI.render_enable_skytex(value?1:0);
 		}
 
-		/// <summary>By default, StereoKit renders all layers. This is a bit
-		/// flag that allows you to change which layers StereoKit renders for
-		/// the primary viewpoint. To change what layers a visual is on, use
-		/// a Draw method that includes a RenderLayer as a parameter.</summary>
+		/// <summary>By default, StereoKit renders all first-person layers.
+		/// This is a bit flag that allows you to change which layers StereoKit
+		/// renders for the primary viewpoint. To change what layers a visual
+		/// is on, use a Draw method that includes a RenderLayer as a
+		/// parameter.</summary>
 		public static RenderLayer LayerFilter {
 			set => NativeAPI.render_set_filter(value);
 			get => NativeAPI.render_get_filter();

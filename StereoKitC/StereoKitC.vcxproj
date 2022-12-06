@@ -48,7 +48,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
@@ -148,6 +148,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="libraries\stb_image.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\tinycthread.cpp" />
+    <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\flatscreen_input.cpp" />
@@ -204,6 +205,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="hierarchy.h" />
     <ClInclude Include="libraries\aileron_font_data.h" />
     <ClInclude Include="libraries\array.h" />
+    <ClInclude Include="libraries\atomic_util.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
@@ -311,15 +313,4 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <Import Project="..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets'))" />
-  </Target>
 </Project>

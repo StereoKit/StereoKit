@@ -139,7 +139,7 @@ class DebugToolWindow
 	static void RecordHead()
 	{
 		Pose prev = recordingHead[recordingHead.Count - 1].pose;
-		Quat diff = Quat.Difference(Input.Head.orientation, prev.orientation);
+		Quat diff = Quat.Delta(Input.Head.orientation, prev.orientation);
 		if (Vec3.DistanceSq(Input.Head.position, prev.position) > (2 * U.cm * 2 * U.cm) ||
 			(diff.w) * (diff.w) < (0.8f * 0.8f))
 			recordingHead.Add((Time.Totalf, Input.Head));

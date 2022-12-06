@@ -91,7 +91,7 @@ void demo_lines_draw() {
 		vec3         prev  = line_draw[line_draw.size() - 2].pt;
 		vec3         dir   = vec3_normalize(prev - (line_draw.size() > 2 ? line_draw[line_draw.size() - 3].pt : line_draw[line_draw.size() - 1].pt));
 		float        dist  = vec3_magnitude(prev - tip);
-		float        speed = vec3_magnitude(tip - line_prev_tip) * time_elapsedf();
+		float        speed = vec3_magnitude(tip - line_prev_tip) * time_stepf();
 		line_point_t here  = line_point_t{tip, max(1-speed/0.0003f,0.1f) * line_size, line_color};
 
 		if ((vec3_dot( dir, vec3_normalize(tip-prev)) < 0.2f && dist > 0.001f) || dist > 0.005f) { 

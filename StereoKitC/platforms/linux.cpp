@@ -386,16 +386,6 @@ bool setup_x_window() {
 
 ///////////////////////////////////////////
 
-#if defined(SKG_LINUX_EGL)
-
-bool setup_egl_flat() {
-	return true;
-}
-
-#endif
-
-///////////////////////////////////////////
-
 bool check_wayland() {
 	char* sess_type = getenv("XDG_SESSION_TYPE");
 	if (sess_type == NULL) {
@@ -417,11 +407,9 @@ bool linux_init() {
 
 	xwayland = check_wayland();
 
-	#if !defined(SKG_LINUX_EGL)
-
+	#if defined(SKG_LINUX_GLX)
 	if (!setup_x_window())
 		return false;
-
 	#endif
 
 	return true;
@@ -436,6 +424,11 @@ bool linux_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_post_xr() {
+	#if defined(SKG_LINUX_EGL)
+	if (!sk_settings.disable_desktop_input_window && !setup_x_window())
+		return false;
+	#endif
+
 	return true;
 }
 
@@ -444,8 +437,6 @@ bool linux_start_post_xr() {
 bool linux_start_flat() {
 	#if defined(SKG_LINUX_EGL)
 	if (!setup_x_window())
-		return false;
-	if (!setup_egl_flat())
 		return false;
 	#endif
 	
@@ -518,7 +509,13 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
+  #if defined(SKG_LINUX_EGL)
+	if(!sk_settings.disable_desktop_input_window) {
+		linux_events();
+	}
+  #else
 	linux_events();
+  #endif
 }
 
 ///////////////////////////////////////////

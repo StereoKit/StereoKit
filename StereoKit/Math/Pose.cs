@@ -47,15 +47,39 @@ namespace StereoKit
 			this.orientation = orientation;
 		}
 
-		/// <summary>Basic initialization constructor! Just copies in the provided values directly.</summary>
+		/// <summary>Basic initialization constructor! Just copies in the
+		/// provided values directly, and uses Identity for the orientation.
+		/// </summary>
+		/// <param name="position">Location of the pose.</param>
+		public Pose(Vec3 position)
+		{
+			this.position    = position;
+			this.orientation = Quat.Identity;
+		}
+
+		/// <summary>Basic initialization constructor! Just copies in the
+		/// provided values directly.</summary>
 		/// <param name="x">X location of the pose.</param>
 		/// <param name="y">Y location of the pose.</param>
 		/// <param name="z">Z location of the pose.</param>
-		/// <param name="orientation">Orientation of the pose, stored as a rotation from Vec3.Forward.</param>
+		/// <param name="orientation">Orientation of the pose, stored as a
+		/// rotation from Vec3.Forward.</param>
 		public Pose(float x, float y, float z, Quat orientation)
 		{
-			this.position = new Vec3(x,y,z);
+			this.position    = new Vec3(x,y,z);
 			this.orientation = orientation;
+		}
+
+		/// <summary>Basic initialization constructor! Just copies in the
+		/// provided values directly, and uses Identity for the orientation.
+		/// </summary>
+		/// <param name="x">X location of the pose.</param>
+		/// <param name="y">Y location of the pose.</param>
+		/// <param name="z">Z location of the pose.</param>
+		public Pose(float x, float y, float z)
+		{
+			this.position    = new Vec3(x,y,z);
+			this.orientation = Quat.Identity;
 		}
 
 		/// <summary>Converts this pose into a transform matrix, incorporating a provided scale value.</summary>
@@ -78,7 +102,7 @@ namespace StereoKit
 		public Matrix ToMatrix() 
 			=> Matrix.TR(position, orientation);
 
-		/// <summary>Interpolates between two poses! t is unclamped, so values outside of (0,1) will
+		/// <summary>Interpolates between two poses! It is unclamped, so values outside of (0,1) will
 		/// extrapolate their position.</summary>
 		/// <param name="a">Starting pose, or percent == 0</param>
 		/// <param name="b">Ending pose, or percent == 1</param>

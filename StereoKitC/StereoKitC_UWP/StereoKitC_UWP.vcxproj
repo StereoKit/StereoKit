@@ -3,7 +3,7 @@
   <Import Project="..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
   <Import Project="..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
   <Import Project="..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
-  <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props')" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{45af7827-11ca-4691-a063-8c78fb0be1ec}</ProjectGuid>
     <ProjectName>StereoKitC_UWP</ProjectName>
@@ -78,7 +78,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(Platform)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform)\$(Configuration);$(ProjectDir)..\lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>StereoKitC</TargetName>
@@ -148,7 +148,7 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets')" />
     <Import Project="..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
     <Import Project="..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
@@ -157,8 +157,8 @@ xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\UWP\$(Platform)\$(Co
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props'))" />
-    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Windows.CppWinRT.2.0.220608.4\build\native\Microsoft.Windows.CppWinRT.targets'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets'))" />
     <Error Condition="!Exists('..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props'))" />

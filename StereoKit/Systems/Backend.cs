@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -66,9 +67,17 @@ namespace StereoKit
 			/// frame, and is available after SK.Initialize.</summary>
 			public static long Time => NativeAPI.backend_openxr_get_time();
 
-			/// <summary>Type: XrTime. This is the OpenXR time of the eye tracker
-			/// sample associated with the current value of <see cref="Input.Eyes"/>.</summary>
+			/// <summary>Type: XrTime. This is the OpenXR time of the eye
+			/// tracker sample associated with the current value of
+			/// <see cref="Input.Eyes"/>.</summary>
 			public static long EyesSampleTime => NativeAPI.backend_openxr_get_eyes_sample_time();
+
+			/// <summary>Tells StereoKit to request only the extensions that
+			/// are absolutely critical to StereoKit. You can still request
+			/// extensions via `OpenXR.RequestExt`, and this can be used to
+			/// opt-in to extensions that StereoKit would normally request
+			/// automatically.</summary>
+			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value?1:0); }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
@@ -160,6 +169,38 @@ namespace StereoKit
 				// free all those up.
 				_onPreCreateSession           = null;
 				_onPreCreateSessionRegistered = false;
+			}
+
+			private struct XRPollEventCallbackData
+			{
+				public Action<IntPtr>      action;
+				public XRPollEventCallback callback;
+			}
+
+			private static List<XRPollEventCallbackData> _xrPollEventCallbacks;
+
+			/// <summary>This event gets published each time xrPollEvent results in XR_SUCCESS.</summary>
+			public static event Action<IntPtr> OnPollEvent
+			{
+				add
+				{
+					if (_xrPollEventCallbacks == null) _xrPollEventCallbacks = new List<XRPollEventCallbackData>();
+
+					XRPollEventCallback callback = (_, XrEventDataBuffer) => { value(XrEventDataBuffer); };
+					_xrPollEventCallbacks.Add(new XRPollEventCallbackData { action = value, callback = callback });
+
+					NativeAPI.backend_openxr_add_callback_poll_event(callback, IntPtr.Zero);
+				}
+				remove
+				{
+					if (_xrPollEventCallbacks == null) throw new NullReferenceException();
+
+					int i = _xrPollEventCallbacks.FindIndex(d => d.action == value);
+					if (i < 0) throw new KeyNotFoundException();
+
+					NativeAPI.backend_openxr_remove_callback_poll_event(_xrPollEventCallbacks[i].callback);
+					_xrPollEventCallbacks.RemoveAt(i);
+				}
 			}
 		}
 

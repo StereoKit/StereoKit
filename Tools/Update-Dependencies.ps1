@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('x64','ARM','ARM64')]
+    [ValidateSet('x86','x64','ARM','ARM64')]
     [string]$arch = 'x64',
     [ValidateSet('Win32','UWP')]
     [string]$plat = 'UWP',
@@ -243,10 +243,14 @@ foreach($dep in $dependencies) {
 
     # Configure build settings
     Write-Host "$($dep.Name): Configuring $arch $plat" -ForegroundColor green
+    $vsArch = $arch
+    if ($vsArch -eq 'x86') {
+        $vsArch = 'Win32'
+    }
     if ($plat -eq 'UWP') {
-        & $cmakeCmd -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
+        & $cmakeCmd -G $vsGeneratorName -A $vsArch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DCMAKE_SYSTEM_NAME=WindowsStore' '-DCMAKE_SYSTEM_VERSION=10.0' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     } else {
-        & $cmakeCmd -G $vsGeneratorName -A $arch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
+        & $cmakeCmd -G $vsGeneratorName -A $vsArch "-DCMAKE_BUILD_TYPE=$config" $dep.CmakeOptions '-DCMAKE_CXX_FLAGS=/MP' '-DDYNAMIC_LOADER=OFF' '-Wno-deprecated' '-Wno-dev' ..
     }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: --- $($dep.Name) config failed! Stopping build! ---" -ForegroundColor red

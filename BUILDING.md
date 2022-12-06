@@ -33,18 +33,20 @@ I may update this guide eventually, but if you can track what steps you take whi
 
 ## I want to modify code (Linux)
 
-StereoKit builds Linux code using xmake running on Windows Subsystems for Linux. So set up WSL2 on your system, and install xmake on it. You may also need to install a number of various packages to get it to build correctly, but I don't have that list easily on hand.
+StereoKit official Linux builds currently use xmake running on Windows Subsystems for Linux, however, it's also possible to use cmake, and do either from a normal Linux machine.
 
-It may help to build just the C++ side on Linux first to find which packages need to be installed. Here's how you build StereoKit using xmake:
+Here's the pre-reqs you'll need first!
+```
+# here's the commands for installing Linux build pre-reqs:
+sudo apt-get update
+sudo apt-get install build-essential cmake unzip libfontconfig1-dev libgl1-mesa-dev libvulkan-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev libjsoncpp-dev libxfixes-dev libglew-dev
+```
 
+To build with xmake:
 ```
 # StereoKit uses xmake, check their docs (https://xmake.io/#/getting_started)
 # for details, but here's the quick way to install:
 bash <(curl -fsSL https://xmake.io/shget.text)
-
-# here's a few other pre-reqs, mostly pulled from OpenXR's build list:
-sudo apt-get update
-sudo apt-get install build-essential cmake unzip libfontconfig1-dev libgl1-mesa-dev libvulkan-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev libjsoncpp-dev libxfixes-dev
 
 ### From StereoKit's root directory ###
 
@@ -53,11 +55,28 @@ xmake f -p linux -a x64 --tests=y -y
 # Build
 xmake
 
-# Run the project with software graphics on WSL
+# For WSL, run the test app with the software renderer
 LIBGL_ALWAYS_SOFTWARE=1 xmake run
 
-# Or, real Linux often has more recent graphics drivers
+# For Linux, just run like normal
 xmake run
+```
+
+To build with cmake:
+```
+### From StereoKit's root directory ###
+
+# Make a folder to build in
+mkdir build
+cd build
+
+# Configure the build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+# Build
+cmake --build . -j8 --config Debug
+
+# Run the test app
+./StereoKitCTest
 ```
 
 ## I want to build the whole NuGet package

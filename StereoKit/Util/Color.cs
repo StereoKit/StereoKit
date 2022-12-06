@@ -218,10 +218,12 @@ namespace StereoKit
 
 		public static implicit operator Color32(Color c) 
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
-		public static Color operator *(Color a, float b) 
-			=> new Color(a.r * b, a.g * b, a.b * b, a.a * b);
-		public static Color operator *(Color a, Color b)
-			=> new Color(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a);
+		public static Color operator *(Color a, float b) => new Color(a.r * b, a.g * b, a.b * b, a.a * b);
+		public static Color operator /(Color a, float b) => new Color(a.r / b, a.g / b, a.b / b, a.a / b);
+		public static Color operator *(Color a, Color b) => new Color(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a);
+		public static Color operator /(Color a, Color b) => new Color(a.r / b.r, a.g / b.g, a.b / b.b, a.a / b.a);
+		public static Color operator +(Color a, Color b) => new Color(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a);
+		public static Color operator -(Color a, Color b) => new Color(a.r - b.r, a.g - b.g, a.b - b.b, a.a - b.a);
 
 		/// <summary>Mostly for debug purposes, this is a decent way to log or
 		/// inspect the color in debug mode. Looks like "[r, g, b, a]"

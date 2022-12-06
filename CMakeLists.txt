@@ -53,6 +53,56 @@ if(FORCE_COLORED_OUTPUT)
 	endif()
 endif()
 
+
+###########################################
+## Platform Specific Settings            ##
+###########################################
+
+if (ANDROID)
+  set(ANDROID_LOG_LIBRARY log)
+  set(ANDROID_LIBS
+    log
+    android
+    EGL)
+elseif (UNIX)
+  set(LINUX_LIBS
+    Threads::Threads
+    GLX
+    X11
+    Xfixes
+    fontconfig )
+
+  # Add pthreads
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+
+  # Add OpenGL, and account for the SK_LINUX_EGL option
+  if(SK_LINUX_EGL)
+    add_definitions("-DSKG_LINUX_EGL")
+    list(APPEND LINUX_LIBS EGL)
+  else()
+    add_definitions("-DSKG_LINUX_GLX")
+    find_package(X11 REQUIRED)
+    list(APPEND LINUX_LIBS GL dl)
+  endif()
+elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+  set(WINDOWS_LIBS
+    Comdlg32
+    WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
+endif()
+
+if(NOT SK_PHYSICS)
+  message("-- Building without physics!")
+  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
+else()
+  message("-- Building with physics!")
+endif()
+
 ###########################################
 ## Dependencies                          ##
 ###########################################
@@ -72,7 +122,7 @@ if(SK_PHYSICS)
   CPMAddPackage(
     NAME reactphysics3d
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1 # v0.9.0
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
     EXCLUDE_FROM_ALL YES
   )
   # Something in reactphysics3d seems to require -fPIC
@@ -89,9 +139,11 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.22
+  VERSION 1.0.24
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG 458984d7f59d1ae6dc1b597d94b02e4f7132eaba # v1.0.22
+  GIT_TAG "release-1.0.24"
+  OPTIONS
+  "BUILD_WITH_SYSTEM_JSONCPP OFF"
 )
 
 ###########################################
@@ -123,50 +175,11 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
 endforeach(SHADER)
-
-###########################################
-## Platform Specific Library Linking     ##
-###########################################
-
-if (UNIX)
-  set(LINUX_LIBS
-    Threads::Threads
-    GLX
-    X11
-    Xfixes
-    fontconfig )
-
-  # Add pthreads
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
-
-  # Add OpenGL, and account for the SK_LINUX_EGL option
-  if(SK_LINUX_EGL)
-    add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL)
-  else()
-    add_definitions("-DSKG_LINUX_GLX")
-    find_package(GLEW REQUIRED)
-    find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL GLEW)
-  endif()
-elseif(WIN32)
-  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
-    WindowsApp) # Required for ISAC spatial audio code
-endif()
-
-if(NOT SK_PHYSICS)
-  message("-- Building without physics!")
-  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
-else()
-  message("-- Building with physics!")
-endif()
 
 ###########################################
 ## StereoKitC                            ##
@@ -225,6 +238,7 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/cgltf.cpp
@@ -247,6 +261,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stb_truetype.h
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
+  StereoKitC/libraries/unicode.h
+  StereoKitC/libraries/unicode.cpp
   StereoKitC/libraries/tinycthread.h
   StereoKitC/libraries/tinycthread.cpp )
 
@@ -351,15 +367,16 @@ add_library(StereoKitC ${LIBRARY_TYPE}
 
 # Set up Visual Studio folders/filters for a more organized
 # workspace there.
-source_group("code"        FILES ${SK_SRC_CODE})
-source_group("asset_types" FILES ${SK_SRC_ASSET_TYPES})
-source_group("libraries"   FILES ${SK_SRC_LIBRARIES})
-source_group("systems"     FILES ${SK_SRC_SYSTEMS})
-source_group("hands"       FILES ${SK_SRC_HANDS})
-source_group("platform"    FILES ${SK_SRC_PLATFORMS})
-source_group("xr_backends" FILES ${SK_SRC_XR_BACKENDS})
-source_group("tools"       FILES ${SK_SRC_TOOLS})
-source_group("ui"          FILES ${SK_SRC_UI})
+source_group("code"            FILES ${SK_SRC_CODE})
+source_group("asset_types"     FILES ${SK_SRC_ASSET_TYPES})
+source_group("libraries"       FILES ${SK_SRC_LIBRARIES})
+source_group("systems"         FILES ${SK_SRC_SYSTEMS})
+source_group("hands"           FILES ${SK_SRC_HANDS})
+source_group("platform"        FILES ${SK_SRC_PLATFORMS})
+source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
+source_group("tools"           FILES ${SK_SRC_TOOLS})
+source_group("ui"              FILES ${SK_SRC_UI})
+source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (UNIX)
   # DirectXMath on Linux needs a few extra files
@@ -383,6 +400,8 @@ target_link_libraries( StereoKitC
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+  PUBLIC
+    ${ANDROID_LIBS}
 )
 
 ###########################################
@@ -435,6 +454,13 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  set (source      ${CMAKE_SOURCE_DIR}/Examples/Assets)
+  set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)
+  add_custom_command(
+    TARGET StereoKitCTest
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
+    COMMENT "Copy resources from ${source} => ${destination}")
 endif()
 
 ###########################################

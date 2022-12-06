@@ -14,7 +14,7 @@ rect_atlas_t rect_atlas_create(int32_t width, int32_t height) {
 
 void rect_atlas_destroy(rect_atlas_t *atlas) {
 	atlas->free_space.free();
-	atlas->packed.free();
+	atlas->packed    .free();
 	*atlas = {};
 }
 

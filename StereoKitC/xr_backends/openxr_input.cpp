@@ -265,7 +265,9 @@ bool oxri_init() {
 
 	array_t<XrActionSuggestedBinding> binding_arr = {};
 
-	{ // microsoft/motion_controller
+	// microsoft/motion_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_microsoft_mixed_reality_motion_controller_profile
+	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
 
@@ -313,8 +315,9 @@ bool oxri_init() {
 		binding_arr.clear();
 	}
 
-	if (xr_ext_available.EXT_hp_mixed_reality_controller)
-	{ // hp/mixed_reality_controller
+	// hp/mixed_reality_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hp_mixed_reality_controller
+	if (xr_ext_available.EXT_hp_mixed_reality_controller) {
 		xrStringToPath(xr_instance, "/user/hand/left/input/x/click",        &path_x1[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
 		xrStringToPath(xr_instance, "/user/hand/left/input/y/click",        &path_x2[0]);
@@ -365,7 +368,44 @@ bool oxri_init() {
 		binding_arr.clear();
 	}
 
-	{ // htc/vive_controller
+	// microsoft/hand_interaction
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_hand_interaction
+	if (xr_ext_available.MSFT_hand_interaction) {
+		xrStringToPath(xr_instance, "/user/hand/left/input/select/value",  &path_trigger[0]);
+		xrStringToPath(xr_instance, "/user/hand/right/input/select/value", &path_trigger[1]);
+		XrActionSuggestedBinding bindings[] = {
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger    [0] }, { xrc_action_trigger,     path_trigger    [1] },
+			{ xrc_action_grip,       path_grip       [0] }, { xrc_action_grip,        path_grip       [1] },
+		};
+		binding_arr.add_range(bindings, _countof(bindings));
+		if (xr_ext_available.EXT_palm_pose) {
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
+		}
+
+		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/hand_interaction", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = binding_arr.data;
+		suggested_binds.countSuggestedBindings = binding_arr.count;
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for WMR vs. HoloLens controllers
+			xrc_profile_info_t info;
+			info.profile = profile_path;
+			info.name    = "microsoft/hand_interaction";
+			info.offset_rot[handed_left ] = quat_identity;
+			info.offset_rot[handed_right] = quat_identity;
+			info.offset_pos[handed_left ] = vec3_zero;
+			info.offset_pos[handed_right] = vec3_zero;
+			xrc_profile_offsets.add(info);
+		}
+		binding_arr.clear();
+	}
+
+	// htc/vive_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_htc_vive_controller_profile
+	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger[1]);
 
@@ -403,7 +443,9 @@ bool oxri_init() {
 		binding_arr.clear();
 	}
 
-	{ // valve/index_controller
+	// valve/index_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_valve_index_controller_profile
+	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/a/click",        &path_x1[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
 		xrStringToPath(xr_instance, "/user/hand/left/input/b/click",        &path_x2[0]);
@@ -451,7 +493,9 @@ bool oxri_init() {
 		binding_arr.clear();
 	}
 
-	{ // oculus/touch_controller
+	// oculus/touch_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_oculus_touch_controller_profile
+	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/x/click",        &path_x1[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/a/click",       &path_x1[1]);
 		xrStringToPath(xr_instance, "/user/hand/left/input/y/click",        &path_x2[0]);
@@ -496,7 +540,9 @@ bool oxri_init() {
 	}
 
 #if !defined(SK_OS_ANDROID)
-	{ // khr/simple_controller
+	// khr/simple_controller
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_khronos_simple_controller_profile
+	{
 		xrStringToPath(xr_instance, "/user/hand/left/input/select/click",  &path_trigger[0]);
 		xrStringToPath(xr_instance, "/user/hand/right/input/select/click", &path_trigger[1]);
 		XrActionSuggestedBinding bindings[] = {

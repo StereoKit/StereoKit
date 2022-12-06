@@ -152,12 +152,24 @@ namespace StereoKit
 		/// <summary>The default VFX layer, StereoKit draws some non-standard
 		/// mesh content using this flag, such as lines.</summary>
 		Vfx          = 1 << 10,
+		/// <summary>For items that should only be drawn from the first person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 1st person viewpoint.</summary>
+		FirstPerson  = 1 << 11,
+		/// <summary>For items that should only be drawn from the third person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 3rd person viewpoint.</summary>
+		ThirdPerson  = 1 << 12,
 		/// <summary>This is a flag that specifies all possible layers. If you
 		/// want to render all layers, then this is the layer filter
 		/// you would use. This is the default for render filtering.</summary>
 		All          = 0xFFFF,
 		/// <summary>This is a combination of all layers that are not the VFX layer.</summary>
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
+		/// <summary>All layers except for the third person layer.</summary>
+		AllFirstPerson = All & ~ThirdPerson,
+		/// <summary>All layers except for the first person layer.</summary>
+		AllThirdPerson = All & ~FirstPerson,
 	}
 
 	/// <summary>This tells about the app's current focus state, whether it's active and

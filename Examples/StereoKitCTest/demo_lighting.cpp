@@ -52,7 +52,7 @@ void demo_lighting_init() {
 
 void demo_lighting_update() {
 	vec3  center = { 0,0,-0.5f };
-	float time   = time_getf();
+	float time   = time_totalf();
 	for (int32_t i = 0; i < 3; i++) {
 		skt_lighting_set_pos(lights[i], vec3{cosf(time*(i+1)), 0, sinf(time*(i+1))} + center);
 		render_add_mesh(mesh_sphere, mat_light,

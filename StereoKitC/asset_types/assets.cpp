@@ -16,6 +16,7 @@
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/atomic_util.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -57,6 +58,7 @@ mtx_t                  asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
 int32_t                asset_tasks_processing= 0;
 int32_t                asset_tasks_priority  = INT_MAX;
+cnd_t                  asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
 int32_t asset_thread   (void *);
@@ -127,6 +129,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
+	sk_free(header->id_text);
 	header->id_text = string_copy(id);
 }
 
@@ -146,22 +149,22 @@ void assets_set_id(asset_header_t *header, uint64_t id) {
 ///////////////////////////////////////////
 
 void assets_addref(asset_header_t *asset) {
-	asset->refs += 1;
+	atomic_increment(&asset->refs);
 }
 
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
 	// Manage the reference count
-	asset->refs -= 1;
-	if (asset->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset->refs) == 0) {
+		assets_destroy(asset);
+	} else if (asset->refs < 0) {
+		if (asset->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset->type, asset->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset->type);
 		abort();
 	}
-	if (asset->refs != 0)
-		return;
-
-	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
@@ -170,26 +173,31 @@ void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
 	// Manage the reference count
-	asset_header->refs -= 1;
-	if (asset_header->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset_header->refs) == 0) {
+		mtx_lock(&assets_multithread_destroy_lock);
+		assets_multithread_destroy.add(asset_header);
+		mtx_unlock(&assets_multithread_destroy_lock);
+	} else if (asset_header->refs < 0) {
+		if (asset_header->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset_header->type, asset_header->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset_header->type);
 		abort();
 	}
-	if (asset_header->refs != 0)
-		return;
-
-	mtx_lock(&assets_multithread_destroy_lock);
-	assets_multithread_destroy.add(asset_header);
-	mtx_unlock(&assets_multithread_destroy_lock);
 }
 
 ///////////////////////////////////////////
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
+		log_errf("Destroying asset[%d] '%s' that still has references!", asset->type, asset->id_text);
+		abort();
 		return;
 	}
+
+	// destroy functions will often zero out their contents for safety, so we
+	// need to free the id text first
+	sk_free(asset->id_text);
 
 	// Call asset specific destroy function
 	switch(asset->type) {
@@ -214,7 +222,6 @@ void assets_destroy(asset_header_t *asset) {
 	}
 
 	// And at last, free the memory we allocated for it!
-	sk_free(asset->id_text);
 	sk_free(asset);
 }
 
@@ -320,6 +327,7 @@ bool assets_init() {
 	mtx_init(&assets_job_lock,                 mtx_plain);
 	mtx_init(&asset_thread_task_mtx,           mtx_plain);
 	mtx_init(&assets_load_event_lock,          mtx_plain);
+	cnd_init(&asset_tasks_available);
 
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);
@@ -380,12 +388,19 @@ void assets_update() {
 	mtx_unlock(&assets_load_event_lock);
 	assets_load_call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
 	assets_load_call_list.clear();
+
+#if defined(SK_DEBUG_MEM)
+	if (input_key(key_p) & button_state_just_active) {
+		sk_mem_log_allocations();
+	}
+#endif
 }
 
 ///////////////////////////////////////////
 
 void assets_shutdown() {
 	asset_thread_enabled = false;
+	cnd_broadcast(&asset_tasks_available);
 	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
 			assets_update();
@@ -394,6 +409,9 @@ void assets_shutdown() {
 	}
 	asset_threads.free();
 
+#if defined(SK_DEBUG_MEM)
+	assets_shutdown_check();
+#endif
 
 	mtx_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
@@ -404,10 +422,12 @@ void assets_shutdown() {
 	mtx_destroy(&assets_multithread_destroy_lock);
 	mtx_destroy(&assets_job_lock);
 	mtx_destroy(&assets_load_event_lock);
+	cnd_destroy(&asset_tasks_available);
 
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
+	assets               .free();
 
 	asset_tasks_processing = 0;
 	asset_tasks_finished   = 0;
@@ -550,6 +570,9 @@ void assets_add_task(asset_task_t src_task) {
 	asset_thread_tasks.insert(idx, task);
 	asset_tasks_processing += 1;
 	mtx_unlock(&asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) cnd_broadcast(&asset_tasks_available);
+	else                              cnd_signal   (&asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -598,6 +621,9 @@ void assets_return_task(asset_task_t *task) {
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
 	asset_thread_tasks.insert(0, task);
 	mtx_unlock(&asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) cnd_broadcast(&asset_tasks_available);
+	else                              cnd_signal   (&asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -700,12 +726,18 @@ int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
 	thread->id      = thrd_id_current();
 	thread->running = true;
+	 
+	mtx_t wait_mtx;
+	mtx_init(&wait_mtx, mtx_plain);
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
 		asset_step_task();
-		thrd_yield();
+
+		if (asset_thread_enabled && asset_thread_tasks.count == 0)
+			cnd_wait(&asset_tasks_available, &wait_mtx);
 	}
 
+	mtx_destroy(&wait_mtx);
 	thread->running = false;
 	return 0;
 }
@@ -729,7 +761,6 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_update();
-		thrd_yield();
 	}
 }
 
@@ -751,7 +782,6 @@ void assets_block_for_priority(int32_t priority) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_update();
-		thrd_yield();
 		curr_priority = assets_current_task_priority();
 	}
 }

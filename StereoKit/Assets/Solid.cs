@@ -49,6 +49,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty solid!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Solid()
 		{
 			if (_inst != IntPtr.Zero)

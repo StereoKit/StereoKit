@@ -28,6 +28,9 @@ matrix gltf_build_node_matrix (cgltf_node *curr);
 matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
 void   gltf_add_warning       (array_t<const char *> *warnings, const char *text);
 
+// This needs to be in cgltf.cpp due to the location of the json parser
+void gltf_parse_extras(model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+
 ///////////////////////////////////////////
 
 void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
@@ -40,16 +43,12 @@ void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
 
 ///////////////////////////////////////////
 
-bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
+bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const char *filename) {
 	if (node->skin == nullptr)
 		return false;
-	if (node->mesh->primitives_count > 1) {
-		log_warnf("[%s] multimaterial skinned meshes not supported yet", filename);
-		return false;
-	}
 	
 	cgltf_mesh      *m = node->mesh;
-	cgltf_primitive *p = &m->primitives[0];
+	cgltf_primitive *p = &m->primitives[primitive_id];
 
 	uint16_t *bone_ids   = nullptr;
 	int32_t   bone_id_ct = 0;
@@ -215,6 +214,10 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 
 	// And assign the skin!
 	mesh_set_skin(sk_mesh, bone_ids, bone_id_ct, weights, weight_ct, bone_trs, bone_tr_ct);
+
+	sk_free(bone_ids);
+	sk_free(weights);
+	sk_free(bone_trs);
 
 	return true;
 }
@@ -504,18 +507,28 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
-		void         *buffer = nullptr;
-		cgltf_options options = {};
+		char* start = strchr(image->uri, ',');
+		if (start != nullptr && start - image->uri >= 7 && strncmp(start - 7, ";base64", 7) == 0) {
+			void*         buffer  = nullptr;
+			cgltf_options options = {};
 
-		char*  start = strchr(image->uri, ',') + 1; // start of base64 data
-		char*  end   = strchr(image->uri, '=');     // end of base64 data
-		size_t size = ((end-start) * 6) / 8;        // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
-		cgltf_load_buffer_base64(&options, size, start, &buffer);
+			char*  base64_start = start + 1;
+			size_t base64_len   = strlen(base64_start);
 
-		if (buffer != nullptr) {
-			result = tex_create_mem(buffer, size, srgb_data, priority);
-			tex_set_id(result, id);
-			sk_free(buffer);
+			// A base64 string may end with 0, 1 or 2 '=' padding characters,
+			// padding is present to ensure data is a multiple of 3.
+			size_t base64_size = 3 * (base64_len / 4);
+			if (base64_len >= 1 && base64_start[base64_len-1] == '=') { base64_size -= 1; }
+			if (base64_len >= 2 && base64_start[base64_len-2] == '=') { base64_size -= 1; }
+
+			 // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
+			cgltf_load_buffer_base64(&options, base64_size, base64_start, &buffer);
+
+			if (buffer != nullptr) {
+				result = tex_create_mem(buffer, base64_size, srgb_data, priority);
+				tex_set_id(result, id);
+				sk_free(buffer);
+			}
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
@@ -795,6 +808,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader, warnings);
 		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, node_transform, mesh, material);
+		if (node->skin) 
+			gltf_parseskin(model_node_get_mesh(model, new_node), node, (int)p, filename);
 		if (node_id == -1)
 			node_id = new_node;
 
@@ -802,13 +817,20 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		material_release(material);
 	}
 
-	if (node->skin && node_id != -1)
-		gltf_parseskin(model_node_get_mesh(model, node_id), node, filename);
-
 	if (node_id == -1) {
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
 	}
-	node_map->add(node, node_id);
+	node_map->set(node, node_id);
+
+	// Copy the GLTF's extras into a dictionary
+	int64_t extras_size_i = (int64_t)node->extras.end_offset - (int64_t)node->extras.start_offset;
+	size_t  extras_size   = extras_size_i < 0 ? 0 : extras_size_i;
+	if (extras_size > 0) {
+		char* extras_json = sk_malloc_t(char, extras_size+1);
+		cgltf_copy_extras_json(data, &node->extras, extras_json, &extras_size);
+		gltf_parse_extras(model, node_id, extras_json, extras_size);
+		sk_free(extras_json);
+	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);
@@ -864,15 +886,19 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		if (data->nodes[i].skin == nullptr) continue;
 		cgltf_skin *skin = data->nodes[i].skin;
+		cgltf_node *node = &data->nodes[i];
 
-		anim_skeleton_t skel = {};
-		skel.bone_count       = (int32_t)skin->joints_count;
-		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
-		skel.skin_node        = *node_map.get(&data->nodes[i]);
-		for (int32_t b = 0; b < skel.bone_count; b++) {
-			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+		// Each GLTF skin node has an sk_mesh node for each of its primitives.
+		for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+			anim_skeleton_t skel = {};
+			skel.bone_count       = (int32_t)skin->joints_count;
+			skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
+			skel.skin_node        = *node_map.get(&data->nodes[i]) + (int)p;
+			for (int32_t b = 0; b < skel.bone_count; b++) {
+				skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+			}
+			model->anim_data.skeletons.add(skel);
 		}
-		model->anim_data.skeletons.add(skel);
 	}
 
 	for (int32_t i = 0; i < warnings.count; i++) {

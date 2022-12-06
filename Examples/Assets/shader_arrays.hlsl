@@ -31,7 +31,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float4 world = mul(input.pos, sk_inst[id].world);
 	o.pos        = mul(world,     sk_viewproj[o.view_id]);
 
-	o.uv    = input.uv + offsets[((int)(sk_time*4))%10].xy;
+	o.uv    = input.uv + offsets[((uint)(sk_time*4))%10].xy;
 	o.color = input.col * color * sk_inst[id].color;
 	return o;
 }

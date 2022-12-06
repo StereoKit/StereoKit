@@ -464,6 +464,7 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t p
 
 tex_t tex_create(tex_type_ type, tex_format_ format) {
 	tex_t result = (tex_t)assets_allocate(asset_type_tex);
+	result->owned  = true;
 	result->type   = type;
 	result->format = format;
 	result->address_mode = tex_address_wrap;
@@ -620,6 +621,7 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
 	
+	tex_addref(texture->depth_buffer);
 	return texture->depth_buffer;
 }
 
@@ -644,8 +646,10 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count) {
-	if (skg_tex_is_valid(&texture->tex))
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned) {
+	texture->owned = owned;
+	
+	if (texture->owned && skg_tex_is_valid(&texture->tex))
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
@@ -665,6 +669,13 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 	tex_set_fallback(texture, texture->header.state <= 0
 		? tex_error_texture 
 		: nullptr);
+}
+
+///////////////////////////////////////////
+
+void* tex_get_surface(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded);
+	return skg_tex_get_native(&texture->tex);
 }
 
 ///////////////////////////////////////////
@@ -740,7 +751,8 @@ void tex_destroy(tex_t tex) {
 	assets_on_load_remove(&tex->header, nullptr);
 
 	sk_free(tex->light_info);
-	skg_tex_destroy(&tex->tex);
+	if(tex->owned)
+		skg_tex_destroy(&tex->tex);
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
 	*tex = {};
@@ -971,6 +983,14 @@ int32_t tex_get_anisotropy(tex_t texture) {
 
 ///////////////////////////////////////////
 
+int32_t tex_get_mips(tex_t texture) {
+	return (texture->type & tex_type_mips)
+		? skg_mip_count(tex_get_width(texture), tex_get_height(texture))
+		: 1;
+}
+
+///////////////////////////////////////////
+
 size_t tex_format_size(tex_format_ format) {
 	switch (format) {
 	case tex_format_depth32:
@@ -1028,23 +1048,35 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 ///////////////////////////////////////////
 
 void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
+	tex_get_data_mip(texture, out_data, out_data_size, 0);
+}
+
+///////////////////////////////////////////
+
+void tex_get_data_mip(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
+	if (mip_level > tex_get_mips(texture)) {
+		log_warn("Cannot retrieve invalid mip-level!");
+		return;
+	}
+
 	assets_block_until(&texture->header, asset_state_loaded);
-	memset(out_data, 0, out_data_size);
 
 	struct tex_data_job_t {
-		tex_t texture;
-		void *out_data;
-		size_t out_data_size;
+		tex_t   texture;
+		void*   out_data;
+		size_t  out_data_size;
+		int32_t mip_level;
 	};
-	tex_data_job_t job_data = { texture, out_data, out_data_size };
+	tex_data_job_t job_data = { texture, out_data, out_data_size, mip_level };
 
 	bool32_t result = assets_execute_gpu([](void *data) {
 		tex_data_job_t *job_data = (tex_data_job_t *)data;
-		return (bool32_t)skg_tex_get_contents(&job_data->texture->tex, job_data->out_data, job_data->out_data_size);
+		return (bool32_t)skg_tex_get_mip_contents(&job_data->texture->tex, job_data->mip_level, job_data->out_data, job_data->out_data_size);
 	}, &job_data);
 
 	if (!result) {
 		log_warn("Couldn't get texture contents!");
+		memset(out_data, 0, out_data_size);
 	}
 }
 
@@ -1108,6 +1140,49 @@ tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ typ
 	tex_set_colors(result, width, height, color_data);
 
 	sk_free(color_data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_t gradient_linear) {
+	if (roundness < 0.00001f)
+		roundness = 0.00001f;
+
+	gradient_t grad = gradient_linear;
+	if (gradient_linear == nullptr) {
+		gradient_key_t keys[2] = {
+			{ {1,1,1,0}, 0 },
+			{ {1,1,1,1}, 1 }
+		};
+		grad = gradient_create_keys(keys, 2);
+	}
+	// Create an array of color values the size of our texture
+	color32* color_data = sk_malloc_t(color32, width * height);
+
+	vec2  center   = { width / 2.0f, height / 2.0f };
+	float max_dist = fminf((float)width, (float)height) / 2.0f;
+	float power    = roundness * 2;
+	for (int32_t px_y=0; px_y<height; px_y++) {
+		for (int32_t px_x=0; px_x<width; px_x++) {
+			// Constrain the point to the top right quadrant
+			vec2 pt = {
+				fabsf(px_x - center.x) / max_dist,
+				fabsf(px_y - center.y) / max_dist};
+			float minkowski_dist = powf(powf(pt.x, power) + powf(pt.y, power), 1.0f / power);
+
+			color_data[px_x + px_y*width] = gradient_get32(grad, 1-minkowski_dist);
+		}
+	}
+
+	// And upload it to the GPU
+	tex_t result = tex_create(tex_type_image, tex_format_rgba32_linear);
+	tex_set_colors(result, width, height, color_data);
+
+	sk_free(color_data);
+	if (gradient_linear == nullptr)
+		gradient_release(grad);
 
 	return result;
 }

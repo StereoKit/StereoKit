@@ -259,7 +259,7 @@ void input_hand_update() {
 	hand_sources[hand_system].update_frame();
 
 	// Update the hand size every second
-	hand_size_update -= time_elapsedf();
+	hand_size_update -= time_stepf_unscaled();
 	if (hand_size_update <= 0) {
 		hand_size_update = 1;
 
@@ -421,8 +421,8 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 		0,
 		handedness == handed_right ?  90.f : -90.f,
 		handedness == handed_right ? -90.f :  90.f) * orientation;
-	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2;
-	hand.wrist.orientation = hand.palm.orientation;
+	hand.wrist.orientation = hand.fingers[2][0].orientation;
+	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
 }
 
 ///////////////////////////////////////////
@@ -447,7 +447,7 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 
 	// Blend our active pose with our desired pose, for smooth transitions
 	// between poses
-	float delta = time_elapsedf_unscaled() * 30;
+	float delta = time_stepf_unscaled() * 30;
 	delta = delta>1?1:delta;
 	for (int32_t f = 0; f < 5; f++) {
 	for (int32_t j = 0; j < 5; j++) {

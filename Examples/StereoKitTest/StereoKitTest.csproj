@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
@@ -9,9 +9,12 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<OutputPath>..\..\bin\x64_$(Configuration)\StereoKitTest\</OutputPath>
 		<RunWorkingDirectory>$(OutputPath)</RunWorkingDirectory>
+		
+		<SKAssetFolder>..\Assets</SKAssetFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
 	</PropertyGroup>
 	
-	<!-- IF YOU ARE LOOKING AT THIS FOLDER AS REFERENCE, I recommend that you
+	<!-- IF YOU ARE LOOKING AT THIS FILE AS REFERENCE, I recommend that you
 	     do not. This file 'emulates' the NuGet package's behavior, since we
 	     can't directly reference a NuGet output without lots of pain and
 	     suffering. Check here instead: https://stereokit.net/Pages/Guides/Learning-Resources.html -->
@@ -20,10 +23,13 @@
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_Android\**" />
 		<Compile Remove="StereoKitTest_UWP\**" />
+		<Compile Remove="StereoKitTest_Maui\**" />
 		<EmbeddedResource Remove="StereoKitTest_Android\**" />
 		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
+		<EmbeddedResource Remove="StereoKitTest_Maui\**" />
 		<None Remove="StereoKitTest_Android\**" />
 		<None Remove="StereoKitTest_UWP\**" />
+		<None Remove="StereoKitTest_Maui\**" />
 	</ItemGroup>
 	
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
@@ -31,25 +37,19 @@
 		<ProjectReference Include="$(ProjectDir)..\..\StereoKit\StereoKit.csproj" />
 		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.dll" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
 		<None Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.pdb" Include="$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
-		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym" Include="$(ProjectDir)../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
+		<None Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so" />
+		<None 
+			Condition="'$(OS)'!='Windows_NT' and Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/StereoKitC.sym')"
+			CopyToOutputDirectory="PreserveNewest"
+			Link="runtimes\linux-x64\native\StereoKitC.sym"
+			Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/StereoKitC.sym" />
 	</ItemGroup>
-	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 
 	<!-- Error out if StereoKitC hasn't successfully built! -->
 	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
 		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
-		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../bin/distribute/bin/linux/x64/release/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
 	</Target>
-
-	<!-- Copy assets, and build the app's shaders into the final app folder -->
-	<ItemGroup>
-		<Content Include="..\Assets\**">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-		</Content>
-		<SKShader Include="..\Assets\**\*.hlsl" BuildRoot="..\" BuildTo="Assets" />
-	</ItemGroup>
 
 	<!-- This guide file shouldn't be compiled -->
 	<ItemGroup>
@@ -58,4 +58,8 @@
 	<ItemGroup>
 		<None Include="Guides\GuideGettingStarted.cs" />
 	</ItemGroup>
+
+	<Import Project="$(ProjectDir)..\..\StereoKit\StereoKit.props" />
+	<Import Project="$(ProjectDir)..\..\StereoKit\SKAssets.targets" />
+	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
 </Project>

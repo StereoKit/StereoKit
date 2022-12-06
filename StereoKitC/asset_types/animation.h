@@ -38,7 +38,6 @@ struct anim_t {
 	char                 *name;
 	float                 duration;
 	array_t<anim_curve_t> curves;
-	void                 *anim_memory;
 };
 
 struct anim_data_t {

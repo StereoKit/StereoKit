@@ -42,10 +42,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		matrix to_local   = matrix_invert(render_get_cam_root());
-		pose_t local_head = matrix_transform_pose(to_local, *input_head());
-		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
+		keyboard_pose = ui_popup_pose({0,-0.1f,0});
 	}
 
 	// Reset the keyboard to its default state
@@ -106,7 +103,7 @@ void virtualkeyboard_update() {
 	remove_last_clicked_keys();
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body);
+	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body, ui_system_get_move_type());
 
 	// Check layer keys for switching between keyboard layout layers
 	int layer_index = 0;

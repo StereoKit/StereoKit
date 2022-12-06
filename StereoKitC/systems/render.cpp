@@ -123,8 +123,8 @@ vec4                    render_lighting[9]     = {};
 spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
-render_layer_           render_primary_filter  = render_layer_all;
-render_layer_           render_capture_filter  = render_layer_all;
+render_layer_           render_primary_filter  = render_layer_all_first_person;
+render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
 tex_t                   render_global_textures[16] = {};
 
@@ -453,18 +453,23 @@ color128 render_get_clear_color_ln() {
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
 	render_item_t item;
-	item.mesh     = mesh;
-	item.mesh_inds= mesh->ind_draw;
-	item.material = material;
-	item.color    = color;
-	item.sort_id  = render_queue_id(material, mesh);
-	item.layer    = (uint16_t)layer;
+	item.mesh      = mesh;
+	item.mesh_inds = mesh->ind_draw;
+	item.color     = color;
+	item.layer     = (uint16_t)layer;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, item.transform);
 	} else {
 		math_matrix_to_fast(transform, &item.transform);
 	}
-	render_list_add(&item);
+
+	material_t curr = material;
+	while (curr != nullptr) {
+		item.material = curr;
+		item.sort_id  = render_queue_id(curr, mesh);
+		render_list_add(&item);
+		curr = curr->chain;
+	}
 }
 
 ///////////////////////////////////////////
@@ -483,14 +488,19 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		if (vis->visible == false) continue;
 		
 		render_item_t item;
-		item.mesh     = vis->mesh;
-		item.mesh_inds= vis->mesh->ind_count;
-		item.material = vis->material;
-		item.color    = color;
-		item.sort_id  = render_queue_id(item.material, vis->mesh);
-		item.layer    = (uint16_t)layer;
+		item.mesh      = vis->mesh;
+		item.mesh_inds = vis->mesh->ind_count;
+		item.color     = color;
+		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
-		render_list_add(&item);
+
+		material_t curr = vis->material;
+		while (curr != nullptr) {
+			item.material = curr;
+			item.sort_id  = render_queue_id(curr, vis->mesh);
+			render_list_add(&item);
+			curr = curr->chain;
+		}
 	}
 
 	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
@@ -524,7 +534,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 	// Copy in the other global shader variables
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
-	render_global_buffer.time       = time_getf();
+	render_global_buffer.time       = time_totalf();
 	render_global_buffer.view_count = view_count;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
@@ -592,7 +602,7 @@ void render_check_screenshots() {
 		color32 *buffer = (color32*)sk_malloc(size);
 		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_add_zbuffer  (render_capture_surface);
+		tex_release(tex_add_zbuffer(render_capture_surface));
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);

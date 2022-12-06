@@ -60,7 +60,7 @@ void physics_shutdown() {
 
 void physics_update() {
 	// How many physics frames are we going to be calculating this time?
-	int32_t frames = (int32_t)ceil((sk_timev - physics_sim_time) / physics_step);
+	int32_t frames = (int32_t)ceil((time_total() - physics_sim_time) / physics_step);
 	if (frames <= 0)
 		return;
 	if (frames > (0.5f/physics_step))
@@ -92,7 +92,7 @@ void physics_update() {
 	}
 
 	// Sim physics!
-	while (physics_sim_time < sk_timev) {
+	while (physics_sim_time < time_total()) {
 		physics_world->update((reactphysics3d::decimal)physics_step);
 		physics_sim_time += physics_step;
 	}

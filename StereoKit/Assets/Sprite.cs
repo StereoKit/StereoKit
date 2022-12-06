@@ -55,6 +55,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty sprite!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sprite()
 		{
 			if (_inst != IntPtr.Zero)

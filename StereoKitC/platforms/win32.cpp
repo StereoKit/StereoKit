@@ -58,7 +58,7 @@ void win32_resize(int width, int height) {
 
 void win32_physical_key_interact() {
 	// On desktop, we want to hide soft keyboards on physical presses
-	input_last_physical_keypress = time_getf();
+	input_last_physical_keypress = time_totalf_unscaled();
 	platform_keyboard_show(false, text_context_text);
 }
 
@@ -74,7 +74,7 @@ bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
 	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
 	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
 	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
@@ -239,8 +239,10 @@ bool win32_start_flat() {
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 	tex_set_id       (win32_target, "platform/swapchain");
 	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
+
 	tex_t zbuffer = tex_add_zbuffer (win32_target, (tex_format_)depth_fmt);
-	tex_set_id       (zbuffer, "platform/swapchain_zbuffer");
+	tex_set_id (zbuffer, "platform/swapchain_zbuffer");
+	tex_release(zbuffer);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 

@@ -160,10 +160,7 @@ namespace StereoKit
 		/// converted to a UTF-8 encoding.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, string data)
-		{ 
-			byte[] bytes = NativeHelper.ToUtf8(data); 
-			return NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), bytes, (UIntPtr)bytes.Length) > 0;
-		}
+			=> NativeAPI.platform_write_file_text(NativeHelper.ToUtf8(filename), NativeHelper.ToUtf8(data)) > 0;
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
 		/// advantage of any permissions that may have been granted by

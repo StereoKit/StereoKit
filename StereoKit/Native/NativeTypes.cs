@@ -66,6 +66,12 @@ namespace StereoKit
 		/// You don't want this, you can disable it with this setting!</summary>
 		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
 		private int _disableFlatscreenMRSim;
+		/// <summary>By default, StereoKit will open a desktop window for
+		/// keyboard input due to lack of XR-native keyboard APIs on many
+		/// platforms. If you don't want this, you can disable it with
+		/// this setting!</summary>
+		public  bool disableDesktopInputWindow { get { return _disableDesktopInputWindow > 0; } set { _disableDesktopInputWindow = value ? 1 : 0; } }
+		private int _disableDesktopInputWindow;
 		/// <summary>By default, StereoKit will slow down when the
 		/// application is out of focus. This is useful for saving processing
 		/// power while the app is out-of-focus, but may not always be
@@ -365,10 +371,30 @@ namespace StereoKit
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>
 		public float scrollChange;
+		
+		/// <summary>Ray representing the position and orientation that the
+		/// current Input.Mouse.pos is pointing in.</summary>
+		public Ray Ray
+		{
+			get
+			{
+				NativeAPI.ray_from_mouse(pos, out Ray ray);
+				return ray;
+			}
+		}
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPreSessionCreateCallback(IntPtr context);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPollEventCallback(IntPtr context, IntPtr XrEventDataBuffer);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
@@ -467,6 +493,18 @@ namespace StereoKit
 		VariablePinch
 	}
 
+	/// <summary>Determines when this UI function returns true.</summary>
+	public enum UINotify
+	{
+		/// <summary>This function returns true any time the values has 
+		/// changed!</summary>
+		Change,
+		/// <summary>This function returns true when the user has finished
+		/// interacting with it. This does not guarantee the value has changed.
+		/// </summary>
+		Finalize,
+	}
+
 	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
 	/// element visual.</summary>
 	public enum UIVisual
@@ -510,6 +548,13 @@ namespace StereoKit
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>Refers to UI.ButtonRound elements.</summary>
+		ButtonRound,
+		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
+		Panel,
+		/// <summary>Refers to the text position indicator carat on text input
+		/// elements.</summary>
+		Carat,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,

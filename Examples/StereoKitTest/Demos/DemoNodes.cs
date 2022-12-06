@@ -3,10 +3,8 @@ using System;
 
 class DemoNodes : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "ModelNode API lets...";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Model Nodes";
+	string description = "ModelNode API lets...";
 
 	Model radio     = Model.FromFile("Radio.glb");
 	Pose  radioPose = new Pose(0.5f, -0.25f, -0.5f, Quat.LookDir(-1, 0, 1));
@@ -79,8 +77,7 @@ class DemoNodes : ITest
 			radioSound.WriteSamples(radioSoundBuffer);
 		}
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description);
 	}
 
 	void UpdateLine(LinePoint[] line, float freq)

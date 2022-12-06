@@ -11,14 +11,18 @@
 #if defined(SK_OS_WINDOWS)
 
 	#include "../platforms/win32.h"
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <windows.h>
 	#include <commdlg.h>
 	#include <stdio.h>
 
 #elif defined(SK_OS_WINDOWS_UWP)
 
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <windows.h>
 	#include <winrt/Windows.UI.Core.h>
 	#include <winrt/Windows.ApplicationModel.Core.h>
@@ -238,10 +242,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 
 	file_picker_open_folder(fp_path.folder);
 
-	const pose_t *head = input_head();
-	vec3          pos  = head->position + head->orientation*vec3_forward*.5f + head->orientation*vec3_up*0.2f;
-	fp_win_pose = { pos, quat_lookat(pos, head->position) };
-
+	fp_win_pose  = ui_popup_pose({0,-0.1f,0});
 	fp_call_data = callback_data;
 	fp_callback  = on_confirm;
 	fp_mode = mode;
@@ -359,7 +360,7 @@ void file_picker_finish() {
 void file_picker_update() {
 	if (fp_show) {
 		ui_push_id("_skp");
-		ui_window_begin(fp_title, fp_win_pose, { .46f,0 });
+		ui_window_begin(fp_title, fp_win_pose, { .46f,0 }, ui_win_normal, ui_system_get_move_type());
 
 		// Show the current directory address bar!
 		float   line_height       = ui_line_height();

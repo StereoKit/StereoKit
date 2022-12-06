@@ -199,6 +199,9 @@
     <ClCompile Include="xr_backends\openxr_view.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\unicode.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -459,6 +462,9 @@
     </ClInclude>
     <ClInclude Include="xr_backends\openxr_view.h">
       <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\atomic_util.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

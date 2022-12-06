@@ -14,10 +14,8 @@ using StereoKit.Framework;
 
 class DemoHands : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Hand Input";
+	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
 	static Pose optionsPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
 	bool showHands     = true;
@@ -173,10 +171,7 @@ class DemoHands : ITest
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
-		if (!Tests.IsTesting) { 
-			Text.Add(title, titlePose);
-			Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
-		}
+		Demo.ShowSummary(title, description);
 	}
 
 	private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
@@ -263,6 +258,7 @@ class DemoHands : ITest
 				Lines.AddAxis(hand[finger, joint].Pose);
 			}}
 			Lines.AddAxis(hand.palm);
+			Lines.AddAxis(hand.wrist);
 		}
 	}
 
@@ -323,5 +319,5 @@ class DemoHands : ITest
 }
 
 /// :CodeDoc: Guides Using Hands
-/// The code in context for this document can be found [on Github here](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/DemoHands.cs)!
+/// The code in context for this document can be found [on Github here](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoHands.cs)!
 /// :End:

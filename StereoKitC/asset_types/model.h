@@ -24,6 +24,7 @@ struct model_node_t {
 	int32_t  child;
 	int32_t  sibling;
 	bool32_t solid;
+	dictionary_t<char*> info;
 };
 
 struct _model_t {

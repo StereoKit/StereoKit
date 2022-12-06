@@ -58,7 +58,7 @@ void android_main(struct android_app* state) {
 			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
 
 			if (sk_active_display_mode() == display_mode_flatscreen) {
-				vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };
+				vec3 pos = { cosf(time_totalf())*.6f, 0.5f, sinf(time_totalf())*.6f };
 				render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3{0,0.25f,0})));
 			}
 

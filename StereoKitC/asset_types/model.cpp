@@ -412,6 +412,7 @@ void model_destroy(model_t model) {
 	anim_data_destroy(&model->anim_data);
 	for (int32_t i = 0; i < model->nodes.count; i++) {
 		sk_free(model->nodes[i].name);
+		model_node_info_clear(model, i);
 	}
 	for (int32_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
@@ -738,6 +739,62 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 
 ///////////////////////////////////////////
 
+const char* model_node_info_get(model_t model, model_node_id node, const char* info_key_u8) {
+	return *model->nodes[node].info.get(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_set(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	dictionary_t<char*>* info = &model->nodes[node].info;
+	int32_t              at   = info->contains(info_key_u8);
+	if (at != -1) {
+		sk_free(info->items[at].value);
+		info->items[at].value = string_copy(info_value_u8);
+	} else {
+		info->set(info_key_u8, string_copy(info_value_u8));
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_remove(model_t model, model_node_id node, const char* info_key_u8) {
+	return model->nodes[node].info.remove(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_clear(model_t model, model_node_id node) {
+	model->nodes[node].info.each([](char*& val) { sk_free(val); });
+	model->nodes[node].info.free();
+}
+
+///////////////////////////////////////////
+
+int32_t model_node_info_count(model_t model, model_node_id node) {
+	return model->nodes[node].info.count;
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_iterate(model_t model, model_node_id node, int32_t* ref_iterator, const char** out_key_utf8, const char** out_value_utf8) {
+	dictionary_t<char*> *info = &model->nodes[node].info;
+
+	if (*ref_iterator >= info->capacity) return false;
+	while (info->items[*ref_iterator].hash == 0) {
+		*ref_iterator = *ref_iterator + 1;
+		if (*ref_iterator >= info->capacity) return false;
+	}
+
+	if (out_key_utf8   != nullptr) *out_key_utf8   = info->items[*ref_iterator].key;
+	if (out_value_utf8 != nullptr) *out_value_utf8 = info->items[*ref_iterator].value;
+	*ref_iterator = *ref_iterator + 1;
+
+	return true;
+}
+
+///////////////////////////////////////////
+
 void model_step_anim(model_t model) {
 	anim_update_model(model);
 }
@@ -767,7 +824,7 @@ void model_set_anim_time(model_t model, float time) {
 		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
 	} else {
-		model->anim_inst.start_time = time_getf() - time;
+		model->anim_inst.start_time = time_totalf() - time;
 	}
 }
 
@@ -814,9 +871,9 @@ float model_anim_active_time(model_t model) {
 
 	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 	switch (model->anim_inst.mode) {
-	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
-	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
-	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_manual: return fminf(                model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_totalf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_totalf() - model->anim_inst.start_time, max_time);
 	default:               return 0;
 	}
 }

@@ -50,6 +50,7 @@ material_t sprite_create_material(int index_id) {
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
 	material_set_cull        (result, cull_none);
+	material_set_depth_test  (result, depth_test_less_or_eq);
 	shader_release(shader);
 
 	return result;
