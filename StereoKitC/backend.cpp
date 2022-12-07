@@ -106,6 +106,18 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 
 ///////////////////////////////////////////
 
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
+	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
+	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
 	log_err(backend_err_wrong_backend);
 }

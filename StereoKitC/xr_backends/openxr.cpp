@@ -45,11 +45,15 @@ typedef struct context_callback_t {
 	void *context;
 } context_callback_t;
 
+typedef struct poll_event_callback_t {
+	void (*callback)(void* context, void* XrEventDataBuffer);
+	void *context;
+} poll_event_callback_t;
+
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
 	"",
 };
-bool xr_has_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
 bool xr_has_hand_meshes       = false;
 bool xr_has_single_pass       = false;
@@ -71,7 +75,8 @@ array_t<const char*> xr_exts_user    = {};
 array_t<uint64_t>    xr_exts_loaded  = {};
 bool32_t             xr_minimum_exts = false;
 
-array_t<context_callback_t> xr_callbacks_pre_session_create = {};
+array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
+array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
 
 bool   xr_has_bounds        = false;
 vec2   xr_bounds_size       = {};
@@ -259,6 +264,17 @@ bool openxr_init() {
 		return false;
 	}
 
+	// Fetch the runtime name/info, for logging and for a few other checks
+	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+		"xrGetInstanceProperties failed [%s]");
+
+	log_diagf("Using OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+		inst_properties.runtimeName,
+		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
+		XR_VERSION_MINOR(inst_properties.runtimeVersion),
+		XR_VERSION_PATCH(inst_properties.runtimeVersion));
+
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
 
@@ -317,18 +333,16 @@ bool openxr_init() {
 
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
-	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
+	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
 	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
-	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
 	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
 	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
 	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
 
 	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
 	else                                                                log_diagf("Platform does not support single-pass rendering");
-	
 
 	// Exception for the articulated WMR hand simulation, and the Vive Index
 	// controller equivalent. These simulations are insufficient to treat them
@@ -355,12 +369,6 @@ bool openxr_init() {
 	}
 	sk_free(xr_layers);
 
-	// Get the runtime name so we're less likely to invalidate something we
-	// don't kow about.
-	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
-	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
-		"xrGetInstanceProperties failed [%s]");
-
 	// The Leap hand tracking layer seems to supercede the built-in extensions.
 	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
 		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
@@ -374,7 +382,6 @@ bool openxr_init() {
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
-	if (xr_has_depth_lsr)                  log_diag("OpenXR depth LSR ext enabled!");
 	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
 	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
 	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
@@ -697,6 +704,11 @@ void openxr_poll_events() {
 			break;
 		default: break;
 		}
+
+		for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+			xr_callbacks_poll_event[i].callback(xr_callbacks_poll_event[i].context, &event_buffer);
+		}
+
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
 }
@@ -1014,6 +1026,33 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 	}
 
 	xr_callbacks_pre_session_create.add({ on_pre_session_create, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	xr_callbacks_poll_event.add({ on_poll_event, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+		if (xr_callbacks_poll_event[i].callback == on_poll_event || on_poll_event == nullptr) {
+			xr_callbacks_poll_event.remove(i);
+			return;
+		}
+	}
 }
 
 } // namespace sk

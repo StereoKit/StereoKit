@@ -50,6 +50,7 @@ sk_gpu.h
 		#else
 			#define _SKG_GL_DESKTOP
 			#define _SKG_GL_LOAD_GLX
+			#define _SKG_GL_MAKE_FUNCTIONS
 		#endif
 	#elif defined(_WIN32)
 		#define _SKG_GL_DESKTOP
@@ -285,7 +286,9 @@ typedef struct skg_shader_meta_t {
 #if   defined(SKG_DIRECT3D11)
 
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <d3d11.h>
 #include <dxgi1_6.h>
 
@@ -656,6 +659,7 @@ typedef struct {
 ///////////////////////////////////////////
 
 SKG_API void                    skg_log                        (skg_log_ level, const char *text);
+SKG_API void                    skg_logf                       (skg_log_ level, const char *text, ...);
 SKG_API bool                    skg_read_file                  (const char *filename, void **out_data, size_t *out_size);
 SKG_API uint64_t                skg_hash                       (const char *string);
 SKG_API uint32_t                skg_mip_count                  (int32_t width, int32_t height);
@@ -778,16 +782,14 @@ int32_t skg_init(const char *, void *adapter_id) {
 	if (FAILED(hr)) {
 
 		// Message that we failed to initialize with the selected adapter.
-		char d3d_info_txt[128];
 		if (final_adapter != nullptr) {
 			DXGI_ADAPTER_DESC1 final_adapter_info;
 			final_adapter->GetDesc1(&final_adapter_info);
-			snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Failed starting Direct3D 11 adapter '%ls': 0x%08X", &final_adapter_info.Description, hr);
+			skg_logf(skg_log_critical, "Failed starting Direct3D 11 adapter '%ls': 0x%08X", &final_adapter_info.Description, hr);
 			final_adapter->Release();
 		} else {
-			snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Failed starting Direct3D 11 adapter 'Default adapter': 0x%08X", hr);
+			skg_logf(skg_log_critical, "Failed starting Direct3D 11 adapter 'Default adapter': 0x%08X", hr);
 		}
-		skg_log(skg_log_critical, d3d_info_txt);
 
 		// Get a human readable description of that error message.
 		char *error_text = NULL;
@@ -810,9 +812,7 @@ int32_t skg_init(const char *, void *adapter_id) {
 	if (final_adapter != nullptr) {
 		DXGI_ADAPTER_DESC1 final_adapter_info;
 		final_adapter->GetDesc1(&final_adapter_info);
-		char d3d_info_txt[128];
-		snprintf(d3d_info_txt, sizeof(d3d_info_txt), "Using Direct3D 11: %ls", &final_adapter_info.Description);
-		skg_log(skg_log_info, d3d_info_txt);
+		skg_logf(skg_log_info, "Using Direct3D 11: %ls", &final_adapter_info.Description);
 		final_adapter->Release();
 	} else {
 		skg_log(skg_log_info, "Using Direct3D 11: default device");
@@ -1012,8 +1012,9 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 	case skg_buffer_type_constant: buffer_desc.BindFlags |= D3D11_BIND_CONSTANT_BUFFER; break;
 	case skg_buffer_type_compute:  break;
 	}
-	if (FAILED(d3d_device->CreateBuffer(&buffer_desc, data == nullptr ? nullptr : &buffer_data, &result._buffer))) {
-		skg_log(skg_log_critical, "CreateBuffer failed!");
+	HRESULT hr = d3d_device->CreateBuffer(&buffer_desc, data == nullptr ? nullptr : &buffer_data, &result._buffer);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "CreateBuffer failed: 0x%08X", hr);
 		return {};
 	}
 
@@ -1024,8 +1025,9 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 		view.Buffer.FirstElement = 0;
 		view.Buffer.NumElements  = size_count; 
 
-		if(FAILED(d3d_device->CreateUnorderedAccessView( result._buffer, &view, &result._unordered ))) {
-			skg_log(skg_log_critical, "CreateUnorderedAccessView failed!");
+		hr = d3d_device->CreateUnorderedAccessView( result._buffer, &view, &result._unordered );
+		if(FAILED(hr)) {
+			skg_logf(skg_log_critical, "CreateUnorderedAccessView failed: 0x%08X", hr);
 			skg_buffer_destroy(&result);
 			return {};
 		}
@@ -1037,8 +1039,9 @@ skg_buffer_t skg_buffer_create(const void *data, uint32_t size_count, uint32_t s
 		view.BufferEx.FirstElement = 0;
 		view.BufferEx.NumElements  = size_count;
 
-		if (FAILED(d3d_device->CreateShaderResourceView(result._buffer, &view, &result._resource))) {
-			skg_log(skg_log_critical, "CreateShaderResourceView failed!");
+		hr = d3d_device->CreateShaderResourceView(result._buffer, &view, &result._resource);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "CreateShaderResourceView failed: 0x%08X", hr);
 			skg_buffer_destroy(&result);
 			return {};
 		}
@@ -1061,11 +1064,12 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 	}
 
 	D3D11_MAPPED_SUBRESOURCE resource;
-	if (SUCCEEDED(d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource))) {
+	HRESULT hr = d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	if (SUCCEEDED(hr)) {
 		memcpy(resource.pData, data, size_bytes);
 		d3d_context->Unmap(buffer->_buffer, 0);
 	} else {
-		skg_log(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type?");
+		skg_logf(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type: 0x%08X", hr);
 	}
 }
 
@@ -1080,19 +1084,21 @@ void skg_buffer_get_contents(const skg_buffer_t *buffer, void *ref_buffer, uint3
 	desc.Usage          = D3D11_USAGE_STAGING;
 	desc.BindFlags      = 0;
 	desc.MiscFlags      = 0;
-	if (FAILED(d3d_device->CreateBuffer(&desc, nullptr, &cpu_buff)) ) {
-		skg_log(skg_log_critical, "Couldn't create a tep buffer for copy!");
+	HRESULT hr = d3d_device->CreateBuffer(&desc, nullptr, &cpu_buff);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't create a temp buffer for copy: 0x%08X", hr);
 		return;
 	}
 	d3d_context->CopyResource( cpu_buff, buffer->_buffer );
 
 	D3D11_MAPPED_SUBRESOURCE resource;
-	if (SUCCEEDED(d3d_context->Map(cpu_buff, 0, D3D11_MAP_READ, 0, &resource))) {
+	hr = d3d_context->Map(cpu_buff, 0, D3D11_MAP_READ, 0, &resource);
+	if (SUCCEEDED(hr)) {
 		memcpy(ref_buffer, resource.pData, buffer_size);
 		d3d_context->Unmap(cpu_buff, 0);
 	} else {
 		memset(ref_buffer, 0, buffer_size);
-		skg_log(skg_log_critical, "Failed to get contents of buffer!");
+		skg_logf(skg_log_critical, "Failed to get contents of buffer: 0x%08X", hr);
 	}
 	cpu_buff->Release();
 }
@@ -1223,10 +1229,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 			errors->Release();
 		}
 		if (FAILED(hr)) {
-			char text[128];
-			snprintf(text, sizeof(text), "D3DCompile failed: 0x%X", hr);
-			skg_log(skg_log_warning, text);
-
+			skg_logf(skg_log_warning, "D3DCompile failed: 0x%08X", hr);
 			if (compiled) compiled->Release();
 			return {};
 		}
@@ -1243,9 +1246,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 	case skg_stage_compute : hr = d3d_device->CreateComputeShader(buffer, buffer_size, nullptr, (ID3D11ComputeShader**)&result._shader); break;
 	}
 	if (FAILED(hr)) {
-		char text[128];
-		snprintf(text, sizeof(text), "CreateXShader failed: 0x%X", hr);
-		skg_log(skg_log_warning, text);
+		skg_logf(skg_log_warning, "CreateXShader failed: 0x%08X", hr);
 
 		if (compiled) compiled->Release();
 		if (result._shader) {
@@ -1288,9 +1289,7 @@ void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 
 skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader) {
 	if (v_shader._shader == nullptr && p_shader._shader == nullptr && c_shader._shader == nullptr) {
-		char text[290];
-		snprintf(text, sizeof(text), "Shader '%s' has no valid stages!", meta->name);
-		skg_log(skg_log_warning, text);
+		skg_logf(skg_log_warning, "Shader '%s' has no valid stages!", meta->name);
 		return {};
 	}
 
@@ -1419,7 +1418,11 @@ void skg_pipeline_update_depth(skg_pipeline_t *pipeline) {
 	desc_depthstate.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
 	desc_depthstate.BackFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
 	desc_depthstate.BackFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
-	d3d_device->CreateDepthStencilState(&desc_depthstate, &pipeline->_depth);
+	
+	HRESULT hr = d3d_device->CreateDepthStencilState(&desc_depthstate, &pipeline->_depth);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_warning, "CreateDepthStencilState failed: 0x%08X", hr);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1583,8 +1586,9 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 	IDXGIAdapter  *dxgi_adapter; dxgi_device ->GetParent     (__uuidof(IDXGIAdapter),  (void **)&dxgi_adapter);
 	IDXGIFactory2 *dxgi_factory; dxgi_adapter->GetParent     (__uuidof(IDXGIFactory2), (void **)&dxgi_factory);
 
-	if (FAILED(dxgi_factory->CreateSwapChainForHwnd(d3d_device, (HWND)hwnd, &swapchain_desc, nullptr, nullptr, &result._swapchain))) {
-		skg_log(skg_log_critical, "sk_gpu couldn't create swapchain!");
+	HRESULT hr = dxgi_factory->CreateSwapChainForHwnd(d3d_device, (HWND)hwnd, &swapchain_desc, nullptr, nullptr, &result._swapchain);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't create swapchain: 0x%08X", hr);
 		result = {};
 		return result;
 	}
@@ -1627,8 +1631,15 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 
 	swapchain->width  = width;
 	swapchain->height = height;
-	swapchain->_swapchain->ResizeBuffers(0, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
-
+	HRESULT hr = swapchain->_swapchain->ResizeBuffers(0, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't resize swapchain: 0x%08X", hr);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			hr = d3d_device->GetDeviceRemovedReason();
+			skg_logf(skg_log_critical, "Device removed reason: 0x%08X", hr);
+		}
+	}
+	
 	ID3D11Texture2D *back_buffer;
 	swapchain->_swapchain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
 	swapchain->_target = skg_tex_create_from_existing(back_buffer, skg_tex_type_rendertarget, target_fmt, width, height, 1);
@@ -1643,7 +1654,14 @@ void skg_swapchain_resize(skg_swapchain_t *swapchain, int32_t width, int32_t hei
 ///////////////////////////////////////////
 
 void skg_swapchain_present(skg_swapchain_t *swapchain) {
-	swapchain->_swapchain->Present(1, 0);
+	HRESULT hr = swapchain->_swapchain->Present(1, 0);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Couldn't present swapchain: 0x%08X", hr);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			hr = d3d_device->GetDeviceRemovedReason();
+			skg_logf(skg_log_critical, "Device removed reason: 0x%08X", hr);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -1791,8 +1809,10 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 
 	// D3D will already return the same sampler when provided the same 
 	// settings, so we can just lean on that to prevent sampler duplicates :)
-	if (FAILED(d3d_device->CreateSamplerState(&desc_sampler, &tex->_sampler)))
-		skg_log(skg_log_critical, "Failed to create sampler state!");
+	HRESULT hr = d3d_device->CreateSamplerState(&desc_sampler, &tex->_sampler);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Failed to create sampler state: 0x%08X", hr);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1861,6 +1881,7 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 
 bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start, bool use_in_shader) {
 	DXGI_FORMAT format = (DXGI_FORMAT)skg_tex_fmt_to_native(tex->format);
+	HRESULT     hr     = E_FAIL;
 
 	if (tex->type != skg_tex_type_depth) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
@@ -1897,9 +1918,12 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 			}
 		}
 
-		if (use_in_shader && FAILED(d3d_device->CreateShaderResourceView(tex->_texture, &res_desc, &tex->_resource))) {
-			skg_log(skg_log_critical, "Create Shader Resource View error!");
-			return false;
+		if (use_in_shader) {
+			hr = d3d_device->CreateShaderResourceView(tex->_texture, &res_desc, &tex->_resource);
+			if (FAILED(hr)) {
+				skg_logf(skg_log_critical, "Create Shader Resource View error: 0x%08X", hr);
+				return false;
+			}
 		}
 	} else {
 		D3D11_DEPTH_STENCIL_VIEW_DESC stencil_desc = {};
@@ -1925,8 +1949,10 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 				stencil_desc.Texture2D.MipSlice = 0;
 			}
 		}
-		if (FAILED(d3d_device->CreateDepthStencilView(tex->_texture, &stencil_desc, &tex->_depth_view))) {
-			skg_log(skg_log_critical, "Create Depth Stencil View error!");
+
+		hr = d3d_device->CreateDepthStencilView(tex->_texture, &stencil_desc, &tex->_depth_view);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "Create Depth Stencil View error: 0x%08X", hr);
 			return false;
 		}
 	}
@@ -1956,8 +1982,9 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 			}
 		}
 
-		if (FAILED(d3d_device->CreateRenderTargetView(tex->_texture, &target_desc, &tex->_target_view))) {
-			skg_log(skg_log_critical, "Create Render Target View error!");
+		hr = d3d_device->CreateRenderTargetView(tex->_texture, &target_desc, &tex->_target_view);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "Create Render Target View error: 0x%08X", hr);
 			return false;
 		}
 	}
@@ -1973,8 +2000,9 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 			view.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		}
 
-		if(FAILED(d3d_device->CreateUnorderedAccessView( tex->_texture, &view, &tex->_unordered ))) {
-			skg_log(skg_log_critical, "CreateUnorderedAccessView failed!");
+		hr = d3d_device->CreateUnorderedAccessView( tex->_texture, &view, &tex->_unordered );
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "CreateUnorderedAccessView failed: 0x%08X", hr);
 			return {};
 		}
 	} 
@@ -2013,6 +2041,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 
 	uint32_t mip_levels = (mips ? skg_mip_count(width, height) : 1);
 	uint32_t px_size    = skg_tex_fmt_size(tex->format);
+	HRESULT  hr         = E_FAIL;
 
 	if (tex->_texture == nullptr) {
 		D3D11_TEXTURE2D_DESC desc = {};
@@ -2045,8 +2074,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 			}
 		}
 
-		if (FAILED(d3d_device->CreateTexture2D(&desc, tex_mem, &tex->_texture))) {
-			skg_log(skg_log_critical, "Create texture error!");
+		hr = d3d_device->CreateTexture2D(&desc, tex_mem, &tex->_texture);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "Create texture error: 0x%08X", hr);
 		}
 
 		if (tex_mem != nullptr) {
@@ -2062,8 +2092,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	} else {
 		// For dynamic textures, just upload the new value into the texture!
 		D3D11_MAPPED_SUBRESOURCE tex_mem = {};
-		if (FAILED(d3d_context->Map(tex->_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &tex_mem))) {
-			skg_log(skg_log_critical, "Failed mapping a texture");
+		hr = d3d_context->Map(tex->_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &tex_mem);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "Failed mapping a texture: 0x%08X", hr);
 			return;
 		}
 
@@ -2122,6 +2153,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		return false;
 	}
 
+	HRESULT              hr               = E_FAIL;
 	D3D11_TEXTURE2D_DESC desc             = {};
 	ID3D11Texture2D     *copy_tex         = nullptr;
 	bool                 copy_tex_release = true;
@@ -2133,6 +2165,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	desc.ArraySize = 1;
 	desc.MiscFlags = 0;
 
+	
 	// Make sure copy_tex is a texture that we can read from!
 	if (desc.SampleDesc.Count > 1) {
 		// Not gonna bother with MSAA stuff
@@ -2148,8 +2181,9 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		desc.Usage          = D3D11_USAGE_STAGING;
 
-		if (FAILED(d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex))) {
-			skg_log(skg_log_critical, "CreateTexture2D failed!");
+		hr = d3d_device->CreateTexture2D(&desc, nullptr, &copy_tex);
+		if (FAILED(hr)) {
+			skg_logf(skg_log_critical, "CreateTexture2D failed: 0x%08X", hr);
 			return false;
 		}
 
@@ -2163,8 +2197,9 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 
 	// Load the data into CPU RAM
 	D3D11_MAPPED_SUBRESOURCE data;
-	if (FAILED(d3d_context->Map(copy_tex, subresource, D3D11_MAP_READ, 0, &data))) {
-		skg_log(skg_log_critical, "Texture Map failed!");
+	hr = d3d_context->Map(copy_tex, subresource, D3D11_MAP_READ, 0, &data);
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Texture Map failed: 0x%08X", hr);
 		return false;
 	}
 
@@ -2402,13 +2437,12 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	EGLContext egl_context;
 	EGLConfig  egl_config;
 #elif defined(_SKG_GL_LOAD_GLX)
-	#include <GL/glxew.h>
+	#include <X11/Xutil.h>
+	#include <X11/Xlib.h>
+	#include <dlfcn.h>
 
 	Display     *xDisplay;
 	XVisualInfo *visualInfo;
-	GLXFBConfig  glxFBConfig;
-	GLXDrawable  glxDrawable;
-	GLXContext   glxContext;
 #elif defined(_SKG_GL_LOAD_WGL)
 	#pragma comment(lib, "opengl32.lib")
 	#define WIN32_LEAN_AND_MEAN
@@ -2424,29 +2458,63 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 ///////////////////////////////////////////
 
 #ifdef _SKG_GL_LOAD_WGL
-#define WGL_DRAW_TO_WINDOW_ARB            0x2001
-#define WGL_SUPPORT_OPENGL_ARB            0x2010
-#define WGL_DOUBLE_BUFFER_ARB             0x2011
-#define WGL_ACCELERATION_ARB              0x2003
-#define WGL_FULL_ACCELERATION_ARB         0x2027
-#define WGL_PIXEL_TYPE_ARB                0x2013
-#define WGL_COLOR_BITS_ARB                0x2014
-#define WGL_DEPTH_BITS_ARB                0x2022
-#define WGL_STENCIL_BITS_ARB              0x2023
-#define WGL_TYPE_RGBA_ARB                 0x202B
-#define WGL_SAMPLE_BUFFERS_ARB            0x2041
-#define WGL_SAMPLES_ARB                   0x2042
-#define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
-#define WGL_CONTEXT_FLAGS_ARB             0x2094
-#define WGL_CONTEXT_PROFILE_MASK_ARB      0x9126
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
-#define WGL_CONTEXT_DEBUG_BIT_ARB         0x0001
+	#define WGL_DRAW_TO_WINDOW_ARB            0x2001
+	#define WGL_SUPPORT_OPENGL_ARB            0x2010
+	#define WGL_DOUBLE_BUFFER_ARB             0x2011
+	#define WGL_ACCELERATION_ARB              0x2003
+	#define WGL_FULL_ACCELERATION_ARB         0x2027
+	#define WGL_PIXEL_TYPE_ARB                0x2013
+	#define WGL_COLOR_BITS_ARB                0x2014
+	#define WGL_DEPTH_BITS_ARB                0x2022
+	#define WGL_STENCIL_BITS_ARB              0x2023
+	#define WGL_TYPE_RGBA_ARB                 0x202B
+	#define WGL_SAMPLE_BUFFERS_ARB            0x2041
+	#define WGL_SAMPLES_ARB                   0x2042
+	#define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
+	#define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
+	#define WGL_CONTEXT_FLAGS_ARB             0x2094
+	#define WGL_CONTEXT_PROFILE_MASK_ARB      0x9126
+	#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+	#define WGL_CONTEXT_DEBUG_BIT_ARB         0x0001
 
-typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
-wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
-wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+	typedef BOOL  (*wglChoosePixelFormatARB_proc)    (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+	typedef HGLRC (*wglCreateContextAttribsARB_proc) (HDC hDC, HGLRC hShareContext, const int *attribList);
+	wglChoosePixelFormatARB_proc    wglChoosePixelFormatARB;
+	wglCreateContextAttribsARB_proc wglCreateContextAttribsARB;
+#endif
+
+#ifdef _SKG_GL_LOAD_GLX
+	#define GLX_RENDER_TYPE                  0x8011
+	#define GLX_RGBA_TYPE                    0x8014
+	#define GLX_CONTEXT_FLAGS_ARB            0x2094
+	#define GLX_CONTEXT_DEBUG_BIT_ARB        0x0001
+	#define GLX_CONTEXT_MAJOR_VERSION_ARB    0x2091
+	#define GLX_CONTEXT_MINOR_VERSION_ARB    0x2092
+	#define GLX_CONTEXT_PROFILE_MASK_ARB     0x9126
+	#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+
+	typedef XID GLXDrawable;
+	typedef struct __GLXFBConfig* GLXFBConfig;
+	typedef struct __GLXcontext*  GLXContext;
+	typedef void (*__GLXextproc)(void);
+
+	typedef GLXContext   (*glXCreateContext_proc)          (Display* dpy, XVisualInfo* vis, GLXContext shareList, Bool direct);
+	typedef GLXContext   (*glXCreateContextAttribsARB_proc)(Display* dpy, GLXFBConfig, GLXContext, Bool, const int*);
+	typedef void         (*glXDestroyContext_proc)         (Display* dpy, GLXContext);
+	typedef Bool         (*glXMakeCurrent_proc)            (Display* dpy, GLXDrawable, GLXContext);
+	typedef void         (*glXSwapBuffers_proc)            (Display* dpy, GLXDrawable);
+	typedef __GLXextproc (*glXGetProcAddress_proc)         (const char* procName);
+
+	glXCreateContext_proc           glXCreateContext;
+	glXCreateContextAttribsARB_proc glXCreateContextAttribsARB;
+	glXDestroyContext_proc          glXDestroyContext;
+	glXMakeCurrent_proc             glXMakeCurrent;
+	glXSwapBuffers_proc             glXSwapBuffers;
+	glXGetProcAddress_proc          glXGetProcAddress;
+
+	GLXFBConfig  glxFBConfig;
+	GLXDrawable  glxDrawable;
+	GLXContext   glxContext;
 #endif
 
 #ifdef _SKG_GL_MAKE_FUNCTIONS
@@ -2720,6 +2788,10 @@ GLE(void,     glDispatchCompute,         uint32_t num_groups_x, uint32_t num_gro
 GLE(const char *, glGetString,           uint32_t name) \
 GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 
+#define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
+GL_API
+#undef GLE
+
 #if defined(_SKG_GL_LOAD_WGL)
 	// from https://www.khronos.org/opengl/wiki/Load_OpenGL_Functions
 	// Some GL functions can only be loaded with wglGetProcAddress, and others
@@ -2734,11 +2806,9 @@ GLE(const char *, glGetStringi,          uint32_t name, uint32_t index)
 	}
 #elif defined(_SKG_GL_LOAD_EGL)
 	#define gl_get_function(x) eglGetProcAddress(x)
+#elif defined(_SKG_GL_LOAD_GLX)
+	#define gl_get_function(x) glXGetProcAddress(x)
 #endif
-
-#define GLE(ret, name, ...) typedef ret GLDECL name##_proc(__VA_ARGS__); static name##_proc * name;
-GL_API
-#undef GLE
 
 static void gl_load_extensions( ) {
 #define GLE(ret, name, ...) name = (name##_proc *) gl_get_function(#name); if (name == nullptr) skg_log(skg_log_info, "Couldn't load gl function " #name);
@@ -2961,14 +3031,22 @@ int32_t gl_init_egl() {
 
 int32_t gl_init_glx() {
 #ifdef _SKG_GL_LOAD_GLX
-	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, GL_TRUE);
-	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
-
-	glewExperimental=true; // Needed in core profile
-	if (glewInit() != GLEW_OK) {
-		skg_log(skg_log_critical, "Failed to initialize GLEW");
+	// Load the OpenGL library
+	void* lib = dlopen("libGL.so.1", RTLD_LAZY|RTLD_GLOBAL);
+	if (lib == nullptr) lib = dlopen("libGL.so", RTLD_LAZY|RTLD_GLOBAL);
+	if (lib == nullptr) {
+		skg_log(skg_log_critical, "Unable to load GL!");
 		return -1;
 	}
+	glXCreateContext           = (glXCreateContext_proc)          dlsym(lib, "glXCreateContext");
+	glXCreateContextAttribsARB = (glXCreateContextAttribsARB_proc)dlsym(lib, "glXCreateContextAttribsARB");
+	glXDestroyContext          = (glXDestroyContext_proc)         dlsym(lib, "glXDestroyContext");
+	glXMakeCurrent             = (glXMakeCurrent_proc)            dlsym(lib, "glXMakeCurrent");
+	glXSwapBuffers             = (glXSwapBuffers_proc)            dlsym(lib, "glXSwapBuffers");
+	glXGetProcAddress          = (glXGetProcAddress_proc)         dlsym(lib, "glXGetProcAddress");
+
+	GLXContext old_ctx = glXCreateContext(xDisplay, visualInfo, NULL, true);
+	glXMakeCurrent(xDisplay, glxDrawable, old_ctx);
 
 	int ctx_attribute_list[] = {
 		GLX_RENDER_TYPE,               GLX_RGBA_TYPE,
@@ -2980,7 +3058,7 @@ int32_t gl_init_glx() {
 		GLX_CONTEXT_PROFILE_MASK_ARB,  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
 		0
 	};
-	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, GL_TRUE, ctx_attribute_list);
+	glxContext = glXCreateContextAttribsARB(xDisplay, glxFBConfig, NULL, true, ctx_attribute_list);
 	glXDestroyContext(xDisplay, old_ctx);
 	glXMakeCurrent(xDisplay, glxDrawable, glxContext);
 
@@ -4415,6 +4493,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdarg.h>
 
 #if __ANDROID__
 #include <android/asset_manager.h>
@@ -4426,6 +4505,17 @@ void skg_callback_log(void (*callback)(skg_log_ level, const char *text)) {
 }
 void skg_log(skg_log_ level, const char *text) {
 	if (_skg_log) _skg_log(level, text);
+}
+void skg_logf (skg_log_ level, const char *text, ...) {
+	va_list args;
+	va_start(args, text);
+	size_t length = vsnprintf(nullptr, 0, text, args);
+	char*  buffer = (char*)malloc(sizeof(char) * (length + 2));
+	vsnprintf(buffer, length + 2, text, args);
+
+	skg_log(level, buffer);
+	free(buffer);
+	va_end(args);
 }
 
 ///////////////////////////////////////////

@@ -31,8 +31,8 @@ namespace StereoKit
 		/// displays, and completely unavailable for transparent displays.</summary>
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex();
-			set => NativeAPI.render_enable_skytex(value);
+			get => NativeAPI.render_enabled_skytex() > 0;
+			set => NativeAPI.render_enable_skytex(value?1:0);
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.

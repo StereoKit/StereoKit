@@ -8,7 +8,7 @@ class TestMatrixShaderParam : ITest
 	{
 		_material = new Material(Shader.FromFile("matrix_param.hlsl"));
 		_material[MatParamName.DiffuseTex] = Tex.FromFile("test.png");
-		_material["custom_transform"] = (Matrix)System.Numerics.Matrix4x4.Transpose(Matrix.TS(-0.25f, 0, 0, 0.25f));
+		_material["custom_transform"] = Matrix.TS(-0.25f, 0, 0, 0.25f).Transposed;
 	}
 
 	public void Shutdown() { }

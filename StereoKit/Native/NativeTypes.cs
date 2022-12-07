@@ -329,7 +329,7 @@ namespace StereoKit
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
+	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
 
 	/// <summary>Pointer is an abstraction of a number of different input 
 	/// sources, and a way to surface input events!</summary>
@@ -392,6 +392,9 @@ namespace StereoKit
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPollEventCallback(IntPtr context, IntPtr XrEventDataBuffer);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
@@ -496,6 +499,18 @@ namespace StereoKit
 		VariablePinch
 	}
 
+	/// <summary>Determines when this UI function returns true.</summary>
+	public enum UINotify
+	{
+		/// <summary>This function returns true any time the values has 
+		/// changed!</summary>
+		Change,
+		/// <summary>This function returns true when the user has finished
+		/// interacting with it. This does not guarantee the value has changed.
+		/// </summary>
+		Finalize,
+	}
+
 	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
 	/// element visual.</summary>
 	public enum UIVisual
@@ -539,6 +554,13 @@ namespace StereoKit
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>Refers to UI.ButtonRound elements.</summary>
+		ButtonRound,
+		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
+		Panel,
+		/// <summary>Refers to the text position indicator carat on text input
+		/// elements.</summary>
+		Carat,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,

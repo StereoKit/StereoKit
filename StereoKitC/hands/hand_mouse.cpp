@@ -80,7 +80,7 @@ void hand_mouse_update_frame() {
 	bool was_l_pressed = hand->pinch_state   & button_state_active;
 	bool was_r_pressed = hand->grip_state    & button_state_active;
 
-	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_elapsedf_unscaled()*8);
+	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
 
 	bool hand_tracked = hand_mouse_update_position();
 	if (hand_tracked) {

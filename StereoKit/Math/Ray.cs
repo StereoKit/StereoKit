@@ -38,7 +38,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Plane plane, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(plane, this, out at);
+			=> NativeAPI.plane_ray_intersect(plane, this, out at) > 0;
 
 		/// <summary>Checks the intersection of this ray with a sphere!
 		/// </summary>
@@ -51,7 +51,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Sphere sphere, out Vec3 at)
-			=> NativeAPI.sphere_ray_intersect(sphere, this, out at);
+			=> NativeAPI.sphere_ray_intersect(sphere, this, out at) > 0;
 
 		/// <summary>Checks the intersection of this ray with a bounding box!
 		/// </summary>
@@ -64,7 +64,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Bounds bounds, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(bounds, this, out at);
+			=> NativeAPI.bounds_ray_intersect(bounds, this, out at) > 0;
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -82,8 +82,8 @@ namespace StereoKit
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt,IntPtr.Zero) > 0;
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out _, cullFaces) > 0;
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -100,17 +100,20 @@ namespace StereoKit
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds) > 0;
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds, Cull cullFaces = Cull.Back)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces) > 0;
 
 
 		// TODO: Remove in v0.4
 		[Obsolete("Removing in v0.4, replace with the Ray.Intersect overload with a Ray output.")]
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, IntPtr.Zero) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back) > 0;
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -128,10 +131,13 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Model model, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt) > 0;
+		public bool Intersect(Model model, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
+			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt, cullFaces) > 0;
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's

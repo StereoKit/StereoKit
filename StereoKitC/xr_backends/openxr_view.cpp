@@ -482,26 +482,11 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 
 	// Check those against our formats, prefer OpenXR's pick for color format
 	out_color_dx = 0;
-	if (!xr_ext_available.FB_color_space) {
-		for (uint32_t i=0; i<count; i++) {
-			for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
-				if (formats[i] == pixel_formats[f]) {
-					out_color_dx = pixel_formats[f];
-					break;
-				}
-			}
-		}
-	} else {
-		// Currently, Oculus sorts swapchain formats numerically instead of
-		// by preference, and gives us formats that don't work well first. So
-		// for Oculus, we'll pick -our- preference instead.
-		// TODO: monitor for if Oculus ever fixes this
-		for (uint32_t i=0; i<_countof(pixel_formats); i++) {
-			for (uint32_t f=0; out_color_dx == 0 && f<count; f++) {
-				if (formats[f] == pixel_formats[i]) {
-					out_color_dx = pixel_formats[i];
-					break;
-				}
+	for (uint32_t i=0; i<count; i++) {
+		for (int32_t f=0; out_color_dx == 0 && f<_countof(pixel_formats); f++) {
+			if (formats[i] == pixel_formats[f]) {
+				out_color_dx = pixel_formats[f];
+				break;
 			}
 		}
 	}
@@ -736,7 +721,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		view.subImage.imageRect.offset = { 0, 0 };
 		view.subImage.imageRect.extent = { layer.swapchain_color.width, layer.swapchain_color.height };
 
-		if (xr_has_depth_lsr) {
+		if (xr_ext_available.KHR_composition_layer_depth) {
 			XrCompositionLayerDepthInfoKHR &depth = layer.view_depths[i];
 			depth.minDepth = 0;
 			depth.maxDepth = 1;

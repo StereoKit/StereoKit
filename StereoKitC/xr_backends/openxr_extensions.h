@@ -8,7 +8,9 @@
 #include "../libraries/array.h"
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <d3d11.h>
 	#define XR_GFX_EXTENSION XR_KHR_D3D11_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageD3D11KHR

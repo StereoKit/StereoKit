@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!--Gather a list of items from the Asset folder, we do this as a Target,
+	    otherwise VS may add 'Remove' items when users add items to their
+		Assets folder.-->
+	<Target Name="StereoKit_ContentFind" AfterTargets="StereoKit_Properties" BeforeTargets="AssignTargetPaths">
+		<ItemGroup Condition="'$(SKCopyAssets)'=='True'">
+			<SKContent Include="$(SKAssetFolder)/**" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind" BeforeTargets="AssignTargetPaths">
+		<!--Different frameworks use different methods for adding content to
+		    the final application.-->
+		<ItemGroup>
+			<!--MAUI-->
+			<MauiAsset Condition="'$(UseMaui)'=='true'" Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<LogicalName>%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</LogicalName>
+				<Link>$(SKAssetDestination)/%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
+			</MauiAsset>
+
+			<!--Xamarin-->
+			<AndroidAsset Condition="'$(UseMaui)'!='true' and '$(SKBuildPlatform)'=='Android'" Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
+			</AndroidAsset>
+
+			<!--Everyone else-->
+			<Content Condition="'$(UseMaui)'!='true' and '$(SKBuildPlatform)'!='Android'" Include="%(SKContent.Identity)">
+				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+				<Link>$(SKAssetDestination)/%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
+			</Content>
+		</ItemGroup>
+	</Target>
+</Project>

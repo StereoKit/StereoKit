@@ -58,7 +58,7 @@ void win32_resize(int width, int height) {
 
 void win32_physical_key_interact() {
 	// On desktop, we want to hide soft keyboards on physical presses
-	input_last_physical_keypress = time_getf();
+	input_last_physical_keypress = time_totalf_unscaled();
 	platform_keyboard_show(false, text_context_text);
 }
 

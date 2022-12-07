@@ -13,18 +13,12 @@
 	<ItemGroup>
 		<PackageReference Include="System.Numerics.Vectors" Version="4.*" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-		<!--<ProjectReference Include="..\StereoKitC\StereoKitC.vcxproj" Condition="$(SKTest) != 'True'">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>
-		<ProjectReference Include="..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj" Condition="$(SKTest) != 'True'">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-		</ProjectReference>-->
 	</ItemGroup>
 
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.7-preview.4</Version>
+		<Version>0.3.7-preview.7</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -44,42 +38,46 @@
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
 	<ItemGroup>
-		<None Include="..\Tools\img\StereoKitLogo64.png" Pack="true" PackagePath="images\" />
+		<None    Pack="true" Visible="false" Include="..\Tools\img\StereoKitLogo64.png" PackagePath="images\" />
 
-		<Content Pack="true" Include="..\bin\netstandard2.0\StereoKit.pdb" PackagePath="lib\netstandard2.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\netstandard2.0\StereoKit.pdb" PackagePath="lib\netstandard2.0\" />
 		
 		<!-- Win32 DLLs -->
-		<Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
-		<Content Pack="true" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" />
 
 		<!-- Android Libraries -->
-		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libStereoKitC.so"    PackagePath="runtimes\android-arm64\native" />
-		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\StereoKitC.sym"      PackagePath="runtimes\android-arm64\native" />
-		<Content Pack="true" Include="..\bin\distribute\bin\android\arm64-v8a\release\libopenxr_loader.so" PackagePath="runtimes\android-arm64\native" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so"             PackagePath="runtimes\android-arm64\native" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\StereoKitC.sym"               PackagePath="runtimes\android-arm64\native" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\oculus\libopenxr_loader.so"   PackagePath="android_openxr_loaders\oculus" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\standard\libopenxr_loader.so" PackagePath="android_openxr_loaders\standard" />
 
 		<!-- Linux Libraries -->
-		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\libStereoKitC.so"   PackagePath="runtimes\linux-x64\native\" />
-		<Content Pack="true" Include="..\bin\distribute\bin\linux\x64\release\StereoKitC.sym"     PackagePath="runtimes\linux-x64\native\" />
-		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\libStereoKitC.so" PackagePath="runtimes\linux-arm64\native\" />
-		<Content Pack="true" Include="..\bin\distribute\bin\linux\arm64\release\StereoKitC.sym"   PackagePath="runtimes\linux-arm64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so"   PackagePath="runtimes\linux-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\StereoKitC.sym"     PackagePath="runtimes\linux-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so" PackagePath="runtimes\linux-arm64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\StereoKitC.sym"   PackagePath="runtimes\linux-arm64\native\" />
 
 		<!-- UWP DLLs -->
-		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-x64\native\" />
-		<Content Pack="true" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\native\" />
-		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
-		<Content Pack="true" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
-		<Content Pack="true" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-arm\native\" />
-		<Content Pack="true" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-arm\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\native\" />
 
 		<!-- Shader compile tools -->
-		<Content Pack="true" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />
-		<Content Pack="true" Include="..\Tools\skshaderc"     PackagePath="tools\" />
-		<Content Pack="true" Include="..\Tools\include\*.*"   PackagePath="tools\include\" />
+		<Content Pack="true" Visible="false" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />
+		<Content Pack="true" Visible="false" Include="..\Tools\skshaderc"     PackagePath="tools\" />
+		<Content Pack="true" Visible="false" Include="..\Tools\include\*.*"   PackagePath="tools\include\" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in
 		the user's project. -->
 		<Content Pack="true" Include="StereoKit.targets" PackagePath="build\" />
+		<Content Pack="true" Include="StereoKit.props"   PackagePath="build\" />
+		<Content Pack="true" Include="SKAssets.targets"  PackagePath="build\" />
 		<Content Pack="true" Include="SKShaders.targets" PackagePath="build\" />
+		<Content Pack="true" Include="SKMaui.targets"    PackagePath="build\" />
 		<Content Pack="true" Include="SKShader.xml"      PackagePath="build\" />
 	</ItemGroup>
 </Project>

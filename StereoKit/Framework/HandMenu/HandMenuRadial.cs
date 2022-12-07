@@ -208,7 +208,7 @@ namespace StereoKit.Framework
 		void StepMenu(Hand hand)
 		{
 			// Animate the menu a bit
-			float time = Math.Min(1, Time.Elapsedf * 24);
+			float time = Math.Min(1, Time.StepUnscaledf * 24);
 			menuPose.position    = Vec3  .Lerp (menuPose.position,    destPose.position,    time);
 			menuPose.orientation = Quat  .Slerp(menuPose.orientation, destPose.orientation, time);
 			activation           = SKMath.Lerp (activation,           1,                    time);

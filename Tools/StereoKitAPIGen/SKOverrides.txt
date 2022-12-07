@@ -1,4 +1,19 @@
-﻿# Keyboard keys by default resolve to just numbers, no bueno
+﻿# Start with the native types that don't follow our rules
+int8_t sbyte
+int16_t short
+int32_t int
+int64_t long
+uint8_t byte
+uint16_t ushort
+uint32_t uint
+uint64_t ulong
+bool32_t int
+float float
+double double
+void void
+char32_t uint
+
+# Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
 key_1 N1
 key_2 N2
@@ -46,3 +61,14 @@ backend_graphics_webgl WebGL
 display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState
+color128 Color
+
+sk_settings_t SKSettings
+vind_t uint
+vert_t Vertex
+model_node_id int
+sh_light_t SHLight
+openxr_handle_t ulong
+asset_t IntPtr
+
+size_t UIntPtr

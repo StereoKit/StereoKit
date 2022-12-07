@@ -97,17 +97,51 @@ namespace StereoKit
 		public void WriteSamples(in float[] samples, int sampleCount)
 			=> NativeAPI.sound_write_samples(_inst, samples, (ulong)sampleCount);
 
+		/// <summary>Only works if this Sound is a stream type! This writes
+		/// a number of audio samples to the sample buffer, and samples 
+		/// should be between -1 and +1. Streams are stored as ring buffers
+		/// of a fixed size, so writing beyond the capacity of the ring
+		/// buffer will overwrite the oldest samples.
+		/// 
+		/// StereoKit uses 48,000 samples per second of audio.
+		/// 
+		/// This variation of the method bypasses marshalling memory into C#,
+		/// so it is the most optimal way to copy sound data if your source is
+		/// already in native memory!</summary>
+		/// <param name="samples">A pointer to a native array of `float` audio
+		/// samples, where each sample is between -1 and +1.</param>
+		/// <param name="sampleCount">You can use this to write only a subset
+		/// of the samples in the array, rather than the entire array!</param>
+		public void WriteSamples(IntPtr samples, int sampleCount)
+			=> NativeAPI.sound_write_samples(_inst, samples, (ulong)sampleCount);
+
 		/// <summary>This will read samples from the sound stream, starting
 		/// from the first unread sample. Check UnreadSamples for how many
 		/// samples are available to read.</summary>
 		/// <param name="samples">A pre-allocated buffer to read the samples
-		/// into! This function will stop reading when this buffer is full, 
-		/// or when it runs out of unread samples.</param>
+		/// into! This function will stop reading when this buffer is full,
+		/// or when the sound runs out of unread samples.</param>
 		/// <returns>Returns the number of samples that were read from the
 		/// stream's buffer and written to the provided sample buffer.
 		/// </returns>
 		public int ReadSamples(ref float[] samples)
 			=> (int)NativeAPI.sound_read_samples(_inst, samples, (ulong)samples.Length);
+
+		/// <summary>This will read samples from the sound stream, starting
+		/// from the first unread sample. Check UnreadSamples for how many
+		/// samples are available to read.</summary>
+		/// <param name="sampleBuffer">A pointer to a pre-allocated native
+		/// buffer of floats to read the samples into! This function will stop
+		/// reading when this buffer is full, or when the sound runs out of
+		/// unread samples.</param>
+		/// <param name="sampleCount">The maximum number of samples to read,
+		/// this should be less than or equal to the number of samples the
+		/// sampleBuffer can contain.</param>
+		/// <returns>Returns the number of samples that were read from the
+		/// stream's buffer and written to the provided sample buffer.
+		/// </returns>
+		public int ReadSamples(IntPtr sampleBuffer, int sampleCount)
+			=> (int)NativeAPI.sound_read_samples(_inst, sampleBuffer, (ulong)sampleCount);
 
 		/// <summary>Looks for a Sound asset that's already loaded, matching the given id!</summary>
 		/// <param name="modelId">Which Sound are you looking for?</param>

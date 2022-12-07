@@ -271,6 +271,48 @@ namespace StereoKit
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
 
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
+			=> NativeAPI.ui_text_sz_16(text, textAlign, fit, size);
+
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
+
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the
@@ -440,6 +482,116 @@ namespace StereoKit
 			return false;
 		}
 
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> Toggle(text, ref value, image, image, imageLayout);
+
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
+		{
+			int iVal = value?1:0;
+			if (NativeAPI.ui_toggle_img_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout))
+			{
+				value = iVal>0?true:false;
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec2 size)
+			=> Toggle(text, ref value, image, image, imageLayout, size);
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
+		{
+			int iVal = value ? 1 : 0;
+			if (NativeAPI.ui_toggle_img_sz_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, size))
+			{
+				value = iVal > 0 ? true : false;
+				return true;
+			}
+			return false;
+		}
+
 		/// <inheritdoc cref="Toggle(string, ref bool)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
@@ -461,6 +613,8 @@ namespace StereoKit
 		/// <param name="text">Text to display on the Toggle and id for
 		/// tracking element state. MUST be unique within current hierarchy.
 		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -473,6 +627,62 @@ namespace StereoKit
 		{
 			int iVal = value ? 1 : 0;
 			if (NativeAPI.ui_toggle_at_16(text, ref iVal, topLeftCorner, size))
+			{
+				value = iVal > 0 ? true : false;
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> ToggleAt(text, ref value, image, image, imageLayout, topLeftCorner, size);
+
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		{
+			int iVal = value ? 1 : 0;
+			if (NativeAPI.ui_toggle_img_at_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, topLeftCorner, size))
 			{
 				value = iVal > 0 ? true : false;
 				return true;
@@ -553,9 +763,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
-			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
@@ -574,9 +786,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -599,9 +813,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -624,9 +840,11 @@ namespace StereoKit
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.

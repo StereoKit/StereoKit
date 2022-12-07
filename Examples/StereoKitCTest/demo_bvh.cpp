@@ -150,7 +150,7 @@ void demo_bvh_update() {
 
     // Intersection test
 
-    const double t0 = time_get_raw();
+    const double t0 = time_total_raw();
 
     mesh_t      isec_mesh = nullptr;
     matrix      isec_matrix;
@@ -161,7 +161,7 @@ void demo_bvh_update() {
     else
         have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection, cull_mode);
 
-    const double t1 = time_get_raw();
+    const double t1 = time_total_raw();
     intersect_time = t1 - t0;
 
     // Intersection result

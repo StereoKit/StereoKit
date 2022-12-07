@@ -16,6 +16,7 @@
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/atomic_util.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -148,22 +149,22 @@ void assets_set_id(asset_header_t *header, uint64_t id) {
 ///////////////////////////////////////////
 
 void assets_addref(asset_header_t *asset) {
-	asset->refs += 1;
+	atomic_increment(&asset->refs);
 }
 
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
 	// Manage the reference count
-	asset->refs -= 1;
-	if (asset->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset->refs) == 0) {
+		assets_destroy(asset);
+	} else if (asset->refs < 0) {
+		if (asset->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset->type, asset->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset->type);
 		abort();
 	}
-	if (asset->refs != 0)
-		return;
-
-	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
@@ -172,24 +173,25 @@ void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
 	// Manage the reference count
-	asset_header->refs -= 1;
-	if (asset_header->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset_header->refs) == 0) {
+		mtx_lock(&assets_multithread_destroy_lock);
+		assets_multithread_destroy.add(asset_header);
+		mtx_unlock(&assets_multithread_destroy_lock);
+	} else if (asset_header->refs < 0) {
+		if (asset_header->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset_header->type, asset_header->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset_header->type);
 		abort();
 	}
-	if (asset_header->refs != 0)
-		return;
-
-	mtx_lock(&assets_multithread_destroy_lock);
-	assets_multithread_destroy.add(asset_header);
-	mtx_unlock(&assets_multithread_destroy_lock);
 }
 
 ///////////////////////////////////////////
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
+		log_errf("Destroying asset[%d] '%s' that still has references!", asset->type, asset->id_text);
+		abort();
 		return;
 	}
 

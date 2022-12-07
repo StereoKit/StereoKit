@@ -37,21 +37,22 @@ sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
 bool32_t      sk_running     = false;
+bool32_t      sk_stepping    = false;
 bool32_t      sk_initialized = false;
 bool32_t      sk_first_step  = false;
 thrd_id_t     sk_init_thread = {};
 
-double  sk_timev_scale       = 1;
-float   sk_timevf            = 0;
-double  sk_timev             = 0;
-float   sk_timevf_us         = 0;
-double  sk_timev_us          = 0;
-double  sk_time_start        = 0;
-double  sk_timev_elapsed     = 0;
-float   sk_timev_elapsedf    = 0;
-double  sk_timev_elapsed_us  = 0;
-float   sk_timev_elapsedf_us = 0;
-uint64_t sk_timev_raw        = 0;
+double  sk_timev_scale    = 1;
+float   sk_timevf         = 0;
+double  sk_timev          = 0;
+float   sk_timevf_us      = 0;
+double  sk_timev_us       = 0;
+double  sk_time_start     = 0;
+double  sk_timev_step     = 0;
+float   sk_timev_stepf    = 0;
+double  sk_timev_step_us  = 0;
+float   sk_timev_stepf_us = 0;
+uint64_t sk_timev_raw     = 0;
 
 uint64_t  app_init_time = 0;
 system_t *app_system    = nullptr;
@@ -335,6 +336,11 @@ void sk_set_window_xam(void *window) {
 ///////////////////////////////////////////
 
 void sk_shutdown() {
+	if (sk_is_stepping()) {
+		log_err("sk_shutdown should only be called for cleanup, please use sk_quit to exit the app!");
+		abort();
+	}
+
 	log_show_any_fail_reason();
 
 	systems_shutdown();
@@ -358,6 +364,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 	// TODO: remove this in v0.4 when sk_step is formally replaced by sk_run
 	sk_assert_thread_valid();
 	sk_first_step = true;
+	sk_stepping   = true;
 	
 	sk_app_update_func = app_update;
 	sk_update_timer();
@@ -366,6 +373,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
 		platform_sleep(100);
+	sk_stepping = false;
 	return sk_running;
 }
 
@@ -425,14 +433,14 @@ void sk_update_timer() {
 	if (sk_time_start == 0)
 		sk_time_start = time_curr;
 	double new_time = time_curr - sk_time_start;
-	sk_timev_elapsed_us  =  new_time - sk_timev_us;
-	sk_timev_elapsed     = (new_time - sk_timev_us) * sk_timev_scale;
-	sk_timev_us          = new_time;
-	sk_timev            += sk_timev_elapsed;
-	sk_timev_elapsedf_us = (float)sk_timev_elapsed_us;
-	sk_timev_elapsedf    = (float)sk_timev_elapsed;
-	sk_timevf_us         = (float)sk_timev_us;
-	sk_timevf            = (float)sk_timev;
+	sk_timev_step_us  =  new_time - sk_timev_us;
+	sk_timev_step     = (new_time - sk_timev_us) * sk_timev_scale;
+	sk_timev_us       = new_time;
+	sk_timev         += sk_timev_step;
+	sk_timev_stepf_us = (float)sk_timev_step_us;
+	sk_timev_stepf    = (float)sk_timev_step;
+	sk_timevf_us      = (float)sk_timev_us;
+	sk_timevf         = (float)sk_timev;
 }
 
 ///////////////////////////////////////////
@@ -457,26 +465,39 @@ void sk_assert_thread_valid() {
 
 ///////////////////////////////////////////
 
+bool32_t sk_is_stepping() { return sk_stepping; }
+
+///////////////////////////////////////////
+
 display_mode_ sk_active_display_mode() { return sk_display_mode; }
 
 ///////////////////////////////////////////
 
-double time_get_raw          (){ return stm_sec(stm_now()); }
-float  time_getf_unscaled    (){ return sk_timevf_us; };
-double time_get_unscaled     (){ return sk_timev_us; };
-float  time_getf             (){ return sk_timevf; };
-double time_get              (){ return sk_timev; };
-float  time_elapsedf_unscaled(){ return sk_timev_elapsedf_us; };
-double time_elapsed_unscaled (){ return sk_timev_elapsed_us; };
-float  time_elapsedf         (){ return sk_timev_elapsedf; };
-double time_elapsed          (){ return sk_timev_elapsed; };
+double time_get_raw          (){ return time_total_raw      (); }
+float  time_getf_unscaled    (){ return time_totalf_unscaled(); };
+double time_get_unscaled     (){ return time_total_unscaled (); };
+float  time_getf             (){ return time_totalf         (); };
+double time_get              (){ return time_total          (); };
+float  time_elapsedf_unscaled(){ return time_stepf_unscaled (); };
+double time_elapsed_unscaled (){ return time_step_unscaled  (); };
+float  time_elapsedf         (){ return time_stepf          (); };
+double time_elapsed          (){ return time_step           (); };
+double time_total_raw        (){ return stm_sec(stm_now()); }
+float  time_totalf_unscaled  (){ return sk_timevf_us;       };
+double time_total_unscaled   (){ return sk_timev_us;        };
+float  time_totalf           (){ return sk_timevf;          };
+double time_total            (){ return sk_timev;           };
+float  time_stepf_unscaled   (){ return sk_timev_stepf_us;  };
+double time_step_unscaled    (){ return sk_timev_step_us;   };
+float  time_stepf            (){ return sk_timev_stepf;     };
+double time_step             (){ return sk_timev_step;      };
 void   time_scale(double scale) { sk_timev_scale = scale; }
 
 ///////////////////////////////////////////
 
 void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	if (frame_elapsed_seconds < 0) {
-		frame_elapsed_seconds = sk_timev_elapsed_us;
+		frame_elapsed_seconds = sk_timev_step_us;
 		if (frame_elapsed_seconds == 0)
 			frame_elapsed_seconds = 1.f / 90.f;
 	}
@@ -485,15 +506,15 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	sk_timev_raw  = stm_now();
 	sk_time_start = stm_sec(sk_timev_raw) - total_seconds;
 
-	sk_timev_elapsed_us  = frame_elapsed_seconds;
-	sk_timev_elapsed     = frame_elapsed_seconds * sk_timev_scale;
-	sk_timev_us          = total_seconds;
-	sk_timev             = total_seconds;
-	sk_timev_elapsedf_us = (float)sk_timev_elapsed_us;
-	sk_timev_elapsedf    = (float)sk_timev_elapsed;
-	sk_timevf_us         = (float)sk_timev_us;
-	sk_timevf            = (float)sk_timev;
-	physics_sim_time     = sk_timev;
+	sk_timev_step_us  = frame_elapsed_seconds;
+	sk_timev_step     = frame_elapsed_seconds * sk_timev_scale;
+	sk_timev_us       = total_seconds;
+	sk_timev          = total_seconds;
+	sk_timev_stepf_us = (float)sk_timev_step_us;
+	sk_timev_stepf    = (float)sk_timev_step;
+	sk_timevf_us      = (float)sk_timev_us;
+	sk_timevf         = (float)sk_timev;
+	physics_sim_time  = sk_timev;
 }
 
 } // namespace sk

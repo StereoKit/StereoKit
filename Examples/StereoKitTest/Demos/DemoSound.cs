@@ -36,7 +36,7 @@ class DemoSound : ITest
 		UI.HandleEnd();
 
 		Vec3  wandTip   = wandPose.ToMatrix() * (wandModel.Bounds.center + wandModel.Bounds.dimensions.y * 0.5f * Vec3.Up);
-		Vec3  wandVel   = (wandTip - wandTipPrev) * Time.Elapsedf;
+		Vec3  wandVel   = (wandTip - wandTipPrev) * Time.Stepf;
 		float wandSpeed = wandVel.Magnitude*100;
 			
 		int count = Math.Max(0, (int)(0.1f*48000) - (wandStream.TotalSamples - wandStream.CursorSamples));

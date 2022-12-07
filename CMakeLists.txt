@@ -53,6 +53,56 @@ if(FORCE_COLORED_OUTPUT)
 	endif()
 endif()
 
+
+###########################################
+## Platform Specific Settings            ##
+###########################################
+
+if (ANDROID)
+  set(ANDROID_LOG_LIBRARY log)
+  set(ANDROID_LIBS
+    log
+    android
+    EGL)
+elseif (UNIX)
+  set(LINUX_LIBS
+    Threads::Threads
+    GLX
+    X11
+    Xfixes
+    fontconfig )
+
+  # Add pthreads
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+
+  # Add OpenGL, and account for the SK_LINUX_EGL option
+  if(SK_LINUX_EGL)
+    add_definitions("-DSKG_LINUX_EGL")
+    list(APPEND LINUX_LIBS EGL)
+  else()
+    add_definitions("-DSKG_LINUX_GLX")
+    find_package(X11 REQUIRED)
+    list(APPEND LINUX_LIBS GL dl)
+  endif()
+elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+  set(WINDOWS_LIBS
+    Comdlg32
+    WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
+endif()
+
+if(NOT SK_PHYSICS)
+  message("-- Building without physics!")
+  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
+else()
+  message("-- Building with physics!")
+endif()
+
 ###########################################
 ## Dependencies                          ##
 ###########################################
@@ -92,6 +142,8 @@ CPMAddPackage(
   VERSION 1.0.24
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG "release-1.0.24"
+  OPTIONS
+  "BUILD_WITH_SYSTEM_JSONCPP OFF"
 )
 
 ###########################################
@@ -123,54 +175,11 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
 endforeach(SHADER)
-
-###########################################
-## Platform Specific Settings            ##
-###########################################
-
-if (UNIX)
-  set(LINUX_LIBS
-    Threads::Threads
-    GLX
-    X11
-    Xfixes
-    fontconfig )
-
-  # Add pthreads
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
-
-  # Add OpenGL, and account for the SK_LINUX_EGL option
-  if(SK_LINUX_EGL)
-    add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL)
-  else()
-    add_definitions("-DSKG_LINUX_GLX")
-    find_package(GLEW REQUIRED)
-    find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL GLEW)
-  endif()
-elseif(WIN32)
-  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
-    WindowsApp) # Required for ISAC spatial audio code
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  add_definitions("-DWINDOWS_UWP")
-endif()
-
-if(NOT SK_PHYSICS)
-  message("-- Building without physics!")
-  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
-else()
-  message("-- Building with physics!")
-endif()
 
 ###########################################
 ## StereoKitC                            ##
@@ -229,6 +238,7 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/cgltf.cpp
@@ -390,6 +400,8 @@ target_link_libraries( StereoKitC
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+  PUBLIC
+    ${ANDROID_LIBS}
 )
 
 ###########################################
