@@ -207,7 +207,7 @@ namespace StereoKit
 		/// went wrong.</returns>
 		public static Sound Generate(AudioGenerator generator, float duration)
 		{
-			NativeAPI.SKFunc_float tmpGen = new NativeAPI.SKFunc_float(generator);
+			NativeAPI.AudioGenerator tmpGen = new NativeAPI.AudioGenerator(generator);
 			IntPtr inst = NativeAPI.sound_generate(tmpGen, duration);
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}

@@ -168,8 +168,8 @@ namespace StereoKit
 		}
 		// This pattern is a little weird, but it avoids continuous Action
 		// allocations, and saves our GC a surprising amount of work.
-		private static NativeAPI.SKAction _stepAction   = _Step;
-		private static Action             _stepCallback = null;
+		private static Action _stepAction   = _Step;
+		private static Action _stepCallback = null;
 		private static void _Step() {
 			_steppers.Step();
 			_stepCallback?.Invoke();
@@ -181,7 +181,7 @@ namespace StereoKit
 			_mainThreadInvoke.Clear();
 		}
 
-		private static NativeAPI.SKAction _shutdownCallback = null;
+		private static Action _shutdownCallback = null;
 		/// <summary>This passes application execution over to StereoKit. 
 		/// This continuously steps all StereoKit systems, and inserts user
 		/// code via callback between the appropriate system updates. Once
@@ -201,7 +201,7 @@ namespace StereoKit
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
 			_stepCallback     = onStep;
-			_shutdownCallback = onShutdown == null ? null : new NativeAPI.SKAction(onShutdown);
+			_shutdownCallback = onShutdown;
 			NativeAPI.sk_run(_stepAction, _shutdownCallback);
 		}
 

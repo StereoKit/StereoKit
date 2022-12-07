@@ -58,7 +58,7 @@ namespace StereoKit
 ");
 
 		foreach (string d in delegates.Values)
-			fnFileText.AppendLine($"\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
+			if (!string.IsNullOrEmpty(d)) fnFileText.AppendLine($"\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
 		fnFileText.Append(fnText);
 		fnFileText.AppendLine("	}\r\n}");
 
@@ -90,7 +90,7 @@ namespace StereoKit
 					string name = arg.ToString();
 					int    prefix = 0;
 					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
-					result = ((CppUnaryExpression)curr).Operator + SnakeToCamel(name, true, prefix) + result;
+					result = ((CppUnaryExpression)curr).Operator + CSTypes.SnakeToCamel(name, true, prefix) + result;
 				} break;
 				default: result = curr + result; break;
 			}

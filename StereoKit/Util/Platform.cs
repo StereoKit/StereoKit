@@ -55,7 +55,7 @@ namespace StereoKit
 		static Action<string>       _filePickerOnSelect;
 		static Action               _filePickerOnCancel;
 		static Action<bool, string> _filePickerOnComplete;
-		static NativeAPI.SKAction_IntPtr_int_IntPtr_int _filePickerCallback;
+		static NativeAPI.PickerCallback _filePickerCallback;
 		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
 			string filename = NativeHelper.FromUtf8(file, fileLength);

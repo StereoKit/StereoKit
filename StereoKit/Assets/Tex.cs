@@ -56,7 +56,7 @@ namespace StereoKit
 			add {
 				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
 
-				NativeAPI.SKAction_IntPtr_IntPtr callback = (a, _) => { NativeAPI.tex_addref(a); value(new Tex(a)); };
+				NativeAPI.AssetOnLoadCallback callback = (a, _) => { NativeAPI.tex_addref(a); value(new Tex(a)); };
 				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
 
 				NativeAPI.tex_on_load(_inst, callback, IntPtr.Zero);

@@ -872,8 +872,8 @@ SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API asset_state_ tex_asset_state         (const tex_t texture);
-SK_API void         tex_on_load             (tex_t texture, void (*on_load)(tex_t texture, void *context), void *context);
-SK_API void         tex_on_load_remove      (tex_t texture, void (*on_load)(tex_t texture, void *context));
+SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
+SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
@@ -1318,9 +1318,9 @@ SK_API void          model_node_set_material       (model_t model, model_node_id
 SK_API void          model_node_set_mesh           (model_t model, model_node_id node, mesh_t      mesh);
 SK_API void          model_node_set_transform_model(model_t model, model_node_id node, matrix      transform_model_space);
 SK_API void          model_node_set_transform_local(model_t model, model_node_id node, matrix      transform_local_space);
-SK_API const char*   model_node_info_get           (model_t model, model_node_id node, const char* info_key_u8);
-SK_API void          model_node_info_set           (model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8);
-SK_API bool32_t      model_node_info_remove        (model_t model, model_node_id node, const char* info_key_u8);
+SK_API const char*   model_node_info_get           (model_t model, model_node_id node, const char* info_key_utf8);
+SK_API void          model_node_info_set           (model_t model, model_node_id node, const char* info_key_utf8, const char* info_value_utf8);
+SK_API bool32_t      model_node_info_remove        (model_t model, model_node_id node, const char* info_key_utf8);
 SK_API void          model_node_info_clear         (model_t model, model_node_id node);
 SK_API int32_t       model_node_info_count         (model_t model, model_node_id node);
 SK_API bool32_t      model_node_info_iterate       (model_t model, model_node_id node, int32_t *ref_iterator, const char **out_key_utf8, const char **out_value_utf8);
@@ -1467,7 +1467,7 @@ SK_API const char*  sound_get_id         (const sound_t sound);
 SK_API sound_t      sound_create         (const char *filename_utf8);
 SK_API sound_t      sound_create_stream  (float buffer_duration);
 SK_API sound_t      sound_create_samples (const float *in_arr_samples_at_48000s, uint64_t sample_count);
-SK_API sound_t      sound_generate       (float (*function)(float sample_time), float duration);
+SK_API sound_t      sound_generate       (float (*audio_generator)(float sample_time), float duration);
 SK_API void         sound_write_samples  (sound_t sound, const float *in_arr_samples,  uint64_t sample_count);
 SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_arr_samples, uint64_t sample_count);
 SK_API uint64_t     sound_unread_samples (sound_t sound);
@@ -1527,8 +1527,8 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
-SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  ();
 SK_API bool32_t platform_file_picker_visible();
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
@@ -1902,8 +1902,8 @@ SK_API void                  input_hand_visible   (handed_ hand, bool32_t visibl
 SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material  (handed_ hand, material_t material);
 
-SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_fire_event     (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
@@ -2015,9 +2015,9 @@ SK_API void              backend_openxr_ext_request         (const char *extensi
 SK_API void              backend_openxr_use_minimum_exts    (bool32_t use_minimum_exts);
 SK_API void              backend_openxr_composition_layer   (void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order);
 
-SK_API void              backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context);
-SK_API void              backend_openxr_add_callback_poll_event        (void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context);
-SK_API void              backend_openxr_remove_callback_poll_event     (void (*on_poll_event)(void* context, void* XrEventDataBuffer));
+SK_API void              backend_openxr_add_callback_pre_session_create(void (*xr_pre_session_create_callback)(void* context), void* context);
+SK_API void              backend_openxr_add_callback_poll_event        (void (*xr_poll_event_callback)(void* context, void* XrEventDataBuffer), void* context);
+SK_API void              backend_openxr_remove_callback_poll_event     (void (*xr_poll_event_callback)(void* context, void* XrEventDataBuffer));
 
 SK_API backend_platform_ backend_platform_get         ();
 SK_API void*             backend_android_get_java_vm  ();
@@ -2061,8 +2061,8 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*on_log)(log_ level, const char *text));
-SK_API void log_unsubscribe(void (*on_log)(log_ level, const char *text));
+SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
+SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));
 
 ///////////////////////////////////////////
 

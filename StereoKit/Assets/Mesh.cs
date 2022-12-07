@@ -296,7 +296,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided?1:0));
 
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
@@ -324,10 +324,10 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided?1:0));
 
 		/// <summary>Generates a circle on the XZ axis facing up that is 
-		/// pre-sized to the given diameter. UV coordinates corespond to a unit 
+		/// pre-sized to the given diameter. UV coordinates correspond to a unit 
 		/// circle centered at 0.5, 0.5! That is, the right-most point on the 
 		/// circle has UV coordinates 1, 0.5 and the top-most point has UV 
 		/// coordinates 0.5, 1.
@@ -344,11 +344,11 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided?1:0));
 
 		/// <summary>Generates a circle with an arbitrary orientation that is
 		/// pre-sized to the given diameter. UV coordinates start at the top 
-		/// left indicated with 'planeTopDirection' and corespond to a unit 
+		/// left indicated with 'planeTopDirection' and correspond to a unit 
 		/// circle centered at 0.5, 0.5.
 		/// 
 		/// NOTE: This generates a completely new Mesh asset on the GPU, and
@@ -371,7 +371,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, Vec3 planeNormal, Vec3 planeTopDirection, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided?1:0));
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,

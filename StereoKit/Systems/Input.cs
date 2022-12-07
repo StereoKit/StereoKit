@@ -306,7 +306,7 @@ namespace StereoKit
 			public BtnState type;
 			public Action<InputSource, BtnState, Pointer> callback;
 		}
-		static NativeAPI.SKAction_InputSource_BtnState_Pointer callback;
+		static NativeAPI.InputEventCallback callback;
 		static List<EventListener> listeners   = new List<EventListener>();
 		static bool                initialized = false;
 		static Hand[]              hands       = new Hand[2] { new Hand(), new Hand() };

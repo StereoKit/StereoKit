@@ -63,15 +63,17 @@ class CSTypes
 
 	public static string CallbackType(CppFunctionType fn, string varName)
 	{
-		string result = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void
-			? "SKAction"
-			: "SKFunc";
+		bool isVoidRet = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void;
+		if (isVoidRet == true && fn.Parameters.Count == 0)
+			return "Action";
 
-		for (int i = 0; i < fn.Parameters.Count; i++) 
+		string result = SnakeToCamel(varName, true, 0);
+
+		/*for (int i = 0; i < fn.Parameters.Count; i++) 
 		{
 			var p = fn.Parameters[i];
 			result += "_" + TypeName(p.Type, p.Name, null).raw;
-		}
+		}*/
 		
 		return result;
 	}
@@ -80,7 +82,11 @@ class CSTypes
 	
 	public static string CallbackDefinition(CppFunctionType fn, string varName)
 	{
-		string ret = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void
+		bool isVoidRet = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void;
+		if (isVoidRet == true && fn.Parameters.Count == 0)
+			return "";
+
+		string ret = isVoidRet
 			? "void"
 			: TypeName(fn.ReturnType, "", null).raw;
 
@@ -90,7 +96,7 @@ class CSTypes
 			if (i != 0) result += ", ";
 
 			var p = fn.Parameters[i];
-			result += TypeName(p.Type, p.Name, null).RawName + " " + p.Name;
+			result += TypeName(p.Type, p.Name, null).RawName + " " + SnakeToCamel(p.Name, false, 0);
 		}
 		result += ");";
 

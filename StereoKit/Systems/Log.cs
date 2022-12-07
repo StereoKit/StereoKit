@@ -56,7 +56,7 @@ namespace StereoKit
 		}
 		#endregion
 
-		static List<NativeAPI.SKAction_LogLevel_string> callbacks = new List<NativeAPI.SKAction_LogLevel_string>();
+		static List<NativeAPI.LogCallback> callbacks = new List<NativeAPI.LogCallback>();
 
 		/// <summary>What's the lowest level of severity logs to display on
 		/// the console? Default is LogLevel.Info. This property can safely
@@ -144,7 +144,7 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
-			NativeAPI.SKAction_LogLevel_string callback = new NativeAPI.SKAction_LogLevel_string(onLog);
+			NativeAPI.LogCallback callback = new NativeAPI.LogCallback(onLog);
 			callbacks.Add(callback); // This prevents the callback from getting GCed
 			NativeAPI.log_subscribe(callback);
 		}
@@ -162,7 +162,7 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
-			NativeAPI.SKAction_LogLevel_string callback = new NativeAPI.SKAction_LogLevel_string(onLog);
+			NativeAPI.LogCallback callback = new NativeAPI.LogCallback(onLog);
 			callbacks.Remove(callback);
 			NativeAPI.log_unsubscribe(callback);
 		}
