@@ -147,7 +147,7 @@ namespace StereoKit
 		/// <summary>This will check if the file picker interface is
 		/// currently visible. Some pickers will never show this, as they
 		/// block the application until the picker has completed.</summary>
-		public static bool FilePickerVisible => NativeAPI.platform_file_picker_visible();
+		public static bool FilePickerVisible => NativeAPI.platform_file_picker_visible() > 0;
 		#endregion
 
 		#region File Save & Load
@@ -160,7 +160,7 @@ namespace StereoKit
 		/// converted to a UTF-8 encoding.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, string data)
-			=> NativeAPI.platform_write_file_text(NativeHelper.ToUtf8(filename), NativeHelper.ToUtf8(data));
+			=> NativeAPI.platform_write_file_text(NativeHelper.ToUtf8(filename), NativeHelper.ToUtf8(data)) > 0;
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
 		/// advantage of any permissions that may have been granted by
@@ -170,7 +170,7 @@ namespace StereoKit
 		/// <param name="data">An array of bytes to write to the file.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, byte[] data)
-			=> NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length);
+			=> NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length) > 0;
 
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by
@@ -182,7 +182,7 @@ namespace StereoKit
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out string data) {
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length) <= 0)
 				return false;
 
 			data = NativeHelper.FromUtf8(fileData, (int)length);
@@ -212,7 +212,7 @@ namespace StereoKit
 		public static bool ReadFile (string filename, out byte[] data)
 		{
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length) <= 0)
 				return false;
 
 			data = new byte[(uint)length];

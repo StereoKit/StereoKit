@@ -329,7 +329,7 @@ namespace StereoKit
 	}
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
+	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
 
 	/// <summary>Pointer is an abstraction of a number of different input 
 	/// sources, and a way to surface input events!</summary>

@@ -135,7 +135,7 @@ namespace StereoKit
 		/// OpenGL systems like Quest.</summary>
 		public bool Wireframe {
 			get => NativeAPI.material_get_wireframe(_inst)>0;
-			set => NativeAPI.material_set_wireframe(_inst, value); }
+			set => NativeAPI.material_set_wireframe(_inst, value?1:0); }
 		/// <summary>How does this material interact with the ZBuffer? 
 		/// Generally DepthTest.Less would be normal behavior: don't draw
 		/// objects that are occluded. But this can also be used to achieve
@@ -155,7 +155,7 @@ namespace StereoKit
 		/// Not writing to the buffer can also be faster! :)</summary>
 		public bool DepthWrite {
 			get => NativeAPI.material_get_depth_write(_inst)>0;
-			set => NativeAPI.material_set_depth_write(_inst, value); }
+			set => NativeAPI.material_set_depth_write(_inst, value?1:0); }
 		/// <summary>This property will force this material to draw earlier
 		/// or later in the draw queue. Positive values make it draw later, 
 		/// negative makes it earlier. This can be helpful for tweaking 

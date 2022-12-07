@@ -362,10 +362,13 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, cullFaces) > 0;
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a

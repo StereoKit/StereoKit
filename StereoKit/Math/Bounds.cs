@@ -71,7 +71,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurred, false if not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Ray ray, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(this, ray, out at);
+			=> NativeAPI.bounds_ray_intersect(this, ray, out at)>0;
 
 		/// <summary>Does the Bounds contain the given point? This includes
 		/// points that are on the surface of the Bounds.</summary>
@@ -80,7 +80,7 @@ namespace StereoKit
 		/// <returns>True if the point is on, or in the Bounds.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(Vec3 pt)
-			=> NativeAPI.bounds_point_contains(this, pt);
+			=> NativeAPI.bounds_point_contains(this, pt)>0;
 
 		/// <summary>Does the Bounds contain or intersects with the given line?
 		/// </summary>
@@ -90,7 +90,7 @@ namespace StereoKit
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(Vec3 linePt1, Vec3 linePt2)
-			=> NativeAPI.bounds_line_contains(this, linePt1, linePt2);
+			=> NativeAPI.bounds_line_contains(this, linePt1, linePt2)>0;
 
 		/// <summary>Does the bounds contain or intersect with the given
 		/// capsule?</summary>
@@ -100,7 +100,7 @@ namespace StereoKit
 		/// <returns>True if the capsule is in, or intersects with the 
 		/// bounds.</returns>
 		public bool Contains(Vec3 linePt1, Vec3 linePt2, float radius)
-			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius);
+			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius)>0;
 
 		/// <summary>Scale this bounds. It will scale the center as well as	the dimensions!
 		///  Modifies this bounds object.</summary>

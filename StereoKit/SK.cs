@@ -164,7 +164,7 @@ namespace StereoKit
 		public static bool Step(Action onStep = null)
 		{
 			_stepCallback = onStep;
-			return NativeAPI.sk_step(_stepAction);
+			return NativeAPI.sk_step(_stepAction) > 0;
 		}
 		// This pattern is a little weird, but it avoids continuous Action
 		// allocations, and saves our GC a surprising amount of work.
