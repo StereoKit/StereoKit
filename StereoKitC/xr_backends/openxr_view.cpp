@@ -317,7 +317,7 @@ bool openxr_update_swapchains(device_display_t &display) {
 	int32_t h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
 	int32_t s = display.multisample;
 	if (display.render_scale != 1.0f) {
-		const int32_t quantize = 32;
+		const int32_t quantize = 4;
 		w = (w / quantize) * quantize;
 		h = (h / quantize) * quantize;
 	}
