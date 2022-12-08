@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace StereoKit
 {
@@ -81,7 +82,7 @@ namespace StereoKit
 		/// trailing '/' is unnecessary.</param>
 		/// <returns>Returns true if all systems are successfully 
 		/// initialized!</returns>
-		public static bool Initialize(string projectName = "StereoKit App", string assetsFolder = "")
+		public static bool Initialize(string projectName = null, string assetsFolder = "")
 			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
 
 		/// <summary>If you need to call StereoKit code before calling
@@ -110,6 +111,10 @@ namespace StereoKit
 		{
 			// Prep console for colored debug logs
 			Log.SetupConsole();
+
+			// Make sure we have a valid name
+			if (string.IsNullOrEmpty(settings.appName))
+				settings.appName = Assembly.GetEntryAssembly().GetName().Name;
 
 			// DllImport finds the function at the beginning of the function 
 			// call, so this needs to be in a separate function from 
