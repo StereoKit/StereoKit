@@ -137,6 +137,13 @@ bool32_t sk_init(sk_settings_t settings) {
 		sk_settings.flatscreen_width  = 1280;
 	if (sk_settings.flatscreen_height == 0)
 		sk_settings.flatscreen_height = 720;
+	if (sk_settings.render_scaling == 0)
+		sk_settings.render_scaling = 1;
+	if (sk_settings.render_multisample == 0)
+		sk_settings.render_multisample = 1;
+
+	render_set_scaling    (sk_settings.render_scaling);
+	render_set_multisample(sk_settings.render_multisample);
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 

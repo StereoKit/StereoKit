@@ -305,6 +305,8 @@ typedef struct sk_settings_t {
 	bool32_t       disable_flatscreen_mr_sim;
 	bool32_t       disable_desktop_input_window;
 	bool32_t       disable_unfocused_sleep;
+	float          render_scaling;
+	int            render_multisample;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
