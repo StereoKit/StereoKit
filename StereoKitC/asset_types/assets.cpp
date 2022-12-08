@@ -41,11 +41,11 @@ struct asset_thread_t {
 
 array_t<asset_header_t *>      assets = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
-mtx_t                          assets_multithread_destroy_lock;
+mtx_t                          assets_multithread_destroy_lock = {};
 thrd_id_t                      assets_gpu_thread = {};
-mtx_t                          assets_job_lock;
+mtx_t                          assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
-mtx_t                          assets_load_event_lock;
+mtx_t                          assets_load_event_lock = {};
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
 
