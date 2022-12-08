@@ -316,6 +316,12 @@ bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
+	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
+		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
+		openxr_shutdown();
+		return false;
+	}
+
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
