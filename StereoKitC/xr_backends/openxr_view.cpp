@@ -313,28 +313,32 @@ bool openxr_update_swapchains(device_display_t &display) {
 	// Check if the latest configuration is different from what we've already
 	// set up.
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
-	int w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
-	int h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	int32_t w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
+	int32_t h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	int32_t s = display.multisample;
 	if (display.render_scale != 1.0f) {
 		const int32_t quantize = 32;
 		w = (w / quantize) * quantize;
 		h = (h / quantize) * quantize;
 	}
-	int s = display.multisample;
+	if (w > display.view_configs[0].maxImageRectWidth      ) w = display.view_configs[0].maxImageRectWidth;
+	if (h > display.view_configs[0].maxImageRectHeight     ) h = display.view_configs[0].maxImageRectHeight;
+	if (s > display.view_configs[0].maxSwapchainSampleCount) s = display.view_configs[0].maxSwapchainSampleCount;
+
 	if (   w == display.swapchain_color.width
 		&& h == display.swapchain_color.height
 		&& s == display.swapchain_color.multisample) {
 		return true;
 	}
 
-	// Create the new swapchaines for the current size
+	// Create the new swapchains for the current size
 	if (!openxr_create_swapchain(display.swapchain_color, display.type, true,  display.view_cap, display.color_format, w, h, s)) return false;
 	if (!openxr_create_swapchain(display.swapchain_depth, display.type, false, display.view_cap, display.depth_format, w, h, s)) return false;
 
 	log_diagf("Set view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d<~BLK>@<~clr>%d<~BLK>msaa<~clr>", openxr_view_name(display.type), display.swapchain_color.width, display.swapchain_color.height, display.swapchain_color.multisample);
 
 	// If shaders can't select layers from a texture array, we'll have to
-	// seprate the layers into individual render targets.
+	// separate the layers into individual render targets.
 	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) {
 		display.swapchain_color.surface_layers = 1;
 		display.swapchain_depth.surface_layers = 1;
@@ -407,8 +411,10 @@ bool openxr_update_swapchains(device_display_t &display) {
 bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count) {
 	swapchain_delete(out_swapchain);
 
-	// Create a swapchain for this viewpoint! A swapchain is a set of texture buffers used for displaying to screen,
-	// typically this is a backbuffer and a front buffer, one for rendering data to, and one for displaying on-screen.
+	// Create a swapchain for this viewpoint! A swapchain is a set of texture
+	// buffers used for displaying to screen, typically this is a backbuffer
+	// and a front buffer, one for rendering data to, and one for displaying
+	// on-screen.
 	XrSwapchainCreateInfo swapchain_info = { XR_TYPE_SWAPCHAIN_CREATE_INFO };
 	XrSwapchain           handle         = {};
 	swapchain_info.arraySize   = array_size;
@@ -432,13 +438,14 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle),
 		"xrCreateSwapchain failed [%s]");
 
-	// Find out how many textures were generated for the swapchain
+	// Find out how many textures were generated for the swapcha in
 	uint32_t surface_count = 0;
 	xr_check(xrEnumerateSwapchainImages(handle, 0, &surface_count, nullptr),
 		"xrEnumerateSwapchainImages failed [%s]");
 
-	// We'll want to track our own information about the swapchain, so we can draw stuff onto it! We'll also create
-	// a depth buffer for each generated texture here as well with make_surfacedata.
+	// We'll want to track our own information about the swapchain, so we can
+	// draw stuff onto it! We'll also create a depth buffer for each generated
+	// texture here as well with make_surfacedata.
 	out_swapchain.width         = swapchain_info.width;
 	out_swapchain.height        = swapchain_info.height;
 	out_swapchain.multisample   = swapchain_info.sampleCount;
@@ -561,9 +568,10 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 ///////////////////////////////////////////
 
 bool openxr_render_frame() {
-	// Block until the previous frame is finished displaying, and is ready for another one.
-	// Also returns a prediction of when the next frame will be displayed, for use with predicting
-	// locations of controllers, viewpoints, etc.
+	// Block until the previous frame is finished displaying, and is ready for
+	// another one. Also returns a prediction of when the next frame will be
+	// displayed, for use with predicting locations of controllers, viewpoints,
+	// etc.
 	XrFrameWaitInfo                            wait_info        = { XR_TYPE_FRAME_WAIT_INFO };
 	XrFrameState                               frame_state      = { XR_TYPE_FRAME_STATE };
 	XrSecondaryViewConfigurationFrameStateMSFT secondary_states = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_STATE_MSFT };
@@ -600,9 +608,9 @@ bool openxr_render_frame() {
 		openxr_update_swapchains(xr_displays[0]);
 	}
 
-	// Must be called before any rendering is done! This can return some interesting flags, like
-	// XR_SESSION_VISIBILITY_UNAVAILABLE, which means we could skip rendering this frame and call
-	// xrEndFrame right away.
+	// Must be called before any rendering is done! This can return some
+	// interesting flags, like XR_SESSION_VISIBILITY_UNAVAILABLE, which means
+	// we could skip rendering this frame and call xrEndFrame right away.
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
 	xr_check(xrBeginFrame(xr_session, &begin_info),
 		"xrBeginFrame [%s]");
@@ -610,12 +618,13 @@ bool openxr_render_frame() {
 	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
 
-	// Execute any code that's dependant on the predicted time, such as updating the location of
-	// controller models.
+	// Execute any code that's dependent on the predicted time, such as
+	// updating the location of controller models.
 	input_update_poses(true);
 
-	// Render all the views for the application, then clear out the render queue
-	// If the session is active, lets render our layer in the compositor!
+	// Render all the views for the application, then clear out the render
+	// queue. If the session is active, lets render our layer in the
+	// compositor!
 	xr_display_2nd_layers.clear();
 
 	skg_draw_begin();
@@ -677,9 +686,9 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 	result[5]  = 2 / tanAngleHeight;                   // [1][1] Same as DX's: Height (CosFov / SinFov)
 	result[8]  = (tanRight + tanLeft) / tanAngleWidth; // [2][0] Only present in xr's
 	result[9]  = (tanUp + tanDown) / tanAngleHeight;   // [2][1] Only present in xr's
-	result[10] = range;                               // [2][2] Same as xr's: -(farZ + offsetZ) / (farZ - nearZ)
-	result[11] = -1;                                  // [2][3] Same
-	result[14] = range * clip_near;                   // [3][2] Same as xr's: -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
+	result[10] = range;                                // [2][2] Same as xr's: -(farZ + offsetZ) / (farZ - nearZ)
+	result[11] = -1;                                   // [2][3] Same
+	result[14] = range * clip_near;                    // [3][2] Same as xr's: -(farZ * (nearZ + offsetZ)) / (farZ - nearZ);
 }
 
 ///////////////////////////////////////////
@@ -694,15 +703,15 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.space                 = xr_app_space;
 	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
 
-	// We need to ask which swapchain image to use for rendering! Which one will we get?
-	// Who knows! It's up to the runtime to decide.
+	// We need to ask which swapchain image to use for rendering! Which one
+	// will we get? Who knows! It's up to the runtime to decide.
 	uint32_t                    color_id, depth_id;
 	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
 	xrAcquireSwapchainImage(layer.swapchain_color.handle, &acquire_info, &color_id);
 	xrAcquireSwapchainImage(layer.swapchain_depth.handle, &acquire_info, &depth_id);
 
-	// Wait until the image is available to render to. The compositor could still be
-	// reading from it.
+	// Wait until the image is available to render to. The compositor could
+	// still be reading from it.
 	XrSwapchainImageWaitInfo wait_info = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
 	wait_info.timeout = XR_INFINITE_DURATION;
 	xrWaitSwapchainImage(layer.swapchain_color.handle, &wait_info);
@@ -711,7 +720,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	// And now we'll iterate through each viewpoint, and render it!
 	vec2 clip_planes = render_get_clip();
 	for (uint32_t i = 0; i < layer.view_count; i++) {
-		// Set up our rendering information for the viewpoint we're using right now!
+		// Set up our rendering information for the viewpoint we're using right
+		// now!
 		XrCompositionLayerProjectionView &view = layer.view_layers[i];
 		view = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		view.pose = layer.views[i].pose;
