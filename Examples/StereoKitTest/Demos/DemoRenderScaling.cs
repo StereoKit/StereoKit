@@ -1,10 +1,10 @@
 ﻿using StereoKit;
 using System;
 
-class DemoAliasing : ITest
+class DemoRenderScaling : ITest
 {
-	string title       = "Aliasing";
-	string description = "...";
+	string title       = "Render Scaling";
+	string description = "Sometimes you need to boost the number of pixels your app renders, to reduce jaggies! Renderer.Scaling and Renderer.Multisample let you increase the size of the draw surface, and multisample each pixel.\n\nThis is powerful stuff, so use it sparingly!";
 
 	Pose windowPose = Demo.contentPose.Pose;
 
@@ -16,7 +16,7 @@ class DemoAliasing : ITest
 		multisample = Renderer.Multisample;
 		scaling     = Renderer.Scaling;
 	}
-	public void Shutdown() => Microphone.Stop();
+	public void Shutdown() { }
 	public void Update()
 	{
 		UI.WindowBegin("Aliasing Settings", ref windowPose);
