@@ -11,7 +11,9 @@ class App
 		assetsFolder      = "Assets",
 		blendPreference   = DisplayBlend.AnyTransparent,
 		displayPreference = DisplayMode.MixedReality,
-		logFilter         = LogLevel.Diagnostic};
+		logFilter         = LogLevel.Diagnostic,
+		renderMultisample = 4,
+	};
 
 	public SKSettings Settings => settings;
 	public static PassthroughFBExt passthrough;

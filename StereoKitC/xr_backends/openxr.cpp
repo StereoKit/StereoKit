@@ -70,6 +70,8 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
+bool           xr_system_created = false;
+bool           xr_system_success = false;
 
 array_t<const char*> xr_exts_user    = {};
 array_t<uint64_t>    xr_exts_loaded  = {};
@@ -136,70 +138,9 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
-XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
-void *openxr_get_luid() {
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-	const char *extensions[] = { XR_GFX_EXTENSION };
+bool openxr_create_system() {
+	if (xr_system_created == true) return xr_system_success;
 
-	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount      = 1;
-	create_info.enabledExtensionNames      = extensions;
-	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
-	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
-	XrResult result = xrCreateInstance(&create_info, &xr_instance);
-
-	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		return nullptr;
-	}
-
-	// Request a form factor from the device (HMD, Handheld, etc.)
-	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
-	systemInfo.formFactor = xr_config_form;
-	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
-	if (XR_FAILED(result)) {
-		xrDestroyInstance(xr_instance);
-		return nullptr;
-	}
-
-	// Get an extension function, and check it for our requirements
-	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
-	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
-		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
-		xrDestroyInstance(xr_instance);
-		return nullptr;
-	}
-
-	xrDestroyInstance(xr_instance);
-	return (void *)&luid_requirement.adapterLuid;
-#else
-	return nullptr;
-#endif
-}
-
-///////////////////////////////////////////
-
-XrTime openxr_acquire_time() {
-	XrTime result = {};
-#ifdef XR_USE_TIMESPEC
-	struct timespec time;
-	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
-		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#else
-	LARGE_INTEGER time;
-	if (!QueryPerformanceCounter(&time) ||
-		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#endif
-	return result;
-}
-
-///////////////////////////////////////////
-
-bool openxr_init() {
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
 	xrGetInstanceProcAddr(
@@ -321,6 +262,70 @@ bool openxr_init() {
 		openxr_shutdown();
 		return false;
 	}
+
+	xr_system_created = true;
+	xr_system_success = true;
+	return xr_system_success;
+}
+
+///////////////////////////////////////////
+
+XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+void *openxr_get_luid() {
+	
+#if defined(XR_USE_GRAPHICS_API_D3D11)
+	if (!openxr_create_system()) return nullptr;
+
+	// Get an extension function, and check it for our requirements
+	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
+	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
+		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
+	}
+
+	return (void *)&luid_requirement.adapterLuid;
+#else
+	return nullptr;
+#endif
+}
+
+///////////////////////////////////////////
+
+XrTime openxr_acquire_time() {
+	XrTime result = {};
+#ifdef XR_USE_TIMESPEC
+	struct timespec time;
+	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
+		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
+	}
+#else
+	LARGE_INTEGER time;
+	if (!QueryPerformanceCounter(&time) ||
+		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
+	}
+#endif
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool openxr_init() {
+	if (!openxr_create_system())
+		return false;
+
+	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
+		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
+		openxr_shutdown();
+		return false;
+	}
+
+	// Fetch the runtime name/info, for logging and for a few other checks
+	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+		"xrGetInstanceProperties failed [%s]");
 
 	// Figure out what this device is capable of!
 	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
@@ -453,7 +458,7 @@ bool openxr_init() {
 		gfx_binding.next = &overlay_info;
 		sk_info.overlay_app = true;
 	}
-	result = xrCreateSession(xr_instance, &session_info, &xr_session);
+	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
@@ -617,7 +622,9 @@ void openxr_shutdown() {
 		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
 	}
 
-	xr_minimum_exts = false;
+	xr_minimum_exts   = false;
+	xr_system_created = false;
+	xr_system_success = false;
 
 	xr_exts_loaded.free();
 	xr_exts_user  .free();

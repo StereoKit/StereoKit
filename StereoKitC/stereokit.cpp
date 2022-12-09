@@ -137,6 +137,13 @@ bool32_t sk_init(sk_settings_t settings) {
 		sk_settings.flatscreen_width  = 1280;
 	if (sk_settings.flatscreen_height == 0)
 		sk_settings.flatscreen_height = 720;
+	if (sk_settings.render_scaling == 0)
+		sk_settings.render_scaling = 1;
+	if (sk_settings.render_multisample == 0)
+		sk_settings.render_multisample = 1;
+
+	render_set_scaling    (sk_settings.render_scaling);
+	render_set_multisample(sk_settings.render_multisample);
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 
@@ -148,10 +155,13 @@ bool32_t sk_init(sk_settings_t settings) {
 	system_t sys_platform_begin   = { "FrameBegin"  };
 	system_t sys_platform_render  = { "FrameRender" };
 
-	sys_platform        .func_initialize = platform_init;
-	sys_platform        .func_shutdown   = platform_shutdown;
-	sys_platform_begin  .func_update     = platform_step_begin;
-	sys_platform_render .func_update     = platform_step_end;
+	const char* platform_deps[] = { "Assets" };
+	sys_platform        .init_dependencies     = platform_deps;
+	sys_platform        .init_dependency_count = _countof(platform_deps);
+	sys_platform        .func_initialize       = platform_init;
+	sys_platform        .func_shutdown         = platform_shutdown;
+	sys_platform_begin  .func_update           = platform_step_begin;
+	sys_platform_render .func_update           = platform_step_end;
 
 	const char *frame_render_update_deps [] = {"App", "Text", "Sprites", "Lines", "World", "UILate", "Animation"};
 	sys_platform_render .update_dependencies     = frame_render_update_deps;
@@ -214,10 +224,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_renderer);
 
 	system_t sys_assets = { "Assets" };
-	const char* assets_deps       [] = {"Platform"};
 	const char *assets_update_deps[] = {"FrameRender"};
-	sys_assets.init_dependencies       = assets_deps;
-	sys_assets.init_dependency_count   = _countof(assets_deps);
 	sys_assets.update_dependencies     = assets_update_deps;
 	sys_assets.update_dependency_count = _countof(assets_update_deps);
 	sys_assets.func_initialize         = assets_init;

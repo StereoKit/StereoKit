@@ -305,6 +305,8 @@ typedef struct sk_settings_t {
 	bool32_t       disable_flatscreen_mr_sim;
 	bool32_t       disable_desktop_input_window;
 	bool32_t       disable_unfocused_sleep;
+	float          render_scaling;
+	int            render_multisample;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -1421,6 +1423,10 @@ SK_API void                  render_set_skylight   (const sk_ref(spherical_harmo
 SK_API spherical_harmonics_t render_get_skylight   ();
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     ();
+SK_API void                  render_set_scaling    (float display_tex_scale);
+SK_API float                 render_get_scaling    ();
+SK_API void                  render_set_multisample(int32_t display_tex_multisample);
+SK_API int32_t               render_get_multisample();
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
 SK_API render_layer_         render_get_capture_filter     ();
 SK_API bool32_t              render_has_capture_filter     ();

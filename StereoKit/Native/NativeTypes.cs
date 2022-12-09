@@ -80,6 +80,18 @@ namespace StereoKit
 		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
 		private int _disableUnfocusedSleep;
 
+		/// <summary>If you know in advance that you need this feature, this
+		/// setting allows you to set `Renderer.Scaling` before initialization.
+		/// This avoids creating and discarding a large and unnecessary
+		/// swapchain object. Default value is 1.</summary>
+		public float renderScaling;
+
+		/// <summary>If you know in advance that you need this feature, this
+		/// setting allows you to set `Renderer.Multisample` before
+		/// initialization. This avoids creating and discarding a large and
+		/// unnecessary swapchain object. Default value is 1.</summary>
+		public int renderMultisample;
+
 		public IntPtr androidJavaVm;
 		public IntPtr androidActivity;
 

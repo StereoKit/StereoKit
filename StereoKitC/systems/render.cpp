@@ -123,6 +123,8 @@ vec4                    render_lighting[9]     = {};
 spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
+float                   render_scale           = 1;
+int32_t                 render_multisample     = 1;
 render_layer_           render_primary_filter  = render_layer_all_first_person;
 render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
@@ -377,6 +379,33 @@ render_layer_ render_get_filter() {
 
 void render_set_filter(render_layer_ layer_filter) {
 	render_primary_filter = layer_filter;
+}
+
+///////////////////////////////////////////
+
+void render_set_scaling(float texture_scale) {
+	render_scale = fminf(2, fmaxf(0.2f, texture_scale));
+}
+
+///////////////////////////////////////////
+
+float render_get_scaling() {
+	return render_scale;
+}
+
+///////////////////////////////////////////
+
+void render_set_multisample(int32_t display_tex_multisample) {
+	if      (display_tex_multisample <= 1)  render_multisample = 1;
+	else if (display_tex_multisample <= 3)  render_multisample = 2;
+	else if (display_tex_multisample <= 7)  render_multisample = 4;
+	else                                    render_multisample = 8;
+}
+
+///////////////////////////////////////////
+
+int32_t render_get_multisample() {
+	return render_multisample;
 }
 
 ///////////////////////////////////////////
