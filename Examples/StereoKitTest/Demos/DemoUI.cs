@@ -41,7 +41,8 @@ class DemoUI : ITest
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
 	Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
-	bool   clipToggle;
+    float  clipboardScale = 1;
+    bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;
 
@@ -132,8 +133,8 @@ class DemoUI : ITest
 		/// advantage of how HandleBegin pushes the handle's pose onto the
 		/// Hierarchy transform stack!
 		/// 
-		UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
-		clipboard.Draw(Matrix.Identity);
+		UI.HandleBegin("Clip", ref clipboardPose, ref clipboardScale, clipboard.Bounds);
+		clipboard.Draw(Matrix.TS(Vec3.Zero, clipboardScale));
 		///
 		/// Once we've done that, we also need to define the layout area of
 		/// the model, where UI elements will go. This is different for each

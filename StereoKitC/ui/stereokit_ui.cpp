@@ -2297,7 +2297,7 @@ bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, doub
 
 ///////////////////////////////////////////
 
-bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, float* scale = 0) {
 	bool result = false;
 	float color = 1;
 
@@ -2449,6 +2449,14 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
 						}
 
+						// Scale based on the distance of pinch points between the current and previous frames.
+						if (scale != nullptr)
+						{
+							float prev_pinch_dist = vec3_distance(skui_hand[0].pinch_pt_prev, skui_hand[1].pinch_pt_prev);
+							float curr_pinch_dist = vec3_distance(skui_hand[0].pinch_pt, skui_hand[1].pinch_pt);
+							*scale *= curr_pinch_dist / prev_pinch_dist;
+						}
+
 						// If one of the hands just let go, reset their starting
 						// locations so the handle doesn't 'pop' when switching
 						// back to 1-handed interaction.
@@ -2515,6 +2523,9 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 }
 bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
+}
+bool32_t ui_handle_begin_sc_16(const char16_t* text, pose_t& movement, float& scale, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, &scale);
 }
 
 ///////////////////////////////////////////

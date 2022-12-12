@@ -198,6 +198,7 @@ SK_API void     ui_space             (float space);
 
 SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
+SK_API bool32_t ui_handle_begin_sc_16(const char16_t *text, sk_ref(pose_t) movement, sk_ref(float) scale, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API void     ui_handle_end        ();
 SK_API void     ui_window_begin      (const char     *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_begin_16   (const char16_t *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
