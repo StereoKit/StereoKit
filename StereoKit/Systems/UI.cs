@@ -868,13 +868,13 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
-        public static bool HandleBegin(string id, ref Pose pose, ref float scale, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+		public static bool HandleBegin(string id, ref Pose pose, ref float scale, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 			=> NativeAPI.ui_handle_begin_sc_16(id, ref pose, ref scale, handle, drawHandle ? 1 : 0, moveType);
 
-        /// <summary>Finishes a handle! Must be called after UI.HandleBegin()
-        /// and all elements have been drawn. Pops the pose transform pushed
-        /// by UI.HandleBegin() from the hierarchy stack.</summary>
-        public static void HandleEnd   ()
+		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
+		/// and all elements have been drawn. Pops the pose transform pushed
+		/// by UI.HandleBegin() from the hierarchy stack.</summary>
+		public static void HandleEnd   ()
 			=> NativeAPI.ui_handle_end();
 
 		/// <summary>This begins and ends a handle so you can just use  its 
