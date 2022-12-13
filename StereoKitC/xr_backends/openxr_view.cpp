@@ -7,6 +7,7 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../sk_memory.h"
 #include "../log.h"
 #include "../asset_types/texture_.h"
@@ -313,17 +314,17 @@ bool openxr_update_swapchains(device_display_t &display) {
 	// Check if the latest configuration is different from what we've already
 	// set up.
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
-	int32_t w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
-	int32_t h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	int32_t w = (int32_t)(display.view_configs[0].recommendedImageRectWidth  * display.render_scale);
+	int32_t h = (int32_t)(display.view_configs[0].recommendedImageRectHeight * display.render_scale);
 	int32_t s = display.multisample;
 	if (display.render_scale != 1.0f) {
 		const int32_t quantize = 4;
 		w = (w / quantize) * quantize;
 		h = (h / quantize) * quantize;
 	}
-	if (w > display.view_configs[0].maxImageRectWidth      ) w = display.view_configs[0].maxImageRectWidth;
-	if (h > display.view_configs[0].maxImageRectHeight     ) h = display.view_configs[0].maxImageRectHeight;
-	if (s > display.view_configs[0].maxSwapchainSampleCount) s = display.view_configs[0].maxSwapchainSampleCount;
+	if (w > (int32_t)display.view_configs[0].maxImageRectWidth      ) w = display.view_configs[0].maxImageRectWidth;
+	if (h > (int32_t)display.view_configs[0].maxImageRectHeight     ) h = display.view_configs[0].maxImageRectHeight;
+	if (s > (int32_t)display.view_configs[0].maxSwapchainSampleCount) s = display.view_configs[0].maxSwapchainSampleCount;
 
 	if (   w == display.swapchain_color.width
 		&& h == display.swapchain_color.height
@@ -702,6 +703,14 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
 	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
+
+	// Copy over the FoV so it's available to the users
+	if (layer.view_count > 0) {
+		device_data.display_fov.right  = layer.views[0].fov.angleRight * rad2deg;
+		device_data.display_fov.left   = layer.views[0].fov.angleLeft  * rad2deg;
+		device_data.display_fov.top    = layer.views[0].fov.angleUp    * rad2deg;
+		device_data.display_fov.bottom = layer.views[0].fov.angleDown  * rad2deg;
+	}
 
 	// We need to ask which swapchain image to use for rendering! Which one
 	// will we get? Who knows! It's up to the runtime to decide.

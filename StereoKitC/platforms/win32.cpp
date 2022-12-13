@@ -7,8 +7,10 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
 #include "../systems/input.h"
@@ -43,14 +45,16 @@ const int32_t win32_multisample = 8;
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (win32_swapchain_initialized == false || (width == sk_info.display_width && height == sk_info.display_height))
+	if (win32_swapchain_initialized == false || (width == device_data.display_width && height == device_data.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
+	device_data.display_width  = width;
+	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
-	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
+	skg_swapchain_resize(&win32_swapchain, device_data.display_width, device_data.display_height);
+	tex_set_color_arr   (win32_target,     device_data.display_width, device_data.display_height, nullptr, 1, nullptr, win32_multisample);
 	render_update_projection();
 }
 
@@ -151,6 +155,17 @@ bool win32_start_flat() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
+	device_data.display_blend  = display_blend_opaque;
+	device_data.display_width  = sk_settings.flatscreen_width;
+	device_data.display_height = sk_settings.flatscreen_height;
+	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
+		? device_tracking_6dof
+		: device_tracking_none;
+	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
+		? string_copy("Simulator")
+		: string_copy("None");
 
 	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
@@ -236,6 +251,8 @@ bool win32_start_flat() {
 	win32_swapchain_initialized = true;
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
+	device_data.display_width  = win32_swapchain.width;
+	device_data.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 	tex_set_id       (win32_target, "platform/swapchain");
 	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
@@ -245,6 +262,7 @@ bool win32_start_flat() {
 	tex_release(zbuffer);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	render_update_projection();
 
 	flatscreen_input_init();
 

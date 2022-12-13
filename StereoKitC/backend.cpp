@@ -10,7 +10,7 @@ const char* backend_err_wrong_backend = "Backend functions only work with the co
 ///////////////////////////////////////////
 
 backend_xr_type_ backend_xr_get_type() {
-	if (sk_display_mode == display_mode_mixedreality) {
+	if (device_display_get_type() == display_mode_mixedreality) {
 #if defined(SK_XR_OPENXR)
 		return backend_xr_type_openxr;
 #elif defined(SK_XR_WEBXR)

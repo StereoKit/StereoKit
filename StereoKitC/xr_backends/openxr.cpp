@@ -12,6 +12,7 @@
 
 #include "../sk_memory.h"
 #include "../log.h"
+#include "../device.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/sk_gpu.h"
@@ -140,6 +141,7 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
+	xr_system_created = true;
 
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
@@ -202,6 +204,8 @@ bool openxr_create_system() {
 
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
 		openxr_shutdown();
+		xr_system_created = true;
+		xr_system_success = false;
 		return false;
 	}
 
@@ -210,7 +214,7 @@ bool openxr_create_system() {
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
 		"xrGetInstanceProperties failed [%s]");
 
-	log_diagf("Using OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
 		inst_properties.runtimeName,
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
@@ -260,10 +264,11 @@ bool openxr_create_system() {
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_inform, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
 		openxr_shutdown();
+		xr_system_created = true;
+		xr_system_success = false;
 		return false;
 	}
 
-	xr_system_created = true;
 	xr_system_success = true;
 	return xr_system_success;
 }
@@ -316,7 +321,9 @@ bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
-	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
+	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
+	// yet, so it throws errors into the logs.
+	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
 		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
 		openxr_shutdown();
 		return false;
@@ -339,6 +346,8 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
+	device_data.name = string_copy(properties.systemName);
+
 	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
@@ -384,6 +393,13 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	device_data.has_eye_gaze      = sk_info.eye_tracking_present;
+	device_data.has_hand_tracking = xr_has_articulated_hands;
+	device_data.tracking          = device_tracking_none;
+	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
+	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
+
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");

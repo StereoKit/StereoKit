@@ -150,7 +150,7 @@ typedef enum display_blend_ {
 
 /*Severity of a log item.*/
 typedef enum log_ {
-	log_none                      = 0,
+	log_none = 0,
 	/*This is for diagnostic information, where you need to know
 	  details about what -exactly- is going on in the system. This
 	  info doesn't surface by default.*/
@@ -339,6 +339,49 @@ SK_API system_info_t sk_system_info        ();
 SK_API const char   *sk_version_name       ();
 SK_API uint64_t      sk_version_id         ();
 SK_API app_focus_    sk_app_focus          ();
+
+///////////////////////////////////////////
+
+/*What type of user motion is the device capable of tracking? For the normal
+  fully capable XR headset, this should be 6dof (rotation and translation), but
+  more limited headsets may be restricted to 3dof (rotation) and flatscreen
+  computers with the simulator off would be none. */
+typedef enum device_tracking_ {
+	/*No tracking is available! This is likely a flatscreen application, not an
+	  XR applicaion.*/
+	device_tracking_none = 0,
+	/*This tracks rotation only, this may be a limited device without tracking
+	  cameras, or could be a more capable headset in a 3dof mode.*/
+	device_tracking_3dof,
+	/*This is capable of tracking both the position and rotation of the device,
+	  most fully featured XR headsets (such as a HoloLens 2) will have this.*/
+	device_tracking_6dof,
+} device_tracking_;
+
+typedef enum display_type_ {
+	display_type_none,
+	display_type_stereo,
+	display_type_flatscreen,
+} display_type_;
+
+typedef struct fov_info_t {
+	float left;
+	float right;
+	float top;
+	float bottom;
+} fov_info_t;
+
+SK_API display_type_    device_display_get_type  ();
+SK_API display_blend_   device_display_get_blend ();
+SK_API float            device_display_get_refresh_rate();
+SK_API int32_t          device_display_get_width ();
+SK_API int32_t          device_display_get_height();
+SK_API fov_info_t       device_display_get_fov   ();
+SK_API device_tracking_ device_get_tracking      ();
+SK_API const char*      device_get_name          ();
+SK_API const char*      device_get_gpu           ();
+SK_API bool32_t         device_has_eye_gaze      ();
+SK_API bool32_t         device_has_hand_tracking ();
 
 ///////////////////////////////////////////
 

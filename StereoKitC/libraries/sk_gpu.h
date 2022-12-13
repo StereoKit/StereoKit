@@ -542,6 +542,7 @@ typedef struct skg_platform_data_t {
 
 SKG_API void                skg_setup_xlib               (void *dpy, void *vi, void *fbconfig, void *drawable);
 SKG_API int32_t             skg_init                     (const char *app_name, void *adapter_id);
+SKG_API const char*         skg_adapter_name             ();
 SKG_API void                skg_shutdown                 ();
 SKG_API void                skg_callback_log             (void (*callback)(skg_log_ level, const char *text));
 SKG_API void                skg_callback_file_read       (bool (*callback)(const char *filename, void **out_data, size_t *out_size));
@@ -727,6 +728,7 @@ ID3D11InfoQueue         *d3d_info        = nullptr;
 ID3D11RasterizerState   *d3d_rasterstate = nullptr;
 ID3D11DepthStencilState *d3d_depthstate  = nullptr;
 skg_tex_t               *d3d_active_rendertarget = nullptr;
+char                    *d3d_adapter_name = nullptr;
 
 ///////////////////////////////////////////
 
@@ -812,11 +814,19 @@ int32_t skg_init(const char *, void *adapter_id) {
 	if (final_adapter != nullptr) {
 		DXGI_ADAPTER_DESC1 final_adapter_info;
 		final_adapter->GetDesc1(&final_adapter_info);
-		skg_logf(skg_log_info, "Using Direct3D 11: %ls", &final_adapter_info.Description);
+
+		int32_t utf8_size = WideCharToMultiByte(CP_UTF8, 0, final_adapter_info.Description, -1, NULL, 0, NULL, NULL);
+		d3d_adapter_name = (char*)malloc(utf8_size * sizeof(char));
+		WideCharToMultiByte(CP_UTF8, 0, final_adapter_info.Description, -1, d3d_adapter_name, utf8_size, NULL, NULL);
+
+		skg_logf(skg_log_info, "Using Direct3D 11: vendor 0x%04X, device 0x%04X", final_adapter_info.VendorId, final_adapter_info.DeviceId);
 		final_adapter->Release();
 	} else {
-		skg_log(skg_log_info, "Using Direct3D 11: default device");
+		const char default_name[] = "Default Device";
+		d3d_adapter_name = (char*)malloc(sizeof(default_name));
+		memcpy(d3d_adapter_name, default_name, sizeof(default_name));
 	}
+	skg_logf(skg_log_info, "Device: %s", d3d_adapter_name);
 
 	// Hook into debug information
 	ID3D11Debug *d3d_debug = nullptr;
@@ -870,7 +880,14 @@ int32_t skg_init(const char *, void *adapter_id) {
 
 ///////////////////////////////////////////
 
+const char* skg_adapter_name() {
+	return d3d_adapter_name;
+}
+
+///////////////////////////////////////////
+
 void skg_shutdown() {
+	free(d3d_adapter_name);
 	if (d3d_rasterstate) { d3d_rasterstate->Release(); d3d_rasterstate = nullptr; }
 	if (d3d_depthstate ) { d3d_depthstate ->Release(); d3d_depthstate  = nullptr; }
 	if (d3d_info       ) { d3d_info       ->Release(); d3d_info        = nullptr; }
@@ -2563,6 +2580,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_READ_WRITE 0x88BA
 #define GL_TRIANGLES 0x0004
 #define GL_VERSION 0x1F02
+#define GL_RENDERER 0x1F01
 #define GL_CULL_FACE 0x0B44
 #define GL_BACK 0x0405
 #define GL_FRONT 0x0404
@@ -2820,10 +2838,11 @@ static void gl_load_extensions( ) {
 
 ///////////////////////////////////////////
 
-int32_t    gl_active_width        = 0;
-int32_t    gl_active_height       = 0;
-skg_tex_t *gl_active_rendertarget = nullptr;
-uint32_t   gl_current_framebuffer = 0;
+int32_t     gl_active_width        = 0;
+int32_t     gl_active_height       = 0;
+skg_tex_t  *gl_active_rendertarget = nullptr;
+uint32_t    gl_current_framebuffer = 0;
+const char *gl_adapter_name        = nullptr;
 
 ///////////////////////////////////////////
 
@@ -3097,8 +3116,9 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	gl_load_extensions();
 #endif
 
-	skg_log(skg_log_info, "Using OpenGL");
-	skg_log(skg_log_info, (char*)glGetString(GL_VERSION));
+	gl_adapter_name = glGetString(GL_RENDERER);
+	skg_logf(skg_log_info, "Using OpenGL: %s", glGetString(GL_VERSION));
+	skg_logf(skg_log_info, "Device: %s", gl_adapter_name);
 
 #if !defined(NDEBUG) && !defined(_SKG_GL_WEB)
 	skg_log(skg_log_info, "Debug info enabled.");

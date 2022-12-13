@@ -1,6 +1,7 @@
 #include "render.h"
 #include "world.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math_dx.h"
@@ -198,7 +199,7 @@ void render_set_ortho_size(float viewport_height_meters) {
 
 void render_set_ortho_clip(float near_plane, float far_plane) {
 	render_ortho_near_clip = near_plane;
-	render_ortho_far_clip = far_plane;
+	render_ortho_far_clip  = far_plane;
 	render_update_projection();
 }
 
@@ -224,21 +225,40 @@ float render_get_ortho_view_height() {
 ///////////////////////////////////////////
 
 void render_update_projection() {
+	// Both paths need the aspect ratio
+	float aspect = (float)device_display_get_width() / device_display_get_height();
+
 	if (render_projection_type == projection_perspective) {
+		
 		math_fast_to_matrix(
-		    XMMatrixPerspectiveFovRH(render_fov * deg2rad,
-		                             (float)sk_system_info().display_width / sk_system_info().display_height,
-		                             render_clip_planes.x,
-		                             render_clip_planes.y),
-		    &render_default_camera_proj);
+			XMMatrixPerspectiveFovRH(
+				render_fov * deg2rad,
+				aspect,
+				render_clip_planes.x,
+				render_clip_planes.y),
+			&render_default_camera_proj);
+
+		// Update the FoV data
+		backend_xr_type_ type = backend_xr_get_type();
+		if (type == backend_xr_type_none ||
+			type == backend_xr_type_simulator) {
+
+			fov_info_t fov;
+			fov.top    = render_fov * 0.5f;
+			fov.bottom = -fov.top;
+			fov.right  =  fov.top * aspect;
+			fov.left   = -fov.right;
+			device_data.display_fov = fov;
+		}
 	} else {
+
 		math_fast_to_matrix(
-		    XMMatrixOrthographicRH(
-		        ((float)sk_system_info().display_width / (float)sk_system_info().display_height)*render_ortho_viewport_height, 
-				render_ortho_viewport_height, 
-				render_ortho_near_clip, 
+			XMMatrixOrthographicRH(
+				aspect*render_ortho_viewport_height,
+				render_ortho_viewport_height,
+				render_ortho_near_clip,
 				render_ortho_far_clip),
-		    &render_default_camera_proj);
+			&render_default_camera_proj);
 	}
 }
 

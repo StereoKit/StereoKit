@@ -202,6 +202,9 @@
     <ClCompile Include="libraries\unicode.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -465,6 +468,9 @@
     </ClInclude>
     <ClInclude Include="libraries\atomic_util.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
