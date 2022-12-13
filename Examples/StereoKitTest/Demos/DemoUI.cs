@@ -163,24 +163,24 @@ class DemoUI : ITest
 		UI.SameLine();
 		if (UI.Radio("ExactWithScale", uiMoveType == UIMove.ExactWithScale)) uiMoveType = UIMove.ExactWithScale;
 
-        bool IsBitSet(UIMove b, UIMove pos) => ((byte)b & (int)pos) != 0;
-        UI.Text("Or toggle transform components!");
+		bool IsBitSet(UIMove b, UIMove pos) => ((byte)b & (int)pos) != 0;
+		UI.Text("Or toggle transform components!");
 		bool posOnly = IsBitSet(uiMoveType, UIMove.PosOnly);
-        if (UI.Toggle("Position", ref posOnly)) uiMoveType ^= UIMove.PosOnly;
+		if (UI.Toggle("Position", ref posOnly)) uiMoveType ^= UIMove.PosOnly;
 		UI.SameLine();
-        bool rotOnly = IsBitSet(uiMoveType, UIMove.RotOnly);
-        if (UI.Toggle("Rotation", ref rotOnly)) uiMoveType ^= UIMove.RotOnly;
-        UI.SameLine();
-        bool scaleOnly = IsBitSet(uiMoveType, UIMove.ScaleOnly);
-        if (UI.Toggle("Scale", ref scaleOnly)) uiMoveType ^= UIMove.ScaleOnly;
+		bool rotOnly = IsBitSet(uiMoveType, UIMove.RotOnly);
+		if (UI.Toggle("Rotation", ref rotOnly)) uiMoveType ^= UIMove.RotOnly;
+		UI.SameLine();
+		bool scaleOnly = IsBitSet(uiMoveType, UIMove.ScaleOnly);
+		if (UI.Toggle("Scale", ref scaleOnly)) uiMoveType ^= UIMove.ScaleOnly;
 
-        UI.Text("Or choose a unique move type:");
+		UI.Text("Or choose a unique move type:");
 		bool faceUser = uiMoveType == UIMove.FaceUser;
 		if (UI.Toggle("FaceUser", ref faceUser)) uiMoveType = faceUser ? UIMove.FaceUser : UIMove.None;
-        ///
-        /// As with windows, Handles need an End call.
-        /// 
-        UI.HandleEnd();
+		///
+		/// As with windows, Handles need an End call.
+		/// 
+		UI.HandleEnd();
 		/// :End:
 
 		UI.HandleBegin("HelmetScale", ref helmetPose, ref helmetScale, helmet.Bounds, false, uiMoveType);
