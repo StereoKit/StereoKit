@@ -459,25 +459,25 @@ namespace StereoKit
 		/// <summary>The element follows the position and orientation of the 
 		/// user's hand exactly.</summary>
 		Exact = PosOnly | RotOnly,
-        /// <summary>The element follows the position and orientation of the 
-        /// user's hand exactly. If the element is pinched with both hands,
+		/// <summary>The element follows the position and orientation of the 
+		/// user's hand exactly. If the element is pinched with both hands,
 		/// the scale is determined from the distance between the previous
 		/// and current pinch points.</summary>
-        ExactWithScale = PosOnly | RotOnly | ScaleOnly,
-        /// <summary>The element follows the position of the user's hand, but
-        /// orients to face the user's head instead of just using the hand's
-        /// rotation.</summary>
-        FaceUser = 1 << 0,
-        /// <summary>This element follows the hand's position only, completely
-        /// discarding any rotation information.</summary>
-        PosOnly = 1 << 1,
-        /// <summary>This element follows the hand's rotation only, completely
-        /// discarding any position information.</summary>
-        RotOnly = 1 << 2,
-        /// <summary>If the element is pinched with both hands,
+		ExactWithScale = PosOnly | RotOnly | ScaleOnly,
+		/// <summary>The element follows the position of the user's hand, but
+		/// orients to face the user's head instead of just using the hand's
+		/// rotation.</summary>
+		FaceUser = 1 << 3 | PosOnly,
+		/// <summary>This element follows the hand's position only, completely
+		/// discarding any rotation information.</summary>
+		PosOnly = 1 << 0,
+		/// <summary>This element follows the hand's rotation only, completely
+		/// discarding any position information.</summary>
+		RotOnly = 1 << 1,
+		/// <summary>If the element is pinched with both hands,
 		/// the scale is determined from the distance between the previous
 		/// and current pinch points.</summary>
-        ScaleOnly = 1 << 3,
+		ScaleOnly = 1 << 2,
 		/// <summary>Do not allow user input to change the element's pose at
 		/// all! You may also be interested in UI.Push/PopSurface.</summary>
 		None = 0,
