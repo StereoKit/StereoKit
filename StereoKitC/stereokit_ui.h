@@ -7,10 +7,13 @@ namespace sk {
 #endif
 
 typedef enum ui_move_ {
-	ui_move_exact = 0,
-	ui_move_face_user,
-	ui_move_pos_only,
-	ui_move_none,
+	ui_move_none		= 0,
+	ui_move_face_user	= 1 << 0,
+	ui_move_pos			= 1 << 1,
+	ui_move_rot			= 1 << 2,
+	ui_move_scale		= 1 << 3,
+	ui_move_exact		= ui_move_pos | ui_move_rot,
+	ui_move_exact_scale = ui_move_pos | ui_move_rot | ui_move_scale,
 } ui_move_;
 
 typedef enum ui_win_ {
@@ -107,7 +110,7 @@ SK_API void     ui_push_enabled          (bool32_t enabled);
 SK_API void     ui_pop_enabled           ();
 SK_API void     ui_push_preserve_keyboard(bool32_t preserve_keyboard);
 SK_API void     ui_pop_preserve_keyboard ();
-SK_API void     ui_push_surface          (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
+SK_API void     ui_push_surface          (pose_t surface_pose, vec3 surface_scale sk_default({ 1,1,1 }), vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
 SK_API void     ui_pop_surface           ();
 SK_API uint64_t ui_push_id               (const char     *id);
 SK_API uint64_t ui_push_id_16            (const char16_t *id);
@@ -198,7 +201,7 @@ SK_API void     ui_space             (float space);
 
 SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
-SK_API bool32_t ui_handle_begin_sc_16(const char16_t *text, sk_ref(pose_t) movement, sk_ref(float) scale, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
+SK_API bool32_t ui_handle_begin_sc_16(const char16_t *text, sk_ref(pose_t) movement, sk_ref(vec3) scale, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
 SK_API void     ui_handle_end        ();
 SK_API void     ui_window_begin      (const char     *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_begin_16   (const char16_t *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));

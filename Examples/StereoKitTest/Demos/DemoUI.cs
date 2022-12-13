@@ -41,7 +41,7 @@ class DemoUI : ITest
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
 	Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
-	float  clipboardScale = 1;
+	Vec3   clipboardScale = V.XXX(1);
 	bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;

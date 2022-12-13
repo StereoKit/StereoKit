@@ -101,6 +101,8 @@ uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
 uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
+vec3			skui_start_object_scale = {};
+float			skui_start_pinch_dist = 0;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -872,9 +874,9 @@ bool32_t ui_is_interacting(handed_ hand) {
 //////////////   Layout!   ////////////////
 ///////////////////////////////////////////
 
-void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensions) {
+void ui_push_surface(pose_t surface_pose, vec3 surface_scale, vec3 layout_start, vec2 layout_dimensions) {
 	vec3   right = surface_pose.orientation * vec3_right;
-	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation);
+	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation, surface_scale);
 	hierarchy_push(trs);
 
 	skui_layers.add(layer_t{
@@ -2296,8 +2298,7 @@ bool32_t ui_hslider_f64   (const char     *name, double &value, double min, doub
 bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_g<char16_t, double>(name, value, min, max, step, width, confirm_method, notify_on); }
 
 ///////////////////////////////////////////
-
-bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, float* scale = 0) {
+bool32_t _ui_handle_begin(uint64_t id, pose_t& movement, bounds_t handle, bool32_t draw, ui_move_ move_type, sk_ref(vec3) scale = vec3()) {
 	bool result = false;
 	float color = 1;
 
@@ -2305,7 +2306,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
-	ui_push_surface(movement);
+	if (move_type & ui_move_scale)
+		ui_push_surface(movement, scale);
+	else
+		ui_push_surface(movement);
 
 	// If the handle is scale of zero, we don't actually want to draw or interact with it
 	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
@@ -2413,24 +2417,20 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 								start_2h_rot = dest_rot;
 								start_2h_handle_pos = movement.position;
 								start_2h_handle_rot = movement.orientation;
+								// Setup the uniform scaling.
+								skui_start_object_scale = scale;
+								skui_start_pinch_dist = vec3_distance(skui_hand[0].pinch_pt_world, skui_hand[1].pinch_pt_world);
+							} else if (move_type & ui_move_scale) {
+								// Scale based on the distance of pinch points between the current and start frames.
+								float curr_pinch_dist = vec3_distance(skui_hand[0].pinch_pt_world, skui_hand[1].pinch_pt_world);
+								scale = skui_start_object_scale * (curr_pinch_dist / skui_start_pinch_dist);
 							}
-
-							switch (move_type) {
-							case ui_move_exact: {
+							
+							if (move_type & ui_move_rot) {
 								dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
 								dest_rot = quat_difference(start_2h_rot, dest_rot);
-							} break;
-							case ui_move_face_user: {
-								dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
-								dest_rot = quat_difference(start_2h_rot, dest_rot);
-							} break;
-							case ui_move_pos_only: {
+							} else {
 								dest_rot = quat_identity;
-							} break;
-							case ui_move_none: {
-								dest_rot = quat_identity;
-							} break;
-							default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 							}
 
 							hierarchy_set_enabled(false);
@@ -2449,14 +2449,6 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
 						}
 
-						// Scale based on the distance of pinch points between the current and previous frames.
-						if (scale != nullptr)
-						{
-							float prev_pinch_dist = vec3_distance(skui_hand[0].pinch_pt_prev, skui_hand[1].pinch_pt_prev);
-							float curr_pinch_dist = vec3_distance(skui_hand[0].pinch_pt, skui_hand[1].pinch_pt);
-							*scale *= curr_pinch_dist / prev_pinch_dist;
-						}
-
 						// If one of the hands just let go, reset their starting
 						// locations so the handle doesn't 'pop' when switching
 						// back to 1-handed interaction.
@@ -2467,23 +2459,16 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							start_palm_rot  [i] = matrix_transform_quat( to_local, hand->palm.orientation);
 						}
 					} else {
-						switch (move_type) {
-						case ui_move_exact: {
+
+						if (move_type & ui_move_rot) {
 							dest_rot = matrix_transform_quat(to_local, hand->palm.orientation);
 							dest_rot = quat_difference(start_palm_rot[i], dest_rot);
-						} break;
-						case ui_move_face_user: {
+						} else if (move_type == ui_move_face_user) {
 							vec3 look_from = vec3{ movement.position.x, finger_pos[i].y, movement.position.z };
 							dest_rot = quat_lookat_up(look_from, matrix_transform_pt(to_local, input_head()->position), matrix_transform_dir(to_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
-						} break;
-						case ui_move_pos_only: {
+						} else {
 							dest_rot = quat_identity;
-						} break;
-						case ui_move_none: {
-							dest_rot = quat_identity;
-						} break;
-						default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 						}
 
 						vec3 curr_pos = finger_pos[i];
@@ -2499,7 +2484,10 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
 					}
 					ui_pop_surface();
-					ui_push_surface(movement);
+					if (move_type & ui_move_scale)
+						ui_push_surface(movement, scale);
+					else
+						ui_push_surface(movement);
 				}
 			}
 		}
@@ -2524,8 +2512,8 @@ bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bo
 bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
 	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
 }
-bool32_t ui_handle_begin_sc_16(const char16_t* text, pose_t& movement, float& scale, bounds_t handle, bool32_t draw, ui_move_ move_type) {
-	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, &scale);
+bool32_t ui_handle_begin_sc_16(const char16_t* text, pose_t& movement, vec3& scale, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, scale);
 }
 
 ///////////////////////////////////////////
