@@ -71,6 +71,7 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
+display_blend_ xr_valid_blends   = display_blend_none;
 bool           xr_system_created = false;
 bool           xr_system_success = false;
 
@@ -321,6 +322,10 @@ bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
+	// A number of other items also use the xr_time, so lets get this ready
+	// right away.
+	xr_time = openxr_acquire_time();
+
 	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
 	// yet, so it throws errors into the logs.
 	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
@@ -527,7 +532,6 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time        = openxr_acquire_time();
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
@@ -699,6 +703,12 @@ void openxr_poll_events() {
 				}
 
 				xrBeginSession(xr_session, &begin_info);
+
+				// FoV normally updates right before drawing, but we need it to
+				// be available as soon as the session begins, for apps that
+				// are listening to sk_app_focus changing to determine if FoV
+				// is ready.
+				openxr_views_update_fov();
 
 				xr_running = true;
 				log_diag("OpenXR session begin.");

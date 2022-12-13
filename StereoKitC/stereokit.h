@@ -121,6 +121,7 @@ typedef enum display_ {
 	  application.*/
 	display_any_transparent       = display_additive | display_blend,
 } display_;
+SK_MakeFlag(display_);
 
 /*This describes the way the display's content blends with
   whatever is behind it. VR headsets are normally Opaque, but some VR
@@ -147,6 +148,7 @@ typedef enum display_blend_ {
 	  application.*/
 	display_blend_any_transparent = display_blend_additive | display_blend_blend,
 } display_blend_;
+SK_MakeFlag(display_blend_);
 
 /*Severity of a log item.*/
 typedef enum log_ {
@@ -371,17 +373,19 @@ typedef struct fov_info_t {
 	float bottom;
 } fov_info_t;
 
-SK_API display_type_    device_display_get_type  ();
-SK_API display_blend_   device_display_get_blend ();
+SK_API display_type_    device_display_get_type   ();
+SK_API display_blend_   device_display_get_blend  ();
+SK_API bool32_t         device_display_set_blend  (display_blend_ blend);
+SK_API bool32_t         device_display_valid_blend(display_blend_ blend);
 SK_API float            device_display_get_refresh_rate();
-SK_API int32_t          device_display_get_width ();
-SK_API int32_t          device_display_get_height();
-SK_API fov_info_t       device_display_get_fov   ();
-SK_API device_tracking_ device_get_tracking      ();
-SK_API const char*      device_get_name          ();
-SK_API const char*      device_get_gpu           ();
-SK_API bool32_t         device_has_eye_gaze      ();
-SK_API bool32_t         device_has_hand_tracking ();
+SK_API int32_t          device_display_get_width  ();
+SK_API int32_t          device_display_get_height ();
+SK_API fov_info_t       device_display_get_fov    ();
+SK_API device_tracking_ device_get_tracking       ();
+SK_API const char*      device_get_name           ();
+SK_API const char*      device_get_gpu            ();
+SK_API bool32_t         device_has_eye_gaze       ();
+SK_API bool32_t         device_has_hand_tracking  ();
 
 ///////////////////////////////////////////
 
