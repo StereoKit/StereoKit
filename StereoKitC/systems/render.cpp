@@ -736,8 +736,14 @@ void render_clear() {
 bool render_init() {
 	render_shader_globals  = material_buffer_create(1, sizeof(render_global_buffer));
 	render_shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	skg_buffer_name(&render_shader_blit, "render/blit_buffer");
+#endif
 	
 	render_instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	skg_buffer_name(&render_instance_buffer, "render/instance_buffer");
+#endif
 	render_instance_list.resize(render_instance_max);
 
 	// Setup a default camera

@@ -17,6 +17,7 @@ _material_buffer_t material_buffers[14] = {};
 ///////////////////////////////////////////
 
 void material_copy_pipeline(material_t dest, const material_t src);
+void material_update_label (material_t material);
 
 ///////////////////////////////////////////
 
@@ -33,12 +34,24 @@ material_t material_find(const char *id) {
 
 void material_set_id(material_t material, const char *id) {
 	assets_set_id(&material->header, id);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
 
 const char* material_get_id(const material_t material) {
 	return material->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void material_update_label(material_t material) {
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	if (material->header.id_text != nullptr) {
+		skg_pipeline_name(&material->pipeline, material->header.id_text);
+		skg_buffer_name  (&material->args.buffer_gpu, material->header.id_text);
+	}
+#endif
 }
 
 ///////////////////////////////////////////
@@ -282,6 +295,7 @@ shader_t material_get_shader(material_t material) {
 void material_set_transparency(material_t material, transparency_ mode) {
 	material->alpha_mode = mode;
 	skg_pipeline_set_transparency(&material->pipeline, (skg_transparency_)mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -289,6 +303,7 @@ void material_set_transparency(material_t material, transparency_ mode) {
 void material_set_cull(material_t material, cull_ mode) {
 	material->cull = mode;
 	skg_pipeline_set_cull(&material->pipeline, (skg_cull_)mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -296,6 +311,7 @@ void material_set_cull(material_t material, cull_ mode) {
 void material_set_wireframe(material_t material, bool32_t wireframe) {
 	material->wireframe = wireframe;
 	skg_pipeline_set_wireframe(&material->pipeline, wireframe);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -303,6 +319,7 @@ void material_set_wireframe(material_t material, bool32_t wireframe) {
 void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
 	material->depth_test = depth_test_mode;
 	skg_pipeline_set_depth_test(&material->pipeline, (skg_depth_test_)depth_test_mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -310,6 +327,7 @@ void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
 void material_set_depth_write(material_t material, bool32_t write_enabled) {
 	material->depth_write = write_enabled;
 	skg_pipeline_set_depth_write(&material->pipeline, write_enabled);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -827,6 +845,11 @@ material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
 	}
 	material_buffers[register_slot].buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
 	material_buffers[register_slot].size   = size;
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	char name[64];
+	snprintf(name, sizeof(name), "render/material_buffer/register_%d", register_slot);
+	skg_buffer_name(&material_buffers[register_slot].buffer, name);
+#endif
 	return &material_buffers[register_slot];
 }
 
