@@ -17,7 +17,7 @@ class DemoMaterialChain : ITest
 
 	void CreateShellMaterial()
 	{
-		Material shellMaterial = new Material(Shader.FromFile("inflatable.hlsl"));
+		Material shellMaterial = new Material("inflatable.hlsl");
 		shellMaterial.FaceCull = Cull.Front;
 		shellMaterial[MatParamName.ColorTint] = Color.HSV(0.1f, 0.7f, 1);
 

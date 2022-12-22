@@ -190,17 +190,47 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.material_get_id(_inst));
 			set => NativeAPI.material_set_id(_inst, value); }
 
-		/// <summary>Creates a material from a shader, and uses the shader's 
-		/// default settings. Uses an auto-generated id.</summary>
-		/// <param name="shader">Any valid shader.</param>
+		/// <summary>Creates a material from a shader, and uses the shader's
+		/// default settings. If the shader is null, a warning will be added to
+		/// the log, and this Material will default to using an Unlit shader.
+		/// Uses an auto-generated id.</summary>
+		/// <param name="shader">Any valid shader, null is okay, but will log a
+		/// warning and default to Unlit.</param>
 		public Material(Shader shader)
 		{
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
 		}
-		/// <summary>Creates a material from a shader, and uses the shader's 
-		/// default settings.</summary>
+		/// <summary>Loads a Shader asset and creates a Material using it. If
+		/// the shader fails to load, a warning will be added to the log, and
+		/// this Material will default to using an Unlit shader. Uses an
+		/// auto-generated id.</summary>
+		/// <param name="shaderFilename">The filename of a Shader asset. If the
+		/// file is not present, the Shader will default to Unlit.</param>
+		public Material(string shaderFilename)
+		{
+			Shader shader = Shader.FromFile(shaderFilename);
+			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
+		}
+		/// <summary>Loads a Shader asset and creates a Material using it. If
+		/// the shader fails to load, a warning will be added to the log, and
+		/// this Material will default to using an Unlit shader. Uses an
+		/// auto-generated id.</summary>
 		/// <param name="id">Set the material's id to this.</param>
-		/// <param name="shader">Any valid shader.</param>
+		/// <param name="shaderFilename">The filename of a Shader asset. If the
+		/// file is not present, the Shader will default to Unlit.</param>
+		public Material(string id, string shaderFilename)
+		{
+			Shader shader = Shader.FromFile(shaderFilename);
+			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
+			NativeAPI.material_set_id(_inst, id);
+		}
+		/// <summary>Creates a material from a shader, and uses the shader's
+		/// default settings. If the shader is null, a warning will be added to
+		/// the log, and this Material will default to using an Unlit shader.
+		/// </summary>
+		/// <param name="id">Set the material's id to this.</param>
+		/// <param name="shader">Any valid shader, null is okay, but will log a
+		/// warning and default to Unlit.</param>
 		public Material(string id, Shader shader)
 		{
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
