@@ -182,7 +182,7 @@ namespace StereoKit
 		/// using, or overrides the Shader this material uses.</summary>
 		public Shader Shader { 
 			get => new Shader(NativeAPI.material_get_shader(_inst));
-			set => NativeAPI.material_set_shader(_inst, value._inst); }
+			set => NativeAPI.material_set_shader(_inst, value?._inst ?? IntPtr.Zero); }
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managine your assets, or finding
 		/// them later on!</summary>

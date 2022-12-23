@@ -239,15 +239,18 @@ void material_destroy(material_t material) {
 ///////////////////////////////////////////
 
 void material_set_shader(material_t material, shader_t shader) {
+	// We can't really go without a shader, so unlit is our default fallback.
+	if (shader == nullptr)
+		shader = sk_default_shader_unlit;
+
 	if (shader == material->shader)
 		return;
 
 	// Update references
-	if (shader != nullptr)
-		shader_addref(shader);
+	shader_addref(shader);
 
 	// Copy over any relevant values that are attached to the old shader
-	if (material->shader != nullptr && shader != nullptr) {
+	if (material->shader != nullptr) {
 		shader_t          old_shader   = material->shader;
 		void             *old_buffer   = material->args.buffer;
 		shaderargs_tex_t *old_textures = material->args.textures;
