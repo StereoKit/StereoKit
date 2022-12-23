@@ -78,13 +78,14 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		: nullptr;
 	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
 
+	material->args.buffer       = buff_size > 0 ? sk_malloc(buff_size) : nullptr;
+	material->args.buffer_size  = buff_size;
+	material->args.buffer_bind  = buff_info ? buff_info->bind : skg_bind_t{};
+	material->args.buffer_dirty = false;
+	if (buff_info && buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
+	else                                             memset(material->args.buffer, 0, buff_size);
 	if (buff_size != 0) {
-		material->args.buffer       = sk_malloc(buff_size);
-		material->args.buffer_size  = buff_size;
-		material->args.buffer_bind  = buff_info->bind;
 		material->args.buffer_dirty = true;
-		if (buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
-		else                                memset(material->args.buffer, 0, buff_size);
 
 		// Construct a material parameters buffer on the GPU, and do it
 		// threadsafe
@@ -99,24 +100,23 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 			return (bool32_t)true;
 		}, &job_data);
 	}
-	if (meta->resource_count > 0) {
-		material->args.texture_count = meta->resource_count;
-		material->args.textures      = sk_malloc_t(shaderargs_tex_t, meta->resource_count);
-		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
-		for (uint32_t i = 0; i < meta->resource_count; i++) {
-			shaderargs_tex_t *tex_arg     = &material->args.textures[i];
-			tex_t             default_tex = nullptr;
 
-			if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
-			else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
-			else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
-			else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
-			else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
-			else                                                   default_tex = tex_find(default_id_tex);
-			tex_arg->tex       = default_tex;
-			tex_arg->meta_hash = 0;
-			tex_arg->bind      = meta->resources[i].bind;
-		}
+	material->args.texture_count = meta->resource_count;
+	material->args.textures      = meta->resource_count > 0 ? sk_malloc_t(shaderargs_tex_t, meta->resource_count) : nullptr;
+	memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
+	for (uint32_t i = 0; i < meta->resource_count; i++) {
+		shaderargs_tex_t *tex_arg     = &material->args.textures[i];
+		tex_t             default_tex = nullptr;
+
+		if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
+		else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
+		else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
+		else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
+		else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
+		else                                                   default_tex = tex_find(default_id_tex);
+		tex_arg->tex       = default_tex;
+		tex_arg->meta_hash = 0;
+		tex_arg->bind      = meta->resources[i].bind;
 	}
 }
 
