@@ -4284,10 +4284,11 @@ void skg_tex_name(skg_tex_t *tex, const char* name) {
 
 	char postfix_name[256];
 	if (tex->_framebuffer != 0) {
-		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		snprintf(postfix_name, sizeof(postfix_name), "%s_framebuffer", name);
-		printf("Attempting to label framebuffer %u as %s\n", tex->_framebuffer, postfix_name);
-		glObjectLabel(GL_FRAMEBUFFER, tex->_framebuffer, strlen(postfix_name), postfix_name);
+		// If the framebuffer hasn't been created, labeling it can error out,
+		// binding it can force creation and fix that!
+		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
+		glObjectLabel    (GL_FRAMEBUFFER, tex->_framebuffer, strlen(postfix_name), postfix_name);
 	}
 }
 
