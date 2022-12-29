@@ -2592,7 +2592,7 @@ void ui_window_end() {
 		ui_nextline();
 	
 	vec3 start = layer.offset_initial + vec3{0,0,skui_settings.depth};
-	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.padding),  layer.offset_initial.z};
+	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.gutter),  layer.offset_initial.z};
 	vec3 size  = start - end;
 	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
 	layer.window->size.x = size.x;
