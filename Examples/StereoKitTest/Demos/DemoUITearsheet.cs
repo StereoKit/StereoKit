@@ -41,6 +41,8 @@ class DemoUITearsheet : ITest
 		UI.SameLine();
 		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.CenterNoText));
 
+		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.None));
+
 		UI.Label("UI.ButtonRound");
 		UI.SameLine();
 		Unique(() => UI.ButtonRound("UI.ButtonRound", sprSearch));

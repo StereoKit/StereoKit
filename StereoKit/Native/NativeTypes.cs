@@ -625,6 +625,8 @@ namespace StereoKit
 	/// the text filling the remaining space.</summary>
 	public enum UIBtnLayout
 	{
+		/// <summary>Hide the image, and only show text.</summary>
+		None,
 		/// <summary>Image to the left, text to the right. Image will take up
 		/// no more than half the width.</summary>
 		Left,
