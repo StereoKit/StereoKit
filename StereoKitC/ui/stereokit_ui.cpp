@@ -108,6 +108,7 @@ sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
 sound_t         skui_snd_grab;
 sound_t         skui_snd_ungrab;
+sound_t         skui_snd_tick;
 
 ui_settings_t skui_settings = {
 	10 * mm2m, // padding
@@ -666,6 +667,7 @@ bool ui_init() {
 	mesh_set_id(skui_win_bot, "sk/ui/box_mesh_bot");
 	mesh_set_id(skui_win_bot, "sk/ui/cylinder_mesh");
 
+	// Create default sprites for the toggles
 	tex_t toggle_tex_on = ui_create_sdf_tex(64, 64, [](float x, float y) {
 		float dist = vec2_magnitude({ x, y });
 		return fminf(dist - 20, fmaxf(-(dist - 27), dist - 31)) / 32.0f;
@@ -684,6 +686,15 @@ bool ui_init() {
 	sprite_set_id(skui_toggle_off, "sk/ui/toggle_off_spr");
 	tex_release(toggle_tex_on);
 	tex_release(toggle_tex_off);
+
+	// Create a sound for the HSlider
+	skui_snd_tick = sound_generate([](float t){
+		float x     = t / 0.03f;
+		float band1 = sinf(t*8000) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*6550) * (x * powf(1 - x, 12)) / 0.03f;
+
+		return (band1*0.6f + band2*0.4f) * 0.05f;
+	}, .03f);
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
@@ -821,6 +832,7 @@ void ui_shutdown() {
 	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
 	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
 	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
+	sound_release(skui_snd_tick);       skui_snd_tick       = nullptr;
 	mesh_release(skui_box);      skui_box      = nullptr;
 	mesh_release(skui_cylinder); skui_cylinder = nullptr;
 	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
@@ -2169,9 +2181,32 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
 		}
-		result = value != new_val;
+		result  = value != new_val;
+		percent = (float)((new_val - min) / (max - min));
+
+		// Play tick sound as the value updates
+		if (result) {
+			
+			if (step != 0) {
+				// Play on every change if there's a user specified step value
+				sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+			} else {
+				// If no user specified step, then we'll do a set number of
+				// clicks across the whole bar.
+				const int32_t click_steps = 10;
+
+				float   old_percent  = (float)((value - min) / (max - min));
+				int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
+				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
+
+				if (old_quantize != new_quantize) {
+					sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+				}
+			}
+		}
+
+		// Do this down here so we can calculate old_percent above
 		value = new_val;
-		percent = (float)((value - min) / (max - min));
 	}
 
 	if (button_state & button_state_just_active)
