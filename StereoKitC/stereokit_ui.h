@@ -91,6 +91,7 @@ SK_API bool32_t ui_far_interact_enabled();
 SK_API ui_move_ ui_system_get_move_type();
 SK_API void     ui_system_set_move_type(ui_move_ move_type);
 SK_API void     ui_settings            (ui_settings_t settings);
+SK_API ui_settings_t ui_get_settings   ();
 SK_API float    ui_get_padding         ();
 SK_API float    ui_get_gutter          ();
 SK_API void     ui_set_color           (color128      color);
@@ -102,6 +103,7 @@ SK_API pose_t   ui_popup_pose          (vec3 shift);
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();
+SK_API text_style_t ui_get_text_style    ();
 SK_API void     ui_push_tint             (color128 tint_gamma);
 SK_API void     ui_pop_tint              ();
 SK_API void     ui_push_enabled          (bool32_t enabled);

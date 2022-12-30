@@ -491,6 +491,12 @@ void ui_settings(ui_settings_t settings) {
 
 ///////////////////////////////////////////
 
+ui_settings_t ui_get_settings() {
+	return skui_settings;
+}
+
+///////////////////////////////////////////
+
 float ui_get_padding() {
 	return skui_settings.padding;
 }
@@ -598,6 +604,12 @@ void ui_pop_text_style() {
 	}
 	skui_font_stack.pop();
 	skui_fontsize = text_style_get_char_height(skui_font_stack.last());
+}
+
+///////////////////////////////////////////
+
+text_style_t ui_get_text_style() {
+	return skui_font_stack.last();
 }
 
 ///////////////////////////////////////////

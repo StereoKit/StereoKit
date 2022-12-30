@@ -594,6 +594,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove ui_system_get_move_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_system_set_move_type(UIMove move_type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_settings            (UISettings settings);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings ui_get_settings    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_color           (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color     (UIColor color_type, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color     (UIColor color_type);
@@ -602,6 +603,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle ui_get_text_style   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_tint             (Color tint_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_tint              ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          (int enabled);
