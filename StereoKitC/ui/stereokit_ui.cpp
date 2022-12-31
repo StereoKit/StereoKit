@@ -1557,7 +1557,7 @@ void ui_text_g(const C *text, text_align_ text_align) {
 	vec3  offset   = skui_layers.last().offset;
 	vec2  size     = { ui_layout_remaining().x, 0 };
 
-	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
+	vec3 at = offset - vec3{ 0, 0, skui_settings.depth/2 };
 	size.y = ui_text_in(text, text_align_top_left, text_align, text_fit_wrap, at, size);
 
 	ui_layout_reserve(size);
