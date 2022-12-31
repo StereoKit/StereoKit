@@ -1035,8 +1035,10 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 	skui_layouts.last().window = &window;
 	window.layout_start = start;
 	window.layout_size  = dimensions;
-	window.prev_size    = window.curr_size;
-	window.curr_size    = {};
+	
+	window.curr_size = {};
+	if (window.layout_size.x != 0) window.curr_size.x = dimensions.x;
+	if (window.layout_size.y != 0) window.curr_size.y = dimensions.y;
 }
 
 ///////////////////////////////////////////
@@ -1195,14 +1197,20 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size) {
 
 void ui_layout_pop() {
 	ui_layout_t* layout = &skui_layouts.last();
+
+	// Move to next line if we're still on a previous line
+	if (layout->offset.x != layout->offset_initial.x - skui_settings.padding)
+		ui_nextline();
+
 	if (layout->window) {
 		vec3 start = layout->window->layout_start;// layout->offset_initial + vec3{0,0,skui_settings.depth};
 		vec3 end   = { layout->max_x, layout->offset.y - (layout->line_height-skui_settings.gutter),  layout->offset_initial.z};
 		vec3 size  = start - end;
 		size = { fmaxf(size.x+skui_settings.padding, layout->size.x), fmaxf(size.y+skui_settings.padding, layout->size.y), size.z };
-		layout->window->curr_size = {
-			fmaxf(size.x, layout->window->curr_size.x),
-			fmaxf(size.y, layout->window->curr_size.y)};
+		if (layout->window->layout_size.x == 0)
+			layout->window->curr_size.x = fmaxf(size.x, layout->window->curr_size.x);
+		if (layout->window->layout_size.y == 0)
+			layout->window->curr_size.y = fmaxf(size.y, layout->window->curr_size.y);
 	}
 
 	skui_layouts.pop();
@@ -2717,18 +2725,9 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 
 void ui_window_end() {
 	ui_layout_t *layout = &skui_layouts.last();
-
-	// Move to next line if we're still on a previous line
-	if (layout->offset.x != layout->offset_initial.x - skui_settings.padding)
-		ui_nextline();
-	
 	ui_layout_pop();
-	/*vec3 start = layout->offset_initial + vec3{0,0,skui_settings.depth};
-	vec3 end   = { layout->max_x, layout->offset.y - (layout->line_height-skui_settings.gutter),  layout->offset_initial.z};
-	vec3 size  = start - end;
-	size = { fmaxf(size.x+skui_settings.padding, layout->size.x), fmaxf(size.y+skui_settings.padding, layout->size.y), size.z };
-	layout->window->size.x = size.x;
-	layout->window->size.y = size.y;*/
+	layout->window->prev_size = layout->window->curr_size;
+
 	vec3 start = layout->window->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { layout->window->curr_size.x, layout->window->curr_size.y, skui_settings.depth };
 
