@@ -44,6 +44,8 @@ typedef enum ui_vis_ {
 	ui_vis_window_head_only,
 	ui_vis_separator,
 	ui_vis_slider_line,
+	ui_vis_slider_line_active,
+	ui_vis_slider_line_inactive,
 	ui_vis_slider_push,
 	ui_vis_slider_pinch,
 	ui_vis_button_round,
@@ -79,6 +81,7 @@ typedef struct ui_settings_t {
 	float padding;
 	float gutter;
 	float depth;
+	float rounding;
 	float backplate_depth;
 	float backplate_border;
 } ui_settings_t;

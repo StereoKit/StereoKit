@@ -79,10 +79,14 @@ array_t<uint64_t>   *skui_preserve_keyboard_ids_read;
 array_t<uint64_t>   *skui_preserve_keyboard_ids_write;
 
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
-mesh_t          skui_win_top      = nullptr;
-mesh_t          skui_win_bot      = nullptr;
+mesh_t          skui_box_top      = nullptr;
+mesh_t          skui_box_bot      = nullptr;
 mesh_t          skui_box          = nullptr;
-vec3            skui_box_min      = {};
+vec2            skui_box_min      = {};
+mesh_t          skui_small_left   = nullptr;
+mesh_t          skui_small_right  = nullptr;
+mesh_t          skui_small        = nullptr;
+vec2            skui_small_min    = {};
 mesh_t          skui_box_dbg      = nullptr;
 vec3            skui_box_dbg_min  = {};
 mesh_t          skui_cylinder;
@@ -110,13 +114,7 @@ sound_t         skui_snd_grab;
 sound_t         skui_snd_ungrab;
 sound_t         skui_snd_tick;
 
-ui_settings_t skui_settings = {
-	10 * mm2m, // padding
-	10 * mm2m, // gutter
-	10 * mm2m, // depth
-	.4f,       // backplate_depth
-	1  * mm2m, // backplate_border
-};
+ui_settings_t skui_settings = {};
 float skui_fontsize = 10*mm2m;
 
 vec3  skui_prev_offset;
@@ -321,9 +319,9 @@ void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float 
 		float x = cosf(ang);
 		float y = sinf(ang);
 		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0.001f*radius, 0.5f};
+		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0, 0.5f};
 		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0.001f*radius,-0.5f};
+		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0,-0.5f};
 
 		// strip first
 		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
@@ -479,14 +477,37 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.backplate_border == 0) settings.backplate_border = 0.5f * mm2m;
 	if (settings.backplate_depth  == 0) settings.backplate_depth  = 0.4f;
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
-	if (settings.gutter           == 0) settings.gutter  = 20 * mm2m;
+	if (settings.gutter           == 0) settings.gutter  = 5  * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
-	skui_settings = settings; 
+	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
-	skui_box_min = { settings.padding*0.75f, settings.padding*0.75f, 0 };
-	ui_default_mesh     (&skui_box,     true, settings.padding*0.75f, 1.25f*mm2m, 3);
-	ui_default_mesh_half(&skui_win_top, true, settings.padding,       1.25f*mm2m, 3, 0);
-	ui_default_mesh_half(&skui_win_bot, true, settings.padding,       1.25f*mm2m, 3, 180 * deg2rad);
+	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
+	skui_settings = settings;
+
+	if (rebuild_meshes) {
+		int32_t slices  = 3;//  settings.rounding > 20 * mm2m ? 4 : 3;
+		bool    set_ids = skui_box == nullptr;
+		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
+		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
+		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2,       1.25f*mm2m, slices, 180 * deg2rad);
+
+		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
+		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
+		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
+		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
+
+		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
+		skui_small_min = vec2{ small, small } / 2;
+
+		if (set_ids) {
+			mesh_set_id(skui_box,         "sk/ui/box_mesh");
+			mesh_set_id(skui_box_top,     "sk/ui/box_mesh_top");
+			mesh_set_id(skui_box_bot,     "sk/ui/box_mesh_bot");
+			mesh_set_id(skui_small,       "sk/ui/small_mesh");
+			mesh_set_id(skui_small_left,  "sk/ui/small_mesh_left");
+			mesh_set_id(skui_small_right, "sk/ui/small_mesh_right");
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -668,16 +689,13 @@ void ui_pop_preserve_keyboard(){
 
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
+	// TODO: v0.4, this sets up default values when zeroed out, with a
+	// ui_get_settings, this isn't really necessary anymore!
+	ui_settings_t settings = {};
+	ui_settings(settings);
 
-	skui_box_min = { skui_settings.padding*0.75f, skui_settings.padding*0.75f, 0 };
-	ui_default_mesh     (&skui_box,      true,  skui_settings.padding*0.75f, 1.25f*mm2m, 5);
-	ui_default_mesh_half(&skui_win_top,  true,  skui_settings.padding,       1.25f*mm2m, 5, 0);
-	ui_default_mesh_half(&skui_win_bot,  true,  skui_settings.padding,       1.25f*mm2m, 5, 180 * deg2rad);
-	ui_default_mesh     (&skui_cylinder, false, 1,                           4*cm2m, 5);
-	mesh_set_id(skui_box,     "sk/ui/box_mesh");
-	mesh_set_id(skui_win_top, "sk/ui/box_mesh_top");
-	mesh_set_id(skui_win_bot, "sk/ui/box_mesh_bot");
-	mesh_set_id(skui_win_bot, "sk/ui/cylinder_mesh");
+	ui_default_mesh(&skui_cylinder, false, 1, 4 * cm2m, 5);
+	mesh_set_id(skui_box_bot, "sk/ui/cylinder_mesh");
 
 	// Create default sprites for the toggles
 	tex_t toggle_tex_on = ui_create_sdf_tex(64, 64, [](float x, float y) {
@@ -707,6 +725,7 @@ bool ui_init() {
 
 		return (band1*0.6f + band2*0.4f) * 0.05f;
 	}, .03f);
+	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
@@ -726,12 +745,18 @@ bool ui_init() {
 	skui_mat = material_copy_id(default_id_material_ui);
 	material_set_bool(skui_mat, "ui_tint", true);
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
-	ui_set_element_visual(ui_vis_default,      skui_box,      skui_mat_quad, { skui_settings.padding * 0.75f, skui_settings.padding * 0.75f });
-	ui_set_element_visual(ui_vis_window_head,  skui_win_top,  nullptr);
-	ui_set_element_visual(ui_vis_window_body,  skui_win_bot,  nullptr);
-	ui_set_element_visual(ui_vis_separator,    skui_box_dbg,  skui_mat);
-	ui_set_element_visual(ui_vis_carat,        skui_box_dbg,  skui_mat);
-	ui_set_element_visual(ui_vis_button_round, skui_cylinder, skui_mat);
+	//material_set_wireframe(skui_mat_quad, true);
+	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
+	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
+	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
+	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
+	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
+	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat);
+	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
 
 	skui_preserve_keyboard_ids_read  = &skui_preserve_keyboard_ids[0];
 	skui_preserve_keyboard_ids_write = &skui_preserve_keyboard_ids[1];
@@ -845,11 +870,14 @@ void ui_shutdown() {
 	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
 	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
 	sound_release(skui_snd_tick);       skui_snd_tick       = nullptr;
-	mesh_release(skui_box);      skui_box      = nullptr;
-	mesh_release(skui_cylinder); skui_cylinder = nullptr;
-	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
-	mesh_release(skui_win_top);  skui_win_top  = nullptr;
-	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	mesh_release(skui_box);         skui_box         = nullptr;
+	mesh_release(skui_box_top);     skui_box_top     = nullptr;
+	mesh_release(skui_box_bot);     skui_box_bot     = nullptr;
+	mesh_release(skui_small);       skui_small       = nullptr;
+	mesh_release(skui_small_left);  skui_small_left  = nullptr;
+	mesh_release(skui_small_right); skui_small_right = nullptr;
+	mesh_release(skui_cylinder);    skui_cylinder    = nullptr;
+	mesh_release(skui_box_dbg);     skui_box_dbg     = nullptr;
 	material_release(skui_mat);      skui_mat      = nullptr;
 	material_release(skui_mat_quad); skui_mat_quad = nullptr;
 	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
@@ -2067,7 +2095,7 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	// If the left or right side of the bar is too small, then we'll just draw
 	// a single solid bar.
 	float bar_length = math_saturate(percent) * size.x;
-	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line);
+	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
 			vec3{ start_pos.x, bar_y,      start_pos.z },
@@ -2083,11 +2111,11 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	}
 
 	// Slide line
-	ui_draw_el(ui_vis_slider_line,
+	ui_draw_el(ui_vis_slider_line_active,
 		vec3{ start_pos.x, bar_y,      start_pos.z },
 		vec3{ bar_length,  bar_height, bar_depth },
 		ui_color_primary, focus);
-	ui_draw_el(ui_vis_slider_line,
+	ui_draw_el(ui_vis_slider_line_inactive,
 		vec3{ start_pos.x - bar_length, bar_y,      start_pos.z },
 		vec3{ size.x      - bar_length, bar_height, bar_depth },
 		ui_color_common, focus);
