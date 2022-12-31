@@ -93,6 +93,10 @@ namespace StereoKit
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
 
+		public static void LayoutPush   (Vec3 start, Vec2 offset) => NativeAPI.ui_layout_push(start, offset);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters);
+		public static void LayoutPop    () => NativeAPI.ui_layout_pop();
+
 		/// <summary>Tells if the hand was involved in the focus or active
 		/// state of the most recent UI element using an id.</summary>
 		/// <param name="hand">Which hand we're checking.</param>

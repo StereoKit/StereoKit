@@ -77,6 +77,13 @@ typedef enum ui_btn_layout_ {
 	ui_btn_layout_center_no_text,
 } ui_btn_layout_;
 
+typedef enum ui_cut_ {
+	ui_cut_left,
+	ui_cut_right,
+	ui_cut_top,
+	ui_cut_bottom,
+} ui_cut_;
+
 typedef struct ui_settings_t {
 	float padding;
 	float gutter;
@@ -127,6 +134,9 @@ SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
+SK_API void     ui_layout_push     (vec3 start, vec2 dimensions);
+SK_API void     ui_layout_push_cut (ui_cut_ cut_to, float size);
+SK_API void     ui_layout_pop      ();
 
 SK_API button_state_ ui_last_element_hand_used(handed_ hand);
 SK_API button_state_ ui_last_element_active   ();
