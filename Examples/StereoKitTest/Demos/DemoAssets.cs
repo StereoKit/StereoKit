@@ -36,25 +36,27 @@ class DemoAssets : ITest
 		UI.Label("Filter:");
 
 		// A radio button selection for what to filter by
-		if (UI.Radio("All",      filterType == typeof(IAsset  ))) UpdateFilter(typeof(IAsset));
+		 
+		Vec2 size = new Vec2((0.3f - (UI.Settings.padding*2+UI.Settings.gutter*4))/4.0f, 0);
+		if (UI.Radio("All",      filterType == typeof(IAsset  ), size)) UpdateFilter(typeof(IAsset));
 		UI.SameLine();
-		if (UI.Radio("Font",     filterType == typeof(Font    ))) UpdateFilter(typeof(Font));
+		if (UI.Radio("Font",     filterType == typeof(Font    ), size)) UpdateFilter(typeof(Font));
 		UI.SameLine();
-		if (UI.Radio("Material", filterType == typeof(Material))) UpdateFilter(typeof(Material));
+		if (UI.Radio("Material", filterType == typeof(Material), size)) UpdateFilter(typeof(Material));
 		UI.SameLine();
-		if (UI.Radio("Mesh",     filterType == typeof(Mesh    ))) UpdateFilter(typeof(Mesh));
+		if (UI.Radio("Mesh",     filterType == typeof(Mesh    ), size)) UpdateFilter(typeof(Mesh));
 		UI.SameLine();
-		if (UI.Radio("Model",    filterType == typeof(Model   ))) UpdateFilter(typeof(Model));
+		if (UI.Radio("Model",    filterType == typeof(Model   ), size)) UpdateFilter(typeof(Model));
 		UI.SameLine();
-		if (UI.Radio("Shader",   filterType == typeof(Shader  ))) UpdateFilter(typeof(Shader));
+		if (UI.Radio("Shader",   filterType == typeof(Shader  ), size)) UpdateFilter(typeof(Shader));
 		UI.SameLine();
-		if (UI.Radio("Solid",    filterType == typeof(Solid   ))) UpdateFilter(typeof(Solid));
+		if (UI.Radio("Solid",    filterType == typeof(Solid   ), size)) UpdateFilter(typeof(Solid));
 		UI.SameLine();
-		if (UI.Radio("Sound",    filterType == typeof(Sound   ))) UpdateFilter(typeof(Sound));
+		if (UI.Radio("Sound",    filterType == typeof(Sound   ), size)) UpdateFilter(typeof(Sound));
 		UI.SameLine();
-		if (UI.Radio("Sprite",   filterType == typeof(Sprite  ))) UpdateFilter(typeof(Sprite));
+		if (UI.Radio("Sprite",   filterType == typeof(Sprite  ), size)) UpdateFilter(typeof(Sprite));
 		UI.SameLine();
-		if (UI.Radio("Tex",      filterType == typeof(Tex     ))) UpdateFilter(typeof(Tex));
+		if (UI.Radio("Tex",      filterType == typeof(Tex     ), size)) UpdateFilter(typeof(Tex));
 
 		UI.HSeparator();
 
