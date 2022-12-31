@@ -477,7 +477,7 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.backplate_border == 0) settings.backplate_border = 0.5f * mm2m;
 	if (settings.backplate_depth  == 0) settings.backplate_depth  = 0.4f;
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
-	if (settings.gutter           == 0) settings.gutter  = 5  * mm2m;
+	if (settings.gutter           == 0) settings.gutter  = 10 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
 	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
