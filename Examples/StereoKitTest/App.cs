@@ -23,7 +23,8 @@ class App
 	Pose   demoSelectPose = new Pose();
 	Sprite powerButton;
 
-	List<string> demoNames = new List<string>();
+	List<string> demoNames    = new List<string>();
+	float        demoWinWidth = 50 * U.cm;
 
 	//////////////////////
 
@@ -76,6 +77,8 @@ class App
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+
+		UISettings uiSettings = UI.Settings;
 		for (int i = 0; i < Tests.DemoCount; i++)
 			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
 
@@ -139,12 +142,31 @@ class App
 		/// :End:
 
 		// Make a window for demo selection
-		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
+		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(demoWinWidth, 0));
+		int        start = 0;
+		float      currWidthTotal = 0;
+		UISettings uiSettings = UI.Settings;
+		TextStyle  style = UI.TextStyle;
 		for (int i = 0; i < demoNames.Count; i++)
 		{
-			if (UI.Button(demoNames[i]))
-				Tests.SetDemoActive(i);
-			UI.SameLine();
+			float width = Text.Size(demoNames[i], style).x + uiSettings.padding * 2;
+			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth || i == demoNames.Count-1)
+			{
+				float inflate = i == demoNames.Count - 1
+					? 0 
+					: (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
+				for (int t = start; t < i; t++)
+				{
+					float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2 + inflate;
+					if (UI.Button(demoNames[t], new Vec2(currWidth, 0)))
+						Tests.SetDemoActive(t);
+					UI.SameLine();
+				}
+				start = i;
+			}
+			if (start == i)
+				currWidthTotal = uiSettings.padding * 2;
+			currWidthTotal += width + uiSettings.gutter;
 		}
 		UI.NextLine();
 		UI.HSeparator();
