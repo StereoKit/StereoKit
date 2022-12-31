@@ -2003,9 +2003,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	// Render the input UI
-	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y - skui_settings.padding * 2 };
+	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
-	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, text_bounds);
+	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth/2 + 2*mm2m }, text_bounds);
 	
 	float line      = ui_line_height() * 0.5f;
 	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
