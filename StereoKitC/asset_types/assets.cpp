@@ -190,8 +190,9 @@ void assets_releaseref_threadsafe(void *asset) {
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-		log_errf("Destroying asset[%d] '%s' that still has references!", asset->type, asset->id_text);
-		abort();
+		// If something else picked up a reference to this between submission
+		// for destruction and now, that's actually just fine! We can just
+		// break out of here.
 		return;
 	}
 
