@@ -17,6 +17,7 @@ class DemoAssets : ITest
 	List<IAsset> filteredAssets = new List<IAsset>();
 	Type         filterType     = typeof(IAsset);
 	Pose         filterWindow   = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
+	int          filterIdx      = 0;
 
 	void UpdateFilter(Type type)
 	{
@@ -31,47 +32,108 @@ class DemoAssets : ITest
 
 	public void AssetWindow()
 	{
-		UI.WindowBegin("Asset Browser", ref filterWindow, V.XY(0.3f,0));
+		UI.WindowBegin("Asset Browser", ref filterWindow, V.XY(0.4f,0));
 
-		UI.Label("Filter:");
+		UI.LayoutPushCut(UICut.Left, 0.1f);
+		UI.Label("Filter");
+
+		UI.HSeparator();
 
 		// A radio button selection for what to filter by
-		 
-		Vec2 size = new Vec2((0.3f - (UI.Settings.padding*2+UI.Settings.gutter*4))/4.0f, 0);
-		if (UI.Radio("All",      filterType == typeof(IAsset  ), size)) UpdateFilter(typeof(IAsset));
-		UI.SameLine();
-		if (UI.Radio("Font",     filterType == typeof(Font    ), size)) UpdateFilter(typeof(Font));
-		UI.SameLine();
-		if (UI.Radio("Material", filterType == typeof(Material), size)) UpdateFilter(typeof(Material));
+		Vec2 size = new Vec2(0.08f, 0);
+		if (UI.Radio("Model",    filterType == typeof(Model   ), size)) UpdateFilter(typeof(Model));
 		UI.SameLine();
 		if (UI.Radio("Mesh",     filterType == typeof(Mesh    ), size)) UpdateFilter(typeof(Mesh));
 		UI.SameLine();
-		if (UI.Radio("Model",    filterType == typeof(Model   ), size)) UpdateFilter(typeof(Model));
+		if (UI.Radio("Material", filterType == typeof(Material), size)) UpdateFilter(typeof(Material));
+		UI.SameLine();
+		if (UI.Radio("Sprite",   filterType == typeof(Sprite  ), size)) UpdateFilter(typeof(Sprite));
+		UI.SameLine();
+		if (UI.Radio("Sound",    filterType == typeof(Sound   ), size)) UpdateFilter(typeof(Sound));
+		UI.SameLine();
+		if (UI.Radio("Font",     filterType == typeof(Font    ), size)) UpdateFilter(typeof(Font));
 		UI.SameLine();
 		if (UI.Radio("Shader",   filterType == typeof(Shader  ), size)) UpdateFilter(typeof(Shader));
 		UI.SameLine();
 		if (UI.Radio("Solid",    filterType == typeof(Solid   ), size)) UpdateFilter(typeof(Solid));
 		UI.SameLine();
-		if (UI.Radio("Sound",    filterType == typeof(Sound   ), size)) UpdateFilter(typeof(Sound));
-		UI.SameLine();
-		if (UI.Radio("Sprite",   filterType == typeof(Sprite  ), size)) UpdateFilter(typeof(Sprite));
-		UI.SameLine();
 		if (UI.Radio("Tex",      filterType == typeof(Tex     ), size)) UpdateFilter(typeof(Tex));
+		UI.SameLine();
+		if (UI.Radio("All",      filterType == typeof(IAsset  ), size)) UpdateFilter(typeof(IAsset));
 
-		UI.HSeparator();
+		UI.LayoutPop();
 
-		// Not a complicated visualization here, we're just showing whatever
-		// text based id was provided for the asset! Some Ids may just be null.
-		foreach(var asset in filteredAssets)
-			if (!string.IsNullOrEmpty(asset.Id))
-				UI.Label(asset.Id);
+		// We can visualize some of these assets, and just draw a label for
+		// some others.
+		foreach (var asset in filteredAssets)
+		{
+			//if (string.IsNullOrEmpty(asset.Id))
+			//	continue;
+
+			switch(asset)
+			{
+				case Mesh     item: VisualizeMesh    (item); break;
+				case Material item: VisualizeMaterial(item); break;
+				case Sprite   item: VisualizeSprite  (item); break;
+				case Model    item: VisualizeModel   (item); break;
+				case Sound    item: VisualizeSound   (item); break;
+			}
+			UI.Label(string.IsNullOrEmpty(asset.Id) ? "(null)" : asset.Id);
+			filterIdx += 1;
+		}
+		filterIdx = 0;
 		
 		UI.WindowEnd();
 	}
-	
+
+	void VisualizeMesh(Mesh item)
+	{
+		Bounds meshSize = item.Bounds;
+		Bounds b        = UI.LayoutReserve(V.XX(UI.LineHeight), false, UI.LineHeight);
+		float  scale    = (1.0f/meshSize.dimensions.Length);
+		item.Draw(Material.Default, Matrix.TS(b.center+meshSize.center*scale, b.dimensions*scale));
+
+		UI.SameLine();
+	}
+
+	void VisualizeMaterial(Material item)
+	{
+		// Default Materials have a number of special effect shaders that don't
+		// visualize in a generic way.
+		if (!string.IsNullOrEmpty(item.Id) && (item.Id.StartsWith("render/") || item.Id.StartsWith("default/")))
+			return;
+
+		Bounds b = UI.LayoutReserve(V.XX(UI.LineHeight), false, UI.LineHeight);
+		Mesh.Sphere.Draw(item, Matrix.TS(b.center, b.dimensions));
+
+		UI.SameLine();
+	}
+
+	void VisualizeSprite(Sprite item)
+	{
+		UI.Image(item, V.XX(UI.LineHeight));
+		UI.SameLine();
+	}
+
+	void VisualizeModel(Model item)
+	{
+		UI.Model(item, V.XX(UI.LineHeight));
+		UI.SameLine();
+	}
+
+	void VisualizeSound(Sound item)
+	{
+		UI.PushId(filterIdx);
+		if (UI.Button(">", V.XX(UI.LineHeight)))
+			item.Play(Hierarchy.ToWorld(UI.LayoutLast.center));
+		UI.PopId();
+		UI.SameLine();
+	}
+	/// :End:
+
 	public void Initialize()
 	{
-		UpdateFilter(typeof(Sound));
+		UpdateFilter(typeof(Mesh));
 		
 		/// :CodeSample: Assets Assets.All
 		/// ### Enumerating all Assets
