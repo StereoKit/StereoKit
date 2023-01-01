@@ -239,10 +239,11 @@ class App
 	static void LogWindow()
 	{
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-		if (UI.Button("v")) UpdateLogStr(logIndex + 15);
-		UI.SameLine();
-		if (UI.Button("^")) UpdateLogStr(logIndex - 15);
-		UI.HSeparator();
+
+		UI.LayoutPushCut(UICut.Right, 4 * U.cm);
+			if (UI.Button("^", V.XY(3,3)*U.cm)) UpdateLogStr(logIndex - 15);
+			if (UI.Button("v", V.XY(3,3)*U.cm)) UpdateLogStr(logIndex + 15);
+		UI.LayoutPop();
 
 		UI.Text(logString);
 		UI.WindowEnd();

@@ -648,4 +648,12 @@ namespace StereoKit
 		/// <summary>Same as `Center`, but omitting the text.</summary>
 		CenterNoText,
 	}
+
+	public enum UICut
+	{
+		Left,
+		Right,
+		Top,
+		Bottom,
+	}
 }
