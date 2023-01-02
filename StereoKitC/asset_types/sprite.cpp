@@ -83,6 +83,15 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		result->buffer_index = -1;
 		result->material     = sprite_create_material(sprite_index);
 		material_set_texture(result->material, "diffuse", image);
+
+		// Set an id based on the texture's id, if it has one!
+		const char* id = tex_get_id(image);
+		if (id) {
+			char new_id[256];
+			snprintf(new_id, sizeof(new_id), "%s/spr", id);
+			sprite_set_id(result, new_id);
+		}
+
 	} else {
 		// Find the atlas for this id
 		uint64_t     map_id = hash_fnv64_string(atlas_id);
