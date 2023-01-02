@@ -1038,7 +1038,7 @@ namespace StereoKit
 		/// <param name="start">The top left corner of the Panel element.</param>
 		/// <param name="size">The size of the Panel element, in hierarchy
 		/// local meters.</param>
-		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// <param name="padding">Only UIPad.Outsize has any effect here.
 		/// UIPad.Inside will behave the same as UIPad.None.</param>
 		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
 

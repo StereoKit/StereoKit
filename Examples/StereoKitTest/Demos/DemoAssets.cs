@@ -17,11 +17,13 @@ class DemoAssets : ITest
 	List<IAsset> filteredAssets = new List<IAsset>();
 	Type         filterType     = typeof(IAsset);
 	Pose         filterWindow   = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
-	int          filterIdx      = 0;
+	int          filterScroll   = 0;
+	const int    filterScrollCt = 12;
 
 	void UpdateFilter(Type type)
 	{
-		filterType = type;
+		filterType   = type;
+		filterScroll = 0;
 		filteredAssets.Clear();
 		
 		// Here's where the magic happens! `Assets.Type` can take a Type, or a
@@ -32,9 +34,13 @@ class DemoAssets : ITest
 
 	public void AssetWindow()
 	{
-		UI.WindowBegin("Asset Browser", ref filterWindow, V.XY(0.4f,0));
+		UISettings settings = UI.Settings;
+		float height = filterScrollCt * (UI.LineHeight + settings.gutter) + settings.padding * 2;
+		UI.WindowBegin("Asset Browser", ref filterWindow, V.XY(0.5f, height));
 
 		UI.LayoutPushCut(UICut.Left, 0.1f);
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+
 		UI.Label("Filter");
 
 		UI.HSeparator();
@@ -63,14 +69,25 @@ class DemoAssets : ITest
 
 		UI.LayoutPop();
 
+		UI.LayoutPushCut(UICut.Right, 0.03f + settings.padding*2);
+			UI.PushEnabled(filterScroll - filterScrollCt >= 0);
+			if (UI.Button("^", V.XX(0.03f))) filterScroll -= filterScrollCt;
+			UI.PopEnabled();
+			UI.LayoutPushCut(UICut.Bottom, 0.03f + settings.padding * 2);
+				UI.PushEnabled(filterScroll + filterScrollCt < filteredAssets.Count);
+				if (UI.Button("v", V.XX(0.03f))) filterScroll += filterScrollCt;
+				UI.PopEnabled();
+			UI.LayoutPop();
+		UI.LayoutPop();
+
+
 		// We can visualize some of these assets, and just draw a label for
 		// some others.
-		foreach (var asset in filteredAssets)
+		for (int i = filterScroll; i < Math.Min(filteredAssets.Count, filterScroll + filterScrollCt); i++)
 		{
-			//if (string.IsNullOrEmpty(asset.Id))
-			//	continue;
-
-			switch(asset)
+			IAsset asset = filteredAssets[i];
+			UI.PushId(i);
+			switch (asset)
 			{
 				case Mesh     item: VisualizeMesh    (item); break;
 				case Material item: VisualizeMaterial(item); break;
@@ -78,10 +95,9 @@ class DemoAssets : ITest
 				case Model    item: VisualizeModel   (item); break;
 				case Sound    item: VisualizeSound   (item); break;
 			}
+			UI.PopId();
 			UI.Label(string.IsNullOrEmpty(asset.Id) ? "(null)" : asset.Id);
-			filterIdx += 1;
 		}
-		filterIdx = 0;
 		
 		UI.WindowEnd();
 	}
@@ -123,10 +139,8 @@ class DemoAssets : ITest
 
 	void VisualizeSound(Sound item)
 	{
-		UI.PushId(filterIdx);
 		if (UI.Button(">", V.XX(UI.LineHeight)))
 			item.Play(Hierarchy.ToWorld(UI.LayoutLast.center));
-		UI.PopId();
 		UI.SameLine();
 	}
 	/// :End:
