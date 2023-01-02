@@ -19,18 +19,26 @@ namespace sk {
 
 struct ui_window_t {
 	pose_t   pose;
-	vec2     size;
+	vec2     prev_size;
+	vec2     curr_size;
+	vec3     layout_start;
+	vec2     layout_size;
 	ui_win_  type;
 	uint64_t hash;
 };
 
-struct layer_t {
-	ui_window_t *window;
+struct ui_layout_t {
+	ui_window_t* window;
 	vec3         offset_initial;
 	vec3         offset;
 	vec2         size;
 	float        line_height;
 	float        max_x;
+	vec3         prev_offset;
+	float        prev_line_height;
+};
+
+struct layer_t {
 	vec3         finger_pos   [handed_max];
 	vec3         finger_prev  [handed_max];
 	vec3         pinch_pt_pos [handed_max];
@@ -70,6 +78,7 @@ struct ui_el_visual_t {
 array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
+array_t<ui_layout_t> skui_layouts    = {};
 array_t<text_style_t>skui_font_stack = {};
 array_t<color128>    skui_tint_stack = {};
 array_t<bool32_t>    skui_enabled_stack = {};
@@ -79,10 +88,14 @@ array_t<uint64_t>   *skui_preserve_keyboard_ids_read;
 array_t<uint64_t>   *skui_preserve_keyboard_ids_write;
 
 ui_el_visual_t  skui_visuals[ui_vis_max] = {};
-mesh_t          skui_win_top      = nullptr;
-mesh_t          skui_win_bot      = nullptr;
+mesh_t          skui_box_top      = nullptr;
+mesh_t          skui_box_bot      = nullptr;
 mesh_t          skui_box          = nullptr;
-vec3            skui_box_min      = {};
+vec2            skui_box_min      = {};
+mesh_t          skui_small_left   = nullptr;
+mesh_t          skui_small_right  = nullptr;
+mesh_t          skui_small        = nullptr;
+vec2            skui_small_min    = {};
 mesh_t          skui_box_dbg      = nullptr;
 vec3            skui_box_dbg_min  = {};
 mesh_t          skui_cylinder;
@@ -101,6 +114,8 @@ uint64_t        skui_input_target = 0;
 color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
 uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
+sprite_t        skui_toggle_off = nullptr;
+sprite_t        skui_toggle_on = nullptr;
 float           skui_start_object_scale = 0;
 float           skui_start_pinch_dist = 0;
 
@@ -108,18 +123,11 @@ sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
 sound_t         skui_snd_grab;
 sound_t         skui_snd_ungrab;
+sound_t         skui_snd_tick;
 
-ui_settings_t skui_settings = {
-	10 * mm2m, // padding
-	10 * mm2m, // gutter
-	10 * mm2m, // depth
-	.4f,       // backplate_depth
-	1  * mm2m, // backplate_border
-};
+ui_settings_t skui_settings = {};
 float skui_fontsize = 10*mm2m;
 
-vec3  skui_prev_offset;
-float skui_prev_line_height;
 bounds_t skui_recent_layout;
 
 uint64_t skui_anim_id;
@@ -149,6 +157,24 @@ void          ui_draw_el                 (ui_vis_ element_visual, vec3 start, ve
 float ui_text_in(const char*     text_utf8,  text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size);
 float ui_text_in(const char16_t* text_utf16, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size);
 vec2  text_size (const char16_t* text_utf16, text_style_t style) { return text_size_16(text_utf16, style); }
+
+///////////////////////////////////////////
+
+tex_t ui_create_sdf_tex(int32_t width, int32_t height, float (*sdf)(float x, float y), float scale) {
+	color32 *data     = sk_malloc_t(color32, width * height);
+	float    center_x = width  / 2.0f;
+	float    center_y = height / 2.0f;
+	for (int32_t y = 0; y < height; y++) {
+		int32_t yoff = y * width;
+		for (int32_t x = 0; x < width; x++) {
+			float dist = sdf(x - center_x, y - center_y);
+			float lerp = 1-math_saturate(dist * scale);
+
+			data[x + yoff] = {255,255,255,(uint8_t)(lerp * 255)};
+		}
+	}
+	return tex_create_color32(data, width, height, false);
+}
 
 ///////////////////////////////////////////
 
@@ -302,9 +328,9 @@ void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float 
 		float x = cosf(ang);
 		float y = sinf(ang);
 		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0.001f*radius, 0.5f};
+		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0, 0.5f};
 		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0.001f*radius,-0.5f};
+		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0,-0.5f};
 
 		// strip first
 		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
@@ -460,14 +486,43 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.backplate_border == 0) settings.backplate_border = 0.5f * mm2m;
 	if (settings.backplate_depth  == 0) settings.backplate_depth  = 0.4f;
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
-	if (settings.gutter           == 0) settings.gutter  = 20 * mm2m;
+	if (settings.gutter           == 0) settings.gutter  = 10 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
-	skui_settings = settings; 
+	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
-	skui_box_min = { settings.padding*0.75f, settings.padding*0.75f, 0 };
-	ui_default_mesh     (&skui_box,     true, settings.padding*0.75f, 1.25f*mm2m, 3);
-	ui_default_mesh_half(&skui_win_top, true, settings.padding,       1.25f*mm2m, 3, 0);
-	ui_default_mesh_half(&skui_win_bot, true, settings.padding,       1.25f*mm2m, 3, 180 * deg2rad);
+	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
+	skui_settings = settings;
+
+	if (rebuild_meshes) {
+		int32_t slices  = 3;//  settings.rounding > 20 * mm2m ? 4 : 3;
+		bool    set_ids = skui_box == nullptr;
+		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
+		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
+		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2,       1.25f*mm2m, slices, 180 * deg2rad);
+
+		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
+		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
+		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
+		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
+
+		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
+		skui_small_min = vec2{ small, small } / 2;
+
+		if (set_ids) {
+			mesh_set_id(skui_box,         "sk/ui/box_mesh");
+			mesh_set_id(skui_box_top,     "sk/ui/box_mesh_top");
+			mesh_set_id(skui_box_bot,     "sk/ui/box_mesh_bot");
+			mesh_set_id(skui_small,       "sk/ui/small_mesh");
+			mesh_set_id(skui_small_left,  "sk/ui/small_mesh_left");
+			mesh_set_id(skui_small_right, "sk/ui/small_mesh_right");
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+ui_settings_t ui_get_settings() {
+	return skui_settings;
 }
 
 ///////////////////////////////////////////
@@ -583,6 +638,12 @@ void ui_pop_text_style() {
 
 ///////////////////////////////////////////
 
+text_style_t ui_get_text_style() {
+	return skui_font_stack.last();
+}
+
+///////////////////////////////////////////
+
 void ui_push_tint(color128 tint_gamma) {
 	skui_tint = color_to_linear(tint_gamma);
 	skui_tint_stack.add(skui_tint);
@@ -637,16 +698,43 @@ void ui_pop_preserve_keyboard(){
 
 bool ui_init() {
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
+	// TODO: v0.4, this sets up default values when zeroed out, with a
+	// ui_get_settings, this isn't really necessary anymore!
+	ui_settings_t settings = {};
+	ui_settings(settings);
 
-	skui_box_min = { skui_settings.padding*0.75f, skui_settings.padding*0.75f, 0 };
-	ui_default_mesh     (&skui_box,      true,  skui_settings.padding*0.75f, 1.25f*mm2m, 5);
-	ui_default_mesh_half(&skui_win_top,  true,  skui_settings.padding,       1.25f*mm2m, 5, 0);
-	ui_default_mesh_half(&skui_win_bot,  true,  skui_settings.padding,       1.25f*mm2m, 5, 180 * deg2rad);
-	ui_default_mesh     (&skui_cylinder, false, 1,                           4*cm2m, 5);
-	mesh_set_id(skui_box,     "sk/ui/box_mesh");
-	mesh_set_id(skui_win_top, "sk/ui/box_mesh_top");
-	mesh_set_id(skui_win_bot, "sk/ui/box_mesh_bot");
-	mesh_set_id(skui_win_bot, "sk/ui/cylinder_mesh");
+	ui_default_mesh(&skui_cylinder, false, 1, 4 * cm2m, 5);
+	mesh_set_id(skui_box_bot, "sk/ui/cylinder_mesh");
+
+	// Create default sprites for the toggles
+	tex_t toggle_tex_on = ui_create_sdf_tex(64, 64, [](float x, float y) {
+		float dist = vec2_magnitude({ x, y });
+		return fminf(dist - 20, fmaxf(-(dist - 27), dist - 31)) / 32.0f;
+	}, 40);
+	tex_set_address(toggle_tex_on, tex_address_clamp);
+	tex_set_id     (toggle_tex_on, "sk/ui/toggle_on_tex");
+	tex_t toggle_tex_off = ui_create_sdf_tex(64, 64, [](float x, float y) {
+		float dist = vec2_magnitude({ x, y });
+		return fmaxf(-(dist - 27), dist - 31) / 32.0f;
+	}, 40);
+	tex_set_address(toggle_tex_off, tex_address_clamp);
+	tex_set_id     (toggle_tex_off, "sk/ui/toggle_off_tex");
+	skui_toggle_on  = sprite_create(toggle_tex_on,  sprite_type_single);
+	skui_toggle_off = sprite_create(toggle_tex_off, sprite_type_single);
+	sprite_set_id(skui_toggle_on,  "sk/ui/toggle_on_spr");
+	sprite_set_id(skui_toggle_off, "sk/ui/toggle_off_spr");
+	tex_release(toggle_tex_on);
+	tex_release(toggle_tex_off);
+
+	// Create a sound for the HSlider
+	skui_snd_tick = sound_generate([](float t){
+		float x     = t / 0.03f;
+		float band1 = sinf(t*8000) * (x * powf(1 - x, 10)) / 0.03f;
+		float band2 = sinf(t*6550) * (x * powf(1 - x, 12)) / 0.03f;
+
+		return (band1*0.6f + band2*0.4f) * 0.05f;
+	}, .03f);
+	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
@@ -666,12 +754,18 @@ bool ui_init() {
 	skui_mat = material_copy_id(default_id_material_ui);
 	material_set_bool(skui_mat, "ui_tint", true);
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
-	ui_set_element_visual(ui_vis_default,      skui_box,      skui_mat_quad, { skui_settings.padding * 0.75f, skui_settings.padding * 0.75f });
-	ui_set_element_visual(ui_vis_window_head,  skui_win_top,  nullptr);
-	ui_set_element_visual(ui_vis_window_body,  skui_win_bot,  nullptr);
-	ui_set_element_visual(ui_vis_separator,    skui_box_dbg,  skui_mat);
-	ui_set_element_visual(ui_vis_carat,        skui_box_dbg,  skui_mat);
-	ui_set_element_visual(ui_vis_button_round, skui_cylinder, skui_mat);
+	//material_set_wireframe(skui_mat_quad, true);
+	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
+	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
+	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
+	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
+	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
+	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat);
+	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
 
 	skui_preserve_keyboard_ids_read  = &skui_preserve_keyboard_ids[0];
 	skui_preserve_keyboard_ids_write = &skui_preserve_keyboard_ids[1];
@@ -784,15 +878,21 @@ void ui_shutdown() {
 	sound_release(skui_snd_uninteract); skui_snd_uninteract = nullptr;
 	sound_release(skui_snd_grab);       skui_snd_grab       = nullptr;
 	sound_release(skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
-	mesh_release(skui_box);      skui_box      = nullptr;
-	mesh_release(skui_cylinder); skui_cylinder = nullptr;
-	mesh_release(skui_box_dbg);  skui_box_dbg  = nullptr;
-	mesh_release(skui_win_top);  skui_win_top  = nullptr;
-	mesh_release(skui_win_bot);  skui_win_bot  = nullptr;
+	sound_release(skui_snd_tick);       skui_snd_tick       = nullptr;
+	mesh_release(skui_box);         skui_box         = nullptr;
+	mesh_release(skui_box_top);     skui_box_top     = nullptr;
+	mesh_release(skui_box_bot);     skui_box_bot     = nullptr;
+	mesh_release(skui_small);       skui_small       = nullptr;
+	mesh_release(skui_small_left);  skui_small_left  = nullptr;
+	mesh_release(skui_small_right); skui_small_right = nullptr;
+	mesh_release(skui_cylinder);    skui_cylinder    = nullptr;
+	mesh_release(skui_box_dbg);     skui_box_dbg     = nullptr;
 	material_release(skui_mat);      skui_mat      = nullptr;
 	material_release(skui_mat_quad); skui_mat_quad = nullptr;
 	material_release(skui_mat_dbg);  skui_mat_dbg  = nullptr;
 	material_release(skui_font_mat); skui_font_mat = nullptr;
+	sprite_release(skui_toggle_off); skui_toggle_off = nullptr;
+	sprite_release(skui_toggle_on);  skui_toggle_on  = nullptr;
 	font_release(skui_font); skui_font = nullptr;
 }
 
@@ -879,20 +979,16 @@ void ui_push_surface(pose_t surface_pose, float surface_scale, vec3 layout_start
 	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation, {surface_scale,surface_scale,surface_scale});
 	hierarchy_push(trs);
 
-	skui_layers.add(layer_t{
-		nullptr,
-		layout_start,
-		layout_start,
-		layout_dimensions, 0, 0
-	});
+	skui_layers.add(layer_t{});
+	ui_layout_push(layout_start, layout_dimensions);
 
-	layer_t      &layer    = skui_layers.last();
+	layer_t*      layer    = &skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
 	for (int32_t i = 0; i < handed_max; i++) {
-		layer.finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
-		layer.finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
-		layer.pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
-		layer.pinch_pt_prev[i] = skui_hand[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world_prev);
+		layer->finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
+		layer->finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
+		layer->pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
+		layer->pinch_pt_prev[i] = skui_hand[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world_prev);
 	}
 }
 
@@ -901,6 +997,7 @@ void ui_push_surface(pose_t surface_pose, float surface_scale, vec3 layout_start
 void ui_pop_surface() {
 	hierarchy_pop();
 	skui_layers.pop();
+	ui_layout_pop();
 
 	if (skui_layers.count <= 0) {
 		for (int32_t i = 0; i < handed_max; i++) {
@@ -910,12 +1007,12 @@ void ui_pop_surface() {
 			skui_hand[i].pinch_pt_prev = skui_hand[i].pinch_pt_world_prev;
 		}
 	} else {
-		layer_t &layer = skui_layers.last();
+		layer_t *layer = &skui_layers.last();
 		for (int32_t i = 0; i < handed_max; i++) {
-			skui_hand[i].finger        = layer.finger_pos[i];
-			skui_hand[i].finger_prev   = layer.finger_prev[i];
-			skui_hand[i].pinch_pt      = layer.pinch_pt_pos[i];
-			skui_hand[i].pinch_pt_prev = layer.pinch_pt_prev[i];
+			skui_hand[i].finger        = layer->finger_pos[i];
+			skui_hand[i].finger_prev   = layer->finger_prev[i];
+			skui_hand[i].pinch_pt      = layer->pinch_pt_pos[i];
+			skui_hand[i].pinch_pt_prev = layer->pinch_pt_prev[i];
 		}
 	}
 }
@@ -923,33 +1020,42 @@ void ui_pop_surface() {
 ///////////////////////////////////////////
 
 void ui_layout_area(vec3 start, vec2 dimensions) {
-	layer_t &layer = skui_layers.last();
-	layer.window         = layer.window;
-	layer.offset_initial = start;
-	layer.offset         = layer.offset_initial - vec3{ skui_settings.padding, skui_settings.padding };
-	layer.size           = dimensions;
-	layer.max_x          = 0;
-	layer.line_height    = 0;
-
-	skui_prev_offset      = layer.offset;
-	skui_prev_line_height = layer.line_height;
+	ui_layout_t *layout = &skui_layouts.last();
+	layout->offset_initial   = start;
+	layout->offset           = start - vec3{ skui_settings.padding, skui_settings.padding };
+	layout->size             = dimensions;
+	layout->max_x            = 0;
+	layout->line_height      = 0;
+	layout->prev_offset      = layout->offset;
+	layout->prev_line_height = layout->line_height;
 }
 
 ///////////////////////////////////////////
 
 void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
-	layer_t &layer = skui_layers.last();
-	layer.window         = &window;
 	ui_layout_area(start, dimensions);
+	skui_layouts.last().window = &window;
+	window.layout_start = start;
+	window.layout_size  = dimensions;
+	
+	window.curr_size = {};
+	if (window.layout_size.x != 0) window.curr_size.x = dimensions.x;
+	if (window.layout_size.y != 0) window.curr_size.y = dimensions.y;
 }
 
 ///////////////////////////////////////////
 
 vec2 ui_layout_remaining() {
-	layer_t &layer = skui_layers.last();
+	ui_layout_t *layout = &skui_layouts.last();
+	float size_x = layout->size.x != 0
+		? layout->size.x
+		: (layout->window ? layout->window->prev_size.x : 0);
+	float size_y = layout->size.y != 0
+		? layout->size.y
+		: (layout->window ? layout->window->prev_size.y : 0);
 	return vec2{
-		fmaxf(-layer.max_x, fmaxf(layer.size.x, layer.window != nullptr ? layer.window->size.x : 0) - (layer.offset_initial.x - layer.offset.x) - skui_settings.padding),
-		fmaxf(0,            fmaxf(layer.size.y, layer.window != nullptr ? layer.window->size.y : 0) + (layer.offset.y + layer.offset_initial.y) - skui_settings.padding)
+		fmaxf(-layout->max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
+		fmaxf(0,              size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
 	};
 }
 
@@ -962,7 +1068,7 @@ vec2 ui_area_remaining() {
 ///////////////////////////////////////////
 
 vec3 ui_layout_at() {
-	return skui_layers.last().offset;
+	return skui_layouts.last().offset;
 }
 
 ///////////////////////////////////////////
@@ -977,32 +1083,32 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 	if (size.x == 0) size.x = ui_layout_remaining().x - (add_padding ? skui_settings.padding*2 : 0);
 	if (size.y == 0) size.y = ui_line_height();
 
-	layer_t &layer = skui_layers.last();
+	ui_layout_t *layout = &skui_layouts.last();
 
-	vec3 final_pos  = layer.offset;
+	vec3 final_pos  = layout->offset;
 	vec2 final_size = add_padding
 		? size + vec2{ skui_settings.padding, skui_settings.padding }*2
 		: size;
 
 	// If this is not the first element, and it goes outside the active window,
 	// then we'll want to start this element on the next line down
-	if (final_pos.x  != layer.offset_initial.x-skui_settings.padding &&
-		layer.size.x != 0                                            &&
-		final_pos.x - final_size.x < layer.offset_initial.x - layer.size.x + skui_settings.padding)
+	if (final_pos.x  != layout->offset_initial.x-skui_settings.padding &&
+		layout->size.x != 0                                            &&
+		final_pos.x - final_size.x < layout->offset_initial.x - layout->size.x + skui_settings.padding)
 	{
 		ui_nextline();
-		final_pos = layer.offset;
+		final_pos = layout->offset;
 	}
 
 	// Track the sizes for this line, for ui_layout_remaining, as well as
 	// window auto-sizing.
-	if (layer.max_x > layer.offset.x - final_size.x)
-		layer.max_x = layer.offset.x - final_size.x;
-	if (layer.line_height < final_size.y)
-		layer.line_height = final_size.y;
+	if (layout->max_x > layout->offset.x - final_size.x)
+		layout->max_x = layout->offset.x - final_size.x;
+	if (layout->line_height < final_size.y)
+		layout->line_height = final_size.y;
 
 	// Advance the UI layout position
-	layer.offset -= vec3{ final_size.x + skui_settings.gutter, 0, 0 };
+	layout->offset -= vec3{ final_size.x + skui_settings.gutter, 0, 0 };
 
 	ui_nextline();
 
@@ -1027,6 +1133,85 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 	result.center.z -= depth/2;
 	result.dimensions.z = depth;
 	return result;
+}
+
+///////////////////////////////////////////
+
+void ui_layout_push(vec3 start, vec2 dimensions) {
+	ui_layout_t layout = {};
+	layout.offset_initial   = start;
+	layout.prev_offset      = start;
+	layout.offset           = start - vec3{ skui_settings.padding, skui_settings.padding, 0 };
+	layout.size             = dimensions;
+	layout.line_height      = 0;
+	layout.max_x            = 0;
+	layout.prev_line_height = 0;
+	skui_layouts.add(layout);
+}
+
+///////////////////////////////////////////
+
+void ui_layout_push_cut(ui_cut_ cut_to, float size) {
+	ui_layout_t* curr = &skui_layouts.last();
+	if      (cut_to == ui_cut_bottom && curr->size.y == 0) log_warn("Can't cut bottom for layout with a height of 0!");
+	else if (cut_to == ui_cut_right  && curr->size.x == 0) log_warn("Can't cut right for layout with an width of 0!");
+
+	vec3 cut_start   = {};
+	vec2 cut_size    = {};
+	vec3 curr_offset = {};
+	switch (cut_to) {
+	case ui_cut_left:
+		curr_offset   = {-size, 0, 0 };
+		cut_start     = curr->offset_initial;
+		cut_size      = { size, curr->size.y };
+		curr->size.x -= size;
+		break;
+	case ui_cut_right:
+		curr_offset   = {0, 0, 0 };
+		cut_start     = curr->offset_initial - vec3{curr->size.x-size, 0, 0};
+		cut_size      = { size, curr->size.y };
+		curr->size.x -= size;break;
+	case ui_cut_top:
+		curr_offset   = {0, -size, 0 };
+		cut_start     = curr->offset_initial;
+		cut_size      = { curr->size.x, size };
+		curr->size.y -= size;
+		break;
+	case ui_cut_bottom:
+		curr_offset   = {0, 0, 0 };
+		cut_start     = curr->offset_initial - vec3{0,curr->size.y-size,0};
+		cut_size      = { curr->size.x, size };
+		curr->size.y -= size;
+		break;
+	}
+	curr->offset         += curr_offset;
+	curr->offset_initial += curr_offset;
+	curr->prev_offset    += curr_offset;
+	ui_layout_push(cut_start, cut_size);
+	skui_layouts.last().window = curr->window;
+}
+
+///////////////////////////////////////////
+
+void ui_layout_pop() {
+	ui_layout_t* layout = &skui_layouts.last();
+
+	// Move to next line if we're still on a previous line
+	if (layout->offset.x != layout->offset_initial.x - skui_settings.padding)
+		ui_nextline();
+
+	if (layout->window) {
+		vec3 start = layout->window->layout_start;// layout->offset_initial + vec3{0,0,skui_settings.depth};
+		vec3 end   = { layout->max_x, layout->offset.y - (layout->line_height-skui_settings.gutter),  layout->offset_initial.z};
+		vec3 size  = start - end;
+		size = { fmaxf(size.x+skui_settings.padding, layout->size.x), fmaxf(size.y+skui_settings.padding, layout->size.y), size.z };
+		if (layout->window->layout_size.x == 0)
+			layout->window->curr_size.x = fmaxf(size.x, layout->window->curr_size.x);
+		if (layout->window->layout_size.y == 0)
+			layout->window->curr_size.y = fmaxf(size.y, layout->window->curr_size.y);
+	}
+
+	skui_layouts.pop();
 }
 
 ///////////////////////////////////////////
@@ -1056,21 +1241,21 @@ button_state_ ui_last_element_focused() {
 ///////////////////////////////////////////
 
 void ui_nextline() {
-	layer_t &layer = skui_layers.last();
-	skui_prev_offset      = layer.offset;
-	skui_prev_line_height = layer.line_height;
+	ui_layout_t *layout = &skui_layouts.last();
+	layout->prev_offset      = layout->offset;
+	layout->prev_line_height = layout->line_height;
 
-	layer.offset.x    = layer.offset_initial.x - skui_settings.padding;
-	layer.offset.y   -= layer.line_height + skui_settings.gutter;
-	layer.line_height = 0;
+	layout->offset.x    = layout->offset_initial.x - skui_settings.padding;
+	layout->offset.y   -= layout->line_height      + skui_settings.gutter;
+	layout->line_height = 0;
 }
 
 ///////////////////////////////////////////
 
 void ui_sameline() {
-	layer_t &layer = skui_layers.last();
-	layer.offset      = skui_prev_offset;
-	layer.line_height = skui_prev_line_height;
+	ui_layout_t *layout = &skui_layouts.last();
+	layout->offset      = layout->prev_offset;
+	layout->line_height = layout->prev_line_height;
 }
 
 ///////////////////////////////////////////
@@ -1082,11 +1267,11 @@ float ui_line_height() {
 ///////////////////////////////////////////
 
 void ui_space(float space) {
-	layer_t &layer = skui_layers.last();
-	if (layer.offset.x == layer.offset_initial.x - skui_settings.padding)
-		layer.offset.y -= space;
+	ui_layout_t *layout = &skui_layouts.last();
+	if (layout->offset.x == layout->offset_initial.x - skui_settings.padding)
+		layout->offset.y -= space;
 	else
-		layer.offset.x -= space;
+		layout->offset.x -= space;
 }
 
 ///////////////////////////////////////////
@@ -1450,11 +1635,11 @@ void ui_text_at_16(const char16_t* text, text_align_ align, text_fit_ fit, vec3 
 
 template<typename C>
 void ui_text_sz_g(const C *text, text_align_ text_align, text_fit_ fit, vec2 size) {
-	vec3 offset = skui_layers.last().offset;
-	vec3 at     = offset - vec3{ 0, 0, skui_settings.depth / 4 };
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	ui_text_at(text, text_align, fit, at, size);
-	ui_layout_reserve(size);
+	ui_text_at(text, text_align, fit, final_pos - vec3{ 0, 0, skui_settings.depth/2 }, final_size);
 }
 void ui_text_sz   (const char     *text, text_align_ text_align, text_fit_ fit, vec2 size) { ui_text_sz_g<char    >(text, text_align, fit, size); }
 void ui_text_sz_16(const char16_t *text, text_align_ text_align, text_fit_ fit, vec2 size) { ui_text_sz_g<char16_t>(text, text_align, fit, size); }
@@ -1463,10 +1648,9 @@ void ui_text_sz_16(const char16_t *text, text_align_ text_align, text_fit_ fit, 
 
 template<typename C>
 void ui_text_g(const C *text, text_align_ text_align) {
-	vec3  offset   = skui_layers.last().offset;
-	vec2  size     = { ui_layout_remaining().x, 0 };
-
-	vec3 at = offset - vec3{ 0, 0, skui_settings.depth / 4 };
+	vec3 offset = ui_layout_at();
+	vec2 size   = { ui_layout_remaining().x, 0 };
+	vec3 at     = offset - vec3{ 0, 0, skui_settings.depth/2 };
 	size.y = ui_text_in(text, text_align_top_left, text_align, text_fit_wrap, at, size);
 
 	ui_layout_reserve(size);
@@ -1494,33 +1678,6 @@ void ui_image(sprite_t image, vec2 size) {
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_button_at_g(const C *text, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
-	float         finger_offset;
-	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
-
-	if (state & button_state_just_active)
-		ui_anim_start(id);
-	float color_blend = state & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t     = ui_anim_elapsed    (id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
-	}
-
-	float activation = 1 + 1-(finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button, window_relative_pos,  vec3{ size.x,   size.y,   finger_offset }, ui_color_common, fmaxf(activation,color_blend));
-	ui_text_at(text, text_align_center, text_fit_squeeze, window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2});
-
-	return state & button_state_just_active;
-}
-bool32_t ui_button_at   (const char     *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char    >(text, window_relative_pos, size); }
-bool32_t ui_button_at   (const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char16_t>(text, window_relative_pos, size); }
-bool32_t ui_button_at_16(const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_at_g<char16_t>(text, window_relative_pos, size); }
-
-///////////////////////////////////////////
-
-template<typename C>
 void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
 	float pad2       = skui_settings.padding * 2;
 	float pad2gutter = pad2 + skui_settings.gutter;
@@ -1531,7 +1688,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	vec3  text_at;
 	vec2  text_size;
 	text_align_ text_align;
-	float aspect = sprite_get_aspect(image);
+	float aspect = image != nullptr ? sprite_get_aspect(image) : 1.0f;
 	switch (image_layout) {
 	default:
 	case ui_btn_layout_left:
@@ -1552,6 +1709,13 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
 		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
 		break;
+	case ui_btn_layout_none:
+		image_size = 0;
+
+		text_align = text_align_top_left;
+		text_at    = window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, depth };
+		text_size  = vec2{ size.x - pad2, size.y - pad2 };
+		break;
 	case ui_btn_layout_center_no_text:
 	case ui_btn_layout_center:
 		image_align = text_align_center;
@@ -1565,14 +1729,14 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		break;
 	}
 
-	if (image_size>0) {
+	if (image_size>0 && image) {
 		color128 final_color = skui_tint;
 		if (!skui_enabled_stack.last()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
-		if (image_layout != ui_btn_layout_center_no_text)
-			ui_text_in(text, text_align, text_align_center, text_fit_squeeze, text_at, text_size);
 	}
+	if (image_layout != ui_btn_layout_center_no_text)
+		ui_text_in(text, text_align, text_align_center, text_fit_squeeze, text_at, text_size);
 }
 
 ///////////////////////////////////////////
@@ -1582,8 +1746,9 @@ vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_lay
 	vec2 size = {};
 	if (image_layout == ui_btn_layout_center || image_layout == ui_btn_layout_center_no_text) {
 		size = { skui_fontsize, skui_fontsize };
-	}
-	else {
+	} else if (image_layout == ui_btn_layout_none) {
+		size = text_size(text, skui_font_stack.last());
+	} else {
 		vec2  txt_size   = text_size(text, skui_font_stack.last());
 		float aspect     = sprite_get_aspect(image);
 		float image_size = skui_fontsize * aspect;
@@ -1622,32 +1787,6 @@ bool32_t ui_button_img_at_16(const char16_t *text, sprite_t image, ui_btn_layout
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_button_sz_g(const C *text, vec2 size) {
-	vec3 final_pos;
-	vec2 final_size;
-	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
-
-	return ui_button_at(text, final_pos, final_size);
-}
-bool32_t ui_button_sz   (const char     *text, vec2 size) { return ui_button_sz_g<char    >(text, size); }
-bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_sz_g<char16_t>(text, size); }
-
-///////////////////////////////////////////
-
-template<typename C>
-bool32_t ui_button_g(const C *text) {
-	vec3 final_pos;
-	vec2 final_size;
-	ui_layout_reserve_sz(text_size(text, skui_font_stack.last()), true, &final_pos, &final_size);
-
-	return ui_button_at(text, final_pos, final_size);
-}
-bool32_t ui_button   (const char     *text) { return ui_button_g<char    >(text); }
-bool32_t ui_button_16(const char16_t *text) { return ui_button_g<char16_t>(text); }
-
-///////////////////////////////////////////
-
-template<typename C>
 bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_layout) {
 	vec3 final_pos;
 	vec2 final_size;
@@ -1674,60 +1813,19 @@ bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout
 
 ///////////////////////////////////////////
 
-template<typename C>
-bool32_t ui_toggle_at_g(const C *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
-	float         finger_offset;
-	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
-
-	if (state & button_state_just_active)
-		ui_anim_start(id);
-	float color_blend = pressed || focus & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t     = ui_anim_elapsed    (id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
-	}
-
-	if (state & button_state_just_active) {
-		pressed = !pressed;
-	}
-	finger_offset = pressed ? fminf(skui_settings.backplate_depth*skui_settings.depth + mm2m, finger_offset) : finger_offset;
-
-	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x, size.y, finger_offset }, ui_color_common, color_blend);
-	ui_text_at(text, text_align_center, text_fit_squeeze, window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, finger_offset + 2*mm2m }, vec2{size.x-skui_settings.padding*2, size.y-skui_settings.padding*2});
-
-	return state & button_state_just_active;
-}
-bool32_t ui_toggle_at   (const char     *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char    >(text, pressed, window_relative_pos, size); }
-bool32_t ui_toggle_at   (const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char16_t>(text, pressed, window_relative_pos, size); }
-bool32_t ui_toggle_at_16(const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_at_g<char16_t>(text, pressed, window_relative_pos, size); }
+bool32_t ui_button_at   (const char     *text, vec3 window_relative_pos, vec2 size) { return ui_button_img_at   (text, nullptr, ui_btn_layout_none, window_relative_pos, size); }
+bool32_t ui_button_at   (const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_16(text, nullptr, ui_btn_layout_none, window_relative_pos, size); }
+bool32_t ui_button_at_16(const char16_t *text, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_16(text, nullptr, ui_btn_layout_none, window_relative_pos, size); }
 
 ///////////////////////////////////////////
 
-template<typename C>
-bool32_t ui_toggle_g(const C *text, bool32_t &pressed) {
-	vec3 final_pos;
-	vec2 final_size;
-	ui_layout_reserve_sz(text_size(text, skui_font_stack.last()), true, &final_pos, &final_size);
-
-	return ui_toggle_at(text, pressed, final_pos, final_size);
-}
-bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_g<char    >(text, pressed); }
-bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_g<char16_t>(text, pressed); }
+bool32_t ui_button_sz   (const char     *text, vec2 size) { return ui_button_img_sz   (text, nullptr, ui_btn_layout_none, size); }
+bool32_t ui_button_sz_16(const char16_t *text, vec2 size) { return ui_button_img_sz_16(text, nullptr, ui_btn_layout_none, size); }
 
 ///////////////////////////////////////////
 
-template<typename C>
-bool32_t ui_toggle_sz_g(const C *text, bool32_t &pressed, vec2 size) {
-	vec3 final_pos;
-	vec2 final_size;
-	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
-
-	return ui_toggle_at(text, pressed, final_pos, final_size);
-}
-bool32_t ui_toggle_sz   (const char     *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char    >(text, pressed, size); }
-bool32_t ui_toggle_sz_16(const char16_t *text, bool32_t &pressed, vec2 size) { return ui_toggle_sz_g<char16_t>(text, pressed, size); }
+bool32_t ui_button   (const char     *text) { return ui_button_img   (text, nullptr, ui_btn_layout_none); }
+bool32_t ui_button_16(const char16_t *text) { return ui_button_img_16(text, nullptr, ui_btn_layout_none); }
 
 ///////////////////////////////////////////
 
@@ -1787,6 +1885,22 @@ bool32_t ui_toggle_img_sz_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 }
 bool32_t ui_toggle_img_sz   (const char*     text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size) { return ui_toggle_img_sz_g<char    >(text, pressed, toggle_off, toggle_on, image_layout, size); }
 bool32_t ui_toggle_img_sz_16(const char16_t* text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size) { return ui_toggle_img_sz_g<char16_t>(text, pressed, toggle_off, toggle_on, image_layout, size); }
+
+///////////////////////////////////////////
+
+bool32_t ui_toggle_at   (const char     *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at   (text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left, window_relative_pos, size); }
+bool32_t ui_toggle_at   (const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_16(text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left, window_relative_pos, size); }
+bool32_t ui_toggle_at_16(const char16_t *text, bool32_t &pressed, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_16(text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left, window_relative_pos, size); }
+
+///////////////////////////////////////////
+
+bool32_t ui_toggle   (const char     *text, bool32_t &pressed) { return ui_toggle_img   (text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left); }
+bool32_t ui_toggle_16(const char16_t *text, bool32_t &pressed) { return ui_toggle_img_16(text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left); }
+
+///////////////////////////////////////////
+
+bool32_t ui_toggle_sz   (const char     *text, bool32_t &pressed, vec2 size) { return ui_toggle_img_sz   (text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left, size); }
+bool32_t ui_toggle_sz_16(const char16_t* text, bool32_t& pressed, vec2 size) { return ui_toggle_img_sz_16(text, pressed, skui_toggle_off, skui_toggle_on, ui_btn_layout_left, size); }
 
 ///////////////////////////////////////////
 
@@ -1982,9 +2096,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	// Render the input UI
-	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y - skui_settings.padding * 2 };
+	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
-	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, skui_settings.padding, skui_settings.depth/2 + 2*mm2m }, text_bounds);
+	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth/2 + 2*mm2m }, text_bounds);
 	
 	float line      = ui_line_height() * 0.5f;
 	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
@@ -2074,7 +2188,7 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	// If the left or right side of the bar is too small, then we'll just draw
 	// a single solid bar.
 	float bar_length = math_saturate(percent) * size.x;
-	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line);
+	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
 			vec3{ start_pos.x, bar_y,      start_pos.z },
@@ -2090,11 +2204,11 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	}
 
 	// Slide line
-	ui_draw_el(ui_vis_slider_line,
+	ui_draw_el(ui_vis_slider_line_active,
 		vec3{ start_pos.x, bar_y,      start_pos.z },
 		vec3{ bar_length,  bar_height, bar_depth },
 		ui_color_primary, focus);
-	ui_draw_el(ui_vis_slider_line,
+	ui_draw_el(ui_vis_slider_line_inactive,
 		vec3{ start_pos.x - bar_length, bar_y,      start_pos.z },
 		vec3{ size.x      - bar_length, bar_height, bar_depth },
 		ui_color_common, focus);
@@ -2200,9 +2314,32 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
 		}
-		result = value != new_val;
+		result  = value != new_val;
+		percent = (float)((new_val - min) / (max - min));
+
+		// Play tick sound as the value updates
+		if (result) {
+			
+			if (step != 0) {
+				// Play on every change if there's a user specified step value
+				sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+			} else {
+				// If no user specified step, then we'll do a set number of
+				// clicks across the whole bar.
+				const int32_t click_steps = 10;
+
+				float   old_percent  = (float)((value - min) / (max - min));
+				int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
+				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
+
+				if (old_quantize != new_quantize) {
+					sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+				}
+			}
+		}
+
+		// Do this down here so we can calculate old_percent above
 		value = new_val;
-		percent = (float)((value - min) / (max - min));
 	}
 
 	if (button_state & button_state_just_active)
@@ -2534,7 +2671,8 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		index = ~index;
 		ui_window_t new_window = {};
 		new_window.hash = id;
-		new_window.size = window_size;
+		new_window.prev_size = window_size;
+		new_window.curr_size = window_size;
 		skui_sl_windows.insert(index, new_window);
 	}
 	ui_window_t &window = skui_sl_windows[index];
@@ -2545,28 +2683,31 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	if (window.type & ui_win_head) {
 		float line = ui_line_height();
 		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
-		box_size  = vec3{ window.size.x, line, skui_settings.depth*2 };
+		box_size  = vec3{ window.prev_size.x, line, skui_settings.depth*2 };
 	} 
 	if (window.type & ui_win_body) {
-		box_start.z = skui_settings.depth/2;
-		box_start.y -= window.size.y / 2;
-		box_size.x  = window.size.x;
-		box_size.y += window.size.y;
-		box_size.z  = skui_settings.depth * 2;
+		box_start.z  = skui_settings.depth/2;
+		box_start.y -= window.prev_size.y / 2;
+		box_size.x   = window.prev_size.x;
+		box_size.y  += window.prev_size.y;
+		box_size.z   = skui_settings.depth * 2;
 	}
 
 	// Set up window handle and layout area
 	_ui_handle_begin(id, pose, { box_start, box_size }, false, move_type);
-	ui_layout_area(window, { window.size.x / 2,0,0 }, window_size);
+	ui_layout_push({}, {});
+	ui_layout_area(window, { window.prev_size.x / 2,0,0 }, window_size);
 
 	// draw label
 	if (window.type & ui_win_head) {
+		ui_layout_t* layout = &skui_layouts.last();
+
 		vec2 size = text_size(text, skui_font_stack.last());
-		vec3 at   = skui_layers.last().offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
+		vec3 at   = layout->offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
 		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
-		if (skui_layers.last().max_x > at.x - size.x - skui_settings.padding)
-			skui_layers.last().max_x = at.x - size.x - skui_settings.padding;
+		if (layout->max_x > at.x - size.x - skui_settings.padding)
+			layout->max_x = at.x - size.x - skui_settings.padding;
 	}
 	window.pose = pose;
 }
@@ -2580,28 +2721,22 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	layer_t &layer = skui_layers.last();
+	ui_layout_t *layout = &skui_layouts.last();
+	ui_layout_pop();
+	layout->window->prev_size = layout->window->curr_size;
 
-	// Move to next line if we're still on a previous line
-	if (layer.offset.x != layer.offset_initial.x - skui_settings.padding)
-		ui_nextline();
-	
-	vec3 start = layer.offset_initial + vec3{0,0,skui_settings.depth};
-	vec3 end   = { layer.max_x, layer.offset.y - (layer.line_height-skui_settings.padding),  layer.offset_initial.z};
-	vec3 size  = start - end;
-	size = { fmaxf(size.x+skui_settings.padding, layer.size.x), fmaxf(size.y+skui_settings.padding, layer.size.y), size.z };
-	layer.window->size.x = size.x;
-	layer.window->size.y = size.y;
+	vec3 start = layout->window->layout_start + vec3{ 0,0,skui_settings.depth };
+	vec3 size  = { layout->window->curr_size.x, layout->window->curr_size.y, skui_settings.depth };
 
 	float line_height = ui_line_height();
-	if (layer.window->type & ui_win_head) {
+	if (layout->window->type & ui_win_head) {
 		float glow = 1;
-		if (skui_hand[0].focused_prev == layer.window->hash || skui_hand[1].focused_prev == layer.window->hash)
+		if (skui_hand[0].focused_prev == layout->window->hash || skui_hand[1].focused_prev == layout->window->hash)
 			glow = 1.5f;
-		ui_draw_el(layer.window->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, glow);
+		ui_draw_el(layout->window->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, glow);
 	}
-	if (layer.window->type & ui_win_body) {
-		ui_draw_el(layer.window->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 1);
+	if (layout->window->type & ui_win_body) {
+		ui_draw_el(layout->window->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 1);
 	}
 	ui_handle_end();
 	ui_pop_id();
@@ -2630,21 +2765,21 @@ struct panel_stack_data_t {
 };
 array_t<panel_stack_data_t> skui_panel_stack = {};
 void ui_panel_begin(ui_pad_ padding) {
-	layer_t           &layer = skui_layers.last();
+	ui_layout_t*       layout = &skui_layouts.last();
 	panel_stack_data_t data;
-	data.at      = layer.offset;
-	data.max_x   = layer.max_x;
+	data.at      = layout->offset;
+	data.max_x   = layout->max_x;
 	data.padding = padding;
 
 	skui_panel_stack.add( data );
-	layer.max_x = layer.offset_initial.x;
+	layout->max_x = layout->offset_initial.x;
 
 	if (padding == ui_pad_inside) {
 		float gutter = skui_settings.gutter / 2;
-		layer.offset_initial.x -= gutter;
-		layer.offset_initial.y -= gutter;
-		layer.offset.x -= gutter;
-		layer.offset.y -= gutter;
+		layout->offset_initial.x -= gutter;
+		layout->offset_initial.y -= gutter;
+		layout->offset.x -= gutter;
+		layout->offset.y -= gutter;
 	}
 }
 
@@ -2654,21 +2789,21 @@ void ui_panel_end() {
 	ui_sameline();
 
 	float              gutter = skui_settings.gutter / 2;
-	layer_t           &layer  = skui_layers.last();
+	ui_layout_t*       layout = &skui_layouts.last();
 	panel_stack_data_t start  = skui_panel_stack.last();
-	if (start.padding == ui_pad_inside) layer.max_x -= gutter;
+	if (start.padding == ui_pad_inside) layout->max_x -= gutter;
 
-	vec3 curr = vec3{layer.max_x, layer.offset.y - (layer.line_height + (start.padding == ui_pad_inside?gutter:0)), layer.offset.z};
+	vec3 curr = vec3{layout->max_x, layout->offset.y - (layout->line_height + (start.padding == ui_pad_inside?gutter:0)), layout->offset.z};
 
 	ui_panel_at(start.at, {fabsf(curr.x-start.at.x), start.at.y-curr.y}, start.padding);
 
-	layer.max_x = fminf(layer.max_x, start.max_x);
+	layout->max_x = fminf(layout->max_x, start.max_x);
 	if (start.padding == ui_pad_inside) {
-		layer.offset_initial.x += gutter;
-		layer.offset_initial.y += gutter;
-		layer.line_height += gutter * 2;
-		layer.offset.y += gutter;
-		layer.offset.x -= gutter;
+		layout->offset_initial.x += gutter;
+		layout->offset_initial.y += gutter;
+		layout->line_height += gutter * 2;
+		layout->offset.y += gutter;
+		layout->offset.x -= gutter;
 	}
 	skui_panel_stack.pop();
 	ui_nextline();

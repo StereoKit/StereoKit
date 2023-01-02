@@ -41,6 +41,8 @@ class DemoUITearsheet : ITest
 		UI.SameLine();
 		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.CenterNoText));
 
+		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.None));
+
 		UI.Label("UI.ButtonRound");
 		UI.SameLine();
 		Unique(() => UI.ButtonRound("UI.ButtonRound", sprSearch));
@@ -78,7 +80,7 @@ class DemoUITearsheet : ITest
 	}
 
 	Pose   textWindowPose = new Pose(-0.6f, 0, 0);
-	string textInput = "Text here...";
+	string textInput = "Text here please :)";
 	void ShowTextWindow()
 	{
 		UI.WindowBegin("Text", ref textWindowPose, V.XY(0.25f,0));

@@ -23,6 +23,7 @@ namespace sk {
 
 void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height);
 bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format);
+void  tex_update_label   (tex_t texture);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -607,6 +608,15 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 // Texture manipulation functions        //
 ///////////////////////////////////////////
 
+void tex_update_label(tex_t texture) {
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	if (texture->header.id_text != nullptr)
+		skg_tex_name(&texture->tex, texture->header.id_text);
+#endif
+}
+
+///////////////////////////////////////////
+
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err(tex_msg_requires_rendertarget);
@@ -692,6 +702,8 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
 	texture->tex    = skg_tex_create_from_layer(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_index);
+
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////
@@ -723,6 +735,7 @@ tex_t tex_find(const char *id) {
 
 void tex_set_id(tex_t tex, const char *id) {
 	assets_set_id(&tex->header, id);
+	tex_update_label(tex);
 }
 
 ///////////////////////////////////////////
@@ -805,7 +818,8 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
-		
+
+		tex_update_label(texture);
 	} else if (dynamic) {
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
@@ -919,6 +933,7 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 	}
 
 	skg_tex_settings(&texture->tex, skg_addr, skg_sample, anisotropy_level);
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////

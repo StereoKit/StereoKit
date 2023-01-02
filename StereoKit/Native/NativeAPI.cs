@@ -594,6 +594,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove ui_system_get_move_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_system_set_move_type(UIMove move_type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_settings            (UISettings settings);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings ui_get_settings    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_color           (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color     (UIColor color_type, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color     (UIColor color_type);
@@ -602,6 +603,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle ui_get_text_style   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_tint             (Color tint_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_tint              ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          (int enabled);
@@ -620,6 +622,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   ui_layout_at       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0, float depth = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_push     (Vec3 start, Vec2 dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_push_cut (UICut cut_to, float size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_pop      ();
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_used(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_active();

@@ -15,6 +15,8 @@ using namespace DirectX;
 
 namespace sk {
 
+void mesh_update_label(mesh_t mesh);
+
 ///////////////////////////////////////////
 
 void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
@@ -54,6 +56,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -64,6 +67,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
@@ -150,6 +154,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -160,6 +165,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create dynamic index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
@@ -381,12 +387,22 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(&mesh->header, id);
+	mesh_update_label(mesh);
 }
 
 ///////////////////////////////////////////
 
 const char* mesh_get_id(const mesh_t mesh) {
 	return mesh->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void mesh_update_label(mesh_t mesh) {
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	if (mesh->header.id_text != nullptr)
+		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
+#endif
 }
 
 ///////////////////////////////////////////

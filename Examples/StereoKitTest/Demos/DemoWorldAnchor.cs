@@ -8,10 +8,13 @@ using Windows.Perception.Spatial;
 
 class DemoWorldAnchor : ITest
 {
+	string title       = "World Anchor";
+	string description = "This demo uses UWP's Spatial APIs to add, remove, and load World Anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!";
+
 	SpatialAnchorStore       anchorStore;
 	Dictionary<string, Pose> anchorPoses = new Dictionary<string, Pose>();
 	Model                    wandModel   = Model.FromFile("Wand.glb", Shader.UI);
-	Pose                     wandPose    = new Pose(.5f, 0, -0.3f, Quat.LookDir(1, 0, 0));
+	Pose                     wandPose    = new Pose(.6f, 0, -0.3f, Quat.LookDir(1, 0, 0));
 
 	public bool Enabled => true;
 
@@ -74,7 +77,7 @@ class DemoWorldAnchor : ITest
 	{
 	}
 
-	Pose pose = new Pose(Vec3.Forward * 0.4f, Quat.Identity);
+	Pose pose = Demo.contentPose.Pose;
 	public void Update()
 	{
 		Vec3 wandTip = wandModel.Bounds.center + wandModel.Bounds.dimensions.y * 0.5f * Vec3.Up;
@@ -110,6 +113,8 @@ class DemoWorldAnchor : ITest
 			Pose p = anchorPoses[selected];
 			Mesh.Cube.Draw(Material.UIBox, p.ToMatrix(0.1f));
 		}
+
+		Demo.ShowSummary(title, description);
 	}
 
 	public void Shutdown()

@@ -16,8 +16,8 @@ namespace StereoKit
 	/// </summary>
 	public static class UI
 	{
-		/// <summary>UI sizing and layout settings. Set only for now</summary>
-		public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
+		/// <summary>UI sizing and layout settings.</summary>
+		public static UISettings Settings { get => NativeAPI.ui_get_settings(); set { NativeAPI.ui_settings(value); } }
 
 		/// <summary>StereoKit will generate a color palette from this gamma
 		/// space color, and use it to skin the UI!</summary>
@@ -28,7 +28,7 @@ namespace StereoKit
 		/// collision issues.</summary>
 		public static bool ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
 
-		/// <summary>Enables or disables the far ray grab interaction for 
+		/// <summary>Enables or disables the far ray grab interaction for
 		/// Handle elements like the Windows. It can be enabled and disabled
 		/// for individual UI elements, and if this remains disabled at the
 		/// start of the next frame, then the hand ray indicators will not be
@@ -40,8 +40,13 @@ namespace StereoKit
 		/// soft keyboard.</summary>
 		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
 
-		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
+		/// <summary>This is the height of a single line of text with padding
+		/// in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
+
+		/// <summary>This returns the TextStyle that's on top of the UI's
+		/// stack, according to UI.Push/PopTextStyle.</summary>
+		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
 
 		/// <summary>Use LayoutRemaining, removing in v0.4</summary>
 		[Obsolete("Use LayoutRemaining, removing in v0.4")]
@@ -87,6 +92,10 @@ namespace StereoKit
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
+
+		public static void LayoutPush   (Vec3 start, Vec2 offset) => NativeAPI.ui_layout_push(start, offset);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters);
+		public static void LayoutPop    () => NativeAPI.ui_layout_pop();
 
 		/// <summary>Tells if the hand was involved in the focus or active
 		/// state of the most recent UI element using an id.</summary>
@@ -1031,7 +1040,7 @@ namespace StereoKit
 		/// <param name="start">The top left corner of the Panel element.</param>
 		/// <param name="size">The size of the Panel element, in hierarchy
 		/// local meters.</param>
-		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// <param name="padding">Only UIPad.Outsize has any effect here.
 		/// UIPad.Inside will behave the same as UIPad.None.</param>
 		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
 

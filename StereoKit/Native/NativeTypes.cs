@@ -198,6 +198,8 @@ namespace StereoKit
 		public float gutter;
 		/// <summary>The Z depth of 3D UI elements, in meters.</summary>
 		public float depth;
+		/// <summary>Radius of the UI element corners, in meters.</summary>
+		public float rounding;
 		/// <summary>How far up does the white back-border go on UI elements?
 		/// This is a 0-1 percentage of the depth value.</summary>
 		public float backplateDepth;
@@ -570,8 +572,14 @@ namespace StereoKit
 		/// <summary>Refers to UI.HSeparator element.</summary>
 		Separator,
 		/// <summary>Refers to the back line component of the UI.HSlider
-		/// element.</summary>
+		/// element for full lines.</summary>
 		SliderLine,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element for the active or "full" half of the line.</summary>
+		SliderLineActive,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element for the inactive or "empty" half of the line.</summary>
+		SliderLineInactive,
 		/// <summary>Refers to the push button component of the UI.HSlider
 		/// element when using UIConfirm.Push.</summary>
 		SliderPush,
@@ -637,6 +645,8 @@ namespace StereoKit
 	/// the text filling the remaining space.</summary>
 	public enum UIBtnLayout
 	{
+		/// <summary>Hide the image, and only show text.</summary>
+		None,
 		/// <summary>Image to the left, text to the right. Image will take up
 		/// no more than half the width.</summary>
 		Left,
@@ -649,5 +659,13 @@ namespace StereoKit
 		Center,
 		/// <summary>Same as `Center`, but omitting the text.</summary>
 		CenterNoText,
+	}
+
+	public enum UICut
+	{
+		Left,
+		Right,
+		Top,
+		Bottom,
 	}
 }
