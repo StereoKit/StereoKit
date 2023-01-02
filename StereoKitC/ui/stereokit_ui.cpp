@@ -1045,10 +1045,6 @@ void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
 
 vec2 ui_layout_remaining() {
 	ui_layout_t *layout = &skui_layouts.last();
-	/*return vec2{
-		fmaxf(-layout->max_x, fmaxf(layout->size.x, layout->window != nullptr ? layout->window->size.x : 0) - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
-		fmaxf(0,              fmaxf(layout->size.y, layout->window != nullptr ? layout->window->size.y : 0) + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
-	};*/
 	float size_x = layout->size.x != 0
 		? layout->size.x
 		: (layout->window ? layout->window->prev_size.x : 0);
@@ -1181,7 +1177,7 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size) {
 		break;
 	case ui_cut_bottom:
 		curr_offset   = {0, 0, 0 };
-		cut_start     = curr->offset_initial + vec3{0,-size,0};
+		cut_start     = curr->offset_initial - vec3{0,curr->size.y-size,0};
 		cut_size      = { curr->size.x, size };
 		curr->size.y -= size;
 		break;
