@@ -2177,11 +2177,19 @@ pose_t ui_popup_pose(vec3 shift) {
 
 ///////////////////////////////////////////
 
-void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus) {
+void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus, bool vertical) {
+	// For a vertical progress bar, the easiest thing is to just rotate the
+	// hierarchy 90, as this simplifies any issues with trying to rotate the
+	// calls to draw the left and right line segments.
+	hierarchy_push(vertical
+		? matrix_trs(start_pos - vec3{size.x,0,0}, quat_from_angles(0, 0, 90))
+		: matrix_t  (start_pos));
+	if (vertical) size = { size.y, size.x };
+
 	// Find sizes of bar elements
 	float bar_height = fmaxf(skui_settings.padding, size.y / 6.f);
 	float bar_depth  = bar_height * skui_settings.backplate_depth - mm2m;
-	float bar_y      = start_pos.y - size.y / 2.f + bar_height / 2.f;
+	float bar_y      = -size.y / 2.f + bar_height / 2.f;
 
 	// If the left or right side of the bar is too small, then we'll just draw
 	// a single solid bar.
@@ -2189,33 +2197,36 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
-			vec3{ start_pos.x, bar_y,      start_pos.z },
-			vec3{ size.x,      bar_height, bar_depth },
+			vec3{ 0,      bar_y,      0 },
+			vec3{ size.x, bar_height, bar_depth },
 			ui_color_common, focus);
+		hierarchy_pop();
 		return;
 	} else if (bar_length >= size.x-min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
-			vec3{ start_pos.x, bar_y,      start_pos.z },
-			vec3{ size.x,      bar_height, bar_depth },
+			vec3{ 0,      bar_y,      0 },
+			vec3{ size.x, bar_height, bar_depth },
 			ui_color_primary, focus);
+		hierarchy_pop();
 		return;
 	}
 
 	// Slide line
 	ui_draw_el(ui_vis_slider_line_active,
-		vec3{ start_pos.x, bar_y,      start_pos.z },
-		vec3{ bar_length,  bar_height, bar_depth },
+		vec3{ 0,          bar_y,      0 },
+		vec3{ bar_length, bar_height, bar_depth },
 		ui_color_primary, focus);
 	ui_draw_el(ui_vis_slider_line_inactive,
-		vec3{ start_pos.x - bar_length, bar_y,      start_pos.z },
-		vec3{ size.x      - bar_length, bar_height, bar_depth },
+		vec3{        - bar_length, bar_y,      0 },
+		vec3{ size.x - bar_length, bar_height, bar_depth },
 		ui_color_common, focus);
+	hierarchy_pop();
 }
 
 ///////////////////////////////////////////
 
 void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
-	ui_progress_bar_at_ex(percent, start_pos, size, 1);
+	ui_progress_bar_at_ex(percent, start_pos, size, 1, false);
 }
 
 ///////////////////////////////////////////
@@ -2238,13 +2249,18 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
 
+	bool  vertical = size.y > size.x;
+	float size_min = vertical ? size.x : size.y;
+
 	// Find sizes of slider elements
 	float percent      = (float)((value - min) / (max - min));
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size    = fmaxf(skui_settings.padding, size.y / 6.f);
+	float rule_size    = fmaxf(skui_settings.padding, size_min / 6.f);
 	vec2  button_size  = confirm_method == ui_confirm_push
-		? vec2{ size.y / 2, size.y / 2 }
-		: vec2{ size.y / 4, size.y };
+		? vec2{ size_min / 2, size_min / 2 }
+		: (vertical
+			? vec2{ size_min, size_min / 4 }
+			: vec2{ size_min / 4, size_min } );
 
 	// Activation bounds sizing
 	float activation_plane = button_depth + skui_finger_radius;
@@ -2253,13 +2269,15 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	button_state_ focus_state   = button_state_inactive;
 	button_state_ button_state  = button_state_inactive;
 	float         finger_offset = button_depth;
-	float         finger_x      = 0;
+	float         finger_at     = 0;
 	int32_t       hand          = -1;
 	if (confirm_method == ui_confirm_push) {
-		vec3  activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
-		vec3  activation_size  = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
-		vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-		vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+		vec3  activation_start = vertical
+			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
+			: window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
+		vec3  activation_size = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
+		vec3  sustain_size    = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
+		vec3  sustain_start   = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
 
 		ui_box_interaction_1h_poke(id,
 			activation_start, activation_size,
@@ -2277,10 +2295,17 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			button_state = ui_active_set(hand, id, false);
 		}
 		if (hand != -1)
-			finger_x = skui_hand[hand].finger.x;
+			finger_at = vertical ? skui_hand[hand].finger.y : skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		vec3 activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x, -(size.y/2 - button_size.y/2), button_depth };
-		vec3 activation_size  = vec3{ button_size.x*3, button_size.y, button_depth*2 };
+		vec3 activation_start;
+		vec3 activation_size;
+		if (vertical) {
+			activation_start = window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2), percent * -(size.y - button_size.y) + button_size.y, button_depth };
+			activation_size  = vec3{ button_size.x, button_size.y * 3, button_depth * 2 };
+		} else {
+			activation_start = window_relative_pos + vec3{ percent * -(size.x - button_size.x) + button_size.x, -(size.y / 2 - button_size.y / 2), button_depth };
+			activation_size  = vec3{ button_size.x * 3, button_size.y, button_depth * 2 };
+		}
 
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
@@ -2298,16 +2323,18 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
 			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-			finger_x = pinch_local.x;
+			finger_at = vertical ? pinch_local.y : pinch_local.x;
 
 			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-				finger_x = finger_x / (1 + scale_step * snap_scale);
+				finger_at = finger_at / (1 + scale_step * snap_scale);
 			}
 		}
 	}
 
 	if (button_state & button_state_active) {
-		float pos_in_slider = (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_x) / (size.x-button_size.x)));
+		float pos_in_slider = vertical
+			? (float)fmin(1, fmax(0, ((window_relative_pos.y-button_size.y/2)-finger_at) / (size.y-button_size.y)))
+			: (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_at) / (size.x-button_size.x)));
 		N new_val = (N)min + (N)pos_in_slider*(N)(max-min);
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
@@ -2350,21 +2377,28 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Draw the UI
 	float x           = window_relative_pos.x;
-	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
-	float slide_x_rel = (float)(percent * (size.x-button_size.x));
-	float slide_y     = window_relative_pos.y - (size.y-button_size.y)/2;
+	float y           = window_relative_pos.y;
+	float slide_x_rel = 0;
+	float slide_y_rel = 0;
+	if (vertical) {
+		slide_x_rel = (size.x - button_size.x) / 2;
+		slide_y_rel = (float)(percent * (size.y - button_size.y));
+	} else {
+		slide_x_rel = (float)(percent * (size.x - button_size.x));
+		slide_y_rel = (size.y - button_size.y) / 2;
+	}
 
-	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend);
+	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend, vertical);
 
 	if (confirm_method == ui_confirm_push) {
 		ui_draw_el(ui_vis_slider_push,
-			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z}, 
+			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
 			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_settings.backplate_depth+mm2m)},
 			ui_color_primary, color_blend);
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		ui_draw_el(ui_vis_slider_pinch,
-			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z},
-			vec3{ button_size.x, button_size.y, button_depth}, 
+			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
+			vec3{button_size.x, button_size.y, button_depth},
 			ui_color_primary, color_blend);
 
 		vec3 pinch_local = hand < 0
@@ -2372,26 +2406,38 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
 		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-			float scale    = 1 + scale_step * snap_scale;
-			float z        = -activation_plane - (scale_step * snap_dist) + button_depth/2;
-			float scaled_x = x+size.x*(scale-1)*0.5f;
+			float scale     = 1 + scale_step * snap_scale;
+			float z         = -activation_plane - (scale_step * snap_dist) + button_depth/2;
+			float scaled_at = vertical
+				? y+size.y*(scale-1)*0.5f
+				: x+size.x*(scale-1)*0.5f;
 			
-			float connector_y = line_y - rule_size * 0.5f;
-			line_add({ x,        connector_y, window_relative_pos.z}, { scaled_x,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_x-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			if (vertical) {
+				float connector_x = (x-slide_x_rel) - size_min * 0.5f;
+				line_add({ connector_x, y,        window_relative_pos.z}, { connector_x, scaled_at,              window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+				line_add({ connector_x, y-size.y, window_relative_pos.z}, { connector_x, scaled_at-size.y*scale, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			} else {
+				float connector_y = (y-slide_y_rel) - size_min * 0.5f;
+				line_add({ x,        connector_y, window_relative_pos.z}, { scaled_at,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+				line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_at-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			}
 
-			ui_draw_el(ui_vis_slider_line,
-				vec3{ scaled_x, line_y, window_relative_pos.z + z },
-				vec3{ slide_x_rel*scale + button_size.x/2, rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-				ui_color_primary, color_blend);
-			ui_draw_el(ui_vis_slider_line,
-				vec3{ scaled_x - slide_x_rel*scale - button_size.x/2, line_y, window_relative_pos.z + z },
-				vec3{ (size.x-slide_x_rel)*scale, rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-				ui_color_common, color_blend);
-
+			if (vertical) {
+				ui_progress_bar_at_ex(percent,
+					vec3{ x-slide_x_rel, scaled_at, window_relative_pos.z + z },
+					vec2{ size.x, size.y*scale },
+					color_blend, vertical);
+			} else {
+				ui_progress_bar_at_ex(percent,
+					vec3{ scaled_at, y-slide_y_rel, window_relative_pos.z + z },
+					vec2{ size.x*scale, size.y },
+					color_blend, vertical);
+			}
 			ui_draw_el(ui_vis_slider_pinch,
-				vec3{ scaled_x - slide_x_rel*scale, slide_y, window_relative_pos.z+z},
-				vec3{ button_size.x, button_size.y, button_depth}, 
+				vertical
+					? vec3{ x - slide_x_rel, scaled_at - slide_y_rel * scale, window_relative_pos.z + z }
+					: vec3{ scaled_at - slide_x_rel * scale, y - slide_y_rel, window_relative_pos.z + z },
+				vec3{ button_size.x, button_size.y, button_depth },
 				ui_color_primary, color_blend);
 		}
 	}
