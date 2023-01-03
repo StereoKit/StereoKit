@@ -104,6 +104,20 @@ namespace StereoKit
 		public void Draw(in Matrix transform, TextAlign anchorPosition, Color32 linearColor)
 			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, linearColor);
 
+		/// <summary>Finds a sprite that matches the given id! Check out the
+		/// DefaultIds static class for some built-in ids. Sprites will auto-id
+		/// themselves using this pattern if single sprites: {Tex.Id}/spr, and
+		/// this pattern if atlased sprites: atlas_spr/{atlas}/{Tex.Id}.
+		/// </summary>
+		/// <param name="id">Id of the sprite asset.</param>
+		/// <returns>A Sprite asset with the given id, or null if none is
+		/// found.</returns>
+		public static Sprite Find(string id)
+		{
+			IntPtr sprite = NativeAPI.sprite_find(id);
+			return sprite == IntPtr.Zero ? null : new Sprite(sprite);
+		}
+
 		/// <summary>Create a sprite from an image file! This loads a Texture
 		/// from file, and then uses that Texture as the source for the 
 		/// Sprite.</summary>

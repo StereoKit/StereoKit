@@ -116,10 +116,11 @@ void *assets_allocate(asset_type_ type) {
 
 	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
-	header->type  = type;
-	header->id    = hash_fnv64_string(name);
-	header->index = assets.count;
-	header->state = asset_state_none;
+	header->type    = type;
+	header->id      = hash_fnv64_string(name);
+	header->id_text = string_copy(name);
+	header->index   = assets.count;
+	header->state   = asset_state_none;
 	assets_addref(header);
 	assets.add(header);
 	return header;
