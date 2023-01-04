@@ -22,6 +22,7 @@ bool line_drawer_init() {
 	line_mesh = mesh_create();
 	mesh_set_keep_data(line_mesh, false);
 	mesh_set_id       (line_mesh, "render/line_mesh");
+	mesh_set_data     (line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
 
 	shader_t line_shader = shader_find(default_id_shader_lines);
 	line_material = material_create(line_shader);
