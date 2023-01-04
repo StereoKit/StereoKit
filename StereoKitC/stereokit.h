@@ -1348,6 +1348,7 @@ typedef enum sprite_type_ {
 	sprite_type_single
 } sprite_type_;
 
+SK_API sprite_t    sprite_find       (const char* id);
 SK_API sprite_t    sprite_create     (tex_t    sprite,           sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API sprite_t    sprite_create_file(const char *filename_utf8, sprite_type_ type sk_default(sprite_type_atlased), const char *atlas_id sk_default("default"));
 SK_API void        sprite_set_id     (sprite_t sprite, const char *id);
