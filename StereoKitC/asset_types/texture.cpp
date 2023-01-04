@@ -800,7 +800,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 		skg_tex_destroy(&texture->tex);
 
 		if (!different_size && !dynamic)
-			texture->type &= tex_type_dynamic;
+			texture->type |= tex_type_dynamic;
 
 		skg_tex_fmt_  format   = (skg_tex_fmt_)texture->format;
 		skg_use_      use      = texture->type & tex_type_dynamic ? skg_use_dynamic  : skg_use_static;
