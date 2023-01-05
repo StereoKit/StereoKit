@@ -1051,9 +1051,10 @@ vec2 ui_layout_remaining() {
 	float size_y = layout->size.y != 0
 		? layout->size.y
 		: (layout->window ? layout->window->prev_size.y : 0);
+	float max_x = size_x == 0 ? -layout->max_x : layout->offset_initial.x - (size_x - skui_settings.padding);
 	return vec2{
-		fmaxf(-layout->max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
-		fmaxf(0,              size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
+		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
+		fmaxf(0,     size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
 	};
 }
 
@@ -1092,7 +1093,7 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 	// then we'll want to start this element on the next line down
 	if (final_pos.x  != layout->offset_initial.x-skui_settings.padding &&
 		layout->size.x != 0                                            &&
-		final_pos.x - final_size.x < layout->offset_initial.x - layout->size.x + skui_settings.padding)
+		final_pos.x - final_size.x < (layout->offset_initial.x - (layout->size.x + skui_settings.padding)))
 	{
 		ui_nextline();
 		final_pos = layout->offset;
