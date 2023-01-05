@@ -1611,7 +1611,7 @@ void ui_label_g(const C *text, bool32_t use_padding) {
 	vec2 final_size;
 	vec2 txt_size = text_size(text, skui_font_stack.last());
 	txt_size += use_padding
-		? vec2{skui_settings.padding, skui_settings.padding}
+		? vec2{skui_settings.padding, skui_settings.padding}*2
 		: vec2{0, skui_settings.padding}*2;
 	ui_layout_reserve_sz(txt_size, false, &final_pos, &final_size);
 
