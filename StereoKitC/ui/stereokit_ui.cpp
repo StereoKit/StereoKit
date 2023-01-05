@@ -2119,14 +2119,14 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		float right     = fminf(carat_pos.x, carat_end.x);
 
 		vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
-		vec3   pos = (final_pos - vec3{ skui_settings.padding - left, skui_settings.padding - carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
+		vec3   pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
 		matrix mx  = matrix_trs(pos, quat_identity, sz);
 		mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
 	}
 	// Show a blinking text carat
 	if (skui_input_target == id_hash && (int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
 
-		ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, skui_settings.padding - carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
+		ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 1);
 	}
 
 	return result;
