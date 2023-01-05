@@ -81,6 +81,7 @@ class DemoUITearsheet : ITest
 
 	Pose   textWindowPose = new Pose(-0.6f, 0, 0);
 	string textInput = "Text here please :)";
+	string textPassword = "Text here please :)";
 	void ShowTextWindow()
 	{
 		UI.WindowBegin("Text", ref textWindowPose, V.XY(0.25f,0));
@@ -110,6 +111,9 @@ class DemoUITearsheet : ITest
 		UI.Label("UI.Input");
 		UI.SameLine();
 		UI.Input("Input", ref textInput);
+		UI.Label("UI.Input Password");
+		UI.SameLine();
+		UI.Input("Password", ref textPassword, type: TextContext.Password);
 
 		UI.WindowEnd();
 	}
