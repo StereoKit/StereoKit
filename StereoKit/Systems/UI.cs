@@ -138,7 +138,7 @@ namespace StereoKit
 		/// during layout. Like other UI layout sizes, an axis set to zero
 		/// means it will auto-expand in that direction.</param>
 		public static void PushSurface(Pose surfacePose, Vec3 layoutStart = new Vec3(), Vec2 layoutDimensions = new Vec2())
-			=> NativeAPI.ui_push_surface(surfacePose, layoutStart, layoutDimensions);
+			=> NativeAPI.ui_push_surface(surfacePose, 1, layoutStart, layoutDimensions);
 
 		/// <summary>This will return to the previous UI layout on the stack.
 		/// This must be called after a PushSurface call.</summary>
@@ -877,6 +877,8 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
 			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
+		public static bool HandleBegin(string id, ref Pose pose, ref float scale, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.ExactWithScale)
+			=> NativeAPI.ui_handle_begin_sc_16(id, ref pose, ref scale, handle, drawHandle?1:0, moveType);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn. Pops the pose transform pushed

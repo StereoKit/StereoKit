@@ -39,11 +39,16 @@ class DemoUI : ITest
 	/// :End:
 
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
+	Model  helmet        = Model.FromFile("DamagedHelmet.gltf");
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
 	Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+	float  clipboardScale = 1.2f;
+	Pose   helmetPose    = new Pose(.2f,0,0, Quat.LookDir(-1,0,1));
+	float  helmetScale   = 0.1f;
 	bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;
+	UIMove uiMoveType = UIMove.Exact;
 
 	public void Update()
 	{
@@ -132,7 +137,7 @@ class DemoUI : ITest
 		/// advantage of how HandleBegin pushes the handle's pose onto the
 		/// Hierarchy transform stack!
 		/// 
-		UI.HandleBegin("Clip", ref clipboardPose, clipboard.Bounds);
+		UI.HandleBegin("Clip", ref clipboardPose, ref clipboardScale, clipboard.Bounds, false, UIMove.Exact);
 		clipboard.Draw(Matrix.Identity);
 		///
 		/// Once we've done that, we also need to define the layout area of
@@ -153,16 +158,34 @@ class DemoUI : ITest
 		/// button group! Not much 'radio' actually happening, but it's still
 		/// pretty simple. Pair it with an enum, or an integer, and have fun!
 		///
-		if (UI.Radio("Radio1", clipOption == 1)) clipOption = 1;
+		UI.Text("Choose a default move type:");
+		if (UI.Radio("Exact", uiMoveType == UIMove.Exact)) uiMoveType = UIMove.Exact;
 		UI.SameLine();
-		if (UI.Radio("Radio2", clipOption == 2)) clipOption = 2;
+		if (UI.Radio("ExactWithScale", uiMoveType == UIMove.ExactWithScale)) uiMoveType = UIMove.ExactWithScale;
+
+		bool IsBitSet(UIMove b, UIMove pos) => ((byte)b & (int)pos) != 0;
+		UI.Text("Or toggle transform components!");
+		bool posOnly = IsBitSet(uiMoveType, UIMove.PosOnly);
+		if (UI.Toggle("Position", ref posOnly)) uiMoveType ^= UIMove.PosOnly;
 		UI.SameLine();
-		if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
+		bool rotOnly = IsBitSet(uiMoveType, UIMove.RotOnly);
+		if (UI.Toggle("Rotation", ref rotOnly)) uiMoveType ^= UIMove.RotOnly;
+		UI.SameLine();
+		bool scaleOnly = IsBitSet(uiMoveType, UIMove.ScaleOnly);
+		if (UI.Toggle("Scale", ref scaleOnly)) uiMoveType ^= UIMove.ScaleOnly;
+
+		UI.Text("Or choose a unique move type:");
+		bool faceUser = uiMoveType == UIMove.FaceUser;
+		if (UI.Toggle("FaceUser", ref faceUser)) uiMoveType = faceUser ? UIMove.FaceUser : UIMove.None;
 		///
 		/// As with windows, Handles need an End call.
 		/// 
 		UI.HandleEnd();
 		/// :End:
+
+		UI.HandleBegin("HelmetScale", ref helmetPose, ref helmetScale, helmet.Bounds, false, uiMoveType);
+		helmet.Draw(Matrix.Identity);
+		UI.HandleEnd();
 
 		// Just moving this UI out of the way so it doesn't show in
 		// screenshots or anything.
