@@ -27,9 +27,15 @@ Set StereoKitTest as the startup project, set the platform to x64, and you shoul
 
 ## I want to modify code (Android)
 
-In addition to the Windows steps, to build for Android, StereoKit uses [xmake](https://xmake.io/). You will need to install it and configure it for building Android applications. You will probably need to tell it where the Android SDK is on your system. I've technically done this at least once, but don't remember it well enough to write a good guide on it.
+In addition to the Windows steps, to build for Android, StereoKit uses [xmake](https://xmake.io/). You will need to install it and configure it for building Android applications. You will need to tell it where the Android SDK and NDK are on your system.
 
-I may update this guide eventually, but if you can track what steps you take while doing this and submit a PR, that would be really incredible!
+To manually configure the SDK and NDK paths for xmake, you may use either the `xmake f/config` command for the configuration of the current project or `xmake g/global` to ensure it's set globally.
+
+If you've downloaded the SDK and NDK through Android Studio on Windows, you may have a similar path to the following: 
+```
+xmake g --android_sdk=C:\Users\<User>\AppData\Local\Android\Sdk
+xmake g --ndk=C:\Users\<User>\AppData\Local\Android\Sdk\ndk\<Version>
+```
 
 ## I want to modify code (Linux)
 
