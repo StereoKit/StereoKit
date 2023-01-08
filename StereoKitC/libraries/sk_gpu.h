@@ -749,7 +749,7 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
 template <typename T>
-void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
+void skg_downsample_4(T *data, T data_max, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
 
 ///////////////////////////////////////////
 
@@ -1994,16 +1994,16 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 		case skg_tex_fmt_bgra32_linear:
 		case skg_tex_fmt_rgba32:
 		case skg_tex_fmt_rgba32_linear: 
-			skg_downsample_4((uint8_t  *)mip_data, mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+			skg_downsample_4<uint8_t >((uint8_t  *)mip_data, 255,   mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_rgba64u:
-			skg_downsample_4((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_4<uint16_t>((uint16_t *)mip_data, 65535, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba64s:
-			skg_downsample_4((int16_t  *)mip_data, mip_w, mip_h, (int16_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_4<int16_t >((int16_t  *)mip_data, 32762, mip_w, mip_h, (int16_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba128:
-			skg_downsample_4((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
+			skg_downsample_4<float   >((float    *)mip_data, 1.0f,  mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_depth32:
 		case skg_tex_fmt_r32:
@@ -2459,7 +2459,7 @@ void skg_tex_destroy(skg_tex_t *tex) {
 ///////////////////////////////////////////
 
 template <typename T>
-void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
+void skg_downsample_4(T *data, T data_max, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
 	int w = (int32_t)log2f((float)width);
 	int h = (int32_t)log2f((float)height);
 	*out_width  = w = max(1, (1 << w) >> 1);
@@ -2467,9 +2467,9 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 
 	*out_data = (T*)malloc((int64_t)w * h * sizeof(T) * 4);
 	if (*out_data == nullptr) { skg_log(skg_log_critical, "Out of memory"); return; }
-	memset(*out_data, 0, (int64_t)w * h * sizeof(T) * 4);
 	T *result = *out_data;
 
+	const float data_maxf = (float)data_max;
 	for (int32_t y = 0; y < (*out_height); y++) {
 		int32_t src_row_start  = y * 2 * width;
 		int32_t dest_row_start = y * (*out_width);
@@ -2479,10 +2479,15 @@ void skg_downsample_4(T *data, int32_t width, int32_t height, T **out_data, int3
 			int src_n = src + width*4;
 			T *cD = &result[dest];
 
-			cD[0] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++; src_n++;
-			cD[1] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++; src_n++;
-			cD[2] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++; src_n++;
-			cD[3] = (data[src] + data[src+4] + data[src_n] + data[src_n+4])/4; src++; src_n++;
+			float a = data[src  +3] / data_maxf;
+			float b = data[src  +7] / data_maxf;
+			float c = data[src_n+3] / data_maxf;
+			float d = data[src_n+7] / data_maxf;
+			float total = a + b + c + d;
+			cD[0] = (T)((data[src+0]*a + data[src+4]*b + data[src_n+0]*c + data[src_n+4]*d)/total);
+			cD[1] = (T)((data[src+1]*a + data[src+5]*b + data[src_n+1]*c + data[src_n+5]*d)/total);
+			cD[2] = (T)((data[src+2]*a + data[src+6]*b + data[src_n+2]*c + data[src_n+6]*d)/total);
+			cD[3] =     (data[src+3]   + data[src+7]   + data[src_n+3]   + data[src_n+7])/4;
 		}
 	}
 }
@@ -2498,7 +2503,6 @@ void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int3
 
 	*out_data = (T*)malloc((int64_t)w * h * sizeof(T));
 	if (*out_data == nullptr) { skg_log(skg_log_critical, "Out of memory"); return; }
-	memset(*out_data, 0, (int64_t)w * h * sizeof(T));
 	T *result = *out_data;
 
 	for (int32_t y = 0; y < (*out_height); y++) {
