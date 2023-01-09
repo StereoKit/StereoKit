@@ -1051,9 +1051,10 @@ vec2 ui_layout_remaining() {
 	float size_y = layout->size.y != 0
 		? layout->size.y
 		: (layout->window ? layout->window->prev_size.y : 0);
+	float max_x = size_x == 0 ? -layout->max_x : layout->offset_initial.x - (size_x - skui_settings.padding);
 	return vec2{
-		fmaxf(-layout->max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
-		fmaxf(0,              size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
+		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
+		fmaxf(0,     size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
 	};
 }
 
@@ -1092,7 +1093,7 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 	// then we'll want to start this element on the next line down
 	if (final_pos.x  != layout->offset_initial.x-skui_settings.padding &&
 		layout->size.x != 0                                            &&
-		final_pos.x - final_size.x < layout->offset_initial.x - layout->size.x + skui_settings.padding)
+		final_pos.x - final_size.x < (layout->offset_initial.x - (layout->size.x + skui_settings.padding)))
 	{
 		ui_nextline();
 		final_pos = layout->offset;
@@ -1610,10 +1611,12 @@ void ui_label_g(const C *text, bool32_t use_padding) {
 	vec3 final_pos;
 	vec2 final_size;
 	vec2 txt_size = text_size(text, skui_font_stack.last());
-	ui_layout_reserve_sz(txt_size, use_padding, &final_pos, &final_size);
+	txt_size += use_padding
+		? vec2{skui_settings.padding, skui_settings.padding}*2
+		: vec2{0, skui_settings.padding}*2;
+	ui_layout_reserve_sz(txt_size, false, &final_pos, &final_size);
 
-	float pad = use_padding ? skui_settings.gutter : 0;
-	ui_text_at(text, text_align_center_left, text_fit_squeeze, final_pos - vec3{pad,0,skui_settings.depth/2}, final_size);
+	ui_text_at(text, text_align_center, text_fit_squeeze, final_pos - vec3{0,0,skui_settings.depth/2}, final_size);
 }
 void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char    >(text, use_padding); }
 void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t>(text, use_padding); }
@@ -2096,25 +2099,51 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	// Render the input UI
 	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
-	ui_text_at(buffer, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth/2 + 2*mm2m }, text_bounds);
-	
-	float line      = ui_line_height() * 0.5f;
-	vec2  carat_pos = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
-	if (skui_input_target == id_hash && skui_input_carat != skui_input_carat_end) {
-		vec2  carat_end = text_char_at_o(buffer, skui_font_stack.last(), skui_input_carat_end, &text_bounds, text_fit_squeeze, text_align_top_left, text_align_center_left);
-		float left      = fmaxf(carat_pos.x, carat_end.x);
-		float right     = fminf(carat_pos.x, carat_end.x);
 
-		vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
-		vec3   pos = (final_pos - vec3{ skui_settings.padding - left, skui_settings.padding - carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
-		matrix mx  = matrix_trs(pos, quat_identity, sz);
-		mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
+	// Swap out for a string of asterisks to hide any password
+	const C* draw_text = buffer;
+	if (type == text_context_password) {
+		int32_t len          = utf_charlen(buffer);
+		C*      password_txt = (C*)alloca(sizeof(C) * (len + 1));
+		for (size_t i = 0; i < len; i++)
+			password_txt[i] = '*';
+		password_txt[len] = '\0';
+		draw_text = password_txt;
 	}
-	// Show a blinking text carat
-	if (skui_input_target == id_hash && (int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
 
-		ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, skui_settings.padding - carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
+	// If the input is focused, display text selection information
+	if (skui_input_target == id_hash) {
+		// Advance the displayed text if it's off the right side of the input
+		int32_t carat_at      = skui_input_carat;
+		vec2    carat_pos     = text_char_at_o(draw_text, skui_font_stack.last(), carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+		float   scroll_margin = text_bounds.x - skui_fontsize;
+		while (carat_pos.x < -scroll_margin && *draw_text != '\0' && carat_at >= 0) {
+			draw_text += 1;
+			carat_at  -= 1;
+			carat_pos = text_char_at_o(draw_text, skui_font_stack.last(), carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+		}
+
+		// Display a selection box for highlighted text
+		float line = ui_line_height() * 0.5f;
+		if (skui_input_carat != skui_input_carat_end) {
+			int32_t end       = maxi(0, carat_at + (skui_input_carat_end - skui_input_carat));
+			vec2    carat_end = text_char_at_o(draw_text, skui_font_stack.last(), end, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+			float   left      = fmaxf(carat_pos.x, carat_end.x);
+			float   right     = fmax(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
+
+			vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
+			vec3   pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
+			matrix mx  = matrix_trs(pos, quat_identity, sz);
+			mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
+		}
+
+		// Show a blinking text carat
+		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
+			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 1);
+		}
 	}
+
+	ui_text_at(draw_text, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds);
 
 	return result;
 }

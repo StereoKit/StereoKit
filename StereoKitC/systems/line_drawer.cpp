@@ -19,10 +19,6 @@ array_t<vind_t> line_inds  = {};
 ///////////////////////////////////////////
 
 bool line_drawer_init() {
-	line_mesh = mesh_create();
-	mesh_set_keep_data(line_mesh, false);
-	mesh_set_id       (line_mesh, "render/line_mesh");
-
 	shader_t line_shader = shader_find(default_id_shader_lines);
 	line_material = material_create(line_shader);
 	shader_release(line_shader);
@@ -39,7 +35,15 @@ void line_drawer_update() {
 	if (line_inds.count <= 0)
 		return;
 
-	mesh_set_data     (line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
+	if (line_mesh) {
+		mesh_set_data(line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
+	} else {
+		line_mesh = mesh_create();
+		mesh_set_keep_data(line_mesh, false);
+		mesh_set_id       (line_mesh, "render/line_mesh");
+		mesh_set_data     (line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
+	}
+
 	mesh_set_draw_inds(line_mesh, line_inds.count);
 	render_add_mesh   (line_mesh, line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 

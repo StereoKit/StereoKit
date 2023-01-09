@@ -92,6 +92,13 @@ class App
 	}
 
 	//////////////////////
+	
+	public void Shutdown()
+	{
+		Tests.Shutdown();
+	}
+
+	//////////////////////
 
 	public void Step()
 	{
