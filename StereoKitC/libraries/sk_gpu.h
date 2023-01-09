@@ -1987,14 +1987,15 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 	const void *mip_data = curr_data;
 	int32_t     mip_w    = width;
 	int32_t     mip_h    = height;
+
 	for (uint32_t m = 1; m < mip_levels; m++) {
 		tex_mem[m] = {};
 		switch (format) { // When adding a new format here, also add it to skg_can_make_mips
 		case skg_tex_fmt_bgra32:
 		case skg_tex_fmt_bgra32_linear:
 		case skg_tex_fmt_rgba32:
-		case skg_tex_fmt_rgba32_linear: 
-			skg_downsample_4<uint8_t >((uint8_t  *)mip_data, 255,   mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
+		case skg_tex_fmt_rgba32_linear:
+			skg_downsample_4<uint8_t >((uint8_t  *)mip_data, 255,   mip_w, mip_h, (uint8_t  **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
 			break;
 		case skg_tex_fmt_rgba64u:
 			skg_downsample_4<uint16_t>((uint16_t *)mip_data, 65535, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h);
@@ -2181,9 +2182,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	tex->multisample = multisample;
 	bool mips = 
 		   tex->mips == skg_mip_generate
-		&& skg_can_make_mips(tex->format)
-		&& (width  & (width  - 1)) == 0
-		&& (height & (height - 1)) == 0;
+		&& skg_can_make_mips(tex->format);
 
 	uint32_t mip_levels = (mips ? skg_mip_count(width, height) : 1);
 	uint32_t px_size    = skg_tex_fmt_size(tex->format);
@@ -2460,12 +2459,9 @@ void skg_tex_destroy(skg_tex_t *tex) {
 
 template <typename T>
 void skg_downsample_4(T *data, T data_max, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
-	int w = (int32_t)log2f((float)width);
-	int h = (int32_t)log2f((float)height);
-	*out_width  = w = max(1, (1 << w) >> 1);
-	*out_height = h = max(1, (1 << h) >> 1);
-
-	*out_data = (T*)malloc((int64_t)w * h * sizeof(T) * 4);
+	*out_width  = width  / 2;
+	*out_height = height / 2;
+	*out_data   = (T*)malloc((int64_t)(*out_width) * (*out_height) * sizeof(T) * 4);
 	if (*out_data == nullptr) { skg_log(skg_log_critical, "Out of memory"); return; }
 	T *result = *out_data;
 
@@ -2496,12 +2492,9 @@ void skg_downsample_4(T *data, T data_max, int32_t width, int32_t height, T **ou
 
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height) {
-	int w = (int32_t)log2f((float)width);
-	int h = (int32_t)log2f((float)height);
-	*out_width  = w = (1 << w) >> 1;
-	*out_height = h = (1 << h) >> 1;
-
-	*out_data = (T*)malloc((int64_t)w * h * sizeof(T));
+	*out_width  = width  / 2;
+	*out_height = height / 2;
+	*out_data   = (T*)malloc((int64_t)(*out_width) * (*out_height) * sizeof(T));
 	if (*out_data == nullptr) { skg_log(skg_log_critical, "Out of memory"); return; }
 	T *result = *out_data;
 
