@@ -1051,7 +1051,7 @@ vec2 ui_layout_remaining() {
 	float size_y = layout->size.y != 0
 		? layout->size.y
 		: (layout->window ? layout->window->prev_size.y : 0);
-	float max_x = size_x == 0 ? -layout->max_x : layout->offset_initial.x - (size_x - skui_settings.padding);
+	float max_x = size_x == 0 ? -layout->max_x : -(size_x - skui_settings.padding);
 	return vec2{
 		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
 		fmaxf(0,     size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
