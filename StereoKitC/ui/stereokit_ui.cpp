@@ -739,6 +739,7 @@ bool ui_init() {
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color       (skui_mat_dbg, "color", { 0,1,0,0.25f });
+	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
 
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
@@ -752,6 +753,7 @@ bool ui_init() {
 
 	skui_mat = material_copy_id(default_id_material_ui);
 	material_set_bool(skui_mat, "ui_tint", true);
+	material_set_id  (skui_mat, "sk/ui/default_mat");
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
 	//material_set_wireframe(skui_mat_quad, true);
 	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
