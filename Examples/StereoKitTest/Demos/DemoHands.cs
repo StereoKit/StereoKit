@@ -25,7 +25,6 @@ class DemoHands : ITest
 	bool showHandMenus = true;
 	bool showHandSize  = true;
 
-	Mesh jointMesh = Mesh.GenerateSphere(1);
 	HandMenuRadial handMenu;
 
 	public void Initialize() {
@@ -159,7 +158,7 @@ class DemoHands : ITest
 					new GradientKey(new Color(1,1,1,1),       1)));
 		UI.WindowEnd();
 
-		if (showJoints)   DrawJoints(jointMesh, Default.Material);
+		if (showJoints)   DrawJoints(Mesh.Sphere, Default.Material);
 		if (showAxes)     DrawAxes();
 		if (showPointers) DrawPointers();
 		if (showHandSize) DrawHandSize();

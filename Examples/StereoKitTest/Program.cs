@@ -37,6 +37,6 @@ class Program
 		app.Init();
 
 		// Now pass execution over to StereoKit
-		SK.Run(app.Step, () => Log.Info("Bye!") );
+		SK.Run(app.Step, app.Shutdown);
 	}
 }

@@ -49,6 +49,7 @@
 namespace sk {
 
 bool openxr_init          ();
+void openxr_cleanup       ();
 void openxr_shutdown      ();
 void openxr_step_begin    ();
 void openxr_step_end      ();

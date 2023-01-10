@@ -23,5 +23,10 @@
 	<Type Name="sk::rect_t"><DisplayString>[{x,g},{y,g} - {w,g},{h,g}]</DisplayString></Type>
 	<Type Name="sk::plane_t"><DisplayString>&lt;{center.x,g},{center.y,g},{center.z,g}&gt; - {d,g}</DisplayString></Type>
 	<Type Name="sk::sphere_t"><DisplayString>&lt;{center.x,g},{center.y,g},{center.z,g}&gt; - {radius,g}</DisplayString></Type>
+	
+	<Type Name="sk::asset_header_t">
+		<DisplayString Condition="id_text!=0">{id_text,sb}[{type,en}:{refs}] - {state,en}</DisplayString>
+		<DisplayString Condition="id_text==0">{id}[{type,en}:{refs}] - {state,en}</DisplayString>
+	</Type>
 
 </AutoVisualizer>

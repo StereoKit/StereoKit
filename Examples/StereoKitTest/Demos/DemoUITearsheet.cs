@@ -41,6 +41,8 @@ class DemoUITearsheet : ITest
 		UI.SameLine();
 		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.CenterNoText));
 
+		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.None));
+
 		UI.Label("UI.ButtonRound");
 		UI.SameLine();
 		Unique(() => UI.ButtonRound("UI.ButtonRound", sprSearch));
@@ -63,14 +65,22 @@ class DemoUITearsheet : ITest
 	}
 
 	Pose   sliderWindowPose = new Pose(-0.3f, 0, 0);
-	float  sliderValf = 0;
-	double sliderVald = 0;
+	float  sliderValf1 = 0;
+	float  sliderValf2 = 0;
+	float  sliderValf3 = 0;
+	double sliderVald  = 0;
 	void ShowSliderWindow()
 	{
-		UI.WindowBegin("Slides & Separators", ref sliderWindowPose);
+		UI.WindowBegin("Slides & Separators", ref sliderWindowPose, new Vec2(0.25f, 0.2f));
 
-		Unique(() => UI.HSlider("UI.HSlider", ref sliderValf, 0, 1, 0, 0, UIConfirm.Push));
-		Unique(() => UI.HSlider("UI.HSlider", ref sliderVald, 0, 1, 0, 0, UIConfirm.Pinch));
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.gutter + UI.Settings.padding*2);
+		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf2, 0, 1, 0, 0, UIConfirm.Push));
+		UI.SameLine();
+		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf3, 0, 1, 0, 0, UIConfirm.VariablePinch));
+		UI.LayoutPop();
+
+		Unique(() => UI.HSlider("UI.HSlider", ref sliderValf1, 0, 1, 0, 0, UIConfirm.Push));
+		Unique(() => UI.HSlider("UI.HSlider", ref sliderVald,  0, 1, 0, 0, UIConfirm.VariablePinch));
 		UI.HSeparator();
 		UI.ProgressBar((Time.Totalf%3.0f)/3.0f);
 
@@ -78,7 +88,8 @@ class DemoUITearsheet : ITest
 	}
 
 	Pose   textWindowPose = new Pose(-0.6f, 0, 0);
-	string textInput = "Text here...";
+	string textInput = "Text here please :)";
+	string textPassword = "Text here please :)";
 	void ShowTextWindow()
 	{
 		UI.WindowBegin("Text", ref textWindowPose, V.XY(0.25f,0));
@@ -108,6 +119,9 @@ class DemoUITearsheet : ITest
 		UI.Label("UI.Input");
 		UI.SameLine();
 		UI.Input("Input", ref textInput);
+		UI.Label("UI.Input Password");
+		UI.SameLine();
+		UI.Input("Password", ref textPassword, type: TextContext.Password);
 
 		UI.WindowEnd();
 	}

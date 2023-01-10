@@ -9,6 +9,8 @@
 
 namespace sk {
 
+void shader_update_label(shader_t shader);
+
 ///////////////////////////////////////////
 
 shader_t shader_find(const char *id) {
@@ -24,12 +26,22 @@ shader_t shader_find(const char *id) {
 
 void shader_set_id(shader_t shader, const char *id) {
 	assets_set_id(&shader->header, id);
+	shader_update_label(shader);
 }
 
 ///////////////////////////////////////////
 
 const char* shader_get_id(const shader_t shader) {
 	return shader->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void shader_update_label(shader_t shader) {
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	if (shader->header.id_text != nullptr)
+		skg_shader_name(&shader->shader, shader->header.id_text);
+#endif
 }
 
 ///////////////////////////////////////////

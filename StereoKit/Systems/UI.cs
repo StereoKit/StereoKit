@@ -16,8 +16,8 @@ namespace StereoKit
 	/// </summary>
 	public static class UI
 	{
-		/// <summary>UI sizing and layout settings. Set only for now</summary>
-		public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
+		/// <summary>UI sizing and layout settings.</summary>
+		public static UISettings Settings { get => NativeAPI.ui_get_settings(); set { NativeAPI.ui_settings(value); } }
 
 		/// <summary>StereoKit will generate a color palette from this gamma
 		/// space color, and use it to skin the UI!</summary>
@@ -28,7 +28,7 @@ namespace StereoKit
 		/// collision issues.</summary>
 		public static bool ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
 
-		/// <summary>Enables or disables the far ray grab interaction for 
+		/// <summary>Enables or disables the far ray grab interaction for
 		/// Handle elements like the Windows. It can be enabled and disabled
 		/// for individual UI elements, and if this remains disabled at the
 		/// start of the next frame, then the hand ray indicators will not be
@@ -40,8 +40,13 @@ namespace StereoKit
 		/// soft keyboard.</summary>
 		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
 
-		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
+		/// <summary>This is the height of a single line of text with padding
+		/// in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
+
+		/// <summary>This returns the TextStyle that's on top of the UI's
+		/// stack, according to UI.Push/PopTextStyle.</summary>
+		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
 
 		/// <summary>Use LayoutRemaining, removing in v0.4</summary>
 		[Obsolete("Use LayoutRemaining, removing in v0.4")]
@@ -87,6 +92,10 @@ namespace StereoKit
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
+
+		public static void LayoutPush   (Vec3 start, Vec2 offset) => NativeAPI.ui_layout_push(start, offset);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters);
+		public static void LayoutPop    () => NativeAPI.ui_layout_pop();
 
 		/// <summary>Tells if the hand was involved in the focus or active
 		/// state of the most recent UI element using an id.</summary>
@@ -846,6 +855,106 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
 			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="height">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref float value, float min, float max, float step, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_vslider_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="height">Physical height of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref double value, double min, double max, double step, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_f64_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// Y this is the remaining height of the current layout, and for X this
+		/// is UI.LineHeight.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// Y this is the remaining height of the current layout, and for X this
+		/// is UI.LineHeight.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
 		/// You can draw the handle, but it will have no text on it.
@@ -1029,7 +1138,7 @@ namespace StereoKit
 		/// <param name="start">The top left corner of the Panel element.</param>
 		/// <param name="size">The size of the Panel element, in hierarchy
 		/// local meters.</param>
-		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// <param name="padding">Only UIPad.Outsize has any effect here.
 		/// UIPad.Inside will behave the same as UIPad.None.</param>
 		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
 

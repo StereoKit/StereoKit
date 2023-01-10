@@ -360,6 +360,7 @@ namespace StereoKit
 
 		 ///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_find       (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create     (IntPtr sprite,   SpriteType type = SpriteType.Atlased, string atlas_id = "default");
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_create_file([In] byte[] filename_utf8, SpriteType type = SpriteType.Atlased, string atlas_id = "default");
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_set_id     (IntPtr sprite, string id);
@@ -594,6 +595,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove ui_system_get_move_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_system_set_move_type(UIMove move_type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_settings            (UISettings settings);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings ui_get_settings    ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_color           (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color     (UIColor color_type, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color     (UIColor color_type);
@@ -602,6 +604,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle ui_get_text_style   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_tint             (Color tint_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_tint              ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          (int enabled);
@@ -620,6 +623,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3   ui_layout_at       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_last     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds ui_layout_reserve  (Vec2 size, int add_padding = 0, float depth = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_push     (Vec3 start, Vec2 dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_push_cut (UICut cut_to, float size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_pop      ();
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_used(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_active();
@@ -646,35 +652,39 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_at_16      (string text, ref int pressed, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_img_at_16  (string text, ref int pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void     ui_progress_bar_at   (float percent, Vec3 window_relative_pos, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_16     (string id,   ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_16     (string id,   ref float  value, float  min, float  max, float  step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_f64_16 (string id,   ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_vslider_at_16     (string id,   ref float  value, float  min, float  max, float  step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_vslider_at_f64_16 (string id,   ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_hseparator     ();
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16       (string text, bool use_padding);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16    (string text, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_16        (string text, TextAlign text_align);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_sz_16     (string text, TextAlign text_align, TextFit fit, Vec2 size);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image          (IntPtr sprite_image, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16      (string text);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16   (string text, Vec2 size);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_hseparator      ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16        (string text, bool use_padding);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16     (string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_16         (string text, TextAlign text_align);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_sz_16      (string text, TextAlign text_align, TextFit fit, Vec2 size);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image           (IntPtr sprite_image, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16       (string text);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16    (string text, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_16   (string text, IntPtr image, UIBtnLayout image_layout);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_sz_16(string text, IntPtr image, UIBtnLayout image_layout, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16(string id, IntPtr image, float diameter);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16      (string text, ref int pressed);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16   (string text, ref int pressed, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16 (string id, IntPtr image, float diameter);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_16       (string text, ref int pressed);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_sz_16    (string text, ref int pressed, Vec2 size);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_img_16   (string text, ref int pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_toggle_img_sz_16(string text, ref int pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model          (IntPtr model, Vec2 ui_size, float model_scale);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16       (string id,   StringBuilder buffer, int buffer_size, Vec2 size, TextContext type);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_progress_bar   (float percent, float width);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16     (string id,   ref float value, float min, float max, float step, float width, UIConfirm confirm_method, UINotify notify_on);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_f64_16 (string id,   ref double value, double min, double max, double step, float width, UIConfirm confirm_method, UINotify notify_on);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16(string text, ref Pose movement, Bounds handle, int draw, UIMove move_type);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end     ();
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16(string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_window_end     ();
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_at       (Vec3 start, Vec2 size, UIPad padding);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_begin    (UIPad padding);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_end      ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_model           (IntPtr model, Vec2 ui_size, float model_scale);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16        (string id,   StringBuilder buffer, int buffer_size, Vec2 size, TextContext type);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_progress_bar    (float percent, float width);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16      (string id,   ref float  value, float  min, float  max, float  step, float width,  UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_f64_16  (string id,   ref double value, double min, double max, double step, float width,  UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_vslider_16      (string id,   ref float  value, float  min, float  max, float  step, float height, UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_vslider_f64_16  (string id,   ref double value, double min, double max, double step, float height, UIConfirm confirm_method, UINotify notify_on);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16 (string text, ref Pose movement, Bounds handle, int draw, UIMove move_type);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end      ();
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16 (string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_window_end      ();
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_at        (Vec3 start, Vec2 size, UIPad padding);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_begin     (UIPad padding);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_end       ();
 	}
 }

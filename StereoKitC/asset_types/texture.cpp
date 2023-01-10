@@ -23,6 +23,8 @@ namespace sk {
 
 void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height);
 bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format);
+void  tex_update_label   (tex_t texture);
+void _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -607,6 +609,15 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 // Texture manipulation functions        //
 ///////////////////////////////////////////
 
+void tex_update_label(tex_t texture) {
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+	if (texture->header.id_text != nullptr)
+		skg_tex_name(&texture->tex, texture->header.id_text);
+#endif
+}
+
+///////////////////////////////////////////
+
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err(tex_msg_requires_rendertarget);
@@ -692,6 +703,8 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
 	texture->tex    = skg_tex_create_from_layer(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_index);
+
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////
@@ -723,6 +736,7 @@ tex_t tex_find(const char *id) {
 
 void tex_set_id(tex_t tex, const char *id) {
 	assets_set_id(&tex->header, id);
+	tex_update_label(tex);
 }
 
 ///////////////////////////////////////////
@@ -784,8 +798,6 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
 	if (!skg_tex_is_valid(&texture->tex) || different_size || (!different_size && !dynamic)) {
-		skg_tex_destroy(&texture->tex);
-
 		if (!different_size && !dynamic)
 			texture->type &= tex_type_dynamic;
 
@@ -796,16 +808,21 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
 		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
-		texture->tex = skg_tex_create(type, use, format, use_mips);
-		tex_set_meta   (texture, width, height, texture->format);
-		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
+		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
+		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);
+		skg_tex_set_contents_arr(&new_tex, (const void**)data, data_count, width, height, multisample);
+		skg_tex_t old_tex = texture->tex;
+		texture->tex = new_tex;
+		skg_tex_destroy(&old_tex);
+
+		tex_set_meta(texture, width, height, texture->format);
+
 		if (texture->depth_buffer != nullptr) {
 			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
-		
+		tex_update_label(texture);
 	} else if (dynamic) {
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
@@ -897,11 +914,7 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 
 ///////////////////////////////////////////
 
-void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
-	texture->address_mode = address_mode;
-	texture->anisotropy   = anisotropy_level;
-	texture->sample_mode  = sample;
-
+void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
 	skg_tex_address_ skg_addr;
 	switch (address_mode) {
 	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
@@ -918,7 +931,18 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skg_tex_settings(&texture->tex, skg_addr, skg_sample, anisotropy_level);
+	skg_tex_settings(texture, skg_addr, skg_sample, anisotropy_level);
+}
+
+///////////////////////////////////////////
+
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+	texture->address_mode = address_mode;
+	texture->anisotropy   = anisotropy_level;
+	texture->sample_mode  = sample;
+
+	_tex_set_options(&texture->tex, sample, address_mode, anisotropy_level);
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////
