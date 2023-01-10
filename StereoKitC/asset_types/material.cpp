@@ -46,7 +46,7 @@ const char* material_get_id(const material_t material) {
 ///////////////////////////////////////////
 
 void material_update_label(material_t material) {
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (material->header.id_text != nullptr) {
 		skg_pipeline_name(&material->pipeline, material->header.id_text);
 		skg_buffer_name  (&material->args.buffer_gpu, material->header.id_text);
@@ -848,7 +848,7 @@ material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
 	}
 	material_buffers[register_slot].buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
 	material_buffers[register_slot].size   = size;
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	char name[64];
 	snprintf(name, sizeof(name), "render/material_buffer/register_%d", register_slot);
 	skg_buffer_name(&material_buffers[register_slot].buffer, name);

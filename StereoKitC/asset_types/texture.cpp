@@ -610,7 +610,7 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 ///////////////////////////////////////////
 
 void tex_update_label(tex_t texture) {
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (texture->header.id_text != nullptr)
 		skg_tex_name(&texture->tex, texture->header.id_text);
 #endif
