@@ -57,19 +57,14 @@ shader_t shader_create_mem(void *data, size_t data_size) {
 	if (!skg_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
 		return nullptr;
 
-	shader_t result = shader_find(name);
-	if (result != nullptr)
-		return result;
-
 	skg_shader_t shader = skg_shader_create_memory(data, data_size);
 	if (!skg_shader_is_valid(&shader)) {
 		skg_shader_destroy(&shader);
 		return nullptr;
 	}
 
-	result = (shader_t)assets_allocate(asset_type_shader);
+	shader_t result = (shader_t)assets_allocate(asset_type_shader);
 	result->shader = shader;
-	shader_set_id(result, name);
 
 	return result;
 }
@@ -100,9 +95,10 @@ shader_t shader_create_file(const char *filename) {
 	sk_free(asset_filename);
 	sk_free(with_ext);
 
-	return loaded 
-		? shader_create_mem(data, size)
-		: nullptr;
+	result = loaded ? shader_create_mem(data, size) : nullptr;
+	if (result)
+		shader_set_id(result, filename);
+	return result;
 }
 
 ///////////////////////////////////////////
