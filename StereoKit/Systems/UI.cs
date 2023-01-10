@@ -855,6 +855,106 @@ namespace StereoKit
 		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
 			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="height">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref float value, float min, float max, float step, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_vslider_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="height">Physical height of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref double value, double min, double max, double step, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_f64_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// Y this is the remaining height of the current layout, and for X this
+		/// is UI.LineHeight.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
+		/// at min, and increments by step.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// Y this is the remaining height of the current layout, and for X this
+		/// is UI.LineHeight.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
 		/// <summary>This begins a new UI group with its own layout! Much 
 		/// like a window, except with a more flexible handle, and no header.
 		/// You can draw the handle, but it will have no text on it.

@@ -73,14 +73,14 @@ class DemoUITearsheet : ITest
 	{
 		UI.WindowBegin("Slides & Separators", ref sliderWindowPose, new Vec2(0.25f, 0.2f));
 
-		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.padding*2);
-		Vec2 remain = UI.LayoutRemaining;
-		Unique(() => UI.HSliderAt("UI.HSlider", ref sliderValf2, 0, 1, 0, UI.LayoutAt,                     V.XY(remain.x/2, remain.y), UIConfirm.Push));
-		Unique(() => UI.HSliderAt("UI.HSlider", ref sliderValf3, 0, 1, 0, UI.LayoutAt-V.XY0(remain.x/2,0), V.XY(remain.x/2, remain.y), UIConfirm.VariablePinch));
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.gutter + UI.Settings.padding*2);
+		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf2, 0, 1, 0, 0, UIConfirm.Push));
+		UI.SameLine();
+		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf3, 0, 1, 0, 0, UIConfirm.VariablePinch));
 		UI.LayoutPop();
 
 		Unique(() => UI.HSlider("UI.HSlider", ref sliderValf1, 0, 1, 0, 0, UIConfirm.Push));
-		Unique(() => UI.HSlider("UI.HSlider", ref sliderVald, 0, 1, 0, 0, UIConfirm.VariablePinch));
+		Unique(() => UI.HSlider("UI.HSlider", ref sliderVald,  0, 1, 0, 0, UIConfirm.VariablePinch));
 		UI.HSeparator();
 		UI.ProgressBar((Time.Totalf%3.0f)/3.0f);
 
