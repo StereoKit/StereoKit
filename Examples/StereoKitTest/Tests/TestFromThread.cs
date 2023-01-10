@@ -26,6 +26,8 @@ class TestFromThread : ITest
 		// using the SKG_FORCE_OPENGL preprocessor define.
 		Task.Run(() =>
 		{
+			// Load the shader via memory to force load a unique new shader
+			// with a brand new id.
 			Shader uniqueshader = Shader.FromMemory(Platform.ReadFileBytes("Assets/floor_shader.hlsl.sks"));
 			uniqueShaderMat = new Material(uniqueshader);
 			material        = Material.Default.Copy();
