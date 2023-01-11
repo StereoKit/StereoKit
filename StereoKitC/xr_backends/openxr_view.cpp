@@ -313,17 +313,17 @@ bool openxr_update_swapchains(device_display_t &display) {
 	// Check if the latest configuration is different from what we've already
 	// set up.
 	xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, display.type, display.view_cap, &display.view_cap, display.view_configs);
-	int32_t w = display.view_configs[0].recommendedImageRectWidth  * display.render_scale;
-	int32_t h = display.view_configs[0].recommendedImageRectHeight * display.render_scale;
+	int32_t w = (int32_t)(display.view_configs[0].recommendedImageRectWidth  * display.render_scale);
+	int32_t h = (int32_t)(display.view_configs[0].recommendedImageRectHeight * display.render_scale);
 	int32_t s = display.multisample;
 	if (display.render_scale != 1.0f) {
 		const int32_t quantize = 4;
 		w = (w / quantize) * quantize;
 		h = (h / quantize) * quantize;
 	}
-	if (w > display.view_configs[0].maxImageRectWidth      ) w = display.view_configs[0].maxImageRectWidth;
-	if (h > display.view_configs[0].maxImageRectHeight     ) h = display.view_configs[0].maxImageRectHeight;
-	if (s > display.view_configs[0].maxSwapchainSampleCount) s = display.view_configs[0].maxSwapchainSampleCount;
+	if (w > (int32_t)display.view_configs[0].maxImageRectWidth      ) w = display.view_configs[0].maxImageRectWidth;
+	if (h > (int32_t)display.view_configs[0].maxImageRectHeight     ) h = display.view_configs[0].maxImageRectHeight;
+	if (s > (int32_t)display.view_configs[0].maxSwapchainSampleCount) s = display.view_configs[0].maxSwapchainSampleCount;
 
 	if (   w == display.swapchain_color.width
 		&& h == display.swapchain_color.height

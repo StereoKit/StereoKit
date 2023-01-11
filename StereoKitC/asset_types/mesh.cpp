@@ -399,7 +399,7 @@ const char* mesh_get_id(const mesh_t mesh) {
 ///////////////////////////////////////////
 
 void mesh_update_label(mesh_t mesh) {
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (mesh->header.id_text != nullptr)
 		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
 #endif

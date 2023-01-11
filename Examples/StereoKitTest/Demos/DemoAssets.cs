@@ -17,13 +17,13 @@ class DemoAssets : ITest
 	List<IAsset> filteredAssets = new List<IAsset>();
 	Type         filterType     = typeof(IAsset);
 	Pose         filterWindow   = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
-	int          filterScroll   = 0;
+	float        filterScroll   = 0;
 	const int    filterScrollCt = 12;
 
 	void UpdateFilter(Type type)
 	{
 		filterType   = type;
-		filterScroll = 0;
+		filterScroll = 0.0f;
 		filteredAssets.Clear();
 		
 		// Here's where the magic happens! `Assets.Type` can take a Type, or a
@@ -70,20 +70,13 @@ class DemoAssets : ITest
 		UI.LayoutPop();
 
 		UI.LayoutPushCut(UICut.Right, 0.03f + settings.padding*2);
-			UI.PushEnabled(filterScroll - filterScrollCt >= 0);
-			if (UI.Button("^", V.XX(0.03f))) filterScroll -= filterScrollCt;
-			UI.PopEnabled();
-			UI.LayoutPushCut(UICut.Bottom, 0.03f + settings.padding * 2);
-				UI.PushEnabled(filterScroll + filterScrollCt < filteredAssets.Count);
-				if (UI.Button("v", V.XX(0.03f))) filterScroll += filterScrollCt;
-				UI.PopEnabled();
-			UI.LayoutPop();
+		UI.VSliderAt("scroll", ref filterScroll, 0, Math.Max(0,filteredAssets.Count-3), 1, UI.LayoutAt, UI.LayoutRemaining, UIConfirm.Pinch);
 		UI.LayoutPop();
 
 
 		// We can visualize some of these assets, and just draw a label for
 		// some others.
-		for (int i = filterScroll; i < Math.Min(filteredAssets.Count, filterScroll + filterScrollCt); i++)
+		for (int i = (int)filterScroll; i < Math.Min(filteredAssets.Count, (int)filterScroll + filterScrollCt); i++)
 		{
 			IAsset asset = filteredAssets[i];
 			UI.PushId(i);

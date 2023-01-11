@@ -140,6 +140,8 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
+	xr_system_success = false;
+	xr_system_created = true;
 
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
@@ -201,7 +203,7 @@ bool openxr_create_system() {
 		const char *err_name = openxr_string(result);
 
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -259,11 +261,10 @@ bool openxr_create_system() {
 	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_inform, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
-	xr_system_created = true;
 	xr_system_success = true;
 	return xr_system_success;
 }
@@ -318,7 +319,7 @@ bool openxr_init() {
 
 	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
 		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -463,7 +464,7 @@ bool openxr_init() {
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -477,7 +478,7 @@ bool openxr_init() {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -488,7 +489,7 @@ bool openxr_init() {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -502,7 +503,7 @@ bool openxr_init() {
 	}
 
 	if (!openxr_views_create() || !oxri_init()) {
-		openxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -606,7 +607,7 @@ XrReferenceSpaceType openxr_preferred_space() {
 
 ///////////////////////////////////////////
 
-void openxr_shutdown() {
+void openxr_cleanup() {
 	if (xr_instance) {
 		// Shut down the input!
 		oxri_shutdown();
@@ -621,6 +622,10 @@ void openxr_shutdown() {
 		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
 		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
 	}
+}
+
+void openxr_shutdown() {
+	openxr_cleanup();
 
 	xr_minimum_exts   = false;
 	xr_system_created = false;

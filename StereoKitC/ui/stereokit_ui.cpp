@@ -137,7 +137,8 @@ color128 skui_palette[ui_color_max];
 ///////////////////////////////////////////
 
 // Layout
-void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
+void ui_layout_reserve_sz         (vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
+void ui_layout_reserve_vertical_sz(vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
 
 // Interaction
 bool32_t      ui_in_box                  (vec3 pt1, vec3 pt2, float radius, bounds_t box);
@@ -738,6 +739,7 @@ bool ui_init() {
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
 	material_set_transparency(skui_mat_dbg, transparency_blend);
 	material_set_color       (skui_mat_dbg, "color", { 0,1,0,0.25f });
+	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
 
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
@@ -751,6 +753,7 @@ bool ui_init() {
 
 	skui_mat = material_copy_id(default_id_material_ui);
 	material_set_bool(skui_mat, "ui_tint", true);
+	material_set_id  (skui_mat, "sk/ui/default_mat");
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
 	//material_set_wireframe(skui_mat_quad, true);
 	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
@@ -1051,7 +1054,7 @@ vec2 ui_layout_remaining() {
 	float size_y = layout->size.y != 0
 		? layout->size.y
 		: (layout->window ? layout->window->prev_size.y : 0);
-	float max_x = size_x == 0 ? -layout->max_x : layout->offset_initial.x - (size_x - skui_settings.padding);
+	float max_x = size_x == 0 ? -layout->max_x : -(size_x - skui_settings.padding);
 	return vec2{
 		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
 		fmaxf(0,     size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
@@ -1074,6 +1077,14 @@ vec3 ui_layout_at() {
 
 bounds_t ui_layout_last() {
 	return skui_recent_layout;
+}
+
+///////////////////////////////////////////
+
+void ui_layout_reserve_vertical_sz(vec2 size, bool32_t add_padding, vec3* out_position, vec2* out_size) {
+	if (size.x == 0) size.x = ui_line_height();
+	if (size.y == 0) size.y = ui_layout_remaining().y - (add_padding ? skui_settings.padding * 2 : 0);
+	ui_layout_reserve_sz(size, add_padding, out_position, out_size);
 }
 
 ///////////////////////////////////////////
@@ -2103,8 +2114,8 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
 	if (type == text_context_password) {
-		int32_t len          = utf_charlen(buffer);
-		C*      password_txt = (C*)alloca(sizeof(C) * (len + 1));
+		size_t len          = utf_charlen(buffer);
+		C*     password_txt = (C*)alloca(sizeof(C) * (len + 1));
 		for (size_t i = 0; i < len; i++)
 			password_txt[i] = '*';
 		password_txt[len] = '\0';
@@ -2129,7 +2140,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			int32_t end       = maxi(0, carat_at + (skui_input_carat_end - skui_input_carat));
 			vec2    carat_end = text_char_at_o(draw_text, skui_font_stack.last(), end, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
 			float   left      = fmaxf(carat_pos.x, carat_end.x);
-			float   right     = fmax(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
+			float   right     = fmaxf(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
 
 			vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
 			vec3   pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
@@ -2206,11 +2217,19 @@ pose_t ui_popup_pose(vec3 shift) {
 
 ///////////////////////////////////////////
 
-void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus) {
+void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus, bool vertical) {
+	// For a vertical progress bar, the easiest thing is to just rotate the
+	// hierarchy 90, as this simplifies any issues with trying to rotate the
+	// calls to draw the left and right line segments.
+	hierarchy_push(vertical
+		? matrix_trs(start_pos - vec3{size.x,0,0}, quat_from_angles(0, 0, 90))
+		: matrix_t  (start_pos));
+	if (vertical) size = { size.y, size.x };
+
 	// Find sizes of bar elements
 	float bar_height = fmaxf(skui_settings.padding, size.y / 6.f);
 	float bar_depth  = bar_height * skui_settings.backplate_depth - mm2m;
-	float bar_y      = start_pos.y - size.y / 2.f + bar_height / 2.f;
+	float bar_y      = -size.y / 2.f + bar_height / 2.f;
 
 	// If the left or right side of the bar is too small, then we'll just draw
 	// a single solid bar.
@@ -2218,33 +2237,36 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
-			vec3{ start_pos.x, bar_y,      start_pos.z },
-			vec3{ size.x,      bar_height, bar_depth },
+			vec3{ 0,      bar_y,      0 },
+			vec3{ size.x, bar_height, bar_depth },
 			ui_color_common, focus);
+		hierarchy_pop();
 		return;
 	} else if (bar_length >= size.x-min_size.x) {
 		ui_draw_el(ui_vis_slider_line,
-			vec3{ start_pos.x, bar_y,      start_pos.z },
-			vec3{ size.x,      bar_height, bar_depth },
+			vec3{ 0,      bar_y,      0 },
+			vec3{ size.x, bar_height, bar_depth },
 			ui_color_primary, focus);
+		hierarchy_pop();
 		return;
 	}
 
 	// Slide line
 	ui_draw_el(ui_vis_slider_line_active,
-		vec3{ start_pos.x, bar_y,      start_pos.z },
-		vec3{ bar_length,  bar_height, bar_depth },
+		vec3{ 0,          bar_y,      0 },
+		vec3{ bar_length, bar_height, bar_depth },
 		ui_color_primary, focus);
 	ui_draw_el(ui_vis_slider_line_inactive,
-		vec3{ start_pos.x - bar_length, bar_y,      start_pos.z },
-		vec3{ size.x      - bar_length, bar_height, bar_depth },
+		vec3{        - bar_length, bar_y,      0 },
+		vec3{ size.x - bar_length, bar_height, bar_depth },
 		ui_color_common, focus);
+	hierarchy_pop();
 }
 
 ///////////////////////////////////////////
 
 void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
-	ui_progress_bar_at_ex(percent, start_pos, size, 1);
+	ui_progress_bar_at_ex(percent, start_pos, size, 1, false);
 }
 
 ///////////////////////////////////////////
@@ -2260,20 +2282,24 @@ void ui_progress_bar(float percent, float width) {
 ///////////////////////////////////////////
 
 template<typename C, typename N>
-bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
 	uint64_t id     = ui_stack_hash(id_text);
 	bool     result = false;
 
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
 
+	float size_min = vertical ? size.x : size.y;
+
 	// Find sizes of slider elements
 	float percent      = (float)((value - min) / (max - min));
 	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size    = fmaxf(skui_settings.padding, size.y / 6.f);
+	float rule_size    = fmaxf(skui_settings.padding, size_min / 6.f);
 	vec2  button_size  = confirm_method == ui_confirm_push
-		? vec2{ size.y / 2, size.y / 2 }
-		: vec2{ size.y / 4, size.y };
+		? vec2{ size_min / 2, size_min / 2 }
+		: (vertical
+			? vec2{ size_min, size_min / 4 }
+			: vec2{ size_min / 4, size_min } );
 
 	// Activation bounds sizing
 	float activation_plane = button_depth + skui_finger_radius;
@@ -2282,13 +2308,15 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	button_state_ focus_state   = button_state_inactive;
 	button_state_ button_state  = button_state_inactive;
 	float         finger_offset = button_depth;
-	float         finger_x      = 0;
+	float         finger_at     = 0;
 	int32_t       hand          = -1;
 	if (confirm_method == ui_confirm_push) {
-		vec3  activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
-		vec3  activation_size  = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
-		vec3  sustain_size     = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-		vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+		vec3  activation_start = vertical
+			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
+			: window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
+		vec3  activation_size = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
+		vec3  sustain_size    = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
+		vec3  sustain_start   = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
 
 		ui_box_interaction_1h_poke(id,
 			activation_start, activation_size,
@@ -2306,10 +2334,17 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			button_state = ui_active_set(hand, id, false);
 		}
 		if (hand != -1)
-			finger_x = skui_hand[hand].finger.x;
+			finger_at = vertical ? skui_hand[hand].finger.y : skui_hand[hand].finger.x;
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		vec3 activation_start = window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x, -(size.y/2 - button_size.y/2), button_depth };
-		vec3 activation_size  = vec3{ button_size.x*3, button_size.y, button_depth*2 };
+		vec3 activation_start;
+		vec3 activation_size;
+		if (vertical) {
+			activation_start = window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2), percent * -(size.y - button_size.y) + button_size.y, button_depth };
+			activation_size  = vec3{ button_size.x, button_size.y * 3, button_depth * 2 };
+		} else {
+			activation_start = window_relative_pos + vec3{ percent * -(size.x - button_size.x) + button_size.x, -(size.y / 2 - button_size.y / 2), button_depth };
+			activation_size  = vec3{ button_size.x * 3, button_size.y, button_depth * 2 };
+		}
 
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
@@ -2327,16 +2362,18 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
 			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-			finger_x = pinch_local.x;
+			finger_at = vertical ? pinch_local.y : pinch_local.x;
 
 			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-				finger_x = finger_x / (1 + scale_step * snap_scale);
+				finger_at = finger_at / (1 + scale_step * snap_scale);
 			}
 		}
 	}
 
 	if (button_state & button_state_active) {
-		float pos_in_slider = (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_x) / (size.x-button_size.x)));
+		float pos_in_slider = vertical
+			? (float)fmin(1, fmax(0, ((window_relative_pos.y-button_size.y/2)-finger_at) / (size.y-button_size.y)))
+			: (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_at) / (size.x-button_size.x)));
 		N new_val = (N)min + (N)pos_in_slider*(N)(max-min);
 		if (step != 0) {
 			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
@@ -2379,21 +2416,28 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 
 	// Draw the UI
 	float x           = window_relative_pos.x;
-	float line_y      = window_relative_pos.y - size.y/2.f + rule_size / 2.f;
-	float slide_x_rel = (float)(percent * (size.x-button_size.x));
-	float slide_y     = window_relative_pos.y - (size.y-button_size.y)/2;
+	float y           = window_relative_pos.y;
+	float slide_x_rel = 0;
+	float slide_y_rel = 0;
+	if (vertical) {
+		slide_x_rel = (size.x - button_size.x) / 2;
+		slide_y_rel = (float)(percent * (size.y - button_size.y));
+	} else {
+		slide_x_rel = (float)(percent * (size.x - button_size.x));
+		slide_y_rel = (size.y - button_size.y) / 2;
+	}
 
-	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend);
+	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend, vertical);
 
 	if (confirm_method == ui_confirm_push) {
 		ui_draw_el(ui_vis_slider_push,
-			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z}, 
+			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
 			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_settings.backplate_depth+mm2m)},
 			ui_color_primary, color_blend);
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		ui_draw_el(ui_vis_slider_pinch,
-			vec3{ x - slide_x_rel, slide_y, window_relative_pos.z},
-			vec3{ button_size.x, button_size.y, button_depth}, 
+			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
+			vec3{button_size.x, button_size.y, button_depth},
 			ui_color_primary, color_blend);
 
 		vec3 pinch_local = hand < 0
@@ -2401,26 +2445,38 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
 		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-			float scale    = 1 + scale_step * snap_scale;
-			float z        = -activation_plane - (scale_step * snap_dist) + button_depth/2;
-			float scaled_x = x+size.x*(scale-1)*0.5f;
+			float scale     = 1 + scale_step * snap_scale;
+			float z         = -activation_plane - (scale_step * snap_dist) + button_depth/2;
+			float scaled_at = vertical
+				? y+size.y*(scale-1)*0.5f
+				: x+size.x*(scale-1)*0.5f;
 			
-			float connector_y = line_y - rule_size * 0.5f;
-			line_add({ x,        connector_y, window_relative_pos.z}, { scaled_x,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_x-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			if (vertical) {
+				float connector_x = (x-slide_x_rel) - size_min * 0.5f;
+				line_add({ connector_x, y,        window_relative_pos.z}, { connector_x, scaled_at,              window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+				line_add({ connector_x, y-size.y, window_relative_pos.z}, { connector_x, scaled_at-size.y*scale, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			} else {
+				float connector_y = (y-slide_y_rel) - size_min * 0.5f;
+				line_add({ x,        connector_y, window_relative_pos.z}, { scaled_at,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+				line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_at-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
+			}
 
-			ui_draw_el(ui_vis_slider_line,
-				vec3{ scaled_x, line_y, window_relative_pos.z + z },
-				vec3{ slide_x_rel*scale + button_size.x/2, rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-				ui_color_primary, color_blend);
-			ui_draw_el(ui_vis_slider_line,
-				vec3{ scaled_x - slide_x_rel*scale - button_size.x/2, line_y, window_relative_pos.z + z },
-				vec3{ (size.x-slide_x_rel)*scale, rule_size, rule_size * skui_settings.backplate_depth - mm2m },
-				ui_color_common, color_blend);
-
+			if (vertical) {
+				ui_progress_bar_at_ex(percent,
+					vec3{ x-slide_x_rel, scaled_at, window_relative_pos.z + z },
+					vec2{ size.x, size.y*scale },
+					color_blend, vertical);
+			} else {
+				ui_progress_bar_at_ex(percent,
+					vec3{ scaled_at, y-slide_y_rel, window_relative_pos.z + z },
+					vec2{ size.x*scale, size.y },
+					color_blend, vertical);
+			}
 			ui_draw_el(ui_vis_slider_pinch,
-				vec3{ scaled_x - slide_x_rel*scale, slide_y, window_relative_pos.z+z},
-				vec3{ button_size.x, button_size.y, button_depth}, 
+				vertical
+					? vec3{ x - slide_x_rel, scaled_at - slide_y_rel * scale, window_relative_pos.z + z }
+					: vec3{ scaled_at - slide_x_rel * scale, y - slide_y_rel, window_relative_pos.z + z },
+				vec3{ button_size.x, button_size.y, button_depth },
 				ui_color_primary, color_blend);
 		}
 	}
@@ -2436,30 +2492,45 @@ bool32_t ui_hslider_at_g(const C *id_text, N &value, N min, N max, N step, vec3 
 	else if (notify_on == ui_notify_finalize) return button_state & button_state_just_inactive;
 	else                                      return result;
 }
-bool32_t ui_hslider_at   (const char     *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char    , float>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at   (const char16_t *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char16_t, float>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at_16(const char16_t *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char16_t, float>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
-bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char    , double>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char16_t, double>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_at_g<char16_t, double>(id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , double>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, double>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, double>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+
+bool32_t ui_vslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+
+bool32_t ui_vslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , double>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, double>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, double>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
 ///////////////////////////////////////////
 
 template<typename C, typename N>
-bool32_t ui_hslider_g(const C *name, N &value, N min, N max, N step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+bool32_t ui_slider_g(bool vertical, const C *name, N &value, N min, N max, N step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
 	vec3 final_pos;
 	vec2 final_size;
-	ui_layout_reserve_sz({width, 0}, false, &final_pos, &final_size);
+	if (vertical) ui_layout_reserve_vertical_sz({width, 0}, false, &final_pos, &final_size);
+	else          ui_layout_reserve_sz         ({width, 0}, false, &final_pos, &final_size);
 
-	return ui_hslider_at_g<C, N>(name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
+	return ui_slider_at_g<C, N>(vertical, name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
 }
 
-bool32_t ui_hslider   (const char     *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_g<char,     float>(name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_16(const char16_t *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_g<char16_t, float>(name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider       (const char     *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
 
-bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_g<char,     double>(name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_hslider_g<char16_t, double>(name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
+
+bool32_t ui_vslider       (const char     *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+
+bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
 
 ///////////////////////////////////////////
 
