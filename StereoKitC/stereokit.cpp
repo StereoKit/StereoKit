@@ -29,6 +29,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+char          sk_sys_name[256];
 const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
 display_mode_ sk_display_mode           = display_mode_none;
@@ -61,6 +62,12 @@ system_t *app_system    = nullptr;
 
 sk_settings_t sk_get_settings() {
 	return sk_settings;
+}
+
+///////////////////////////////////////////
+
+const char* sk_system_name() {
+	return &sk_sys_name[0];
 }
 
 ///////////////////////////////////////////
@@ -125,6 +132,7 @@ void sk_app_update() {
 ///////////////////////////////////////////
 
 bool32_t sk_init(sk_settings_t settings) {
+	strcpy(sk_sys_name, "");
 	sk_settings               = settings;
 	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
 	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;

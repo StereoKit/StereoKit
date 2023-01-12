@@ -336,6 +336,7 @@ SK_API bool32_t      sk_is_stepping        ();
 SK_API display_mode_ sk_active_display_mode();
 SK_API sk_settings_t sk_get_settings       ();
 SK_API system_info_t sk_system_info        ();
+SK_API const char   *sk_system_name        ();
 SK_API const char   *sk_version_name       ();
 SK_API uint64_t      sk_version_id         ();
 SK_API app_focus_    sk_app_focus          ();

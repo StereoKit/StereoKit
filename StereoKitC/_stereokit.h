@@ -4,6 +4,7 @@
 
 namespace sk {
 
+extern char          sk_sys_name[256];
 extern const char   *sk_app_name;
 extern sk_settings_t sk_settings;
 extern system_info_t sk_info;
