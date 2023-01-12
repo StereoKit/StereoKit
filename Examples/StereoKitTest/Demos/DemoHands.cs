@@ -80,14 +80,14 @@ class DemoHands : ITest
 				new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 				new HandMenuItem("Cancel", null, null)),
 			new HandRadialLayer("File", 
-				new HandMenuItem("New",   null, () => Log.Info("New")),
-				new HandMenuItem("Open",  null, () => Log.Info("Open")),
-				new HandMenuItem("Close", null, () => Log.Info("Close")),
-				new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
+				new HandMenuItem("New",    null, () => Log.Info("New")),
+				new HandMenuItem("Open",   null, () => Log.Info("Open")),
+				new HandMenuItem("Close",  null, () => Log.Info("Close")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back)),
 			new HandRadialLayer("Edit",
-				new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
-				new HandMenuItem("Paste", null, () => Log.Info("Paste")),
-				new HandMenuItem("Back", null, null, HandMenuAction.Back))));
+				new HandMenuItem("Copy",   null, () => Log.Info("Copy")),
+				new HandMenuItem("Paste",  null, () => Log.Info("Paste")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back))));
 		/// :End:
 
 		Tests.RunForFrames(2);
@@ -109,18 +109,18 @@ class DemoHands : ITest
 
 		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Show");
-		if (UI.Toggle("Hands", ref showHands, size))
+		if (UI.Toggle("Hands", ref showHands,     size))
 			Input.HandVisible(Handed.Max, showHands);
 		UI.SameLine();
-		UI.Toggle("Joints", ref showJoints, size);
+		UI.Toggle("Joints",    ref showJoints,    size);
 		UI.SameLine();
-		UI.Toggle("Axes", ref showAxes, size);
+		UI.Toggle("Axes",      ref showAxes,      size);
 
-		UI.Toggle("Hand Size", ref showHandSize, size);
+		UI.Toggle("Hand Size", ref showHandSize,  size);
 		UI.SameLine();
-		UI.Toggle("Pointers", ref showPointers, size);
+		UI.Toggle("Pointers",  ref showPointers,  size);
 		UI.SameLine();
-		UI.Toggle("Menu", ref showHandMenus, size);
+		UI.Toggle("Menu",      ref showHandMenus, size);
 		UI.PanelEnd();
 
 		UI.HSeparator();
