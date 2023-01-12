@@ -761,13 +761,13 @@ bool render_init() {
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
 	mesh_set_data(render_sky_mesh, verts, _countof(verts), inds, _countof(inds));
-	mesh_set_id  (render_sky_mesh, "render/skybox_mesh");
+	mesh_set_id  (render_sky_mesh, "sk/render/skybox_mesh");
 
 	shader_t shader_sky = shader_find(default_id_shader_sky);
 	render_sky_mat = material_create(shader_sky);
 	shader_release(shader_sky);
 
-	material_set_id          (render_sky_mat, "render/skybox_material");
+	material_set_id          (render_sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
 	
 	render_list_primary = render_list_create();
