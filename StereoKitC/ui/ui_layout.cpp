@@ -85,9 +85,12 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 
 	// If this is not the first element, and it goes outside the active window,
 	// then we'll want to start this element on the next line down
+	// 
+	// Floating point rounding can cause this to occasionally round past the
+	// end of the layout, so 0.0001f is meant to forgive a bit of rounding.
 	if (final_pos.x    != layout->offset_initial.x &&
 		layout->size.x != 0                        &&
-		final_pos.x - final_size.x < (layout->offset_initial.x - (layout->size.x + skui_settings.margin)))
+		final_pos.x - final_size.x < layout->offset_initial.x - (layout->size.x + 0.0001f))
 	{
 		ui_nextline();
 		final_pos = layout->offset;
