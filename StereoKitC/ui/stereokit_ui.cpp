@@ -487,6 +487,7 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
 	if (settings.gutter           == 0) settings.gutter  = 10 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
+	if (settings.margin           == 0) settings.margin = settings.padding;
 	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
 	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
@@ -522,6 +523,12 @@ void ui_settings(ui_settings_t settings) {
 
 ui_settings_t ui_get_settings() {
 	return skui_settings;
+}
+
+///////////////////////////////////////////
+
+float ui_get_margin() {
+	return skui_settings.margin;
 }
 
 ///////////////////////////////////////////
@@ -737,8 +744,10 @@ bool ui_init() {
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material_ui);
-	material_set_transparency(skui_mat_dbg, transparency_blend);
-	material_set_color       (skui_mat_dbg, "color", { 0,1,0,0.25f });
+	material_set_transparency(skui_mat_dbg, transparency_add);
+	material_set_color       (skui_mat_dbg, "color", { .5f,.5f,.5f,1 });
+	material_set_depth_write (skui_mat_dbg, false);
+	material_set_depth_test  (skui_mat_dbg, depth_test_always);
 	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
 
 	skui_font_mat   = material_find(default_id_material_font);
@@ -981,7 +990,7 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 	hierarchy_push(trs);
 
 	skui_layers.add(layer_t{});
-	ui_layout_push(layout_start, layout_dimensions);
+	ui_layout_push(layout_start, layout_dimensions, true);
 
 	layer_t*      layer    = &skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
@@ -1020,10 +1029,14 @@ void ui_pop_surface() {
 
 ///////////////////////////////////////////
 
-void ui_layout_area(vec3 start, vec2 dimensions) {
+void ui_layout_area(vec3 start, vec2 dimensions, bool32_t add_margin) {
+	if (add_margin) {
+		start      -= vec3{ skui_settings.margin, skui_settings.margin, 0 };
+		dimensions -= vec2{ skui_settings.margin, skui_settings.margin } * 2;
+	}
 	ui_layout_t *layout = &skui_layouts.last();
 	layout->offset_initial   = start;
-	layout->offset           = start - vec3{ skui_settings.padding, skui_settings.padding };
+	layout->offset           = start;
 	layout->size             = dimensions;
 	layout->max_x            = 0;
 	layout->line_height      = 0;
@@ -1033,31 +1046,18 @@ void ui_layout_area(vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
-void ui_layout_area(ui_window_t &window, vec3 start, vec2 dimensions) {
-	ui_layout_area(start, dimensions);
-	skui_layouts.last().window = &window;
-	window.layout_start = start;
-	window.layout_size  = dimensions;
-	
-	window.curr_size = {};
-	if (window.layout_size.x != 0) window.curr_size.x = dimensions.x;
-	if (window.layout_size.y != 0) window.curr_size.y = dimensions.y;
-}
-
-///////////////////////////////////////////
-
 vec2 ui_layout_remaining() {
 	ui_layout_t *layout = &skui_layouts.last();
 	float size_x = layout->size.x != 0
 		? layout->size.x
-		: (layout->window ? layout->window->prev_size.x : 0);
+		: (layout->window ? (layout->window->prev_size.x-skui_settings.margin*2) : 0);
 	float size_y = layout->size.y != 0
 		? layout->size.y
-		: (layout->window ? layout->window->prev_size.y : 0);
-	float max_x = size_x == 0 ? -layout->max_x : -(size_x - skui_settings.padding);
+		: (layout->window ? (layout->window->prev_size.y-skui_settings.margin*2) : 0);
+	float max_x = size_x == 0 ? -layout->max_x : -size_x;
 	return vec2{
-		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x) - skui_settings.padding),
-		fmaxf(0,     size_y + (layout->offset.y + layout->offset_initial.y) - skui_settings.padding)
+		fmaxf(max_x, size_x - (layout->offset_initial.x - layout->offset.x)),
+		fmaxf(0,     size_y - (layout->offset_initial.y - layout->offset.y))
 	};
 }
 
@@ -1102,9 +1102,9 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 
 	// If this is not the first element, and it goes outside the active window,
 	// then we'll want to start this element on the next line down
-	if (final_pos.x  != layout->offset_initial.x-skui_settings.padding &&
-		layout->size.x != 0                                            &&
-		final_pos.x - final_size.x < (layout->offset_initial.x - (layout->size.x + skui_settings.padding)))
+	if (final_pos.x    != layout->offset_initial.x &&
+		layout->size.x != 0                        &&
+		final_pos.x - final_size.x < (layout->offset_initial.x - (layout->size.x + skui_settings.margin)))
 	{
 		ui_nextline();
 		final_pos = layout->offset;
@@ -1124,8 +1124,8 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 
 	// Store this as the most recent layout
 	skui_recent_layout = {
-		final_pos - vec3{final_size.x/2, final_size.y/2, 0}, 
-		{final_size.x, final_size.y, 0} 
+		final_pos - vec3{final_size.x/2, final_size.y/2, 0},
+		{final_size.x, final_size.y, 0}
 	};
 
 	*out_position = skui_recent_layout.center + skui_recent_layout.dimensions/2;
@@ -1147,11 +1147,16 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 
 ///////////////////////////////////////////
 
-void ui_layout_push(vec3 start, vec2 dimensions) {
+void ui_layout_push(vec3 start, vec2 dimensions, bool32_t add_margin) {
+	if (add_margin) {
+		start      -= vec3{ skui_settings.margin, skui_settings.margin, 0 };
+		if (dimensions.x != 0) dimensions.x = dimensions.x - skui_settings.margin * 2;
+		if (dimensions.y != 0) dimensions.y = dimensions.y - skui_settings.margin * 2;
+	}
 	ui_layout_t layout = {};
 	layout.offset_initial   = start;
 	layout.prev_offset      = start;
-	layout.offset           = start - vec3{ skui_settings.padding, skui_settings.padding, 0 };
+	layout.offset           = start;
 	layout.size             = dimensions;
 	layout.line_height      = 0;
 	layout.max_x            = 0;
@@ -1161,7 +1166,7 @@ void ui_layout_push(vec3 start, vec2 dimensions) {
 
 ///////////////////////////////////////////
 
-void ui_layout_push_cut(ui_cut_ cut_to, float size) {
+void ui_layout_push_cut(ui_cut_ cut_to, float size, bool32_t add_margin) {
 	ui_layout_t* curr = &skui_layouts.last();
 	if      (cut_to == ui_cut_bottom && curr->size.y == 0) log_warn("Can't cut bottom for layout with a height of 0!");
 	else if (cut_to == ui_cut_right  && curr->size.x == 0) log_warn("Can't cut right for layout with an width of 0!");
@@ -1171,34 +1176,48 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size) {
 	vec3 curr_offset = {};
 	switch (cut_to) {
 	case ui_cut_left:
-		curr_offset   = {-size, 0, 0 };
+		curr_offset   = {-(size+skui_settings.gutter), 0, 0 };
 		cut_start     = curr->offset_initial;
 		cut_size      = { size, curr->size.y };
-		curr->size.x -= size;
+		curr->size.x -= size+skui_settings.gutter;
 		break;
 	case ui_cut_right:
 		curr_offset   = {0, 0, 0 };
 		cut_start     = curr->offset_initial - vec3{curr->size.x-size, 0, 0};
 		cut_size      = { size, curr->size.y };
-		curr->size.x -= size;break;
+		curr->size.x -= size+skui_settings.gutter;
+		break;
 	case ui_cut_top:
-		curr_offset   = {0, -size, 0 };
+		curr_offset   = {0, -(size+skui_settings.gutter), 0 };
 		cut_start     = curr->offset_initial;
 		cut_size      = { curr->size.x, size };
-		curr->size.y -= size;
+		curr->size.y -= size+skui_settings.gutter;
 		break;
 	case ui_cut_bottom:
 		curr_offset   = {0, 0, 0 };
 		cut_start     = curr->offset_initial - vec3{0,curr->size.y-size,0};
 		cut_size      = { curr->size.x, size };
-		curr->size.y -= size;
+		curr->size.y -= size+skui_settings.gutter;
 		break;
 	}
 	curr->offset         += curr_offset;
 	curr->offset_initial += curr_offset;
 	curr->prev_offset    += curr_offset;
-	ui_layout_push(cut_start, cut_size);
+	ui_layout_push(cut_start, cut_size, false);
 	skui_layouts.last().window = curr->window;
+}
+
+///////////////////////////////////////////
+
+void ui_layout_push(ui_window_t &window, vec3 start, vec2 dimensions, bool32_t add_margin) {
+	ui_layout_push(start, dimensions, add_margin);
+	skui_layouts.last().window = &window;
+	window.layout_start = start;
+	window.layout_size  = dimensions;
+	
+	window.curr_size = {};
+	if (window.layout_size.x != 0) window.curr_size.x = dimensions.x;
+	if (window.layout_size.y != 0) window.curr_size.y = dimensions.y;
 }
 
 ///////////////////////////////////////////
@@ -1207,14 +1226,14 @@ void ui_layout_pop() {
 	ui_layout_t* layout = &skui_layouts.last();
 
 	// Move to next line if we're still on a previous line
-	if (layout->offset.x != layout->offset_initial.x - skui_settings.padding)
+	if (layout->offset.x != layout->offset_initial.x)
 		ui_nextline();
 
 	if (layout->window) {
 		vec3 start = layout->window->layout_start;// layout->offset_initial + vec3{0,0,skui_settings.depth};
 		vec3 end   = { layout->max_x, layout->offset.y - (layout->line_height-skui_settings.gutter),  layout->offset_initial.z};
 		vec3 size  = start - end;
-		size = { fmaxf(size.x+skui_settings.padding, layout->size.x), fmaxf(size.y+skui_settings.padding, layout->size.y), size.z };
+		size = { fmaxf(size.x+skui_settings.margin, layout->size.x), fmaxf(size.y+skui_settings.margin, layout->size.y), size.z };
 		if (layout->window->layout_size.x == 0)
 			layout->window->curr_size.x = fmaxf(size.x, layout->window->curr_size.x);
 		if (layout->window->layout_size.y == 0)
@@ -1255,8 +1274,8 @@ void ui_nextline() {
 	layout->prev_offset      = layout->offset;
 	layout->prev_line_height = layout->line_height;
 
-	layout->offset.x    = layout->offset_initial.x - skui_settings.padding;
-	layout->offset.y   -= layout->line_height      + skui_settings.gutter;
+	layout->offset.x    = layout->offset_initial.x;
+	layout->offset.y   -= layout->line_height + skui_settings.gutter;
 	layout->line_height = 0;
 }
 
@@ -1278,7 +1297,7 @@ float ui_line_height() {
 
 void ui_space(float space) {
 	ui_layout_t *layout = &skui_layouts.last();
-	if (layout->offset.x == layout->offset_initial.x - skui_settings.padding)
+	if (layout->offset.x == layout->offset_initial.x)
 		layout->offset.y -= space;
 	else
 		layout->offset.x -= space;
@@ -2794,19 +2813,20 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 
 	// Set up window handle and layout area
 	_ui_handle_begin(id, pose, { box_start, box_size }, false, move_type);
-	ui_layout_push({}, {});
-	ui_layout_area(window, { window.prev_size.x / 2,0,0 }, window_size);
+	ui_layout_push(window, { window.prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label
 	if (window.type & ui_win_head) {
 		ui_layout_t* layout = &skui_layouts.last();
 
-		vec2 size = text_size(text, skui_font_stack.last());
-		vec3 at   = layout->offset - vec3{ skui_settings.padding, -ui_line_height(), 2*mm2m };
+		vec2 txt_size = text_size(text, skui_font_stack.last());
+		vec2 size = vec2{ fmaxf(txt_size.x, window.prev_size.x-(skui_settings.gutter*2+skui_settings.margin*2)) , ui_line_height() };
+		vec3 at   = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
+
 		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
-		if (layout->max_x > at.x - size.x - skui_settings.padding)
-			layout->max_x = at.x - size.x - skui_settings.padding;
+		if (layout->max_x > at.x - (size.x + skui_settings.padding))
+			layout->max_x = at.x - (size.x + skui_settings.padding);
 	}
 	window.pose = pose;
 }

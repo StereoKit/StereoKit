@@ -25,12 +25,14 @@ class DemoUISettings : ITest
 		UI.Label("Spacing");
 
 		UI.PanelBegin();
+		UI.Label("Margin", size); UI.SameLine();
+		UI.HSlider("sl_margin",   ref activeSettings.margin,   0, 40 * U.mm, 0);
 		UI.Label("Padding", size); UI.SameLine();
-		UI.HSlider("sl_padding", ref activeSettings.padding, 0, 40*U.mm, 0);
+		UI.HSlider("sl_padding",  ref activeSettings.padding,  0, 40 * U.mm, 0);
 		UI.Label("Gutter", size); UI.SameLine();
-		UI.HSlider("sl_gutter",  ref activeSettings.gutter,  0, 40*U.mm, 0);
+		UI.HSlider("sl_gutter",   ref activeSettings.gutter,   0, 40 * U.mm, 0);
 		UI.Label("Depth", size); UI.SameLine();
-		UI.HSlider("sl_depth",   ref activeSettings.depth,   0, 40*U.mm, 0);
+		UI.HSlider("sl_depth",    ref activeSettings.depth,    0, 40 * U.mm, 0);
 		UI.Label("Rounding", size); UI.SameLine();
 		UI.HSlider("sl_rounding", ref activeSettings.rounding, 0, 40 * U.mm, 0);
 		UI.PanelEnd();
@@ -50,7 +52,7 @@ class DemoUISettings : ITest
 		UI.Settings = activeSettings;
 
 
-		UI.WindowBegin("Color", ref colorPose, new Vec2(20, 0) * U.cm);
+		UI.WindowBegin("Color", ref colorPose, new Vec2(25, 0) * U.cm);
 
 		UI.Label("Hue / Saturation / Value");
 		float h = colorScheme.x;

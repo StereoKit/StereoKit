@@ -73,7 +73,7 @@ class DemoUITearsheet : ITest
 	{
 		UI.WindowBegin("Slides & Separators", ref sliderWindowPose, new Vec2(0.25f, 0.2f));
 
-		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.gutter + UI.Settings.padding*2);
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.gutter);
 		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf2, 0, 1, 0, 0, UIConfirm.Push));
 		UI.SameLine();
 		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf3, 0, 1, 0, 0, UIConfirm.VariablePinch));
@@ -126,17 +126,55 @@ class DemoUITearsheet : ITest
 		UI.WindowEnd();
 	}
 
+	Pose layoutWindowPose = new Pose(-0.9f, 0, 0);
+	void ShowLayouts()
+	{
+		UI.WindowBegin("Layouts", ref layoutWindowPose, V.XY(0.25f, 0.25f));
+
+		UI.LayoutPushCut(UICut.Left, 0.05f);
+			UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+			UI.LayoutPushCut(UICut.Top, 0.075f);
+				UI.PanelAt(UI.LayoutAt+V.XYZ(0,0,-0.001f), UI.LayoutRemaining);
+			UI.LayoutPop();
+			UI.LayoutPushCut(UICut.Bottom, 0.075f);
+				UI.PanelAt(UI.LayoutAt+V.XYZ(0,0,-0.001f), UI.LayoutRemaining);
+			UI.LayoutPop();
+		UI.LayoutPop();
+
+		UI.LayoutPushCut(UICut.Right, 0.05f);
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+		UI.LayoutPop();
+
+		UI.LayoutPushCut(UICut.Bottom, 0.05f);
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+		UI.LayoutPop();
+
+		UI.LayoutPushCut(UICut.Top, 0.05f);
+			UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+			UI.LayoutPushCut(UICut.Right, 0.025f);
+				UI.PanelAt(UI.LayoutAt+V.XYZ(0,0,-0.001f), UI.LayoutRemaining);
+			UI.LayoutPop();
+			UI.LayoutPushCut(UICut.Left, 0.025f);
+				UI.PanelAt(UI.LayoutAt+V.XYZ(0,0,-0.001f), UI.LayoutRemaining);
+			UI.LayoutPop();
+		UI.LayoutPop();
+
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+		UI.WindowEnd();
+	}
+
 	public void Update()
 	{
 		index = 0;
 		Hierarchy.Push(Demo.contentPose);
 		ShowButtonWindow();
 		ShowSliderWindow();
-		ShowTextWindow();
+		ShowTextWindow  ();
+		ShowLayouts     ();
 
-		Vec3 off  = new Vec3(-0.3f, -0.2f, 0);
+		Vec3 off  = new Vec3(-0.45f, -0.2f, 0);
 		Vec3 at   = Hierarchy.ToWorld(Vec3.Zero + off);
-		Vec3 from = Hierarchy.ToWorld(new Vec3(0,0,-0.5f) + off);
+		Vec3 from = Hierarchy.ToWorld(new Vec3(0,0,-0.55f) + off);
 		Hierarchy.Pop();
 
 		Tests.Screenshot("Tests/UITearsheet.jpg", 1, 1000, 500, 60, from, at);
