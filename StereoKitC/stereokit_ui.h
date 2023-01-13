@@ -232,6 +232,13 @@ SK_API void     ui_panel_at          (vec3 start, vec2 size, ui_pad_ padding sk_
 SK_API void     ui_panel_begin       (ui_pad_ padding sk_default(ui_pad_outside));
 SK_API void     ui_panel_end         ();
 
+///////////////////////////////////////////
+
+SK_CONST char* ui_default_id_radio_on_spr   = "sk/ui/radio_on_spr";
+SK_CONST char* ui_default_id_radio_off_spr  = "sk/ui/radio_off_spr";
+SK_CONST char* ui_default_id_toggle_on_spr  = "sk/ui/toggle_on_spr";
+SK_CONST char* ui_default_id_toggle_off_spr = "sk/ui/toggle_off_spr";
+
 #ifdef __cplusplus
 } // namespace sk
 #endif

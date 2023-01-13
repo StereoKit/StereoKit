@@ -94,7 +94,9 @@ color128        skui_tint = {1,1,1,1};
 bool32_t        skui_interact_enabled = true;
 uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 sprite_t        skui_toggle_off = nullptr;
-sprite_t        skui_toggle_on = nullptr;
+sprite_t        skui_toggle_on  = nullptr;
+sprite_t        skui_radio_off  = nullptr;
+sprite_t        skui_radio_on   = nullptr;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -111,10 +113,6 @@ const color128 skui_color_border = { 1,1,1,1 };
 color128 skui_palette[ui_color_max];
 
 ///////////////////////////////////////////
-
-// Layout
-void ui_layout_reserve_sz         (vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
-void ui_layout_reserve_vertical_sz(vec2 size, bool32_t add_padding, vec3 *out_position, vec2 *out_final_size);
 
 // Interaction
 bool32_t      ui_in_box                  (vec3 pt1, vec3 pt2, float radius, bounds_t box);
@@ -135,14 +133,31 @@ vec2  text_size (const char16_t* text_utf16, text_style_t style) { return text_s
 
 ///////////////////////////////////////////
 
-tex_t ui_create_sdf_tex(int32_t width, int32_t height, float (*sdf)(float x, float y), float scale) {
+float sdf_box_round(vec2 pt, float size, float radius) {
+	vec2 q = vec2{fabsf(pt.x)-size+radius, fabsf(pt.y)-size+radius};
+	return fminf(fmaxf(q.x, q.y), 0.0) + vec2_magnitude({ fmaxf(q.x,0), fmaxf(q.y,0)}) - radius;
+}
+float sdf_box(vec2 pt, float size) {
+	vec2 d = vec2{fabsf(pt.x)-size, fabsf(pt.y)-size};
+	return fminf(fmaxf(d.x, d.y), 0.0) + vec2_magnitude({ fmaxf(d.x,0), fmaxf(d.y,0)});
+}
+float sdf_circle(vec2 pt, float radius) {
+	return vec2_magnitude(pt) - radius;
+}
+float sdf_subtract(float sdf, float from) {
+	return fmaxf(-sdf, from);
+}
+float sdf_union(float distance_1, float distance_2) {
+	return fminf(distance_1, distance_2);
+}
+tex_t sdf_create_tex(int32_t width, int32_t height, float (*sdf)(vec2 pt), float scale) {
 	color32 *data     = sk_malloc_t(color32, width * height);
-	float    center_x = width  / 2.0f;
-	float    center_y = height / 2.0f;
+	float    center_x = width  / 2.0f - 0.5f;
+	float    center_y = height / 2.0f - 0.5f;
 	for (int32_t y = 0; y < height; y++) {
 		int32_t yoff = y * width;
 		for (int32_t x = 0; x < width; x++) {
-			float dist = sdf(x - center_x, y - center_y);
+			float dist = sdf({ x - center_x, y - center_y });
 			float lerp = 1-math_saturate(dist * scale);
 
 			data[x + yoff] = {255,255,255,(uint8_t)(lerp * 255)};
@@ -689,24 +704,59 @@ bool ui_init() {
 	mesh_set_id(skui_box_bot, "sk/ui/cylinder_mesh");
 
 	// Create default sprites for the toggles
-	tex_t toggle_tex_on = ui_create_sdf_tex(64, 64, [](float x, float y) {
-		float dist = vec2_magnitude({ x, y });
-		return fminf(dist - 20, fmaxf(-(dist - 27), dist - 31)) / 32.0f;
+
+	// #defines because we can't capture anything in these lambdas D:
+	#define OUTER_RADIUS 31
+	#define RING_WIDTH 8
+	#define INNER_RADIUS (OUTER_RADIUS - RING_WIDTH*2)
+
+	tex_t toggle_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+				sdf_box(pt, INNER_RADIUS),
+				sdf_subtract(
+					sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
+					sdf_box_round(pt, OUTER_RADIUS, 8)))/32.0f;
 	}, 40);
 	tex_set_address(toggle_tex_on, tex_address_clamp);
 	tex_set_id     (toggle_tex_on, "sk/ui/toggle_on_tex");
-	tex_t toggle_tex_off = ui_create_sdf_tex(64, 64, [](float x, float y) {
-		float dist = vec2_magnitude({ x, y });
-		return fmaxf(-(dist - 27), dist - 31) / 32.0f;
+	tex_t toggle_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+		return
+			sdf_subtract(
+				sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
+				sdf_box_round(pt, OUTER_RADIUS, 8))/32.0f;
 	}, 40);
 	tex_set_address(toggle_tex_off, tex_address_clamp);
 	tex_set_id     (toggle_tex_off, "sk/ui/toggle_off_tex");
+	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+		float dist = vec2_magnitude(pt);
+		return
+			sdf_union(
+				dist - INNER_RADIUS,
+				sdf_subtract(
+					dist - (OUTER_RADIUS - RING_WIDTH),
+					dist - OUTER_RADIUS)) / 32.0f;
+	}, 40);
+	tex_set_address(radio_tex_on, tex_address_clamp);
+	tex_set_id     (radio_tex_on, "sk/ui/radio_on_tex");
+	tex_t radio_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+		float dist = vec2_magnitude(pt);
+		return sdf_subtract(dist - (OUTER_RADIUS - RING_WIDTH), dist - OUTER_RADIUS)/32.0f;
+	}, 40);
+	tex_set_address(radio_tex_off, tex_address_clamp);
+	tex_set_id     (radio_tex_off, "sk/ui/radio_off_tex");
 	skui_toggle_on  = sprite_create(toggle_tex_on,  sprite_type_single);
 	skui_toggle_off = sprite_create(toggle_tex_off, sprite_type_single);
-	sprite_set_id(skui_toggle_on,  "sk/ui/toggle_on_spr");
-	sprite_set_id(skui_toggle_off, "sk/ui/toggle_off_spr");
+	skui_radio_on   = sprite_create(radio_tex_on,   sprite_type_single);
+	skui_radio_off  = sprite_create(radio_tex_off,  sprite_type_single);
+	sprite_set_id(skui_toggle_on,  ui_default_id_toggle_on_spr);
+	sprite_set_id(skui_toggle_off, ui_default_id_toggle_off_spr);
+	sprite_set_id(skui_radio_on,   ui_default_id_radio_on_spr);
+	sprite_set_id(skui_radio_off,  ui_default_id_radio_off_spr);
 	tex_release(toggle_tex_on);
 	tex_release(toggle_tex_off);
+	tex_release(radio_tex_on);
+	tex_release(radio_tex_off);
 
 	// Create a sound for the HSlider
 	skui_snd_tick = sound_generate([](float t){
@@ -879,6 +929,8 @@ void ui_shutdown() {
 	material_release(skui_font_mat); skui_font_mat = nullptr;
 	sprite_release(skui_toggle_off); skui_toggle_off = nullptr;
 	sprite_release(skui_toggle_on);  skui_toggle_on  = nullptr;
+	sprite_release(skui_radio_off);  skui_radio_off  = nullptr;
+	sprite_release(skui_radio_on);   skui_radio_on   = nullptr;
 	font_release(skui_font); skui_font = nullptr;
 }
 

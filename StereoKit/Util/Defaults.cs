@@ -195,6 +195,11 @@
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
+		public static Sprite SpriteRadioOn { get; private set; }
+		public static Sprite SpriteRadioOff { get; private set; }
+		public static Sprite SpriteToggleOn { get; private set; }
+		public static Sprite SpriteToggleOff { get; private set; }
+
 		/// <summary>The default font used by StereoKit's text. This varies
 		/// from platform to platform, but is typically a sans-serif general
 		/// purpose font, such as Segoe UI.</summary>
@@ -242,6 +247,11 @@
 
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
+
+			SpriteRadioOn   = Sprite.Find(DefaultIds.spriteRadioOn);
+			SpriteRadioOff  = Sprite.Find(DefaultIds.spriteRadioOff);
+			SpriteToggleOn  = Sprite.Find(DefaultIds.spriteToggleOn);
+			SpriteToggleOff = Sprite.Find(DefaultIds.spriteToggleOff);
 		}
 
 		internal static void Shutdown()
@@ -283,6 +293,11 @@
 
 			SoundClick   = null;
 			SoundUnclick = null;
+
+			SpriteRadioOn   = null;
+			SpriteRadioOff  = null;
+			SpriteToggleOn  = null;
+			SpriteToggleOff = null;
 		}
 	}
 }

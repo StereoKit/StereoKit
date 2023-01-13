@@ -6,8 +6,8 @@ class DemoUITearsheet : ITest
 	string title       = "UI Tearsheet";
 	string description = "An enumeration of all the different types of UI elements!";
 
-	Sprite sprToggleOn  = Sprite.FromFile("toggle_on.png");
-	Sprite sprToggleOff = Sprite.FromFile("toggle_off.png");
+	Sprite sprToggleOn  = Sprite.FromFile("mic_icon.png");
+	Sprite sprToggleOff = Sprite.FromFile("power.png");
 	Sprite sprSearch    = Sprite.FromFile("search.png");
 
 	public void Initialize()
