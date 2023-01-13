@@ -238,6 +238,26 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	MultiByteToWideChar(CP_UTF8, 0, slash_fix_filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"rb");
 	if (fp == nullptr) {
+		// If the working directory has been changed, and the exe is called
+		// from a folder other than where the exe sits (like dotnet vs VS), the
+		// file may be relative to where the exe is. We attempt to find that
+		// here.
+		wchar_t drive[MAX_PATH];
+		_wsplitpath(wfilename, drive, nullptr, nullptr, nullptr);
+		if (drive[0] == '\0') {
+			wchar_t exe_name[MAX_PATH];
+			wchar_t dir     [MAX_PATH];
+			GetModuleFileNameW(nullptr, exe_name, _countof(exe_name));
+			_wsplitpath(exe_name, drive, dir, nullptr, nullptr);
+			wchar_t fullpath[MAX_PATH];
+			wcscpy(fullpath, drive);
+			wcscat(fullpath, dir);
+			wcscat(fullpath, wfilename);
+			log_diagf("Also trying %ls", fullpath);
+			fp = _wfopen(fullpath, L"rb");
+		}
+	}
+	if (fp == nullptr) {
 		wchar_t* buffer      = nullptr;
 		DWORD    buffer_size = GetFullPathNameW(wfilename, 0, buffer, nullptr);
 		buffer = sk_malloc_t(wchar_t, buffer_size);
@@ -252,6 +272,20 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	sk_free(wfilename);
 #else
 	FILE *fp = fopen(slash_fix_filename, "rb");
+
+	// If the working directory has been changed, and the exe is called
+	// from a folder other than where the exe sits (like dotnet vs VS), the
+	// file may be relative to where the exe is. We attempt to find that
+	// here.
+	if (fp == nullptr && slash_fix_filename[0] =! '/') {
+		char exe_path[PATH_MAX];
+		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+		exe_path[len] = '\0';
+		char* dir = dirname(exe_path);
+		char  fullpath[PATH_MAX];
+		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
+		fp = fopen(fullpath, "rb");
+	}
 	if (fp == nullptr) {
 		char* real_path = path_absolute(slash_fix_filename);
 		if (real_path == nullptr) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
