@@ -49,7 +49,7 @@ class TestConcurrentSetColors : ITest
 	public void Update()
 	{
 		for (int i = 0; i < materials.Length; i++) {
-			Mesh.Sphere.Draw(materials[i], Matrix.TS(V.X0Z((i-materials.Length/2)*0.25f, -0.5f), 0.25f));
+			Mesh.Sphere.Draw(materials[i], Matrix.TS(V.X0Z((i-materials.Length/2+0.5f)*0.25f, -0.5f), 0.25f));
 		}
 	}
 }

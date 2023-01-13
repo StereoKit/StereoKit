@@ -172,7 +172,7 @@ class App
 				start = i;
 			}
 			if (start == i)
-				currWidthTotal = uiSettings.padding * 2;
+				currWidthTotal = uiSettings.margin * 2;
 			currWidthTotal += width + uiSettings.gutter;
 		}
 		UI.NextLine();
@@ -227,19 +227,19 @@ class App
 	/// Here's the code for the window, and log tracking.
 	static Pose         logPose   = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
 	static List<string> logList   = new List<string>();
-	static int          logIndex  = 0;
+	static float        logIndex  = 0;
 	static string       logString = "";
 	static void OnLog(LogLevel level, string text)
 	{
 		logList.Insert(0, text.Length < 100 ? text : text.Substring(0, 100) + "...\n");
-		UpdateLogStr(logIndex);
+		UpdateLogStr((int)logIndex);
 	}
 
 	static void UpdateLogStr(int index)
 	{
 		logIndex  = Math.Max(Math.Min(index, logList.Count-1), 0);
 		logString = "";
-		for (int i = logIndex; i < logIndex + 15 && i < logList.Count; i++)
+		for (int i = index; i < index + 15 && i < logList.Count; i++)
 			logString += logList[i];
 	}
 
@@ -247,9 +247,9 @@ class App
 	{
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
 
-		UI.LayoutPushCut(UICut.Right, 4 * U.cm);
-			if (UI.Button("^", V.XY(3,3)*U.cm)) UpdateLogStr(logIndex - 15);
-			if (UI.Button("v", V.XY(3,3)*U.cm)) UpdateLogStr(logIndex + 15);
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight);
+		if (UI.VSlider("scroll", ref logIndex, 0, Math.Max(logList.Count - 3, 0), 1))
+			UpdateLogStr((int)logIndex);
 		UI.LayoutPop();
 
 		UI.Text(logString);

@@ -180,6 +180,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
     <ClCompile Include="ui\stereokit_ui.cpp" />
+    <ClCompile Include="ui\ui_layout.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
     <ClCompile Include="xr_backends\openxr_view.cpp" />
@@ -268,6 +269,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="systems\world.h" />
     <ClInclude Include="tools\virtual_keyboard.h" />
     <ClInclude Include="tools\virtual_keyboard_layouts.h" />
+    <ClInclude Include="ui\ui_layout.h" />
     <ClInclude Include="xr_backends\openxr.h" />
     <ClInclude Include="xr_backends\openxr_extensions.h" />
     <ClInclude Include="xr_backends\openxr_input.h" />

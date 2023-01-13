@@ -756,13 +756,13 @@ void render_clear() {
 bool render_init() {
 	render_shader_globals  = material_buffer_create(1, sizeof(render_global_buffer));
 	render_shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
-	skg_buffer_name(&render_shader_blit, "render/blit_buffer");
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	skg_buffer_name(&render_shader_blit, "sk/render/blit_buffer");
 #endif
 	
 	render_instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-#if defined(_DEBUG) || defined(SK_GPU_LABELS)
-	skg_buffer_name(&render_instance_buffer, "render/instance_buffer");
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	skg_buffer_name(&render_instance_buffer, "sk/render/instance_buffer");
 #endif
 	render_instance_list.resize(render_instance_max);
 
@@ -781,13 +781,13 @@ bool render_init() {
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
 	mesh_set_data(render_sky_mesh, verts, _countof(verts), inds, _countof(inds));
-	mesh_set_id  (render_sky_mesh, "render/skybox_mesh");
+	mesh_set_id  (render_sky_mesh, "sk/render/skybox_mesh");
 
 	shader_t shader_sky = shader_find(default_id_shader_sky);
 	render_sky_mat = material_create(shader_sky);
 	shader_release(shader_sky);
 
-	material_set_id          (render_sky_mat, "render/skybox_material");
+	material_set_id          (render_sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
 	
 	render_list_primary = render_list_create();

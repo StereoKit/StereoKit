@@ -35,10 +35,10 @@ class DemoAssets : ITest
 	public void AssetWindow()
 	{
 		UISettings settings = UI.Settings;
-		float height = filterScrollCt * (UI.LineHeight + settings.gutter) + settings.padding * 2;
+		float height = filterScrollCt * (UI.LineHeight + settings.gutter) + settings.margin * 2;
 		UI.WindowBegin("Asset Browser", ref filterWindow, V.XY(0.5f, height));
 
-		UI.LayoutPushCut(UICut.Left, 0.1f);
+		UI.LayoutPushCut(UICut.Left, 0.08f);
 		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
 
 		UI.Label("Filter");
@@ -69,8 +69,10 @@ class DemoAssets : ITest
 
 		UI.LayoutPop();
 
-		UI.LayoutPushCut(UICut.Right, 0.03f + settings.padding*2);
-		UI.VSliderAt("scroll", ref filterScroll, 0, Math.Max(0,filteredAssets.Count-3), 1, UI.LayoutAt, UI.LayoutRemaining, UIConfirm.Pinch);
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight);
+		UI.VSlider("scroll", ref filterScroll, 0, Math.Max(0,filteredAssets.Count-3), 1, 0, UIConfirm.Pinch);
 		UI.LayoutPop();
 
 
@@ -160,7 +162,7 @@ class DemoAssets : ITest
 	{
 		AssetWindow();
 
-		Tests.Screenshot("TinyAssetBrowser.jpg", 1, 400, 400, 90, filterWindow.position + V.XYZ(-0.16f, -0.16f, 0.16f), filterWindow.position - V.XYZ(0, 0.16f, 0));
+		Tests.Screenshot("TinyAssetBrowser.jpg", 1, 400, 400, 90, filterWindow.position + V.XYZ(-0.2f, -0.23f, 0.2f), filterWindow.position - V.XYZ(0, 0.23f, 0));
 
 		Demo.ShowSummary(title, description);
 	}

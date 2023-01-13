@@ -192,6 +192,9 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct UISettings
 	{
+		/// <summary>The margin is the space between a window and its contents.
+		/// In meters.</summary>
+		public float margin;
 		/// <summary>Spacing between an item and its parent, in meters.</summary>
 		public float padding;
 		/// <summary>Spacing between sibling items, in meters.</summary>

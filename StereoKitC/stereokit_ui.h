@@ -85,6 +85,7 @@ typedef enum ui_cut_ {
 } ui_cut_;
 
 typedef struct ui_settings_t {
+	float margin;
 	float padding;
 	float gutter;
 	float depth;
@@ -102,6 +103,7 @@ SK_API ui_move_ ui_system_get_move_type();
 SK_API void     ui_system_set_move_type(ui_move_ move_type);
 SK_API void     ui_settings            (ui_settings_t settings);
 SK_API ui_settings_t ui_get_settings   ();
+SK_API float    ui_get_margin          ();
 SK_API float    ui_get_padding         ();
 SK_API float    ui_get_gutter          ();
 SK_API void     ui_set_color           (color128      color);
@@ -129,13 +131,13 @@ SK_API void     ui_pop_id                ();
 SK_API uint64_t ui_stack_hash            (const char     *string);
 SK_API uint64_t ui_stack_hash_16         (const char16_t *string);
 
-SK_API void     ui_layout_area     (vec3 start, vec2 dimensions);
+SK_API void     ui_layout_area     (vec3 start, vec2 dimensions, bool32_t add_margin sk_default(true));
 SK_API vec2     ui_layout_remaining();
 SK_API vec3     ui_layout_at       ();
 SK_API bounds_t ui_layout_last     ();
 SK_API bounds_t ui_layout_reserve  (vec2 size, bool32_t add_padding sk_default(false), float depth sk_default(0));
-SK_API void     ui_layout_push     (vec3 start, vec2 dimensions);
-SK_API void     ui_layout_push_cut (ui_cut_ cut_to, float size);
+SK_API void     ui_layout_push     (vec3 start, vec2 dimensions, bool32_t add_margin);
+SK_API void     ui_layout_push_cut (ui_cut_ cut_to, float size, bool32_t add_margin);
 SK_API void     ui_layout_pop      ();
 
 SK_API button_state_ ui_last_element_hand_used(handed_ hand);
@@ -229,6 +231,13 @@ SK_API void     ui_window_end        ();
 SK_API void     ui_panel_at          (vec3 start, vec2 size, ui_pad_ padding sk_default(ui_pad_outside));
 SK_API void     ui_panel_begin       (ui_pad_ padding sk_default(ui_pad_outside));
 SK_API void     ui_panel_end         ();
+
+///////////////////////////////////////////
+
+SK_CONST char* ui_default_id_radio_on_spr   = "sk/ui/radio_on_spr";
+SK_CONST char* ui_default_id_radio_off_spr  = "sk/ui/radio_off_spr";
+SK_CONST char* ui_default_id_toggle_on_spr  = "sk/ui/toggle_on_spr";
+SK_CONST char* ui_default_id_toggle_off_spr = "sk/ui/toggle_off_spr";
 
 #ifdef __cplusplus
 } // namespace sk

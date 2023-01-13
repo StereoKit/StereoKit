@@ -93,8 +93,8 @@ namespace StereoKit
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
 
-		public static void LayoutPush   (Vec3 start, Vec2 offset) => NativeAPI.ui_layout_push(start, offset);
-		public static void LayoutPushCut(UICut cutTo, float sizeMeters) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters);
+		public static void LayoutPush   (Vec3 start, Vec2 offset, bool addMargin = false) => NativeAPI.ui_layout_push(start, offset, addMargin ? 1 : 0);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin ? 1 : 0);
 		public static void LayoutPop    () => NativeAPI.ui_layout_pop();
 
 		/// <summary>Tells if the hand was involved in the focus or active
@@ -152,8 +152,8 @@ namespace StereoKit
 		/// the current Hierarchy in local meters.</param>
 		/// <param name="dimensions">The size of the layout area from the top
 		/// left, in local meters.</param>
-		public static void LayoutArea(Vec3 start, Vec2 dimensions)
-			=> NativeAPI.ui_layout_area(start, dimensions);
+		public static void LayoutArea(Vec3 start, Vec2 dimensions, bool addMargin = true)
+			=> NativeAPI.ui_layout_area(start, dimensions, addMargin ? 1 : 0);
 
 		/// <summary>Use LayoutReserve, removing in v0.4</summary>
 		[Obsolete("Use LayoutReserve, removing in v0.4")]
@@ -163,14 +163,14 @@ namespace StereoKit
 		/// <summary>Moves the current layout position back to the end of the
 		/// line that just finished, so it can continue on the same line as the
 		/// last element!</summary>
-		public static void SameLine() 
+		public static void SameLine()
 			=> NativeAPI.ui_sameline();
 
 		/// <summary>This will advance the layout to the next line. If there's
 		/// nothing on the current line, it'll advance to the start of the next
 		/// on. But this won't have any affect on an empty line, try UI.Space
 		/// for that.</summary>
-		public static void NextLine() 
+		public static void NextLine()
 			=> NativeAPI.ui_nextline();
 
 		/// <summary>Adds some space! If we're at the start of a new line,
@@ -426,7 +426,7 @@ namespace StereoKit
 		public static bool Radio(string text, bool active)
 		{
 			int iActive = active?1:0;
-			return NativeAPI.ui_toggle_16(text, ref iActive) && iActive>0;
+			return NativeAPI.ui_toggle_img_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && iActive>0;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool)"/>
@@ -437,7 +437,7 @@ namespace StereoKit
 		public static bool Radio(string text, bool active, Vec2 size)
 		{
 			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_sz_16(text, ref iActive, size) && iActive>0;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && iActive>0;
 		}
 
 		/// <summary>A pressable button! A button will expand to fit the text
