@@ -205,6 +205,9 @@
     <ClCompile Include="ui\ui_layout.cpp">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -471,6 +474,9 @@
     </ClInclude>
     <ClInclude Include="ui\ui_layout.h">
       <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

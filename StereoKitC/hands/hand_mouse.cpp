@@ -16,7 +16,7 @@ int     mouse_active_state = 0;
 ///////////////////////////////////////////
 
 bool hand_mouse_available() {
-	return sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim;
+	return backend_xr_get_type() == backend_xr_type_simulator;
 }
 
 ///////////////////////////////////////////

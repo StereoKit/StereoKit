@@ -26,6 +26,22 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayType    device_display_get_type        ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayBlend   device_display_get_blend       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_set_blend       (DisplayBlend blend);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_valid_blend     (DisplayBlend blend);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float          device_display_get_refresh_rate();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_width       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_height      ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FovInfo        device_display_get_fov         ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DeviceTracking device_get_tracking            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_name                ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_gpu                 ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_has_eye_gaze            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_has_hand_tracking       ();
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_totalf_unscaled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_total_unscaled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float       time_totalf();

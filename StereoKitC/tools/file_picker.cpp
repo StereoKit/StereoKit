@@ -129,7 +129,7 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
-	if (sk_active_display_mode() == display_mode_flatscreen) {
+	if (device_display_get_type() == display_type_flatscreen) {
 		fp_wfilename[0] = '\0';
 
 		// Build a filter string

@@ -11,11 +11,13 @@
 
 namespace sk {
 
-bool openxr_views_create ();
-void openxr_views_destroy();
-void openxr_views_render (XrTime time);
+bool openxr_views_create    ();
+void openxr_views_destroy   ();
+void openxr_views_update_fov();
 
-void xr_compositor_layers_clear();
+void     xr_compositor_layers_clear();
+bool32_t xr_set_blend              (display_blend_ blend);
+bool32_t xr_blend_valid            (display_blend_ blend);
 
 extern array_t<XrViewConfigurationType> xr_display_types;
 
