@@ -3324,6 +3324,12 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 
 ///////////////////////////////////////////
 
+const char* skg_adapter_name() {
+	return gl_adapter_name;
+}
+
+///////////////////////////////////////////
+
 void skg_shutdown() {
 #if defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent(NULL, NULL);

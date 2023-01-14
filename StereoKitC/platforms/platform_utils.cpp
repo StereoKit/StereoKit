@@ -56,6 +56,7 @@
 #ifdef SK_OS_LINUX
 #include <unistd.h>
 #include <dirent.h> 
+#include <libgen.h> 
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
 #endif
@@ -277,7 +278,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// from a folder other than where the exe sits (like dotnet vs VS), the
 	// file may be relative to where the exe is. We attempt to find that
 	// here.
-	if (fp == nullptr && slash_fix_filename[0] =! '/') {
+	if (fp == nullptr && slash_fix_filename[0] != '/') {
 		char exe_path[PATH_MAX];
 		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
 		exe_path[len] = '\0';

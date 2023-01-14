@@ -1495,7 +1495,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	float pad2       = skui_settings.padding * 2;
 	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
-	vec3  image_at;
+	vec3  image_at   = {};
 	float image_size;
 	text_align_ image_align;
 	vec3  text_at;
