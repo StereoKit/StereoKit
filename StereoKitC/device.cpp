@@ -1,6 +1,7 @@
 #include "device.h"
 #include "stereokit.h"
 #include "sk_memory.h"
+#include "xr_backends/openxr_view.h"
 
 namespace sk {
 
@@ -24,6 +25,28 @@ display_type_ device_display_get_type() {
 
 display_blend_ device_display_get_blend() {
 	return device_data.display_blend;
+}
+
+///////////////////////////////////////////
+
+bool32_t device_display_set_blend(display_blend_ blend) {
+#if defined(SK_XR_OPENXR)
+	if (backend_xr_get_type() == backend_xr_type_openxr) {
+		return xr_set_blend(blend);
+	}
+#endif
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool32_t device_display_valid_blend(display_blend_ blend) {
+#if defined(SK_XR_OPENXR)
+	if (backend_xr_get_type() == backend_xr_type_openxr) {
+		return xr_blend_valid(blend);
+	}
+#endif
+	return blend == display_blend_opaque;
 }
 
 ///////////////////////////////////////////

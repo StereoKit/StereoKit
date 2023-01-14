@@ -168,6 +168,53 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 
 ///////////////////////////////////////////
 
+bool32_t xr_blend_valid(display_blend_ blend) {
+	if (blend == display_blend_any_transparent) {
+		if (xr_valid_blends & display_blend_additive) {
+			blend = display_blend_additive;
+		} else if (xr_valid_blends & display_blend_blend) {
+			blend = display_blend_additive;
+		} else {
+			blend = display_blend_none;
+		}
+	}
+
+	return (blend & xr_valid_blends) != 0;
+}
+
+///////////////////////////////////////////
+
+bool32_t xr_set_blend(display_blend_ blend) {
+	if (blend == display_blend_any_transparent) {
+		if (xr_valid_blends & display_blend_additive) {
+			blend = display_blend_additive;
+		} else if (xr_valid_blends & display_blend_blend) {
+			blend = display_blend_additive;
+		} else {
+			blend = display_blend_none;
+		}
+	}
+
+	if ((blend & xr_valid_blends) == 0) {
+		log_err("Set display blend to an invalid mode!");
+		return false;
+	}
+	device_data.display_blend = blend;
+
+	for (int32_t i = 0; i < xr_displays.count; i++) {
+		if (xr_displays[i].type != xr_display_primary) continue;
+		switch (blend) {
+		case display_blend_additive: xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE; break;
+		case display_blend_blend:    xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND; break;
+		case display_blend_opaque:   xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_OPAQUE; break;
+		}
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////
+
 bool openxr_views_create() {
 	xr_render_sys = systems_find("FrameRender");
 

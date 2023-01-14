@@ -237,6 +237,38 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>What type of user motion is the device capable of tracking? For the normal
+	/// fully capable XR headset, this should be 6dof (rotation and translation), but
+	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
+	/// computers with the simulator off would be none. </summary>
+	public enum DeviceTracking {
+		/// <summary>No tracking is available! This is likely a flatscreen application, not an
+		/// XR applicaion.</summary>
+		None         = 0,
+		/// <summary>This tracks rotation only, this may be a limited device without tracking
+		/// cameras, or could be a more capable headset in a 3dof mode. DoF stands
+		/// for Degrees of Freedom.</summary>
+		DoF3,
+		/// <summary>This is capable of tracking both the position and rotation of the device,
+		/// most fully featured XR headsets (such as a HoloLens 2) will have this.
+		/// DoF stands for Degrees of Freedom.</summary>
+		DoF6,
+	}
+
+	/// <summary>This describes a type of display hardware!</summary>
+	public enum DisplayType {
+		/// <summary>Not a display at all, or the variable hasn't been initialized properly
+		/// yet.</summary>
+		None,
+		/// <summary>This is a stereo display! It has 2 screens, or two sections that display
+		/// content in stereo, one for each eye. This could be a VR headset, or like
+		/// a 3D tv.</summary>
+		Stereo,
+		/// <summary>This is a single flat screen, with no stereo depth. This could be
+		/// something like either a computer monitor, or a phone with passthrough AR.</summary>
+		Flatscreen,
+	}
+
 	/// <summary>Culling is discarding an object from the render pipeline!
 	/// This enum describes how mesh faces get discarded on the graphics
 	/// card. With culling set to none, you can double the number of pixels
