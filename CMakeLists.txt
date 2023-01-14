@@ -192,6 +192,8 @@ set(SK_SRC_CODE
   StereoKitC/_stereokit_ui.h
   StereoKitC/color.cpp
   StereoKitC/backend.cpp
+  StereoKitC/device.cpp
+  StereoKitC/device.h
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
   StereoKitC/intersect.cpp

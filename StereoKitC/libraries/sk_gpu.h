@@ -3268,7 +3268,8 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	const char* name     = glGetString(GL_RENDERER);
 	size_t      name_len = strlen(name);
 	gl_adapter_name = (char*)malloc(name_len+1);
-	memcpy(gl_adapter_name, name, name_len+1);
+	memcpy(gl_adapter_name, name, name_len);
+	gl_adapter_name[name_len] = '\0';
 
 	skg_logf(skg_log_info, "Using OpenGL: %s", glGetString(GL_VERSION));
 	skg_logf(skg_log_info, "Device: %s", gl_adapter_name);
@@ -4741,14 +4742,16 @@ void skg_log(skg_log_ level, const char *text) {
 	if (_skg_log) _skg_log(level, text);
 }
 void skg_logf (skg_log_ level, const char *text, ...) {
-	va_list args;
+	va_list args, copy;
 	va_start(args, text);
+	va_copy (copy, args);
 	size_t length = vsnprintf(nullptr, 0, text, args);
 	char*  buffer = (char*)malloc(sizeof(char) * (length + 2));
-	vsnprintf(buffer, length + 2, text, args);
+	vsnprintf(buffer, length + 2, text, copy);
 
 	skg_log(level, buffer);
 	free(buffer);
+	va_end(copy);
 	va_end(args);
 }
 

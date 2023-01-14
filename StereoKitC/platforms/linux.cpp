@@ -15,10 +15,12 @@
 #include "../systems/input_keyboard.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../log.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
+#include "../libraries/stref.h"
 
 namespace sk {
 
@@ -185,7 +187,7 @@ void linux_events() {
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
-					input_last_physical_keypress = time_getf();
+					input_last_physical_keypress = time_totalf();
 					platform_keyboard_show(false, text_context_text);
 
 					// Some non-text characters get fed into the text system as
@@ -439,6 +441,18 @@ bool linux_start_flat() {
 	if (!setup_x_window())
 		return false;
 	#endif
+
+	device_data.display_blend  = display_blend_opaque;
+	device_data.display_width  = sk_settings.flatscreen_width;
+	device_data.display_height = sk_settings.flatscreen_height;
+	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
+		? device_tracking_6dof
+		: device_tracking_none;
+	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
+		? string_copy("Simulator")
+		: string_copy("None");
 	
 	flatscreen_input_init();
 
