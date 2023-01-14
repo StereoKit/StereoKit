@@ -2991,7 +2991,7 @@ int32_t     gl_active_width        = 0;
 int32_t     gl_active_height       = 0;
 skg_tex_t  *gl_active_rendertarget = nullptr;
 uint32_t    gl_current_framebuffer = 0;
-const char *gl_adapter_name        = nullptr;
+char*       gl_adapter_name        = nullptr;
 
 ///////////////////////////////////////////
 
@@ -3265,7 +3265,11 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	gl_load_extensions();
 #endif
 
-	gl_adapter_name = glGetString(GL_RENDERER);
+	const char* name     = glGetString(GL_RENDERER);
+	size_t      name_len = strlen(name);
+	gl_adapter_name = (char*)malloc(name_len+1);
+	memcpy(gl_adapter_name, name, name_len+1);
+
 	skg_logf(skg_log_info, "Using OpenGL: %s", glGetString(GL_VERSION));
 	skg_logf(skg_log_info, "Device: %s", gl_adapter_name);
 
@@ -3331,6 +3335,8 @@ const char* skg_adapter_name() {
 ///////////////////////////////////////////
 
 void skg_shutdown() {
+	free(gl_adapter_name); gl_adapter_name = nullptr;
+
 #if defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent(NULL, NULL);
 	ReleaseDC(gl_hwnd, gl_hdc);
