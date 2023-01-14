@@ -340,6 +340,7 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
+	strncpy(sk_sys_name, properties.systemName, 256);
 	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;

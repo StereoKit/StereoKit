@@ -35,6 +35,10 @@ namespace StereoKit
 		/// characteristics!</summary>
 		public static SystemInfo System => _system;
 
+		/// <summary>Human-readable system name embedded in the StereoKitC
+		/// DLL.</summary>
+		public static string SystemName => Marshal.PtrToStringAnsi(NativeAPI.sk_system_name());
+
 		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
 		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );

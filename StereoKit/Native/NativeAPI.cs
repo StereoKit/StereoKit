@@ -19,6 +19,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_run([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update, [MarshalAs(UnmanagedType.FunctionPtr)] Action app_shutdown);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int         sk_is_stepping();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayMode sk_active_display_mode();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_system_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SystemInfo  sk_system_info();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
