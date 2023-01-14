@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Collections.Concurrent;
 
 namespace StereoKit
 {
@@ -10,9 +11,9 @@ namespace StereoKit
 	/// library!</summary>
 	public static class SK
 	{
-		private static SystemInfo   _system;
-		private static Steppers     _steppers         = new Steppers();
-		private static List<Action> _mainThreadInvoke = new List<Action>();
+		private static SystemInfo              _system;
+		private static Steppers                _steppers         = new Steppers();
+		private static ConcurrentQueue<Action> _mainThreadInvoke = new ConcurrentQueue<Action>();
 
 		/// <summary>This is a copy of the settings that StereoKit was
 		/// initialized with, so you can refer back to them a little easier.
@@ -179,11 +180,8 @@ namespace StereoKit
 			_steppers.Step();
 			_stepCallback?.Invoke();
 
-			for (int i = 0; i < _mainThreadInvoke.Count; i++)
-			{
-				_mainThreadInvoke[i].Invoke();
-			}
-			_mainThreadInvoke.Clear();
+			while (_mainThreadInvoke.TryDequeue(out Action a))
+				a.Invoke();
 		}
 
 		private static Action _shutdownCallback = null;
@@ -245,6 +243,6 @@ namespace StereoKit
 		/// <param name="action">Some code to run! This Action will persist in
 		/// a list until after Step, at which point it is removed and dropped.
 		/// </param>
-		public static void ExecuteOnMain(Action action) => _mainThreadInvoke.Add(action);
+		public static void ExecuteOnMain(Action action) => _mainThreadInvoke.Enqueue(action);
 	}
 }

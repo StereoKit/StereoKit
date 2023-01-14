@@ -78,18 +78,18 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 
 	// Calculate the bounds for this mesh by searching it for min and max values!
 	if (calculate_bounds && vertex_count > 0) {
-		vec3 min = vertices[0].pos;
-		vec3 max = vertices[0].pos;
+		XMVECTOR min = XMLoadFloat3((XMFLOAT3*)&vertices[0].pos);
+		XMVECTOR max = min;
 		for (uint32_t i = 1; i < vertex_count; i++) {
-			min.x = fminf(vertices[i].pos.x, min.x);
-			min.y = fminf(vertices[i].pos.y, min.y);
-			min.z = fminf(vertices[i].pos.z, min.z);
 
-			max.x = fmaxf(vertices[i].pos.x, max.x);
-			max.y = fmaxf(vertices[i].pos.y, max.y);
-			max.z = fmaxf(vertices[i].pos.z, max.z);
+			XMVECTOR pt = XMLoadFloat3((XMFLOAT3*)&vertices[i].pos);
+			min = XMVectorMin(min, pt);
+			max = XMVectorMax(max, pt);
 		}
-		mesh->bounds = bounds_t{ min / 2 + max / 2, max - min };
+		XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+		XMVECTOR dimensions = XMVectorSubtract(max, min);
+		XMStoreFloat3((XMFLOAT3*)&mesh->bounds.center,     center);
+		XMStoreFloat3((XMFLOAT3*)&mesh->bounds.dimensions, dimensions);
 	}
 }
 ///////////////////////////////////////////

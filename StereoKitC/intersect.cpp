@@ -144,26 +144,50 @@ bounds_t bounds_grow_to_fit_pt(bounds_t bounds, vec3 pt) {
 
 ///////////////////////////////////////////
 
-bounds_t bounds_grow_to_fit_box(bounds_t bounds, bounds_t box, const matrix* opt_transform) {
-	vec3 half = bounds.dimensions / 2;
-	vec3 min  = bounds.center - half;
-	vec3 max  = bounds.center + half;
-	
-	for (int32_t i = 0; i < 8; i++) {
-		vec3 pt = bounds_corner(box, i);
-		if (opt_transform) pt = matrix_transform_pt(*opt_transform, pt);
-		if      (pt.x > max.x) max.x = pt.x;
-		else if (pt.x < min.x) min.x = pt.x;
-		if      (pt.y > max.y) max.y = pt.y;
-		else if (pt.y < min.y) min.y = pt.y;
-		if      (pt.z > max.z) max.z = pt.z;
-		else if (pt.z < min.z) min.z = pt.z;
+bounds_t bounds_grow_to_fit_box_opt(bounds_t *opt_bounds, bounds_t box, const matrix* opt_transform) {
+	XMVECTOR min, max;
+	int32_t start;
+	if (opt_bounds) {
+		vec3 half = opt_bounds->dimensions / 2;
+		vec3 minf = opt_bounds->center - half;
+		vec3 maxf = opt_bounds->center + half;
+		start = 0;
+		min   = XMLoadFloat3((XMFLOAT3*)&minf);
+		max   = XMLoadFloat3((XMFLOAT3*)&maxf);
+	} else {
+		min   = XMLoadFloat3((XMFLOAT3*)&bounds_corner(box, 0));
+		max   = min;
+		start = 1;
 	}
 
+	for (int32_t i = 1; i < 8; i++) {
+		vec3 pt = opt_transform 
+			? matrix_transform_pt(*opt_transform, bounds_corner(box, i))
+			: bounds_corner(box, i);
+
+		XMVECTOR xpt = XMLoadFloat3((XMFLOAT3*)&pt);
+		min = XMVectorMin(min, xpt);
+		max = XMVectorMax(max, xpt);
+	}
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract   (max, min);
+
 	bounds_t result;
-	result.center     = vec3_lerp(min, max, 0.5f);
-	result.dimensions = max - min;
+	XMStoreFloat3((XMFLOAT3*)&result.center,     center);
+	XMStoreFloat3((XMFLOAT3*)&result.dimensions, dimensions);
 	return result;
+}
+
+///////////////////////////////////////////
+
+bounds_t bounds_grow_to_fit_box(bounds_t bounds, bounds_t box, const matrix* opt_transform) {
+	return bounds_grow_to_fit_box_opt(&bounds, box, opt_transform);
+}
+
+///////////////////////////////////////////
+
+bounds_t bounds_transform(bounds_t bounds, matrix transform) {
+	return bounds_grow_to_fit_box_opt(nullptr, bounds, &transform);
 }
 
 ///////////////////////////////////////////
