@@ -33,7 +33,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float          device_display_get_refresh_rate();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_width       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_height      ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FovInfo        device_display_get_fov         ();
+		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FovInfo        device_display_get_fov         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DeviceTracking device_get_tracking            ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_name                ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_gpu                 ();

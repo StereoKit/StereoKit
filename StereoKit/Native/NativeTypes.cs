@@ -188,14 +188,14 @@ namespace StereoKit
 		private int _worldRaycastPresent;
 	}
 
-	[StructLayout(LayoutKind.Sequential)]
+	/*[StructLayout(LayoutKind.Sequential)]
 	public struct FovInfo
 	{
 		public float left;
 		public float right;
 		public float top;
 		public float bottom;
-	}
+	}*/
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
 	[StructLayout(LayoutKind.Sequential)]

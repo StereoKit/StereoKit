@@ -155,7 +155,8 @@ bounds_t bounds_grow_to_fit_box_opt(bounds_t *opt_bounds, bounds_t box, const ma
 		min   = XMLoadFloat3((XMFLOAT3*)&minf);
 		max   = XMLoadFloat3((XMFLOAT3*)&maxf);
 	} else {
-		min   = XMLoadFloat3((XMFLOAT3*)&bounds_corner(box, 0));
+		vec3 corner = bounds_corner(box, 0);
+		min   = XMLoadFloat3((XMFLOAT3*)&corner);
 		max   = min;
 		start = 1;
 	}
