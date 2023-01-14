@@ -571,7 +571,8 @@ SK_API bool32_t bounds_point_contains  (bounds_t bounds, vec3 pt);
 SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
 SK_API bounds_t bounds_grow_to_fit_pt  (bounds_t bounds, vec3 pt);
-SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_transform sk_default(nullptr));
+SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_box_transform sk_default(nullptr));
+SK_API bounds_t bounds_transform       (bounds_t bounds, matrix transform);
 SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////

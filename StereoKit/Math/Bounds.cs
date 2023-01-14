@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -59,6 +61,43 @@ namespace StereoKit
 		public static Bounds FromCorners(Vec3 bottomLeftBack, Vec3 topRightFront)
 			=> new Bounds(bottomLeftBack/2 + topRightFront/2, topRightFront-bottomLeftBack);
 
+		/// <summary>Grow the Bounds to encapsulate the provided point. Returns
+		/// the result, and does NOT modify the current bounds.</summary>
+		/// <param name="pt">The point to encapsulate! This should be in the
+		/// same space as the bounds.</param>
+		/// <returns>The bounds that also encapsulate the provided point.
+		/// </returns>
+		Bounds Grown (Vec3 pt)
+			=> NativeAPI.bounds_grow_to_fit_pt(this, pt);
+		/// <summary>Grow the Bounds to encapsulate the provided box after it
+		/// has been transformed by the provided matrix transform. This will
+		/// transform each corner of the box, and expand the bounds to
+		/// encapsulate each point!</summary>
+		/// <param name="box">The box to encapsulate! The corners of this box
+		/// are transformed, and then used to grow the Bounds.</param>
+		/// <param name="boxTransform">The Matrix transform for the box. If
+		/// this is just an Identity matrix, you can skip providing a Matrix.
+		/// </param>
+		/// <returns>The bounds that also encapsulate the provided transformed
+		/// box.</returns>
+		Bounds Grown (Bounds box, Matrix boxTransform)
+			=> NativeAPI.bounds_grow_to_fit_box(this, box, boxTransform);
+		/// <summary>Grow the Bounds to encapsulate the provided box.</summary>
+		/// <param name="box">The box to encapsulate!</param>
+		/// <returns>The bounds that also encapsulate the provided box.
+		/// </returns>
+		Bounds Grown (Bounds box)
+			=> NativeAPI.bounds_grow_to_fit_box(this, box, IntPtr.Zero);
+		/// <summary>This returns a Bounds that encapsulates the transformed
+		/// points of the current Bounds's corners. Note that this will likely
+		/// introduce a lot of extra empty volume in many cases, as the result
+		/// is still always axis aligned.</summary>
+		/// <param name="transform">A transform Matrix for the current Bounds's
+		/// corners.</param>
+		/// <returns>A Bounds that encapsulates the transformed points of the
+		/// current Bounds's corners</returns>
+		Bounds Transformed(Matrix transform)
+			=> NativeAPI.bounds_transform(this, transform);
 
 		/// <summary>Calculate the intersection between a Ray, and these
 		/// bounds. Returns false if no intersection occurred, and 'at' will
