@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
-  <Import Project="..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
-  <Import Project="..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
+  <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
+  <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
+  <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -49,14 +49,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -99,18 +99,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
       <PostBuildEvent>
-      <Command>xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
-xcopy "$(TargetDir)*.dll" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.lib" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(TargetDir)*.pdb" "$(SolutionDir)bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
-xcopy "$(ProjectDir)stereokit.h" "$(SolutionDir)bin\distribute\include\" /d /k /y
-xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /k /y</Command>
+      <Command>xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
+xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.lib" "$(ProjectDir)..\bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
+xcopy "$(ProjectDir)stereokit.h" "$(ProjectDir)..\bin\distribute\include\" /d /k /y
+xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d /k /y</Command>
       <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(SolutionDir)Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
-"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
+"$(ProjectDir)..\Tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(ProjectDir)..\Tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -278,8 +278,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Tools\include\stereokit.hlsli" />
-    <None Include="..\Tools\include\stereokit_pbr.hlsli" />
+    <None Include="$(ProjectDir)..\Tools\include\stereokit.hlsli" />
+    <None Include="$(ProjectDir)..\Tools\include\stereokit_pbr.hlsli" />
     <None Include="cpp.hint" />
     <None Include="packages.config" />
     <None Include="shaders_builtin\shader_builtin_default.hlsl" />
@@ -313,8 +313,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(SolutionDir)bin\distribute\include\" /d /
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
-    <Import Project="..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
-    <Import Project="..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
+    <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
+    <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
+    <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
   </ImportGroup>
 </Project>
