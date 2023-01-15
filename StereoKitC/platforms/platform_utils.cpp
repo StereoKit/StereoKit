@@ -274,6 +274,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 #else
 	FILE *fp = fopen(slash_fix_filename, "rb");
 
+	#if defined(SK_OS_LINUX)
 	// If the working directory has been changed, and the exe is called
 	// from a folder other than where the exe sits (like dotnet vs VS), the
 	// file may be relative to where the exe is. We attempt to find that
@@ -287,6 +288,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
 		fp = fopen(fullpath, "rb");
 	}
+	#endif
 	if (fp == nullptr) {
 		char* real_path = path_absolute(slash_fix_filename);
 		if (real_path == nullptr) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
