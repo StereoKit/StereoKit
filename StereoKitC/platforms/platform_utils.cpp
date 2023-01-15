@@ -254,7 +254,6 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 			wcscpy(fullpath, drive);
 			wcscat(fullpath, dir);
 			wcscat(fullpath, wfilename);
-			log_diagf("Also trying %ls", fullpath);
 			fp = _wfopen(fullpath, L"rb");
 		}
 	}
