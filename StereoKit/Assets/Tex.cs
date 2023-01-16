@@ -263,54 +263,54 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
-        /// <summary>Loads an image file stored in memory directly into a
-        /// texture synchronously! Supported formats are: jpg, png, tga,
+		/// <summary>Loads an image file stored in memory directly into a
+		/// texture synchronously! Supported formats are: jpg, png, tga,
 		/// bmp, psd, gif, hdr, pic. Asset Id will be the same as the
 		/// filename.</summary>
-        /// <param name="imageFileData">The binary data of an image file,
-        /// this is NOT a raw RGB color array!</param>
-        /// <param name="sRGBData">Is this image color data in sRGB format,
-        /// or is it normal/metal/rough/data that's not for direct display?
-        /// sRGB colors get converted to linear color space on the graphics
-        /// card, so getting this right can have a big impact on visuals.
-        /// </param>
-        public void SetMemory(in byte[] imageFileData, bool sRGBData = true)
-        {
-            NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0);
-        }
+		/// <param name="imageFileData">The binary data of an image file,
+		/// this is NOT a raw RGB color array!</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.
+		/// </param>
+		public void SetMemory(in byte[] imageFileData, bool sRGBData = true)
+		{
+			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0);
+		}
 
-        /// <summary>This function is dependent on the graphics backend! It
-        /// will take a texture resource for the current graphics backend (D3D
-        /// or GL) and wrap it in a StereoKit texture for use within StereoKit.
-        /// This is a bit of an advanced feature.</summary>
-        /// <param name="nativeTexture">For D3D, this should be an
-        /// ID3D11Texture2D*, and for GL, this should be a uint32_t from a
-        /// glGenTexture call, coerced into the IntPtr.</param>
-        /// <param name="type">The image flags that tell SK how to treat the
-        /// texture, this should match up with the settings the texture was
-        /// originally created with. If SK can figure the appropriate settings,
-        /// it _may_ override the value provided here.</param>
-        /// <param name="native_fmt">The texture's format using the graphics
-        /// backend's value, not SK's. This should match up with the settings
-        /// the texture was originally created with. If SK can figure the
-        /// appropriate settings, it _may_ override the value provided here.
-        /// </param>
-        /// <param name="width">Width of the texture. This should match up with
-        /// the settings the texture was originally created with. If SK can
-        /// figure the appropriate settings, it _may_ override the value
-        /// provided here.</param>
-        /// <param name="height">Height of the texture. This should match up
-        /// with the settings the texture was originally created with. If SK
-        /// can figure the appropriate settings, it _may_ override the value
-        /// provided here.</param>
-        /// <param name="surface_count">Texture array surface count. This
-        /// should match up with the settings the texture was originally
-        /// created with. If SK can figure the appropriate settings, it _may_
-        /// override the value provided here.</param>
-        /// <param name="owned">Should ownership of this texture resource be
-        /// passed on to StereoKit? If so, StereoKit may delete it when it's
-        /// finished with it. If this is not desired, pass in false.</param>
-        public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
+		/// <summary>This function is dependent on the graphics backend! It
+		/// will take a texture resource for the current graphics backend (D3D
+		/// or GL) and wrap it in a StereoKit texture for use within StereoKit.
+		/// This is a bit of an advanced feature.</summary>
+		/// <param name="nativeTexture">For D3D, this should be an
+		/// ID3D11Texture2D*, and for GL, this should be a uint32_t from a
+		/// glGenTexture call, coerced into the IntPtr.</param>
+		/// <param name="type">The image flags that tell SK how to treat the
+		/// texture, this should match up with the settings the texture was
+		/// originally created with. If SK can figure the appropriate settings,
+		/// it _may_ override the value provided here.</param>
+		/// <param name="native_fmt">The texture's format using the graphics
+		/// backend's value, not SK's. This should match up with the settings
+		/// the texture was originally created with. If SK can figure the
+		/// appropriate settings, it _may_ override the value provided here.
+		/// </param>
+		/// <param name="width">Width of the texture. This should match up with
+		/// the settings the texture was originally created with. If SK can
+		/// figure the appropriate settings, it _may_ override the value
+		/// provided here.</param>
+		/// <param name="height">Height of the texture. This should match up
+		/// with the settings the texture was originally created with. If SK
+		/// can figure the appropriate settings, it _may_ override the value
+		/// provided here.</param>
+		/// <param name="surface_count">Texture array surface count. This
+		/// should match up with the settings the texture was originally
+		/// created with. If SK can figure the appropriate settings, it _may_
+		/// override the value provided here.</param>
+		/// <param name="owned">Should ownership of this texture resource be
+		/// passed on to StereoKit? If so, StereoKit may delete it when it's
+		/// finished with it. If this is not desired, pass in false.</param>
+		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
 			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned?1:0);
 
 		/// <summary>This will return the texture's native resource for use
