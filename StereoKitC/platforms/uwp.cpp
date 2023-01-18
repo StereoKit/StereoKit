@@ -6,8 +6,10 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
 #include "../systems/input.h"
@@ -509,6 +511,17 @@ bool uwp_start_flat() {
 	sk_info.display_width  = sk_settings.flatscreen_width;
 	sk_info.display_height = sk_settings.flatscreen_height;
 	sk_info.display_type   = display_opaque;
+	device_data.display_blend  = display_blend_opaque;
+	device_data.display_width  = sk_settings.flatscreen_width;
+	device_data.display_height = sk_settings.flatscreen_height;
+	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
+	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
+		? device_tracking_6dof
+		: device_tracking_none;
+	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
+		? string_copy("Simulator")
+		: string_copy("None");
 
 	_beginthread(window_thread, 0, nullptr);
 	
@@ -521,6 +534,8 @@ bool uwp_start_flat() {
 	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
+	device_data.display_width  = uwp_swapchain.width;
+	device_data.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 	tex_set_id       (uwp_target, "sk/platform/swapchain");
 	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
@@ -546,6 +561,8 @@ void uwp_step_begin_flat() {
 
 		sk_info.display_width  = uwp_resize_width;
 		sk_info.display_height = uwp_resize_height;
+		device_data.display_width  = uwp_resize_width;
+		device_data.display_height = uwp_resize_height;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", uwp_resize_width, uwp_resize_height);
 
 		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
