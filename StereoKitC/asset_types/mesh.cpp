@@ -402,6 +402,8 @@ void mesh_update_label(mesh_t mesh) {
 #if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (mesh->header.id_text != nullptr)
 		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
+#else
+	(void)mesh;
 #endif
 }
 

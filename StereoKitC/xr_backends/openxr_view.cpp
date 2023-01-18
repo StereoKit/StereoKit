@@ -416,9 +416,9 @@ bool openxr_update_swapchains(device_display_t &display) {
 		memset(display.swapchain_color.textures, 0, sizeof(tex_t) * display.swapchain_color.surface_count * display.swapchain_color.surface_layers);
 		memset(display.swapchain_depth.textures, 0, sizeof(tex_t) * display.swapchain_depth.surface_count * display.swapchain_depth.surface_layers);
 
-		for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+		for (uint32_t surf = 0; surf < display.swapchain_color.surface_count; surf++) {
 			for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
-				int32_t index = layer*display.swapchain_color.surface_count + s;
+				int32_t index = layer*display.swapchain_color.surface_count + surf;
 
 				display.swapchain_color.textures[index] = tex_create(tex_type_rendertarget, tex_get_tex_format(display.color_format));
 				display.swapchain_depth.textures[index] = tex_create(tex_type_depth,        tex_get_tex_format(display.depth_format));
@@ -435,24 +435,24 @@ bool openxr_update_swapchains(device_display_t &display) {
 	}
 
 	// Update or set the native textures
-	for (uint32_t s = 0; s < display.swapchain_color.surface_count; s++) {
+	for (uint32_t surf = 0; surf < display.swapchain_color.surface_count; surf++) {
 		// Update our textures with the new swapchain display surfaces
 		void *native_surface_col   = nullptr;
 		void *native_surface_depth = nullptr;
 #if defined(XR_USE_GRAPHICS_API_D3D11)
-		native_surface_col   = display.swapchain_color.images[s].texture;
-		native_surface_depth = display.swapchain_depth.images[s].texture;
+		native_surface_col   = display.swapchain_color.images[surf].texture;
+		native_surface_depth = display.swapchain_depth.images[surf].texture;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL) || defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-		native_surface_col   = (void*)(uint64_t)display.swapchain_color.images[s].image;
-		native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[s].image;
+		native_surface_col   = (void*)(uint64_t)display.swapchain_color.images[surf].image;
+		native_surface_depth = (void*)(uint64_t)display.swapchain_depth.images[surf].image;
 #endif
 		if (display.swapchain_color.surface_layers == 1) {
-			tex_set_surface(display.swapchain_color.textures[s], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
-			tex_set_surface(display.swapchain_depth.textures[s], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
-			tex_set_zbuffer(display.swapchain_color.textures[s], display.swapchain_depth.textures[s]);
+			tex_set_surface(display.swapchain_color.textures[surf], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, display.view_cap);
+			tex_set_surface(display.swapchain_depth.textures[surf], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, display.view_cap);
+			tex_set_zbuffer(display.swapchain_color.textures[surf], display.swapchain_depth.textures[surf]);
 		} else {
 			for (uint32_t layer = 0; layer < display.swapchain_color.surface_layers; layer++) {
-				int32_t index = layer * display.swapchain_color.surface_count + s;
+				int32_t index = layer * display.swapchain_color.surface_count + surf;
 				tex_set_surface_layer(display.swapchain_color.textures[index], native_surface_col,   tex_type_rendertarget, display.color_format, display.swapchain_color.width, display.swapchain_color.height, layer);
 				tex_set_surface_layer(display.swapchain_depth.textures[index], native_surface_depth, tex_type_depth,        display.depth_format, display.swapchain_depth.width, display.swapchain_depth.height, layer);
 				tex_set_zbuffer(display.swapchain_color.textures[index], display.swapchain_depth.textures[index]);
@@ -463,6 +463,8 @@ bool openxr_update_swapchains(device_display_t &display) {
 	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
 		sk_info.display_width  = w;
 		sk_info.display_height = h;
+		device_data.display_width  = w;
+		device_data.display_height = h;
 	}
 
 	return true;
@@ -841,7 +843,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 
 void openxr_views_update_fov() {
 	device_display_t* disp = &xr_displays[0];
-	for (size_t i = 0; i < xr_displays.count; i++) {
+	for (int32_t i = 0; i < xr_displays.count; i++) {
 		if (xr_displays[i].type == xr_display_primary) {
 			disp = &xr_displays[i];
 			break;

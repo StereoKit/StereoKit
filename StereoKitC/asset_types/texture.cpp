@@ -613,6 +613,8 @@ void tex_update_label(tex_t texture) {
 #if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (texture->header.id_text != nullptr)
 		skg_tex_name(&texture->tex, texture->header.id_text);
+#else
+	(void)texture;
 #endif
 }
 

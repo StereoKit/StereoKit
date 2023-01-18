@@ -189,7 +189,7 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size, bool32_t add_margin) {
 	curr->offset         += curr_offset;
 	curr->offset_initial += curr_offset;
 	curr->prev_offset    += curr_offset;
-	ui_layout_push(cut_start, cut_size, false);
+	ui_layout_push(cut_start, cut_size, add_margin);
 	skui_layouts.last().window = curr->window;
 }
 
