@@ -401,6 +401,29 @@ namespace StereoKit
 			=> Matrix4x4.CreatePerspectiveFieldOfView(fovDegrees*Units.deg2rad, aspectRatio, nearClip, farClip);
 
 		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. With the known camera 
+		/// intrinsics, you can replicate its perspective!</summary>
+		/// <param name="focalLength">The focal length of a camera.</param>
+		/// <param name="principalPoint">The principal point of a camera.</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		public static Matrix Perspective(Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
+		    => new Matrix(new Matrix4x4()
+		    {
+			M11 = focalLength.x / principalPoint.x,
+			M22 = focalLength.y / principalPoint.y,
+			M33 = farClip / (nearClip - farClip),
+			M34 = -1,
+			M43 = nearClip * farClip / (nearClip - farClip),
+		    });
+		
+		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
 		/// matrices will preserve parallel lines. This is great for 2D 
 		/// scenes or content.</summary>
