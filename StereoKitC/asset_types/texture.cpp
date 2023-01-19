@@ -926,8 +926,11 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 	}
 	tex_set_meta(texture, width, height, format);
 
-	tex_set_arr_parse(texture, load_data);
-	tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
+	bool32_t success = tex_set_arr_parse(texture, load_data);
+	if (!success)	tex_set_fallback(texture, tex_error_texture);
+	else		tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
+
+	tex_load_free(nullptr, load_data);
 }
 
 ///////////////////////////////////////////
