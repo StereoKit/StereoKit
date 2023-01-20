@@ -403,8 +403,10 @@ namespace StereoKit
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. With the known camera 
 		/// intrinsics, you can replicate its perspective!</summary>
-		/// <param name="focalLength">The focal length of a camera.</param>
-		/// <param name="principalPoint">The principal point of a camera.</param>
+		/// <param name="imageResolution">The resolution of the image. This
+		/// should be the image's width and height in pixels.</param>
+		/// <param name="focalLength">The focal length of camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
 		/// <param name="nearClip">Anything closer than this distance (in
 		/// meters) will be discarded. Must not be zero, and if you make this
 		/// too small, you may experience glitching in your depth buffer.</param>
@@ -413,15 +415,19 @@ namespace StereoKit
 		/// should not be too far away, or you'll see bad z-fighting 
 		/// artifacts.</param>
 		/// <returns>The final perspective matrix.</returns>
-		public static Matrix Perspective(Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
-		    => new Matrix4x4()
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, float nearClip, float farClip)
+		{
+		    Vec2 aspectRatio = imageResolution / focalLength * nearClip;
+		    float deltaZ = nearClip - farClip;
+		    return new Matrix4x4()
 		    {
-			M11 = focalLength.x / principalPoint.x,
-			M22 = focalLength.y / principalPoint.y,
-			M33 = farClip / (nearClip - farClip),
+			M11 = 2 * nearClip / aspectRatio.x,
+			M22 = 2 * nearClip / aspectRatio.y,
+			M33 = farClip / deltaZ,
 			M34 = -1,
-			M43 = nearClip * farClip / (nearClip - farClip),
+			M43 = nearClip * farClip / deltaZ,
 		    };
+		}
 		
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
