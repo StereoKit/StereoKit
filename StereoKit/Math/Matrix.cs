@@ -414,14 +414,14 @@ namespace StereoKit
 		/// artifacts.</param>
 		/// <returns>The final perspective matrix.</returns>
 		public static Matrix Perspective(Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
-		    => new Matrix(new Matrix4x4()
+		    => new Matrix4x4()
 		    {
 			M11 = focalLength.x / principalPoint.x,
 			M22 = focalLength.y / principalPoint.y,
 			M33 = farClip / (nearClip - farClip),
 			M34 = -1,
 			M43 = nearClip * farClip / (nearClip - farClip),
-		    });
+		    };
 		
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
