@@ -417,12 +417,12 @@ namespace StereoKit
 		/// <returns>The final perspective matrix.</returns>
 		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, float nearClip, float farClip)
 		{
-		    Vec2 aspectRatio = imageResolution / focalLength * nearClip;
+		    Vec2 aspectRatio = imageResolution / focalLength;
 		    float deltaZ = nearClip - farClip;
 		    return new Matrix4x4()
 		    {
-			M11 = 2 * nearClip / aspectRatio.x,
-			M22 = 2 * nearClip / aspectRatio.y,
+			M11 = 2 / aspectRatio.x,
+			M22 = 2 / aspectRatio.y,
 			M33 = farClip / deltaZ,
 			M34 = -1,
 			M43 = nearClip * farClip / deltaZ,
