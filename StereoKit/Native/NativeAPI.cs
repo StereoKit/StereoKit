@@ -307,6 +307,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_named_subset  (IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count      (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds(IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds_exact(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_ray_intersect     (IntPtr model, Ray model_space_ray, out Ray out_pt, Cull cull_mode);

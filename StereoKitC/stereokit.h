@@ -1259,6 +1259,7 @@ SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
 SK_API void          model_draw                    (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
+SK_API void          model_recalculate_bounds_exact(model_t model);
 SK_API void          model_set_bounds              (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t      model_get_bounds              (model_t model);
 SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t* out_pt, cull_ cull_mode sk_default(cull_back));

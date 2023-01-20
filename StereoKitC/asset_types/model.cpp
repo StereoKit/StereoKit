@@ -3,6 +3,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "model.h"
+#include "mesh.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform_utils.h"
 
@@ -175,6 +176,43 @@ void model_recalculate_bounds(model_t model) {
 	
 	// Final bounds value
 	model->bounds = bounds_t{ min / 2 + max / 2, max - min };
+}
+
+///////////////////////////////////////////
+
+void model_recalculate_bounds_exact(model_t model) {
+    model->bounds_dirty = false;
+    if (model->visuals.count <= 0) {
+        model->bounds = {};
+        return;
+    }
+
+    // Get an initial size
+    vec3 first_corner = model->visuals[0].mesh->verts[0].pos;
+    vec3 min, max;
+    min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+
+    // Use all the transformed vertices, and factor them in!
+    for (int32_t m = 0; m < model->visuals.count; m += 1) {
+        const matrix& transform_model = model->visuals[m].transform_model;
+        const mesh_t& mesh = model->visuals[m].mesh;
+        const vert_t* verts = mesh->verts;
+        uint32_t n = mesh->vert_count;
+        if (n == 0) continue;
+        for (int32_t i = 0; i < n; i += 1) {
+            vec3 pt = matrix_transform_pt(transform_model, verts[i].pos);
+            min.x = fminf(pt.x, min.x);
+            min.y = fminf(pt.y, min.y);
+            min.z = fminf(pt.z, min.z);
+
+            max.x = fmaxf(pt.x, max.x);
+            max.y = fmaxf(pt.y, max.y);
+            max.z = fmaxf(pt.z, max.z);
+        }
+    }
+
+    // Final bounds value
+    model->bounds = bounds_t{ min / 2 + max / 2, max - min };
 }
 
 ///////////////////////////////////////////
