@@ -419,6 +419,13 @@ namespace StereoKit
 		public void RecalculateBounds()
 			=> NativeAPI.model_recalculate_bounds(_inst);
 
+		/// <summary>Examines the visuals as they currently are, and rebuilds
+		/// the bounds based on all the vertices in the model! This leads (in general)
+		/// to a tighter bound than the default bound based on bounding boxes.
+		/// However, computing the exact bound can take much longer!</summary>
+		public void RecalculateBoundsExact()
+			=> NativeAPI.model_recalculate_bounds_exact(_inst);
+
 		/// <inheritdoc cref="Model.Draw(Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
 		/// to pass into the shader! Normally this gets used like a material
