@@ -6,6 +6,8 @@
 #include "mesh.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform_utils.h"
+#include <DirectXMath.h>
+using namespace DirectX;
 
 #include <stdio.h>
 #include <string.h>
@@ -189,8 +191,10 @@ void model_recalculate_bounds_exact(model_t model) {
 
     // Get an initial size
     vec3 first_corner = model->visuals[0].mesh->verts[0].pos;
-    vec3 min, max;
-    min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+    vec3 minf = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+    vec3 maxf;
+    XMVECTOR min = XMLoadFloat3((XMFLOAT3*)&minf);
+    XMVECTOR max = XMLoadFloat3((XMFLOAT3*)&minf);
 
     // Use all the transformed vertices, and factor them in!
     for (int32_t m = 0; m < model->visuals.count; m += 1) {
@@ -201,18 +205,21 @@ void model_recalculate_bounds_exact(model_t model) {
         if (n == 0) continue;
         for (int32_t i = 0; i < n; i += 1) {
             vec3 pt = matrix_transform_pt(transform_model, verts[i].pos);
-            min.x = fminf(pt.x, min.x);
-            min.y = fminf(pt.y, min.y);
-            min.z = fminf(pt.z, min.z);
+            XMVECTOR xpt = XMLoadFloat3((XMFLOAT3*)&pt);
 
-            max.x = fmaxf(pt.x, max.x);
-            max.y = fmaxf(pt.y, max.y);
-            max.z = fmaxf(pt.z, max.z);
+            min = XMVectorMin(min, xpt);
+            max = XMVectorMax(max, xpt);
         }
     }
 
     // Final bounds value
-    model->bounds = bounds_t{ min / 2 + max / 2, max - min };
+
+    XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+    XMVECTOR dimensions = XMVectorSubtract   (max, min);
+
+    bounds_t result;
+    XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
+    XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
 }
 
 ///////////////////////////////////////////
