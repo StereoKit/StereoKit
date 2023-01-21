@@ -263,25 +263,25 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
-        /// <summary>Loads an image file stored in memory directly into
-        /// the created texture! Supported formats are: jpg, png, tga,
-        /// bmp, psd, gif, hdr, pic. This method introduces a blocking 
-        /// boolean parameter, which allows you to specify whether this
-        /// method blocks until the image fully loads! The default case
-        /// is to have it as part of the asynchronous asset pipeline, in
-        /// which the Asset Id will be the same as the filename.</summary>
-        /// <param name="imageFileData">The binary data of an image file,
-        /// this is NOT a raw RGB color array!</param>
-        /// <param name="sRGBData">Is this image color data in sRGB format,
-        /// or is it normal/metal/rough/data that's not for direct display?
-        /// sRGB colors get converted to linear color space on the graphics
-        /// card, so getting this right can have a big impact on visuals.
-        /// </param>
-        /// <param name="blocking">Will this method wait for the image 
-        /// to load. By default, we try to load it asynchronously.</param>
-        /// <param name="priority">The priority sort order for this asset in
-        /// the async loading system. Lower values mean loading sooner.</param>
-        public void SetMemory(in byte[] imageFileData, bool sRGBData = true, bool blocking = false, int priority = 10)
+		/// <summary>Loads an image file stored in memory directly into
+		/// the created texture! Supported formats are: jpg, png, tga,
+		/// bmp, psd, gif, hdr, pic. This method introduces a blocking 
+		/// boolean parameter, which allows you to specify whether this
+		/// method blocks until the image fully loads! The default case
+		/// is to have it as part of the asynchronous asset pipeline, in
+		/// which the Asset Id will be the same as the filename.</summary>
+		/// <param name="imageFileData">The binary data of an image file,
+		/// this is NOT a raw RGB color array!</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.
+		/// </param>
+		/// <param name="blocking">Will this method wait for the image 
+		/// to load. By default, we try to load it asynchronously.</param>
+		/// <param name="priority">The priority sort order for this asset in
+		/// the async loading system. Lower values mean loading sooner.</param>
+		public void SetMemory(in byte[] imageFileData, bool sRGBData = true, bool blocking = false, int priority = 10)
 		{
 			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0, blocking, priority);
 		}
