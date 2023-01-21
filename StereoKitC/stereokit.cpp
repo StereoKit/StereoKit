@@ -31,7 +31,6 @@ namespace sk {
 
 const char   *sk_app_name;
 void        (*sk_app_update_func)(void);
-display_mode_ sk_display_mode           = display_mode_none;
 bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
@@ -378,7 +377,7 @@ bool32_t sk_step(void (*app_update)(void)) {
 
 	systems_update();
 
-	if (sk_display_mode == display_mode_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
+	if (device_display_get_type() == display_type_flatscreen && sk_focus != app_focus_active && !sk_settings.disable_unfocused_sleep)
 		platform_sleep(100);
 	sk_stepping = false;
 	return sk_running;
@@ -476,7 +475,14 @@ bool32_t sk_is_stepping() { return sk_stepping; }
 
 ///////////////////////////////////////////
 
-display_mode_ sk_active_display_mode() { return sk_display_mode; }
+display_mode_ sk_active_display_mode() {
+	switch (device_display_get_type()) {
+	case display_type_flatscreen: return display_mode_flatscreen;
+	case display_type_none:       return display_mode_none;
+	case display_type_stereo:     return display_mode_mixedreality;
+	default:                      return display_mode_none;
+	}
+}
 
 ///////////////////////////////////////////
 

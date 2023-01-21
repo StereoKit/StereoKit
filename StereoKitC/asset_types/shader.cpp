@@ -41,6 +41,8 @@ void shader_update_label(shader_t shader) {
 #if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (shader->header.id_text != nullptr)
 		skg_shader_name(&shader->shader, shader->header.id_text);
+#else
+	(void)shader;
 #endif
 }
 

@@ -2,6 +2,7 @@
 #if defined(SK_OS_ANDROID)
 
 #include "../log.h"
+#include "../device.h"
 #include "../xr_backends/openxr.h"
 #include "flatscreen_input.h"
 #include "../systems/render.h"
@@ -210,7 +211,7 @@ void android_step_begin_flat() {
 
 			if (android_next_window) {
 				android_window = (ANativeWindow*)android_next_window;
-				if (sk_display_mode == display_mode_flatscreen)
+				if (device_data.display_type == display_type_flatscreen)
 					android_create_swapchain();
 			}
 		}

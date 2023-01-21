@@ -30,6 +30,8 @@ void flatscreen_input_init() {
 		? matrix_identity
 		: matrix_trs( fltscr_head_pos, quat_from_angles( fltscr_head_rot.x, fltscr_head_rot.y, fltscr_head_rot.z ));
 	render_set_cam_root(render_get_cam_root());
+
+	flatscreen_mouse_update();
 }
 
 ///////////////////////////////////////////
@@ -132,10 +134,9 @@ void flatscreen_mouse_update() {
 ///////////////////////////////////////////
 
 bool flatscreen_is_simulating_movement() {
-	return sk_display_mode == display_mode_flatscreen
-		&& sk_settings.disable_flatscreen_mr_sim == false
-		&& (   input_key(key_caps_lock) & button_state_active
-			|| input_key(key_shift)     & button_state_active);
+	return backend_xr_get_type() == backend_xr_type_simulator &&
+		(input_key(key_caps_lock) & button_state_active ||
+		 input_key(key_shift)     & button_state_active);
 }
 
 } // namespace sk

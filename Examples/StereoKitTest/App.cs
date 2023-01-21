@@ -12,7 +12,6 @@ class App
 		blendPreference   = DisplayBlend.AnyTransparent,
 		displayPreference = DisplayMode.MixedReality,
 		logFilter         = LogLevel.Diagnostic,
-		renderMultisample = 4,
 	};
 
 	public SKSettings Settings => settings;

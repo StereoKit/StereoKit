@@ -52,16 +52,16 @@ class DemoUISettings : ITest
 		UI.Settings = activeSettings;
 
 
-		UI.WindowBegin("Color", ref colorPose, new Vec2(25, 0) * U.cm);
+		UI.WindowBegin("Color", ref colorPose);
 
 		UI.Label("Hue / Saturation / Value");
 		float h = colorScheme.x;
 		float s = colorScheme.y;
 		float v = colorScheme.z;
 		UI.PanelBegin();
-		UI.HSlider("x", ref h, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("y", ref s, 0, 1, 0, 18 * U.cm);
-		UI.HSlider("z", ref v, 0, 1, 0, 18 * U.cm);
+		UI.HSlider("x", ref h, 0, 1, 0);
+		UI.HSlider("y", ref s, 0, 1, 0);
+		UI.HSlider("z", ref v, 0, 1, 0);
 		UI.PanelEnd();
 		colorScheme = new Vec3(h, s, v);
 		Color  color  = Color.HSV(colorScheme.x, colorScheme.y, colorScheme.z);

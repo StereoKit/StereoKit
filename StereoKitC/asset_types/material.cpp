@@ -51,6 +51,8 @@ void material_update_label(material_t material) {
 		skg_pipeline_name(&material->pipeline, material->header.id_text);
 		skg_buffer_name  (&material->args.buffer_gpu, material->header.id_text);
 	}
+#else
+	(void)material;
 #endif
 }
 

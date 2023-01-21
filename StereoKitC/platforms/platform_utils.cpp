@@ -56,6 +56,7 @@
 #ifdef SK_OS_LINUX
 #include <unistd.h>
 #include <dirent.h> 
+#include <libgen.h> 
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
 #endif
@@ -238,6 +239,25 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	MultiByteToWideChar(CP_UTF8, 0, slash_fix_filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"rb");
 	if (fp == nullptr) {
+		// If the working directory has been changed, and the exe is called
+		// from a folder other than where the exe sits (like dotnet vs VS), the
+		// file may be relative to where the exe is. We attempt to find that
+		// here.
+		wchar_t drive[MAX_PATH];
+		_wsplitpath(wfilename, drive, nullptr, nullptr, nullptr);
+		if (drive[0] == '\0') {
+			wchar_t exe_name[MAX_PATH];
+			wchar_t dir     [MAX_PATH];
+			GetModuleFileNameW(nullptr, exe_name, _countof(exe_name));
+			_wsplitpath(exe_name, drive, dir, nullptr, nullptr);
+			wchar_t fullpath[MAX_PATH];
+			wcscpy(fullpath, drive);
+			wcscat(fullpath, dir);
+			wcscat(fullpath, wfilename);
+			fp = _wfopen(fullpath, L"rb");
+		}
+	}
+	if (fp == nullptr) {
 		wchar_t* buffer      = nullptr;
 		DWORD    buffer_size = GetFullPathNameW(wfilename, 0, buffer, nullptr);
 		buffer = sk_malloc_t(wchar_t, buffer_size);
@@ -252,6 +272,22 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	sk_free(wfilename);
 #else
 	FILE *fp = fopen(slash_fix_filename, "rb");
+
+	#if defined(SK_OS_LINUX)
+	// If the working directory has been changed, and the exe is called
+	// from a folder other than where the exe sits (like dotnet vs VS), the
+	// file may be relative to where the exe is. We attempt to find that
+	// here.
+	if (fp == nullptr && slash_fix_filename[0] != '/') {
+		char exe_path[PATH_MAX];
+		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+		exe_path[len] = '\0';
+		char* dir = dirname(exe_path);
+		char  fullpath[PATH_MAX];
+		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
+		fp = fopen(fullpath, "rb");
+	}
+	#endif
 	if (fp == nullptr) {
 		char* real_path = path_absolute(slash_fix_filename);
 		if (real_path == nullptr) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
@@ -511,7 +547,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	//   may need some revision based on how people interact with it.
 	const float physical_interact_timeout = 60 * 5; // 5 minutes
 	if (visible == false) virtualkeyboard_open(false, type);
-	else if (sk_active_display_mode() != display_mode_flatscreen &&
+	else if (device_display_get_type() != display_type_flatscreen &&
 	         (input_last_physical_keypress < 0 || (time_totalf_unscaled()-input_last_physical_keypress) > physical_interact_timeout) ) {
 
 		virtualkeyboard_open(visible, type);

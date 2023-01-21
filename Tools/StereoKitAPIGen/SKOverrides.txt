@@ -58,6 +58,9 @@ backend_graphics_opengl_wgl OpenGL_WGL
 backend_graphics_opengles_egl OpenGLES_EGL
 backend_graphics_webgl WebGL
 
+device_tracking_3dof DoF3
+device_tracking_6dof DoF6
+
 display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState

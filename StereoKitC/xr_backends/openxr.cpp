@@ -12,6 +12,7 @@
 
 #include "../sk_memory.h"
 #include "../log.h"
+#include "../device.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/sk_gpu.h"
@@ -70,6 +71,7 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
+display_blend_ xr_valid_blends   = display_blend_none;
 bool           xr_system_created = false;
 bool           xr_system_success = false;
 
@@ -212,7 +214,7 @@ bool openxr_create_system() {
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
 		"xrGetInstanceProperties failed [%s]");
 
-	log_diagf("Using OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
 		inst_properties.runtimeName,
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
@@ -317,7 +319,13 @@ bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
-	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
+	// A number of other items also use the xr_time, so lets get this ready
+	// right away.
+	xr_time = openxr_acquire_time();
+
+	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
+	// yet, so it throws errors into the logs.
+	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
 		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
 		openxr_cleanup();
 		return false;
@@ -340,6 +348,8 @@ bool openxr_init() {
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
+	device_data.name = string_copy(properties.systemName);
+
 	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
@@ -385,6 +395,13 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	device_data.has_eye_gaze      = sk_info.eye_tracking_present;
+	device_data.has_hand_tracking = xr_has_articulated_hands;
+	device_data.tracking          = device_tracking_none;
+	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
+	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
+
 
 	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
 	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
@@ -512,7 +529,6 @@ bool openxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time        = openxr_acquire_time();
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
@@ -688,6 +704,12 @@ void openxr_poll_events() {
 				}
 
 				xrBeginSession(xr_session, &begin_info);
+
+				// FoV normally updates right before drawing, but we need it to
+				// be available as soon as the session begins, for apps that
+				// are listening to sk_app_focus changing to determine if FoV
+				// is ready.
+				openxr_views_update_fov();
 
 				xr_running = true;
 				log_diag("OpenXR session begin.");

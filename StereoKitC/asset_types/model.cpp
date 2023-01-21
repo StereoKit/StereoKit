@@ -524,7 +524,9 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.node            = node_id;
 		visual.visible         = true;
 		node.visual = model->visuals.add(visual);
-		model->bounds = bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
+		model->bounds = model->visuals.count == 1
+			? bounds_transform(mesh_get_bounds(mesh), node.transform_model)
+			: bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
 	}
 
 	model->nodes.add(node);

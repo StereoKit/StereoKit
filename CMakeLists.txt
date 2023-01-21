@@ -192,6 +192,8 @@ set(SK_SRC_CODE
   StereoKitC/_stereokit_ui.h
   StereoKitC/color.cpp
   StereoKitC/backend.cpp
+  StereoKitC/device.cpp
+  StereoKitC/device.h
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
   StereoKitC/intersect.cpp
@@ -343,7 +345,9 @@ set(SK_SRC_TOOLS
 
 set(SK_SRC_UI
   StereoKitC/stereokit_ui.h
-  StereoKitC/ui/stereokit_ui.cpp )
+  StereoKitC/ui/stereokit_ui.cpp
+  StereoKitC/ui/ui_layout.h
+  StereoKitC/ui/ui_layout.cpp )
 
 # Switch between a static or shared library based on
 # the cmake options provided.

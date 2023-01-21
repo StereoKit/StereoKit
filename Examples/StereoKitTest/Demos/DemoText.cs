@@ -34,8 +34,8 @@ class DemoText : ITest
 	{
 		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 
-		UI.WindowBegin("Alignment", ref alignWindow, new Vec2(20,0) * U.cm);
-		Vec2 size = new Vec2(5 * U.cm, UI.LineHeight);
+		UI.WindowBegin("Alignment", ref alignWindow);
+		Vec2 size = new Vec2(8 * U.cm, UI.LineHeight);
 		if (UI.Radio("Left"   , alignX == TextAlign.XLeft  , size)) alignX = TextAlign.XLeft;   UI.SameLine();
 		if (UI.Radio("CenterX", alignX == TextAlign.XCenter, size)) alignX = TextAlign.XCenter; UI.SameLine();
 		if (UI.Radio("Right"  , alignX == TextAlign.XRight , size)) alignX = TextAlign.XRight;

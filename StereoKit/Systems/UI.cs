@@ -426,7 +426,7 @@ namespace StereoKit
 		public static bool Radio(string text, bool active)
 		{
 			int iActive = active?1:0;
-			return NativeAPI.ui_toggle_16(text, ref iActive) && iActive>0;
+			return NativeAPI.ui_toggle_img_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && iActive>0;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool)"/>
@@ -437,7 +437,7 @@ namespace StereoKit
 		public static bool Radio(string text, bool active, Vec2 size)
 		{
 			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_sz_16(text, ref iActive, size) && iActive>0;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && iActive>0;
 		}
 
 		/// <summary>A pressable button! A button will expand to fit the text
