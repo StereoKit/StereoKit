@@ -902,7 +902,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 
 ///////////////////////////////////////////
 
-void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data) {
+void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data, bool32_t blocking, int32_t priority) {
 	tex_load_t* load_data = sk_calloc_t(tex_load_t, 1);
 	load_data->is_srgb = srgb_data;
 	load_data->file_count = 1;
@@ -926,11 +926,22 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 	}
 	tex_set_meta(texture, width, height, format);
 
-	bool32_t success = tex_set_arr_parse(texture, load_data);
-	if (!success)	tex_set_fallback(texture, tex_error_texture);
-	else		tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
-
-	tex_load_free(nullptr, load_data);
+	if (blocking) {
+		bool32_t success = tex_set_arr_parse(texture, load_data);
+		if (!success)	tex_set_fallback(texture, tex_error_texture);
+		else			tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
+		tex_load_free(nullptr, load_data);
+	} else {
+		static const asset_load_action_t actions[] = {
+		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
+#if defined(SKG_OPENGL)
+		asset_load_action_t {tex_load_arr_upload, asset_thread_gpu  },
+#else
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+#endif
+		};
+		tex_add_loading_task(texture, load_data, actions, _countof(actions), priority, (float)(width * height));
+	}
 }
 
 ///////////////////////////////////////////
