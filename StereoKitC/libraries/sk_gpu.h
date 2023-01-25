@@ -2665,16 +2665,16 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	typedef void         (*glXSwapBuffers_proc)            (Display* dpy, GLXDrawable);
 	typedef __GLXextproc (*glXGetProcAddress_proc)         (const char* procName);
 
-	glXCreateContext_proc           glXCreateContext;
-	glXCreateContextAttribsARB_proc glXCreateContextAttribsARB;
-	glXDestroyContext_proc          glXDestroyContext;
-	glXMakeCurrent_proc             glXMakeCurrent;
-	glXSwapBuffers_proc             glXSwapBuffers;
-	glXGetProcAddress_proc          glXGetProcAddress;
+	static glXCreateContext_proc           glXCreateContext;
+	static glXCreateContextAttribsARB_proc glXCreateContextAttribsARB;
+	static glXDestroyContext_proc          glXDestroyContext;
+	static glXMakeCurrent_proc             glXMakeCurrent;
+	static glXSwapBuffers_proc             glXSwapBuffers;
+	static glXGetProcAddress_proc          glXGetProcAddress;
 
-	GLXFBConfig  glxFBConfig;
-	GLXDrawable  glxDrawable;
-	GLXContext   glxContext;
+	static GLXFBConfig  glxFBConfig;
+	static GLXDrawable  glxDrawable;
+	static GLXContext   glxContext;
 #endif
 
 #ifdef _SKG_GL_MAKE_FUNCTIONS
