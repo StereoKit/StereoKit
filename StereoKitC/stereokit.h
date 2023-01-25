@@ -1701,6 +1701,7 @@ typedef struct hand_t {
 	hand_joint_t  fingers[5][5];
 	pose_t        wrist;
 	pose_t        palm;
+	pose_t        elbow;
 	vec3          pinch_pt;
 	handed_       handedness;
 	button_state_ tracked_state;
