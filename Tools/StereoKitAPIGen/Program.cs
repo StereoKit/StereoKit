@@ -8,6 +8,7 @@ class Program
 	{
 		None,
 		CSharp,
+		Zig,
 	}
 
 	static void Main(string[] args)
@@ -103,6 +104,7 @@ class Program
 		switch(lang)
 		{
 			case BindLang.CSharp: BindCSharp.Bind(ast, destFolder); break;
+			case BindLang.Zig:    BindZig   .Bind(ast, destFolder); break;
 		}
 	}
 
@@ -120,6 +122,6 @@ class Program
                   parsing and converting. You can provide more than one file
                   this way.
     -l language   Binding language. What bindings are generated from the the 
-                  provided header files. Valid options are: CSharp.");
+                  provided header files. Valid options are: CSharp, Zig.");
 	}
 }

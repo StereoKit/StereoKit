@@ -4,44 +4,6 @@ using System.Linq;
 
 ///////////////////////////////////////////
 
-enum SKTypeDirection
-{
-	None,
-	In,
-	Out,
-	Ref
-}
-enum SKTextType
-{
-	None,
-	Ascii,
-	Utf8,
-	Utf16,
-}
-
-///////////////////////////////////////////
-
-struct SKType
-{
-	public string          raw;
-	public string          final;
-	public SKTypeDirection direction;
-	public SKTextType      text;
-	public bool            array;
-	public int             fixedArray;
-	public SKType(string raw, string final, SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None, int fixedArray = 0) { this.fixedArray = fixedArray; this.text = text; this.raw = raw;   this.final = final; this.direction = dir; this.array = array; }
-	public SKType(string final,             SKTypeDirection dir = SKTypeDirection.None, bool array = false, SKTextType text = SKTextType.None, int fixedArray = 0) { this.fixedArray = fixedArray; this.text = text; this.raw = final; this.final = final; this.direction = dir; this.array = array; }
-
-	public string RawName => array
-		? $"{(direction != SKTypeDirection.None ? $"[{(direction == SKTypeDirection.Ref ? "In, Out" : direction)}] " : "")}{raw}[]"
-		: $"{(direction != SKTypeDirection.None ? direction.ToString().ToLower() + " " : "")}{raw}";
-	public string FinalName => array
-		? $"{(direction != SKTypeDirection.None ? $"[{(direction == SKTypeDirection.Ref ? "In, Out" : direction)}] " : "")}{final}[]"
-		: $"{(direction != SKTypeDirection.None ? direction.ToString().ToLower() + " " : "")}{final}";
-}
-
-///////////////////////////////////////////
-
 class CSTypes
 {
 	public static string SnakeToCamel(string name, bool active, int removePrefix)
@@ -96,7 +58,7 @@ class CSTypes
 			if (i != 0) result += ", ";
 
 			var p = fn.Parameters[i];
-			result += TypeName(p.Type, p.Name, null).RawName + " " + SnakeToCamel(p.Name, false, 0);
+			result += BindCSharp.TypeToName(TypeName(p.Type, p.Name, null)) + " " + SnakeToCamel(p.Name, false, 0);
 		}
 		result += ");";
 
@@ -140,7 +102,7 @@ class CSTypes
 
 		// Allow for an IntPtr override
 		if (varName.EndsWith("_ptr"))
-			return new SKType("IntPtr", SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
+			return new SKType("IntPtr", dir, array, constant, SKSpecialType.None, arraySize);
 		
 		if (dir == SKTypeDirection.None && pointer > 0 && constant && varName != "")
 			dir = SKTypeDirection.In;
@@ -148,20 +110,20 @@ class CSTypes
 		if (pointer > 0 && type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Void)
 		{
 			return varName == "data"
-				? new SKType("byte", dir, true, SKTextType.None, arraySize)
-				: new SKType("IntPtr", dir, array, SKTextType.None, arraySize);
+				? new SKType("byte", dir, true, constant, SKSpecialType.None, arraySize)
+				: new SKType("IntPtr", dir, array, constant, SKSpecialType.None, arraySize);
 		}
 		if (type.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Char)
 		{
 			if (varName.EndsWith("_utf8"))
 			{
-				return new SKType("byte", "string", dir, true, SKTextType.Utf8, arraySize);
+				return new SKType("byte", dir, true, constant, SKSpecialType.Utf8, arraySize);
 			}
 			else
 			{
 				return dir == SKTypeDirection.Out || varName == ""
-					? new SKType("IntPtr", "string", dir, array, SKTextType.Ascii, arraySize)
-					: new SKType("string", "string", array ? dir : SKTypeDirection.None, array, SKTextType.Ascii, arraySize);
+					? new SKType("IntPtr", dir, array, constant, SKSpecialType.Ascii, arraySize)
+					: new SKType("string", array ? dir : SKTypeDirection.None, array, constant, SKSpecialType.Ascii, arraySize);
 			}
 		}
 
@@ -172,17 +134,17 @@ class CSTypes
 		}
 		
 		if (name == "const char16_t" || name == "char16_t")
-			return new SKType("string", "string", dir == SKTypeDirection.In ? SKTypeDirection.None : dir, array, SKTextType.Utf16, arraySize);
+			return new SKType("string", dir == SKTypeDirection.In ? SKTypeDirection.None : dir, array, constant, SKSpecialType.Utf16, arraySize);
 
 		// pointer return types
 		if (varName == "" && pointer > 0)
 		{
-			return new SKType("IntPtr", SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
+			return new SKType("IntPtr", dir, array, constant, SKSpecialType.None, arraySize);
 		}
 		
 		return StereoKitTypes.types.Contains(name)
-			? new SKType("IntPtr", SnakeToCamel(name, true, 0))
-			: new SKType(SnakeToCamel(name, true, 0), dir, array, SKTextType.None, arraySize);
+			? new SKType("IntPtr")
+			: new SKType(SnakeToCamel(name, true, 0), dir, array, constant, SKSpecialType.None, arraySize);
 	}
 	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions)
 		=> TypeName(type, varName, delegateDefinitions, false, 0, 0);

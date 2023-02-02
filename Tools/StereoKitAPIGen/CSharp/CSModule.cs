@@ -18,10 +18,10 @@ class CSModule
 
 	static void BuildRawFunction(StringBuilder fnText, Dictionary<string, string> delegateText, CppFunction fn)
 	{
-		SKType     returnType = CSTypes.TypeName(fn.ReturnType, "", null);
-		SKTextType textType   = returnType.text;
+		SKType        returnType = CSTypes.TypeName(fn.ReturnType, "", null);
+		SKSpecialType textType   = returnType.special;
 
-		string line  = $"{returnType.RawName,-20}{fn.Name,-20}(";
+		string line  = $"{BindCSharp.TypeToName(returnType),-20}{fn.Name,-20}(";
 		bool   first = true;
 		int    i     = 0;
 		foreach (var p in fn.Parameters)
@@ -38,25 +38,25 @@ class CSModule
 				CppParameter    subParam = fnParam.Parameters[i];
 				paramType = CSTypes.TypeName(subParam.Type, subParam.Name, delegateText);
 				if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
-				line += $"{paramType.RawName} {subParam.Name}";
+				line += $"{BindCSharp.TypeToName(paramType)} {subParam.Name}";
 			}
 			else
 			{
 				paramType = CSTypes.TypeName(p.Type, p.Name, delegateText);
 				if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
-				line += $"{paramType.RawName} {p.Name}";
+				line += $"{BindCSharp.TypeToName(paramType)} {p.Name}";
 			}
-			if (paramType.text != SKTextType.None) textType = paramType.text;
+			if (paramType.special != SKSpecialType.None) textType = paramType.special;
 			i+=1;
 		}
 		line += ");";
 
 		string charSet = textType switch
 		{
-			SKTextType.None  => "",
-			SKTextType.Ascii => ", CharSet = ascii",
-			SKTextType.Utf8  => "",
-			SKTextType.Utf16 => ", CharSet = utf16",
+			SKSpecialType.None  => "",
+			SKSpecialType.Ascii => ", CharSet = ascii",
+			SKSpecialType.Utf8  => "",
+			SKSpecialType.Utf16 => ", CharSet = utf16",
 		};
 		line = $"[DllImport(dll, CallingConvention = call{charSet,-17})] public static extern " + line;
 		fnText.AppendLine(line);

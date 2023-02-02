@@ -68,7 +68,7 @@ namespace StereoKit
 
 	///////////////////////////////////////////
 
-	static string BuildExpression(CppExpression expression, string removePrefix)
+	public static string BuildExpression(CppExpression expression, string removePrefix)
 	{
 		string result = "";
 		CppExpression exp = expression;
@@ -108,36 +108,9 @@ namespace StereoKit
 
 	///////////////////////////////////////////
 
-	static bool IsCommand(CppComment cmd)
+	public static string BuildCommentSummary(CppComment comment, int indent)
 	{
-		if (cmd.Kind == CppCommentKind.InlineCommand) return true;
-		if (cmd.Kind == CppCommentKind.Text) { string txt = ((CppCommentText)cmd).Text; return txt == "@" || txt == "&" || txt == "<" || txt == ">"; }
-		return false;
-	}
-
-	static string BuildCommentSummary(CppComment comment, int indent)
-	{
-		// Assemble a comment that ignores inline commands
-		string txt        = "";
-		var    children   = comment.Children[0].Children;
-		for (int i = 0; i < children.Count; i++)
-		{
-			bool isCommand   = IsCommand(children[i]);
-			bool nextCommand = i+1 == children.Count
-				? false
-				: IsCommand(children[i+1]);
-
-			if (children[i] is CppCommentInlineCommand) txt += "@" + ((CppCommentInlineCommand)children[i]).CommandName; 
-			else                                        txt += children[i].ToString();
-			
-			if (!(nextCommand || isCommand) && i+1 < children.Count)
-				txt += "\n";
-		}
-		txt = txt.Replace("&", "&amp;");
-		txt = txt.Replace("<", "&lt;");
-		txt = txt.Replace(">", "&gt;");
-
-
+		string   txt    = Tools.BuildCommentSummary(comment);
 		string   prefix = new string('\t', indent) + "/// ";
 		string[] lines  = txt.Split("\n");
 		bool     first  = true;
@@ -207,5 +180,12 @@ namespace StereoKit
 		}
 
 		return new List<CSModule>(modules.Values);
+	}
+
+	public static string TypeToName(SKType type)
+	{
+		return type.array
+			? $"{(type.direction != SKTypeDirection.None ? $"[{(type.direction == SKTypeDirection.Ref ? "In, Out" : type.direction)}] " : "")}{type.raw}[]"
+			: $"{(type.direction != SKTypeDirection.None ? type.direction.ToString().ToLower() + " " : "")}{type.raw}";
 	}
 }
