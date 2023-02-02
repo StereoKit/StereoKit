@@ -20,7 +20,8 @@ namespace StereoKit
 		public static UISettings Settings { get => NativeAPI.ui_get_settings(); set { NativeAPI.ui_settings(value); } }
 
 		/// <summary>StereoKit will generate a color palette from this gamma
-		/// space color, and use it to skin the UI!</summary>
+		/// space color, and use it to skin the UI! To explicitly adjust
+		/// individual theme colors, see UI.SetThemeColor.</summary>
 		public static Color ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
 		/// <summary>Shows or hides the collision volumes of the UI! This is
@@ -93,22 +94,53 @@ namespace StereoKit
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
 
-		public static void LayoutPush   (Vec3 start, Vec2 offset, bool addMargin = false) => NativeAPI.ui_layout_push(start, offset, addMargin ? 1 : 0);
+		/// <summary>This pushes a layout rect onto the layout stack. All UI
+		/// elements using the layout system will now exist inside this layout
+		/// area! Note that some UI elements such as Windows will already be
+		/// managing a layout of their own on the stack.</summary>
+		/// <param name="start">The top left position of the layout. Note that
+		/// Windows have their origin at the top center, the left side of a
+		/// window is X+, and content advances to the X- direction.</param>
+		/// <param name="dimensions">The total size of the layout area. A value
+		/// of zero means the layout will expand in that axis, but may prevent
+		/// certain types of layout "Cuts".</param>
+		/// <param name="addMargin">Adds a spacing margin to the interior of
+		/// the layout. Most of the time you won't need this, but may be useful
+		/// when working without a Window.</param>
+		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, addMargin ? 1 : 0);
+		/// <summary>This cuts off a portion of the current layout area, and
+		/// pushes that new area onto the layout stack. Left and Top cuts will
+		/// always work, but Right and Bottom cuts can only exist inside of a
+		/// parent layout with an explicit size, auto-resizing prevents these
+		/// cuts.
+		/// All UI elements using the layout system will now exist inside this
+		/// layout area! Note that some UI elements such as Windows will already be
+		/// managing a layout of their own on the stack.</summary>
+		/// <param name="cutTo">Which side of the current layout should the cut
+		/// happen to? Note that Right and Bottom will require explicit sizes
+		/// in the parent layout, not auto-sizes.</param>
+		/// <param name="sizeMeters">The size of the layout cut, in meters.
+		/// </param>
+		/// <param name="addMargin">Adds a spacing margin to the interior of
+		/// the layout. Most of the time you won't need this, but may be useful
+		/// when working without a Window.</param>
 		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin ? 1 : 0);
-		public static void LayoutPop    () => NativeAPI.ui_layout_pop();
+		/// <summary>This removes a layout from the layout stack that was
+		/// previously added using LayoutPush, or LayoutPushCut.</summary>
+		public static void LayoutPop() => NativeAPI.ui_layout_pop();
 
 		/// <summary>Tells if the hand was involved in the focus or active
-		/// state of the most recent UI element using an id.</summary>
+		/// state of the most recently called UI element using an id.</summary>
 		/// <param name="hand">Which hand we're checking.</param>
 		/// <returns>A BtnState that indicated the hand was "just active" this
 		/// frame, is currently "active" or if it "just became inactive" this
 		/// frame.</returns>
 		public static BtnState LastElementHandUsed(Handed hand) => NativeAPI.ui_last_element_hand_used(hand);
-		/// <summary>Tells the Active state of the most recent UI element that
-		/// used an id.</summary>
+		/// <summary>Tells the Active state of the most recently called UI
+		/// element that used an id.</summary>
 		public static BtnState LastElementActive => NativeAPI.ui_last_element_active();
-		/// <summary>Tells the Focused state of the most recent UI element that
-		/// used an id.</summary>
+		/// <summary>Tells the Focused state of the most recently called UI
+		/// element that used an id.</summary>
 		public static BtnState LastElementFocused => NativeAPI.ui_last_element_focused();
 
 		/// <summary>Tells if the user is currently interacting with a UI
@@ -120,10 +152,25 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
-		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
+		/// <summary>This allows you to explicitly set an individual theme
+		/// color, for finer grained control over the UI appearance. Each theme
+		/// type is still used by many different UI elements.</summary>
+		/// <param name="colorCategory">The category of UI elements that will
+		/// be affected by this theme color.</param>
+		/// <param name="colorGamma">The gamma corrected color that should be
+		/// applied to this theme color category.</param>
+		public static void SetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_set_theme_color(colorCategory, colorGamma);
+		/// <summary>This allows you to inspect the current color of the theme
+		/// color category! If you set the color with UI.ColorScheme, this will
+		/// be one of the generated colors, and not necessarily the color that
+		/// was provided there.</summary>
+		/// <param name="colorCategory">The category of UI elements that are
+		/// affected by this theme color.</param>
+		/// <returns>The gamma space color for the theme color category.
+		/// </returns>
+		public static Color GetThemeColor(UIColor colorCategory) => NativeAPI.ui_get_theme_color(colorCategory);
 		[Obsolete("To be removed in v0.4")]
-		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
-		public static Color GetThemeColor(UIColor colorType) => NativeAPI.ui_get_theme_color(colorType);
+		public static Color GetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_get_theme_color(colorCategory);
 
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
