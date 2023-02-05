@@ -1263,7 +1263,13 @@ int32_t ui_last_focused_hand(uint64_t for_el_id) {
 
 ///////////////////////////////////////////
 
-void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float &finger_offset, button_state_ &button_state, button_state_ &focus_state) {
+void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float& finger_offset, button_state_& button_state, button_state_& focus_state) {
+	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, finger_offset, button_state, focus_state);
+}
+
+///////////////////////////////////////////
+
+void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, float button_depth, float button_activation_depth, float &finger_offset, button_state_ &button_state, button_state_ &focus_state) {
 	button_state = button_state_inactive;
 	focus_state  = button_state_inactive;
 	int32_t hand = -1;
@@ -1278,7 +1284,7 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 	// completely through the button. Width and height is added to this 
 	// volume to account for vertical or horizontal movement during a press,
 	// such as the downward motion often accompanying a 'poke' motion.
-	float activation_plane = skui_settings.depth + skui_finger_radius*2;
+	float activation_plane = button_depth + skui_finger_radius*2;
 	vec3  activation_start = window_relative_pos + vec3{ 0, 0, -activation_plane };
 	vec3  activation_size  = vec3{ size.x, size.y, 0.0001f };
 
@@ -1291,12 +1297,12 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float 
 
 
 	// If a hand is interacting, adjust the button surface accordingly
-	finger_offset = skui_settings.depth;
+	finger_offset = button_depth;
 	if (focus_state & button_state_active) {
 		finger_offset = -(skui_hand[hand].finger.z+skui_finger_radius) - window_relative_pos.z;
-		bool pressed  = finger_offset < skui_settings.depth / 2;
+		bool pressed  = finger_offset < button_activation_depth;
 		button_state  = ui_active_set(hand, id, pressed);
-		finger_offset = fminf(fmaxf(2*mm2m, finger_offset), skui_settings.depth);
+		finger_offset = fminf(fmaxf(2*mm2m, finger_offset), button_depth);
 	} else if (focus_state & button_state_just_inactive) {
 		button_state = ui_active_set(hand, id, false);
 	}
