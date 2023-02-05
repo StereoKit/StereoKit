@@ -1065,6 +1065,22 @@ button_state_ ui_last_element_hand_used(handed_ hand) {
 
 ///////////////////////////////////////////
 
+button_state_ ui_last_element_hand_active(handed_ hand) {
+	return button_make_state(
+		skui_hand[hand].active_prev == skui_last_element,
+		skui_hand[hand].active      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_hand_focused(handed_ hand) {
+	return button_make_state(
+		skui_hand[hand].focused_prev == skui_last_element,
+		skui_hand[hand].focused      == skui_last_element);
+}
+
+///////////////////////////////////////////
+
 button_state_ ui_last_element_active() {
 	return button_make_state(
 		skui_hand[handed_left].active_prev == skui_last_element || skui_hand[handed_right].active_prev == skui_last_element,

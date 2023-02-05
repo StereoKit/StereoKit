@@ -649,7 +649,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_push_cut (UICut cut_to, float size, int add_margin);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_layout_pop      ();
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_used(Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_used   (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_active (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_hand_focused(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_active();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState ui_last_element_focused();
 

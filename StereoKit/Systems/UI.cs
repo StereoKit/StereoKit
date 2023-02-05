@@ -129,13 +129,32 @@ namespace StereoKit
 		/// previously added using LayoutPush, or LayoutPushCut.</summary>
 		public static void LayoutPop() => NativeAPI.ui_layout_pop();
 
-		/// <summary>Tells if the hand was involved in the focus or active
-		/// state of the most recently called UI element using an id.</summary>
+		/// <summary>Obsolete: Use LastElementHandActive, or
+		/// LastElementHandFocused, removing in v0.4.</summary>
 		/// <param name="hand">Which hand we're checking.</param>
 		/// <returns>A BtnState that indicated the hand was "just active" this
 		/// frame, is currently "active" or if it "just became inactive" this
 		/// frame.</returns>
+		[Obsolete("Use LastElementHandActive, or LastElementHandFocused, removing in v0.4")]
 		public static BtnState LastElementHandUsed(Handed hand) => NativeAPI.ui_last_element_hand_used(hand);
+		/// <summary>Tells if the hand was involved in the active state of the
+		/// most recently called UI element using an id. Active state is
+		/// frequently a single frame in the case of Buttons, but could be many
+		/// in the case of Sliders or Handles.</summary>
+		/// <param name="hand">Which hand we're checking.</param>
+		/// <returns>A BtnState that indicated the hand was "just active" this
+		/// frame, is currently "active" or if it "just became inactive" this
+		/// frame.</returns>
+		public static BtnState LastElementHandActive(Handed hand) => NativeAPI.ui_last_element_hand_active(hand);
+		/// <summary>Tells if the hand was involved in the focus state of the
+		/// most recently called UI element using an id. Focus occurs when the
+		/// hand is in or near an element, in such a way that indicates the
+		/// user may be about to interact with it.</summary>
+		/// <param name="hand">Which hand we're checking.</param>
+		/// <returns>A BtnState that indicated the hand was "just focused" this
+		/// frame, is currently "focused" or if it "just became focused" this
+		/// frame.</returns>
+		public static BtnState LastElementHandFocused(Handed hand) => NativeAPI.ui_last_element_hand_focused(hand);
 		/// <summary>Tells the Active state of the most recently called UI
 		/// element that used an id.</summary>
 		public static BtnState LastElementActive => NativeAPI.ui_last_element_active();
