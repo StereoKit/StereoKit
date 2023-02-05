@@ -382,9 +382,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
 
@@ -394,7 +392,7 @@ namespace StereoKit
 		/// components is 0, it'll be automatically determined from the other
 		/// component and the image's aspect ratio.</param>
 		public static void Image (Sprite image, Vec2 size) 
-			=> NativeAPI.ui_image(image._inst, size);
+			=> NativeAPI.ui_image(image?._inst ?? IntPtr.Zero, size);
 
 		/// <summary>A pressable button! A button will expand to fit the text
 		/// provided to it, vertically and horizontally. Text is re-used as the
@@ -424,9 +422,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonAt(string text, Vec3 topLeftCorner, Vec2 size)
@@ -447,7 +443,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image._inst, imageLayout);
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -455,7 +451,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -470,13 +466,11 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
@@ -506,6 +500,54 @@ namespace StereoKit
 			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && iActive>0;
 		}
 
+		/// <summary>A Radio is similar to a button, except you can specify if
+		/// it looks pressed or not regardless of interaction. This can be
+		/// useful for radio-like behavior! Check an enum for a value, and use
+		/// that as the 'active' state, Then switch to that enum value if Radio
+		/// returns true. This version allows you to override the images used
+		/// by the Radio.</summary>
+		/// <param name="text">Text to display on the Radio and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="active">Does this button look like it's pressed?</param>
+		/// <param name="imageOff">Image to use when the radio value is
+		/// false.</param>
+		/// <param name="imageOn">Image to use when the radio value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the radio. For example,
+		/// `UIBtnLayout.Left` will have the image on the left, and text on the
+		/// right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
+		{
+			int iActive = active?1:0;
+			return NativeAPI.ui_toggle_img_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout) && iActive>0;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec2 size)
+		{
+			int iActive = active ? 1 : 0;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size) && iActive>0;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		{
+			int iActive = active ? 1 : 0;
+			return NativeAPI.ui_toggle_img_at_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && iActive > 0;
+		}
+
 		/// <summary>A pressable button! A button will expand to fit the text
 		/// provided to it, vertically and horizontally. Text is re-used as the
 		/// id. Will return true only on the first frame it is pressed!
@@ -518,7 +560,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
-			=> NativeAPI.ui_button_round_16(id, image._inst, diameter);
+			=> NativeAPI.ui_button_round_16(id, image?._inst ?? IntPtr.Zero, diameter);
 
 		/// <summary>A variant of UI.ButtonRound that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -532,7 +574,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonRoundAt(string id, Sprite image, Vec3 topLeftCorner, float diameter)
-			=> NativeAPI.ui_button_round_at_16(id, image._inst, topLeftCorner, diameter);
+			=> NativeAPI.ui_button_round_at_16(id, image?._inst ?? IntPtr.Zero, topLeftCorner, diameter);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -601,7 +643,7 @@ namespace StereoKit
 		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
 		{
 			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_img_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout))
+			if (NativeAPI.ui_toggle_img_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout))
 			{
 				value = iVal>0?true:false;
 				return true;
@@ -659,7 +701,7 @@ namespace StereoKit
 		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
 		{
 			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_img_sz_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, size))
+			if (NativeAPI.ui_toggle_img_sz_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size))
 			{
 				value = iVal > 0 ? true : false;
 				return true;
@@ -693,9 +735,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Vec3 topLeftCorner, Vec2 size)
@@ -724,9 +764,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
@@ -749,15 +787,13 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
 		{
 			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_img_at_16(text, ref iVal, toggleOff._inst, toggleOn._inst, imageLayout, topLeftCorner, size))
+			if (NativeAPI.ui_toggle_img_at_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size))
 			{
 				value = iVal > 0 ? true : false;
 				return true;
@@ -766,9 +802,9 @@ namespace StereoKit
 		}
 
 		public static void Model(Model model)
-			=> NativeAPI.ui_model(model._inst, Vec2.Zero, 0);
+			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, Vec2.Zero, 0);
 		public static void Model(Model model, Vec2 uiSize, float modelScale = 0)
-			=> NativeAPI.ui_model(model._inst, uiSize, modelScale);
+			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, uiSize, modelScale);
 
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
@@ -815,9 +851,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size);
 
@@ -882,9 +916,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -898,20 +930,18 @@ namespace StereoKit
 		/// system, and instead goes exactly where you put it.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
-		/// <param name="value">The value that the slider will store slider 
+		/// <param name="value">The value that the slider will store slider
 		/// state in.</param>
-		/// <param name="min">The minimum value the slider can set, left side 
+		/// <param name="min">The minimum value the slider can set, left side
 		/// of the slider.</param>
-		/// <param name="max">The maximum value the slider can set, right 
+		/// <param name="max">The maximum value the slider can set, right
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
+		/// <param name="step">Locks the value to intervals of step. Starts
 		/// at min, and increments by step.</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -982,9 +1012,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// Y this is the remaining height of the current layout, and for X this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -1009,9 +1037,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// Y this is the remaining height of the current layout, and for X this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
@@ -1241,7 +1267,7 @@ namespace StereoKit
 		/// This lets UI elements to accommodate for this minimum size, and
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
-			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, Vec2.Zero);
+			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, Vec2.Zero);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user
@@ -1286,7 +1312,7 @@ namespace StereoKit
 		/// inside the "box", and a value of 1 means the geometry will start at
 		/// the boundary of the box and continue outside it.</param>
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
-			=> NativeAPI.ui_quadrant_size_mesh(mesh._inst, overflowPercent);
+			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
 
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
