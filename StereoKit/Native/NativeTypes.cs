@@ -497,11 +497,11 @@ namespace StereoKit
 		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
-		Empty = 0,
+		Empty = 1 << 0,
 		/// <summary>Flag to include a head on the window.</summary>
-		Head = 1 << 0,
+		Head = 1 << 1,
 		/// <summary>Flag to include a body on the window.</summary>
-		Body = 1 << 1,
+		Body = 1 << 2,
 	}
 
 	/// <summary>Used with StereoKit's UI, and determines the interaction

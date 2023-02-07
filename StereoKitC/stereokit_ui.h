@@ -14,9 +14,9 @@ typedef enum ui_move_ {
 } ui_move_;
 
 typedef enum ui_win_ {
-	ui_win_empty  = 0,
-	ui_win_head   = 1 << 0,
-	ui_win_body   = 1 << 1,
+	ui_win_empty  = 1 << 0,
+	ui_win_head   = 1 << 1,
+	ui_win_body   = 1 << 2,
 	ui_win_normal = ui_win_head | ui_win_body,
 } ui_win_;
 

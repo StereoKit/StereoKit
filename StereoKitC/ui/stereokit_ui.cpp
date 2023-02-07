@@ -2607,7 +2607,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
 		box_size  = vec3{ window.prev_size.x, line, skui_settings.depth*2 };
 	} 
-	if (window.type & ui_win_body) {
+	if (window.type & ui_win_body || window.type & ui_win_empty) {
 		box_start.z  = skui_settings.depth/2;
 		box_start.y -= window.prev_size.y / 2;
 		box_size.x   = window.prev_size.x;
