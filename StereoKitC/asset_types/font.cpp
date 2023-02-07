@@ -429,8 +429,8 @@ void font_upsize_texture(font_t font) {
 		}
 	}
 	// Update the rest of our rectangles
-	for (int32_t i = 32; i < 128;                       i++) font_char_reuv(&font->characters         [i],       scale_x, scale_y);
-	for (int32_t i = 0;  i < font->character_map.count; i++) font_char_reuv(&font->character_map.items[i].value, scale_x, scale_y);
+	for (int32_t i = 32; i < 128;                          i++) font_char_reuv(&font->characters         [i],       scale_x, scale_y);
+	for (int32_t i = 0;  i < font->character_map.capacity; i++) font_char_reuv(&font->character_map.items[i].value, scale_x, scale_y);
 	
 	// This could be a faster copy, but may not make a big difference. Also
 	// doesn't allow for copying to new locations.
