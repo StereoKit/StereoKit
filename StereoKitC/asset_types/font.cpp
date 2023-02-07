@@ -299,7 +299,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	if (glyph.idx == 0) return {};
 	font_source_t *source = &font_sources[glyph.font];
 
-	const int32_t pad = 4;
+	const int32_t pad_empty = 2;
 	float   to_u = 1.0f / font->atlas.w;
 	float   to_v = 1.0f / font->atlas.h;
 
@@ -313,17 +313,17 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 
 	if (x1-x0 <= 0) return char_info;
 
-	int32_t  sw         = (x1-x0) + pad;
-	int32_t  sh         = (y1-y0) + pad;
+	int32_t  sw         = (x1-x0) + pad_empty*2;
+	int32_t  sh         = (y1-y0) + pad_empty*2;
 	int32_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
 	if (rect_idx == -1) {
 		font_upsize_texture(font);
 		rect_idx = rect_atlas_add(&font->atlas, sw, sh);
-		to_u     = 1.0f / font->atlas.w; 
+		to_u     = 1.0f / font->atlas.w;
 		to_v     = 1.0f / font->atlas.h;
 	}
 	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { rect.x, rect.y, rect.w - pad, rect.h - pad};
+	recti_t  rect_unpad = { rect.x+pad_empty, rect.y+pad_empty, rect.w - pad_empty*2, rect.h - pad_empty*2};
 
 	char_info.x0 = ( x0-0.5f) / source->char_height;
 	char_info.y0 = (-y0-0.5f) / source->char_height;
@@ -345,25 +345,29 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
 	font_source_t *source = &font_sources[glyph.font];
 
-	// This is a really simple low quality render, very fast
-	//stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
-	//return;
-
-	// This is a multisampling high quality render, about 7x slower?
-	const int32_t multisample = 3;
-
 	// Following code based on stbtt_GetGlyphBitmap, but modified to always
 	// produce a bitmap that's a multiple of `multisample`
 	int ix0,iy0,ix1,iy1;
-	stbtt_vertex *vertices;
-	int num_verts = stbtt_GetGlyphShape(&source->info, glyph.idx, &vertices);
-
-	stbtt_GetGlyphBitmapBoxSubpixel(&source->info, glyph.idx, source->scale*multisample, source->scale*multisample, 0, 0, &ix0,&iy0,&ix1,&iy1);
-
-	// now we get the size
 	stbtt__bitmap gbm;
-	gbm.w = w*multisample;
-	gbm.h = h*multisample;
+
+	// SDF based glyph generation
+	/*const int32_t multisample = 1; 
+	int width, height; 
+	gbm.pixels = stbtt_GetGlyphSDF(&source->info, source->scale, glyph.idx, 0, 128, 10, &width, &height, &ix0, &iy0);
+	gbm.w      = width;
+	gbm.h      = height;
+	gbm.stride = gbm.w;*/
+
+	// Raster based glyph generation
+	// This is a multisampling high quality render, about 7x slower?
+	const int32_t multisample = 3;
+
+	stbtt_vertex* vertices;
+	int num_verts = stbtt_GetGlyphShape(&source->info, glyph.idx, &vertices);
+	stbtt_GetGlyphBitmapBoxSubpixel(&source->info, glyph.idx, source->scale * multisample, source->scale * multisample, 0, 0, &ix0, &iy0, &ix1, &iy1);
+	// now we get the size
+	gbm.w      = w*multisample;
+	gbm.h      = h*multisample;
 	gbm.pixels = (unsigned char *)sk_malloc(gbm.w * gbm.h);
 	gbm.stride = gbm.w;
 	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
