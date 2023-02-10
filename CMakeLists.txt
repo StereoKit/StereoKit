@@ -79,7 +79,7 @@ elseif (UNIX)
   # Add OpenGL, and account for the SK_LINUX_EGL option
   if(SK_LINUX_EGL)
     add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL)
+    list(APPEND LINUX_LIBS EGL gbm)
   else()
     add_definitions("-DSKG_LINUX_GLX")
     find_package(X11 REQUIRED)

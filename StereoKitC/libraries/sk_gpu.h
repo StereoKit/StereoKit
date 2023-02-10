@@ -541,6 +541,7 @@ typedef struct skg_platform_data_t {
 ///////////////////////////////////////////
 
 SKG_API void                skg_setup_xlib               (void *dpy, void *vi, void *fbconfig, void *drawable);
+SKG_API bool                skg_egl_dri                  ();
 SKG_API int32_t             skg_init                     (const char *app_name, void *adapter_id);
 SKG_API const char*         skg_adapter_name             ();
 SKG_API void                skg_shutdown                 ();
@@ -2592,8 +2593,12 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #elif defined(_SKG_GL_LOAD_EGL)
 	#include <EGL/egl.h>
 	#include <EGL/eglext.h>
-
-	EGLDisplay egl_display;
+	#if defined(SKG_LINUX_EGL)
+	#include <fcntl.h>
+	#include <gbm.h>
+	bool       egl_dri     = false;
+	#endif
+	EGLDisplay egl_display = EGL_NO_DISPLAY;
 	EGLContext egl_context;
 	EGLConfig  egl_config;
 #elif defined(_SKG_GL_LOAD_GLX)
@@ -3169,11 +3174,40 @@ int32_t gl_init_egl() {
 	EGLint format;
 	EGLint numConfigs;
 
-	egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetDisplay"); return 0; }
+	// No display means no overrides
+	if (egl_display == EGL_NO_DISPLAY) {
+		egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+		if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetDisplay"); return 0; }
+	}
 
 	int32_t major=0, minor=0;
 	eglInitialize(egl_display, &major, &minor);
+
+	#if defined(SKG_LINUX_EGL)
+	if (egl_display == EGL_NO_DISPLAY || eglGetError() != EGL_SUCCESS) {
+		skg_log(skg_log_info, "Trying EGL direct rendering from /dev/dri/renderD128");
+		int32_t fd = open ("/dev/dri/renderD128", O_RDWR | O_CLOEXEC);
+		if (fd <= 0) {
+			skg_log(skg_log_critical, "Could not find direct rendering interface at /dev/dri/renderD128");
+			return 0;
+		}
+
+		struct gbm_device *gbm = gbm_create_device (fd);
+		if (gbm == NULL) {
+			skg_log(skg_log_critical, "Could not create a GBM device");
+			return 0;
+		}
+
+		egl_display = eglGetPlatformDisplay (EGL_PLATFORM_GBM_MESA, gbm, NULL);
+		if (eglGetError() != EGL_SUCCESS) {
+			skg_log(skg_log_critical, "Could not get a platform display");
+			return 0;
+		}
+		egl_dri = true;
+		eglInitialize(egl_display, &major, &minor);
+	}
+	#endif
+
 	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglInitialize"); return 0; }
 	char version[128];
 	snprintf(version, sizeof(version), "EGL version %d.%d", major, minor);
@@ -3242,6 +3276,16 @@ void skg_setup_xlib(void *dpy, void *vi, void *fbconfig, void *drawable) {
 	visualInfo  =  (XVisualInfo*) vi;
 	glxFBConfig = *(GLXFBConfig*) fbconfig;
 	glxDrawable = *(Drawable   *) drawable;
+#endif
+}
+
+///////////////////////////////////////////
+
+bool skg_egl_dri() {
+#ifdef _SKG_GL_LOAD_EGL
+	return egl_dri;
+#else
+	return false;
 #endif
 }
 

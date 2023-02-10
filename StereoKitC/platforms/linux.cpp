@@ -1,4 +1,5 @@
 #include "linux.h"
+#include <cstddef>
 
 #if defined(SK_OS_LINUX)
 
@@ -153,6 +154,9 @@ void linux_init_key_lookups() {
 }
 
 void linux_events() {
+	if (x_dpy == NULL) {
+		return;
+	}
 	XEvent event;
 
 	while (XPending(x_dpy)) {
@@ -389,16 +393,7 @@ bool setup_x_window() {
 ///////////////////////////////////////////
 
 bool check_wayland() {
-	char* sess_type = getenv("XDG_SESSION_TYPE");
-	if (sess_type == NULL) {
-		// We don't want none of this; just assume it's regular X11
-		return false;
-	}
-	const char* wayland = "wayland";
-	if (strcmp(sess_type, wayland) == 0) { // if they're equal,
-		return true;
-	}
-	return false;
+	return getenv("WAYLAND_DISPLAY") != NULL;
 }
 
 ///////////////////////////////////////////
@@ -426,10 +421,14 @@ bool linux_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_post_xr() {
-	#if defined(SKG_LINUX_EGL)
-	if (!sk_settings.disable_desktop_input_window && !setup_x_window())
+#if defined(SKG_LINUX_EGL)
+	if (sk_settings.disable_desktop_input_window)
+		return true;
+	if(skg_egl_dri())
+		return true;
+	if(!setup_x_window())
 		return false;
-	#endif
+#endif
 
 	return true;
 }
@@ -438,6 +437,10 @@ bool linux_start_post_xr() {
 
 bool linux_start_flat() {
 	#if defined(SKG_LINUX_EGL)
+	if (skg_egl_dri()) {
+		log_fail_reason(90, log_error, "Cannot create a window with a direct rendering EGL context");
+		return false;
+	}
 	if (!setup_x_window())
 		return false;
 	#endif
