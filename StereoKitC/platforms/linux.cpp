@@ -424,10 +424,7 @@ bool linux_start_post_xr() {
 #if defined(SKG_LINUX_EGL)
 	if (sk_settings.disable_desktop_input_window)
 		return true;
-	if(skg_egl_dri())
-		return true;
-	if(!setup_x_window())
-		return false;
+	setup_x_window();
 #endif
 
 	return true;
@@ -437,10 +434,6 @@ bool linux_start_post_xr() {
 
 bool linux_start_flat() {
 	#if defined(SKG_LINUX_EGL)
-	if (skg_egl_dri()) {
-		log_fail_reason(90, log_error, "Cannot create a window with a direct rendering EGL context");
-		return false;
-	}
 	if (!setup_x_window())
 		return false;
 	#endif
