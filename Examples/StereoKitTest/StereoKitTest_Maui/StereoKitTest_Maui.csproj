@@ -8,6 +8,7 @@
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>disable</ImplicitUsings>
+		<WindowsPackageType>None</WindowsPackageType>
 		<NoWarn>1587</NoWarn>
 
 		<!-- Display name -->
