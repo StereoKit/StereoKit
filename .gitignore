@@ -336,7 +336,7 @@ ASALocalRun/
 !**/Assets/**
 
 # Ignore dependency build related stuff
-Tools/deps_current.txt
+tools/deps_current.txt
 StereoKitC/lib/include/**
 StereoKitC/lib/bin/**
 # An exception for the Android loader
