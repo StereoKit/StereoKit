@@ -6,7 +6,7 @@
     },
     "StereoKitTest Tests": {
       "commandName": "Project",
-      "commandLineArgs": "-test -screenfolder ../../../Tools/Screenshots/",
+      "commandLineArgs": "-test -screenfolder ../../../tools/Screenshots/",
       "nativeDebugging": true
     }
   }
