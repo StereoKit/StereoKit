@@ -2624,8 +2624,8 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		ui_layout_t* layout = ui_layout_curr();
 
 		vec2 txt_size = text_size(text, skui_font_stack.last());
-		vec2 size = vec2{ fmaxf(txt_size.x, window.prev_size.x-(skui_settings.gutter*2+skui_settings.margin*2)) , ui_line_height() };
-		vec3 at   = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
+		vec2 size     = vec2{ window_size.x == 0 ? txt_size.x : window_size.x-(skui_settings.margin*2), ui_line_height() };
+		vec3 at       = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
 
 		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
