@@ -10,7 +10,7 @@
 		</ItemGroup>
 	</Target>
 
-	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind" BeforeTargets="AssignTargetPaths">
+	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind;StereoKit_ShaderCopy" BeforeTargets="AssignTargetPaths">
 		<!--Different frameworks use different methods for adding content to
 		    the final application.-->
 		<ItemGroup>

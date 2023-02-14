@@ -60,7 +60,7 @@ class App
 
 	public void Init()
 	{
-		Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
+		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
