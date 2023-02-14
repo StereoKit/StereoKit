@@ -295,11 +295,19 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
+#define SK_USE_SDF
+#if defined(SK_USE_SDF)
+#define PAD_SIZE 4
+#else
+#define PAD_SIZE 0
+#endif
+
 font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	if (glyph.idx == 0) return {};
 	font_source_t *source = &font_sources[glyph.font];
 
-	const int32_t pad_empty = 2;
+	const int32_t pad_empty   = 2;
+	const int32_t pad_content = PAD_SIZE;
 	float   to_u = 1.0f / font->atlas.w;
 	float   to_v = 1.0f / font->atlas.h;
 
@@ -313,8 +321,8 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 
 	if (x1-x0 <= 0) return char_info;
 
-	int32_t  sw         = (x1-x0) + pad_empty*2;
-	int32_t  sh         = (y1-y0) + pad_empty*2;
+	int32_t  sw         = (x1-x0) + pad_empty*2 + pad_content*2;
+	int32_t  sh         = (y1-y0) + pad_empty*2 + pad_content*2;
 	int32_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
 	if (rect_idx == -1) {
 		font_upsize_texture(font);
@@ -323,7 +331,11 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		to_v     = 1.0f / font->atlas.h;
 	}
 	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { rect.x+pad_empty, rect.y+pad_empty, rect.w - pad_empty*2, rect.h - pad_empty*2};
+	recti_t  rect_unpad = { 
+		rect.x+pad_empty+pad_content,
+		rect.y+pad_empty+pad_content,
+		rect.w - (pad_empty*2 + pad_content*2),
+		rect.h - (pad_empty*2 + pad_content*2)};
 
 	char_info.x0 = ( x0-0.5f) / source->char_height;
 	char_info.y0 = (-y0-0.5f) / source->char_height;
@@ -339,27 +351,31 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 ///////////////////////////////////////////
 
 void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
-	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f);
-	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f);
+	const int32_t pad_content = PAD_SIZE;
+	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f)-pad_content;
+	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f)-pad_content;
 	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
 	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
 	font_source_t *source = &font_sources[glyph.font];
 
-	// Following code based on stbtt_GetGlyphBitmap, but modified to always
-	// produce a bitmap that's a multiple of `multisample`
-	int ix0,iy0,ix1,iy1;
 	stbtt__bitmap gbm;
 
 	// SDF based glyph generation
-	/*const int32_t multisample = 1; 
-	int width, height; 
-	gbm.pixels = stbtt_GetGlyphSDF(&source->info, source->scale, glyph.idx, 0, 128, 10, &width, &height, &ix0, &iy0);
+#if defined (SK_USE_SDF)
+	int ix0, iy0;
+	const int32_t multisample = 1;
+	int width, height;
+	gbm.pixels = stbtt_GetGlyphSDF(&source->info, source->scale, glyph.idx, pad_content, 128, 10, &width, &height, &ix0, &iy0);
 	gbm.w      = width;
 	gbm.h      = height;
-	gbm.stride = gbm.w;*/
-
+	gbm.stride = gbm.w;
+#else
 	// Raster based glyph generation
 	// This is a multisampling high quality render, about 7x slower?
+
+	// Following code based on stbtt_GetGlyphBitmap, but modified to always
+	// produce a bitmap that's a multiple of `multisample`
+	int ix0, iy0, ix1, iy1;
 	const int32_t multisample = 3;
 
 	stbtt_vertex* vertices;
@@ -372,6 +388,7 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 	gbm.stride = gbm.w;
 	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
 	sk_free(vertices);
+#endif
 
 	// Now average the multisamples to get a final value, and add it to the
 	// atlas data.
