@@ -295,7 +295,7 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
-#define SK_USE_SDF
+//#define SK_USE_SDF
 #if defined(SK_USE_SDF)
 #define PAD_SIZE 4
 #else
