@@ -485,7 +485,7 @@ void ui_settings(ui_settings_t settings) {
 	skui_settings = settings;
 
 	if (rebuild_meshes) {
-		int32_t slices  = 3;//  settings.rounding > 20 * mm2m ? 4 : 3;
+		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
 		bool    set_ids = skui_box == nullptr;
 		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
 		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
