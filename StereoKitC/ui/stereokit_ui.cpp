@@ -2525,8 +2525,14 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 						} break;
 						case ui_move_face_user: {
-							vec3 look_from = vec3{ movement.position.x, finger_pos[i].y, movement.position.z };
-							dest_rot = quat_lookat_up(look_from, matrix_transform_pt(to_local, input_head()->position), matrix_transform_dir(to_local, vec3_up));
+							vec3  local_head   = matrix_transform_pt(to_local, input_head()->position);
+							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { finger_pos[i].x, finger_pos[i].z }) / 0.1f);
+							vec3  look_from    = {
+								math_lerp(finger_pos[i].x, movement.position.x, head_xz_lerp),
+								finger_pos[i].y,
+								math_lerp(finger_pos[i].z, movement.position.z, head_xz_lerp) };
+							
+							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 						} break;
 						case ui_move_pos_only: {
