@@ -54,8 +54,10 @@ namespace StereoKit
 		/// or Hand[] instead. See Hand.Get for more info!</summary>
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
 		public HandJoint[]  fingers;
-		/// <summary>Pose of the wrist. TODO: Not populated right now.
-		/// </summary>
+		/// <summary>Pose of the wrist. This is located at the base of your
+		/// hand, and has a rigid orientation that points forward towards your
+		/// fingers. Its orientation is unrelated to the forearm. This pose can
+		/// be useful for making a hand relative coordinate space!</summary>
 		public  Pose        wrist;
 		/// <summary>The position and orientation of the palm! Position is
 		/// specifically defined as the middle of the middle finger's root
