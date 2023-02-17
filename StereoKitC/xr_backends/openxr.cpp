@@ -678,7 +678,7 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
-	xr_compositor_layers_clear();
+	xr_extension_structs_clear();
 	render_clear();
 }
 

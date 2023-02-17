@@ -15,7 +15,7 @@ bool openxr_views_create    ();
 void openxr_views_destroy   ();
 void openxr_views_update_fov();
 
-void     xr_compositor_layers_clear();
+void     xr_extension_structs_clear();
 bool32_t xr_set_blend              (display_blend_ blend);
 bool32_t xr_blend_valid            (display_blend_ blend);
 

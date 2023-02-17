@@ -134,10 +134,25 @@ namespace StereoKit
 			/// and +1 would be after.</param>
 			public static void AddCompositionLayer<T>(T XrCompositionLayerX, int sortOrder) where T : struct
 			{
-				int size = Marshal.SizeOf<T>();
-				IntPtr ptr = Marshal.AllocHGlobal(size);
+				int    size = Marshal.SizeOf<T>();
+				IntPtr ptr  = Marshal.AllocHGlobal(size);
 				Marshal.StructureToPtr(XrCompositionLayerX, ptr, false);
 				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
+				Marshal.FreeHGlobal(ptr);
+			}
+
+			/// <summary>This adds an item to the chain of objects submitted to
+			/// StereoKit's xrEndFrame call!</summary>
+			/// <typeparam name="T">This must be a serializable struct that
+			/// follows the OpenXR data struct pattern.</typeparam>
+			/// <param name="XrBaseHeader">An OpenXR object that will be
+			/// chained into the xrEndFrame call.</param>
+			public static void AddEndFrameChain<T>(T XrBaseHeader) where T : struct
+			{
+				int    size = Marshal.SizeOf<T>();
+				IntPtr ptr  = Marshal.AllocHGlobal(size);
+				Marshal.StructureToPtr(XrBaseHeader, ptr, false);
+				NativeAPI.backend_openxr_end_frame_chain(ptr, size);
 				Marshal.FreeHGlobal(ptr);
 			}
 
