@@ -727,8 +727,6 @@ bool openxr_render_frame() {
 			end_second.viewConfigurationLayersInfo = &layer2nd;
 
 			backend_openxr_end_frame_chain(&end_second, sizeof(end_second));
-
-			log_info("Submitting secondary view!");
 		} else {
 		}
 	}
