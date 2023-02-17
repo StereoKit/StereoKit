@@ -2030,12 +2030,9 @@ pose_t ui_popup_pose(vec3 shift) {
 	vec3 dir = at - input_head()->position;
 	at = input_head()->position + dir * 0.7f;
 
-	matrix to_local = matrix_invert(render_get_cam_root());
-	vec3   local_at = matrix_transform_pt(to_local, at);
-
 	return pose_t {
-		local_at + shift,
-		quat_lookat(vec3_zero, matrix_transform_dir(to_local, -dir)) };
+		at + shift,
+		quat_lookat(vec3_zero, -dir) };
 }
 
 ///////////////////////////////////////////
