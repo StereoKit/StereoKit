@@ -168,14 +168,14 @@ set(SK_SRC_SHADERS_HLSL
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
-set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/Tools/skshaderc")
+set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/tools/skshaderc")
 foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   # Shader compile tool doesn't work on Linux yet, but pre-built
   # shaders should still be in the repository.
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
@@ -498,11 +498,11 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "tools/include/stereokit.hlsli"
   DESTINATION include)
 
 install(
-  FILES       "Tools/skshaderc" 
+  FILES       "tools/skshaderc" 
   DESTINATION bin)
 
 install(
