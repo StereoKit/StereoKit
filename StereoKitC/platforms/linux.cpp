@@ -462,6 +462,8 @@ void linux_resize(int width, int height) {
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
+	device_data.display_width  = width;
+	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 
 	skg_swapchain_resize(&linux_swapchain, sk_info.display_width, sk_info.display_height);
