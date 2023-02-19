@@ -55,6 +55,12 @@ struct ui_el_visual_t {
 	vec2       min_size;
 };
 
+struct ui_theme_color_t {
+	color128 normal;
+	color128 active;
+	color128 disabled;
+};
+
 array_t<ui_window_t> skui_sl_windows = {};
 array_t<ui_id_t>     skui_id_stack   = {};
 array_t<layer_t>     skui_layers     = {};
@@ -110,7 +116,11 @@ uint64_t skui_anim_id;
 float    skui_anim_time;
 
 const color128 skui_color_border = { 1,1,1,1 };
-color128 skui_palette[ui_color_max];
+ui_theme_color_t skui_palette[ui_color_max];
+
+// Button activation animations all use the same values
+const float skui_anim_duration  = 0.2f;
+const float skui_anim_overshoot = 10;
 
 ///////////////////////////////////////////
 
@@ -539,23 +549,48 @@ float ui_get_gutter() {
 void ui_set_color(color128 color) {
 	vec3 hsv = color_to_hsv(color);
 	
-	skui_palette[0] = color_to_linear( color );                                                    // Primary color: Headers, separators, etc.
-	skui_palette[1] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
-	skui_palette[2] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	skui_palette[3] = color_to_linear( color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
-	skui_palette[4] = color128{1, 1, 1, 1};                                                        // Text color
+	ui_set_theme_color(ui_color_primary,    color);                                                     // Primary color: Headers, separators, etc.
+	ui_set_theme_color(ui_color_background, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
+	ui_set_theme_color(ui_color_common,     color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
+	ui_set_theme_color(ui_color_complement, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
+	ui_set_theme_color(ui_color_text,       color128{1, 1, 1, 1});                                      // Text color
+}
+
+///////////////////////////////////////////
+
+void ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color128 color_gamma) {
+	color128 linear = color_to_linear(color_gamma);
+
+	switch (state) {
+	case ui_color_state_normal:   skui_palette[color_type].normal   = linear; break;
+	case ui_color_state_active:   skui_palette[color_type].active   = linear; break;
+	case ui_color_state_disabled: skui_palette[color_type].disabled = linear; break;
+	}
+}
+
+///////////////////////////////////////////
+
+color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state) {
+	switch (state) {
+	case ui_color_state_normal:   return color_to_gamma(skui_palette[color_type].normal);
+	case ui_color_state_active:   return color_to_gamma(skui_palette[color_type].active);
+	case ui_color_state_disabled: return color_to_gamma(skui_palette[color_type].disabled);
+	}
 }
 
 ///////////////////////////////////////////
 
 void ui_set_theme_color(ui_color_ color_type, color128 color_gamma) {
-	skui_palette[color_type] = color_to_linear( color_gamma );
+	color128 linear = color_to_linear(color_gamma);
+	skui_palette[color_type].normal   = linear;
+	skui_palette[color_type].active   = linear*2;
+	skui_palette[color_type].disabled = linear*0.5f;
 }
 
 ///////////////////////////////////////////
 
 color128 ui_get_theme_color(ui_color_ color_type) {
-	return color_to_gamma(skui_palette[color_type]);
+	return color_to_gamma(skui_palette[color_type].normal);
 }
 
 ///////////////////////////////////////////
@@ -608,9 +643,10 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, 
 	vec3   pos = start - size / 2;
 	matrix mx  = matrix_trs(pos, quat_identity, size);
 
-	color128 final_color = skui_palette[color] * skui_tint;
-	if (!skui_enabled_stack.last()) final_color = final_color * color128{.5f, .5f, .5f, 1};
-	final_color.a = focus;
+	color128 final_color = skui_enabled_stack.last()
+		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
+		: skui_palette[color].disabled;
+	final_color = final_color * skui_tint;
 
 	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
 }
@@ -779,7 +815,7 @@ bool ui_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[4] )) );
+	skui_font_stack.add( text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
 
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
@@ -1422,7 +1458,7 @@ void ui_hseparator() {
 	vec2 size;
 	ui_layout_reserve_sz({ 0, skui_fontsize*0.4f }, false, &pos, &size);
 
-	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, ui_color_primary, 1);
+	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, ui_color_primary, 0);
 }
 
 ///////////////////////////////////////////
@@ -1603,13 +1639,13 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t = ui_anim_elapsed(id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	float color_blend = state & button_state_active ? 1 : 0;
+	if (ui_anim_has(id, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, skui_anim_duration);
+		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1 + 1 - (finger_offset / skui_settings.depth);
+	float activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, window_relative_pos, size, finger_offset);
 
@@ -1673,10 +1709,10 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t = ui_anim_elapsed(id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	float color_blend = state & button_state_active ? 1 : 0;
+	if (ui_anim_has(id, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, skui_anim_duration);
+		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
 	if (state & button_state_just_active) {
@@ -1684,7 +1720,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	}
 	finger_offset = pressed ? fminf(skui_settings.backplate_depth * skui_settings.depth + mm2m, finger_offset) : finger_offset;
 
-	float activation = 1 + 1 - (finger_offset / skui_settings.depth);
+	float activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, window_relative_pos, size, finger_offset);
 
@@ -1748,13 +1784,13 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 
 	if (state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = state & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t     = ui_anim_elapsed    (id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	float color_blend = state & button_state_active ? 1 : 0;
+	if (ui_anim_has(id, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, skui_anim_duration);
+		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1 + 1-(finger_offset / skui_settings.depth);
+	float activation = 1-(finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
@@ -1847,10 +1883,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	if (state & button_state_just_active)
 		ui_anim_start(id_hash);
-	float color_blend = skui_input_target == id_hash ? 2.f : 1;
-	if (ui_anim_has(id_hash, .2f)) {
-		float t     = ui_anim_elapsed    (id_hash, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	float color_blend = skui_input_target == id_hash ? 1 : 0;
+	if (ui_anim_has(id_hash, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id_hash, skui_anim_duration);
+		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
 	// Unfocus this if the user starts interacting with something else
@@ -1968,12 +2004,12 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			vec3   sz  = vec3{ -(right - left), line, line * 0.01f };
 			vec3   pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
 			matrix mx  = matrix_trs(pos, quat_identity, sz);
-			mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[3]*skui_tint);
-		}
+			mesh_draw(skui_box_dbg, skui_mat, mx, skui_palette[ui_color_complement].normal*skui_tint);
+		} 
 
 		// Show a blinking text carat
 		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
-			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 1);
+			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
 		}
 	}
 
@@ -2228,10 +2264,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 
 	if (button_state & button_state_just_active)
 		ui_anim_start(id);
-	float color_blend = focus_state & button_state_active ? 2.f : 1;
-	if (ui_anim_has(id, .2f)) {
-		float t     = ui_anim_elapsed    (id, .2f);
-		color_blend = math_ease_overshoot(1, 2.f, 40, t);
+	float color_blend = focus_state & button_state_active ? 1 : 0;
+	if (ui_anim_has(id, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, skui_anim_duration);
+		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
 	// Draw the UI
@@ -2355,8 +2391,8 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 ///////////////////////////////////////////
 
 bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
-	bool result = false;
-	float color = 1;
+	bool  result      = false;
+	float color_blend = 0;
 
 	skui_last_element = id;
 
@@ -2440,7 +2476,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			// otherwise the handle UI may try and use a frame of focus to move
 			// around a bit.
 			if (skui_hand[i].focused_prev ==  id) {
-				color = 1.5f;
+				color_blend = 1;
 				if (hand->pinch_state & button_state_just_active) {
 					sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
@@ -2565,7 +2601,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			handle.center+handle.dimensions/2, 
 			handle.dimensions,
 			ui_color_primary,
-			color);
+			color_blend);
 		ui_nextline();
 	}
 	return result;
@@ -2656,13 +2692,13 @@ void ui_window_end() {
 
 	float line_height = ui_line_height();
 	if (win->type & ui_win_head) {
-		float glow = 1;
+		float color_blend = 0;
 		if (skui_hand[0].focused_prev == win->hash || skui_hand[1].focused_prev == win->hash)
-			glow = 1.5f;
-		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, glow);
+			color_blend = 1;
+		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, color_blend);
 	}
 	if (win->type & ui_win_body) {
-		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 1);
+		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 0);
 	}
 	ui_handle_end();
 	ui_pop_id();
@@ -2679,7 +2715,7 @@ void ui_panel_at(vec3 start, vec2 size, ui_pad_ padding) {
 		start_offset = { gutter,  gutter,  0 };
 		size_offset  = { gutter2, gutter2, 0 };
 	}
-	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, ui_color_complement, 1);
+	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, ui_color_complement, 0);
 }
 
 } // namespace sk

@@ -623,6 +623,19 @@ namespace StereoKit
 		Max,
 	}
 
+	/// <summary>Indicates the state of a UI theme color.</summary>
+	public enum UIColorState
+	{
+		/// <summary>The UI element is in its normal resting state.</summary>
+		Normal,
+		/// <summary>The UI element has been activated fully by some type of
+		/// interaction.</summary>
+		Active,
+		/// <summary>The UI element is currently disabled, and cannot be used.
+		/// </summary>
+		Disabled
+	}
+
 	/// <summary>This specifies a particular padding mode for certain UI
 	/// elements, such as the UI.Panel! This describes where padding is applied
 	/// and how it affects the layout of elements.</summary>

@@ -610,20 +610,22 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_verts ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_mesh  (IntPtr ref_mesh, float overflow);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_show_volumes        (bool show);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_enable_far_interact (bool enable);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   ui_far_interact_enabled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove ui_system_get_move_type();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_system_set_move_type(UIMove move_type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_settings            (UISettings settings);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings ui_get_settings    ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_color           (Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color     (UIColor color_type, Color color_gamma);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color     (UIColor color_type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_element_visual  (UIVisual element_visual, IntPtr mesh, IntPtr material, Vec2 min_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   ui_popup_pose          (Vec3 shift);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_verts  ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_mesh   (IntPtr ref_mesh, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_show_volumes         (bool show);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_enable_far_interact  (bool enable);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   ui_far_interact_enabled ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove ui_system_get_move_type ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_system_set_move_type (UIMove move_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_settings             (UISettings settings);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings ui_get_settings     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_color            (Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color      (UIColor color_type, Color color_gamma);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color      (UIColor color_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color_state(UIColor color_type, UIColorState state, Color color_gamma);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color_state(UIColor color_type, UIColorState state);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_element_visual   (UIVisual element_visual, IntPtr mesh, IntPtr material, Vec2 min_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   ui_popup_pose           (Vec3 shift);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();

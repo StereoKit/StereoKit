@@ -63,6 +63,12 @@ typedef enum ui_color_ {
 	ui_color_max,
 } ui_color_;
 
+typedef enum ui_color_state_ {
+	ui_color_state_normal,
+	ui_color_state_active,
+	ui_color_state_disabled,
+} ui_color_state_;
+
 typedef enum ui_pad_ {
 	ui_pad_none,
 	ui_pad_inside,
@@ -94,24 +100,26 @@ typedef struct ui_settings_t {
 	float backplate_border;
 } ui_settings_t;
 
-SK_API void     ui_quadrant_size_verts (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
-SK_API void     ui_quadrant_size_mesh  (mesh_t ref_mesh, float overflow_percent);
-SK_API void     ui_show_volumes        (bool32_t      show);
-SK_API void     ui_enable_far_interact (bool32_t      enable);
-SK_API bool32_t ui_far_interact_enabled();
-SK_API ui_move_ ui_system_get_move_type();
-SK_API void     ui_system_set_move_type(ui_move_ move_type);
-SK_API void     ui_settings            (ui_settings_t settings);
-SK_API ui_settings_t ui_get_settings   ();
-SK_API float    ui_get_margin          ();
-SK_API float    ui_get_padding         ();
-SK_API float    ui_get_gutter          ();
-SK_API void     ui_set_color           (color128      color);
-SK_API void     ui_set_theme_color     (ui_color_ color_type, color128 color_gamma);
-SK_API color128 ui_get_theme_color     (ui_color_ color_type);
-SK_API void     ui_set_element_visual  (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
-SK_API bool32_t ui_has_keyboard_focus  ();
-SK_API pose_t   ui_popup_pose          (vec3 shift);
+SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
+SK_API void     ui_quadrant_size_mesh   (mesh_t ref_mesh, float overflow_percent);
+SK_API void     ui_show_volumes         (bool32_t      show);
+SK_API void     ui_enable_far_interact  (bool32_t      enable);
+SK_API bool32_t ui_far_interact_enabled ();
+SK_API ui_move_ ui_system_get_move_type ();
+SK_API void     ui_system_set_move_type (ui_move_ move_type);
+SK_API void     ui_settings             (ui_settings_t settings);
+SK_API ui_settings_t ui_get_settings    ();
+SK_API float    ui_get_margin           ();
+SK_API float    ui_get_padding          ();
+SK_API float    ui_get_gutter           ();
+SK_API void     ui_set_color            (color128      color);
+SK_API void     ui_set_theme_color      (ui_color_ color_type, color128 color_gamma);
+SK_API color128 ui_get_theme_color      (ui_color_ color_type);
+SK_API void     ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color128 color_gamma);
+SK_API color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state);
+SK_API void     ui_set_element_visual   (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API bool32_t ui_has_keyboard_focus   ();
+SK_API pose_t   ui_popup_pose           (vec3 shift);
 
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        ();

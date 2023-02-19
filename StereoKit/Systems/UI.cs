@@ -171,23 +171,50 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
-		/// <summary>This allows you to explicitly set an individual theme
-		/// color, for finer grained control over the UI appearance. Each theme
-		/// type is still used by many different UI elements.</summary>
+		/// <summary>This allows you to explicitly set a theme color, for finer
+		/// grained control over the UI appearance. Each theme type is still
+		/// used by many different UI elements. This will automatically
+		/// generate colors for different UI element states.</summary>
 		/// <param name="colorCategory">The category of UI elements that will
 		/// be affected by this theme color.</param>
 		/// <param name="colorGamma">The gamma corrected color that should be
-		/// applied to this theme color category.</param>
+		/// applied to this theme color category in its normal resting state.
+		/// Active and disabled colors will be generated based on this color.
+		/// </param>
 		public static void SetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_set_theme_color(colorCategory, colorGamma);
-		/// <summary>This allows you to inspect the current color of the theme
-		/// color category! If you set the color with UI.ColorScheme, this will
-		/// be one of the generated colors, and not necessarily the color that
-		/// was provided there.</summary>
+		/// <summary>This allows you to explicitly set a theme color, for finer
+		/// grained control over the UI appearance. Each theme type is still
+		/// used by many different UI elements. This applies specifically to
+		/// one state of this color category, and does not modify the others.
+		/// </summary>
+		/// <param name="colorCategory">The category of UI elements that will
+		/// be affected by this theme color.</param>
+		/// <param name="colorState">The state of the UI element this color
+		/// should apply to.</param>
+		/// <param name="colorGamma">The gamma corrected color that should be
+		/// applied to this theme color category in the indicated state.
+		/// </param>
+		public static void SetThemeColor(UIColor colorCategory, UIColorState colorState, Color colorGamma) => NativeAPI.ui_set_theme_color_state(colorCategory, colorState, colorGamma);
+		/// <summary>This allows you to inspect the current normal color of the
+		/// theme color category! If you set the color with UI.ColorScheme,
+		/// this will be one of the generated colors, and not necessarily the
+		/// color that was provided there.</summary>
 		/// <param name="colorCategory">The category of UI elements that are
 		/// affected by this theme color.</param>
-		/// <returns>The gamma space color for the theme color category.
-		/// </returns>
+		/// <returns>The gamma space color for the theme color category in its
+		/// normal state.</returns>
 		public static Color GetThemeColor(UIColor colorCategory) => NativeAPI.ui_get_theme_color(colorCategory);
+		/// <summary>This allows you to inspect the current color of the theme
+		/// color category in a specific state! If you set the color with
+		/// UI.ColorScheme, or without specifying a state, this may be a
+		/// generated color, and not necessarily the color that was provided
+		/// <param name="colorCategory">The category of UI elements that are
+		/// affected by this theme color.</param>
+		/// <param name="colorState">The state of the UI element this color
+		/// applies to.</param>
+		/// <returns>The gamma space color for the theme color category in the
+		/// indicated state.</returns>
+		public static Color GetThemeColor(UIColor colorCategory, UIColorState colorState) => NativeAPI.ui_get_theme_color_state(colorCategory, colorState);
 		[Obsolete("To be removed in v0.4")]
 		public static Color GetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_get_theme_color(colorCategory);
 
