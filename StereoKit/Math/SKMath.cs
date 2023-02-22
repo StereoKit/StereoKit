@@ -50,6 +50,24 @@ namespace StereoKit
 			return Math.Abs(delta < -180 ? delta + 360 : delta);
 		}
 
+        /// <summary> Returns value clamped to the inclusive range of min and max.</summary>
+		/// <exception cref="ArgumentOutOfRangeException">Throws if min is higher than max</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Clamp(float value, float min, float max)
+        {
+            // Ported from dotnet 7 MathF.Clamp
+            if (min > max)
+            {
+                throw new ArgumentOutOfRangeException($"Min ({min}) was higher than max ({max}), this is usually a mistake.");
+            }
+
+            if (value < min)
+                return min;
+            else if (value > max)
+                return max;
+            return value;
+        }
+
 		/// <summary>Modulus, works better than '%' for negative values.
 		/// </summary>
 		/// <param name="x">Numerator</param>
