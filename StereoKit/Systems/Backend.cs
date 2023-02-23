@@ -165,6 +165,10 @@ namespace StereoKit
 				_onPreCreateSessionRegistered = false;
 			}
 
+			/// <summary>This allows you to add callbacks that are invoked
+			/// immediately before the OpenXR session is created, but after
+			/// OpenXR has been initialized! This is only helpful when filled
+			/// out _before_ calling `SK.Initialize`.</summary>
 			public static event Action OnPreCreateSession {
 				add {
 					if (_onPreCreateSessionRegistered == false)

@@ -80,6 +80,11 @@ namespace StereoKit
 			}
 		}
 
+		/// <summary>Allows for enumerating all StereoKit assets matching the
+		/// specified type.</summary>
+		/// <typeparam name="T">Any `IAsset` type.</typeparam>
+		/// <returns>An enumeration of all loaded asset objects that match the
+		/// given type.</returns>
 		public static IEnumerable<T> Type<T>() where T : IAsset
 		{
 			AssetType assetType = TypeToAssetType(typeof(T));
@@ -97,6 +102,11 @@ namespace StereoKit
 			}
 		}
 
+		/// <summary>Allows for enumerating all StereoKit assets matching the
+		/// specified type.</summary>
+		/// <param name="type">Any `IAsset` type.</param>
+		/// <returns>An enumeration of all loaded asset objects that match the
+		/// given type.</returns>
 		public static IEnumerable<IAsset> Type(Type type)
 		{
 			AssetType assetType = TypeToAssetType(type);
@@ -114,6 +124,8 @@ namespace StereoKit
 			}
 		}
 		
+		/// <summary>This is an enumeration of all asset object loaded by
+		/// StereoKit at the current moment.</summary>
 		public static IEnumerable<IAsset> All { get
 		{
 			int count = NativeAPI.assets_count();

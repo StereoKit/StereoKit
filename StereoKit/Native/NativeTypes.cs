@@ -293,13 +293,29 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A pretty straightforward 2D rectangle, defined by the top left
+	/// corner of the rectangle, and its width/height.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Rect
 	{
+		/// <summary>The X axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float x;
+		/// <summary>The Y axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float y;
+		/// <summary>The width of the rectangle.</summary>
 		public float width;
+		/// <summary>The height of the rectangle.</summary>
 		public float height;
+		/// <summary>Create a 2D rectangle, defined by the top left  corner of
+		/// the rectangle, and its width/height.</summary>
+		/// <param name="x">The X axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="y">The Y axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="width">The width of the rectangle.</param>
+		/// <param name="height">The height of the rectangle.</param>
 		public Rect(float x, float y, float width, float height)
 		{
 			this.x = x;
@@ -674,11 +690,25 @@ namespace StereoKit
 		CenterNoText,
 	}
 
+	/// <summary>This describes how a layout should be cut up! Used with
+	/// `UI.LayoutPushCut`.</summary>
 	public enum UICut
 	{
+		/// <summary>This cuts a chunk from the left side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
 		Left,
+		/// <summary>This cuts a chunk from the right side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the X axis!</summary>
 		Right,
+		/// <summary>This cuts a chunk from the top side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
 		Top,
+		/// <summary>This cuts a chunk from the bottom side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
 	}
 }

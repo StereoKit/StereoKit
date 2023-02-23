@@ -259,7 +259,7 @@ bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
 	XMVECTOR max_d = min_a;
 
 	const vert_t* curr = verts;
-	for (uint32_t i = 0; i < vert_count/4; i++) {
+	for (int32_t i = 0; i < vert_count/4; i++) {
 		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
 		min_a = XMVectorMin(min_a, pt_a);
 		max_a = XMVectorMax(max_a, pt_a);
@@ -274,7 +274,7 @@ bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
 		max_d = XMVectorMax(max_d, pt_d);
 		curr += 4;
 	}
-	for (uint32_t i = (vert_count / 4) * 4; i < vert_count; i++) {
+	for (int32_t i = (vert_count / 4) * 4; i < vert_count; i++) {
 		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
 		min_a = XMVectorMin(min_a, pt_a);
 		max_a = XMVectorMax(max_a, pt_a);

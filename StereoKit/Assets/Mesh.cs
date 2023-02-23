@@ -191,9 +191,9 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Checks the intersection point of this ray and a Mesh 
+		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
-		/// data will always return false. Ray must be in model space, 
+		/// data will always return false. Ray must be in model space,
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</summary>
@@ -204,7 +204,7 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
@@ -212,9 +212,9 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out _, Cull.Back) > 0;
 
-		/// <summary>Checks the intersection point of this ray and a Mesh 
+		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
-		/// data will always return false. Ray must be in model space, 
+		/// data will always return false. Ray must be in model space,
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</summary>
@@ -225,7 +225,7 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
@@ -234,8 +234,21 @@ namespace StereoKit
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
 			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds, Cull.Back) > 0;
 
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		/// <summary>Checks the intersection point of this ray and a Mesh
+		/// with collision data stored on the CPU. A mesh without collision
+		/// data will always return false. Ray must be in model space,
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="modelSpaceRay">Ray must be in model space, the
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</param>
+		/// <param name="modelSpaceAt">The intersection point of the ray and
+		/// the mesh, if an intersection occurs. This is in model space, and
+		/// must be transformed back into world space later.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
 			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, out _, Cull.Back) > 0;

@@ -801,10 +801,16 @@ namespace StereoKit
 		Model _model;
 		/// <summary>This is the total number of nodes in the Model.</summary>
 		public int Count => NativeAPI.model_node_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_index(_model._inst, index));
 
 		internal ModelNodeCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<ModelNode> GetEnumerator()
 		{
 			int count = Count;
@@ -846,10 +852,16 @@ namespace StereoKit
 		/// <summary>This is the total number of nodes with visual data
 		/// attached to them.</summary>
 		public int Count => NativeAPI.model_node_visual_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_visual_index(_model._inst, index));
 
 		internal ModelVisualCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<ModelNode> GetEnumerator()
 		{
 			int count = Count;
@@ -891,10 +903,16 @@ namespace StereoKit
 		/// <summary>This is the total number of animations attached to the
 		/// model.</summary>
 		public int Count => NativeAPI.model_anim_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public Anim this[int index] => new Anim(_model, index);
 
 		internal ModelAnimCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<Anim> GetEnumerator()
 		{
 			int count = Count;

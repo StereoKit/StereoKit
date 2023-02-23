@@ -208,20 +208,42 @@ namespace StereoKit
 			NativeAPI.sk_run(_stepAction, _shutdownCallback);
 		}
 
-
+		/// <summary>This registers an instance of the `IStepper` type
+		/// provided. SK will hold onto it, Initialize it, Step it every frame,
+		/// and call Shutdown when the application ends. This is generally safe
+		/// to do before SK.Initialize is called, the constructor is called
+		/// right away, and Initialize is called right after SK.Initialize, or
+		/// at the start of the next frame before the next main Step callback
+		/// if SK is already initialized.</summary>
+		/// <param name="stepper">An instance of an IStepper object.</param>
+		/// <typeparam name="T">An IStepper type.</typeparam>
+		/// <returns>Just for convenience, this returns the instance that was
+		/// just added.</returns>
 		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
-		/// <summary>This creates and registers an instance the `IStepper` type
-		/// provided as the generic parameter. SK will hold onto it, Initialize
-		/// it, Step it every frame, and call Shutdown when the application
-		/// ends. This is generally safe to do before SK.Initialize is called,
-		/// the constructor is called right away, and Initialize is called
-		/// right after SK.Initialize, or right away if SK is already
+		/// <summary>This instantiates and registers an instance of the
+		/// `IStepper` type provided as the generic parameter. SK will hold
+		/// onto it, Initialize it, Step it every frame, and call Shutdown when
+		/// the application ends. This is generally safe to do before
+		/// SK.Initialize is called, the constructor is called right away, and
+		/// Initialize is called right after SK.Initialize, or at the start of
+		/// the next frame before the next main Step callback if SK is already
 		/// initialized.</summary>
 		/// <param name="type">Any object that implements IStepper, and has a
 		/// constructor with zero parameters.</param>
 		/// <returns>Just for convenience, this returns the instance that was
 		/// just added.</returns>
 		public static object AddStepper(Type type) => _steppers.Add(type);
+		/// <summary>This instantiates and registers an instance of the
+		/// `IStepper` type provided as the generic parameter. SK will hold
+		/// onto it, Initialize it, Step it every frame, and call Shutdown when
+		/// the application ends. This is generally safe to do before
+		/// SK.Initialize is called, the constructor is called right away, and
+		/// Initialize is called right after SK.Initialize, or at the start of
+		/// the next frame before the next main Step callback if SK is already
+		/// initialized.</summary>
+		/// <typeparam name="T">An IStepper type.</typeparam>
+		/// <returns>Just for convenience, this returns the instance that was
+		/// just added.</returns>
 		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
 		/// <summary>This removes a specific IStepper from SK's IStepper list.
 		/// This will call the IStepper's Shutdown method before returning.
@@ -234,6 +256,10 @@ namespace StereoKit
 		/// method on each removed instance before returning.</summary>
 		/// <param name="type">Any type.</param>
 		public static void RemoveStepper(Type type) => _steppers.Remove(type);
+		/// <summary>This removes all IStepper instances that are assignable to
+		/// the generic type specified. This will call the IStepper's Shutdown
+		/// method on each removed instance before returning.</summary>
+		/// <typeparam name="T">An IStepper type.</typeparam>
 		public static void RemoveStepper<T>() => _steppers.Remove<T>();
 
 		/// <summary>This will queue up some code to be run on StereoKit's main

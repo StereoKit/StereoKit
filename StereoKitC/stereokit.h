@@ -152,25 +152,27 @@ SK_MakeFlag(display_blend_);
 
 /*Severity of a log item.*/
 typedef enum log_ {
+	/*A default log level that indicates it has not yet been
+	  set.*/
 	log_none = 0,
 	/*This is for diagnostic information, where you need to know
 	  details about what -exactly- is going on in the system. This
 	  info doesn't surface by default.*/
 	log_diagnostic,
-	/*This is non-critical information, just to let you know what's
-	  going on.*/
+	/*This is non-critical information, just to let you know
+	  what's going on.*/
 	log_inform,
-	/*Something bad has happened, but it's still within the realm of
-	  what's expected.*/
+	/*Something bad has happened, but it's still within the
+	  realm of what's expected.*/
 	log_warning,
-	/*Danger Will Robinson! Something really bad just happened and
-	  needs fixing!*/
+	/*Danger Will Robinson! Something really bad just happened
+	  and needs fixing!*/
 	log_error
 } log_;
 
-/*When rendering content, you can filter what you're rendering by the
-  RenderLayer that they're on. This allows you to draw items that are
-  visible in one render, but not another. For example, you may wish
+/*When rendering content, you can filter what you're rendering
+  by the RenderLayer that they're on. This allows you to draw items that
+  are visible in one render, but not another. For example, you may wish
   to draw a player's avatar in a 'mirror' rendertarget, but not in
   the primary display. See `Renderer.LayerFilter` for configuring what
   the primary display renders.
@@ -213,7 +215,8 @@ typedef enum render_layer_ {
 	  want to render all layers, then this is the layer filter
 	  you would use. This is the default for render filtering.*/
 	render_layer_all              = 0xFFFF,
-	/*This is a combination of all layers that are not the VFX layer.*/
+	/*This is a combination of all layers that are not the VFX
+	  layer.*/
 	render_layer_all_regular      = render_layer_0 | render_layer_1 | render_layer_2 | render_layer_3 | render_layer_4 | render_layer_5 | render_layer_6 | render_layer_7 | render_layer_8 | render_layer_9,
 	/*All layers except for the third person layer.*/
 	render_layer_all_first_person = render_layer_all & ~render_layer_third_person,
@@ -222,18 +225,19 @@ typedef enum render_layer_ {
 } render_layer_;
 SK_MakeFlag(render_layer_);
 
-/*This tells about the app's current focus state, whether it's active and
-  receiving input, or if it's backgrounded or hidden. This can be
-  important since apps may still run and render when unfocused, as the app
-  may still be visible behind the app that _does_ have focus.*/
+/*This tells about the app's current focus state, whether it's
+  active and receiving input, or if it's backgrounded or hidden. This can
+  be important since apps may still run and render when unfocused, as the
+  app may still be visible behind the app that _does_ have focus.*/
 typedef enum app_focus_ {
-	/*This StereoKit app is active, focused, and receiving input from the
-	  user. Application should behave as normal.*/
+	/*This StereoKit app is active, focused, and receiving input
+	from the user. Application should behave as normal.*/
 	app_focus_active,
-	/*This StereoKit app has been unfocused, something may be compositing
-	  on top of the app such as an OS dashboard. The app is still visible,
-	  but some other thing has focus and is receiving input. You may wish
-	  to pause, disable input tracking, or other such things.*/
+	/*This StereoKit app has been unfocused, something may be
+	  compositing on top of the app such as an OS dashboard. The app is
+	  still visible, but some other thing has focus and is receiving
+	  input. You may wish to pause, disable input tracking, or other such
+	  things.*/
 	app_focus_background,
 	/*This app is not rendering currently.*/
 	app_focus_hidden,
@@ -834,15 +838,46 @@ typedef enum tex_format_ {
 	  of the time you're dealing with color data! Matches well with the
 	  Color32 struct.*/
 	tex_format_rgba32_linear = 2,
+	/*Blue/Green/Red/Transparency data channels, at 8 bits
+	  per-channel in sRGB color space. This is a common swapchain format
+	  on Windows.*/
 	tex_format_bgra32 = 3,
+	/*Blue/Green/Red/Transparency data channels, at 8 bits
+	  per-channel in linear color space. This is a common swapchain
+	  format on Windows.*/
 	tex_format_bgra32_linear = 4,
+	/*Red/Green/Blue data channels, with 11 bits for R and G,
+	  and 10 bits for blue. This is a great presentation format for high
+	  bit depth displays that still fits in 32 bits! This format has no
+	  alpha channel.*/
 	tex_format_rg11b10 = 5,
+	/*Red/Green/Blue/Transparency data channels, with 10 
+	  bits for R, G, and B, and 2 for alpha. This is a great presentation
+	  format for high bit depth displays that still fits in 32 bits, and
+	  also includes at least a bit of transparency!*/
 	tex_format_rgb10a2 = 6,
 	/*Red/Green/Blue/Transparency data channels, at 16 bits
 	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images.*/
-	tex_format_rgba64 = 7, // TODO: remove during major version update
+	  raw photos, or HDR images. TODO: remove during major version
+	  update, prefer s, f, or u postfixed versions of this format.*/
+	tex_format_rgba64 = 7,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The u postfix indicates that the raw
+	  color data is stored as an unsigned 16 bit integer, which is then
+	  normalized into the 0, 1 floating point range on the GPU.*/
+	tex_format_rgba64u = tex_format_rgba64,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The s postfix indicates that the raw
+	  color data is stored as a signed 16 bit integer, which is then
+	  normalized into the -1, +1 floating point range on the GPU.*/
 	tex_format_rgba64s = 8,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The f postfix indicates that the raw
+	  color data is stored as 16 bit floats, which may be tricky to work
+	  with in most languages.*/
 	tex_format_rgba64f = 9,
 	/*Red/Green/Blue/Transparency data channels at 32 bits
 	  per-channel! Basically 4 floats per color, which is bonkers
@@ -875,7 +910,6 @@ typedef enum tex_format_ {
 	  your far clip in, or switch to 32/24 bit depth.*/
 	tex_format_depth16 = 16,
 
-	tex_format_rgba64u = tex_format_rgba64,
 } tex_format_;
 
 /*How does the shader grab pixels from the texture? Or more

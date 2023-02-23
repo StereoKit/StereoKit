@@ -208,6 +208,7 @@ namespace StereoKit
 		/// color category in a specific state! If you set the color with
 		/// UI.ColorScheme, or without specifying a state, this may be a
 		/// generated color, and not necessarily the color that was provided
+		/// there.</summary>
 		/// <param name="colorCategory">The category of UI elements that are
 		/// affected by this theme color.</param>
 		/// <param name="colorState">The state of the UI element this color
@@ -1341,6 +1342,12 @@ namespace StereoKit
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
 			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
 
+		/// <summary>This will hash the given text based id into a hash for use
+		/// with certain StereoKit UI functions. This includes the hash of the
+		/// current id stack.</summary>
+		/// <param name="id">Text to hash along with the current id stack.
+		/// </param>
+		/// <returns>An integer based hash id for use with SK UI.</returns>
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
