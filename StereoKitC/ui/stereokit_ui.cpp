@@ -1478,15 +1478,16 @@ void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(t
 
 template<typename C>
 void ui_label_g(const C *text, bool32_t use_padding) {
-	vec3 final_pos;
-	vec2 final_size;
 	vec2 txt_size = text_size(text, skui_font_stack.last());
-	txt_size += use_padding
+	vec2 padding  = use_padding
 		? vec2{skui_settings.padding, skui_settings.padding}*2
 		: vec2{0, skui_settings.padding}*2;
-	ui_layout_reserve_sz(txt_size, false, &final_pos, &final_size);
 
-	ui_text_at(text, text_align_center, text_fit_squeeze, final_pos - vec3{0,0,skui_settings.depth/2}, final_size);
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(txt_size + padding, false, &final_pos, &final_size);
+
+	ui_text_at(text, text_align_top_left, text_fit_squeeze, final_pos - vec3{padding.x,padding.y,skui_settings.depth}/2, txt_size);
 }
 void ui_label   (const char     *text, bool32_t use_padding) { ui_label_g<char    >(text, use_padding); }
 void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_g<char16_t>(text, use_padding); }
