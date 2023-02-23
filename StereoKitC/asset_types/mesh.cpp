@@ -76,20 +76,8 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 
 	mesh->vert_count = vertex_count;
 
-	// Calculate the bounds for this mesh by searching it for min and max values!
 	if (calculate_bounds && vertex_count > 0) {
-		XMVECTOR min = XMLoadFloat3((XMFLOAT3*)&vertices[0].pos);
-		XMVECTOR max = min;
-		for (uint32_t i = 1; i < vertex_count; i++) {
-
-			XMVECTOR pt = XMLoadFloat3((XMFLOAT3*)&vertices[i].pos);
-			min = XMVectorMin(min, pt);
-			max = XMVectorMax(max, pt);
-		}
-		XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
-		XMVECTOR dimensions = XMVectorSubtract(max, min);
-		XMStoreFloat3((XMFLOAT3*)&mesh->bounds.center,     center);
-		XMStoreFloat3((XMFLOAT3*)&mesh->bounds.dimensions, dimensions);
+		mesh->bounds = mesh_calculate_bounds(vertices, vertex_count);
 	}
 }
 ///////////////////////////////////////////
@@ -253,6 +241,60 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 		v3->norm += normal;
 	}
 	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+}
+
+///////////////////////////////////////////
+
+bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
+	// Calculate the bounds for this mesh by searching it for min and max
+	// values! This uses DirectXMath's SIMD capabilities, and uses multiple
+	// separate accumulators to reduce operation dependencies.
+	XMVECTOR min_a = XMLoadFloat3((XMFLOAT3*)&verts[0].pos);
+	XMVECTOR min_b = min_a;
+	XMVECTOR min_c = min_a;
+	XMVECTOR min_d = min_a;
+	XMVECTOR max_a = min_a;
+	XMVECTOR max_b = min_a;
+	XMVECTOR max_c = min_a;
+	XMVECTOR max_d = min_a;
+
+	const vert_t* curr = verts;
+	for (uint32_t i = 0; i < vert_count/4; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		XMVECTOR pt_b = XMLoadFloat3((XMFLOAT3*)&curr[1].pos);
+		min_b = XMVectorMin(min_b, pt_b);
+		max_b = XMVectorMax(max_b, pt_b);
+		XMVECTOR pt_c = XMLoadFloat3((XMFLOAT3*)&curr[2].pos);
+		min_c = XMVectorMin(min_c, pt_c);
+		max_c = XMVectorMax(max_c, pt_c);
+		XMVECTOR pt_d = XMLoadFloat3((XMFLOAT3*)&curr[3].pos);
+		min_d = XMVectorMin(min_d, pt_d);
+		max_d = XMVectorMax(max_d, pt_d);
+		curr += 4;
+	}
+	for (uint32_t i = (vert_count / 4) * 4; i < vert_count; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		curr += 1;
+	}
+
+	XMVECTOR min = XMVectorMin(min_a, min_b);
+	min = XMVectorMin(min, min_c);
+	min = XMVectorMin(min, min_d);
+	XMVECTOR max = XMVectorMin(max_a, max_b);
+	max = XMVectorMin(max, max_c);
+	max = XMVectorMin(max, max_d);
+
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	bounds_t bounds     = {};
+	XMStoreFloat3((XMFLOAT3*)&bounds.center,     center);
+	XMStoreFloat3((XMFLOAT3*)&bounds.dimensions, dimensions);
+
+	return bounds;
 }
 
 ///////////////////////////////////////////
