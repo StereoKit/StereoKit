@@ -5,19 +5,20 @@ using System.Numerics;
 namespace StereoKitUnitTest
 {
 	/// <summary>
-	/// The rotation order of the Euler.
+    /// The intrinsic rotation order of the Euler.
 	/// When converting to and from quaternions we need to know
 	/// which order to apply the rotation. Pitch, then Yaw, 
 	/// then Roll. OR Yaw, then Pitch, then Roll? Up to you!
-	/// </summary>
-	public enum EulerRotationOrder
+    /// 
+    /// This uses intrinsic rotation order.</summary>
+    public enum RotOrder
 	{
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member -- Disabled as its obvious
-		RollPitchYaw = 0, // Default because its whats used internally in Quat.FromAngles() and Quaternion.FromYawPitchRoll()
+        YawPitchRoll = 0, // Default because its whats used in Quat.FromAngles() and Quaternion.FromYawPitchRoll()
 		PitchYawRoll,
 		PitchRollYaw,
 		YawRollPitch,
-		YawPitchRoll,
+        RollPitchYaw,
 		RollYawPitch,
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 	}
@@ -25,68 +26,57 @@ namespace StereoKitUnitTest
 	/// <summary>Represent rotations in Euler angles.
 	/// This is usually not preferred to using <see cref="Quat"/> but may be easier for some operations.
 	/// All angles are specified in Pitch, Yaw and Roll.</summary>
-	/// <remarks>
-	/// <para>
-	/// In StereoKit this usually aligns with: 
-	///		X = Roll,
-	///		Y = Yaw,
-	///		Z = Pitch
-	///	</para>
-	/// </remarks>
+    /// <remarks>In StereoKit this usually aligns with: X = Roll, Y = Yaw, Z = Pitch</remarks>
 	public struct Euler
 	{
-		const float RadToDeg = 1 / (SKMath.Pi / 180);
-
 		/// <summary>
-		/// Order that the rotations are applied, defaults to <see cref="EulerRotationOrder.RollPitchYaw"/>.
-		/// Check docs for <seealso cref="EulerRotationOrder"/> for more info.
+        /// Order that the rotations are applied, defaults to <see cref="RotOrder.RollPitchYaw"/>.
+        /// Check docs for <seealso cref="RotOrder"/> for more info.
 		/// </summary>
-		public EulerRotationOrder Order;
+        public RotOrder RotationOrder;
 
 		/// <summary>
-		/// Pitch rotation in Radians
+        /// Pitch rotation in Degrees
 		/// </summary>
 		/// <remarks>
-		/// See the <see cref="Order"/> for which order this is applied. Its not always RollYawPitch!
+        /// See the <see cref="RotationOrder"/> for which order this is applied. Its not always RollYawPitch!
 		/// </remarks>
 		public float XPitch { get; set; }
-		public float XPitchDeg => XPitch * RadToDeg;
 
 		/// <summary>
-		/// Yaw rotation in Radians
+        /// Yaw rotation in Degrees
 		/// </summary>
 		/// <remarks>
-		/// See the <see cref="Order"/> for which order this is applied. Its not always RollYawPitch!
+        /// See the <see cref="RotationOrder"/> for which order this is applied. Its not always RollYawPitch!
 		/// </remarks>
 		public float YYaw { get; set; }
-		public float YYawDeg => YYaw * RadToDeg;
 
 		/// <summary>
-		/// Roll rotation in Radians
+        /// Roll rotation in Degrees
 		/// </summary>
 		/// <remarks>
-		/// See the <see cref="Order"/> for which order this is applied. Its not always RollYawPitch!
+        /// See the <see cref="RotationOrder"/> for which order this is applied. Its not always RollYawPitch!
 		/// </remarks>
 		public float ZRoll { get; set; }
-		public float ZRollDeg => ZRoll * RadToDeg;
 
 		/// <summary>
-		/// Setup a Euler, which will apply rotations in the the specified <see cref="EulerRotationOrder"/>
+        /// Setup a Euler, which will apply rotations in the the specified <see cref="RotOrder"/>
 		/// </summary>
-		public Euler(EulerRotationOrder order)
+        /// <param name="eulerRotationOrder">The rotation order</param>
+        public Euler(RotOrder eulerRotationOrder)
 		{
-			Order = order;
+            RotationOrder = eulerRotationOrder;
 			XPitch = 0;
 			YYaw = 0;
 			ZRoll = 0;
 		}
 
-		/// <inheritdoc cref="Euler(EulerRotationOrder)"/>
-		/// <param name="pitch">Pitch in radians (X axis rotation)</param>
-		/// <param name="yaw">Yaw in radians (Y axis rotation)</param>
-		/// <param name="roll">Roll in radians (Z axis rotation)</param>
-		public Euler(float pitch, float yaw, float roll, EulerRotationOrder order)
-			: this(order)
+        /// <inheritdoc cref="Euler(RotOrder)"/>
+        /// <param name="pitch">Pitch in degrees (X axis rotation)</param>
+        /// <param name="yaw">Yaw in degrees (Y axis rotation)</param>
+        /// <param name="roll">Roll in degrees (Z axis rotation)</param>
+        public Euler(float pitch, float yaw, float roll, RotOrder eulerRotationOrder)
+            : this(eulerRotationOrder)
 		{
 			XPitch = pitch;
 			YYaw = yaw;
@@ -98,7 +88,7 @@ namespace StereoKitUnitTest
 		/// Specify an Euler Order to specify which order the rotations are applied.
 		/// </summary>
 		/// <returns>A new Euler</returns>
-		public static Euler FromQuat(Quat quat, EulerRotationOrder order)
+        public static Euler FromQuat(Quat quat, RotOrder order)
 		{
 			
 			// Creates a row major matrix
@@ -115,9 +105,10 @@ namespace StereoKitUnitTest
 
 			var euler = new Euler(order);
 
+            // This code converts the quaternion to it Intrinsic Euler rotations.
 			switch (order)
 			{
-				case EulerRotationOrder.PitchYawRoll:
+                case RotOrder.PitchYawRoll:
 
 					euler.YYaw = (float)Math.Asin(SKMath.Clamp(m13, -1, 1));
 
@@ -134,7 +125,7 @@ namespace StereoKitUnitTest
 
 					break;
 
-				case EulerRotationOrder.YawPitchRoll:
+                case RotOrder.YawPitchRoll:
 
 					euler.XPitch = (float)Math.Asin(-SKMath.Clamp(m23, -1, 1));
 
@@ -151,7 +142,7 @@ namespace StereoKitUnitTest
 
 					break;
 
-				case EulerRotationOrder.RollPitchYaw:
+                case RotOrder.RollPitchYaw:
 
 					euler.XPitch = (float)Math.Asin(SKMath.Clamp(m32, -1, 1));
 
@@ -168,7 +159,7 @@ namespace StereoKitUnitTest
 
 					break;
 
-				case EulerRotationOrder.RollYawPitch:
+                case RotOrder.RollYawPitch:
 
 					euler.YYaw = (float)Math.Asin(-SKMath.Clamp(m31, -1, 1));
 
@@ -185,7 +176,7 @@ namespace StereoKitUnitTest
 
 					break;
 
-				case EulerRotationOrder.YawRollPitch:
+                case RotOrder.YawRollPitch:
 
 					euler.ZRoll = (float)Math.Asin(SKMath.Clamp(m21, -1, 1));
 
@@ -202,7 +193,7 @@ namespace StereoKitUnitTest
 
 					break;
 
-				case EulerRotationOrder.PitchRollYaw:
+                case RotOrder.PitchRollYaw:
 
 					euler.ZRoll = (float)Math.Asin(-SKMath.Clamp(m12, -1, 1));
 
@@ -223,6 +214,10 @@ namespace StereoKitUnitTest
 					throw new ArgumentOutOfRangeException(nameof(order));
 			}
 
+            // Convert from radians to degrees
+            euler.XPitch *= Units.rad2deg;
+            euler.YYaw *= Units.rad2deg;
+            euler.ZRoll *= Units.rad2deg;
 			return euler;
 		}
 
@@ -232,65 +227,69 @@ namespace StereoKitUnitTest
 		/// <returns>A new Quaternion applied in the intended order</returns>
 		public Quat ToQuat()
 		{
+            // Convert from degrees to radians, as the below code needs radian inputs.
 			// csharpier-ignore
-			float x = this.XPitch, y = this.YYaw, z = this.ZRoll;
-			EulerRotationOrder order = this.Order;
+            float pitch = XPitch * Units.deg2rad, yaw = YYaw * Units.deg2rad, roll = ZRoll * Units.deg2rad;
+            RotOrder order = this.RotationOrder;
 
 			// Ported from from https://github.com/mrdoob/three.js/blob/4503ef10b81a00f5c6c64fe9a856881ee31fe6a3/src/math/Quaternion.js#L201
 
 			// Which again attributes:
 			// http://www.mathworks.com/matlabcentral/fileexchange/20696-function-to-convert-between-dcm-euler-angles-quaternions-and-euler-vectors/content/SpinCalc.m
 
-			double c1 = Math.Cos(x / 2);
-			double c2 = Math.Cos(y / 2);
-			double c3 = Math.Cos(z / 2);
+            // This code converts the Intrinsic Euler rotations to quaternions.
+            // This actually means that we apply the rotations in inverse order (Extrinsic),
+            // because the math for Extrinsic is faster.
+            double cp = Math.Cos(pitch / 2);
+            double cy = Math.Cos(yaw / 2);
+            double cr = Math.Cos(roll / 2);
 
-			double s1 = Math.Sin(x / 2);
-			double s2 = Math.Sin(y / 2);
-			double s3 = Math.Sin(z / 2);
+            double sp = Math.Sin(pitch / 2);
+            double sy = Math.Sin(yaw / 2);
+            double sr = Math.Sin(roll / 2);
 			var quat = new Quat();
 			switch (order)
 			{
-				case EulerRotationOrder.PitchYawRoll:
-					quat.x = (float)(s1 * c2 * c3 + c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 - s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 + s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 - s1 * s2 * s3);
+                case RotOrder.PitchYawRoll:
+                    quat.x = (float)(cy * sp * cr + sy * cp * sr);
+                    quat.y = (float)(sy * cp * cr - cy * sp * sr);
+                    quat.z = (float)(cy * cp * sr + sy * sp * cr);
+                    quat.w = (float)(cy * cp * cr - sy * sp * sr);
 					break;
 
-				case EulerRotationOrder.YawPitchRoll:
-					quat.x = (float)(s1 * c2 * c3 + c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 - s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 - s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 + s1 * s2 * s3);
+                case RotOrder.YawPitchRoll:
+                    quat.x = (float)(sp * cy * cr + cp * sy * sr);
+                    quat.y = (float)(cp * sy * cr - sp * cy * sr);
+                    quat.z = (float)(cp * cy * sr - sp * sy * cr);
+                    quat.w = (float)(cp * cy * cr + sp * sy * sr);
 					break;
 
-				case EulerRotationOrder.RollPitchYaw:
-					quat.x = (float)(s1 * c2 * c3 - c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 + s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 + s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 - s1 * s2 * s3);
+                case RotOrder.RollPitchYaw:
+                    quat.x = (float)(sp * cy * cr - cp * sy * sr);
+                    quat.y = (float)(cp * sy * cr + sp * cy * sr);
+                    quat.z = (float)(cp * cy * sr + sp * sy * cr);
+                    quat.w = (float)(cp * cy * cr - sp * sy * sr);
 					break;
 
-				case EulerRotationOrder.RollYawPitch:
-					quat.x = (float)(s1 * c2 * c3 - c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 + s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 - s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 + s1 * s2 * s3);
+                case RotOrder.RollYawPitch:
+                    quat.x = (float)(sp * cy * cr - cp * sy * sr);
+                    quat.y = (float)(cp * sy * cr + sp * cy * sr);
+                    quat.z = (float)(cp * cy * sr - sp * sy * cr);
+                    quat.w = (float)(cp * cy * cr + sp * sy * sr);
 					break;
 
-				case EulerRotationOrder.YawRollPitch:
-					quat.x = (float)(s1 * c2 * c3 + c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 + s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 - s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 - s1 * s2 * s3);
+                case RotOrder.YawRollPitch:
+                    quat.x = (float)(sp * cy * cr + cp * sy * sr);
+                    quat.y = (float)(cp * sy * cr + sp * cy * sr);
+                    quat.z = (float)(cp * cy * sr - sp * sy * cr);
+                    quat.w = (float)(cp * cy * cr - sp * sy * sr);
 					break;
 
-				case EulerRotationOrder.PitchRollYaw:
-					quat.x = (float)(s1 * c2 * c3 - c1 * s2 * s3);
-					quat.y = (float)(c1 * s2 * c3 - s1 * c2 * s3);
-					quat.z = (float)(c1 * c2 * s3 + s1 * s2 * c3);
-					quat.w = (float)(c1 * c2 * c3 + s1 * s2 * s3);
+                case RotOrder.PitchRollYaw:
+                    quat.x = (float)(sp * cy * cr - cp * sy * sr);
+                    quat.y = (float)(cp * sy * cr - sp * cy * sr);
+                    quat.z = (float)(cp * cy * sr + sp * sy * cr);
+                    quat.w = (float)(cp * cy * cr + sp * sy * sr);
 					break;
 
 				default:
@@ -309,7 +308,7 @@ namespace StereoKitUnitTest
 		/// [Pitch: pitch, Yaw: yaw, Roll: roll] Order: order</summary>
 		public override string ToString()
 		{
-			return $"(deg)[Pitch: {XPitchDeg}, Yaw: {YYawDeg}, Roll: {ZRollDeg}] Order: {Order}";
+            return $"[Pitch: {XPitch}, Yaw: {YYaw}, Roll: {ZRoll}] Order: {RotationOrder}";
 		}
 	}
 }
