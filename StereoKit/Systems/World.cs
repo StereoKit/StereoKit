@@ -89,6 +89,21 @@ namespace StereoKit
 		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
 			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime);
 
+		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
+		/// based on its current position and rotation! Check
+		/// SK.System.spatialBridgePresent to see if this is available to
+		/// use. Currently only on HoloLens, good for use with the Windows
+		/// QR code package.</summary>
+		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
+		/// acquired from a windows MR API call.</param>
+		/// <param name="pose">A resulting Pose representing the current
+		/// orientation of the spatial node.</param>
+		/// <param name="spatialNodeType">Type of spatial node to locate.</param>
+		/// <param name="qpcTime">A windows performance counter timestamp at
+		/// which the node should be located, obtained from another API or
+		/// with System.Diagnostics.Stopwatch.GetTimestamp().</param>
+		/// <returns>True if FromSpatialNode succeeded, and false if it failed.
+		/// </returns>
 		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
 			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime, out pose) > 0;
 
@@ -111,6 +126,19 @@ namespace StereoKit
 			return result;
 		}
 
+		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
+		/// into SteroKit's coordinate system. This can be great for
+		/// interacting with some of the UWP spatial APIs such as WorldAnchors.
+		/// 
+		/// This method only works on UWP platforms, check 
+		/// SK.System.perceptionBridgePresent to see if this is available.
+		/// </summary>
+		/// <param name="perceptionSpatialAnchor">A valid
+		/// Windows.Perception.Spatial.SpatialAnchor.</param>
+		/// <param name="pose">A resulting Pose representing the current
+		/// orientation of the spatial node.</param>
+		/// <returns>A Pose representing the current orientation of the
+		/// SpatialAnchor.</returns>
 		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);

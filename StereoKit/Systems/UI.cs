@@ -216,6 +216,13 @@ namespace StereoKit
 		/// <returns>The gamma space color for the theme color category in the
 		/// indicated state.</returns>
 		public static Color GetThemeColor(UIColor colorCategory, UIColorState colorState) => NativeAPI.ui_get_theme_color_state(colorCategory, colorState);
+		/// <summary>This overload is obsolete, and will be removed soon.
+		/// </summary>
+		/// <param name="colorCategory">The category of UI elements that are
+		/// affected by this theme color.</param>
+		/// <param name="colorGamma">Unused.</param>
+		/// <returns>The gamma space color for the theme color category in the
+		/// indicated state.</returns>
 		[Obsolete("To be removed in v0.4")]
 		public static Color GetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_get_theme_color(colorCategory);
 
@@ -274,6 +281,13 @@ namespace StereoKit
 		public static void Space (float space) 
 			=> NativeAPI.ui_space(space);
 
+		/// <summary>This Method is obsolete and will be removed soon. Please
+		/// use any other overload of this method.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		/// <returns>True if a hand is in the volume, false if not.</returns>
 		[Obsolete("This overload will be removed in v0.4, prefer any other overload of this method.")]
 		public static bool VolumeAt(string id, Bounds bounds)
 			=> NativeAPI.ui_volume_at_16(id, bounds);
@@ -829,8 +843,19 @@ namespace StereoKit
 			return false;
 		}
 
+		/// <summary>This adds a non-interactive Model to the UI panel layout.
+		/// </summary>
+		/// <param name="model">The Model to use.</param>
 		public static void Model(Model model)
 			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, Vec2.Zero, 0);
+		/// <summary>This adds a non-interactive Model to the UI panel layout,
+		/// and allows you to specify its size.</summary>
+		/// <param name="model">The Model to use.</param>
+		/// <param name="uiSize">The size this element should take from the
+		/// layout.</param>
+		/// <param name="modelScale">0 will auto-scale the model to fit the
+		/// layout space, but you can specify a different scale in case you'd
+		/// like a different size.</param>
 		public static void Model(Model model, Vec2 uiSize, float modelScale = 0)
 			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, uiSize, modelScale);
 
@@ -1351,9 +1376,49 @@ namespace StereoKit
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
+		/// <summary>This is the core functionality of StereoKit's buttons,
+		/// without any of the rendering parts! If you're trying to create your
+		/// own pressable UI elements, or do more extreme customization of the
+		/// look and feel of UI elements, then this function will provide a lot
+		/// of complex pressing functionality for you!</summary>
+		/// <param name="windowRelativePos">The layout position of the
+		/// pressable area.</param>
+		/// <param name="size">The size of the pressable area.</param>
+		/// <param name="id">The id for this pressable element to track its
+		/// state with.</param>
+		/// <param name="fingerOffset">This is the current distance of the
+		/// finger, within the pressable volume, from the bottom of the button.
+		/// </param>
+		/// <param name="buttonState">This is the current frame's "active"
+		/// state for the button.</param>
+		/// <param name="focusState">This is the current frame's "focus" state
+		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
 			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState);
 
+		/// <summary>This is the core functionality of StereoKit's buttons,
+		/// without any of the rendering parts! If you're trying to create your
+		/// own pressable UI elements, or do more extreme customization of the
+		/// look and feel of UI elements, then this function will provide a lot
+		/// of complex pressing functionality for you!
+		/// This overload allows for customizing the depth of the button, which
+		/// otherwise would use UISettings.depth for its values.</summary>
+		/// <param name="windowRelativePos">The layout position of the
+		/// pressable area.</param>
+		/// <param name="size">The size of the pressable area.</param>
+		/// <param name="id">The id for this pressable element to track its
+		/// state with.</param>
+		/// <param name="buttonDepth">This is the z axis depth of the pressable
+		/// area.</param>
+		/// <param name="buttonActivationDepth">This is the depth at which the
+		/// button will activate. Normally this is 1/2 of buttonDepth.</param>
+		/// <param name="fingerOffset">This is the current distance of the
+		/// finger, within the pressable volume, from the bottom of the button.
+		/// </param>
+		/// <param name="buttonState">This is the current frame's "active"
+		/// state for the button.</param>
+		/// <param name="focusState">This is the current frame's "focus" state
+		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
 			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState);
 	}

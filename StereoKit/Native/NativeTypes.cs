@@ -92,7 +92,12 @@ namespace StereoKit
 		/// unnecessary swapchain object. Default value is 1.</summary>
 		public int renderMultisample;
 
+		/// <summary>A pointer to the JNI's JavaVM structure, only used for
+		/// Android applications. This is optional, even for Android.</summary>
 		public IntPtr androidJavaVm;
+		/// <summary>A JNI reference to an android.content.Context associated
+		/// with the application, only used for Android applications. Xamarin
+		/// and Maui apps will use the MainActivity.Handle for this.</summary>
 		public IntPtr androidActivity;
 
 		/// <summary>Name of the application, this shows up an the top of the
@@ -337,11 +342,11 @@ namespace StereoKit
 		/// <summary>The vertex color for the line at this position.</summary>
 		public Color32 color;
 
-		
-	}
-
-	public partial struct LinePoint
-	{
+		/// <summary>This creates and fills out a LinePoint.</summary>
+		/// <param name="point">The location of this point on a line.</param>
+		/// <param name="color">The Color for this line vertex.</param>
+		/// <param name="thickness">The thickness of the line at this vertex.
+		/// </param>
 		public LinePoint(Vec3 point, Color32 color, float thickness)
 		{
 			this.pt = point;
@@ -370,6 +375,12 @@ namespace StereoKit
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
 	}
 
+	/// <summary>The callback type for Input events.</summary>
+	/// <param name="source">What type of device is the source of the provided
+	/// pointer</param>
+	/// <param name="type">What type of event was this.</param>
+	/// <param name="pointer">Where was the input device at the time of the
+	/// input event?</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
 
@@ -429,6 +440,9 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A callback for when log events occur.</summary>
+	/// <param name="level">The level of severity of this log event.</param>
+	/// <param name="text">The text contents of the log event.</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
 
@@ -441,6 +455,10 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
+	/// <summary>A callback that generates a sound wave at a particular point
+	/// in time.</summary>
+	/// <param name="time">The time along the wavelength.</param>
+	/// <returns>The waveform position on the sound at this time.</returns>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
