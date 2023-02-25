@@ -1332,7 +1332,7 @@ namespace StereoKit
 		/// point.</param>
 		/// <returns>A pose between the UI or hand that is currently active,
 		/// and the user's head. Good for popup windows.</returns>
-		public static Pose PopupPose(Vec3 shift)
+		public static Pose PopupPose(Vec3 shift = default)
 			=> NativeAPI.ui_popup_pose(shift);
 
 		/// <summary>This will reposition the vertices to work well with
