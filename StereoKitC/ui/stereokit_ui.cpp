@@ -584,8 +584,8 @@ color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state) {
 void ui_set_theme_color(ui_color_ color_type, color128 color_gamma) {
 	color128 linear = color_to_linear(color_gamma);
 	skui_palette[color_type].normal   = linear;
-	skui_palette[color_type].active   = linear*2;
-	skui_palette[color_type].disabled = linear*0.5f;
+	skui_palette[color_type].active   = linear*color128{ 2,2,2,1 };
+	skui_palette[color_type].disabled = linear*color128{ 0.5f,0.5f,0.5f,1 };
 }
 
 ///////////////////////////////////////////
