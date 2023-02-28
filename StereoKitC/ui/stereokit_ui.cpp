@@ -37,6 +37,7 @@ struct ui_hand_t {
 	bool     ray_enabled;
 	bool     ray_discard;
 	float    ray_visibility;
+	uint64_t focused_prev_prev;
 	uint64_t focused_prev;
 	uint64_t focused;
 	float    focus_priority;
@@ -867,8 +868,9 @@ void ui_update() {
 		skui_hand[i].finger_world        = hand->fingers[1][4].position;
 		skui_hand[i].pinch_pt_world_prev = skui_hand[i].pinch_pt;
 		skui_hand[i].pinch_pt_world      = hand->pinch_pt;
-		skui_hand[i].focused_prev = skui_hand[i].focused;
-		skui_hand[i].active_prev  = skui_hand[i].active;
+		skui_hand[i].focused_prev_prev   = skui_hand[i].focused_prev;
+		skui_hand[i].focused_prev        = skui_hand[i].focused;
+		skui_hand[i].active_prev         = skui_hand[i].active;
 
 		skui_hand[i].focus_priority = FLT_MAX;
 		skui_hand[i].focused = 0;
@@ -1096,8 +1098,8 @@ void ui_pop_surface() {
 
 button_state_ ui_last_element_hand_used(handed_ hand) {
 	return button_make_state(
-		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev == skui_last_element,
-		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused      == skui_last_element);
+		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev_prev == skui_last_element,
+		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -1111,9 +1113,12 @@ button_state_ ui_last_element_hand_active(handed_ hand) {
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_hand_focused(handed_ hand) {
+	// Because focus can change at any point during the frame, we'll check
+	// against the last two frame's focus ids, which are set in stone after the
+	// frame ends.
 	return button_make_state(
-		skui_hand[hand].focused_prev == skui_last_element,
-		skui_hand[hand].focused      == skui_last_element);
+		skui_hand[hand].focused_prev_prev == skui_last_element,
+		skui_hand[hand].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -1127,9 +1132,12 @@ button_state_ ui_last_element_active() {
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_focused() {
+	// Because focus can change at any point during the frame, we'll check
+	// against the last two frame's focus ids, which are set in stone after the
+	// frame ends.
 	return button_make_state(
-		skui_hand[handed_left].focused_prev == skui_last_element || skui_hand[handed_right].focused_prev == skui_last_element,
-		skui_hand[handed_left].focused      == skui_last_element || skui_hand[handed_right].focused      == skui_last_element);
+		skui_hand[handed_left].focused_prev_prev == skui_last_element || skui_hand[handed_right].focused_prev_prev == skui_last_element,
+		skui_hand[handed_left].focused_prev      == skui_last_element || skui_hand[handed_right].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
