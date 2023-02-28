@@ -1551,7 +1551,7 @@ void ui_image(sprite_t image, vec2 size) {
 ///////////////////////////////////////////
 
 template<typename C>
-void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
+void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
 	float pad2       = skui_settings.padding * 2;
 	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
@@ -1565,22 +1565,22 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	switch (image_layout) {
 	default:
 	case ui_btn_layout_left:
-		image_align = text_align_center_left;
-		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter)*0.5f) / aspect);
-		image_at    = window_relative_pos - vec3{ skui_settings.padding, size.y/2, depth };
-			
+		image_align = text_align_center;
+		image_size  = fminf(size.y - pad2, skui_fontsize);
+		image_at    = window_relative_pos - vec3{ size.y/2.0f, size.y/2.0f, depth };
+
 		text_align = text_align_center_right;
 		text_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y/2, depth };
-		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		text_size  = { size.x - ((size.y+image_size)/2.0f + pad2), size.y - pad2 };
 		break;
 	case ui_btn_layout_right:
-		image_align = text_align_center_right;
-		image_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y / 2, depth };
-		image_size  = fminf(size.y - pad2, ((size.x - pad2gutter) * 0.5f) / aspect);
-			
+		image_align = text_align_center;
+		image_at    = window_relative_pos - vec3{ size.x-(size.y/2), size.y / 2, depth };
+		image_size  = fminf(size.y - pad2, skui_fontsize);
+
 		text_align = text_align_center_left;
 		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
-		text_size  = { size.x - (image_size * aspect + pad2gutter), size.y - pad2 };
+		text_size  = { size.x - ((size.y+image_size)/2.0f + pad2), size.y - pad2 };
 		break;
 	case ui_btn_layout_none:
 		image_size = 0;
@@ -1594,7 +1594,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		image_align = text_align_center;
 		image_size  = fminf(size.y - pad2, (size.x - pad2) / aspect);
 		image_at    = window_relative_pos - vec3{ size.x/2, size.y / 2, depth }; 
-			
+
 		text_align = text_align_top_center;
 		float y = size.y / 2 + image_size / 2;
 		text_at    = window_relative_pos - vec3{size.x/2, y, depth};
@@ -1609,7 +1609,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 	}
 	if (image_layout != ui_btn_layout_center_no_text)
-		ui_text_in(text, text_align, text_align_center, text_fit_squeeze, text_at, text_size);
+		ui_text_in(text, text_align, text_layout, text_fit_squeeze, text_at, text_size);
 }
 
 ///////////////////////////////////////////
@@ -1649,7 +1649,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 	float activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
-	_ui_button_img_surface(text, image, image_layout, window_relative_pos, size, finger_offset);
+	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
 	return state & button_state_just_active;
 }
@@ -1724,7 +1724,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 
 	float activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
-	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, window_relative_pos, size, finger_offset);
+	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
 	return state & button_state_just_active;
 }
