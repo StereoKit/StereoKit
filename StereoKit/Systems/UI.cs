@@ -921,8 +921,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="width">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
@@ -944,8 +945,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="width">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
@@ -967,8 +969,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -992,8 +995,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -1017,8 +1021,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, bottom
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="height">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
@@ -1040,8 +1045,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, bottom
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="height">Physical height of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
@@ -1063,8 +1069,9 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, bottom
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
