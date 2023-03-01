@@ -1311,16 +1311,16 @@ int32_t ui_last_focused_hand(uint64_t for_el_id) {
 
 ///////////////////////////////////////////
 
-void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float& finger_offset, button_state_& button_state, button_state_& focus_state) {
-	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, finger_offset, button_state, focus_state);
+void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, int32_t* out_opt_hand) {
+	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, out_finger_offset, out_button_state, out_focus_state, out_opt_hand);
 }
 
 ///////////////////////////////////////////
 
-void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, float button_depth, float button_activation_depth, float &finger_offset, button_state_ &button_state, button_state_ &focus_state) {
-	button_state = button_state_inactive;
-	focus_state  = button_state_inactive;
-	int32_t hand = -1;
+void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
+	out_button_state = button_state_inactive;
+	out_focus_state  = button_state_inactive;
+	int32_t hand     = -1;
 
 	// Button interaction focus is detected out in front of the button to 
 	// prevent 'reverse' or 'side' presses where the finger comes from the
@@ -1341,24 +1341,26 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, 
 	ui_box_interaction_1h_poke(id,
 		activation_start, activation_size,
 		box_start,        box_size,
-		&focus_state, &hand);
-
+		&out_focus_state, &hand);
 
 	// If a hand is interacting, adjust the button surface accordingly
-	finger_offset = button_depth;
-	if (focus_state & button_state_active) {
-		finger_offset = -(skui_hand[hand].finger.z+skui_finger_radius) - window_relative_pos.z;
-		bool pressed  = finger_offset < button_activation_depth;
-		button_state  = ui_active_set(hand, id, pressed);
-		finger_offset = fminf(fmaxf(2*mm2m, finger_offset), button_depth);
-	} else if (focus_state & button_state_just_inactive) {
-		button_state = ui_active_set(hand, id, false);
+	out_finger_offset = button_depth;
+	if (out_focus_state & button_state_active) {
+		out_finger_offset = -(skui_hand[hand].finger.z+skui_finger_radius) - window_relative_pos.z;
+		bool pressed  = out_finger_offset < button_activation_depth;
+		out_button_state  = ui_active_set(hand, id, pressed);
+		out_finger_offset = fminf(fmaxf(2*mm2m, out_finger_offset), button_depth);
+	} else if (out_focus_state & button_state_just_inactive) {
+		out_button_state = ui_active_set(hand, id, false);
 	}
 	
-	if (button_state & button_state_just_active)
+	if (out_button_state & button_state_just_active)
 		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
-	else if (button_state & button_state_just_inactive)
+	else if (out_button_state & button_state_just_inactive)
 		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+
+	if (out_opt_hand)
+		*out_opt_hand = hand;
 }
 
 ///////////////////////////////////////////
@@ -1884,17 +1886,16 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	vec3     box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
 
 	// Find out if the user is trying to focus this UI element
-	button_state_ focus;
+	float         finger_offset;
 	int32_t       hand;
-	ui_box_interaction_1h_poke(id_hash, final_pos, box_size, final_pos, box_size, &focus, &hand);
-	button_state_ state = ui_active_set(hand, id_hash, focus & button_state_active);
+	button_state_ state, focus;
+	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &hand);
 
 	if (state & button_state_just_active) {
 		platform_keyboard_show(true,type);
 		skui_input_blink  = time_totalf_unscaled();
 		skui_input_target = id_hash;
 		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
-		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
 	}
 
 	if (state & button_state_just_active)
@@ -1910,7 +1911,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		for (int32_t i = 0; i < handed_max; i++) {
 			if (ui_is_hand_preoccupied((handed_)i, id_hash, false)) {
 				const ui_hand_t& h = skui_hand[i];
-				if (h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) { 
+				if (h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) {
 					skui_input_target = 0;
 					platform_keyboard_show(false, type);
 				}

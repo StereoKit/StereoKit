@@ -1397,7 +1397,13 @@ namespace StereoKit
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState);
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out _);
+
+		/// <inheritdoc cref="ButtonBehavior(Vec3, Vec2, string, out float, out BtnState, out BtnState)"/>
+		/// <param name="hand">Id of the hand that interacted with the button.
+		/// This will be -1 if no interaction has occurred.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out hand);
 
 		/// <summary>This is the core functionality of StereoKit's buttons,
 		/// without any of the rendering parts! If you're trying to create your
@@ -1422,7 +1428,9 @@ namespace StereoKit
 		/// state for the button.</param>
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
-		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState);
+		/// <param name="hand">Id of the hand that interacted with the button.
+		/// This will be -1 if no interaction has occurred.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
+			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, out hand);
 	}
 }
