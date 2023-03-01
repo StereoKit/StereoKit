@@ -171,8 +171,8 @@ SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_
 
 SK_API void     ui_label             (const char*     text, bool32_t use_padding sk_default(true));
 SK_API void     ui_label_16          (const char16_t* text, bool32_t use_padding sk_default(true));
-SK_API void     ui_label_sz          (const char*     text, vec2 size);
-SK_API void     ui_label_sz_16       (const char16_t* text, vec2 size);
+SK_API void     ui_label_sz          (const char*     text, vec2 size, bool32_t use_padding sk_default(true));
+SK_API void     ui_label_sz_16       (const char16_t* text, vec2 size, bool32_t use_padding sk_default(true));
 SK_API void     ui_text              (const char*     text, text_align_ text_align sk_default(text_align_top_left));
 SK_API void     ui_text_16           (const char16_t* text, text_align_ text_align sk_default(text_align_top_left));
 SK_API void     ui_text_sz           (const char*     text, text_align_ text_align, text_fit_ fit, vec2 size);

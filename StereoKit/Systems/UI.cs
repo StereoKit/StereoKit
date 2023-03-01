@@ -359,8 +359,8 @@ namespace StereoKit
 		/// <param name="usePadding">Should padding be included for
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
-		public static void Label (string text, bool usePadding = true) 
-			=> NativeAPI.ui_label_16(text, usePadding);
+		public static void Label (string text, bool usePadding = true)
+			=> NativeAPI.ui_label_16(text, usePadding?1:0);
 
 		/// <summary>Adds some text to the layout, but this overload allows you
 		/// can specify the size that you want it to use. Text uses the UI's
@@ -372,8 +372,11 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static void Label(string text, Vec2 size)
-			=> NativeAPI.ui_label_sz_16(text, size);
+		/// <param name="usePadding">Should padding be included for
+		/// positioning this text? Sometimes you just want un-padded text!
+		/// </param>
+		public static void Label(string text, Vec2 size, bool usePadding = true)
+			=> NativeAPI.ui_label_sz_16(text, size, usePadding?1:0);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap

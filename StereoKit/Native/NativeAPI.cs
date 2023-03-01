@@ -686,8 +686,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_vslider_at_f64_16 (string id,   ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_hseparator      ();
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16        (string text, bool use_padding);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16     (string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16        (string text, int use_padding);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16     (string text, Vec2 size, int use_padding);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_16         (string text, TextAlign text_align);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_text_sz_16      (string text, TextAlign text_align, TextFit fit, Vec2 size);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image           (IntPtr sprite_image, Vec2 size);

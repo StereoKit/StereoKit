@@ -123,6 +123,9 @@ ui_theme_color_t skui_palette[ui_color_max];
 const float skui_anim_duration  = 0.2f;
 const float skui_anim_overshoot = 10;
 
+
+const float skui_pressed_depth = 0.4f;
+
 ///////////////////////////////////////////
 
 // Interaction
@@ -1473,15 +1476,18 @@ void ui_hseparator() {
 ///////////////////////////////////////////
 
 template<typename C>
-void ui_label_sz_g(const C *text, vec2 size) {
+void ui_label_sz_g(const C *text, vec2 size, bool32_t use_padding) {
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	ui_text_at(text, text_align_center_left, text_fit_squeeze, final_pos - vec3{0,0,skui_settings.depth/2}, final_size);
+	vec2 padding = use_padding
+		? vec2{ skui_settings.padding, skui_settings.padding }
+		: vec2{ 0, skui_settings.padding };
+	ui_text_at(text, text_align_center_left, text_fit_squeeze, final_pos - vec3{ padding.x, 0, skui_settings.depth/2}, vec2{final_size.x-padding.x*2, final_size.y});
 }
-void ui_label_sz   (const char     *text, vec2 size) { ui_label_sz_g<char    >(text, size); }
-void ui_label_sz_16(const char16_t *text, vec2 size) { ui_label_sz_g<char16_t>(text, size); }
+void ui_label_sz   (const char     *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char    >(text, size, use_padding); }
+void ui_label_sz_16(const char16_t *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char16_t>(text, size, use_padding); }
 
 ///////////////////////////////////////////
 
@@ -1728,7 +1734,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	if (state & button_state_just_active) {
 		pressed = pressed ? false : true;
 	}
-	finger_offset = pressed ? fminf(skui_settings.backplate_depth * skui_settings.depth + mm2m, finger_offset) : finger_offset;
+	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
 	float activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
@@ -2094,7 +2100,7 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 
 	// Find sizes of bar elements
 	float bar_height = fmaxf(skui_settings.padding, size.y / 6.f);
-	float bar_depth  = bar_height * skui_settings.backplate_depth - mm2m;
+	float bar_depth  = bar_height * skui_pressed_depth - mm2m;
 	float bar_y      = -size.y / 2.f + bar_height / 2.f;
 
 	// If the left or right side of the bar is too small, then we'll just draw
@@ -2298,7 +2304,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	if (confirm_method == ui_confirm_push) {
 		ui_draw_el(ui_vis_slider_push,
 			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
-			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_settings.backplate_depth+mm2m)},
+			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_pressed_depth +mm2m)},
 			ui_color_primary, color_blend);
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		ui_draw_el(ui_vis_slider_pinch,
@@ -2453,7 +2459,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 				if (ptr->tracked & button_state_active) {
 					vec3  at;
-					ray_t far_ray = { hierarchy_to_local_point    (ptr->ray.pos), 
+					ray_t far_ray = { hierarchy_to_local_point    (ptr->ray.pos),
 									  hierarchy_to_local_direction(ptr->ray.dir)};
 					if (bounds_ray_intersect(box, far_ray, &at)) {
 						vec3  window_world = hierarchy_to_world_point(at);
