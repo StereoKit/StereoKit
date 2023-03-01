@@ -2196,18 +2196,23 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			sustain_start,    sustain_size,
 			&focus_state, &hand);
 
-		// Push confirm is like having a regular button on the slider, and it
-		// only slides when that button is pressed.
-		if (focus_state & button_state_active) {
+		// Here, we allow for pressing or pinching of the button to activate
+		// the slider!
+		if (hand != -1) {
+			const hand_t* h     = input_hand((handed_)hand);
+			button_state_ pinch = h->pinch_state;
+
 			finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
 			bool pressed  = finger_offset < button_depth / 2;
-			button_state  = ui_active_set(hand, id, pressed);
-			finger_offset = fminf(fmaxf(2*mm2m, finger_offset), button_depth);
-		} else if (focus_state & button_state_just_inactive) {
-			button_state = ui_active_set(hand, id, false);
-		}
-		if (hand != -1)
+			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
+
+			button_state = ui_active_set(hand, id, pinch & button_state_active || pressed);
+			// Focus can get lost if the user is dragging outside the box, so set
+			// it to focused if it's still active.
+			focus_state = ui_focus_set(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
+
 			finger_at = vertical ? skui_hand[hand].finger.y : skui_hand[hand].finger.x;
+		}
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		vec3 activation_start;
 		vec3 activation_size;
