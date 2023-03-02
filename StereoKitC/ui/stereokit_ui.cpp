@@ -2417,6 +2417,9 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	float color_blend = 0;
 
 	skui_last_element = id;
+	if (skui_preserve_keyboard_stack.last()) {
+		skui_preserve_keyboard_ids_write->add(id);
+	}
 
 	matrix to_local = *hierarchy_to_local();
 	matrix to_world = *hierarchy_to_world();
@@ -2426,60 +2429,52 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
 		return false;
 
-	if (skui_preserve_keyboard_stack.last()) {
-		skui_preserve_keyboard_ids_write->add(id);
-	}
-
-	vec3     box_start = handle.center;//   +vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding };
-	vec3     box_size  = handle.dimensions + vec3{ skui_settings.padding, skui_settings.padding, skui_settings.padding } *2;
-	bounds_t box       = bounds_t{box_start, box_size};
-
-	static vec3 start_2h_pos = {};
-	static quat start_2h_rot = { quat_identity };
+	static vec3 start_2h_pos        = {};
+	static quat start_2h_rot        = { quat_identity };
 	static vec3 start_2h_handle_pos = {};
 	static quat start_2h_handle_rot = { quat_identity };
 	static vec3 start_handle_pos[2] = {};
-	static quat start_handle_rot[2] = { quat_identity,quat_identity };
+	static quat start_handle_rot[2] = { quat_identity, quat_identity };
 	static vec3 start_palm_pos  [2] = {};
-	static quat start_palm_rot  [2] = { quat_identity,quat_identity };
+	static quat start_palm_rot  [2] = { quat_identity, quat_identity };
 
 	if (!skui_interact_enabled) {
 		ui_focus_set(-1, id, false, 0);
 	} else {
-		vec3 finger_pos[2] = {};
+		vec3     local_pt[2] = {};
+		bounds_t box         = bounds_t {
+			handle.center,
+			handle.dimensions + vec3_one * skui_settings.padding * 2 };
+
 		for (int32_t i = 0; i < handed_max; i++) {
 			// Skip this if something else has some focus!
 			if (ui_is_hand_preoccupied((handed_)i, id, false))
 				continue;
 
 			const hand_t *hand = input_hand((handed_)i);
-			finger_pos[i] = matrix_transform_pt( to_local, hand->pinch_pt );
+			local_pt[i] = matrix_transform_pt(to_local, hand->pinch_pt);
 
 			// Check to see if the handle has focus
-			vec3  from_pt             = finger_pos[i];
+			vec3  from_pt             = local_pt[i];
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
 			if (skui_hand[i].tracked  && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
-				if (ptr->tracked & button_state_active) {
-					vec3  at;
-					ray_t far_ray = { hierarchy_to_local_point    (ptr->ray.pos),
-									  hierarchy_to_local_direction(ptr->ray.dir)};
-					if (bounds_ray_intersect(box, far_ray, &at)) {
-						vec3  window_world = hierarchy_to_world_point(at);
-						float curr_mag     = vec3_magnitude_sq(input_head_pose_world.position - window_world);
-						float hand_dist    = vec3_magnitude_sq(hand->palm.position - window_world);
+				vec3       at;
+				if (ptr->tracked & button_state_active && bounds_ray_intersect(box, hierarchy_to_local_ray(ptr->ray), &at)) {
+					vec3  window_world = hierarchy_to_world_point(at);
+					float curr_mag     = vec3_magnitude_sq(input_head_pose_world.position - window_world);
+					float hand_dist    = vec3_magnitude_sq(hand->palm.position - window_world);
 					
-						if (curr_mag < 0.65f * 0.65f || hand_dist < 0.2f * 0.2f) {
-							// Reset id to zero if we found a window that's within touching distance
-							ui_focus_set(i, 0, true, 10);
-							skui_hand[i].ray_discard = true;
-						} else {
-							has_hand_attention  = true;
-							hand_attention_dist = curr_mag + 10;
-						}
+					if (curr_mag < 0.65f * 0.65f || hand_dist < 0.2f * 0.2f) {
+						// Reset id to zero if we found a window that's within touching distance
+						ui_focus_set(i, 0, true, 10);
+						skui_hand[i].ray_discard = true;
+					} else {
+						has_hand_attention  = true;
+						hand_attention_dist = curr_mag + 10;
 					}
 				}
 			}
@@ -2520,8 +2515,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 					// a two handed interaction from the second hand.
 					if (skui_hand[0].active_prev == id && skui_hand[1].active_prev == id || (skui_hand[0].active == id && skui_hand[1].active == id)) {
 						if (i == 1) {
-							dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
-							dest_pos = finger_pos[0]*0.5f + finger_pos[1]*0.5f;
+							dest_rot = quat_lookat(local_pt[0], local_pt[1]);
+							dest_pos = local_pt[0]*0.5f + local_pt[1]*0.5f;
 
 							if ((input_hand(handed_left)->pinch_state & button_state_just_active) || (input_hand(handed_right)->pinch_state & button_state_just_active)) {
 								start_2h_pos = dest_pos;
@@ -2532,11 +2527,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 							switch (move_type) {
 							case ui_move_exact: {
-								dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
+								dest_rot = quat_lookat(local_pt[0], local_pt[1]);
 								dest_rot = quat_difference(start_2h_rot, dest_rot);
 							} break;
 							case ui_move_face_user: {
-								dest_rot = quat_lookat(finger_pos[0], finger_pos[1]);
+								dest_rot = quat_lookat(local_pt[0], local_pt[1]);
 								dest_rot = quat_difference(start_2h_rot, dest_rot);
 							} break;
 							case ui_move_pos_only: {
@@ -2549,8 +2544,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							}
 
 							hierarchy_set_enabled(false);
-							line_add(matrix_transform_pt(to_world, finger_pos[0]), matrix_transform_pt(to_world, dest_pos), { 255,255,255,0 }, {255,255,255,128}, 0.001f);
-							line_add(matrix_transform_pt(to_world, dest_pos), matrix_transform_pt(to_world, finger_pos[1]), { 255,255,255,128 }, {255,255,255,0}, 0.001f);
+							line_add(matrix_transform_pt(to_world, local_pt[0]), matrix_transform_pt(to_world, dest_pos), { 255,255,255,0 }, {255,255,255,128}, 0.001f);
+							line_add(matrix_transform_pt(to_world, dest_pos), matrix_transform_pt(to_world, local_pt[1]), { 255,255,255,128 }, {255,255,255,0}, 0.001f);
 							hierarchy_set_enabled(true);
 
 							dest_pos = dest_pos + dest_rot * (start_2h_handle_pos - start_2h_pos);
@@ -2581,11 +2576,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						} break;
 						case ui_move_face_user: {
 							vec3  local_head   = matrix_transform_pt(to_local, input_head()->position);
-							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { finger_pos[i].x, finger_pos[i].z }) / 0.1f);
+							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt[i].x, local_pt[i].z }) / 0.1f);
 							vec3  look_from    = {
-								math_lerp(finger_pos[i].x, movement.position.x, head_xz_lerp),
-								finger_pos[i].y,
-								math_lerp(finger_pos[i].z, movement.position.z, head_xz_lerp) };
+								math_lerp(local_pt[i].x, movement.position.x, head_xz_lerp),
+								local_pt[i].y,
+								math_lerp(local_pt[i].z, movement.position.z, head_xz_lerp) };
 							
 							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
@@ -2599,7 +2594,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
 						}
 
-						vec3 curr_pos = finger_pos[i];
+						vec3 curr_pos = local_pt[i];
 						dest_pos = curr_pos + dest_rot * (start_handle_pos[i] - start_palm_pos[i]);
 						if (move_type == ui_move_none) dest_pos = movement.position;
 
@@ -2620,7 +2615,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 	if (draw) {
 		ui_draw_el(ui_vis_handle,
-			handle.center+handle.dimensions/2, 
+			handle.center+handle.dimensions/2,
 			handle.dimensions,
 			ui_color_primary,
 			color_blend);

@@ -1551,10 +1551,12 @@ SK_API vec3          hierarchy_to_local_point    (const sk_ref(vec3  ) world_pt)
 SK_API vec3          hierarchy_to_local_direction(const sk_ref(vec3  ) world_dir);
 SK_API quat          hierarchy_to_local_rotation (const sk_ref(quat  ) world_orientation);
 SK_API pose_t        hierarchy_to_local_pose     (const sk_ref(pose_t) world_pose);
+SK_API ray_t         hierarchy_to_local_ray      (ray_t world_ray);
 SK_API vec3          hierarchy_to_world_point    (const sk_ref(vec3  ) local_pt);
 SK_API vec3          hierarchy_to_world_direction(const sk_ref(vec3  ) local_dir);
 SK_API quat          hierarchy_to_world_rotation (const sk_ref(quat  ) local_orientation);
 SK_API pose_t        hierarchy_to_world_pose     (const sk_ref(pose_t) local_pose);
+SK_API ray_t         hierarchy_to_world_ray      (ray_t local_ray);
 
 ///////////////////////////////////////////
 
