@@ -2425,7 +2425,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	matrix to_world = *hierarchy_to_world();
 	ui_push_surface(movement);
 
-	// If the handle is scale of zero, we don't actually want to draw or interact with it
+	// If the handle is scale of zero, we don't actually want to draw or
+	// interact with it
 	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
 		return false;
 
@@ -2438,11 +2439,12 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	static vec3 start_palm_pos  [2] = {};
 	static quat start_palm_rot  [2] = { quat_identity, quat_identity };
 
-	if (!skui_interact_enabled) {
+	if (!skui_interact_enabled || move_type == ui_move_none) {
 		ui_focus_set(-1, id, false, 0);
 	} else {
-		vec3     local_pt[2] = {};
-		bounds_t box         = bounds_t {
+		vec3          local_pt      [2] = {};
+		button_state_ interact_state[2] = {};
+		bounds_t      box               = bounds_t {
 			handle.center,
 			handle.dimensions + vec3_one * skui_settings.padding * 2 };
 
@@ -2458,30 +2460,31 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			vec3  from_pt             = local_pt[i];
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
-			if (skui_hand[i].tracked  && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
+			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       at;
 				if (ptr->tracked & button_state_active && bounds_ray_intersect(box, hierarchy_to_local_ray(ptr->ray), &at)) {
 					vec3  window_world = hierarchy_to_world_point(at);
-					float curr_mag     = vec3_magnitude_sq(input_head_pose_world.position - window_world);
-					float hand_dist    = vec3_magnitude_sq(hand->palm.position - window_world);
-					
-					if (curr_mag < 0.65f * 0.65f || hand_dist < 0.2f * 0.2f) {
-						// Reset id to zero if we found a window that's within touching distance
+					float head_dist    = vec3_distance_sq(input_head_pose_world.position, window_world);
+					float hand_dist    = vec3_distance_sq(hand->palm.position,            window_world);
+
+					if (head_dist < 0.65f * 0.65f || hand_dist < 0.2f * 0.2f) {
+						// Reset id to zero if we found a window that's within
+						// touching distance
 						ui_focus_set(i, 0, true, 10);
 						skui_hand[i].ray_discard = true;
 					} else {
 						has_hand_attention  = true;
-						hand_attention_dist = curr_mag + 10;
+						hand_attention_dist = head_dist + 10;
 					}
 				}
 			}
 			button_state_ focused = ui_focus_set(i, id, has_hand_attention, hand_attention_dist);
 
-			// If this is the second frame this window has focus for, and it's at
-			// a distance, then draw a line to it.
+			// If this is the second frame this window has focus for, and it's
+			// at a distance, then draw a line to it.
 			if (hand_attention_dist && focused & button_state_active && !(focused & button_state_just_active)) {
 				pointer_t *ptr   = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       start = hierarchy_to_local_point(ptr->ray.pos);
@@ -2492,7 +2495,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			// This waits until the window has been focused for a frame,
 			// otherwise the handle UI may try and use a frame of focus to move
 			// around a bit.
-			if (skui_hand[i].focused_prev ==  id) {
+			if (skui_hand[i].focused_prev == id) {
 				color_blend = 1;
 				if (hand->pinch_state & button_state_just_active) {
 					sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
@@ -2505,14 +2508,14 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				}
 				if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 					result = true;
-					skui_hand[i].active = id;
+					skui_hand[i].active  = id;
 					skui_hand[i].focused = id;
 
-					quat dest_rot;
+					quat dest_rot = quat_identity;
 					vec3 dest_pos;
 
-					// If both hands are interacting with this handle, then we do
-					// a two handed interaction from the second hand.
+					// If both hands are interacting with this handle, then we
+					// do a two handed interaction from the second hand.
 					if (skui_hand[0].active_prev == id && skui_hand[1].active_prev == id || (skui_hand[0].active == id && skui_hand[1].active == id)) {
 						if (i == 1) {
 							dest_rot = quat_lookat(local_pt[0], local_pt[1]);
@@ -2534,34 +2537,25 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 								dest_rot = quat_lookat(local_pt[0], local_pt[1]);
 								dest_rot = quat_difference(start_2h_rot, dest_rot);
 							} break;
-							case ui_move_pos_only: {
-								dest_rot = quat_identity;
-							} break;
-							case ui_move_none: {
-								dest_rot = quat_identity;
-							} break;
-							default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
+							case ui_move_pos_only: { dest_rot = quat_identity; } break;
+							default:               { dest_rot = quat_identity; log_err("Unimplemented move type!"); } break;
 							}
 
 							hierarchy_set_enabled(false);
-							line_add(matrix_transform_pt(to_world, local_pt[0]), matrix_transform_pt(to_world, dest_pos), { 255,255,255,0 }, {255,255,255,128}, 0.001f);
-							line_add(matrix_transform_pt(to_world, dest_pos), matrix_transform_pt(to_world, local_pt[1]), { 255,255,255,128 }, {255,255,255,0}, 0.001f);
+							line_add(matrix_transform_pt(to_world, local_pt[0]), matrix_transform_pt(to_world, dest_pos),    { 255,255,255,0   }, {255,255,255,128}, 0.001f);
+							line_add(matrix_transform_pt(to_world, dest_pos),    matrix_transform_pt(to_world, local_pt[1]), { 255,255,255,128 }, {255,255,255,0  }, 0.001f);
 							hierarchy_set_enabled(true);
 
 							dest_pos = dest_pos + dest_rot * (start_2h_handle_pos - start_2h_pos);
 							dest_rot = start_2h_handle_rot * dest_rot;
-							if (move_type == ui_move_none) {
-								dest_pos = movement.position;
-								dest_rot = movement.orientation;
-							}
 
 							movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 							movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
 						}
 
-						// If one of the hands just let go, reset their starting
-						// locations so the handle doesn't 'pop' when switching
-						// back to 1-handed interaction.
+						// If one of the hands just let go, reset their
+						// starting locations so the handle doesn't 'pop' when
+						// switching back to 1-handed interaction.
 						if ((input_hand(handed_left)->pinch_state & button_state_just_inactive) || (input_hand(handed_right)->pinch_state & button_state_just_inactive)) {
 							start_handle_pos[i] = movement.position;
 							start_handle_rot[i] = movement.orientation;
@@ -2585,18 +2579,12 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 						} break;
-						case ui_move_pos_only: {
-							dest_rot = quat_identity;
-						} break;
-						case ui_move_none: {
-							dest_rot = quat_identity;
-						} break;
-						default: dest_rot = quat_identity; log_err("Unimplemented move type!"); break;
+						case ui_move_pos_only: { dest_rot = quat_identity; } break;
+						default:               { dest_rot = quat_identity; log_err("Unimplemented move type!"); } break;
 						}
 
 						vec3 curr_pos = local_pt[i];
 						dest_pos = curr_pos + dest_rot * (start_handle_pos[i] - start_palm_pos[i]);
-						if (move_type == ui_move_none) dest_pos = movement.position;
 
 						movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
 						movement.orientation = quat_slerp(movement.orientation, start_handle_rot[i] * dest_rot, 0.4f); 
