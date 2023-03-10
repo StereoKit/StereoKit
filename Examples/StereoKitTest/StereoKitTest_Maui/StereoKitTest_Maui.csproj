@@ -8,6 +8,7 @@
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>disable</ImplicitUsings>
+		<WindowsPackageType>None</WindowsPackageType>
 		<NoWarn>1587</NoWarn>
 
 		<!-- Display name -->
@@ -81,5 +82,10 @@
 	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
 		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)../../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
 		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../../bin/distribute/bin/linux/x64/release/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+	</Target>
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	  <Exec Command="cd $(SolutionDir)
+xmake f -p android -a arm64-v8a -y -m $(ConfigurationName) --oculus-openxr=y
+xmake" />
 	</Target>
 </Project>

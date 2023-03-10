@@ -29,6 +29,8 @@ namespace StereoKit.Framework
 		internal List<HandRadialLayer> childLayers = new List<HandRadialLayer>();
 		internal HandMenuItem          layerItem;
 
+		/// <summary>The layer above this layer, will be null if this is the
+		/// root layer.</summary>
 		public HandRadialLayer Parent => parent;
 
 		/// <summary>Creates a menu layer, this overload will calculate a

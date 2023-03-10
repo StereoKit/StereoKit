@@ -13,25 +13,25 @@ class DemoDevice : ITest
 	public void Update() {
 		UI.WindowBegin("Device Info", ref windowPose);
 
-		Vec2 labelSize = V.XY(0.06f,0);
+		Vec2 labelSize = V.XY(0.08f,0);
 		UI.Label("Name", labelSize); UI.SameLine();
-		UI.Label(Device.Name);
+		UI.Label(Device.Name, false);
 		UI.Label("GPU", labelSize); UI.SameLine();
-		UI.Label(Device.GPU);
+		UI.Label(Device.GPU, false);
 		UI.Label("Tracking", labelSize); UI.SameLine();
-		UI.Label(Device.Tracking.ToString());
+		UI.Label(Device.Tracking.ToString(), false);
 		UI.Label("Display", labelSize); UI.SameLine();
-		UI.Label(Device.DisplayType.ToString());
+		UI.Label(Device.DisplayType.ToString(), false);
 		UI.Label("Blend", labelSize); UI.SameLine();
-		UI.Label(Device.DisplayBlend.ToString());
+		UI.Label(Device.DisplayBlend.ToString(), false);
 
 		UI.HSeparator();
 
-		labelSize = V.XY(0.12f, 0);
+		labelSize = V.XY(0.14f, 0);
 		UI.Label("Has Eye Gaze", labelSize); UI.SameLine();
-		UI.Label(Device.HasEyeGaze.ToString());
+		UI.Label(Device.HasEyeGaze.ToString(), false);
 		UI.Label("Has Hand Tracking", labelSize); UI.SameLine();
-		UI.Label(Device.HasHandTracking.ToString());
+		UI.Label(Device.HasHandTracking.ToString(), false);
 
 		UI.WindowEnd();
 		Demo.ShowSummary(title, description);

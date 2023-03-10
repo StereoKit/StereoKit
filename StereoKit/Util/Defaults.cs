@@ -195,9 +195,27 @@
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
+		/// <summary>This is a 64x64 image of a filled hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
 		public static Sprite SpriteRadioOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
 		public static Sprite SpriteRadioOff { get; private set; }
+		/// <summary>This is a 64x64 image of a filled rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
 		public static Sprite SpriteToggleOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
 		public static Sprite SpriteToggleOff { get; private set; }
 
 		/// <summary>The default font used by StereoKit's text. This varies

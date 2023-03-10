@@ -129,8 +129,8 @@ xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\..\bin\distribute\bin\UWP\$(Platform)
       <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\..\Tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP
-"$(ProjectDir)..\..\Tools\skshaderc.exe" -O3 -h -z -t xge -i "$(ProjectDir)..\..\Tools\include" "$(ProjectDir)..\..\StereoKitC\shaders_builtin\*.hlsl"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP
+"$(ProjectDir)..\..\tools\skshaderc.exe" -O3 -h -z -t xge -i "$(ProjectDir)..\..\tools\include" "$(ProjectDir)..\..\StereoKitC\shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>

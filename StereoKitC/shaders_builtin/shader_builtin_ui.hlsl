@@ -35,7 +35,6 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	o.uv         = input.uv;
 	o.color      = ui_tint == true ? lerp(color, sk_inst[id].color, input.color.a) : (color * input.color * sk_inst[id].color);
-	o.color      = o.color * sk_inst[id].color.a;
 	o.color.rgb *= Lighting(o.normal);
 
 	return o;

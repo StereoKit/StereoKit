@@ -44,7 +44,7 @@
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../Tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../Tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
 				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
@@ -62,11 +62,9 @@
 	</Target>
 
 	<!-- Ensure shader binaries get properly included in the build process -->
-	<Target Name="StereoKit_ShaderCopy" BeforeTargets="StereoKit_ContentCopy" AfterTargets="StereoKit_ShaderBuild">
+	<Target Name="StereoKit_ShaderCopy" BeforeTargets="StereoKit_ContentCopy" DependsOnTargets="StereoKit_ShaderBuild">
 		<ItemGroup>
-			<SKContent Condition="'%(SKShader.RelFile)'!=''" Include="$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks">
-				<Link>%(SKShader.RelativeName)</Link>
-			</SKContent>
+			<SKContent Include="$(IntermediateOutputPath)$(SKAssetDestination)/**/*.sks" />
 		</ItemGroup>
 	</Target>
 </Project>

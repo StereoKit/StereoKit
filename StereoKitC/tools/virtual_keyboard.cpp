@@ -42,7 +42,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		keyboard_pose = ui_popup_pose({0,-0.1f,0});
+		keyboard_pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	}
 
 	// Reset the keyboard to its default state

@@ -18,7 +18,7 @@
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.7-preview.8</Version>
+		<Version>0.3.7-preview.9</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -38,7 +38,7 @@
 
 	<!-- Files and DLLs that are needed for the NuGet package -->
 	<ItemGroup>
-		<None    Pack="true" Visible="false" Include="..\Tools\img\StereoKitLogo64.png" PackagePath="images\" />
+		<None    Pack="true" Visible="false" Include="..\tools\img\StereoKitLogo64.png" PackagePath="images\" />
 
 		<Content Pack="true" Visible="false" Include="..\bin\netstandard2.0\StereoKit.pdb" PackagePath="lib\netstandard2.0\" />
 		
@@ -59,17 +59,17 @@
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\StereoKitC.sym"   PackagePath="runtimes\linux-arm64\native\" />
 
 		<!-- UWP DLLs -->
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-x64\native\" />
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\native\" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\native\" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\native\" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-arm\native\" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\native\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\" />
+		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\" />
 
 		<!-- Shader compile tools -->
-		<Content Pack="true" Visible="false" Include="..\Tools\skshaderc.exe" PackagePath="tools\" />
-		<Content Pack="true" Visible="false" Include="..\Tools\skshaderc"     PackagePath="tools\" />
-		<Content Pack="true" Visible="false" Include="..\Tools\include\*.*"   PackagePath="tools\include\" />
+		<Content Pack="true" Visible="false" Include="..\tools\skshaderc.exe" PackagePath="tools\" />
+		<Content Pack="true" Visible="false" Include="..\tools\skshaderc"     PackagePath="tools\" />
+		<Content Pack="true" Visible="false" Include="..\tools\include\*.*"   PackagePath="tools\include\" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in
 		the user's project. -->

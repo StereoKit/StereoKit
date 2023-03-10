@@ -331,6 +331,78 @@ bool openxr_init() {
 		return false;
 	}
 
+	// The Session gets created before checking capabilities! In certain
+	// contexts, such as Holographic Remoting, the system won't know about its
+	// capabilities until the session is ready. Holographic Remoting knows to
+	// make the session ready immediately after xrCreateSession, so we don't
+	// need to wait all the way until the OpenXR message loop tells us.
+	// See here for more info on Holographic Remoting's lifecycle:
+	// https://learn.microsoft.com/en-us/windows/mixed-reality/develop/native/holographic-remoting-create-remote-openxr?source=recommendations#connect-to-the-device
+
+	// Before we call xrCreateSession, lets fire an event for anyone that needs
+	// to set things up!
+	for (int32_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
+		xr_callbacks_pre_session_create[i].callback(xr_callbacks_pre_session_create[i].context);
+	}
+	xr_callbacks_pre_session_create.free();
+
+	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be
+	// called before xrCreateSession
+	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
+		"xrGetGraphicsRequirementsKHR failed [%s]");
+	void *luid = nullptr;
+#ifdef XR_USE_GRAPHICS_API_D3D11
+	luid = (void *)&requirement.adapterLuid;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	log_diagf("OpenXR requires GLES v%d.%d.%d - v%d.%d.%d",
+		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
+		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
+#endif
+
+	// A session represents this application's desire to display things! This
+	// is where we hook up our graphics API. This does not start the session,
+	// for that, you'll need a call to xrBeginSession, which we do in
+	// openxr_poll_events
+	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
+	skg_platform_data_t platform = skg_get_platform_data();
+#if defined(XR_USE_PLATFORM_XLIB)
+	gfx_binding.xDisplay    = (Display*  )platform._x_display;
+	gfx_binding.visualid    = *(uint32_t *)platform._visual_id;
+	gfx_binding.glxFBConfig = (GLXFBConfig)platform._glx_fb_config;
+	gfx_binding.glxDrawable = *((GLXDrawable*)platform._glx_drawable);
+	gfx_binding.glxContext  = (GLXContext )platform._glx_context;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL)
+	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
+	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
+#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
+	#if defined (SK_OS_LINUX)
+		gfx_binding.getProcAddress = eglGetProcAddress;
+	#endif
+	gfx_binding.display = (EGLDisplay)platform._egl_display;
+	gfx_binding.config  = (EGLConfig )platform._egl_config;
+	gfx_binding.context = (EGLContext)platform._egl_context;
+#elif defined(XR_USE_GRAPHICS_API_D3D11)
+	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
+#endif
+	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
+	session_info.next     = &gfx_binding;
+	session_info.systemId = xr_system_id;
+	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
+	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
+		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
+		gfx_binding.next = &overlay_info;
+		sk_info.overlay_app = true;
+	}
+	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
+
+	// Unable to start a session, may not have an MR device attached or ready
+	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
+		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
+		openxr_cleanup();
+		return false;
+	}
+
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
@@ -409,7 +481,8 @@ bool openxr_init() {
 	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
 	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
 
-	// Check scene understanding features
+	// Check scene understanding features, these may be dependant on Session
+	// creation in the context of Holographic Remoting.
 	if (xr_ext_available.MSFT_scene_understanding) {
 		uint32_t count = 0;
 		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
@@ -423,67 +496,6 @@ bool openxr_init() {
 	}
 	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
-
-	// Before we call xrCreateSession, lets fire an event for anyone that needs
-	// to set things up!
-	for (int32_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
-		xr_callbacks_pre_session_create[i].callback(xr_callbacks_pre_session_create[i].context);
-	}
-	xr_callbacks_pre_session_create.free();
-
-	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
-	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
-	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
-		"xrGetGraphicsRequirementsKHR failed [%s]");
-	void *luid = nullptr;
-#ifdef XR_USE_GRAPHICS_API_D3D11
-	luid = (void *)&requirement.adapterLuid;
-#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-	log_diagf("OpenXR requires GLES v%d.%d.%d - v%d.%d.%d",
-		XR_VERSION_MAJOR(requirement.minApiVersionSupported), XR_VERSION_MINOR(requirement.minApiVersionSupported), XR_VERSION_PATCH(requirement.minApiVersionSupported),
-		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
-#endif
-
-	// A session represents this application's desire to display things! This is where we hook up our graphics API.
-	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
-	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
-	skg_platform_data_t platform = skg_get_platform_data();
-#if defined(XR_USE_PLATFORM_XLIB)
-	gfx_binding.xDisplay    = (Display*  )platform._x_display;
-	gfx_binding.visualid    = *(uint32_t *)platform._visual_id;
-	gfx_binding.glxFBConfig = (GLXFBConfig)platform._glx_fb_config;
-	gfx_binding.glxDrawable = *((GLXDrawable*)platform._glx_drawable);
-	gfx_binding.glxContext  = (GLXContext )platform._glx_context;
-#elif defined(XR_USE_GRAPHICS_API_OPENGL)
-	gfx_binding.hDC   = (HDC  )platform._gl_hdc;
-	gfx_binding.hGLRC = (HGLRC)platform._gl_hrc;
-#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-	#if defined (SK_OS_LINUX)
-		gfx_binding.getProcAddress = eglGetProcAddress;
-	#endif
-	gfx_binding.display = (EGLDisplay)platform._egl_display;
-	gfx_binding.config  = (EGLConfig )platform._egl_config;
-	gfx_binding.context = (EGLContext)platform._egl_context;
-#elif defined(XR_USE_GRAPHICS_API_D3D11)
-	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
-#endif
-	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
-	session_info.next     = &gfx_binding;
-	session_info.systemId = xr_system_id;
-	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
-	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
-		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
-		gfx_binding.next = &overlay_info;
-		sk_info.overlay_app = true;
-	}
-	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
-
-	// Unable to start a session, may not have an MR device attached or ready
-	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
-		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
-		openxr_cleanup();
-		return false;
-	}
 
 	// Create reference spaces! So we can find stuff relative to them :)
 	xr_refspace = openxr_preferred_space();
@@ -666,7 +678,7 @@ void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
-	xr_compositor_layers_clear();
+	xr_extension_structs_clear();
 	render_clear();
 }
 

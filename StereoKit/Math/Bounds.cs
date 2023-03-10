@@ -159,7 +159,7 @@ namespace StereoKit
 			dimensions *= scale;
 		}
 
-		/// <summary>Scale the bounds.  
+		/// <summary>Scale the bounds.
 		/// It will scale the center as well as	the dimensions!
 		/// Returns a new Bounds.</summary>
 		/// <remarks>This is equivalent to using the * operator: bounds * scale</remarks>
@@ -172,12 +172,28 @@ namespace StereoKit
 		[Pure]
 		public Bounds Scaled(Vec3 scale) => this * scale;
 
+		/// <summary>This operator will create a new Bounds that has been
+		/// properly scaled up by the float. This does affect the center
+		/// position of the Bounds.</summary>
+		/// <param name="a">The source Bounds.</param>
+		/// <param name="b">A scalar multiplier for the Bounds.</param>
+		/// <returns>A new Bounds that has been scaled.</returns>
 		[Pure]
 		public static Bounds operator *(Bounds a, float b) => new Bounds(a.center * b, a.dimensions * b);
 
+		/// <summary>This operator will create a new Bounds that has been
+		/// properly scaled up by the Vec3. This does affect the center
+		/// position of the Bounds.</summary>
+		/// <param name="a">The source Bounds.</param>
+		/// <param name="b">A Vec3 multiplier for the Bounds.</param>
+		/// <returns>A new Bounds that has been scaled.</returns>
 		[Pure]
 		public static Bounds operator *(Bounds a, Vec3 b) => new Bounds(a.center * b, a.dimensions * b);
 
+		/// <summary>Creates a text description of the Bounds, in the format of
+		/// "[center:X dimensions:X]"</summary>
+		/// <returns>A text description of the Bounds, in the format of
+		/// "[center:X dimensions:X]"</returns>
 		public override string ToString()
 			=> string.Format("[center:{0} dimensions:{1}]", center, dimensions);
 	}

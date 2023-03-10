@@ -160,5 +160,14 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
 		}
+
+		/// <inheritdoc cref="Default.SpriteRadioOn" />
+		public static Sprite RadioOn => Default.SpriteRadioOn;
+		/// <inheritdoc cref="Default.SpriteRadioOff" />
+		public static Sprite RadioOff => Default.SpriteRadioOff;
+		/// <inheritdoc cref="Default.SpriteToggleOn" />
+		public static Sprite ToggleOn => Default.SpriteToggleOn;
+		/// <inheritdoc cref="Default.SpriteToggleOff" />
+		public static Sprite ToggleOff => Default.SpriteToggleOff;
 	}
 }

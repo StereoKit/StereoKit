@@ -109,8 +109,19 @@ namespace StereoKit
 			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces) > 0;
 
 
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Ray.Intersect overload with a Ray output.")]
+		/// <summary>Checks the intersection point of this ray and a Mesh
+		/// with collision data stored on the CPU. A mesh without collision
+		/// data will always return false. Ray must be in model space,
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the point
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="mesh">A mesh containing collision data on the CPU.
+		/// You can check this with Mesh.KeepData.</param>
+		/// <param name="modelSpaceAt">The intersection point of the ray and
+		/// the mesh, if an intersection occurs. This is in model space, and
+		/// must be transformed back into world space later.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
 			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back) > 0;

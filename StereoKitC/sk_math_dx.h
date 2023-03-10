@@ -79,4 +79,10 @@ inline vec3 matrix_mul_point(const DirectX::XMMATRIX &transform, vec3 point){
 
 ///////////////////////////////////////////
 
+inline DirectX::XMVECTOR matrix_mul_pointx(const DirectX::XMMATRIX& transform, vec3 point) {
+	return XMVector3Transform(math_vec3_to_fast(point), transform);
+}
+
+///////////////////////////////////////////
+
 } // namespace sk

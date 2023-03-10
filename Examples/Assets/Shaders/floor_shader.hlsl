@@ -1,7 +1,5 @@
 #include <stereokit.hlsli>
 
-//--name = app/floor
-
 //--color:color = 0,0,0,1
 float4 color;
 //--radius      = 5,10,0,0

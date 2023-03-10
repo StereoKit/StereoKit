@@ -183,43 +183,39 @@ void model_recalculate_bounds(model_t model) {
 ///////////////////////////////////////////
 
 void model_recalculate_bounds_exact(model_t model) {
-    model->bounds_dirty = false;
-    if (model->visuals.count <= 0) {
-        model->bounds = {};
-        return;
-    }
+	model->bounds_dirty = false;
+	if (model->visuals.count <= 0) {
+		model->bounds = {};
+		return;
+	}
 
-    // Get an initial size
-    vec3 first_corner = model->visuals[0].mesh->verts[0].pos;
-    vec3 minf = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
-    vec3 maxf;
-    XMVECTOR min = XMLoadFloat3((XMFLOAT3*)&minf);
-    XMVECTOR max = XMLoadFloat3((XMFLOAT3*)&minf);
+	// Get an initial size
+	vec3     first_corner = model->visuals[0].mesh->verts[0].pos;
+	vec3     minf         = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+	XMVECTOR min          = XMLoadFloat3((XMFLOAT3*)&minf);
+	XMVECTOR max          = XMLoadFloat3((XMFLOAT3*)&minf);
 
-    // Use all the transformed vertices, and factor them in!
-    for (int32_t m = 0; m < model->visuals.count; m += 1) {
-        const matrix& transform_model = model->visuals[m].transform_model;
-        const mesh_t& mesh = model->visuals[m].mesh;
-        const vert_t* verts = mesh->verts;
-        uint32_t n = mesh->vert_count;
-        if (n == 0) continue;
-        for (int32_t i = 0; i < n; i += 1) {
-            vec3 pt = matrix_transform_pt(transform_model, verts[i].pos);
-            XMVECTOR xpt = XMLoadFloat3((XMFLOAT3*)&pt);
+	// Use all the transformed vertices, and factor them in!
+	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&model->visuals[m].transform_model.row);
+		const mesh_t  mesh            = model->visuals[m].mesh;
+		const vert_t* verts           = mesh->verts;
 
-            min = XMVectorMin(min, xpt);
-            max = XMVectorMax(max, xpt);
-        }
-    }
+		for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
+			XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
 
-    // Final bounds value
+			min = XMVectorMin(min, pt);
+			max = XMVectorMax(max, pt);
+		}
+	}
 
-    XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
-    XMVECTOR dimensions = XMVectorSubtract   (max, min);
+	// Final bounds value
 
-    bounds_t result;
-    XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
-    XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract   (max, min);
+
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
 }
 
 ///////////////////////////////////////////

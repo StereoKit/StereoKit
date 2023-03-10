@@ -249,6 +249,14 @@ namespace StereoKit
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
+		/// <summary>This array accessor allows for easy access to the shader's
+		/// parameters by their string name! If this is a more standard SK
+		/// shader that adheres to naming conventions, you may be able to use
+		/// a `MatParamName` for better safety.</summary>
+		/// <param name="parameterName">The string name of the parameter listed
+		/// in the shader! This may vary from shader to shader, especially if
+		/// using custom shaders.</param>
+		/// <returns>This is a set only.</returns>
 		public object this[string parameterName] { set { 
 			switch(value)
 			{
@@ -265,6 +273,13 @@ namespace StereoKit
 				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
 			}
 		} }
+		/// <summary>This array accessor allows for easy access to the more
+		/// common shader parameters using a predefined enum! Note that these
+		/// parameters are still not guaranteed to exist.</summary>
+		/// <param name="parameter">The name of the parameter listed in the
+		/// shader! The presence of this parameter may vary from shader to
+		/// shader, especially if using custom shaders.</param>
+		/// <returns>This is a set only.</returns>
 		public object this[MatParamName parameter] { set { this[MaterialParamString(parameter)] = value; } }
 		private string MaterialParamString(MatParamName parameter)
 		{

@@ -92,7 +92,12 @@ namespace StereoKit
 		/// unnecessary swapchain object. Default value is 1.</summary>
 		public int renderMultisample;
 
+		/// <summary>A pointer to the JNI's JavaVM structure, only used for
+		/// Android applications. This is optional, even for Android.</summary>
 		public IntPtr androidJavaVm;
+		/// <summary>A JNI reference to an android.content.Context associated
+		/// with the application, only used for Android applications. Xamarin
+		/// and Maui apps will use the MainActivity.Handle for this.</summary>
 		public IntPtr androidActivity;
 
 		/// <summary>Name of the application, this shows up an the top of the
@@ -293,13 +298,29 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A pretty straightforward 2D rectangle, defined by the top left
+	/// corner of the rectangle, and its width/height.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Rect
 	{
+		/// <summary>The X axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float x;
+		/// <summary>The Y axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float y;
+		/// <summary>The width of the rectangle.</summary>
 		public float width;
+		/// <summary>The height of the rectangle.</summary>
 		public float height;
+		/// <summary>Create a 2D rectangle, defined by the top left  corner of
+		/// the rectangle, and its width/height.</summary>
+		/// <param name="x">The X axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="y">The Y axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="width">The width of the rectangle.</param>
+		/// <param name="height">The height of the rectangle.</param>
 		public Rect(float x, float y, float width, float height)
 		{
 			this.x = x;
@@ -321,11 +342,11 @@ namespace StereoKit
 		/// <summary>The vertex color for the line at this position.</summary>
 		public Color32 color;
 
-		
-	}
-
-	public partial struct LinePoint
-	{
+		/// <summary>This creates and fills out a LinePoint.</summary>
+		/// <param name="point">The location of this point on a line.</param>
+		/// <param name="color">The Color for this line vertex.</param>
+		/// <param name="thickness">The thickness of the line at this vertex.
+		/// </param>
 		public LinePoint(Vec3 point, Color32 color, float thickness)
 		{
 			this.pt = point;
@@ -354,6 +375,12 @@ namespace StereoKit
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
 	}
 
+	/// <summary>The callback type for Input events.</summary>
+	/// <param name="source">What type of device is the source of the provided
+	/// pointer</param>
+	/// <param name="type">What type of event was this.</param>
+	/// <param name="pointer">Where was the input device at the time of the
+	/// input event?</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
 
@@ -413,6 +440,9 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A callback for when log events occur.</summary>
+	/// <param name="level">The level of severity of this log event.</param>
+	/// <param name="text">The text contents of the log event.</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
 
@@ -425,6 +455,10 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
+	/// <summary>A callback that generates a sound wave at a particular point
+	/// in time.</summary>
+	/// <param name="time">The time along the wavelength.</param>
+	/// <returns>The waveform position on the sound at this time.</returns>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
@@ -497,11 +531,11 @@ namespace StereoKit
 		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
-		Empty = 0,
+		Empty = 1 << 0,
 		/// <summary>Flag to include a head on the window.</summary>
-		Head = 1 << 0,
+		Head = 1 << 1,
 		/// <summary>Flag to include a body on the window.</summary>
-		Body = 1 << 1,
+		Body = 1 << 2,
 	}
 
 	/// <summary>Used with StereoKit's UI, and determines the interaction
@@ -623,6 +657,19 @@ namespace StereoKit
 		Max,
 	}
 
+	/// <summary>Indicates the state of a UI theme color.</summary>
+	public enum UIColorState
+	{
+		/// <summary>The UI element is in its normal resting state.</summary>
+		Normal,
+		/// <summary>The UI element has been activated fully by some type of
+		/// interaction.</summary>
+		Active,
+		/// <summary>The UI element is currently disabled, and cannot be used.
+		/// </summary>
+		Disabled
+	}
+
 	/// <summary>This specifies a particular padding mode for certain UI
 	/// elements, such as the UI.Panel! This describes where padding is applied
 	/// and how it affects the layout of elements.</summary>
@@ -661,11 +708,25 @@ namespace StereoKit
 		CenterNoText,
 	}
 
+	/// <summary>This describes how a layout should be cut up! Used with
+	/// `UI.LayoutPushCut`.</summary>
 	public enum UICut
 	{
+		/// <summary>This cuts a chunk from the left side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
 		Left,
+		/// <summary>This cuts a chunk from the right side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the X axis!</summary>
 		Right,
+		/// <summary>This cuts a chunk from the top side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
 		Top,
+		/// <summary>This cuts a chunk from the bottom side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
 	}
 }

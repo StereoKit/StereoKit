@@ -288,7 +288,9 @@ void ui_panel_begin(ui_pad_ padding) {
 	data.padding = padding;
 
 	skui_panel_stack.add( data );
-	layout->max_x = layout->offset_initial.x;
+	layout->max_x             = layout->offset_initial.x;
+	layout->offset_initial.z -= skui_settings.depth * 0.1f;
+	layout->offset.z          = layout->offset_initial.z;
 
 	if (padding == ui_pad_inside) {
 		float gutter = skui_settings.gutter / 2;
@@ -313,7 +315,9 @@ void ui_panel_end() {
 
 	ui_panel_at(start.at, {fabsf(curr.x-start.at.x), start.at.y-curr.y}, start.padding);
 
-	layout->max_x = fminf(layout->max_x, start.max_x);
+	layout->max_x            = fminf(layout->max_x, start.max_x);
+	layout->offset_initial.z = start.at.z;
+	layout->offset.z         = start.at.z;
 	if (start.padding == ui_pad_inside) {
 		layout->offset_initial.x += gutter;
 		layout->offset_initial.y += gutter;
