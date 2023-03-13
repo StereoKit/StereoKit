@@ -68,7 +68,7 @@ namespace StereoKit
 
 	///////////////////////////////////////////
 
-	public static string BuildExpression(CppExpression expression, string removePrefix)
+	public static string BuildExpression(CppExpression expression, string removePrefix, string namePrefix)
 	{
 		string result = "";
 		CppExpression exp = expression;
@@ -83,14 +83,17 @@ namespace StereoKit
 					string name   = ((CppRawExpression)curr).Text;
 					int    prefix = 0;
 					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
-					result = CSTypes.SnakeToCamel(name, true, prefix) + result;
+					result = namePrefix + CSTypes.SnakeToCamel(name, true, prefix) + result;
 				} break;
 				case CppExpressionKind.UnaryOperator: {
 					CppExpression arg = ((CppUnaryExpression)curr).Arguments[0];
 					string name = arg.ToString();
-					int    prefix = 0;
-					if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
-					result = ((CppUnaryExpression)curr).Operator + CSTypes.SnakeToCamel(name, true, prefix) + result;
+					if (arg.Kind == CppExpressionKind.DeclRef) {
+						int prefix = 0;
+						if (name.StartsWith(removePrefix)) prefix = removePrefix.Length;
+						name = namePrefix + CSTypes.SnakeToCamel(name, true, prefix);
+					}
+					result = ((CppUnaryExpression)curr).Operator + name + result;
 				} break;
 				default: result = curr + result; break;
 			}
@@ -155,7 +158,7 @@ namespace StereoKit
 		{
 			if (i.Comment         != null) enumText.AppendLine(BuildCommentSummary(i.Comment, indentPrefix+1));
 			if (i.ValueExpression == null) enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length)},");
-			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BuildExpression(i.ValueExpression, e.Name)},");
+			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BuildExpression(i.ValueExpression, e.Name, "")},");
 		}
 		enumText.AppendLine($"{prefix}}}");
 	}

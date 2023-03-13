@@ -7,7 +7,7 @@ uint8_t u8
 uint16_t u16
 uint32_t u32
 uint64_t u64
-bool32_t i32
+bool32_t bool32
 float f32
 double f64
 void void
@@ -67,14 +67,32 @@ button_state_ BtnState
 color128 Color
 
 sk SK
-sk_settings_t SKSettings
 vind_t u32
-vert_t Vertex
+vert_t Vert
 model_node_id i32
-sh_light_t SHLight
 openxr_handle_t u64
 asset_t anyopaque
 
 size_t usize
 
+# reserved names
 align alignment
+type typ
+
+pose_matrix toMatrix
+pose_matrix_out toMatrixOut
+tex_asset_state getAssetState
+input_pointer getPointer
+input_pointer_count getPointerCount
+input_hand getHand
+input_controller getController
+input_key getKey
+input_mouse getMouse
+input_head getHead
+input_eyes getEyes
+mic_device_name getDeviceName
+mic_device_count getDeviceCount
+time_scale setScale
+sound_duration getDuration
+text_size sizeOf
+text_size_16 sizeOf16

@@ -37,14 +37,12 @@ class ZigModule
 				CppFunctionType fnParam  = (CppFunctionType)((CppPointerType)p.Type).ElementType;
 				CppParameter    subParam = fnParam.Parameters[i];
 				paramType = SKType.Create(subParam.Type, subParam.Name);
-				//if (paramType.fixedArray != 0) parameters += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
-				parameters += $"{subParam.Name}: {BindZig.TypeToName(paramType)}";
+				parameters += $"{NameOverrides.Check(subParam.Name)}: {BindZig.TypeToName(paramType)}";
 			}
 			else
 			{
 				paramType = SKType.Create(p.Type, p.Name);
-				//if (paramType.fixedArray != 0) parameters += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
-				parameters += $"{p.Name}: {BindZig.TypeToName(paramType)}";
+				parameters += $"{NameOverrides.Check(p.Name)}: {BindZig.TypeToName(paramType)}";
 			}
 			i += 1;
 			first = false;
@@ -72,7 +70,6 @@ class ZigModule
 				CppFunctionType fnParam  = (CppFunctionType)((CppPointerType)p.Type).ElementType;
 				CppParameter    subParam = fnParam.Parameters[i];
 				paramType = SKType.Create(subParam.Type, subParam.Name);
-				//if (paramType.fixedArray != 0) parameters += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				if (first && string.Compare(BindZig.TypeToName(paramType), module, true) == 0 && string.Compare(p.Name, module, true) == 0)
 					parameters += $"self: *{module}";
 				else parameters += $"{CSTypes.SnakeToCamel(subParam.Name, false, 0)}: {BindZig.TypeToName(paramType)}";
@@ -80,7 +77,6 @@ class ZigModule
 			else
 			{
 				paramType = SKType.Create(p.Type, p.Name);
-				//if (paramType.fixedArray != 0) parameters += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				if (first && string.Compare(BindZig.TypeToName(paramType), module, true) == 0 && string.Compare(p.Name, module, true) == 0)
 					parameters += $"self: *{module}";
 				else parameters += $"{CSTypes.SnakeToCamel(p.Name, false, 0)}: {BindZig.TypeToName(paramType)}";
@@ -90,7 +86,7 @@ class ZigModule
 			first = false;
 		}
 
-		string fnName = CSTypes.SnakeToCamel(fn.Name, true, module.Length);
+		string fnName = CSTypes.SnakeToCamelFn(fn.Name, false, module.Length);
 		string line = $"pub fn {fnName,-20}({parameters,-40}) {BindZig.TypeToName(returnType),-20} {{ ";
 
 		if (fn.ReturnType.TypeKind != CppTypeKind.Primitive || ((CppPrimitiveType)fn.ReturnType).Kind != CppPrimitiveKind.Void)
@@ -114,17 +110,15 @@ class ZigModule
 				CppFunctionType fnParam  = (CppFunctionType)((CppPointerType)p.Type).ElementType;
 				CppParameter    subParam = fnParam.Parameters[i];
 				paramType = SKType.Create(subParam.Type, subParam.Name);
-				//if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				if (first && string.Compare(BindZig.TypeToName(paramType), module, true) == 0 && string.Compare(subParam.Name, module, true) == 0)
-					line += "self._inst";
+					line += "self._inst.?";
 				else line += $"{CSTypes.SnakeToCamel(subParam.Name, false, 0)}";
 			}
 			else
 			{
 				paramType = SKType.Create(p.Type, p.Name);
-				//if (paramType.fixedArray != 0) line += $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {paramType.fixedArray})] ";
 				if (first && string.Compare(BindZig.TypeToName(paramType), module, true) == 0 && string.Compare(p.Name, module, true) == 0)
-					line += "self._inst";
+					line += "self._inst.?";
 				else line += $"{CSTypes.SnakeToCamel(p.Name, false, 0)}";
 			}
 			if (paramType.special != SKSpecialType.None) textType = paramType.special;
@@ -142,14 +136,19 @@ class ZigModule
 		builder.Append($"\r\n{indent}///////////////////////////////////////////\r\n\r\n");
 		builder.AppendLine($"{indent}pub const {CSTypes.SnakeToCamel(module, true, 0)} = extern struct {{");
 		if (isAsset)
-			builder.AppendLine($"{indent}    _inst: *opaque{{}},\r\n");
+			builder.AppendLine($"{indent}    _inst: ?*opaque{{}} = null,\r\n");
 		for (int i = 0; i < fields.Count; i++)
 		{
 			builder.Append(indent);
 			builder.Append("    ");
 
 			SKType paramType = SKType.Create(fields[i].Type, fields[i].Name);
-			builder.AppendLine($"{CSTypes.SnakeToCamel(fields[i].Name, false, 0)+":",-20} {BindZig.TypeToName(paramType)} = {{}},");
+			string defaultVal = 
+				 paramType.source.TypeKind == CppTypeKind.Primitive || 
+				(paramType.source.TypeKind == CppTypeKind.Typedef && ((CppTypedef)paramType.source).ElementType.TypeKind == CppTypeKind.Primitive) 
+				? "0"
+				: ".{}";
+			builder.AppendLine($"{CSTypes.SnakeToCamel(fields[i].Name, false, 0)+":",-20} {BindZig.TypeToName(paramType)} = {defaultVal},");
 		}
 		if (fields.Count != 0 && functions.Count != 0) builder.AppendLine();
 		for (int i = 0; i < functions.Count; i++)

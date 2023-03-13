@@ -17,6 +17,9 @@ class BindZig
 // directly :) Instead, modify the header file, and run the StereoKitAPIGen
 // project.
 
+const bool32 = i32;
+const TextStyle = u32;
+
 ");
 
 		var ns = ast.Namespaces[0];
@@ -29,9 +32,6 @@ class BindZig
 		Dictionary<string, string> delegates = new Dictionary<string, string>();
 		foreach (var m in ParseModules(ast))
 			m.BuildRawModule(text, delegates, "");
-
-		//foreach (string d in delegates.Values)
-		//	if (!string.IsNullOrEmpty(d)) text.AppendLine($"\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
 
 		File.WriteAllText(Path.Combine(outputFolder, "StereoKit.zig"), text.ToString());
 		Console.WriteLine(text.ToString());
@@ -55,12 +55,13 @@ class BindZig
 
 		if (e.Comment != null) enumText.AppendLine(BuildCommentSummary(e.Comment, indentPrefix));
 		//if (flags)             enumText.AppendLine($"{prefix}[Flags]");
-		enumText.AppendLine($"{prefix}pub const {CSTypes.SnakeToCamel(e.Name, true, 0)} = enum(c_int) {{");
+		string enumName = CSTypes.SnakeToCamel(e.Name, true, 0);
+		enumText.AppendLine($"{prefix}pub const {enumName} = enum(c_int) {{");
 		foreach (var i in e.Items)
 		{
 			if (i.Comment         != null) enumText.AppendLine(BuildCommentSummary(i.Comment, indentPrefix+1));
 			if (i.ValueExpression == null) enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length)},");
-			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BindCSharp.BuildExpression(i.ValueExpression, e.Name)},");
+			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BindCSharp.BuildExpression(i.ValueExpression, e.Name, enumName+".")},");
 		}
 		enumText.AppendLine($"{prefix}}};");
 	}
@@ -96,9 +97,9 @@ class BindZig
 
 		foreach (var f in ast.Functions)
 		{
-			string[]  words = f.Name.Split('_');
-			ZigModule mod   = null;
-			string modName = CSTypes.SnakeToCamel(words[0], true, 0);
+			string[]  words   = f.Name.Split('_');
+			ZigModule mod     = null;
+			string    modName = CSTypes.SnakeToCamel(words[0], true, 0);
 			if (!modules.TryGetValue(modName, out mod))
 			{
 				mod = new ZigModule(modName);
@@ -130,10 +131,23 @@ class BindZig
 	public static string TypeToName(SKType type)
 	{
 		if      (type.special == SKSpecialType.VoidPtr) return "?*anyopaque";
-		else if (type.special == SKSpecialType.Utf8   ) return type.constant ? "[*]const u8" : "[*]u8";
-		else if (type.special == SKSpecialType.Ascii  ) return type.constant ? "[*]const u8" : "[*]u8";
+		else if (type.special == SKSpecialType.Utf8   ) return type.constant ? "[*]const u8"  : "[*]u8";
+		else if (type.special == SKSpecialType.Utf16  ) return type.constant ? "[*]const u16" : "[*]u16";
+		else if (type.special == SKSpecialType.Ascii  ) return type.constant ? "[*]const u8"  : "[*]u8";
+		else if (type.special == SKSpecialType.FnPtr  ) {
+			string result = "*const fn(";
+			CppFunctionType fn = type.source as CppFunctionType;
+			for (int i = 0; i < fn.Parameters.Count; i++)
+			{
+				SKType t = SKType.Create(fn.Parameters[i].Type, fn.Parameters[i].Name);
+				result += $"{NameOverrides.Check(fn.Parameters[i].Name)}: {TypeToName(t)}";
+				if (i < fn.Parameters.Count-1) result += ", "; 
+			}
+			SKType r = SKType.Create(fn.ReturnType, "");
+			return result+ ") callconv(.C) " + TypeToName(r);
+		}
 		else return type.array
-			? $"[*]{(type.constant?"const ":"")}{CSTypes.SnakeToCamel(type.raw, true, 0)}"
-			: (type.constant?"const ":"")+CSTypes.SnakeToCamel(type.raw, true, 0);
+			? $"[{(type.fixedArray != 0? type.fixedArray:"*")}]{(type.constant?"const ":"")}{CSTypes.SnakeToCamel(type.raw, true, 0)}"
+			: (type.constant?"":"")+(type.pointer > 0 ? "*":"")+CSTypes.SnakeToCamel(type.raw, true, 0);
 	}
 }

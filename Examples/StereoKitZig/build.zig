@@ -2,14 +2,15 @@ const std = @import("std");
 
 pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
-    const mode   = b.standardReleaseOptions();
+    const mode = b.standardReleaseOptions();
 
     var exe = b.addExecutable("main", "main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
 
-    exe.addIncludeDir("../../bin/distribute/include");
-    exe.addLibPath   ("../../bin/distribute/bin/Win32/x64/Release");
+    exe.addIncludePath("../../bin/distribute/include");
+    exe.addLibraryPath("../../bin/distribute/bin/Win32/x64/Release");
+    exe.addPackagePath("StereoKit", "StereoKit/StereoKit.zig");
 
     b.installFile("../../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll", "bin/StereoKitC.dll");
 

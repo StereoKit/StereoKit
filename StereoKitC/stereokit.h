@@ -634,7 +634,7 @@ SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
 SK_API bounds_t bounds_grow_to_fit_pt  (bounds_t bounds, vec3 pt);
 SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_box_transform sk_default(nullptr));
-SK_API bounds_t bounds_transform       (bounds_t bounds, matrix transform);
+SK_API bounds_t bounds_transform       (bounds_t bounds, matrix transform_by);
 SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
 ///////////////////////////////////////////
@@ -693,7 +693,7 @@ typedef struct gradient_key_t {
 } gradient_key_t;
 
 SK_API gradient_t gradient_create     ();
-SK_API gradient_t gradient_create_keys(const gradient_key_t *in_arr_keys, int32_t count);
+SK_API gradient_t gradient_create_keys(const gradient_key_t *in_arr_keys, int32_t key_count);
 SK_API void       gradient_add        (gradient_t gradient, color128 color_linear, float position);
 SK_API void       gradient_set        (gradient_t gradient, int32_t index, color128 color_linear, float position);
 SK_API void       gradient_remove     (gradient_t gradient, int32_t index);

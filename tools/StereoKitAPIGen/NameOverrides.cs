@@ -41,4 +41,7 @@ static class NameOverrides
 
 	public static bool TryGet(string name, out string outName)
 		=> overrides.TryGetValue(name, out outName);
+
+	public static string Check(string name) =>
+		overrides.TryGetValue(name, out string outName) ? outName : name;
 }

@@ -17,6 +17,7 @@ enum SKSpecialType
 	Ascii,
 	Utf8,
 	Utf16,
+	FnPtr,
 }
 
 ///////////////////////////////////////////
@@ -29,7 +30,9 @@ struct SKType
 	public bool            array;
 	public int             fixedArray;
 	public bool            constant;
-	public SKType(string raw, SKTypeDirection dir = SKTypeDirection.None, bool array = false, bool constant = false, SKSpecialType special = SKSpecialType.None, int fixedArray = 0) { this.fixedArray = fixedArray; this.special = special; this.raw = raw; this.direction = dir; this.array = array; this.constant = constant; }
+	public int             pointer;
+	public CppType         source;
+	public SKType(CppType source, string raw, SKTypeDirection dir = SKTypeDirection.None, bool array = false, bool constant = false, SKSpecialType special = SKSpecialType.None, int fixedArray = 0, int pointer = 0) { this.source = source; this.fixedArray = fixedArray; this.special = special; this.raw = raw; this.direction = dir; this.array = array; this.constant = constant; this.pointer = pointer; }
 
 	public static SKType Create(CppType type, string varName, bool constant = false, int pointer = 0, int arraySize = 0)
 	{
@@ -60,8 +63,14 @@ struct SKType
 		else if (varName.EndsWith("_utf8" )) special = SKSpecialType.Utf8;
 		else if (varName.EndsWith("_utf16")) special = SKSpecialType.Utf16;
 		else if (varName.EndsWith("_ascii")) special = SKSpecialType.Ascii;
+		else if (type is CppPrimitiveType && ((CppPrimitiveType)type).Kind == CppPrimitiveKind.Char) special = SKSpecialType.Utf8;
 
-		return new SKType(type.GetDisplayName(), dir, array, constant, special, arraySize);
+		if (type.TypeKind == CppTypeKind.Function)
+		{
+			special = SKSpecialType.FnPtr;
+		}
+
+		return new SKType(type, type.GetDisplayName(), dir, array, constant, special, arraySize, pointer);
 	}
 }
 
