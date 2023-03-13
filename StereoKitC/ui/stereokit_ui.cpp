@@ -2412,7 +2412,7 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 
 ///////////////////////////////////////////
 
-bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
+bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
 	bool  result      = false;
 	float color_blend = 0;
 
@@ -2421,13 +2421,15 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 		skui_preserve_keyboard_ids_write->add(id);
 	}
 
-	matrix to_local = *hierarchy_to_local();
-	matrix to_world = *hierarchy_to_world();
-	ui_push_surface(movement);
+	matrix to_handle_parent_local       = *hierarchy_to_local();
+	matrix handle_parent_local_to_world = *hierarchy_to_world();
+	ui_push_surface(handle_pose);
 
 	// If the handle is scale of zero, we don't actually want to draw or
 	// interact with it
-	if (handle.dimensions.x == 0 || handle.dimensions.y == 0 || handle.dimensions.z == 0)
+	if (handle_bounds.dimensions.x == 0 ||
+		handle_bounds.dimensions.y == 0 ||
+		handle_bounds.dimensions.z == 0)
 		return false;
 
 	static vec3 start_2h_pos        = {};
@@ -2444,9 +2446,6 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 	} else {
 		vec3          local_pt      [2] = {};
 		button_state_ interact_state[2] = {};
-		bounds_t      box               = bounds_t {
-			handle.center,
-			handle.dimensions + vec3_one * skui_settings.padding * 2 };
 
 		for (int32_t i = 0; i < handed_max; i++) {
 			// Skip this if something else has some focus!
@@ -2454,18 +2453,25 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 				continue;
 
 			const hand_t *hand = input_hand((handed_)i);
-			local_pt[i] = matrix_transform_pt(to_local, hand->pinch_pt);
+			local_pt[i] = matrix_transform_pt(to_handle_parent_local, hand->pinch_pt);
+			if (allowed_gestures == ui_gesture_pinch)
+				interact_state[i] = hand->pinch_state;
+			else if (allowed_gestures == ui_gesture_grip)
+				interact_state[i] = hand->grip_state;
+			else if (allowed_gestures == ui_gesture_pinch_grip)
+				interact_state[i] = button_make_state(skui_hand[i].active_prev == id ||
+					(hand->grip_state == button_state_active) || (hand->pinch_state == button_state_active),
+					(hand->grip_state &  button_state_active) || (hand->pinch_state &  button_state_active));
 
 			// Check to see if the handle has focus
-			vec3  from_pt             = local_pt[i];
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
-			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, box)) {
+			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, handle_bounds)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && skui_enable_far_interact) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       at;
-				if (ptr->tracked & button_state_active && bounds_ray_intersect(box, hierarchy_to_local_ray(ptr->ray), &at)) {
+				if (ptr->tracked & button_state_active && bounds_ray_intersect(handle_bounds, hierarchy_to_local_ray(ptr->ray), &at)) {
 					vec3  window_world = hierarchy_to_world_point(at);
 					float head_dist    = vec3_distance_sq(input_head_pose_world.position, window_world);
 					float hand_dist    = vec3_distance_sq(hand->palm.position,            window_world);
@@ -2485,11 +2491,12 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 			// If this is the second frame this window has focus for, and it's
 			// at a distance, then draw a line to it.
+			vec3 from_pt = local_pt[i];
 			if (hand_attention_dist && focused & button_state_active && !(focused & button_state_just_active)) {
 				pointer_t *ptr   = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       start = hierarchy_to_local_point(ptr->ray.pos);
 				line_add(start*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
-				from_pt = matrix_transform_pt(to_local, hierarchy_to_world_point(vec3_zero));
+				from_pt = matrix_transform_pt(to_handle_parent_local, hierarchy_to_world_point(vec3_zero));
 			}
 
 			// This waits until the window has been focused for a frame,
@@ -2497,14 +2504,14 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 			// around a bit.
 			if (skui_hand[i].focused_prev == id) {
 				color_blend = 1;
-				if (hand->pinch_state & button_state_just_active) {
+				if (interact_state[i] & button_state_just_active) {
 					sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
 
 					skui_hand[i].active = id;
-					start_handle_pos[i] = movement.position;
-					start_handle_rot[i] = movement.orientation;
+					start_handle_pos[i] = handle_pose.position;
+					start_handle_rot[i] = handle_pose.orientation;
 					start_palm_pos  [i] = from_pt;
-					start_palm_rot  [i] = matrix_transform_quat( to_local, hand->palm.orientation);
+					start_palm_rot  [i] = matrix_transform_quat(to_handle_parent_local, hand->palm.orientation);
 				}
 				if (skui_hand[i].active_prev == id || skui_hand[i].active == id) {
 					result = true;
@@ -2524,8 +2531,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							if ((input_hand(handed_left)->pinch_state & button_state_just_active) || (input_hand(handed_right)->pinch_state & button_state_just_active)) {
 								start_2h_pos = dest_pos;
 								start_2h_rot = dest_rot;
-								start_2h_handle_pos = movement.position;
-								start_2h_handle_rot = movement.orientation;
+								start_2h_handle_pos = handle_pose.position;
+								start_2h_handle_rot = handle_pose.orientation;
 							}
 
 							switch (move_type) {
@@ -2542,41 +2549,41 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 							}
 
 							hierarchy_set_enabled(false);
-							line_add(matrix_transform_pt(to_world, local_pt[0]), matrix_transform_pt(to_world, dest_pos),    { 255,255,255,0   }, {255,255,255,128}, 0.001f);
-							line_add(matrix_transform_pt(to_world, dest_pos),    matrix_transform_pt(to_world, local_pt[1]), { 255,255,255,128 }, {255,255,255,0  }, 0.001f);
+							line_add(matrix_transform_pt(handle_parent_local_to_world, local_pt[0]), matrix_transform_pt(handle_parent_local_to_world, dest_pos),    { 255,255,255,0   }, {255,255,255,128}, 0.001f);
+							line_add(matrix_transform_pt(handle_parent_local_to_world, dest_pos),    matrix_transform_pt(handle_parent_local_to_world, local_pt[1]), { 255,255,255,128 }, {255,255,255,0  }, 0.001f);
 							hierarchy_set_enabled(true);
 
 							dest_pos = dest_pos + dest_rot * (start_2h_handle_pos - start_2h_pos);
 							dest_rot = start_2h_handle_rot * dest_rot;
 
-							movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
-							movement.orientation = quat_slerp(movement.orientation, dest_rot, 0.4f);
+							handle_pose.position    = vec3_lerp (handle_pose.position,    dest_pos, 0.6f);
+							handle_pose.orientation = quat_slerp(handle_pose.orientation, dest_rot, 0.4f);
 						}
 
 						// If one of the hands just let go, reset their
 						// starting locations so the handle doesn't 'pop' when
 						// switching back to 1-handed interaction.
 						if ((input_hand(handed_left)->pinch_state & button_state_just_inactive) || (input_hand(handed_right)->pinch_state & button_state_just_inactive)) {
-							start_handle_pos[i] = movement.position;
-							start_handle_rot[i] = movement.orientation;
+							start_handle_pos[i] = handle_pose.position;
+							start_handle_rot[i] = handle_pose.orientation;
 							start_palm_pos  [i] = from_pt;
-							start_palm_rot  [i] = matrix_transform_quat( to_local, hand->palm.orientation);
+							start_palm_rot  [i] = matrix_transform_quat( to_handle_parent_local, hand->palm.orientation);
 						}
 					} else {
 						switch (move_type) {
 						case ui_move_exact: {
-							dest_rot = matrix_transform_quat(to_local, hand->palm.orientation);
+							dest_rot = matrix_transform_quat(to_handle_parent_local, hand->palm.orientation);
 							dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 						} break;
 						case ui_move_face_user: {
-							vec3  local_head   = matrix_transform_pt(to_local, input_head()->position);
+							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
 							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt[i].x, local_pt[i].z }) / 0.1f);
 							vec3  look_from    = {
-								math_lerp(local_pt[i].x, movement.position.x, head_xz_lerp),
+								math_lerp(local_pt[i].x, handle_pose.position.x, head_xz_lerp),
 								local_pt[i].y,
-								math_lerp(local_pt[i].z, movement.position.z, head_xz_lerp) };
+								math_lerp(local_pt[i].z, handle_pose.position.z, head_xz_lerp) };
 							
-							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_local, vec3_up));
+							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_handle_parent_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
 						} break;
 						case ui_move_pos_only: { dest_rot = quat_identity; } break;
@@ -2586,16 +2593,16 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 						vec3 curr_pos = local_pt[i];
 						dest_pos = curr_pos + dest_rot * (start_handle_pos[i] - start_palm_pos[i]);
 
-						movement.position    = vec3_lerp (movement.position,    dest_pos, 0.6f);
-						movement.orientation = quat_slerp(movement.orientation, start_handle_rot[i] * dest_rot, 0.4f); 
+						handle_pose.position    = vec3_lerp (handle_pose.position,    dest_pos, 0.6f);
+						handle_pose.orientation = quat_slerp(handle_pose.orientation, start_handle_rot[i] * dest_rot, 0.4f); 
 					}
 
-					if (hand->pinch_state & button_state_just_inactive) {
+					if (interact_state[i] & button_state_just_inactive) {
 						skui_hand[i].active = 0;
 						sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
 					}
 					ui_pop_surface();
-					ui_push_surface(movement);
+					ui_push_surface(handle_pose);
 				}
 			}
 		}
@@ -2603,8 +2610,8 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 	if (draw) {
 		ui_draw_el(ui_vis_handle,
-			handle.center+handle.dimensions/2,
-			handle.dimensions,
+			handle_bounds.center+handle_bounds.dimensions/2,
+			handle_bounds.dimensions,
 			ui_color_primary,
 			color_blend);
 		ui_nextline();
@@ -2614,11 +2621,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &movement, bounds_t handle, bool32
 
 ///////////////////////////////////////////
 
-bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
-	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
+bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, allowed_gestures);
 }
-bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type) {
-	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type);
+bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, allowed_gestures);
 }
 
 ///////////////////////////////////////////
@@ -2660,7 +2667,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	}
 
 	// Set up window handle and layout area
-	_ui_handle_begin(id, pose, { box_start, box_size }, false, move_type);
+	_ui_handle_begin(id, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
 	ui_layout_push_win(&window, { window.prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label

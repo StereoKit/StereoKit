@@ -19,12 +19,21 @@ typedef enum ui_win_ {
 	ui_win_body   = 1 << 2,
 	ui_win_normal = ui_win_head | ui_win_body,
 } ui_win_;
+SK_MakeFlag(ui_win_)
 
 typedef enum ui_confirm_ {
 	ui_confirm_push,
 	ui_confirm_pinch,
 	ui_confirm_variable_pinch
 } ui_confirm_;
+
+typedef enum ui_gesture_ {
+	ui_gesture_none       = 0,
+	ui_gesture_pinch      = 1 << 0,
+	ui_gesture_grip       = 1 << 1,
+	ui_gesture_pinch_grip = ui_gesture_pinch | ui_gesture_grip,
+} ui_gesture_;
+SK_MakeFlag(ui_gesture_)
 
 typedef enum ui_notify_ {
 	ui_notify_change,
@@ -233,8 +242,8 @@ SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, v
 SK_API void     ui_hseparator        ();
 SK_API void     ui_space             (float space);
 
-SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
-SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact));
+SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
+SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
 SK_API void     ui_handle_end        ();
 SK_API void     ui_window_begin      (const char     *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));
 SK_API void     ui_window_begin_16   (const char16_t *text, sk_ref(pose_t) pose, vec2 size sk_default({ 0,0 }), ui_win_ window_type sk_default(ui_win_normal), ui_move_ move_type sk_default(ui_move_face_user));

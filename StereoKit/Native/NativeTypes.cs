@@ -559,6 +559,25 @@ namespace StereoKit
 		VariablePinch
 	}
 
+	/// <summary>This is a bit flag that describes different types and
+	/// combinations of gestures used within the UI system.</summary>
+	[Flags]
+	public enum UIGesture
+	{
+		/// <summary>Default zero state, no gesture at all.</summary>
+		None = 0,
+		/// <summary>A pinching action, calculated by taking the distance
+		/// between the tip of the thumb and the index finger.</summary>
+		Pinch = 1 << 0,
+		/// <summary>A gripping or grasping motion meant to represent a full
+		/// hand grab. This is calculated using the distance between the root
+		/// and the tip of the ring finger.</summary>
+		Grip = 1 << 1,
+		/// <summary>This is a bit flag combination of both Pinch and Grip.
+		/// </summary>
+		PinchGrip = Pinch | Grip,
+	}
+
 	/// <summary>Determines when this UI function returns true.</summary>
 	public enum UINotify
 	{
