@@ -3,7 +3,7 @@
 
 ///////////////////////////////////////////
 
-cbuffer StereoKitBuffer : register(b1) {
+cbuffer stereokit_buffer_b : register(b1) {
 	float4x4 sk_view       [2];
 	float4x4 sk_proj       [2];
 	float4x4 sk_proj_inv   [2];
@@ -16,12 +16,12 @@ cbuffer StereoKitBuffer : register(b1) {
 	float    sk_time;
 	uint     sk_view_count;
 };
-struct Inst {
+struct inst_t {
 	float4x4 world;
 	float4   color;
 };
-cbuffer TransformBuffer : register(b2) {
-	Inst sk_inst[819]; // 819 is UINT16_MAX / sizeof(Inst)
+cbuffer transform_buffer_b : register(b2) {
+	inst_t sk_inst[819]; // 819 is UINT16_MAX / sizeof(inst_t)
 };
 TextureCube  sk_cubemap   : register(t11);
 SamplerState sk_cubemap_s : register(s11);
@@ -31,7 +31,7 @@ SamplerState sk_cubemap_s : register(s11);
 // A spherical harmonics lighting lookup!
 // Some calculations have been offloaded to 'sh_to_fast'
 // in StereoKitC
-float3 Lighting(float3 normal) {
+float3 sk_lighting(float3 normal) {
 	// Band 0
 	float3 result = sk_lighting_sh[0].xyz;
 
@@ -50,16 +50,18 @@ float3 Lighting(float3 normal) {
 	result += sk_lighting_sh[8].xyz * (n2.x - n2.y);
 	return result;
 }
+// Legacy name, use sk_lighting
+float3 Lighting(float3 normal) { return sk_lighting(normal); }
 
 ///////////////////////////////////////////
 
-struct FingerDist {
+struct finger_dist_t {
 	float from_finger;
 	float on_plane;
 };
 
-FingerDist FingerDistanceInfo(float3 world_pos, float3 world_norm) {
-	FingerDist result;
+finger_dist_t sk_finger_distance_info(float3 world_pos, float3 world_norm) {
+	finger_dist_t result;
 	result.from_finger = 10000;
 	result.on_plane    = 10000;
 	
@@ -78,32 +80,44 @@ FingerDist FingerDistanceInfo(float3 world_pos, float3 world_norm) {
 
 	return result;
 }
+// Legacy name, use sk_finger_distance_info
+finger_dist_t FingerDistanceInfo(float3 world_pos, float3 world_norm) { return sk_finger_distance_info(world_pos, world_norm); }
 
 ///////////////////////////////////////////
 
-float2 FingerGlowEx(float3 world_pos, float3 world_norm) {
+float2 sk_finger_glow_ex(float3 world_pos, float3 world_norm) {
 	float dist = 1;
 	float ring = 0;
 	for (int i = 0; i < 2; i++) {
 		float3 to_finger = sk_fingertip[i].xyz - world_pos;
-		float  d = dot(world_norm, to_finger);
-		float3 on_plane = sk_fingertip[i].xyz - d * world_norm;
+		float  d         = dot(world_norm, to_finger);
+		float3 on_plane  = sk_fingertip[i].xyz - d * world_norm;
 
 		float dist_from_finger = length(to_finger);
-		float dist_on_plane = length(world_pos - on_plane);
+		float dist_on_plane    = length(world_pos - on_plane);
 		ring = max(ring, saturate(1 - abs(d * 0.5 - dist_on_plane) * 600));
 		dist = min(dist, dist_from_finger);
 	}
 
 	return float2(dist, ring);
 }
+// Legacy name, use sk_finger_glow_ex
+float2 FingerGlowEx(float3 world_pos, float3 world_norm) { return sk_finger_glow_ex(world_pos, world_norm); }
 
 ///////////////////////////////////////////
 
-float FingerGlow(float3 world_pos, float3 world_norm) {
-	float2 glow = FingerGlowEx(world_pos, world_norm);
+float sk_finger_glow(float3 world_pos, float3 world_norm) {
+	float2 glow = sk_finger_glow_ex(world_pos, world_norm);
 	glow.x = pow(saturate(1 - glow.x / 0.12), 2);
 	return (glow.x * 0.2) + (glow.y * glow.x);
+}
+// Legacy name, use sk_finger_glow
+float FingerGlow(float3 world_pos, float3 world_norm) { return sk_finger_glow(world_pos, world_norm); }
+
+///////////////////////////////////////////
+
+float sk_aspect_ratio(uint view_id) {
+	return sk_proj[view_id]._m11 / sk_proj[view_id]._m00;
 }
 
 ///////////////////////////////////////////

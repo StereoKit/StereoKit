@@ -59,7 +59,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal     = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	o.uv         = input.uv * tex_scale;
 	o.color      = input.color * sk_inst[id].color * color;
-	o.irradiance = Lighting(o.normal);
+	o.irradiance = sk_lighting(o.normal);
 	o.view_dir   = sk_camera_pos[o.view_id].xyz - o.world;
 	return o;
 }
@@ -76,7 +76,7 @@ float4 ps(psIn input) : SV_TARGET {
 	float metallic_final = metal_rough.y * metallic;
 	float rough_final    = metal_rough.x * roughness;
 
-	float4 color = skpbr_shade(albedo, input.irradiance, ao, metallic_final, rough_final, input.view_dir, input.normal);
+	float4 color = sk_pbr_shade(albedo, input.irradiance, ao, metallic_final, rough_final, input.view_dir, input.normal);
 	color.rgb += emissive;
 	return color;
 }
