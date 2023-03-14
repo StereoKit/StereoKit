@@ -24,6 +24,7 @@
     <NoWarn>;2008</NoWarn>
     <ErrorReport>prompt</ErrorReport>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <LangVersion>latest</LangVersion>
     <SKAssetFolder>..\..\Assets</SKAssetFolder>
     <SKAssetDestination>Assets</SKAssetDestination>
   </PropertyGroup>
