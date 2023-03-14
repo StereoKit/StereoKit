@@ -3,7 +3,7 @@
 
 ///////////////////////////////////////////
 
-cbuffer stereokit_buffer_b : register(b1) {
+cbuffer stereokit_buffer : register(b1) {
 	float4x4 sk_view       [2];
 	float4x4 sk_proj       [2];
 	float4x4 sk_proj_inv   [2];
@@ -20,7 +20,7 @@ struct inst_t {
 	float4x4 world;
 	float4   color;
 };
-cbuffer transform_buffer_b : register(b2) {
+cbuffer transform_buffer : register(b2) {
 	inst_t sk_inst[819]; // 819 is UINT16_MAX / sizeof(inst_t)
 };
 TextureCube  sk_cubemap   : register(t11);

@@ -47,7 +47,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	o.inst_col       = sk_inst[id].color;
-	o.light_edge.rgb = Lighting(o.normal);
+	o.light_edge.rgb = sk_lighting(o.normal);
 	o.light_edge.a   = input.color.a;
 	o.alpha          = input.color.b > 0.5 ? 1 : (o.inst_col.a-1) * 0.5;
 	o.glow_mask      = input.color.g;
@@ -55,7 +55,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	float  glow = FingerGlow(input.world.xyz, input.normal);
+	float  glow = sk_finger_glow(input.world.xyz, input.normal);
 
 	float  edge = saturate((input.light_edge.a - 0.15) / fwidth(input.light_edge.a));
 
