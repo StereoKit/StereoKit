@@ -25,6 +25,9 @@
 	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
 	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
 
+	<!-- Snapdragon specific items -->
+	<uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" android:required="false"/>
+
 	<!-- Oculus specific items -->
 	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" android:required="false"/>
 	<uses-feature    android:name="oculus.software.handtracking"        android:required="false"/>
