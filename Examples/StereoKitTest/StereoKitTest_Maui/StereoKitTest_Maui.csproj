@@ -63,7 +63,7 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Abi>arm64-v8a</Abi>
 		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
+		<AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\*.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Abi>arm64-v8a</Abi>
 		</AndroidNativeLibrary>
