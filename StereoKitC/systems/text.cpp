@@ -488,6 +488,7 @@ void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	if (text == nullptr) return 0;
+	if (size.x <= 0) return 0; // Zero width text isn't visible, and causes issues when trying to determine text height.
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
