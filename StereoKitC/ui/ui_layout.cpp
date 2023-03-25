@@ -153,7 +153,8 @@ void ui_layout_push(vec3 start, vec2 dimensions, bool32_t add_margin) {
 ///////////////////////////////////////////
 
 void ui_layout_push_cut(ui_cut_ cut_to, float size, bool32_t add_margin) {
-	ui_layout_t* curr = &skui_layouts.last();
+	ui_layout_t* curr   = &skui_layouts.last();
+	ui_window_t* window = curr->window;
 	if      (cut_to == ui_cut_bottom && curr->size.y == 0) log_warn("Can't cut bottom for layout with a height of 0!");
 	else if (cut_to == ui_cut_right  && curr->size.x == 0) log_warn("Can't cut right for layout with an width of 0!");
 
@@ -190,7 +191,7 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size, bool32_t add_margin) {
 	curr->offset_initial += curr_offset;
 	curr->prev_offset    += curr_offset;
 	ui_layout_push(cut_start, cut_size, add_margin);
-	skui_layouts.last().window = curr->window;
+	skui_layouts.last().window = window;
 }
 
 ///////////////////////////////////////////
