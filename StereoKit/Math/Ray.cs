@@ -38,7 +38,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Plane plane, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(plane, this, out at) > 0;
+			=> NativeAPI.plane_ray_intersect(plane, this, out at);
 
 		/// <summary>Checks the intersection of this ray with a sphere!
 		/// </summary>
@@ -51,7 +51,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Sphere sphere, out Vec3 at)
-			=> NativeAPI.sphere_ray_intersect(sphere, this, out at) > 0;
+			=> NativeAPI.sphere_ray_intersect(sphere, this, out at);
 
 		/// <summary>Checks the intersection of this ray with a bounding box!
 		/// </summary>
@@ -64,7 +64,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Bounds bounds, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(bounds, this, out at) > 0;
+			=> NativeAPI.bounds_ray_intersect(bounds, this, out at);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -83,7 +83,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out _, cullFaces) > 0;
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out _, cullFaces);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -106,7 +106,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds, Cull cullFaces = Cull.Back)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces) > 0;
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces);
 
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
@@ -124,7 +124,7 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back);
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -148,7 +148,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Model model, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt, cullFaces) > 0;
+			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt, cullFaces);
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's

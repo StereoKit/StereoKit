@@ -22,7 +22,7 @@
 		/// will check against additive and blend.</param>
 		/// <returns>True if valid, false if not.</returns>
 		public static bool ValidBlend(DisplayBlend blend)
-			=> NativeAPI.device_display_valid_blend(blend) > 0 ? true : false;
+			=> NativeAPI.device_display_valid_blend(blend);
 
 		/// <summary>The tracking capabilities of this device! Is it 3DoF,
 		/// rotation only? Or is it 6DoF, with positional tracking as well?
@@ -40,11 +40,11 @@
 		/// for input purposes? This is _not_ an indicator that the user has
 		/// given the application permission to access this information. See
 		/// `Input.Gaze` for how to use this data.</summary>
-		public static bool HasEyeGaze => NativeAPI.device_has_eye_gaze()>0;
+		public static bool HasEyeGaze => NativeAPI.device_has_eye_gaze();
 
 		/// <summary>Tells if the device is capable of tracking hands. This
 		/// does not tell if the user is actually using their hands for input,
 		/// merely that it's possible to!</summary>
-		public static bool HasHandTracking => NativeAPI.device_has_hand_tracking()>0;
+		public static bool HasHandTracking => NativeAPI.device_has_hand_tracking();
 	}
 }

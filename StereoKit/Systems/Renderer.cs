@@ -31,8 +31,8 @@ namespace StereoKit
 		/// displays, and completely unavailable for transparent displays.</summary>
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex() > 0;
-			set => NativeAPI.render_enable_skytex(value?1:0);
+			get => NativeAPI.render_enabled_skytex();
+			set => NativeAPI.render_enable_skytex(value);
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.
@@ -70,7 +70,7 @@ namespace StereoKit
 
 		/// <summary>This tells if CaptureFilter has been overridden to a
 		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
-		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
+		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter();
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
@@ -126,7 +126,7 @@ namespace StereoKit
 		/// <param name="overrideFilter">The filter for capture rendering to
 		/// use. This is ignored if useOverrideFilter is false.</param>
 		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
-			=> NativeAPI.render_override_capture_filter(useOverrideFilter ? 1 : 0, overrideFilter);
+			=> NativeAPI.render_override_capture_filter(useOverrideFilter, overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with

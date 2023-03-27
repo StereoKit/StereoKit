@@ -47,8 +47,8 @@ namespace StereoKit
 		/// you set this to true again later on, it will not contain data 
 		/// until it's set again.</summary>
 		public bool KeepData {
-			get => NativeAPI.mesh_get_keep_data(_inst)>0;
-			set => NativeAPI.mesh_set_keep_data(_inst, value?1:0);
+			get => NativeAPI.mesh_get_keep_data(_inst);
+			set => NativeAPI.mesh_set_keep_data(_inst, value);
 		}
 
 		/// <summary>The number of vertices stored in this Mesh! This is
@@ -109,7 +109,7 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds ? 1 : 0);
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds);
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card. If you're
@@ -132,7 +132,7 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetVerts(Vertex[] vertices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_verts(_inst, vertices, vertices.Length, calculateBounds?1:0);
+			=> NativeAPI.mesh_set_verts(_inst, vertices, vertices.Length, calculateBounds);
 
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
@@ -210,7 +210,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out _, Cull.Back) > 0;
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out _, Cull.Back);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -232,7 +232,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds, Cull.Back) > 0;
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds, Cull.Back);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -251,7 +251,7 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, out _, Cull.Back) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, out _, Cull.Back);
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -265,7 +265,7 @@ namespace StereoKit
 		/// <param name="c">The third vertex of the found triangle</param>
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
-			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
+			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c);
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
@@ -309,7 +309,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided?1:0));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided));
 
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
@@ -337,7 +337,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided?1:0));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided));
 
 		/// <summary>Generates a circle on the XZ axis facing up that is 
 		/// pre-sized to the given diameter. UV coordinates correspond to a unit 
@@ -357,7 +357,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided?1:0));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided));
 
 		/// <summary>Generates a circle with an arbitrary orientation that is
 		/// pre-sized to the given diameter. UV coordinates start at the top 
@@ -384,7 +384,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, Vec3 planeNormal, Vec3 planeTopDirection, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided?1:0));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided));
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,

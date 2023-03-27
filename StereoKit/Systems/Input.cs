@@ -177,12 +177,12 @@ namespace StereoKit
 		/// <summary>Sets whether or not StereoKit should render this hand
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
-		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value?1:0); } }
+		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
 		/// </summary>
-		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value?1:0); } }
+		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -441,7 +441,7 @@ namespace StereoKit
 		/// <param name="visible">True, StereoKit renders this. False, it
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
-			=> NativeAPI.input_hand_visible(hand, visible?1:0);
+			=> NativeAPI.input_hand_visible(hand, visible);
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
@@ -450,7 +450,7 @@ namespace StereoKit
 		/// both hands.</param>
 		/// <param name="solid">True? Physics! False? No physics.</param>
 		public static void HandSolid(Handed hand, bool solid)
-			=> NativeAPI.input_hand_solid(hand, solid?1:0);
+			=> NativeAPI.input_hand_solid(hand, solid);
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>

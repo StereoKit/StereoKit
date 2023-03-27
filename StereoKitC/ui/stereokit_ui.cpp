@@ -1253,13 +1253,14 @@ bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t inclu
 ///////////////////////////////////////////
 
 button_state_ ui_focus_set(int32_t hand, uint64_t for_el_id, bool32_t focused, float priority) {
+	if (hand < 0 || hand > 1) {
+		if      (skui_hand[0].active_prev == for_el_id) hand = 0;
+		else if (skui_hand[1].active_prev == for_el_id) hand = 1;
+		else return button_state_inactive;
+	}
 	bool was_focused = skui_hand[hand].focused_prev == for_el_id;
 	bool is_focused  = false;
 
-	if (hand == -1) {
-		if      (skui_hand[0].active_prev == for_el_id) hand = 0;
-		else if (skui_hand[1].active_prev == for_el_id) hand = 1;
-	}
 	if (focused && hand >= 0 && hand < 2 && priority <= skui_hand[hand].focus_priority) {
 		is_focused = focused;
 		skui_hand[hand].focused        = for_el_id;
