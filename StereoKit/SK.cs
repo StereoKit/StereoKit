@@ -120,7 +120,7 @@ namespace StereoKit
 			// DllImport finds the function at the beginning of the function 
 			// call, so this needs to be in a separate function from 
 			// NativeLib.LoadDll
-			bool result = NativeAPI.sk_init(settings) > 0;
+			bool result = NativeAPI.sk_init(settings);
 			Settings = settings;
 
 			// Get system information
@@ -141,7 +141,7 @@ namespace StereoKit
 		/// using SK.Run, as it is called automatically there.</summary>
 		public static void Shutdown()
 		{
-			if (NativeAPI.sk_is_stepping() > 0)
+			if (NativeAPI.sk_is_stepping())
 				throw new Exception("SK.Shutdown is for cleanup and should not be used within SK.Step/Run, please use SK.Quit to exit your app!");
 
 			if (IsInitialized)
@@ -170,7 +170,7 @@ namespace StereoKit
 		public static bool Step(Action onStep = null)
 		{
 			_stepCallback = onStep;
-			return NativeAPI.sk_step(_stepAction) > 0;
+			return NativeAPI.sk_step(_stepAction);
 		}
 		// This pattern is a little weird, but it avoids continuous Action
 		// allocations, and saves our GC a surprising amount of work.

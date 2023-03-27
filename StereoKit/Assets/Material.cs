@@ -134,8 +134,8 @@ namespace StereoKit
 		/// visualization work. Note that this may not work on some mobile
 		/// OpenGL systems like Quest.</summary>
 		public bool Wireframe {
-			get => NativeAPI.material_get_wireframe(_inst)>0;
-			set => NativeAPI.material_set_wireframe(_inst, value?1:0); }
+			get => NativeAPI.material_get_wireframe(_inst);
+			set => NativeAPI.material_set_wireframe(_inst, value); }
 		/// <summary>How does this material interact with the ZBuffer? 
 		/// Generally DepthTest.Less would be normal behavior: don't draw
 		/// objects that are occluded. But this can also be used to achieve
@@ -154,8 +154,8 @@ namespace StereoKit
 		/// 
 		/// Not writing to the buffer can also be faster! :)</summary>
 		public bool DepthWrite {
-			get => NativeAPI.material_get_depth_write(_inst)>0;
-			set => NativeAPI.material_set_depth_write(_inst, value?1:0); }
+			get => NativeAPI.material_get_depth_write(_inst);
+			set => NativeAPI.material_set_depth_write(_inst, value); }
 		/// <summary>This property will force this material to draw earlier
 		/// or later in the draw queue. Positive values make it draw later,
 		/// negative makes it earlier. This is really helpful when doing tricks
@@ -476,7 +476,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetBool(string name, bool value)
-			=> NativeAPI.material_set_bool(_inst, name, value?1:0);
+			=> NativeAPI.material_set_bool(_inst, name, value);
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -569,7 +569,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise false.
 		/// </returns>
-		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name)>0;
+		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name);
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of '0' will be returned.

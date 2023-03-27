@@ -368,7 +368,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, cullFaces) > 0;
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, cullFaces);
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a
@@ -573,8 +573,8 @@ namespace StereoKit
 		/// attached.</summary>
 		public bool Solid
 		{
-			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId) > 0;
-			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value ? 1 : 0);
+			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId);
+			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value);
 		}
 		/// <summary>Is this node flagged as visible? By default, this is true
 		/// for all nodes with visual elements attached. These nodes will not
@@ -583,8 +583,8 @@ namespace StereoKit
 		/// and setting this value will have no effect.</summary>
 		public bool Visible
 		{
-			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId) > 0;
-			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value ? 1 : 0);
+			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId);
+			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value);
 		}
 		/// <summary>The transform of this node relative to the Model itself.
 		/// This incorporates transforms from all parent nodes. Setting this
@@ -737,7 +737,7 @@ namespace StereoKit
 		public IEnumerable<string> Keys { 
 			get {
 				int iterator = 0;
-				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out _) > 0)
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out _))
 					yield return NativeHelper.FromUtf8(key);
 			}
 		}
@@ -747,7 +747,7 @@ namespace StereoKit
 			get
 			{
 				int iterator = 0;
-				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out _, out IntPtr val) > 0)
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out _, out IntPtr val))
 					yield return NativeHelper.FromUtf8(val);
 			}
 		}
@@ -781,14 +781,14 @@ namespace StereoKit
 		/// present.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found and removed, false if not.</returns>
-		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key)) > 0;
+		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key));
 
 		/// <summary>The enumerator for the collection's KeyValuePairs.</summary>
 		/// <returns>Each consecutive pair in the collection.</returns>
 		public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
 		{
 			int iterator = 0;
-			while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out IntPtr val)>0)
+			while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out IntPtr val))
 				yield return new KeyValuePair<string, string>(NativeHelper.FromUtf8(key), NativeHelper.FromUtf8(val));
 		}
 

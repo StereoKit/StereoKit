@@ -23,7 +23,7 @@ namespace StereoKit
 		} }
 		/// <summary>Tells if the Microphone is currently recording audio.
 		/// </summary>
-		public static bool IsRecording { get => NativeAPI.mic_is_recording() > 0; }
+		public static bool IsRecording => NativeAPI.mic_is_recording();
 
 		/// <summary>Constructs a list of valid Microphone devices attached
 		/// to the system. These names can be passed into Start to select
@@ -61,7 +61,7 @@ namespace StereoKit
 		/// or if the deviceName is for a mic that has since been unplugged.
 		/// </returns>
 		public static bool Start(string deviceName = null)
-			=> NativeAPI.mic_start(deviceName) > 0;
+			=> NativeAPI.mic_start(deviceName);
 
 		/// <summary>If the Microphone is recording, this will stop it.
 		/// </summary>
