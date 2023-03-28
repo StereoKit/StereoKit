@@ -217,7 +217,7 @@ void ui_layout_push_win(ui_window_t *window, vec3 start, vec2 dimensions, bool32
 }
 
 ///////////////////////////////////////////
-#include <stdio.h>
+
 void ui_layout_pop() {
 	ui_layout_t* layout = &skui_layouts.last();
 
@@ -236,7 +236,9 @@ void ui_layout_pop() {
 				layout->window->curr_size.y);
 	}
 
-	if (layout->size_used.x != 0 || layout->size_used.y != 0) {
+	// Helpful debug visualization for working with layouts
+	// #include <stdio.h>
+	/*if (layout->size_used.x != 0 || layout->size_used.y != 0) {
 		float   z_offset = 0.001f;
 		color32 col      = { 0,255,255,255 };
 		float   weight   = 0.001f;
@@ -254,7 +256,8 @@ void ui_layout_pop() {
 		char text[256];
 		snprintf(text, 256, "%s\n%.2gx%.2g", layout->window?"win":"layout", size.x * 100, size.y * 100);
 		text_add_at(text, matrix_t(start - vec3{ size.x, 0, z_offset }), 0, text_align_top_left, text_align_top_left);
-	}
+	}*/
+
 	skui_layouts.pop();
 }
 
@@ -299,7 +302,6 @@ void ui_space(float space) {
 	else
 		layout->offset.x -= space;
 }
-
 
 ///////////////////////////////////////////
 

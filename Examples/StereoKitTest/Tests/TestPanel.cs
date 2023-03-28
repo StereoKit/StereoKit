@@ -10,10 +10,11 @@ internal class TestPanel : ITest
 	{
 	}
 
+	Pose p1 = new Pose(-.15f,0,-0.5f, Quat.LookDir(0,0,1));
+	Pose p2 = new Pose(.15f,0,-0.5f, Quat.LookDir(0, 0, 1));
 	public void Update()
 	{
-		Pose p = new Pose(-.15f,0,-0.5f, Quat.LookDir(0,0,1));
-		UI.WindowBegin("Panel Test Auto", ref p);
+		UI.WindowBegin("Panel Test Auto", ref p1);
 
 		UI.PanelBegin(UIPad.None);
 		UI.Button("UIPad.None");
@@ -32,8 +33,8 @@ internal class TestPanel : ITest
 
 		UI.WindowEnd();
 
-		p = new Pose(.15f, 0, -0.5f, Quat.LookDir(0, 0, 1));
-		UI.WindowBegin("Panel Test Fixed", ref p, new Vec2(0.25f, 0));
+
+		UI.WindowBegin("Panel Test Fixed", ref p2, new Vec2(0.25f, 0));
 
 		UI.PanelBegin(UIPad.None);
 		UI.Button("UIPad.None");
@@ -52,6 +53,7 @@ internal class TestPanel : ITest
 
 		UI.WindowEnd();
 
-		Tests.Screenshot("Tests/UIPanels.jpg", 600, 600, Vec3.Zero, new Vec3(0.0f, 0.0f, -0.5f));
+		Vec3 at = new Vec3(0.05f,-0.06f, -0.3f);
+		Tests.Screenshot("UI/Panels.jpg", 600, 400, at, at - Vec3.UnitZ);
 	}
 }
