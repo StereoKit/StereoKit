@@ -303,73 +303,34 @@ void ui_space(float space) {
 
 ///////////////////////////////////////////
 
-struct panel_stack_data_t {
-	vec3    at;
-	float   original_line_start;
-	ui_pad_ padding;
-};
-array_t<panel_stack_data_t> skui_panel_stack = {};
+array_t<ui_pad_> skui_panel_stack = {};
 void ui_panel_begin(ui_pad_ padding) {
 	ui_layout_t* layout = &skui_layouts.last();
-	panel_stack_data_t data;
-	data.at      = layout->offset;
-	data.padding = padding;
-	data.original_line_start = layout->line_pad;
 
-	skui_panel_stack.add(data);
-	/*layout->offset_initial.z -= skui_settings.depth * 0.1f;
-	layout->offset.z          = layout->offset_initial.z;
-
-	if (padding == ui_pad_inside) {
-		float gutter = skui_settings.gutter / 2;
-		layout->offset_initial.x -= gutter;
-		layout->offset_initial.y -= gutter;
-		layout->offset.x -= gutter;
-		layout->offset.y -= gutter;
-		layout->line.x += skui_settings.gutter;
-	}
-
-	layout->line_pad = layout->offset.x + layout->offset_initial.x + skui_settings.margin;*/
-
-	vec2 size = {
-		layout->size.x != 0 ? layout->size.x - (layout->offset_initial.x - layout->offset.x) - skui_settings.margin*2 : 0,
-		layout->size.y != 0 ? layout->size.y - (layout->offset_initial.y - layout->offset.y) - skui_settings.margin*2 : 0 };
-	ui_layout_push(layout->offset - vec3{0,0,skui_settings.depth * 0.1f}, size, true);
+	float pad  = padding == ui_pad_outside ? skui_settings.margin : 0;
+	vec2  size = {
+		layout->size.x != 0 ? layout->size.x - (layout->offset_initial.x - layout->offset.x) + pad*2: 0,
+		layout->size.y != 0 ? layout->size.y - (layout->offset_initial.y - layout->offset.y) + pad*2: 0 };
+	vec2 offset = padding == ui_pad_outside
+		? vec2{ -skui_settings.margin, -skui_settings.margin}
+		: vec2{};
+	skui_panel_stack.add(padding);
+	ui_layout_push(layout->offset - vec3{offset.x,offset.y,skui_settings.depth * 0.1f}, size, padding != ui_pad_none);
 }
 
 ///////////////////////////////////////////
 
 void ui_panel_end() {
-	/*ui_sameline();
-
-	float              gutter = skui_settings.gutter / 2;
-	ui_layout_t*       layout = &skui_layouts.last();
-	panel_stack_data_t start  = skui_panel_stack.last();
-
-	vec3 curr = vec3{layout->offset_initial.x + layout->size_used.x, layout->offset.y - (layout->line.y + (start.padding == ui_pad_inside?gutter:0)), layout->offset.z};
-
-	ui_panel_at(start.at, {fabsf(curr.x-start.at.x), start.at.y-curr.y}, start.padding);
-
-	layout->offset_initial.z = start.at.z;
-	layout->offset.z         = start.at.z;
-	layout->line_pad       = start.original_line_start;
-	if (start.padding == ui_pad_inside) {
-		layout->offset_initial.x += gutter;
-		layout->offset_initial.y += gutter;
-		layout->line.y += gutter * 2;
-		layout->offset.y += gutter;
-		layout->offset.x -= gutter;
-	}
-	skui_panel_stack.pop();
-	ui_nextline();*/
-
+	ui_pad_ padding = skui_panel_stack.last();
+	
 	ui_layout_t* panel_layout = &skui_layouts.last();
-	vec2         panel_size   = panel_layout->size_used + vec2{skui_settings.margin * 2, skui_settings.margin * 2};
+	float        pad          = padding == ui_pad_inside ? skui_settings.margin : 0;
+	vec2         panel_size   = panel_layout->size_used + vec2{pad * 2, pad * 2};
 	ui_layout_pop();
 	bounds_t bounds = ui_layout_reserve(panel_size, false);
 
-	panel_stack_data_t start = skui_panel_stack.last();
-	ui_panel_at(bounds.center + bounds.dimensions / 2, { bounds.dimensions.x, bounds.dimensions.y }, start.padding);
+	ui_panel_at(bounds.center + bounds.dimensions / 2, { bounds.dimensions.x, bounds.dimensions.y }, padding);
+	skui_panel_stack.pop();
 }
 
 }
