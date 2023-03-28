@@ -523,7 +523,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
 	XMMATRIX root;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, root);
@@ -539,11 +539,11 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		render_item_t item;
 		item.mesh      = vis->mesh;
 		item.mesh_inds = vis->mesh->ind_count;
-		item.color     = color;
+		item.color     = color_linear;
 		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
 
-		material_t curr = vis->material;
+		material_t curr = material_override == nullptr ? vis->material : material_override;
 		while (curr != nullptr) {
 			item.material = curr;
 			item.sort_id  = render_queue_id(curr, vis->mesh);
@@ -556,6 +556,12 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		model->transforms_changed = false;
 		anim_update_skin(model);
 	}
+}
+
+///////////////////////////////////////////
+
+void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////

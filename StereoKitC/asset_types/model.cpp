@@ -337,7 +337,13 @@ void model_release(model_t model) {
 ///////////////////////////////////////////
 
 void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
-	render_add_model(model, transform, color_linear, layer);
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void model_draw_mat(model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////

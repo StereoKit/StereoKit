@@ -6,6 +6,7 @@ class DemoPBR : ITest
 	Material[] pbrMaterials;
 	Model      pbrModel;
 	Mesh       sphereMesh;
+	Material   selectionMat;
 
 	Tex oldSkyTex;
 	SphericalHarmonics oldSkyLight;
@@ -19,6 +20,9 @@ class DemoPBR : ITest
 		sphereMesh  = Mesh.GenerateSphere(1, 7);
 		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
+		selectionMat = new Material("interactable.hlsl");
+		selectionMat.Transparency = Transparency.Add;
+		selectionMat.DepthTest = DepthTest.Equal;
 
 		pbrModel = Model.FromFile("DamagedHelmet.gltf");
 		pbrMaterials = new Material[materialGrid*materialGrid];
@@ -61,9 +65,10 @@ class DemoPBR : ITest
 
 		Hierarchy.Push(Matrix.T(0,0,-1));
 
-		if (!Tests.IsTesting) { 
-			UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f);
+		if (!Tests.IsTesting) {
+			UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f, allowedGestures: UIGesture.PinchGrip);
 			pbrModel.Draw(Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f));
+			pbrModel.Draw(selectionMat, Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f), new Color(1,1,1,1));
 			UI.HandleEnd();
 		}
 
