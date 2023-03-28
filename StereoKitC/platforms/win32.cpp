@@ -42,6 +42,10 @@ const int32_t win32_multisample = 1;
 const int32_t win32_multisample = 8;
 #endif
 
+// Constants for the registry key and value names
+const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
+const wchar_t* REG_VALUE_NAME = L"WindowLocation";
+
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
@@ -215,20 +219,30 @@ bool win32_start_flat() {
 	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
 	win32_hinst = wc.hInstance;
 
-	RECT r;
-	r.left   = sk_settings.flatscreen_pos_x;
-	r.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
-	r.top    = sk_settings.flatscreen_pos_y;
-	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
-	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	RECT rect = {};
+	HKEY reg_key;
+	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
+		DWORD data_size = sizeof(RECT);
+		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
+		RegCloseKey     (reg_key);
+	} else {
+		rect.left   = sk_settings.flatscreen_pos_x;
+		rect.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
+		rect.top    = sk_settings.flatscreen_pos_y;
+		rect.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
+	}
+	if (rect.right == rect.left) rect.right  = rect.left + sk_info.display_width;
+	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_info.display_height;
+
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	win32_window = CreateWindowW(
 		app_name_w,
 		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		max(0,r.left),
-		max(0,r.top),
-		r.right  - r.left,
-		r.bottom - r.top,
+		max(0,rect.left),
+		max(0,rect.top),
+		rect.right  - rect.left,
+		rect.bottom - rect.top,
 		0, 0, 
 		wc.hInstance,
 		nullptr);
@@ -272,6 +286,16 @@ bool win32_start_flat() {
 ///////////////////////////////////////////
 
 void win32_stop_flat() {
+	if (backend_xr_get_type() == backend_xr_type_simulator) {
+		RECT rect;
+		HKEY reg_key;
+		GetWindowRect(win32_window, &rect);
+		if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) == ERROR_SUCCESS) {
+			RegSetValueExW(reg_key, REG_VALUE_NAME, 0, REG_BINARY, (const BYTE*)&rect, sizeof(RECT));
+			RegCloseKey   (reg_key);
+		}
+	}
+
 	flatscreen_input_shutdown();
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);

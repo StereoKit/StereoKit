@@ -1075,9 +1075,9 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 ///////////////////////////////////////////
 
 void ui_pop_surface() {
-	hierarchy_pop();
 	skui_layers.pop();
 	ui_layout_pop();
+	hierarchy_pop();
 
 	if (skui_layers.count <= 0) {
 		for (int32_t i = 0; i < handed_max; i++) {
@@ -2428,9 +2428,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 
 	// If the handle is scale of zero, we don't actually want to draw or
 	// interact with it
-	if (handle_bounds.dimensions.x == 0 ||
-		handle_bounds.dimensions.y == 0 ||
-		handle_bounds.dimensions.z == 0)
+	if (vec3_magnitude_sq(handle_bounds.dimensions) == 0)
 		return false;
 
 	static vec3 start_2h_pos        = {};
@@ -2681,8 +2679,8 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 
 		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
-		if (layout->max_x > at.x - (size.x + skui_settings.padding))
-			layout->max_x = at.x - (size.x + skui_settings.padding);
+		if (layout->size_used.x < (size.x + skui_settings.padding*2))
+			layout->size_used.x = (size.x + skui_settings.padding*2);
 	}
 	window.pose = pose;
 }
