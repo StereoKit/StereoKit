@@ -230,11 +230,11 @@ bool win32_start_flat() {
 		rect.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
 		rect.top    = sk_settings.flatscreen_pos_y;
 		rect.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
+		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	}
 	if (rect.right == rect.left) rect.right  = rect.left + sk_info.display_width;
 	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_info.display_height;
-
-	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	
 	win32_window = CreateWindowW(
 		app_name_w,
 		app_name_w,
