@@ -284,9 +284,9 @@ bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
 	XMVECTOR min = XMVectorMin(min_a, min_b);
 	min = XMVectorMin(min, min_c);
 	min = XMVectorMin(min, min_d);
-	XMVECTOR max = XMVectorMin(max_a, max_b);
-	max = XMVectorMin(max, max_c);
-	max = XMVectorMin(max, max_d);
+	XMVECTOR max = XMVectorMax(max_a, max_b);
+	max = XMVectorMax(max, max_c);
+	max = XMVectorMax(max, max_d);
 
 	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
 	XMVECTOR dimensions = XMVectorSubtract(max, min);
