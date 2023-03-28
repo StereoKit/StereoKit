@@ -26,6 +26,9 @@ struct ui_layout_t {
 
 extern ui_settings_t skui_settings;
 
+void ui_layout_init    ();
+void ui_layout_shutdown();
+
 ui_window_t* ui_layout_curr_window        ();
 ui_layout_t* ui_layout_curr               ();
 void         ui_layout_reserve_sz         (vec2 size, bool32_t add_padding, vec3* out_position, vec2* out_size);

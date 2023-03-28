@@ -735,6 +735,8 @@ void ui_pop_preserve_keyboard(){
 ///////////////////////////////////////////
 
 bool ui_init() {
+	ui_layout_init();
+
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
@@ -927,11 +929,11 @@ void ui_update() {
 
 void ui_update_late() {
 	ui_pop_surface();
-	if (skui_layers                 .count != 0) log_err("ui: Mismatching number of Begin/End calls!");
-	if (skui_id_stack               .count != 1) log_err("ui: Mismatching number of id push/pop calls!");
-	if (skui_tint_stack             .count != 1) log_err("ui: Mismatching number of tint push/pop calls!");
-	if (skui_enabled_stack          .count != 1) log_err("ui: Mismatching number of enabled push/pop calls!");
-	if (skui_preserve_keyboard_stack.count != 1) log_err("ui: Mismatching number of preserve keyboard push/pop calls!");
+	if (skui_layers                 .count != 0) log_errf("ui: Mismatching number of %s calls!", "Begin/End");
+	if (skui_id_stack               .count != 1) log_errf("ui: Mismatching number of %s calls!", "id push/pop");
+	if (skui_tint_stack             .count != 1) log_errf("ui: Mismatching number of %s calls!", "tint push/pop");
+	if (skui_enabled_stack          .count != 1) log_errf("ui: Mismatching number of %s calls!", "enabled push/pop");
+	if (skui_preserve_keyboard_stack.count != 1) log_errf("ui: Mismatching number of %s calls!", "preserve keyboard push/pop");
 }
 
 ///////////////////////////////////////////
@@ -974,6 +976,8 @@ void ui_shutdown() {
 	sprite_release(skui_radio_off);  skui_radio_off  = nullptr;
 	sprite_release(skui_radio_on);   skui_radio_on   = nullptr;
 	font_release(skui_font); skui_font = nullptr;
+
+	ui_layout_shutdown();
 }
 
 ///////////////////////////////////////////

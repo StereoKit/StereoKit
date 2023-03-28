@@ -6,9 +6,26 @@
 
 namespace sk {
 
-array_t<ui_layout_t> skui_layouts  = {};
-ui_settings_t        skui_settings = {};
+array_t<ui_layout_t> skui_layouts     = {};
+array_t<ui_pad_>     skui_panel_stack = {};
+ui_settings_t        skui_settings    = {};
 bounds_t             skui_recent_layout;
+
+///////////////////////////////////////////
+
+void ui_layout_init() {
+	skui_layouts       = {};
+	skui_panel_stack   = {};
+	skui_settings      = {};
+	skui_recent_layout = {};
+}
+
+///////////////////////////////////////////
+
+void ui_layout_shutdown() {
+	skui_layouts.free();
+	skui_panel_stack.free();
+}
 
 ///////////////////////////////////////////
 
@@ -305,19 +322,12 @@ void ui_space(float space) {
 
 ///////////////////////////////////////////
 
-array_t<ui_pad_> skui_panel_stack = {};
 void ui_panel_begin(ui_pad_ padding) {
-	ui_layout_t* layout = &skui_layouts.last();
-
-	float pad  = padding == ui_pad_outside ? skui_settings.margin : 0;
-	vec2  size = {
-		layout->size.x != 0 ? layout->size.x - (layout->offset_initial.x - layout->offset.x) + pad*2: 0,
-		layout->size.y != 0 ? layout->size.y - (layout->offset_initial.y - layout->offset.y) + pad*2: 0 };
-	vec2 offset = padding == ui_pad_outside
-		? vec2{ -skui_settings.margin, -skui_settings.margin}
-		: vec2{};
+	float pad   = padding == ui_pad_outside ? skui_settings.margin : 0;
+	vec2  size  = ui_layout_remaining() + vec2{ pad * 2,0 };
+	vec3  start = skui_layouts.last().offset - vec3{ -pad,-pad,skui_settings.depth * 0.1f };
 	skui_panel_stack.add(padding);
-	ui_layout_push(layout->offset - vec3{offset.x,offset.y,skui_settings.depth * 0.1f}, size, padding != ui_pad_none);
+	ui_layout_push(start, size, padding != ui_pad_none);
 }
 
 ///////////////////////////////////////////
