@@ -268,6 +268,10 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/tinycthread.h
   StereoKitC/libraries/tinycthread.cpp )
 
+set(SK_SRC_UTILS
+  StereoKitC/utils/sdf.h
+  StereoKitC/utils/sdf.cpp)
+
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
@@ -347,7 +351,11 @@ set(SK_SRC_UI
   StereoKitC/stereokit_ui.h
   StereoKitC/ui/stereokit_ui.cpp
   StereoKitC/ui/ui_layout.h
-  StereoKitC/ui/ui_layout.cpp )
+  StereoKitC/ui/ui_layout.cpp
+  StereoKitC/ui/ui_core.h
+  StereoKitC/ui/ui_core.cpp
+  StereoKitC/ui/ui_theming.h
+  StereoKitC/ui/ui_theming.cpp )
 
 # Switch between a static or shared library based on
 # the cmake options provided.
@@ -361,6 +369,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_CODE}
   ${SK_SRC_ASSET_TYPES}
   ${SK_SRC_LIBRARIES}
+  ${SK_SRC_UTILS}
   ${SK_SRC_SYSTEMS}
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORMS}
@@ -374,6 +383,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
 source_group("code"            FILES ${SK_SRC_CODE})
 source_group("asset_types"     FILES ${SK_SRC_ASSET_TYPES})
 source_group("libraries"       FILES ${SK_SRC_LIBRARIES})
+source_group("utils"           FILES ${SK_SRC_UTILS})
 source_group("systems"         FILES ${SK_SRC_SYSTEMS})
 source_group("hands"           FILES ${SK_SRC_HANDS})
 source_group("platform"        FILES ${SK_SRC_PLATFORMS})

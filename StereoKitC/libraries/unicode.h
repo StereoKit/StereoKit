@@ -37,3 +37,8 @@ char*           utf_advance_chars(char*           from_utf8,  int32_t codepoint_
 char16_t*       utf_advance_chars(char16_t*       from_utf16, int32_t codepoint_count);
 bool            utf_insert_char  (const char*     buffer_utf8_start,  size_t buffer_length, char*     at_utf8,  char32_t character);
 bool            utf_insert_char  (const char16_t* buffer_utf16_start, size_t buffer_length, char16_t* at_utf16, char32_t character);
+
+inline bool    utf_is_start     (char     ch) { return utf8_is_start(ch); }
+inline bool    utf_is_start     (char16_t ch) { return utf16_is_start(ch); }
+inline int32_t utf_encode_append(char     *buffer, size_t size, char32_t ch) { return utf8_encode_append (buffer, size, ch); }
+inline int32_t utf_encode_append(char16_t *buffer, size_t size, char32_t ch) { return utf16_encode_append(buffer, size, ch); }

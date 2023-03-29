@@ -1,4 +1,5 @@
 #include "ui_layout.h"
+#include "ui_theming.h"
 
 #include "../libraries/array.h"
 
@@ -292,6 +293,36 @@ ui_layout_t* ui_layout_curr() {
 
 ///////////////////////////////////////////
 
+float ui_line_height() {
+	return skui_settings.padding * 2 + skui_fontsize;
+}
+
+///////////////////////////////////////////
+
+ui_settings_t ui_get_settings() {
+	return skui_settings;
+}
+
+///////////////////////////////////////////
+
+float ui_get_margin() {
+	return skui_settings.margin;
+}
+
+///////////////////////////////////////////
+
+float ui_get_padding() {
+	return skui_settings.padding;
+}
+
+///////////////////////////////////////////
+
+float ui_get_gutter() {
+	return skui_settings.gutter;
+}
+
+///////////////////////////////////////////
+
 void ui_nextline() {
 	ui_layout_t *layout = &skui_layouts.last();
 	layout->offset_prev = layout->offset;
@@ -343,6 +374,46 @@ void ui_panel_end() {
 
 	ui_panel_at(bounds.center + bounds.dimensions / 2, { bounds.dimensions.x, bounds.dimensions.y }, padding);
 	skui_panel_stack.pop();
+}
+
+///////////////////////////////////////////
+
+pose_t ui_popup_pose(vec3 shift) {
+	vec3 at;
+	if (ui_last_element_active() & button_state_active) {
+		// If there was a UI element focused, we'll use that
+		at = hierarchy_to_world_point( ui_layout_last().center );
+	} else {
+		bool active_left  = input_hand(handed_left )->tracked_state & button_state_active;
+		bool active_right = input_hand(handed_right)->tracked_state & button_state_active;
+
+		if (active_left && active_right) {
+			// Both hands are active, pick the hand that's the most high
+			// and outstretched.
+			vec3  pl       = input_hand(handed_left )->fingers[1][4].position;
+			vec3  pr       = input_hand(handed_right)->fingers[1][4].position;
+			vec3  head     = input_head()->position;
+			float dist_l   = vec3_distance(pl, head);
+			float dist_r   = vec3_distance(pr, head);
+			float height_l = pl.y - pr.y;
+			float height_r = pr.y - pl.y;
+			at = dist_l + height_l / 2.0f > dist_r + height_r / 2.0f ? pl : pr;
+		} else if (active_left) {
+			at = input_hand(handed_left)->fingers[1][4].position;
+		} else if (active_right) {
+			at = input_hand(handed_right)->fingers[1][4].position;
+		} else {
+			// Head based fallback!
+			at = input_head()->position + input_head()->orientation * vec3_forward * 0.35f;
+		}
+	}
+
+	vec3 dir = at - input_head()->position;
+	at = input_head()->position + dir * 0.7f;
+
+	return pose_t {
+		at + shift,
+		quat_lookat(vec3_zero, -dir) };
 }
 
 }

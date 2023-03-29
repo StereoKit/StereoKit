@@ -208,6 +208,15 @@
     <ClCompile Include="device.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="ui\ui_core.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\sdf.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_theming.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -478,6 +487,15 @@
     <ClInclude Include="device.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="ui\ui_core.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\sdf.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_theming.h">
+      <Filter>ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -509,6 +527,9 @@
     </Filter>
     <Filter Include="xr_backends">
       <UniqueIdentifier>{16429ea8-7ffe-4668-8807-596c42670405}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{cc487034-d7b8-48bc-85ed-fba2b844bd5e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
