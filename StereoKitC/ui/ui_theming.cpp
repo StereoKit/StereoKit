@@ -411,7 +411,7 @@ void ui_push_text_style(text_style_t style) {
 
 void ui_pop_text_style() {
 	if (skui_font_stack.count <= 1) {
-		log_errf("ui_pop_text_style: tried to pop too many styles! Do you have a push/pop mismatch?");
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "text styles");
 		return;
 	}
 	skui_font_stack.pop();
@@ -435,7 +435,7 @@ void ui_push_tint(color128 tint_gamma) {
 
 void ui_pop_tint() {
 	if (skui_tint_stack.count <= 1) {
-		log_errf("ui_pop_tint: tried to pop too many tints! Do you have a push/pop mismatch?");
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "tints");
 		return;
 	}
 	skui_tint_stack.pop();

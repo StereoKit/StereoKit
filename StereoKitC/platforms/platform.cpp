@@ -129,9 +129,9 @@ bool platform_set_mode(display_type_ mode) {
 		return true;
 
 	switch (mode) {
-	case display_type_none:       log_diag("Starting a headless display"); break;
-	case display_type_stereo:     log_diag("Starting a stereo display"); break;
-	case display_type_flatscreen: log_diag("Starting a flatscreen display"); break;
+	case display_type_none:       log_diagf("Starting a <~grn>%s<~clr> display", "headless"  ); break;
+	case display_type_stereo:     log_diagf("Starting a <~grn>%s<~clr> display", "stereo"    ); break;
+	case display_type_flatscreen: log_diagf("Starting a <~grn>%s<~clr> display", "flatscreen"); break;
 	}
 
 	platform_stop_mode();

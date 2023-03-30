@@ -848,7 +848,7 @@ void ui_push_enabled(bool32_t enabled) {
 
 void ui_pop_enabled() {
 	if (skui_enabled_stack.count <= 1) {
-		log_errf("ui_pop_enabled: tried to pop too often! Do you have a push/pop mismatch?");
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "'enabled'");
 		return;
 	}
 	skui_enabled_stack.pop();
@@ -870,7 +870,7 @@ void ui_push_preserve_keyboard(bool32_t preserve_keyboard){
 
 void ui_pop_preserve_keyboard(){
 	if (skui_preserve_keyboard_stack.count <= 1) {
-		log_errf("ui_pop_preserve_keyboard: tried to pop too many! Do you have a push/pop mismatch?");
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "preserve keyboards");
 		return;
 	}
 	skui_preserve_keyboard_stack.pop();
