@@ -16,6 +16,8 @@ struct device_data_t {
 	char*            gpu;
 	bool32_t         has_eye_gaze;
 	bool32_t         has_hand_tracking;
+	origin_mode_     origin_mode;
+	pose_t           origin_offset;
 };
 
 extern device_data_t device_data;

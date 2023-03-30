@@ -129,6 +129,7 @@ namespace sk {
 	_(EXT_hand_tracking,                 true) \
 	_(EXT_palm_pose,                     true) \
 	_(EXT_eye_gaze_interaction,          true) \
+	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \

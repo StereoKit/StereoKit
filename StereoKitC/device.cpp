@@ -105,4 +105,20 @@ bool32_t device_has_hand_tracking() {
 
 ///////////////////////////////////////////
 
+origin_mode_ device_get_origin_mode() {
+	return device_data.origin_mode;
+}
+
+///////////////////////////////////////////
+
+pose_t device_get_origin_offset() {
+	return device_data.origin_offset;
+}
+
+///////////////////////////////////////////
+
+void device_set_origin_offset(pose_t offset) {
+
+}
+
 }

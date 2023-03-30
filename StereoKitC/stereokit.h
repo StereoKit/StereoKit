@@ -52,6 +52,58 @@ namespace sk {
 
 typedef int32_t bool32_t;
 
+typedef struct vec2 {
+	float x;
+	float y;
+} vec2;
+typedef struct vec3 {
+	float x;
+	float y;
+	float z;
+} vec3;
+typedef struct vec4 {
+	float x;
+	float y;
+	float z;
+	float w;
+} vec4;
+typedef struct quat {
+	float x;
+	float y;
+	float z; 
+	float w;
+} quat;
+typedef union matrix {
+	vec4 row[4];
+	float m[16];
+} matrix;
+typedef struct rect_t {
+	float x;
+	float y;
+	float w;
+	float h;
+} rect_t;
+typedef struct ray_t {
+	vec3 pos;
+	vec3 dir;
+} ray_t;
+typedef struct bounds_t {
+	vec3 center;
+	vec3 dimensions;
+} bounds_t;
+typedef struct plane_t {
+	vec3  normal;
+	float d;
+} plane_t;
+typedef struct sphere_t {
+	vec3  center;
+	float radius;
+} sphere_t;
+typedef struct pose_t {
+	vec3 position;
+	quat orientation;
+} pose_t;
+
 ///////////////////////////////////////////
 
 /*Specifies a type of display mode StereoKit uses, like
@@ -149,6 +201,23 @@ typedef enum display_blend_ {
 	display_blend_any_transparent = display_blend_additive | display_blend_blend,
 } display_blend_;
 SK_MakeFlag(display_blend_);
+
+/*This describes where the origin of the application should be. While these
+  origins map closely to OpenXR features, not all runtimes support each
+  feature. StereoKit will provide reasonable fallback behavior in the event the
+  origin mode isn't directly supported.*/
+typedef enum origin_mode_ {
+	/*The origin will be at the location of the user's head when the
+	  application starts, facing the same direction as the user.*/
+	origin_mode_local,
+	/*The origin will be at the floor beneath where the user starts, facing the
+	  direction of the user.*/
+	origin_mode_floor,
+	/*The origin will be at the center of a safe play area or stage that the
+	  user or OS has defined, and will face one of the edges of the play
+	  area.*/
+	origin_mode_stage,
+} origin_mode_;
 
 /*Severity of a log item.*/
 typedef enum log_ {
@@ -313,6 +382,7 @@ typedef struct sk_settings_t {
 	bool32_t       disable_unfocused_sleep;
 	float          render_scaling;
 	int32_t        render_multisample;
+	origin_mode_   origin;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -401,6 +471,8 @@ SK_API const char*      device_get_name           ();
 SK_API const char*      device_get_gpu            ();
 SK_API bool32_t         device_has_eye_gaze       ();
 SK_API bool32_t         device_has_hand_tracking  ();
+SK_API origin_mode_     device_get_origin_mode    ();
+SK_API pose_t           device_get_origin_offset  ();
 
 ///////////////////////////////////////////
 
@@ -428,58 +500,6 @@ SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
 
 ///////////////////////////////////////////
-
-typedef struct vec2 {
-	float x;
-	float y;
-} vec2;
-typedef struct vec3 {
-	float x;
-	float y;
-	float z;
-} vec3;
-typedef struct vec4 {
-	float x;
-	float y;
-	float z;
-	float w;
-} vec4;
-typedef struct quat {
-	float x;
-	float y;
-	float z; 
-	float w;
-} quat;
-typedef union matrix {
-	vec4 row[4];
-	float m[16];
-} matrix;
-typedef struct rect_t {
-	float x;
-	float y;
-	float w;
-	float h;
-} rect_t;
-typedef struct ray_t {
-	vec3 pos;
-	vec3 dir;
-} ray_t;
-typedef struct bounds_t {
-	vec3 center;
-	vec3 dimensions;
-} bounds_t;
-typedef struct plane_t {
-	vec3  normal;
-	float d;
-} plane_t;
-typedef struct sphere_t {
-	vec3  center;
-	float radius;
-} sphere_t;
-typedef struct pose_t {
-	vec3 position;
-	quat orientation;
-} pose_t;
 
 SK_API vec3     vec3_cross                (const sk_ref(vec3) a, const sk_ref(vec3) b);
 
