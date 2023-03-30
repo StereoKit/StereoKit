@@ -66,6 +66,7 @@ XrExtInfo      xr_ext_available = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
+XrReferenceSpaceType xr_app_space_type = {};
 XrSpace        xr_stage_space   = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
@@ -92,7 +93,7 @@ XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-XrSpace              openxr_get_app_space   (XrSession session, origin_mode_ mode, XrTime time);
+XrSpace              openxr_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset);
 void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
 XrTime               openxr_acquire_time    ();
 
@@ -499,7 +500,7 @@ bool openxr_init() {
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	// Create reference spaces! So we can find stuff relative to them :)
-	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time);
+	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &device_data.origin_offset);
 
 	// The space for our head
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
@@ -611,7 +612,7 @@ pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType 
 
 ///////////////////////////////////////////
 
-XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time) {
+XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t *out_space_offset) {
 	// Find the spaces OpenXR has access to on this device
 	uint32_t refspace_count = 0;
 	xrEnumerateReferenceSpaces(session, 0, &refspace_count, nullptr);
@@ -700,7 +701,33 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time) 
 			offset.orientation.x, offset.orientation.y, offset.orientation.z, offset.orientation.w);
 	}
 
+	if (out_space_type != nullptr)
+		*out_space_type = base_space;
+	if (out_space_offset != nullptr)
+		*out_space_offset = offset;
+
 	return result;
+}
+
+///////////////////////////////////////////
+
+void openxr_set_origin_offset(pose_t offset) {
+	// Update our app's space to use the new offset
+	if (xr_app_space != XR_NULL_HANDLE) {
+		xrDestroySpace(xr_app_space);
+		xr_app_space = {};
+	}
+	XrReferenceSpaceCreateInfo space_info = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	space_info.referenceSpaceType = xr_app_space_type;
+	memcpy(&space_info.poseInReferenceSpace.position,    &offset.position,    sizeof(XrVector3f));
+	memcpy(&space_info.poseInReferenceSpace.orientation, &offset.orientation, sizeof(XrQuaternionf));
+	XrResult err = xrCreateReferenceSpace(xr_session, &space_info, &xr_app_space);
+	if (XR_FAILED(err)) {
+		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(err));
+	}
+
+	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
+	xr_bounds_pose = matrix_transform_pose  (render_get_cam_final(), xr_bounds_pose_local);
 }
 
 ///////////////////////////////////////////

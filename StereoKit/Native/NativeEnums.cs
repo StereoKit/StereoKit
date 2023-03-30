@@ -102,6 +102,23 @@ namespace StereoKit
 		AnyTransparent = Additive | Blend,
 	}
 
+	/// <summary>This describes where the origin of the application should be. While these
+	/// origins map closely to OpenXR features, not all runtimes support each
+	/// feature. StereoKit will provide reasonable fallback behavior in the event the
+	/// origin mode isn't directly supported.</summary>
+	public enum OriginMode {
+		/// <summary>The origin will be at the location of the user's head when the
+		/// application starts, facing the same direction as the user.</summary>
+		Local,
+		/// <summary>The origin will be at the floor beneath where the user starts, facing the
+		/// direction of the user.</summary>
+		Floor,
+		/// <summary>The origin will be at the center of a safe play area or stage that the
+		/// user or OS has defined, and will face one of the edges of the play
+		/// area.</summary>
+		Stage,
+	}
+
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel {
 		/// <summary>A default log level that indicates it has not yet been

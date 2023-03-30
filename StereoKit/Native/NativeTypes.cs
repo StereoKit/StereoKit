@@ -92,6 +92,16 @@ namespace StereoKit
 		/// unnecessary swapchain object. Default value is 1.</summary>
 		public int renderMultisample;
 
+		/// <summary>Set the behavior of StereoKit's initial origin. Default
+		/// behavior is OriginMode.Local, which is the most universally
+		/// supported origin mode. Different origin modes have varying levels
+		/// of support on different XR runtimes, and StereoKit will provide
+		/// reasonable fallbacks for each. NOTE that when falling back,
+		/// StereoKit will use a different root origin mode plus an offset. You
+		/// can check Device.OriginMode and Device.OriginOffset to inspect what
+		/// StereoKit actually landed on.</summary>
+		public OriginMode origin;
+
 		/// <summary>A pointer to the JNI's JavaVM structure, only used for
 		/// Android applications. This is optional, even for Android.</summary>
 		public IntPtr androidJavaVm;

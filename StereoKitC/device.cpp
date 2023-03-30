@@ -2,12 +2,18 @@
 #include "stereokit.h"
 #include "sk_memory.h"
 #include "xr_backends/openxr_view.h"
+#include "xr_backends/openxr.h"
+#include "xr_backends/simulator.h"
 
 namespace sk {
 
 device_data_t device_data = {};
 
 ///////////////////////////////////////////
+
+void device_data_init(device_data_t* data) {
+	data->origin_offset = pose_identity;
+}
 
 void device_data_free(device_data_t* data) {
 	sk_free(data->name);
@@ -118,7 +124,11 @@ pose_t device_get_origin_offset() {
 ///////////////////////////////////////////
 
 void device_set_origin_offset(pose_t offset) {
-
+	switch (backend_xr_get_type()) {
+	case backend_xr_type_openxr:    openxr_set_origin_offset   (offset); break;
+	case backend_xr_type_simulator: simulator_set_origin_offset(offset); break;
+	}
+	device_data.origin_offset = offset;
 }
 
 }

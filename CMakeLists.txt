@@ -338,7 +338,9 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_input.h
   StereoKitC/xr_backends/openxr_input.cpp
   StereoKitC/xr_backends/openxr_view.h
-  StereoKitC/xr_backends/openxr_view.cpp )
+  StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/simulator.h
+  StereoKitC/xr_backends/simulator.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h

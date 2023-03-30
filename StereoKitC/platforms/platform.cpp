@@ -19,6 +19,8 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool platform_init() {
+	device_data_init(&device_data);
+
 	// Set up any platform dependent variables
 #if   defined(SK_OS_ANDROID)
 	bool result = android_init();

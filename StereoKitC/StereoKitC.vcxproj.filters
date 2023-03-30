@@ -217,6 +217,9 @@
     <ClCompile Include="ui\ui_theming.cpp">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\simulator.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -495,6 +498,9 @@
     </ClInclude>
     <ClInclude Include="ui\ui_theming.h">
       <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\simulator.h">
+      <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,22 @@
+#include "simulator.h"
+
+namespace sk {
+
+///////////////////////////////////////////
+
+bool simulator_init() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+void simulator_shutdown() {
+}
+
+///////////////////////////////////////////
+
+void simulator_set_origin_offset(pose_t offset) {
+}
+
+
+}

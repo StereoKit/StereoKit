@@ -46,6 +46,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_has_eye_gaze            ();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_has_hand_tracking       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern OriginMode     device_get_origin_mode         ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose           device_get_origin_offset       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void           device_set_origin_offset       (Pose offset);
 
 		///////////////////////////////////////////
 

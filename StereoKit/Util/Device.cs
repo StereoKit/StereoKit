@@ -46,5 +46,23 @@
 		/// does not tell if the user is actually using their hands for input,
 		/// merely that it's possible to!</summary>
 		public static bool HasHandTracking => NativeAPI.device_has_hand_tracking();
+
+		/// <summary>The mode or "reference space" that StereoKit uses for
+		/// determining its base origin. This is determined by the initial
+		/// value provided in SKSettings.origin, as well as by support from the
+		/// underlying runtime. The mode reported here will _not_ necessarily
+		/// be the one requested in initialization, as fallbacks are
+		/// implemented using different available modes.</summary>
+		public static OriginMode OriginMode => NativeAPI.device_get_origin_mode();
+
+		/// <summary>This is relative to the base reference point and is NOT
+		/// in world space! The origin StereoKit uses is actually a base
+		/// reference point combined with an offset! You can use this to read
+		/// or set the offset from the OriginMode reference point. </summary>
+		public static Pose OriginOffset
+		{
+			get => NativeAPI.device_get_origin_offset();
+			set => NativeAPI.device_set_origin_offset(value);
+		}
 	}
 }
