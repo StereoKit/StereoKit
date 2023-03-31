@@ -11,6 +11,8 @@
 #include "android.h"
 #include "web.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/simulator.h"
+#include "../xr_backends/none.h"
 
 #include "../libraries/sk_gpu.h"
 
@@ -190,6 +192,8 @@ bool platform_set_mode(display_type_ mode) {
 #elif defined(SK_OS_WEB)
 		result = web_start_flat    ();
 #endif
+		if (sk_settings.disable_flatscreen_mr_sim) none_init();
+		else                                       simulator_init();
 	}
 
 	return result;
@@ -230,6 +234,8 @@ void platform_step_begin() {
 #elif defined(SK_OS_WEB)
 		web_step_begin_flat    ();
 #endif
+		if (sk_settings.disable_flatscreen_mr_sim) none_step_begin();
+		else                                       simulator_step_begin();
 	} break;
 	}
 	platform_utils_update();
@@ -247,6 +253,8 @@ void platform_step_end() {
 #endif
 		break;
 	case display_type_flatscreen: {
+		if (sk_settings.disable_flatscreen_mr_sim) none_step_end();
+		else                                       simulator_step_end();
 #if   defined(SK_OS_ANDROID)
 		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
@@ -274,6 +282,8 @@ void platform_stop_mode() {
 #endif
 		break;
 	case display_type_flatscreen: {
+		if (sk_settings.disable_flatscreen_mr_sim) none_shutdown();
+		else                                       simulator_shutdown();
 #if   defined(SK_OS_ANDROID)
 		android_stop_flat();
 #elif defined(SK_OS_LINUX)

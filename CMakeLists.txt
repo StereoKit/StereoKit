@@ -139,9 +139,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.24
+  VERSION 1.0.27
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG "release-1.0.24"
+  GIT_TAG "release-1.0.27"
   OPTIONS
   "BUILD_WITH_SYSTEM_JSONCPP OFF"
 )
@@ -340,7 +340,9 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
   StereoKitC/xr_backends/simulator.h
-  StereoKitC/xr_backends/simulator.cpp )
+  StereoKitC/xr_backends/simulator.cpp
+  StereoKitC/xr_backends/none.h
+  StereoKitC/xr_backends/none.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h

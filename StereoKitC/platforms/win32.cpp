@@ -13,10 +13,8 @@
 #include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../hands/input_hand.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -156,20 +154,8 @@ void win32_shutdown() {
 ///////////////////////////////////////////
 
 bool win32_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
-	device_data.display_blend  = display_blend_opaque;
-	device_data.display_width  = sk_settings.flatscreen_width;
-	device_data.display_height = sk_settings.flatscreen_height;
-	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
-		? device_tracking_6dof
-		: device_tracking_none;
-	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
-		? string_copy("Simulator")
-		: string_copy("None");
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
@@ -227,13 +213,13 @@ bool win32_start_flat() {
 		RegCloseKey     (reg_key);
 	} else {
 		rect.left   = sk_settings.flatscreen_pos_x;
-		rect.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
+		rect.right  = sk_settings.flatscreen_pos_x + sk_settings.flatscreen_width;
 		rect.top    = sk_settings.flatscreen_pos_y;
-		rect.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
+		rect.bottom = sk_settings.flatscreen_pos_y + sk_settings.flatscreen_height;
 		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	}
-	if (rect.right == rect.left) rect.right  = rect.left + sk_info.display_width;
-	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_info.display_height;
+	if (rect.right == rect.left) rect.right  = rect.left + sk_settings.flatscreen_width;
+	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_settings.flatscreen_height;
 	
 	win32_window = CreateWindowW(
 		app_name_w,
@@ -278,14 +264,12 @@ bool win32_start_flat() {
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 	render_update_projection();
 
-	flatscreen_input_init();
-
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void win32_stop_flat() {
+void win32_stop_flat() { 
 	if (backend_xr_get_type() == backend_xr_type_simulator) {
 		RECT rect;
 		HKEY reg_key;
@@ -296,7 +280,6 @@ void win32_stop_flat() {
 		}
 	}
 
-	flatscreen_input_shutdown();
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
 	win32_swapchain_initialized = false;
@@ -317,13 +300,14 @@ void win32_step_begin_xr() {
 	}
 }
 
+///////////////////////////////////////////
+
 void win32_step_begin_flat() {
 	MSG msg = {0};
 	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -338,8 +322,6 @@ void win32_step_end_flat() {
 	skg_tex_target_bind(&win32_target->tex);
 #endif
 	skg_target_clear(true, &col.r);
-
-	input_update_poses(true);
 
 	matrix view = render_get_cam_final        ();
 	matrix proj = render_get_projection_matrix();
