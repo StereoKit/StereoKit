@@ -1314,6 +1314,7 @@ SK_API vec2          text_char_at_16               (const char16_t* text_utf16, 
 
 SK_API material_t    text_style_get_material       (text_style_t style);
 SK_API float         text_style_get_char_height    (text_style_t style);
+SK_API void          text_style_set_char_height    (text_style_t style, float height_meters);
 
 ///////////////////////////////////////////
 

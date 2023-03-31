@@ -2,7 +2,6 @@
 
 namespace sk {
 
-extern float    skui_fontsize;
 extern color128 skui_tint;
 
 extern sprite_t skui_toggle_off;

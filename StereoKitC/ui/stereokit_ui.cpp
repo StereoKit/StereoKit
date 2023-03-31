@@ -131,7 +131,7 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 void ui_hseparator() {
 	vec3 pos;
 	vec2 size;
-	ui_layout_reserve_sz({ 0, skui_fontsize*0.4f }, false, &pos, &size);
+	ui_layout_reserve_sz({ 0, text_style_get_char_height(ui_get_text_style())*0.4f }, false, &pos, &size);
 
 	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, ui_color_primary, 0);
 }
@@ -243,11 +243,12 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	vec2  text_size;
 	text_align_ text_align;
 	float aspect = image != nullptr ? sprite_get_aspect(image) : 1.0f;
+	float font_size = text_style_get_char_height(ui_get_text_style());
 	switch (image_layout) {
 	default:
 	case ui_btn_layout_left:
 		image_align = text_align_center;
-		image_size  = fminf(size.y - pad2, skui_fontsize);
+		image_size  = fminf(size.y - pad2, font_size);
 		image_at    = window_relative_pos - vec3{ size.y/2.0f, size.y/2.0f, depth };
 
 		text_align = text_align_center_right;
@@ -257,7 +258,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	case ui_btn_layout_right:
 		image_align = text_align_center;
 		image_at    = window_relative_pos - vec3{ size.x-(size.y/2), size.y / 2, depth };
-		image_size  = fminf(size.y - pad2, skui_fontsize);
+		image_size  = fminf(size.y - pad2, font_size);
 
 		text_align = text_align_center_left;
 		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
@@ -298,15 +299,16 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 template<typename C>
 vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_layout) {
 	vec2 size = {};
-	if (image_layout == ui_btn_layout_center || image_layout == ui_btn_layout_center_no_text) {
-		size = { skui_fontsize, skui_fontsize };
+	float font_size = text_style_get_char_height(ui_get_text_style());
+	if (image_layout == font_size || image_layout == ui_btn_layout_center_no_text) {
+		size = { font_size, font_size };
 	} else if (image_layout == ui_btn_layout_none) {
 		size = text_size(text, ui_get_text_style());
 	} else {
 		vec2  txt_size   = text_size(text, ui_get_text_style());
 		float aspect     = sprite_get_aspect(image);
-		float image_size = skui_fontsize * aspect;
-		size = vec2{ txt_size.x + image_size + skui_settings.gutter, skui_fontsize };
+		float image_size = font_size * aspect;
+		size = vec2{ txt_size.x + image_size + skui_settings.gutter, font_size };
 	}
 	return size;
 }
@@ -654,7 +656,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 		int32_t carat_at      = skui_input_carat;
 		vec2    carat_pos     = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
-		float   scroll_margin = text_bounds.x - skui_fontsize;
+		float   scroll_margin = text_bounds.x - text_style_get_char_height(ui_get_text_style());
 		while (carat_pos.x < -scroll_margin && *draw_text != '\0' && carat_at >= 0) {
 			draw_text += 1;
 			carat_at  -= 1;

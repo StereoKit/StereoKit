@@ -188,6 +188,12 @@ float text_style_get_char_height(text_style_t style) {
 
 ///////////////////////////////////////////
 
+void text_style_set_char_height(text_style_t style, float height_meters) {
+	text_styles[style].char_height = height_meters;
+}
+
+///////////////////////////////////////////
+
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 inline vec2 text_size_g(const C *text, text_style_t style) {
 	if (text == nullptr) return {};

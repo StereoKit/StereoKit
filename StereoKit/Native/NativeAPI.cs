@@ -316,6 +316,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_char_height(TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_char_height(TextStyle style, float height_meters);
 
 		///////////////////////////////////////////
 

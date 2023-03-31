@@ -26,7 +26,6 @@ struct ui_theme_color_t {
 ///////////////////////////////////////////
 
 font_t          skui_font;
-float           skui_fontsize;
 
 ui_el_visual_t  skui_visuals[ui_vis_max];
 mesh_t          skui_box_top;
@@ -77,12 +76,17 @@ void ui_theming_init() {
 	skui_anim_id    = 0;
 	skui_anim_time  = 0;
 	skui_tint       = { 1,1,1,1 };
-	skui_fontsize   = 10 * mm2m;
 	skui_font_stack = {};
 	skui_tint_stack = {};
 	memset(skui_visuals, 0, sizeof(skui_visuals));
 
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
+
+	skui_font_mat   = material_find(default_id_material_font);
+	material_set_queue_offset(skui_font_mat, -12);
+	skui_font       = font_find(default_id_font);
+	skui_font_stack.add( text_make_style_mat(skui_font, 10*mm2m, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
+
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
 	ui_settings_t settings = {};
@@ -163,11 +167,6 @@ void ui_theming_init() {
 	material_set_depth_write (skui_mat_dbg, false);
 	material_set_depth_test  (skui_mat_dbg, depth_test_always);
 	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
-
-	skui_font_mat   = material_find(default_id_material_font);
-	material_set_queue_offset(skui_font_mat, -12);
-	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, skui_fontsize, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
 
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
@@ -404,7 +403,6 @@ color128 ui_get_theme_color(ui_color_ color_type) {
 
 void ui_push_text_style(text_style_t style) {
 	skui_font_stack.add(style);
-	skui_fontsize = text_style_get_char_height(style);
 }
 
 ///////////////////////////////////////////
@@ -415,7 +413,6 @@ void ui_pop_text_style() {
 		return;
 	}
 	skui_font_stack.pop();
-	skui_fontsize = text_style_get_char_height(skui_font_stack.last());
 }
 
 ///////////////////////////////////////////
