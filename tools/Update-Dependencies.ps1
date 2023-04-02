@@ -170,8 +170,8 @@ if (!$vsExe) {
     Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Valid Visual Studio version not found!" -ForegroundColor red
     exit 
 }
-$vsYear          = & $vsWhere -latest -property catalog_productLineVersion -version $vsVersionRange
-$vsVersion       = & $vsWhere -latest -property catalog_buildVersion -version $vsVersionRange
+$vsYear          = & $vsWhere -latest -prerelease -property catalog_productLineVersion -version $vsVersionRange
+$vsVersion       = & $vsWhere -latest -prerelease -property catalog_buildVersion -version $vsVersionRange
 $vsVersion       = $vsVersion.Split(".")[0]
 $vsGeneratorName = "Visual Studio $vsVersion $vsYear"
 Write-Host "Using $vsGeneratorName" -ForegroundColor green
