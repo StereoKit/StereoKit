@@ -54,6 +54,10 @@
 		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/*.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(ProjectDir)openxr_loader/$(SKOpenXRLoader)/*.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+		<Error Condition="'$(SKBuildPlatform)'=='Android' and '$(SKOpenXRLoader)'!='None' and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/*.so') and !Exists('$(ProjectDir)openxr_loader/$(SKOpenXRLoader)/*.so')" Text="StereoKit could not find the Android OpenXR Loader indicated by &lt;SKOpenXRLoader&gt;! Please copy your platform specific libopenxr_loader.so file in this folder: $(ProjectDir)openxr_loader/$(SKOpenXRLoader)/" />
 	</ItemGroup>
 
 </Project>
