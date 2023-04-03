@@ -967,7 +967,10 @@ void skg_tex_target_bind(skg_tex_t *render_target) {
 	if (render_target->type != skg_tex_type_rendertarget)
 		return;
 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)render_target->width, (float)render_target->height);
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width    = (float)render_target->width;
+	viewport.Height   = (float)render_target->height;
+	viewport.MaxDepth = 1.0f;
 	d3d_context->RSSetViewports(1, &viewport);
 	d3d_context->OMSetRenderTargets(1, &render_target->_target_view, render_target->_depth_view);
 }
@@ -1005,7 +1008,12 @@ void skg_compute(uint32_t thread_count_x, uint32_t thread_count_y, uint32_t thre
 ///////////////////////////////////////////
 
 void skg_viewport(const int32_t *xywh) {
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT((float)xywh[0], (float)xywh[1], (float)xywh[2], (float)xywh[3]);
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = (float)xywh[0];
+	viewport.TopLeftY = (float)xywh[1];
+	viewport.Width    = (float)xywh[2];
+	viewport.Height   = (float)xywh[3];
+	viewport.MaxDepth = 1.0f;
 	d3d_context->RSSetViewports(1, &viewport);
 }
 

@@ -1205,7 +1205,7 @@ void render_list_clear(render_list_t list) {
 
 // https://travisdowns.github.io/blog/2019/05/22/sorting.html
 
-#if _WIN32
+#if _MSC_VER
 #include <intrin.h>
 #endif
 

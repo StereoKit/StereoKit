@@ -8,6 +8,7 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../device.h"
+#include "../sk_math.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/stref.h"
@@ -225,8 +226,8 @@ bool win32_start_flat() {
 		app_name_w,
 		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		max(0,rect.left),
-		max(0,rect.top),
+		maxi(0,rect.left),
+		maxi(0,rect.top),
 		rect.right  - rect.left,
 		rect.bottom - rect.top,
 		0, 0, 

@@ -347,7 +347,7 @@ bool audio_init() {
 		return false;
 	}
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(_MSC_VER)
 	if (au_default_device_out_id.wasapi[0] == '\0') {
 		HRESULT hr = isac_activate(_countof(au_active_sounds), isac_data_callback);
 
@@ -429,7 +429,7 @@ void audio_shutdown() {
 	}
 
 	mic_stop();
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(_MSC_VER)
 	isac_destroy();
 #endif
 	ma_device_uninit (&au_device);
