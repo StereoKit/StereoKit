@@ -68,7 +68,7 @@ public static class Tests
 			activeScene = nextScene;
 			nextScene   = null;
 		}
-		activeScene.Update();
+		activeScene.Step();
 		sceneFrame++;
 
 		if (IsTesting && FinishedWithTest())

@@ -121,7 +121,7 @@ class DocModel : ITest
 		Tests.Test(TestModelInfo);
 	}
 	public void Shutdown  (){}
-	public void Update    ()
+	public void Step    ()
 	{
 		testModel.Draw(Matrix.Identity);
 		Tests.Screenshot("Tests/ModelSubsets.jpg", 600, 600, new Vec3(0,0.5f,-2), new Vec3(0, 0.5f, 0));

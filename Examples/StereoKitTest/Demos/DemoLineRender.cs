@@ -39,7 +39,7 @@ class DemoLineRender : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Default.MeshSphere.Draw(Default.MaterialUnlit, Matrix.TS(center, 0.06f), Color.HSV(0.16f, 0.4f, 0.9f));
 		for (int i = 0; i < bodies.Length; i++) { 

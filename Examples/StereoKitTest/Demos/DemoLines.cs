@@ -15,7 +15,7 @@ class DemoLines : ITest
 	public void Initialize() { }
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Hierarchy.Push(Matrix.T(0.1f, -0.2f, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0, 0, 0));

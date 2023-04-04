@@ -158,7 +158,7 @@ class DemoAssets : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		AssetWindow();
 

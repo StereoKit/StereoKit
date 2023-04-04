@@ -128,7 +128,7 @@ class DemoPointCloud : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		cloud.Draw(cloudPose.ToMatrix(cloudScale));
 

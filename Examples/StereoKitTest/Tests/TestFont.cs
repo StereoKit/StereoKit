@@ -11,7 +11,7 @@ class TestFont : ITest
 			Color.White);
 	}
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Color32 col = new Color32(0, 255, 0, 255);
 

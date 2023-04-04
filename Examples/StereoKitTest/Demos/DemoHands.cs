@@ -101,7 +101,7 @@ class DemoHands : ITest
 		/// :End:
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Vec2 size = V.XY(8, 0) * U.cm;
 

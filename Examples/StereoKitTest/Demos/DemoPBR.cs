@@ -59,7 +59,7 @@ class DemoPBR : ITest
 		Renderer.SkyLight = oldSkyLight;
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("PBRBalls.jpg", 1024, 1024, new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
 

@@ -35,7 +35,7 @@ class DocAnim : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		/// :CodeSample: Model Model.AnimCompletion Model.ActiveAnim Model.AnimTime Model.AnimMode Anim.Name
 		/// ### Animation progress bar

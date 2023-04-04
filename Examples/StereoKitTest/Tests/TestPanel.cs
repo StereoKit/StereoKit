@@ -12,7 +12,7 @@ internal class TestPanel : ITest
 
 	Pose p1 = new Pose(-.15f,0,-0.5f, Quat.LookDir(0,0,1));
 	Pose p2 = new Pose(.15f,0,-0.5f, Quat.LookDir(0, 0, 1));
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Panel Test Auto", ref p1);
 

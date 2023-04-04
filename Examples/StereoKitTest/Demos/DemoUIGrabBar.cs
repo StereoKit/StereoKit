@@ -14,7 +14,7 @@ class DemoUIGrabBar : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("UIGrabBarWindow.jpg", 1, 400, 400, 90, grabBarPose.position + V.XYZ(-0.2f, -0.23f, 0.2f), grabBarPose.position - V.XYZ(0, 0.23f, 0));
 		GrabBarWindow();

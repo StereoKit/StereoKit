@@ -29,7 +29,7 @@ class DocHand : ITest
 
 	public void Initialize() { }
 	public void Shutdown() { }
-	public void Update() {
+	public void Step() {
 		HandInBounds();
 
 		Hand hand = Input.Hand(Handed.Right);

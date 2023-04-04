@@ -73,7 +73,7 @@ class DemoRecordMic : ITest
 
 	public void Initialize() => Tests.RunForFrames(2);
 	public void Shutdown() => Microphone.Stop();
-	public void Update()
+	public void Step()
 	{
 		ShowMicDeviceWindow();
 		RecordAudio();

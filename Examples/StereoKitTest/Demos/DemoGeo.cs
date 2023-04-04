@@ -168,7 +168,7 @@ class DemoGeo : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
 

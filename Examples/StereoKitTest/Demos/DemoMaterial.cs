@@ -160,7 +160,7 @@ class DemoMaterial : ITest
 		Tests.Screenshot(screenshotName, 400, 400, at + (from ?? new Vec3(0, 0, -0.08f)), at);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		showCount=0;
 		ShowMaterial(meshSphere, matDefault,    "MaterialDefault.jpg");

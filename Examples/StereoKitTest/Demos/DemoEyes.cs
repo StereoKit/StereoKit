@@ -22,7 +22,7 @@ class DemoEyes : ITest
 	}
 	public void Shutdown  () { }
 
-	public void Update()
+	public void Step()
 	{
 		Plane  plane    = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
 		Matrix quadPose = Matrix.TRS(new Vec3(0.54f, -0.2f, -0.468f), Quat.LookDir(plane.normal), 0.5f);

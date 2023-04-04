@@ -33,7 +33,7 @@ class DemoMaterialChain : ITest
 
 	public void Initialize() => CreateShellMaterial();
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Vec3 at = new Vec3(0.5f, -0.1f, -0.5f);
 		Hierarchy.Push(Matrix.T(at));

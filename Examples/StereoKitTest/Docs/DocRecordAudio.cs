@@ -10,7 +10,7 @@ class DocRecordAudio : ITest
 
 	Pose windowPose = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
 
-	public void Update()
+	public void Step()
 	{
 		if (Microphone.IsRecording)
 		{

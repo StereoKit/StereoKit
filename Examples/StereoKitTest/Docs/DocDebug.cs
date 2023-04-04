@@ -41,5 +41,5 @@ class DocDebug : ITest
 	}
 
 	public void Shutdown(){}
-	public void Update  (){}
+	public void Step  (){}
 }

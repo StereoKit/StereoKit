@@ -69,7 +69,7 @@ class TestProceduralGeo : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Vec3 at   = new Vec3(0,-10,0);
 		Vec3 from = new Vec3(1, 1, 1) * 0.7f;

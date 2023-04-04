@@ -28,7 +28,7 @@ class DocTexGenParticle: ITest
 	}
 
 
-	public void Update() {
+	public void Step() {
 		Hierarchy.Push(Matrix.T(0,4,2));
 
 		Sprite[] sprites = spriteList;

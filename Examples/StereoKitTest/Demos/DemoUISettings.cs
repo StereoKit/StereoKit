@@ -11,7 +11,7 @@ class DemoUISettings : ITest
 	static UISettings activeSettings;
 	static Vec3       colorScheme    = new Vec3(0.07f, 0.5f, 0.8f);
 
-	public void Update()
+	public void Step()
 	{
 		WindowSettings();
 	}

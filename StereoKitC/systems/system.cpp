@@ -187,7 +187,7 @@ void systems_shutdown() {
 
 	log_info("Session Performance Report:");
 	log_info("<~BLK>______________________________________________________<~clr>");
-	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>     <~YLW>Step <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < systems.count; i++) {
 		char start_time   [24];

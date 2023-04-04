@@ -41,7 +41,7 @@ class DemoNodes : ITest
 		radioSoundInst = radioSound.Play(Vec3.Zero);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		UI.HandleBegin("Radio", ref radioPose, radio.Bounds);
 		{
