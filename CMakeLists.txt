@@ -316,8 +316,6 @@ set(SK_SRC_HANDS
 set(SK_SRC_PLATFORMS
   StereoKitC/platforms/android.cpp
   StereoKitC/platforms/android.h
-  StereoKitC/platforms/flatscreen_input.h
-  StereoKitC/platforms/flatscreen_input.cpp
   StereoKitC/platforms/linux.h
   StereoKitC/platforms/linux.cpp
   StereoKitC/platforms/platform.h

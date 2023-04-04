@@ -152,7 +152,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
-    <ClCompile Include="platforms\flatscreen_input.cpp" />
     <ClCompile Include="platforms\linux.cpp" />
     <ClCompile Include="platforms\platform.cpp" />
     <ClCompile Include="platforms\platform_utils.cpp" />
@@ -230,7 +229,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="platforms\android.h" />
-    <ClInclude Include="platforms\flatscreen_input.h" />
     <ClInclude Include="platforms\linux.h" />
     <ClInclude Include="platforms\platform.h" />
     <ClInclude Include="platforms\platform_utils.h" />

@@ -6,6 +6,7 @@
 #include "../asset_types/assets.h"
 #include "../asset_types/mesh_.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/simulator.h"
 #include "../xr_backends/openxr_extensions.h"
 #include "render.h"
 
@@ -79,24 +80,6 @@ bool world_check_needs_update(scene_request_info_t info) {
 	case world_refresh_timer: return (time_totalf_unscaled() - xr_scene_last_refresh) >= info.refresh_interval;
 	default: return false;
 	}
-}
-
-///////////////////////////////////////////
-
-bool32_t world_has_bounds() {
-	return xr_has_bounds;
-}
-
-///////////////////////////////////////////
-
-vec2 world_get_bounds_size() {
-	return xr_bounds_size;
-}
-
-///////////////////////////////////////////
-
-pose_t world_get_bounds_pose() {
-	return xr_bounds_pose;
 }
 
 ///////////////////////////////////////////
@@ -582,25 +565,42 @@ float world_get_refresh_interval() {
 	return 0;
 }
 
+#endif
 
 ///////////////////////////////////////////
 
 bool32_t world_has_bounds() {
-	return false;
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_has_bounds;
+#endif
+	case backend_xr_type_simulator: return true;
+	default:                        return false;
+	}
 }
 
 ///////////////////////////////////////////
 
 vec2 world_get_bounds_size() {
-	return vec2_zero;
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_bounds_size;
+#endif
+	case backend_xr_type_simulator: return simulator_bounds_size();
+	default:                        return vec2_zero;
+	}
 }
 
 ///////////////////////////////////////////
 
 pose_t world_get_bounds_pose() {
-	return pose_identity;
-}
-
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_bounds_pose;
 #endif
+	case backend_xr_type_simulator: return simulator_bounds_pose();
+	default:                        return pose_identity;
+	}
+}
 
 } // namespace sk

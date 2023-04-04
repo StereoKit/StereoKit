@@ -16,7 +16,6 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/flatscreen_input.h"
 #include "../platforms/platform_utils.h"
 
 #pragma warning(push)
@@ -108,6 +107,8 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
+matrix                  render_sim_origin            = matrix_identity;
+matrix                  render_sim_head              = matrix_identity;
 
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
@@ -340,7 +341,7 @@ matrix render_get_cam_final_inv() {
 
 void render_set_cam_root(const matrix &cam_root) {
 	render_camera_root       = cam_root;
-	render_camera_root_final = fltscr_transform * cam_root;
+	render_camera_root_final = render_sim_head * cam_root * render_sim_origin;
 	matrix_inverse(render_camera_root_final, render_camera_root_final_inv);
 
 	// TODO: May want to also update controllers/hands?
@@ -352,6 +353,20 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	world_refresh_transforms();
 	input_update_poses(false);
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_origin(pose_t pose) {
+	render_sim_origin = matrix_invert(pose_matrix(pose));
+	render_set_cam_root(render_get_cam_root());
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_head(pose_t pose) {
+	render_sim_head = pose_matrix(pose);
+	render_set_cam_root(render_get_cam_root());
 }
 
 ///////////////////////////////////////////

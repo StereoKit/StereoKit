@@ -36,6 +36,8 @@ void          render_update_projection    ();
 const char   *render_fmt_name             (tex_format_ format);
 tex_format_   render_preferred_depth_fmt  ();
 void          render_blit_to_bound        (material_t material);
+void          render_set_sim_origin       (pose_t pose);
+void          render_set_sim_head         (pose_t pose);
 
 bool          render_init                 ();
 void          render_update               ();

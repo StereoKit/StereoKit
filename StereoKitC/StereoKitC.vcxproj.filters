@@ -154,9 +154,6 @@
     <ClCompile Include="platforms\android.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
-    <ClCompile Include="platforms\flatscreen_input.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
     <ClCompile Include="platforms\linux.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
@@ -431,9 +428,6 @@
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="platforms\android.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="platforms\flatscreen_input.h">
       <Filter>platforms</Filter>
     </ClInclude>
     <ClInclude Include="platforms\linux.h">
