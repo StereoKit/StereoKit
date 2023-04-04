@@ -254,13 +254,32 @@ namespace StereoKit
 		/// <summary>This removes all IStepper instances that are assignable to
 		/// the generic type specified. This will call the IStepper's Shutdown
 		/// method on each removed instance before returning.</summary>
-		/// <param name="type">Any type.</param>
+		/// <param name="type">Any parent or exact type.</param>
 		public static void RemoveStepper(Type type) => _steppers.Remove(type);
 		/// <summary>This removes all IStepper instances that are assignable to
 		/// the generic type specified. This will call the IStepper's Shutdown
 		/// method on each removed instance before returning.</summary>
-		/// <typeparam name="T">An IStepper type.</typeparam>
+		/// <typeparam name="T">Any parent or exact type.</typeparam>
 		public static void RemoveStepper<T>() => _steppers.Remove<T>();
+
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// generic type.</summary>
+		/// <typeparam name="T">Any parent or exact type.</typeparam>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or null if none is found.</returns>
+		public static T GetStepper<T>() => _steppers.Get<T>();
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// type.</summary>
+		/// <param name="type">Any parent or exact type.</param>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or null if none is found.</returns>
+		public static object GetStepper(Type type) => _steppers.Get(type);
 
 		/// <summary>This will queue up some code to be run on StereoKit's main
 		/// thread! Immediately after StereoKit's Step, all callbacks
