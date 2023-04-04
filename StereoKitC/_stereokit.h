@@ -14,7 +14,6 @@ extern bool32_t   sk_running;
 extern bool32_t   sk_initialized;
 extern bool32_t   sk_first_step;
 
-void sk_update_timer();
 void sk_assert_thread_valid();
 
 } // namespace sk

@@ -410,7 +410,7 @@ bool audio_init() {
 
 ///////////////////////////////////////////
 
-void audio_update() {
+void audio_step() {
 	matrix head = pose_matrix(*input_head());
 	matrix_inverse(head, au_head_transform);
 }

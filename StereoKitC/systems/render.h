@@ -40,7 +40,7 @@ void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
 
 bool          render_init                 ();
-void          render_update               ();
+void          render_step                 ();
 void          render_shutdown             ();
 
 render_list_t render_list_create          ();

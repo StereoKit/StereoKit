@@ -69,7 +69,7 @@ void ui_shutdown() {
 
 ///////////////////////////////////////////
 
-void ui_update() {
+void ui_step() {
 	ui_core_update();
 
 	ui_push_surface(pose_identity);
@@ -77,7 +77,7 @@ void ui_update() {
 
 ///////////////////////////////////////////
 
-void ui_update_late() {
+void ui_step_late() {
 	ui_pop_surface();
 
 	//if (skui_layers                 .count != 0) log_errf("ui: Mismatching number of %s calls!", "Begin/End");

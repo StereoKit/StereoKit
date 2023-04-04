@@ -819,7 +819,7 @@ bool render_init() {
 
 ///////////////////////////////////////////
 
-void render_update() {
+void render_step() {
 	if (hierarchy_stack.count > 0)
 		log_err("Render transform stack doesn't have matching begin/end calls!");
 

@@ -78,7 +78,7 @@ void anim_inst_destroy(anim_inst_t *inst);
 void anim_data_destroy(anim_data_t *data);
 anim_data_t anim_data_copy(anim_data_t *data);
 
-void anim_update();
+void anim_step();
 void anim_shutdown();
 
 } // namespace sk

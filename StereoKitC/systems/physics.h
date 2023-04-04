@@ -7,7 +7,7 @@ namespace sk {
 
 bool physics_init    ();
 void physics_shutdown();
-void physics_update  ();
+void physics_step    ();
 
 void solid_destroy(solid_t solid);
 

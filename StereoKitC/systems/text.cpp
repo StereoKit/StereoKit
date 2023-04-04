@@ -591,7 +591,7 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 
 ///////////////////////////////////////////
 
-void text_update() {
+void text_step() {
 	font_update_fonts();
 
 	for (int32_t i = 0; i < text_buffers.count; i++) {

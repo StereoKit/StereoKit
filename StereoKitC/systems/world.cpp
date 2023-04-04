@@ -412,7 +412,7 @@ bool world_init() {
 
 ///////////////////////////////////////////
 
-void world_update() {
+void world_step() {
 	if (world_is_su_needed(xr_scene_next_req) || world_is_su_needed(xr_scene_last_req)) {
 
 		// Check if we've walked away from the current scene's center
@@ -510,7 +510,7 @@ bool world_init() {
 	return true;
 }
 
-void world_update() {
+void world_step() {
 }
 
 void world_shutdown() {

@@ -31,7 +31,7 @@ bool line_drawer_init() {
 
 ///////////////////////////////////////////
 
-void line_drawer_update() {
+void line_drawer_step() {
 	if (line_inds.count <= 0)
 		return;
 

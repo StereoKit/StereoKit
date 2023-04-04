@@ -23,7 +23,7 @@ const vec2  sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement t
 
 ///////////////////////////////////////////
 
-void simulator_mouse_update();
+void simulator_mouse_step();
 
 ///////////////////////////////////////////
 
@@ -47,7 +47,7 @@ bool simulator_init() {
 
 	render_set_sim_origin(device_data.origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
-	simulator_mouse_update();
+	simulator_mouse_step();
 
 	return true;
 }
@@ -60,7 +60,7 @@ void simulator_shutdown() {
 ///////////////////////////////////////////
 
 void simulator_step_begin() {
-	simulator_mouse_update();
+	simulator_mouse_step();
 
 	if (simulator_is_simulating_movement()) {
 
@@ -142,7 +142,7 @@ void simulator_set_origin_offset(pose_t offset) {
 
 ///////////////////////////////////////////
 
-void simulator_mouse_update() {
+void simulator_mouse_step() {
 	vec2  mouse_pos            = {};
 	float mouse_scroll         = platform_get_scroll();
 	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_focus == app_focus_active;

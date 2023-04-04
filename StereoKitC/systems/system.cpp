@@ -65,13 +65,13 @@ bool systems_sort() {
 	// Turn dependency names into indices for update
 	sort_dependency_t *update_ids = sk_malloc_t(sort_dependency_t, systems.count);
 	for (int32_t i = 0; i < systems.count; i++) {
-		update_ids[i].count = systems[i].update_dependency_count;
-		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].update_dependency_count);
+		update_ids[i].count = systems[i].step_dependency_count;
+		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].step_dependency_count);
 
-		for (int32_t d = 0; d < systems[i].update_dependency_count; d++) {
-			update_ids[i].ids[d] = systems_find_id(systems[i].update_dependencies[d]);
+		for (int32_t d = 0; d < systems[i].step_dependency_count; d++) {
+			update_ids[i].ids[d] = systems_find_id(systems[i].step_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
-				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
+				log_errf("Can't find system update dependency by the name of %s!", systems[i].step_dependencies[d]);
 				result = 1;
 			}
 		}
@@ -151,19 +151,19 @@ bool systems_initialize() {
 
 ///////////////////////////////////////////
 
-void systems_update() {
+void systems_step() {
 	for (int32_t i = 0; i < systems.count; i++) {
-		if (systems[i].func_update != nullptr) {
+		if (systems[i].func_step != nullptr) {
 			// start timing
 			systems[i].profile_frame_start = stm_now();
 
-			systems[i].func_update();
+			systems[i].func_step();
 
 			// end timing
 			if (systems[i].profile_frame_duration == 0)
 				systems[i].profile_frame_duration = stm_since(systems[i].profile_frame_start);
-			systems[i].profile_update_duration += systems[i].profile_frame_duration;
-			systems[i].profile_update_count    += 1;
+			systems[i].profile_step_duration += systems[i].profile_frame_duration;
+			systems[i].profile_step_count    += 1;
 			systems[i].profile_frame_duration   = 0;
 		}
 	}
@@ -199,8 +199,8 @@ void systems_shutdown() {
 			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(start_time, sizeof(start_time), "          ");
 
-		if (systems[i].profile_update_duration != 0) {
-			double ms = stm_ms(systems[i].profile_update_duration / systems[i].profile_update_count);
+		if (systems[i].profile_step_duration != 0) {
+			double ms = stm_ms(systems[i].profile_step_duration / systems[i].profile_step_count);
 			// Exception for FramePresent, since it includes vsync time
 			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[i].name, "FramePresent") ? "<~RED>":"", ms);
 		} else snprintf(update_time, sizeof(update_time), "        ");
