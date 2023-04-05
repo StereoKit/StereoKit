@@ -105,7 +105,7 @@ class DemoMicrophone : ITest
 	}
 	/// :End:
 
-	public void Update()
+	public void Step()
 	{
 		ShowMicDeviceWindow();
 		Tests.Screenshot("MicrophoneSelector.jpg", 1, 400, 400, 90, micSelectPose.position+V.XYZ(-0.15f, -0.02f, 0.15f), micSelectPose.position-V.XYZ(0,0.12f,0));

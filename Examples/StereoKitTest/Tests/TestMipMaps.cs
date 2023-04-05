@@ -68,5 +68,5 @@ class TestMipMaps : ITest
 		tex16.SetColors(6, 8, colors7);
 	}
 	public void Shutdown() { }
-	public void Update() { }
+	public void Step() { }
 }

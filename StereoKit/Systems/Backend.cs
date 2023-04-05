@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -76,7 +77,7 @@ namespace StereoKit
 			/// extensions via `OpenXR.RequestExt`, and this can be used to
 			/// opt-in to extensions that StereoKit would normally request
 			/// automatically.</summary>
-			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value?1:0); }
+			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value); }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
@@ -84,7 +85,7 @@ namespace StereoKit
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			/// <returns>If the extension is available to use.</returns>
-			public static bool ExtEnabled(string extensionName) => NativeAPI.backend_openxr_ext_enabled(extensionName)>0;
+			public static bool ExtEnabled(string extensionName) => NativeAPI.backend_openxr_ext_enabled(extensionName);
 
 			/// <summary>This is basically `xrGetInstanceProcAddr` from OpenXR,
 			/// you can use this to get and call functions from an extension
@@ -133,10 +134,25 @@ namespace StereoKit
 			/// and +1 would be after.</param>
 			public static void AddCompositionLayer<T>(T XrCompositionLayerX, int sortOrder) where T : struct
 			{
-				int size = Marshal.SizeOf<T>();
-				IntPtr ptr = Marshal.AllocHGlobal(size);
+				int    size = Marshal.SizeOf<T>();
+				IntPtr ptr  = Marshal.AllocHGlobal(size);
 				Marshal.StructureToPtr(XrCompositionLayerX, ptr, false);
 				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
+				Marshal.FreeHGlobal(ptr);
+			}
+
+			/// <summary>This adds an item to the chain of objects submitted to
+			/// StereoKit's xrEndFrame call!</summary>
+			/// <typeparam name="T">This must be a serializable struct that
+			/// follows the OpenXR data struct pattern.</typeparam>
+			/// <param name="XrBaseHeader">An OpenXR object that will be
+			/// chained into the xrEndFrame call.</param>
+			public static void AddEndFrameChain<T>(T XrBaseHeader) where T : struct
+			{
+				int    size = Marshal.SizeOf<T>();
+				IntPtr ptr  = Marshal.AllocHGlobal(size);
+				Marshal.StructureToPtr(XrBaseHeader, ptr, false);
+				NativeAPI.backend_openxr_end_frame_chain(ptr, size);
 				Marshal.FreeHGlobal(ptr);
 			}
 
@@ -149,6 +165,10 @@ namespace StereoKit
 				_onPreCreateSessionRegistered = false;
 			}
 
+			/// <summary>This allows you to add callbacks that are invoked
+			/// immediately before the OpenXR session is created, but after
+			/// OpenXR has been initialized! This is only helpful when filled
+			/// out _before_ calling `SK.Initialize`.</summary>
 			public static event Action OnPreCreateSession {
 				add {
 					if (_onPreCreateSessionRegistered == false)
@@ -168,6 +188,38 @@ namespace StereoKit
 				// free all those up.
 				_onPreCreateSession           = null;
 				_onPreCreateSessionRegistered = false;
+			}
+
+			private struct XRPollEventCallbackData
+			{
+				public Action<IntPtr>      action;
+				public XRPollEventCallback callback;
+			}
+
+			private static List<XRPollEventCallbackData> _xrPollEventCallbacks;
+
+			/// <summary>This event gets published each time xrPollEvent results in XR_SUCCESS.</summary>
+			public static event Action<IntPtr> OnPollEvent
+			{
+				add
+				{
+					if (_xrPollEventCallbacks == null) _xrPollEventCallbacks = new List<XRPollEventCallbackData>();
+
+					XRPollEventCallback callback = (_, XrEventDataBuffer) => { value(XrEventDataBuffer); };
+					_xrPollEventCallbacks.Add(new XRPollEventCallbackData { action = value, callback = callback });
+
+					NativeAPI.backend_openxr_add_callback_poll_event(callback, IntPtr.Zero);
+				}
+				remove
+				{
+					if (_xrPollEventCallbacks == null) throw new NullReferenceException();
+
+					int i = _xrPollEventCallbacks.FindIndex(d => d.action == value);
+					if (i < 0) throw new KeyNotFoundException();
+
+					NativeAPI.backend_openxr_remove_callback_poll_event(_xrPollEventCallbacks[i].callback);
+					_xrPollEventCallbacks.RemoveAt(i);
+				}
 			}
 		}
 

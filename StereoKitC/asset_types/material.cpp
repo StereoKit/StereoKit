@@ -16,6 +16,11 @@ _material_buffer_t material_buffers[14] = {};
 
 ///////////////////////////////////////////
 
+void material_copy_pipeline(material_t dest, const material_t src);
+void material_update_label (material_t material);
+
+///////////////////////////////////////////
+
 material_t material_find(const char *id) {
 	material_t result = (material_t)assets_find(id, asset_type_material);
 	if (result != nullptr) {
@@ -29,12 +34,26 @@ material_t material_find(const char *id) {
 
 void material_set_id(material_t material, const char *id) {
 	assets_set_id(&material->header, id);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
 
 const char* material_get_id(const material_t material) {
 	return material->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void material_update_label(material_t material) {
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	if (material->header.id_text != nullptr) {
+		skg_pipeline_name(&material->pipeline, material->header.id_text);
+		skg_buffer_name  (&material->args.buffer_gpu, material->header.id_text);
+	}
+#else
+	(void)material;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -61,13 +80,14 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		: nullptr;
 	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
 
+	material->args.buffer       = buff_size > 0 ? sk_malloc(buff_size) : nullptr;
+	material->args.buffer_size  = buff_size;
+	material->args.buffer_bind  = buff_info ? buff_info->bind : skg_bind_t{};
+	material->args.buffer_dirty = false;
+	if (buff_info && buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
+	else                                             memset(material->args.buffer, 0, buff_size);
 	if (buff_size != 0) {
-		material->args.buffer       = sk_malloc(buff_size);
-		material->args.buffer_size  = buff_size;
-		material->args.buffer_bind  = buff_info->bind;
 		material->args.buffer_dirty = true;
-		if (buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
-		else                                memset(material->args.buffer, 0, buff_size);
 
 		// Construct a material parameters buffer on the GPU, and do it
 		// threadsafe
@@ -82,24 +102,23 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 			return (bool32_t)true;
 		}, &job_data);
 	}
-	if (meta->resource_count > 0) {
-		material->args.texture_count = meta->resource_count;
-		material->args.textures      = sk_malloc_t(shaderargs_tex_t, meta->resource_count);
-		memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
-		for (uint32_t i = 0; i < meta->resource_count; i++) {
-			shaderargs_tex_t *tex_arg     = &material->args.textures[i];
-			tex_t             default_tex = nullptr;
 
-			if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
-			else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
-			else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
-			else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
-			else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
-			else                                                   default_tex = tex_find(default_id_tex);
-			tex_arg->tex       = default_tex;
-			tex_arg->meta_hash = 0;
-			tex_arg->bind      = meta->resources[i].bind;
-		}
+	material->args.texture_count = meta->resource_count;
+	material->args.textures      = meta->resource_count > 0 ? sk_malloc_t(shaderargs_tex_t, meta->resource_count) : nullptr;
+	memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
+	for (uint32_t i = 0; i < meta->resource_count; i++) {
+		shaderargs_tex_t *tex_arg     = &material->args.textures[i];
+		tex_t             default_tex = nullptr;
+
+		if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
+		else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
+		else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
+		else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
+		else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
+		else                                                   default_tex = tex_find(default_id_tex);
+		tex_arg->tex       = default_tex;
+		tex_arg->meta_hash = 0;
+		tex_arg->bind      = meta->resources[i].bind;
 	}
 }
 
@@ -162,16 +181,23 @@ material_t material_copy(material_t material) {
 		if (result->args.textures[i].tex != nullptr)
 			tex_addref(result->args.textures[i].tex);
 	}
+	if (result->chain != nullptr) material_addref(result->chain);
 
 	// Copy over the material's pipeline
 	result->pipeline = skg_pipeline_create(&material->shader->shader);
-	skg_pipeline_set_cull        (&result->pipeline, skg_pipeline_get_cull        (&material->pipeline));
-	skg_pipeline_set_transparency(&result->pipeline, skg_pipeline_get_transparency(&material->pipeline));
-	skg_pipeline_set_wireframe   (&result->pipeline, skg_pipeline_get_wireframe   (&material->pipeline));
-	skg_pipeline_set_depth_test  (&result->pipeline, skg_pipeline_get_depth_test  (&material->pipeline));
-	skg_pipeline_set_depth_write (&result->pipeline, skg_pipeline_get_depth_write (&material->pipeline));
+	material_copy_pipeline(result, material);
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+void material_copy_pipeline(material_t dest, const material_t src) {
+	material_set_cull        (dest, src->cull);
+	material_set_depth_test  (dest, src->depth_test);
+	material_set_depth_write (dest, src->depth_write);
+	material_set_transparency(dest, src->alpha_mode);
+	material_set_wireframe   (dest, src->wireframe);
 }
 
 ///////////////////////////////////////////
@@ -215,15 +241,18 @@ void material_destroy(material_t material) {
 ///////////////////////////////////////////
 
 void material_set_shader(material_t material, shader_t shader) {
+	// We can't really go without a shader, so unlit is our default fallback.
+	if (shader == nullptr)
+		shader = sk_default_shader_unlit;
+
 	if (shader == material->shader)
 		return;
 
 	// Update references
-	if (shader != nullptr)
-		shader_addref(shader);
+	shader_addref(shader);
 
 	// Copy over any relevant values that are attached to the old shader
-	if (material->shader != nullptr && shader != nullptr) {
+	if (material->shader != nullptr) {
 		shader_t          old_shader   = material->shader;
 		void             *old_buffer   = material->args.buffer;
 		shaderargs_tex_t *old_textures = material->args.textures;
@@ -256,11 +285,7 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	material->shader   = shader;
 	material->pipeline = skg_pipeline_create(&material->shader->shader);
-	material_set_cull        (material, material->cull);
-	material_set_depth_test  (material, material->depth_test);
-	material_set_depth_write (material, material->depth_write);
-	material_set_transparency(material, material->alpha_mode);
-	material_set_wireframe   (material, material->wireframe);
+	material_copy_pipeline(material, material);
 }
 
 ///////////////////////////////////////////
@@ -275,6 +300,7 @@ shader_t material_get_shader(material_t material) {
 void material_set_transparency(material_t material, transparency_ mode) {
 	material->alpha_mode = mode;
 	skg_pipeline_set_transparency(&material->pipeline, (skg_transparency_)mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -282,6 +308,7 @@ void material_set_transparency(material_t material, transparency_ mode) {
 void material_set_cull(material_t material, cull_ mode) {
 	material->cull = mode;
 	skg_pipeline_set_cull(&material->pipeline, (skg_cull_)mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -289,6 +316,7 @@ void material_set_cull(material_t material, cull_ mode) {
 void material_set_wireframe(material_t material, bool32_t wireframe) {
 	material->wireframe = wireframe;
 	skg_pipeline_set_wireframe(&material->pipeline, wireframe);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -296,6 +324,7 @@ void material_set_wireframe(material_t material, bool32_t wireframe) {
 void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
 	material->depth_test = depth_test_mode;
 	skg_pipeline_set_depth_test(&material->pipeline, (skg_depth_test_)depth_test_mode);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -303,6 +332,7 @@ void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
 void material_set_depth_write(material_t material, bool32_t write_enabled) {
 	material->depth_write = write_enabled;
 	skg_pipeline_set_depth_write(&material->pipeline, write_enabled);
+	material_update_label(material);
 }
 
 ///////////////////////////////////////////
@@ -820,6 +850,11 @@ material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
 	}
 	material_buffers[register_slot].buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
 	material_buffers[register_slot].size   = size;
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	char name[64];
+	snprintf(name, sizeof(name), "render/material_buffer/register_%d", register_slot);
+	skg_buffer_name(&material_buffers[register_slot].buffer, name);
+#endif
 	return &material_buffers[register_slot];
 }
 

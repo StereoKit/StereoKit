@@ -5,7 +5,7 @@ class DocEyes : ITest
 	public void Initialize() { }
 	public void Shutdown  () { }
 
-	public void Update()
+	public void Step()
 	{
 		/// :CodeSample: Input.EyesTracked Input.Eyes
 		if (Input.EyesTracked.IsActive())

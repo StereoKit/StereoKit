@@ -17,6 +17,7 @@
 #include "../libraries/array.h"
 #include "../libraries/tinycthread.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/atomic_util.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -41,11 +42,11 @@ struct asset_thread_t {
 
 array_t<asset_header_t *>      assets = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
-mtx_t                          assets_multithread_destroy_lock;
+mtx_t                          assets_multithread_destroy_lock = {};
 thrd_id_t                      assets_gpu_thread = {};
-mtx_t                          assets_job_lock;
+mtx_t                          assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
-mtx_t                          assets_load_event_lock;
+mtx_t                          assets_load_event_lock = {};
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
 
@@ -117,10 +118,11 @@ void *assets_allocate(asset_type_ type) {
 
 	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
-	header->type  = type;
-	header->id    = hash_fnv64_string(name);
-	header->index = assets.count;
-	header->state = asset_state_none;
+	header->type    = type;
+	header->id      = hash_fnv64_string(name);
+	header->id_text = string_copy(name);
+	header->index   = assets.count;
+	header->state   = asset_state_none;
 	assets_addref(header);
 	assets.add(header);
 	return header;
@@ -150,22 +152,22 @@ void assets_set_id(asset_header_t *header, uint64_t id) {
 ///////////////////////////////////////////
 
 void assets_addref(asset_header_t *asset) {
-	asset->refs += 1;
+	atomic_increment(&asset->refs);
 }
 
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
 	// Manage the reference count
-	asset->refs -= 1;
-	if (asset->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset->refs) == 0) {
+		assets_destroy(asset);
+	} else if (asset->refs < 0) {
+		if (asset->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset->type, asset->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset->type);
 		abort();
 	}
-	if (asset->refs != 0)
-		return;
-
-	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
@@ -174,24 +176,26 @@ void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
 	// Manage the reference count
-	asset_header->refs -= 1;
-	if (asset_header->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset_header->refs) == 0) {
+		mtx_lock(&assets_multithread_destroy_lock);
+		assets_multithread_destroy.add(asset_header);
+		mtx_unlock(&assets_multithread_destroy_lock);
+	} else if (asset_header->refs < 0) {
+		if (asset_header->id_text != nullptr)
+			log_errf("Released too many references to asset[%d]: %s", asset_header->type, asset_header->id_text);
+		else
+			log_errf("Released too many references to asset[%d]!", asset_header->type);
 		abort();
 	}
-	if (asset_header->refs != 0)
-		return;
-
-	mtx_lock(&assets_multithread_destroy_lock);
-	assets_multithread_destroy.add(asset_header);
-	mtx_unlock(&assets_multithread_destroy_lock);
 }
 
 ///////////////////////////////////////////
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
+		// If something else picked up a reference to this between submission
+		// for destruction and now, that's actually just fine! We can just
+		// break out of here.
 		return;
 	}
 
@@ -349,7 +353,7 @@ bool assets_init() {
 ///////////////////////////////////////////
 
 array_t<asset_load_callback_t> assets_load_call_list = {};
-void assets_update() {
+void assets_step() {
 	// If we have no asset threads for some reason (like WASM), then we'll need
 	// to make sure assets still get loaded here!
 	if (asset_threads.count <= 0) {
@@ -405,7 +409,7 @@ void assets_shutdown() {
 	cnd_broadcast(&asset_tasks_available);
 	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
-			assets_update();
+			assets_step();
 			thrd_yield();
 		}
 	}
@@ -762,7 +766,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 	while (asset->state < state && asset->state >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
+		assets_step();
 	}
 }
 
@@ -783,7 +787,7 @@ void assets_block_for_priority(int32_t priority) {
 	while (curr_priority <= priority && curr_priority != INT_MAX) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
+		assets_step();
 		curr_priority = assets_current_task_priority();
 	}
 }

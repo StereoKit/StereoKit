@@ -7,14 +7,15 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../device.h"
+#include "../sk_math.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../hands/input_hand.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -40,17 +41,23 @@ const int32_t win32_multisample = 1;
 const int32_t win32_multisample = 8;
 #endif
 
+// Constants for the registry key and value names
+const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
+const wchar_t* REG_VALUE_NAME = L"WindowLocation";
+
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
-	if (win32_swapchain_initialized == false || (width == sk_info.display_width && height == sk_info.display_height))
+	if (win32_swapchain_initialized == false || (width == device_data.display_width && height == device_data.display_height))
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
+	device_data.display_width  = width;
+	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skg_swapchain_resize(&win32_swapchain, sk_info.display_width, sk_info.display_height);
-	tex_set_color_arr   (win32_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
+	skg_swapchain_resize(&win32_swapchain, device_data.display_width, device_data.display_height);
+	tex_set_color_arr   (win32_target,     device_data.display_width, device_data.display_height, nullptr, 1, nullptr, win32_multisample);
 	render_update_projection();
 }
 
@@ -58,7 +65,7 @@ void win32_resize(int width, int height) {
 
 void win32_physical_key_interact() {
 	// On desktop, we want to hide soft keyboards on physical presses
-	input_last_physical_keypress = time_getf();
+	input_last_physical_keypress = time_totalf_unscaled();
 	platform_keyboard_show(false, text_context_text);
 }
 
@@ -148,9 +155,8 @@ void win32_shutdown() {
 ///////////////////////////////////////////
 
 bool win32_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
@@ -200,20 +206,30 @@ bool win32_start_flat() {
 	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
 	win32_hinst = wc.hInstance;
 
-	RECT r;
-	r.left   = sk_settings.flatscreen_pos_x;
-	r.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
-	r.top    = sk_settings.flatscreen_pos_y;
-	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
-	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	RECT rect = {};
+	HKEY reg_key;
+	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
+		DWORD data_size = sizeof(RECT);
+		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
+		RegCloseKey     (reg_key);
+	} else {
+		rect.left   = sk_settings.flatscreen_pos_x;
+		rect.right  = sk_settings.flatscreen_pos_x + sk_settings.flatscreen_width;
+		rect.top    = sk_settings.flatscreen_pos_y;
+		rect.bottom = sk_settings.flatscreen_pos_y + sk_settings.flatscreen_height;
+		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	}
+	if (rect.right == rect.left) rect.right  = rect.left + sk_settings.flatscreen_width;
+	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_settings.flatscreen_height;
+	
 	win32_window = CreateWindowW(
 		app_name_w,
 		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		max(0,r.left),
-		max(0,r.top),
-		r.right  - r.left,
-		r.bottom - r.top,
+		maxi(0,rect.left),
+		maxi(0,rect.top),
+		rect.right  - rect.left,
+		rect.bottom - rect.top,
 		0, 0, 
 		wc.hInstance,
 		nullptr);
@@ -236,25 +252,35 @@ bool win32_start_flat() {
 	win32_swapchain_initialized = true;
 	sk_info.display_width  = win32_swapchain.width;
 	sk_info.display_height = win32_swapchain.height;
+	device_data.display_width  = win32_swapchain.width;
+	device_data.display_height = win32_swapchain.height;
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_id       (win32_target, "platform/swapchain");
+	tex_set_id       (win32_target, "sk/platform/swapchain");
 	tex_set_color_arr(win32_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, win32_multisample);
 
 	tex_t zbuffer = tex_add_zbuffer (win32_target, (tex_format_)depth_fmt);
-	tex_set_id (zbuffer, "platform/swapchain_zbuffer");
+	tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
 	tex_release(zbuffer);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-
-	flatscreen_input_init();
+	render_update_projection();
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void win32_stop_flat() {
-	flatscreen_input_shutdown();
+void win32_stop_flat() { 
+	if (backend_xr_get_type() == backend_xr_type_simulator) {
+		RECT rect;
+		HKEY reg_key;
+		GetWindowRect(win32_window, &rect);
+		if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) == ERROR_SUCCESS) {
+			RegSetValueExW(reg_key, REG_VALUE_NAME, 0, REG_BINARY, (const BYTE*)&rect, sizeof(RECT));
+			RegCloseKey   (reg_key);
+		}
+	}
+
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
 	win32_swapchain_initialized = false;
@@ -275,13 +301,14 @@ void win32_step_begin_xr() {
 	}
 }
 
+///////////////////////////////////////////
+
 void win32_step_begin_flat() {
 	MSG msg = {0};
 	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -296,8 +323,6 @@ void win32_step_end_flat() {
 	skg_tex_target_bind(&win32_target->tex);
 #endif
 	skg_target_clear(true, &col.r);
-
-	input_update_poses(true);
 
 	matrix view = render_get_cam_final        ();
 	matrix proj = render_get_projection_matrix();

@@ -31,7 +31,7 @@ class DemoPicker : ITest
 	}
 	public void Shutdown() => Platform.FilePickerClose();
 
-	public void Update() {
+	public void Step() {
 		UI.WindowBegin("Settings", ref menuPose);
 
 		/// :CodeSample: Platform.FilePicker Platform.FilePickerVisible

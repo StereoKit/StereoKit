@@ -78,6 +78,7 @@ class DebugToolWindow
 	static bool screenshots  = false;
 	static int  screenshotId = 1;
 	static AvatarSkeleton avatar = null;
+	static ThemeEditor    theme = null;
 
 	static DemoAnim<Pose>        headAnim = null;
 	static DemoAnim<HandJoint[]> handAnim = null;
@@ -105,6 +106,12 @@ class DebugToolWindow
 		{
 			if (showAvatar) avatar = SK.AddStepper<AvatarSkeleton>();
 			else { SK.RemoveStepper(avatar); avatar = null; }
+		}
+		bool showTheme = theme != null;
+		if (UI.Toggle("Show Theme Editor", ref showTheme))
+		{
+			if (showTheme) theme = SK.AddStepper<ThemeEditor>();
+			else { SK.RemoveStepper(theme); theme = null; }
 		}
 		UI.WindowEnd();
 

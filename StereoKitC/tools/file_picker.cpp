@@ -11,14 +11,18 @@
 #if defined(SK_OS_WINDOWS)
 
 	#include "../platforms/win32.h"
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <windows.h>
 	#include <commdlg.h>
 	#include <stdio.h>
 
 #elif defined(SK_OS_WINDOWS_UWP)
 
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <windows.h>
 	#include <winrt/Windows.UI.Core.h>
 	#include <winrt/Windows.ApplicationModel.Core.h>
@@ -125,7 +129,7 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
-	if (sk_active_display_mode() == display_mode_flatscreen) {
+	if (device_display_get_type() == display_type_flatscreen) {
 		fp_wfilename[0] = '\0';
 
 		// Build a filter string
@@ -238,7 +242,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 
 	file_picker_open_folder(fp_path.folder);
 
-	fp_win_pose  = ui_popup_pose({0,-0.1f,0});
+	fp_win_pose  = matrix_transform_pose( matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	fp_call_data = callback_data;
 	fp_callback  = on_confirm;
 	fp_mode = mode;
@@ -356,6 +360,7 @@ void file_picker_finish() {
 void file_picker_update() {
 	if (fp_show) {
 		ui_push_id("_skp");
+		hierarchy_push(render_get_cam_root());
 		ui_window_begin(fp_title, fp_win_pose, { .46f,0 }, ui_win_normal, ui_system_get_move_type());
 
 		// Show the current directory address bar!
@@ -472,6 +477,7 @@ void file_picker_update() {
 		ui_pop_enabled();
 
 		ui_window_end();
+		hierarchy_pop();
 		ui_pop_id();
 	}
 

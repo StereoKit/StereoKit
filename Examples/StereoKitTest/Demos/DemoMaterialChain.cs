@@ -17,7 +17,7 @@ class DemoMaterialChain : ITest
 
 	void CreateShellMaterial()
 	{
-		Material shellMaterial = new Material(Shader.FromFile("inflatable.hlsl"));
+		Material shellMaterial = new Material("inflatable.hlsl");
 		shellMaterial.FaceCull = Cull.Front;
 		shellMaterial[MatParamName.ColorTint] = Color.HSV(0.1f, 0.7f, 1);
 
@@ -33,7 +33,7 @@ class DemoMaterialChain : ITest
 
 	public void Initialize() => CreateShellMaterial();
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Vec3 at = new Vec3(0.5f, -0.1f, -0.5f);
 		Hierarchy.Push(Matrix.T(at));

@@ -154,9 +154,6 @@
     <ClCompile Include="platforms\android.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
-    <ClCompile Include="platforms\flatscreen_input.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
     <ClCompile Include="platforms\linux.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
@@ -211,7 +208,25 @@
     <ClCompile Include="xr_backends\stage_anchor.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\xr_backend_simxr.cpp">
+    <ClCompile Include="ui\ui_layout.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_core.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\sdf.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_theming.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\simulator.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\none.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
   </ItemGroup>
@@ -424,9 +439,6 @@
     <ClInclude Include="platforms\android.h">
       <Filter>platforms</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\flatscreen_input.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
     <ClInclude Include="platforms\linux.h">
       <Filter>platforms</Filter>
     </ClInclude>
@@ -484,7 +496,28 @@
     <ClInclude Include="xr_backends\stage_anchor.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\xr_backend_simxr.h">
+    <ClInclude Include="libraries\atomic_util.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_layout.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_core.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\sdf.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_theming.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\simulator.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\none.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>
@@ -519,6 +552,9 @@
     <Filter Include="xr_backends">
       <UniqueIdentifier>{16429ea8-7ffe-4668-8807-596c42670405}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{cc487034-d7b8-48bc-85ed-fba2b844bd5e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -549,7 +585,7 @@
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\Tools\include\stereokit.hlsli">
+    <None Include="..\tools\include\stereokit.hlsli">
       <Filter>shaders_builtin</Filter>
     </None>
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl">
@@ -565,7 +601,7 @@
     <None Include="shaders_builtin\shader_builtin_blit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\Tools\include\stereokit_pbr.hlsli">
+    <None Include="..\tools\include\stereokit_pbr.hlsli">
       <Filter>shaders_builtin</Filter>
     </None>
   </ItemGroup>

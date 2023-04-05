@@ -53,6 +53,56 @@ if(FORCE_COLORED_OUTPUT)
 	endif()
 endif()
 
+
+###########################################
+## Platform Specific Settings            ##
+###########################################
+
+if (ANDROID)
+  set(ANDROID_LOG_LIBRARY log)
+  set(ANDROID_LIBS
+    log
+    android
+    EGL)
+elseif (UNIX)
+  set(LINUX_LIBS
+    Threads::Threads
+    GLX
+    X11
+    Xfixes
+    fontconfig )
+
+  # Add pthreads
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+
+  # Add OpenGL, and account for the SK_LINUX_EGL option
+  if(SK_LINUX_EGL)
+    add_definitions("-DSKG_LINUX_EGL")
+    list(APPEND LINUX_LIBS EGL gbm)
+  else()
+    add_definitions("-DSKG_LINUX_GLX")
+    find_package(X11 REQUIRED)
+    list(APPEND LINUX_LIBS GL dl)
+  endif()
+elseif(WIN32)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+  set(WINDOWS_LIBS
+    Comdlg32
+    WindowsApp) # Required for ISAC spatial audio code
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  add_definitions("-DWINDOWS_UWP")
+endif()
+
+if(NOT SK_PHYSICS)
+  message("-- Building without physics!")
+  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
+else()
+  message("-- Building with physics!")
+endif()
+
 ###########################################
 ## Dependencies                          ##
 ###########################################
@@ -89,9 +139,11 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
   NAME OpenXR
-  VERSION 1.0.24
+  VERSION 1.0.27
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG "release-1.0.24"
+  GIT_TAG "release-1.0.27"
+  OPTIONS
+  "BUILD_WITH_SYSTEM_JSONCPP OFF"
 )
 
 ###########################################
@@ -116,61 +168,18 @@ set(SK_SRC_SHADERS_HLSL
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
-set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/Tools/skshaderc")
+set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/tools/skshaderc")
 foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   # Shader compile tool doesn't work on Linux yet, but pre-built
   # shaders should still be in the repository.
   if (WIN32)
     add_custom_command(
         OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -h -t xge -i ${CMAKE_SOURCE_DIR}/Tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
 endforeach(SHADER)
-
-###########################################
-## Platform Specific Settings            ##
-###########################################
-
-if (UNIX)
-  set(LINUX_LIBS
-    Threads::Threads
-    GLX
-    X11
-    Xfixes
-    fontconfig )
-
-  # Add pthreads
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads REQUIRED)
-
-  # Add OpenGL, and account for the SK_LINUX_EGL option
-  if(SK_LINUX_EGL)
-    add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL)
-  else()
-    add_definitions("-DSKG_LINUX_GLX")
-    find_package(GLEW REQUIRED)
-    find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL GLEW)
-  endif()
-elseif(WIN32)
-  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
-    WindowsApp) # Required for ISAC spatial audio code
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  add_definitions("-DWINDOWS_UWP")
-endif()
-
-if(NOT SK_PHYSICS)
-  message("-- Building without physics!")
-  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
-else()
-  message("-- Building with physics!")
-endif()
 
 ###########################################
 ## StereoKitC                            ##
@@ -183,6 +192,8 @@ set(SK_SRC_CODE
   StereoKitC/_stereokit_ui.h
   StereoKitC/color.cpp
   StereoKitC/backend.cpp
+  StereoKitC/device.cpp
+  StereoKitC/device.h
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
   StereoKitC/intersect.cpp
@@ -229,6 +240,7 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/cgltf.cpp
@@ -255,6 +267,10 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/unicode.cpp
   StereoKitC/libraries/tinycthread.h
   StereoKitC/libraries/tinycthread.cpp )
+
+set(SK_SRC_UTILS
+  StereoKitC/utils/sdf.h
+  StereoKitC/utils/sdf.cpp)
 
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
@@ -300,8 +316,6 @@ set(SK_SRC_HANDS
 set(SK_SRC_PLATFORMS
   StereoKitC/platforms/android.cpp
   StereoKitC/platforms/android.h
-  StereoKitC/platforms/flatscreen_input.h
-  StereoKitC/platforms/flatscreen_input.cpp
   StereoKitC/platforms/linux.h
   StereoKitC/platforms/linux.cpp
   StereoKitC/platforms/platform.h
@@ -323,12 +337,14 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_input.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/simulator.h
+  StereoKitC/xr_backends/simulator.cpp
+  StereoKitC/xr_backends/none.h
+  StereoKitC/xr_backends/none.cpp
   StereoKitC/xr_backends/openxr_anchors.h
   StereoKitC/xr_backends/openxr_anchors.cpp
   StereoKitC/xr_backends/stage_anchor.h
-  StereoKitC/xr_backends/stage_anchor.cpp
-  StereoKitC/xr_backends/xr_backend_simxr.h
-  StereoKitC/xr_backends/xr_backend_simxr.cpp )
+  StereoKitC/xr_backends/stage_anchor.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h
@@ -339,7 +355,13 @@ set(SK_SRC_TOOLS
 
 set(SK_SRC_UI
   StereoKitC/stereokit_ui.h
-  StereoKitC/ui/stereokit_ui.cpp )
+  StereoKitC/ui/stereokit_ui.cpp
+  StereoKitC/ui/ui_layout.h
+  StereoKitC/ui/ui_layout.cpp
+  StereoKitC/ui/ui_core.h
+  StereoKitC/ui/ui_core.cpp
+  StereoKitC/ui/ui_theming.h
+  StereoKitC/ui/ui_theming.cpp )
 
 # Switch between a static or shared library based on
 # the cmake options provided.
@@ -353,6 +375,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_CODE}
   ${SK_SRC_ASSET_TYPES}
   ${SK_SRC_LIBRARIES}
+  ${SK_SRC_UTILS}
   ${SK_SRC_SYSTEMS}
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORMS}
@@ -366,6 +389,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
 source_group("code"            FILES ${SK_SRC_CODE})
 source_group("asset_types"     FILES ${SK_SRC_ASSET_TYPES})
 source_group("libraries"       FILES ${SK_SRC_LIBRARIES})
+source_group("utils"           FILES ${SK_SRC_UTILS})
 source_group("systems"         FILES ${SK_SRC_SYSTEMS})
 source_group("hands"           FILES ${SK_SRC_HANDS})
 source_group("platform"        FILES ${SK_SRC_PLATFORMS})
@@ -396,6 +420,8 @@ target_link_libraries( StereoKitC
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+  PUBLIC
+    ${ANDROID_LIBS}
 )
 
 ###########################################
@@ -409,6 +435,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
+    Examples/StereoKitCTest/demo_aliasing.h
+    Examples/StereoKitCTest/demo_aliasing.cpp
     Examples/StereoKitCTest/demo_basics.h
     Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_bvh.h
@@ -488,11 +516,11 @@ install(
 )
 
 install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "Tools/include/stereokit.hlsli"
+  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "tools/include/stereokit.hlsli"
   DESTINATION include)
 
 install(
-  FILES       "Tools/skshaderc" 
+  FILES       "tools/skshaderc" 
   DESTINATION bin)
 
 install(

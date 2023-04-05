@@ -12,7 +12,7 @@ class DocQuat : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		/// :CodeSample: Quat Quat.LookAt
 		/// Quat.LookAt and LookDir are probably one of the easiest ways to

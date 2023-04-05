@@ -6,13 +6,14 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -506,9 +507,8 @@ void uwp_shutdown() {
 ///////////////////////////////////////////
 
 bool uwp_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	_beginthread(window_thread, 0, nullptr);
 	
@@ -521,15 +521,16 @@ bool uwp_start_flat() {
 	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
+	device_data.display_width  = uwp_swapchain.width;
+	device_data.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_id       (uwp_target, "platform/swapchain");
+	tex_set_id       (uwp_target, "sk/platform/swapchain");
 	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
 	tex_t zbuffer = tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
-	tex_set_id       (zbuffer, "platform/swapchain_zbuffer");
+	tex_set_id       (zbuffer, "sk/platform/swapchain_zbuffer");
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
-	flatscreen_input_init();
 	return ViewProvider::inst->valid;
 }
 
@@ -546,6 +547,8 @@ void uwp_step_begin_flat() {
 
 		sk_info.display_width  = uwp_resize_width;
 		sk_info.display_height = uwp_resize_height;
+		device_data.display_width  = uwp_resize_width;
+		device_data.display_height = uwp_resize_height;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", uwp_resize_width, uwp_resize_height);
 
 		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
@@ -554,7 +557,6 @@ void uwp_step_begin_flat() {
 	}
 
 	uwp_mouse_frame_get = ViewProvider::inst->mouse_point;
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -586,8 +588,6 @@ void uwp_step_end_flat() {
 ///////////////////////////////////////////
 
 void uwp_stop_flat() {
-	flatscreen_input_shutdown();
-
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	tex_release          (uwp_target);
 	skg_swapchain_destroy(&uwp_swapchain);

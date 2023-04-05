@@ -1,7 +1,7 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../systems/input.h"
-#include "../platforms/flatscreen_input.h"
+#include "../xr_backends/simulator.h"
 #include "input_hand.h"
 
 namespace sk {
@@ -16,7 +16,7 @@ int     mouse_active_state = 0;
 ///////////////////////////////////////////
 
 bool hand_mouse_available() {
-	return sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim;
+	return backend_xr_get_type() == backend_xr_type_simulator;
 }
 
 ///////////////////////////////////////////
@@ -80,12 +80,12 @@ void hand_mouse_update_frame() {
 	bool was_l_pressed = hand->pinch_state   & button_state_active;
 	bool was_r_pressed = hand->grip_state    & button_state_active;
 
-	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_elapsedf_unscaled()*8);
+	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
 
 	bool hand_tracked = hand_mouse_update_position();
 	if (hand_tracked) {
 		l_pressed = input_key(key_mouse_left ) & button_state_active;
-		r_pressed = flatscreen_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
+		r_pressed = simulator_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
 	}
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
 	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);

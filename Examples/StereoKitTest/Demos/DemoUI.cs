@@ -45,7 +45,7 @@ class DemoUI : ITest
 	float  clipSlider;
 	int    clipOption = 1;
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("GuideUserInterface.jpg", 600, 400, new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
 		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 600, new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));

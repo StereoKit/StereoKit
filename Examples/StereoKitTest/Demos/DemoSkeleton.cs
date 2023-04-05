@@ -12,7 +12,7 @@ class DemoSkeleton : ITest
 		avatar = SK.AddStepper<AvatarSkeleton>();
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Demo.ShowSummary(title, description);
 	}

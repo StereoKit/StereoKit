@@ -82,8 +82,8 @@ namespace StereoKit
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt,IntPtr.Zero) > 0;
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out _, cullFaces);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -100,17 +100,31 @@ namespace StereoKit
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds) > 0;
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds, Cull cullFaces = Cull.Back)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces);
 
 
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Ray.Intersect overload with a Ray output.")]
+		/// <summary>Checks the intersection point of this ray and a Mesh
+		/// with collision data stored on the CPU. A mesh without collision
+		/// data will always return false. Ray must be in model space,
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the point
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="mesh">A mesh containing collision data on the CPU.
+		/// You can check this with Mesh.KeepData.</param>
+		/// <param name="modelSpaceAt">The intersection point of the ray and
+		/// the mesh, if an intersection occurs. This is in model space, and
+		/// must be transformed back into world space later.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, IntPtr.Zero) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back);
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -128,10 +142,13 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Model model, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt) > 0;
+		public bool Intersect(Model model, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
+			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt, cullFaces);
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's

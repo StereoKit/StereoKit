@@ -30,6 +30,17 @@ int32_t      sprite_map_count = 0;
 
 ///////////////////////////////////////////
 
+sprite_t sprite_find(const char* id) {
+	sprite_t result = (sprite_t)assets_find(id, asset_type_sprite);
+	if (result != nullptr) {
+		sprite_addref(result);
+		return result;
+	}
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 void sprite_set_id(sprite_t sprite, const char *id) {
 	assets_set_id(&sprite->header, id);
 }
@@ -50,6 +61,7 @@ material_t sprite_create_material(int index_id) {
 	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
 	material_set_cull        (result, cull_none);
+	material_set_depth_test  (result, depth_test_less_or_eq);
 	shader_release(shader);
 
 	return result;
@@ -58,8 +70,26 @@ material_t sprite_create_material(int index_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
+	if (type == sprite_type_atlased) {
+		log_diag("sprite_create: Atlased sprites not implemented yet! Switching to single.");
+		type = sprite_type_single;
+	}
+
+	// Make an id for the sprite
+	const char* image_id = tex_get_id(image);
+	char sprite_id[256];
+	if (type == sprite_type_single) {
+		snprintf(sprite_id, sizeof(sprite_id), "%s/spr", image_id);
+	} else {
+		snprintf(sprite_id, sizeof(sprite_id), "atlas_spr/%s/%s", atlas_id, image_id);
+	}
+	// Check if the id already exists
+	sprite_t result = sprite_find(sprite_id);
+	if (result != nullptr)
+		return result;
+
 	tex_addref(image);
-	sprite_t result = (_sprite_t*)assets_allocate(asset_type_sprite);
+	result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
 	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
 
@@ -72,11 +102,6 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	else                    // Height is larger than, or equal to width
 		result->dimensions_normalized = { result->aspect, 1 };
 
-	if (type == sprite_type_atlased) {
-		log_diag("sprite_create: Atlased sprites not implemented yet! Switching to single.");
-		type = sprite_type_single;
-	}
-	
 	if (type == sprite_type_single) {
 		result->size         = 1;
 		result->buffer_index = -1;
@@ -119,6 +144,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	}
 
 	sprite_index += 1;
+	sprite_set_id(result, sprite_id);
 	return result;
 }
 

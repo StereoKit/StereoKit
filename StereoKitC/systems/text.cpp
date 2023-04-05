@@ -154,6 +154,7 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 		material_set_texture     (material, "diffuse", font_tex);
 		material_set_cull        (material, cull_none);
 		material_set_transparency(material, transparency_blend);
+		material_set_depth_test  (material, depth_test_less_or_eq);
 
 		mesh_set_keep_data(buffer->mesh, false);
 
@@ -183,6 +184,12 @@ material_t text_style_get_material(text_style_t style) {
 
 float text_style_get_char_height(text_style_t style) {
 	return text_styles[style].char_height;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_char_height(text_style_t style, float height_meters) {
+	text_styles[style].char_height = height_meters;
 }
 
 ///////////////////////////////////////////
@@ -487,6 +494,7 @@ void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	if (text == nullptr) return 0;
+	if (size.x <= 0) return 0; // Zero width text isn't visible, and causes issues when trying to determine text height.
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
@@ -583,7 +591,7 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 
 ///////////////////////////////////////////
 
-void text_update() {
+void text_step() {
 	font_update_fonts();
 
 	for (int32_t i = 0; i < text_buffers.count; i++) {

@@ -15,6 +15,8 @@ using namespace DirectX;
 
 namespace sk {
 
+void mesh_update_label(mesh_t mesh);
+
 ///////////////////////////////////////////
 
 void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
@@ -54,6 +56,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -64,6 +67,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
@@ -72,20 +76,8 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 
 	mesh->vert_count = vertex_count;
 
-	// Calculate the bounds for this mesh by searching it for min and max values!
 	if (calculate_bounds && vertex_count > 0) {
-		vec3 min = vertices[0].pos;
-		vec3 max = vertices[0].pos;
-		for (uint32_t i = 1; i < vertex_count; i++) {
-			min.x = fminf(vertices[i].pos.x, min.x);
-			min.y = fminf(vertices[i].pos.y, min.y);
-			min.z = fminf(vertices[i].pos.z, min.z);
-
-			max.x = fmaxf(vertices[i].pos.x, max.x);
-			max.y = fmaxf(vertices[i].pos.y, max.y);
-			max.z = fmaxf(vertices[i].pos.z, max.z);
-		}
-		mesh->bounds = bounds_t{ min / 2 + max / 2, max - min };
+		mesh->bounds = mesh_calculate_bounds(vertices, vertex_count);
 	}
 }
 ///////////////////////////////////////////
@@ -150,6 +142,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -160,6 +153,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create dynamic index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
@@ -247,6 +241,60 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 		v3->norm += normal;
 	}
 	for (int32_t i = 0; i < vert_count; i++) verts[i].norm = vec3_normalize(verts[i].norm);
+}
+
+///////////////////////////////////////////
+
+bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
+	// Calculate the bounds for this mesh by searching it for min and max
+	// values! This uses DirectXMath's SIMD capabilities, and uses multiple
+	// separate accumulators to reduce operation dependencies.
+	XMVECTOR min_a = XMLoadFloat3((XMFLOAT3*)&verts[0].pos);
+	XMVECTOR min_b = min_a;
+	XMVECTOR min_c = min_a;
+	XMVECTOR min_d = min_a;
+	XMVECTOR max_a = min_a;
+	XMVECTOR max_b = min_a;
+	XMVECTOR max_c = min_a;
+	XMVECTOR max_d = min_a;
+
+	const vert_t* curr = verts;
+	for (int32_t i = 0; i < vert_count/4; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		XMVECTOR pt_b = XMLoadFloat3((XMFLOAT3*)&curr[1].pos);
+		min_b = XMVectorMin(min_b, pt_b);
+		max_b = XMVectorMax(max_b, pt_b);
+		XMVECTOR pt_c = XMLoadFloat3((XMFLOAT3*)&curr[2].pos);
+		min_c = XMVectorMin(min_c, pt_c);
+		max_c = XMVectorMax(max_c, pt_c);
+		XMVECTOR pt_d = XMLoadFloat3((XMFLOAT3*)&curr[3].pos);
+		min_d = XMVectorMin(min_d, pt_d);
+		max_d = XMVectorMax(max_d, pt_d);
+		curr += 4;
+	}
+	for (int32_t i = (vert_count / 4) * 4; i < vert_count; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		curr += 1;
+	}
+
+	XMVECTOR min = XMVectorMin(min_a, min_b);
+	min = XMVectorMin(min, min_c);
+	min = XMVectorMin(min, min_d);
+	XMVECTOR max = XMVectorMax(max_a, max_b);
+	max = XMVectorMax(max, max_c);
+	max = XMVectorMax(max, max_d);
+
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	bounds_t bounds     = {};
+	XMStoreFloat3((XMFLOAT3*)&bounds.center,     center);
+	XMStoreFloat3((XMFLOAT3*)&bounds.dimensions, dimensions);
+
+	return bounds;
 }
 
 ///////////////////////////////////////////
@@ -381,12 +429,24 @@ mesh_t mesh_find(const char *id) {
 
 void mesh_set_id(mesh_t mesh, const char *id) {
 	assets_set_id(&mesh->header, id);
+	mesh_update_label(mesh);
 }
 
 ///////////////////////////////////////////
 
 const char* mesh_get_id(const mesh_t mesh) {
 	return mesh->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void mesh_update_label(mesh_t mesh) {
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	if (mesh->header.id_text != nullptr)
+		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
+#else
+	(void)mesh;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -633,7 +693,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions, bool32_t double_sided) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
@@ -641,6 +701,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
 	vert_t *verts = sk_malloc_t(vert_t, vert_count);
 	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
@@ -657,6 +723,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			right * ((xp - 0.5f) * dimensions.x) +
 			up    * ((yp - 0.5f) * dimensions.y), 
 			plane_normal, {xp,yp}, {255,255,255,255} };
+
+		// The flip side of the plane has the same position and UV but a flipped normal
+		if (double_sided) {
+			verts[x + y*subd + vert_count/2]      = verts[x + y*subd];
+			verts[x + y*subd + vert_count/2].norm = -plane_normal;
+		}
 	} }
 
 	// make indices
@@ -671,6 +743,110 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] = (x+1) + (y+1) * subd;
 			inds[ind++] =  x    +  y    * subd;
 	} }
+
+	if (double_sided) {
+		for (vind_t y = 0; y < subd-1; y++) {
+		for (vind_t x = 0; x < subd-1; x++) {
+				// We flip the winding for the flip side
+				inds[ind++] = (x+1) +  y    * subd + vert_count/2;
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+		} }
+	}
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t spokes, bool32_t double_sided) {
+	vind_t spoke_count = maxi(3, (int32_t)spokes);
+	mesh_t result = mesh_create();
+
+	int vert_count = spoke_count;
+	int ind_count  = (spoke_count - 2) * 3;
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
+	vert_t* verts = sk_malloc_t(vert_t, vert_count);
+	vind_t* inds  = sk_malloc_t(vind_t, ind_count);
+
+	vec3 right = vec3_cross(plane_top_direction, plane_normal);
+	vec3 up    = vec3_cross(right, plane_normal);
+
+	// Make a circle of vertices
+	for (vind_t i = 0; i < spoke_count; i++) {
+		float angle = i * ((float)M_PI*2.0f / spoke_count);
+
+		vert_t *pt   = &verts[i];
+		float radius = diameter / 2;
+		float xp     = cosf(angle);
+		float yp     = sinf(angle);
+
+		pt->norm = plane_normal;
+		pt->pos  = radius * ((right * xp) + (up * yp));
+		pt->uv   = {((xp+1)/2),((yp+1)/2)};
+		pt->col  = {255,255,255,255};
+
+		// The flip side of the circle has the same position and UV but a flipped normal
+		if (double_sided) {
+			vert_t* flip_pt = &verts[i + vert_count/2];
+
+			flip_pt->norm = -plane_normal;
+			flip_pt->pos  = pt->pos;
+			flip_pt->uv   = pt->uv;
+			flip_pt->col  = pt->col;
+		}
+	}
+
+	// No vertex in the center, so we're adding a strip of triangles
+	// across the circle instead
+	for (vind_t i = 0; i < spoke_count - 2; i++) {
+		uint32_t half = i / 2;
+		if (i%2 == 0) { // even
+			vind_t ind1 = (spoke_count - half) % spoke_count;
+			vind_t ind2 = half + 1;
+			vind_t ind3 = (spoke_count - 1) - half;
+
+			inds[i*3+2] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3  ] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind3;
+			}
+		}
+		else { // odd
+			vind_t ind1 = half + 1;
+			vind_t ind2 = spoke_count - (half + 1);
+			vind_t ind3 = half + 2;
+
+			inds[i * 3] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3+2] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind3;
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+			}
+		}
+	}
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 

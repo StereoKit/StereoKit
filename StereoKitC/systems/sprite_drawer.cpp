@@ -132,7 +132,7 @@ bool sprite_drawer_init() {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_update() {
+void sprite_drawer_step() {
 	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)

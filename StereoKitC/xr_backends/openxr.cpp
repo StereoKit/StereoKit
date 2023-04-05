@@ -14,6 +14,7 @@
 
 #include "../sk_memory.h"
 #include "../log.h"
+#include "../device.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/sk_gpu.h"
@@ -47,11 +48,15 @@ typedef struct context_callback_t {
 	void *context;
 } context_callback_t;
 
+typedef struct poll_event_callback_t {
+	void (*callback)(void* context, void* XrEventDataBuffer);
+	void *context;
+} poll_event_callback_t;
+
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
 	"",
 };
-bool xr_has_depth_lsr         = false;
 bool xr_has_articulated_hands = false;
 bool xr_has_hand_meshes       = false;
 bool xr_has_single_pass       = false;
@@ -63,17 +68,22 @@ XrExtInfo      xr_ext_available = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
+XrReferenceSpaceType xr_app_space_type = {};
 XrSpace        xr_stage_space   = {};
 XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
+display_blend_ xr_valid_blends   = display_blend_none;
+bool           xr_system_created = false;
+bool           xr_system_success = false;
 
 array_t<const char*> xr_exts_user    = {};
 array_t<uint64_t>    xr_exts_loaded  = {};
 bool32_t             xr_minimum_exts = false;
 
-array_t<context_callback_t> xr_callbacks_pre_session_create = {};
+array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
+array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
 
 bool   xr_has_bounds        = false;
 vec2   xr_bounds_size       = {};
@@ -85,10 +95,7 @@ XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-void openxr_poll_events ();
-void openxr_poll_actions();
-
-XrReferenceSpaceType openxr_preferred_space ();
+XrSpace              openxr_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset);
 void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
 XrTime               openxr_acquire_time    ();
 
@@ -125,81 +132,23 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 	if (XR_SUCCEEDED(res) && res != XR_SPACE_BOUNDS_UNAVAILABLE) {
 		out_size->x = bounds.width;
 		out_size->y = bounds.height;
+		log_diagf("Bounds updated: %.2g<~BLK>x<~clr>%.2g at (%.1g,%.1g,%.1g) (%.2g,%.2g,%.2g,%.2g)",
+			out_size->x, out_size->y,
+			out_pose->position   .x, out_pose->position   .y, out_pose->position   .z,
+			out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
 	}
 
-	log_diagf("Bounds updated: %.2f<~BLK>x<~clr>%.2f at (%.1f,%.1f,%.1f) (%.2f,%.2f,%.2f,%.2f)",
-		out_size->x, out_size->y,
-		out_pose->position   .x, out_pose->position   .y, out_pose->position   .z,
-		out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
+
 	return true;
 }
 
 ///////////////////////////////////////////
 
-XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
-void *openxr_get_luid() {
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-	const char *extensions[] = { XR_GFX_EXTENSION };
+bool openxr_create_system() {
+	if (xr_system_created == true) return xr_system_success;
+	xr_system_success = false;
+	xr_system_created = true;
 
-	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount      = 1;
-	create_info.enabledExtensionNames      = extensions;
-	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
-	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
-	XrResult result = xrCreateInstance(&create_info, &xr_instance);
-
-	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		return nullptr;
-	}
-
-	// Request a form factor from the device (HMD, Handheld, etc.)
-	XrSystemGetInfo systemInfo = { XR_TYPE_SYSTEM_GET_INFO };
-	systemInfo.formFactor = xr_config_form;
-	result = xrGetSystem(xr_instance, &systemInfo, &xr_system_id);
-	if (XR_FAILED(result)) {
-		xrDestroyInstance(xr_instance);
-		return nullptr;
-	}
-
-	// Get an extension function, and check it for our requirements
-	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
-	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
-		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
-		xrDestroyInstance(xr_instance);
-		return nullptr;
-	}
-
-	xrDestroyInstance(xr_instance);
-	return (void *)&luid_requirement.adapterLuid;
-#else
-	return nullptr;
-#endif
-}
-
-///////////////////////////////////////////
-
-XrTime openxr_acquire_time() {
-	XrTime result = {};
-#ifdef XR_USE_TIMESPEC
-	struct timespec time;
-	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
-		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#else
-	LARGE_INTEGER time;
-	if (!QueryPerformanceCounter(&time) ||
-		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#endif
-	return result;
-}
-
-///////////////////////////////////////////
-
-bool xr_backend_oxr_init() {
 #if defined(SK_OS_ANDROID)
 	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
 	xrGetInstanceProcAddr(
@@ -260,9 +209,20 @@ bool xr_backend_oxr_init() {
 		const char *err_name = openxr_string(result);
 
 		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
-		xr_backend_oxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
+
+	// Fetch the runtime name/info, for logging and for a few other checks
+	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+		"xrGetInstanceProperties failed [%s]");
+
+	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+		inst_properties.runtimeName,
+		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
+		XR_VERSION_MINOR(inst_properties.runtimeVersion),
+		XR_VERSION_PATCH(inst_properties.runtimeVersion));
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
@@ -307,97 +267,81 @@ bool xr_backend_oxr_init() {
 	result = xrGetSystem(xr_instance, &system_info, &xr_system_id);
 	if (XR_FAILED(result)) {
 		log_fail_reasonf(90, log_inform, "Couldn't find our desired MR form factor, no MR device attached/ready? [%s]", openxr_string(result));
-		xr_backend_oxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
-	// Figure out what this device is capable of!
-	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
-	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
-	XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
-	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
-	properties         .next = &properties_tracking;
-	properties_tracking.next = &properties_handmesh;
-	properties_handmesh.next = &properties_gaze;
+	xr_system_success = true;
+	return xr_system_success;
+}
 
-	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
-		"xrGetSystemProperties failed [%s]");
-	log_diagf("Using system: <~grn>%s<~clr>", properties.systemName);
-	xr_has_single_pass                = true;
-	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
-	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
-	xr_has_depth_lsr                  = xr_ext_available.KHR_composition_layer_depth;
-	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
-	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
-	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+///////////////////////////////////////////
 
-	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
-	else                                                                log_diagf("Platform does not support single-pass rendering");
+XrGraphicsRequirements luid_requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
+void *openxr_get_luid() {
 	
+#if defined(XR_USE_GRAPHICS_API_D3D11)
+	if (!openxr_create_system()) return nullptr;
 
-	// Exception for the articulated WMR hand simulation, and the Vive Index
-	// controller equivalent. These simulations are insufficient to treat them
-	// like true articulated hands.
-	// 
-	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
-	// tracking layer is present.
-	//
-	// TODO: Remove this when the hand tracking extension is improved.
-#if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
-	// We don't need to ask for the Ultraleap layer above so we don't have it
-	// stored anywhere. Gotta check it again.
-	bool     has_leap_layer = false;
-	uint32_t xr_layer_count = 0;
-	xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
-	XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
-	for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
-	xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
-	for (uint32_t i = 0; i < xr_layer_count; i++) {
-		if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
-			has_leap_layer = true;
-			break;
-		}
+	// Get an extension function, and check it for our requirements
+	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
+	if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction *)(&xrGetGraphicsRequirementsKHR))) ||
+		XR_FAILED(xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &luid_requirement))) {
+		xrDestroyInstance(xr_instance);
+		return nullptr;
 	}
-	sk_free(xr_layers);
 
-	// Get the runtime name so we're less likely to invalidate something we
-	// don't kow about.
-	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
-	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
-		"xrGetInstanceProperties failed [%s]");
+	return (void *)&luid_requirement.adapterLuid;
+#else
+	return nullptr;
+#endif
+}
 
-	// The Leap hand tracking layer seems to supercede the built-in extensions.
-	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
-			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
-			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
-			xr_has_articulated_hands = false;
-			xr_has_hand_meshes       = false;
-		}
+///////////////////////////////////////////
+
+XrTime openxr_acquire_time() {
+	XrTime result = {};
+#ifdef XR_USE_TIMESPEC
+	struct timespec time;
+	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
+		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
+	}
+#else
+	LARGE_INTEGER time;
+	if (!QueryPerformanceCounter(&time) ||
+		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
+		log_warn("openxr_acquire_time failed to get current time!");
 	}
 #endif
+	return result;
+}
 
-	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
-	if (xr_has_depth_lsr)                  log_diag("OpenXR depth LSR ext enabled!");
-	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
-	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
-	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+///////////////////////////////////////////
 
-	// Check scene understanding features
-	if (xr_ext_available.MSFT_scene_understanding) {
-		uint32_t count = 0;
-		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
-		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
-		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, count, &count, features);
-		for (uint32_t i = 0; i < count; i++) {
-			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
-			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
-		}
-		sk_free(features);
+bool openxr_init() {
+	if (!openxr_create_system())
+		return false;
+
+	// A number of other items also use the xr_time, so lets get this ready
+	// right away.
+	xr_time = openxr_acquire_time();
+
+	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
+	// yet, so it throws errors into the logs.
+	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
+		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
+		openxr_cleanup();
+		return false;
 	}
-	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
-	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
+
+	// The Session gets created before checking capabilities! In certain
+	// contexts, such as Holographic Remoting, the system won't know about its
+	// capabilities until the session is ready. Holographic Remoting knows to
+	// make the session ready immediately after xrCreateSession, so we don't
+	// need to wait all the way until the OpenXR message loop tells us.
+	// See here for more info on Holographic Remoting's lifecycle:
+	// https://learn.microsoft.com/en-us/windows/mixed-reality/develop/native/holographic-remoting-create-remote-openxr?source=recommendations#connect-to-the-device
 
 	// Before we call xrCreateSession, lets fire an event for anyone that needs
 	// to set things up!
@@ -406,7 +350,8 @@ bool xr_backend_oxr_init() {
 	}
 	xr_callbacks_pre_session_create.free();
 
-	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
+	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be
+	// called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
 	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
 		"xrGetGraphicsRequirementsKHR failed [%s]");
@@ -419,8 +364,10 @@ bool xr_backend_oxr_init() {
 		XR_VERSION_MAJOR(requirement.maxApiVersionSupported), XR_VERSION_MINOR(requirement.maxApiVersionSupported), XR_VERSION_PATCH(requirement.maxApiVersionSupported));
 #endif
 
-	// A session represents this application's desire to display things! This is where we hook up our graphics API.
-	// This does not start the session, for that, you'll need a call to xrBeginSession, which we do in openxr_poll_events
+	// A session represents this application's desire to display things! This
+	// is where we hook up our graphics API. This does not start the session,
+	// for that, you'll need a call to xrBeginSession, which we do in
+	// openxr_poll_events
 	XrGraphicsBinding gfx_binding = { XR_TYPE_GRAPHICS_BINDING };
 	skg_platform_data_t platform = skg_get_platform_data();
 #if defined(XR_USE_PLATFORM_XLIB)
@@ -451,37 +398,121 @@ bool xr_backend_oxr_init() {
 		gfx_binding.next = &overlay_info;
 		sk_info.overlay_app = true;
 	}
-	result = xrCreateSession(xr_instance, &session_info, &xr_session);
+	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
 	if (XR_FAILED(result) || xr_session == XR_NULL_HANDLE) {
 		log_fail_reasonf(90, log_inform, "Couldn't create an OpenXR session, no MR device attached/ready? [%s]", openxr_string(result));
-		xr_backend_oxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
+
+	// Fetch the runtime name/info, for logging and for a few other checks
+	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+		"xrGetInstanceProperties failed [%s]");
+
+	// Figure out what this device is capable of!
+	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
+	XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
+	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
+	properties         .next = &properties_tracking;
+	properties_tracking.next = &properties_handmesh;
+	properties_handmesh.next = &properties_gaze;
+
+	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
+		"xrGetSystemProperties failed [%s]");
+	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
+	device_data.name = string_copy(properties.systemName);
+
+	xr_has_single_pass                = true;
+	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
+	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
+	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
+	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
+	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+
+	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
+	else                                                                log_diagf("Platform does not support single-pass rendering");
+
+	// Exception for the articulated WMR hand simulation, and the Vive Index
+	// controller equivalent. These simulations are insufficient to treat them
+	// like true articulated hands.
+	// 
+	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
+	// tracking layer is present.
+	//
+	// TODO: Remove this when the hand tracking extension is improved.
+#if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
+	// We don't need to ask for the Ultraleap layer above so we don't have it
+	// stored anywhere. Gotta check it again.
+	bool     has_leap_layer = false;
+	uint32_t xr_layer_count = 0;
+	xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
+	XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
+	for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
+	xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
+	for (uint32_t i = 0; i < xr_layer_count; i++) {
+		if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
+			has_leap_layer = true;
+			break;
+		}
+	}
+	sk_free(xr_layers);
+
+	// The Leap hand tracking layer seems to supercede the built-in extensions.
+	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
+		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
+			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
+			xr_has_articulated_hands = false;
+			xr_has_hand_meshes       = false;
+		}
+	}
+#endif
+
+	device_data.has_eye_gaze      = sk_info.eye_tracking_present;
+	device_data.has_hand_tracking = xr_has_articulated_hands;
+	device_data.tracking          = device_tracking_none;
+	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
+	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
+
+
+	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
+	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
+	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
+	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+
+	// Check scene understanding features, these may be dependant on Session
+	// creation in the context of Holographic Remoting.
+	if (xr_ext_available.MSFT_scene_understanding) {
+		uint32_t count = 0;
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
+		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
+		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, count, &count, features);
+		for (uint32_t i = 0; i < count; i++) {
+			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
+			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
+		}
+		sk_free(features);
+	}
+	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
+	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	// Create reference spaces! So we can find stuff relative to them :)
-	xr_refspace = openxr_preferred_space();
-
-	// The space for our application
-	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
-	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
-	ref_space.referenceSpaceType   = xr_refspace;
-	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_app_space);
-	if (XR_FAILED(result)) {
-		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		xr_backend_oxr_shutdown();
-		return false;
-	}
+	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &device_data.origin_offset);
 
 	// The space for our head
+	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	ref_space.referenceSpaceType   = XR_REFERENCE_SPACE_TYPE_VIEW;
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_head_space);
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(result));
-		xr_backend_oxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -495,7 +526,7 @@ bool xr_backend_oxr_init() {
 	}
 
 	if (!openxr_views_create() || !oxri_init()) {
-		xr_backend_oxr_shutdown();
+		openxr_cleanup();
 		return false;
 	}
 
@@ -504,7 +535,6 @@ bool xr_backend_oxr_init() {
 		sk_info.display_type = display_blend;
 	}
 
-	xr_time        = openxr_acquire_time();
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
@@ -560,49 +590,154 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 
 ///////////////////////////////////////////
 
-XrReferenceSpaceType openxr_preferred_space() {
+pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType space_type, XrReferenceSpaceType base_space_type) {
+	XrSpace base_space;
+	XrReferenceSpaceCreateInfo view_info = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	view_info.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
+	view_info.referenceSpaceType   = base_space_type;
+	xrCreateReferenceSpace(session, &view_info, &base_space);
 
-	// OpenXR uses a couple different types of reference frames for 
-	// positioning content, we need to choose one for displaying our content!
-	// STAGE would be relative to the center of your guardian system's 
-	// bounds, and LOCAL would be relative to your device's starting location.
+	XrSpace space;
+	view_info.referenceSpaceType   = space_type;
+	xrCreateReferenceSpace(session, &view_info, &space);
 
-	XrReferenceSpaceType refspace_priority[] = {
-		XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT,
-		XR_REFERENCE_SPACE_TYPE_LOCAL,
-		XR_REFERENCE_SPACE_TYPE_STAGE, };
+	XrSpaceLocation loc    = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res    = xrLocateSpace(space, base_space, time, &loc);
+	pose_t          result = pose_identity;
+	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(loc)) {
+		memcpy(&result.position,    &loc.pose.position,    sizeof(vec3));
+		memcpy(&result.orientation, &loc.pose.orientation, sizeof(quat));
+	} else {
+		log_err("Failed to find a space offset!");
+	}
+	xrDestroySpace(base_space);
+	xrDestroySpace(space);
+	return result;
+}
 
+///////////////////////////////////////////
+
+XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t *out_space_offset) {
 	// Find the spaces OpenXR has access to on this device
 	uint32_t refspace_count = 0;
-	xrEnumerateReferenceSpaces(xr_session, 0, &refspace_count, nullptr);
+	xrEnumerateReferenceSpaces(session, 0, &refspace_count, nullptr);
 	XrReferenceSpaceType *refspace_types = sk_malloc_t(XrReferenceSpaceType, refspace_count);
-	xrEnumerateReferenceSpaces(xr_session, refspace_count, &refspace_count, refspace_types);
+	xrEnumerateReferenceSpaces(session, refspace_count, &refspace_count, refspace_types);
 
-	// Find which one we prefer!
-	XrReferenceSpaceType result = (XrReferenceSpaceType)0;
-	for (int32_t p = 0; p < _countof(refspace_priority); p++) {
-		for (uint32_t i = 0; i < refspace_count; i++) {
-			if (refspace_types[i] == refspace_priority[p]) {
-				result = refspace_types[i];
-				break;
-			}
+	// Turn the list into easy flags
+	bool has_local       = false; // This must always be found, according to the spec
+	bool has_stage       = false;
+	bool has_local_floor = false;
+	bool has_unbounded   = false;
+	for (uint32_t i = 0; i < refspace_count; i++) {
+		switch (refspace_types[i]) {
+		case XR_REFERENCE_SPACE_TYPE_LOCAL:           has_local       = true; break;
+		case XR_REFERENCE_SPACE_TYPE_STAGE:           has_stage       = true; break;
+		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: has_local_floor = true; break;
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = true; break;
 		}
-		if (result != 0)
-			break;
+	}
+	sk_free(refspace_types);
+
+	XrSpace              result     = {};
+	XrReferenceSpaceType base_space = XR_REFERENCE_SPACE_TYPE_LOCAL;
+	pose_t               offset     = pose_identity;
+	switch (mode) {
+	case origin_mode_local: {
+		// The origin needs to be at the user's head. Not all runtimes do this
+		// exactly, some of them have variant behavior. However, this _should_
+		// be fairly straightforward to enforce.
+		base_space = has_unbounded ? XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT : XR_REFERENCE_SPACE_TYPE_LOCAL;
+
+		// If head is offset from the origin, then the runtime's implementation
+		// varies from StereoKit's promise. Here we set the space offset to be
+		// the inverse of whatever that offset is.
+		offset = openxr_space_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, base_space);
+		offset.orientation.x = 0;
+		offset.orientation.z = 0;
+		offset.orientation   = quat_normalize(offset.orientation);
+		
+		device_data.origin_mode = origin_mode_local;
+	} break;
+	case origin_mode_stage: {
+		if      (has_stage)       { base_space = XR_REFERENCE_SPACE_TYPE_STAGE;           device_data.origin_mode = origin_mode_stage; }
+		else if (has_local_floor) { base_space = XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT; device_data.origin_mode = origin_mode_floor; }
+		else {
+			base_space = has_unbounded ? XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT : XR_REFERENCE_SPACE_TYPE_LOCAL;
+			offset.position.y = -1.5f;
+		}
+	} break;
+	case origin_mode_floor: {
+		if      (has_local_floor) base_space = XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT;
+		else if (has_stage) {
+			base_space = XR_REFERENCE_SPACE_TYPE_STAGE;
+
+			// Stage will have a different orientation and XZ location from a
+			// LOCAL_FLOOR, so we need to calculate those. This should be a
+			// perfect fallback from LOCAL_FLOOR
+			offset = openxr_space_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, XR_REFERENCE_SPACE_TYPE_STAGE);
+			offset.orientation.x = 0;
+			offset.orientation.z = 0;
+			offset.orientation   = quat_normalize(offset.orientation);
+			offset.position      = { offset.position.x, 0, offset.position.z };
+		} else {
+			base_space = has_unbounded ? XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT : XR_REFERENCE_SPACE_TYPE_LOCAL;
+			offset.position.y = -1.5f;
+		}
+	} break;
 	}
 
-	// TODO: UNBOUNDED_MSFT and STAGE have very different behavior, but
-	// STAGE behavior is preferred. So it would be nice to make some considerations
-	// here to change that?
+	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	ref_space.referenceSpaceType = base_space;
+	memcpy(&ref_space.poseInReferenceSpace.position,    &offset.position,    sizeof(offset.position));
+	memcpy(&ref_space.poseInReferenceSpace.orientation, &offset.orientation, sizeof(offset.orientation));
+	XrResult err = xrCreateReferenceSpace(session, &ref_space, &result);
+	if (XR_FAILED(err)) {
+		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(err));
+	} else {
+		const char *space_name = "";
+		if      (base_space == XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT)  space_name = "unbounded";
+		else if (base_space == XR_REFERENCE_SPACE_TYPE_LOCAL)           space_name = "local";
+		else if (base_space == XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT) space_name = "local floor";
+		else if (base_space == XR_REFERENCE_SPACE_TYPE_STAGE)           space_name = "stage";
+		log_diagf("Created <~grn>%s<~clr> app space at an offset of <~wht>(%.2g,%.2g,%.2g) (%.2g,%.2g,%.2g,%.2g)<~clr>",
+			space_name,
+			offset.position   .x, offset.position   .y, offset.position   .z,
+			offset.orientation.x, offset.orientation.y, offset.orientation.z, offset.orientation.w);
+	}
 
-	sk_free(refspace_types);
+	if (out_space_type != nullptr)
+		*out_space_type = base_space;
+	if (out_space_offset != nullptr)
+		*out_space_offset = offset;
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void xr_backend_oxr_shutdown() {
+void openxr_set_origin_offset(pose_t offset) {
+	// Update our app's space to use the new offset
+	if (xr_app_space != XR_NULL_HANDLE) {
+		xrDestroySpace(xr_app_space);
+		xr_app_space = {};
+	}
+	XrReferenceSpaceCreateInfo space_info = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+	space_info.referenceSpaceType = xr_app_space_type;
+	memcpy(&space_info.poseInReferenceSpace.position,    &offset.position,    sizeof(XrVector3f));
+	memcpy(&space_info.poseInReferenceSpace.orientation, &offset.orientation, sizeof(XrQuaternionf));
+	XrResult err = xrCreateReferenceSpace(xr_session, &space_info, &xr_app_space);
+	if (XR_FAILED(err)) {
+		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(err));
+	}
+
+	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
+	xr_bounds_pose = matrix_transform_pose  (render_get_cam_final(), xr_bounds_pose_local);
+}
+
+///////////////////////////////////////////
+
+void openxr_cleanup() {
 	if (xr_instance) {
 		oxr_anchor_msft_shutdown();
 		stage_anchor_shutdown();
@@ -620,8 +755,14 @@ void xr_backend_oxr_shutdown() {
 		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
 		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
 	}
+}
 
-	xr_minimum_exts = false;
+void openxr_shutdown() {
+	openxr_cleanup();
+
+	xr_minimum_exts   = false;
+	xr_system_created = false;
+	xr_system_success = false;
 
 	xr_exts_loaded.free();
 	xr_exts_user  .free();
@@ -630,7 +771,7 @@ void xr_backend_oxr_shutdown() {
 
 ///////////////////////////////////////////
 
-void xr_backend_oxr_step_begin() {
+void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
@@ -638,11 +779,11 @@ void xr_backend_oxr_step_begin() {
 
 ///////////////////////////////////////////
 
-void xr_backend_oxr_step_end() {
+void openxr_step_end() {
 	if (xr_running)
 		openxr_render_frame();
 
-	xr_compositor_layers_clear();
+	xr_extension_structs_clear();
 	render_clear();
 }
 
@@ -681,6 +822,12 @@ void openxr_poll_events() {
 
 				xrBeginSession(xr_session, &begin_info);
 
+				// FoV normally updates right before drawing, but we need it to
+				// be available as soon as the session begins, for apps that
+				// are listening to sk_app_focus changing to determine if FoV
+				// is ready.
+				openxr_views_update_fov();
+
 				xr_running = true;
 				log_diag("OpenXR session begin.");
 			} break;
@@ -708,6 +855,11 @@ void openxr_poll_events() {
 			break;
 		default: break;
 		}
+
+		for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+			xr_callbacks_poll_event[i].callback(xr_callbacks_poll_event[i].context, &event_buffer);
+		}
+
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
 }
@@ -1025,6 +1177,33 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 	}
 
 	xr_callbacks_pre_session_create.add({ on_pre_session_create, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	xr_callbacks_poll_event.add({ on_poll_event, context });
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
+	if (backend_xr_get_type() != backend_xr_type_openxr) {
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+		return;
+	}
+
+	for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
+		if (xr_callbacks_poll_event[i].callback == on_poll_event || on_poll_event == nullptr) {
+			xr_callbacks_poll_event.remove(i);
+			return;
+		}
+	}
 }
 
 } // namespace sk

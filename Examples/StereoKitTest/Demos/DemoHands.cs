@@ -25,7 +25,6 @@ class DemoHands : ITest
 	bool showHandMenus = true;
 	bool showHandSize  = true;
 
-	Mesh jointMesh = Mesh.GenerateSphere(1);
 	HandMenuRadial handMenu;
 
 	public void Initialize() {
@@ -81,14 +80,14 @@ class DemoHands : ITest
 				new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 				new HandMenuItem("Cancel", null, null)),
 			new HandRadialLayer("File", 
-				new HandMenuItem("New",   null, () => Log.Info("New")),
-				new HandMenuItem("Open",  null, () => Log.Info("Open")),
-				new HandMenuItem("Close", null, () => Log.Info("Close")),
-				new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
+				new HandMenuItem("New",    null, () => Log.Info("New")),
+				new HandMenuItem("Open",   null, () => Log.Info("Open")),
+				new HandMenuItem("Close",  null, () => Log.Info("Close")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back)),
 			new HandRadialLayer("Edit",
-				new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
-				new HandMenuItem("Paste", null, () => Log.Info("Paste")),
-				new HandMenuItem("Back", null, null, HandMenuAction.Back))));
+				new HandMenuItem("Copy",   null, () => Log.Info("Copy")),
+				new HandMenuItem("Paste",  null, () => Log.Info("Paste")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back))));
 		/// :End:
 
 		Tests.RunForFrames(2);
@@ -102,25 +101,34 @@ class DemoHands : ITest
 		/// :End:
 	}
 
-	public void Update()
+	public void Step()
 	{
-		UI.WindowBegin("Options", ref optionsPose, new Vec2(24, 0)*U.cm);
+		Vec2 size = V.XY(8, 0) * U.cm;
+
+		UI.WindowBegin("Options", ref optionsPose, new Vec2(0, 0)*U.cm);
+
+		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Show");
-		if (UI.Toggle("Hands", ref showHands))
+		if (UI.Toggle("Hands", ref showHands,     size))
 			Input.HandVisible(Handed.Max, showHands);
 		UI.SameLine();
-		UI.Toggle("Joints", ref showJoints);
+		UI.Toggle("Joints",    ref showJoints,    size);
 		UI.SameLine();
-		UI.Toggle("Axes", ref showAxes);
+		UI.Toggle("Axes",      ref showAxes,      size);
+
+		UI.Toggle("Hand Size", ref showHandSize,  size);
 		UI.SameLine();
-		UI.Toggle("Hand Size", ref showHandSize);
+		UI.Toggle("Pointers",  ref showPointers,  size);
 		UI.SameLine();
-		UI.Toggle("Pointers", ref showPointers);
-		UI.SameLine();
-		UI.Toggle("Menu", ref showHandMenus);
+		UI.Toggle("Menu",      ref showHandMenus, size);
+		UI.PanelEnd();
+
+		UI.HSeparator();
+
+		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Color");
-		if (UI.Button("Rainbow"))
-			ColorizeFingers(16, 
+		if (UI.Button("Rainbow", size))
+			ColorizeFingers(16, true,
 				new Gradient(
 					new GradientKey(Color.HSV(0.0f,1,1), 0.1f),
 					new GradientKey(Color.HSV(0.2f,1,1), 0.3f),
@@ -132,34 +140,43 @@ class DemoHands : ITest
 					new GradientKey(new Color(1,1,1,0), 0.4f),
 					new GradientKey(new Color(1,1,1,1), 0.9f)));
 		UI.SameLine();
-		if (UI.Button("Black"))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1,1,1,0), 0),
-					new GradientKey(new Color(1,1,1,0), 0.4f),
-					new GradientKey(new Color(1,1,1,1), 0.6f),
-					new GradientKey(new Color(1,1,1,1), 0.9f)));
-		UI.SameLine();
-		if (UI.Button("Full Black"))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1, 1, 1, 0), 0),
-					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
-					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
-		UI.SameLine();
-		if (UI.Button("Normal"))
-			ColorizeFingers(16,
+		if (UI.Button("Normal", size))
+			ColorizeFingers(16, true,
 				new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 				new Gradient(
 					new GradientKey(new Color(.4f,.4f,.4f,0), 0),
 					new GradientKey(new Color(.6f,.6f,.6f,0), 0.4f),
 					new GradientKey(new Color(.8f,.8f,.8f,1), 0.55f),
 					new GradientKey(new Color(1,1,1,1),       1)));
+
+		if (UI.Button("Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1,1,1,0), 0),
+					new GradientKey(new Color(1,1,1,0), 0.4f),
+					new GradientKey(new Color(1,1,1,1), 0.6f),
+					new GradientKey(new Color(1,1,1,1), 0.9f)));
+
+		UI.SameLine();
+		if (UI.Button("Full Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1, 1, 1, 0), 0),
+					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
+					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
+
+		UI.SameLine();
+		if (UI.Button("Cutout Black", size))
+			ColorizeFingers(16, false,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)),
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)));
+
+		UI.PanelEnd();
 		UI.WindowEnd();
 
-		if (showJoints)   DrawJoints(jointMesh, Default.Material);
+		if (showJoints)   DrawJoints(Mesh.Sphere, Default.Material);
 		if (showAxes)     DrawAxes();
 		if (showPointers) DrawPointers();
 		if (showHandSize) DrawHandSize();
@@ -174,7 +191,7 @@ class DemoHands : ITest
 		Demo.ShowSummary(title, description);
 	}
 
-	private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
+	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)
 	{
 		Tex tex = new Tex(TexType.Image, TexFormat.Rgba32Linear);
 		tex.AddressMode = TexAddress.Clamp;
@@ -192,6 +209,9 @@ class DemoHands : ITest
 		tex.SetColors(size, size, pixels);
 
 		Default.MaterialHand[MatParamName.DiffuseTex] = tex;
+		Default.MaterialHand.Transparency = transparent
+			? Transparency.Blend
+			: Transparency.None;
 	}
 
 	/// :CodeDoc: Guides Using Hands
@@ -258,6 +278,7 @@ class DemoHands : ITest
 				Lines.AddAxis(hand[finger, joint].Pose);
 			}}
 			Lines.AddAxis(hand.palm);
+			Lines.AddAxis(hand.wrist);
 		}
 	}
 

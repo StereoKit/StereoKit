@@ -74,7 +74,7 @@ void skt_lighting_step() {
 		l.dist   = vec3_distance_sq(pos, worldPos);
 
 		if (l.state == skt_light_state_fading) { 
-			l.curr_intensity -= time_elapsedf()*8;
+			l.curr_intensity -= time_stepf()*8;
 			if (l.curr_intensity < 0.001f) { 
 				l.state          = skt_light_state_unlit;
 				l.curr_intensity = 0;
@@ -82,7 +82,7 @@ void skt_lighting_step() {
 				free -= 1;
 			}
 		} else if (l.state == skt_light_state_lit) { 
-			l.curr_intensity += time_elapsedf()*3;
+			l.curr_intensity += time_stepf()*3;
 			if (l.curr_intensity > 1) l.curr_intensity = 1;
 			free -= 1;
 		}

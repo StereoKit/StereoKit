@@ -54,8 +54,10 @@ namespace StereoKit
 		/// or Hand[] instead. See Hand.Get for more info!</summary>
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
 		public HandJoint[]  fingers;
-		/// <summary>Pose of the wrist. TODO: Not populated right now.
-		/// </summary>
+		/// <summary>Pose of the wrist. This is located at the base of your
+		/// hand, and has a rigid orientation that points forward towards your
+		/// fingers. Its orientation is unrelated to the forearm. This pose can
+		/// be useful for making a hand relative coordinate space!</summary>
 		public  Pose        wrist;
 		/// <summary>The position and orientation of the palm! Position is
 		/// specifically defined as the middle of the middle finger's root
@@ -100,8 +102,23 @@ namespace StereoKit
 		/// error tolerant threshold.</summary>
 		public float gripActivation;
 
+		/// <summary>A 2D array accessor for getting a specific joint from the
+		/// hand! This version uses an enumeration for safe access.</summary>
+		/// <param name="finger">Which finger on the hand.</param>
+		/// <param name="joint">Which joint on the finger. Note that for the
+		/// thumb, Root and KnuckleMajor are the same.</param>
+		/// <returns>The hand joint.</returns>
 		public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
-		public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
+		/// <summary>A 2D array accessor for getting a specific joint from the
+		/// hand! This version uses integers for easy iteration. Values should
+		/// be in the range of [0,5).</summary>
+		/// <param name="finger">Which finger on the hand, where 0 is the
+		/// thumb, and 4 is the pinky.</param>
+		/// <param name="joint">Which joint on the finger, where 0 is the Root,
+		/// and 4 is the tip. Note that for the thumb, 0 and 1 are the same.
+		/// </param>
+		/// <returns>The hand joint.</returns>
+		public HandJoint this[int finger, int joint] => fingers[finger * 5 + joint];
 		
 		/// <summary>Returns the joint information of the indicated hand
 		/// joint! This also includes fingertips as a 'joint'. This is the
@@ -368,7 +385,7 @@ namespace StereoKit
 		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
-		/// controllers. 
+		/// controllers.
 		/// 
 		/// Note that this is a copy of the hand information, and it's a good
 		/// chunk of data, so it's a good idea to grab it once and keep it
@@ -382,6 +399,19 @@ namespace StereoKit
 			Marshal.PtrToStructure(NativeAPI.input_hand(handed), hands[(int)handed]);
 			return hands[(int)handed];
 		}
+		/// <summary>Retrieves all the information about the user's hand!
+		/// StereoKit will always provide hand information, however sometimes
+		/// that information is simulated, like in the case of a mouse, or
+		/// controllers.
+		/// 
+		/// Note that this is a copy of the hand information, and it's a good
+		/// chunk of data, so it's a good idea to grab it once and keep it
+		/// around for the frame, or at least function, rather than asking
+		/// for it again and again each time you want to touch something.
+		/// </summary>
+		/// <param name="handed">Do you want the left or the right hand? 0 is
+		/// left, and 1 is right.</param>
+		/// <returns>A copy of the entire set of hand data!</returns>
 		public static Hand Hand(int handed){
 			Marshal.PtrToStructure(NativeAPI.input_hand((Handed)handed), hands[handed]);
 			return hands[handed];
@@ -463,8 +493,19 @@ namespace StereoKit
 		public static void TextReset() 
 			=> NativeAPI.input_text_reset();
 
+		/// <summary>The number of Pointer inputs that StereoKit is tracking
+		/// that match the given filter.
+		/// </summary>
+		/// <param name="filter">You can filter input sources using this bit
+		/// flag.</param>
+		/// <returns>The number of Pointers StereoKit knows about that matches
+		/// the given filter.</returns>
 		public static int PointerCount(InputSource filter = InputSource.Any) 
 			=> NativeAPI.input_pointer_count(filter);
+		/// <summary>This gets the pointer by filter based index.</summary>
+		/// <param name="index">Index of the pointer.</param>
+		/// <param name="filter">Filter used to search for the Pointer.</param>
+		/// <returns>The Pointer data.</returns>
 		public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
 			=> NativeAPI.input_pointer(index, filter);
 
@@ -474,20 +515,30 @@ namespace StereoKit
 			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
 			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
 		}
-		static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)
+		static void OnEvent(InputSource source, BtnState evt, in Pointer pointer)
 		{
-			Pointer ptr = Marshal.PtrToStructure<Pointer>(pointer);
 			for (int i = 0; i < listeners.Count; i++)
 			{
 				if ((listeners[i].source & source) > 0 &&
 					(listeners[i].type   & evt) > 0)
 				{
-					listeners[i].callback(source, evt, ptr);
+					listeners[i].callback(source, evt, pointer);
 				}
 			}
 		}
 
-		public static void Subscribe  (InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
+		/// <summary>You can subscribe to input events from Pointer sources
+		/// here. StereoKit will call your callback and pass along a Pointer
+		/// that matches the position of that pointer at the moment the event
+		/// occurred. This can be more accurate than polling for input data,
+		/// since polling happens specifically at frame start.</summary>
+		/// <param name="eventSource">What input sources do we want to listen
+		/// for. This is a bit flag.</param>
+		/// <param name="eventTypes">What events do we want to listen for. This
+		/// is a bit flag.</param>
+		/// <param name="onEvent">The callback to call when the event occurs!
+		/// </param>
+		public static void Subscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
 			if (!initialized)
 				Initialize();
@@ -498,6 +549,13 @@ namespace StereoKit
 			item.type     = eventTypes;
 			listeners.Add(item);
 		}
+		/// <summary>Unsubscribes a listener from input events.</summary>
+		/// <param name="eventSource">The source this listener was originally
+		/// registered for.</param>
+		/// <param name="eventTypes">The events this listener was originally
+		/// registered for.</param>
+		/// <param name="onEvent">The callback this listener originally used.
+		/// </param>
 		public static void Unsubscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
 			if (!initialized)
@@ -512,6 +570,15 @@ namespace StereoKit
 				}
 			}
 		}
+		/// <summary>This function allows you to artifically insert an input
+		/// event, simulating any device source and event type you want.
+		/// </summary>
+		/// <param name="eventSource">The event source to simulate, this is a
+		/// bit flag.</param>
+		/// <param name="eventTypes">The event type to simulate, this is a bit
+		/// flag.</param>
+		/// <param name="pointer">The pointer data to pass along with this
+		/// simulated input event.</param>
 		public static void FireEvent  (InputSource eventSource, BtnState eventTypes, Pointer pointer)
 		{
 			IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());

@@ -7,7 +7,7 @@ class DocPlatformFile : ITest
 	public void Initialize() {}
 	public void Shutdown  () {}
 
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Settings", ref windowPose);
 		if (UI.Button("Open"))

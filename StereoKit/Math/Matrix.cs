@@ -34,12 +34,35 @@ namespace StereoKit
 		/// conversions to System.Numerics types are also provided.</summary>
 		public Matrix4x4 m;
 
+		/// <summary>This constructor is for manually creating a matrix from a
+		/// grid of floats! You'll likely want to use one of the static Matrix
+		/// functions to create a Matrix instead.</summary>
+		/// <param name="m11">m11</param>
+		/// <param name="m12">m12</param>
+		/// <param name="m13">m13</param>
+		/// <param name="m14">m14</param>
+		/// <param name="m21">m21</param>
+		/// <param name="m22">m22</param>
+		/// <param name="m23">m23</param>
+		/// <param name="m24">m24</param>
+		/// <param name="m31">m31</param>
+		/// <param name="m32">m32</param>
+		/// <param name="m33">m33</param>
+		/// <param name="m34">m34</param>
+		/// <param name="m41">m41</param>
+		/// <param name="m42">m42</param>
+		/// <param name="m43">m43</param>
+		/// <param name="m44">m44</param>
 		public Matrix(float m11, float m12, float m13, float m14, float m21, float m22, float m23, float m24, float m31, float m32, float m33, float m34, float m41, float m42, float m43, float m44)
 			=> m = new Matrix4x4(
 				m11, m12, m13, m14,
 				m21, m22, m23, m24,
 				m31, m32, m33, m34,
 				m41, m42, m43, m44);
+		/// <summary>Create a Matrix from the equivalent System.Numerics Matrix
+		/// type. You can also implicitly convert between these types, as this
+		/// Matrix is backed by the System.Numerics type anyhow.</summary>
+		/// <param name="matrix">A System.Numerics matrix.</param>
 		public Matrix(Matrix4x4 matrix)
 			=> m = matrix;
 
@@ -400,6 +423,27 @@ namespace StereoKit
 		public static Matrix Perspective(float fovDegrees, float aspectRatio, float nearClip, float farClip)
 			=> Matrix4x4.CreatePerspectiveFieldOfView(fovDegrees*Units.deg2rad, aspectRatio, nearClip, farClip);
 
+		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. With the known camera 
+		/// intrinsics, you can replicate its perspective!</summary>
+		/// <param name="imageResolution">The resolution of the image. This
+		/// should be the image's width and height in pixels.</param>
+		/// <param name="focalLength">The focal length of camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, float nearClip, float farClip)
+		{
+			Vec2 nearPlaneDimensions = imageResolution / focalLength * nearClip;
+			return Matrix4x4.CreatePerspective(nearPlaneDimensions.x, nearPlaneDimensions.y, nearClip, farClip);
+		}
+		
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
 		/// matrices will preserve parallel lines. This is great for 2D 

@@ -10,7 +10,7 @@ const char* backend_err_wrong_backend = "Backend functions only work with the co
 ///////////////////////////////////////////
 
 backend_xr_type_ backend_xr_get_type() {
-	if (sk_display_mode == display_mode_mixedreality) {
+	if (device_display_get_type() == display_type_stereo) {
 #if defined(SK_XR_OPENXR)
 		return backend_xr_type_openxr;
 #elif defined(SK_XR_WEBXR)
@@ -102,6 +102,18 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
 		return;
 	}
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
+	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
+	log_err(backend_err_wrong_backend);
 }
 
 ///////////////////////////////////////////

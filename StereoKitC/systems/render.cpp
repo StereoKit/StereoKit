@@ -1,6 +1,7 @@
 #include "render.h"
 #include "world.h"
 #include "../_stereokit.h"
+#include "../device.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math_dx.h"
@@ -15,7 +16,6 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/flatscreen_input.h"
 #include "../platforms/platform_utils.h"
 
 #pragma warning(push)
@@ -107,6 +107,8 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
+matrix                  render_sim_origin            = matrix_identity;
+matrix                  render_sim_head              = matrix_identity;
 
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
@@ -123,6 +125,8 @@ vec4                    render_lighting[9]     = {};
 spherical_harmonics_t   render_lighting_src    = {};
 color128                render_clear_col       = {0,0,0,1};
 render_list_t           render_list_primary    = -1;
+float                   render_scale           = 1;
+int32_t                 render_multisample     = 1;
 render_layer_           render_primary_filter  = render_layer_all_first_person;
 render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
@@ -196,7 +200,7 @@ void render_set_ortho_size(float viewport_height_meters) {
 
 void render_set_ortho_clip(float near_plane, float far_plane) {
 	render_ortho_near_clip = near_plane;
-	render_ortho_far_clip = far_plane;
+	render_ortho_far_clip  = far_plane;
 	render_update_projection();
 }
 
@@ -222,21 +226,40 @@ float render_get_ortho_view_height() {
 ///////////////////////////////////////////
 
 void render_update_projection() {
+	// Both paths need the aspect ratio
+	float aspect = (float)device_display_get_width() / device_display_get_height();
+
 	if (render_projection_type == projection_perspective) {
+		
 		math_fast_to_matrix(
-		    XMMatrixPerspectiveFovRH(render_fov * deg2rad,
-		                             (float)sk_system_info().display_width / sk_system_info().display_height,
-		                             render_clip_planes.x,
-		                             render_clip_planes.y),
-		    &render_default_camera_proj);
+			XMMatrixPerspectiveFovRH(
+				render_fov * deg2rad,
+				aspect,
+				render_clip_planes.x,
+				render_clip_planes.y),
+			&render_default_camera_proj);
+
+		// Update the FoV data
+		backend_xr_type_ type = backend_xr_get_type();
+		if (type == backend_xr_type_none ||
+			type == backend_xr_type_simulator) {
+
+			fov_info_t fov;
+			fov.top    = render_fov * 0.5f;
+			fov.bottom = -fov.top;
+			fov.right  =  fov.top * aspect;
+			fov.left   = -fov.right;
+			device_data.display_fov = fov;
+		}
 	} else {
+
 		math_fast_to_matrix(
-		    XMMatrixOrthographicRH(
-		        ((float)sk_system_info().display_width / (float)sk_system_info().display_height)*render_ortho_viewport_height, 
-				render_ortho_viewport_height, 
-				render_ortho_near_clip, 
+			XMMatrixOrthographicRH(
+				aspect*render_ortho_viewport_height,
+				render_ortho_viewport_height,
+				render_ortho_near_clip,
 				render_ortho_far_clip),
-		    &render_default_camera_proj);
+			&render_default_camera_proj);
 	}
 }
 
@@ -318,7 +341,7 @@ matrix render_get_cam_final_inv() {
 
 void render_set_cam_root(const matrix &cam_root) {
 	render_camera_root       = cam_root;
-	render_camera_root_final = fltscr_transform * cam_root;
+	render_camera_root_final = render_sim_head * cam_root * render_sim_origin;
 	matrix_inverse(render_camera_root_final, render_camera_root_final_inv);
 
 	// TODO: May want to also update controllers/hands?
@@ -330,6 +353,20 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	world_refresh_transforms();
 	input_update_poses(false);
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_origin(pose_t pose) {
+	render_sim_origin = matrix_invert(pose_matrix(pose));
+	render_set_cam_root(render_get_cam_root());
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_head(pose_t pose) {
+	render_sim_head = pose_matrix(pose);
+	render_set_cam_root(render_get_cam_root());
 }
 
 ///////////////////////////////////////////
@@ -377,6 +414,33 @@ render_layer_ render_get_filter() {
 
 void render_set_filter(render_layer_ layer_filter) {
 	render_primary_filter = layer_filter;
+}
+
+///////////////////////////////////////////
+
+void render_set_scaling(float texture_scale) {
+	render_scale = fminf(2, fmaxf(0.2f, texture_scale));
+}
+
+///////////////////////////////////////////
+
+float render_get_scaling() {
+	return render_scale;
+}
+
+///////////////////////////////////////////
+
+void render_set_multisample(int32_t display_tex_multisample) {
+	if      (display_tex_multisample <= 1)  render_multisample = 1;
+	else if (display_tex_multisample <= 3)  render_multisample = 2;
+	else if (display_tex_multisample <= 7)  render_multisample = 4;
+	else                                    render_multisample = 8;
+}
+
+///////////////////////////////////////////
+
+int32_t render_get_multisample() {
+	return render_multisample;
 }
 
 ///////////////////////////////////////////
@@ -474,7 +538,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
 	XMMATRIX root;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, root);
@@ -490,11 +554,11 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		render_item_t item;
 		item.mesh      = vis->mesh;
 		item.mesh_inds = vis->mesh->ind_count;
-		item.color     = color;
+		item.color     = color_linear;
 		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
 
-		material_t curr = vis->material;
+		material_t curr = material_override == nullptr ? vis->material : material_override;
 		while (curr != nullptr) {
 			item.material = curr;
 			item.sort_id  = render_queue_id(curr, vis->mesh);
@@ -507,6 +571,12 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		model->transforms_changed = false;
 		anim_update_skin(model);
 	}
+}
+
+///////////////////////////////////////////
+
+void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -534,7 +604,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 	// Copy in the other global shader variables
 	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
-	render_global_buffer.time       = time_getf();
+	render_global_buffer.time       = time_totalf();
 	render_global_buffer.view_count = view_count;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
@@ -707,8 +777,14 @@ void render_clear() {
 bool render_init() {
 	render_shader_globals  = material_buffer_create(1, sizeof(render_global_buffer));
 	render_shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	skg_buffer_name(&render_shader_blit, "sk/render/blit_buffer");
+#endif
 	
 	render_instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	skg_buffer_name(&render_instance_buffer, "sk/render/instance_buffer");
+#endif
 	render_instance_list.resize(render_instance_max);
 
 	// Setup a default camera
@@ -726,13 +802,13 @@ bool render_init() {
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
 	mesh_set_data(render_sky_mesh, verts, _countof(verts), inds, _countof(inds));
-	mesh_set_id  (render_sky_mesh, "render/skybox_mesh");
+	mesh_set_id  (render_sky_mesh, "sk/render/skybox_mesh");
 
 	shader_t shader_sky = shader_find(default_id_shader_sky);
 	render_sky_mat = material_create(shader_sky);
 	shader_release(shader_sky);
 
-	material_set_id          (render_sky_mat, "render/skybox_material");
+	material_set_id          (render_sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(render_sky_mat, 100);
 	
 	render_list_primary = render_list_create();
@@ -743,7 +819,7 @@ bool render_init() {
 
 ///////////////////////////////////////////
 
-void render_update() {
+void render_step() {
 	if (hierarchy_stack.count > 0)
 		log_err("Render transform stack doesn't have matching begin/end calls!");
 
@@ -1144,7 +1220,7 @@ void render_list_clear(render_list_t list) {
 
 // https://travisdowns.github.io/blog/2019/05/22/sorting.html
 
-#if _WIN32
+#if _MSC_VER
 #include <intrin.h>
 #endif
 

@@ -112,7 +112,7 @@ void input_shutdown() {
 
 ///////////////////////////////////////////
 
-void input_update() {
+void input_step() {
 	
 	input_keyboard_update();
 	input_hand_update();

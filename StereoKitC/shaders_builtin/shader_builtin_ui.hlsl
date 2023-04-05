@@ -35,13 +35,12 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	o.uv         = input.uv;
 	o.color      = ui_tint == true ? lerp(color, sk_inst[id].color, input.color.a) : (color * input.color * sk_inst[id].color);
-	o.color      = o.color * sk_inst[id].color.a;
-	o.color.rgb *= Lighting(o.normal);
+	o.color.rgb *= sk_lighting(o.normal);
 
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float  glow = FingerGlow(input.world.xyz, input.normal);
+	float  glow = sk_finger_glow(input.world.xyz, input.normal);
 	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow), input.color.a);
 
 	return diffuse.Sample(diffuse_s, input.uv) * col;

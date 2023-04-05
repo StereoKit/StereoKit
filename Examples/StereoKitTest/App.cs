@@ -11,7 +11,8 @@ class App
 		assetsFolder      = "Assets",
 		blendPreference   = DisplayBlend.AnyTransparent,
 		displayPreference = DisplayMode.MixedReality,
-		logFilter         = LogLevel.Diagnostic};
+		logFilter         = LogLevel.Diagnostic,
+	};
 
 	public SKSettings Settings => settings;
 	public static PassthroughFBExt passthrough;
@@ -21,7 +22,8 @@ class App
 	Pose   demoSelectPose = new Pose();
 	Sprite powerButton;
 
-	List<string> demoNames = new List<string>();
+	List<string> demoNames    = new List<string>();
+	float        demoWinWidth = 50 * U.cm;
 
 	//////////////////////
 
@@ -58,7 +60,7 @@ class App
 
 	public void Init()
 	{
-		Material floorMat = new Material(Shader.FromFile("floor_shader.hlsl"));
+		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
 		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
@@ -74,6 +76,8 @@ class App
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
+
+		UISettings uiSettings = UI.Settings;
 		for (int i = 0; i < Tests.DemoCount; i++)
 			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
 
@@ -84,6 +88,13 @@ class App
 		{
 			UI.EnableFarInteract = false;
 		}
+	}
+
+	//////////////////////
+	
+	public void Shutdown()
+	{
+		Tests.Shutdown();
 	}
 
 	//////////////////////
@@ -137,12 +148,31 @@ class App
 		/// :End:
 
 		// Make a window for demo selection
-		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(50 * U.cm, 0));
+		UI.WindowBegin("Demos", ref demoSelectPose, new Vec2(demoWinWidth, 0));
+		int        start = 0;
+		float      currWidthTotal = 0;
+		UISettings uiSettings = UI.Settings;
+		TextStyle  style = UI.TextStyle;
 		for (int i = 0; i < demoNames.Count; i++)
 		{
-			if (UI.Button(demoNames[i]))
-				Tests.SetDemoActive(i);
-			UI.SameLine();
+			float width = Text.Size(demoNames[i], style).x + uiSettings.padding * 2;
+			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth || i == demoNames.Count-1)
+			{
+				float inflate = i == demoNames.Count - 1
+					? 0 
+					: (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
+				for (int t = start; t < i; t++)
+				{
+					float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2 + inflate;
+					if (UI.Button(demoNames[t], new Vec2(currWidth, 0)))
+						Tests.SetDemoActive(t);
+					UI.SameLine();
+				}
+				start = i;
+			}
+			if (start == i)
+				currWidthTotal = uiSettings.margin * 2;
+			currWidthTotal += width + uiSettings.gutter;
 		}
 		UI.NextLine();
 		UI.HSeparator();
@@ -194,23 +224,34 @@ class App
 	/// your application!
 	/// 
 	/// Here's the code for the window, and log tracking.
-	static Pose         logPose = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
-	static List<string> logList = new List<string>();
-	static string       logText = "";
+	static Pose         logPose   = new Pose(0, -0.1f, 0.5f, Quat.LookDir(Vec3.Forward));
+	static List<string> logList   = new List<string>();
+	static float        logIndex  = 0;
+	static string       logString = "";
 	static void OnLog(LogLevel level, string text)
 	{
-		if (logList.Count > 15)
-			logList.RemoveAt(logList.Count - 1);
-		logList.Insert(0, text.Length < 100 ? text : text.Substring(0,100)+"...\n");
-
-		logText = "";
-		for (int i = 0; i < logList.Count; i++)
-			logText += logList[i];
+		logList.Insert(0, text.Length < 100 ? text : text.Substring(0, 100) + "...\n");
+		UpdateLogStr((int)logIndex);
 	}
+
+	static void UpdateLogStr(int index)
+	{
+		logIndex  = Math.Max(Math.Min(index, logList.Count-1), 0);
+		logString = "";
+		for (int i = index; i < index + 15 && i < logList.Count; i++)
+			logString += logList[i];
+	}
+
 	static void LogWindow()
 	{
 		UI.WindowBegin("Log", ref logPose, new Vec2(40, 0) * U.cm);
-		UI.Text(logText);
+
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight);
+		if (UI.VSlider("scroll", ref logIndex, 0, Math.Max(logList.Count - 3, 0), 1))
+			UpdateLogStr((int)logIndex);
+		UI.LayoutPop();
+
+		UI.Text(logString);
 		UI.WindowEnd();
 	}
 	/// :End:

@@ -39,7 +39,7 @@ namespace StereoKit
 		/// object exhibit?</param>
 		public Solid(Vec3 position, Quat rotation, SolidType type = SolidType.Normal)
 		{
-			_inst = NativeAPI.solid_create(ref position, ref rotation, type);
+			_inst = NativeAPI.solid_create(in position, in rotation, type);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create solid!");
 		}
@@ -111,7 +111,7 @@ namespace StereoKit
 		/// <param name="enabled">False to disable physics on this object, 
 		/// true to enable it.</param>
 		public void SetEnabled(bool enabled)
-			=> NativeAPI.solid_set_enabled(_inst, enabled?1:0);
+			=> NativeAPI.solid_set_enabled(_inst, enabled);
 
 		/// <summary>This moves the Solid from its current location through 
 		/// space to the new location provided, colliding with things along

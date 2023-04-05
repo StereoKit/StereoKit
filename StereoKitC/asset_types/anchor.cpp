@@ -18,6 +18,18 @@ anchor_type_id             anch_default_type = -1;
 
 ///////////////////////////////////////////
 
+anchor_t anchor_create(pose_t pose) {
+	return anchor_create_manual(anch_default_type, pose, nullptr);
+}
+
+///////////////////////////////////////////
+
+anchor_t anchor_create_type(anchor_type_id type, pose_t pose) {
+	return anchor_create_manual(type, pose, nullptr);
+}
+
+///////////////////////////////////////////
+
 anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, void* data) {
 	anchor_t result = (anchor_t)assets_allocate(asset_type_anchor);
 	result->source_system = system_id;

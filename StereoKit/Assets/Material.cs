@@ -134,7 +134,7 @@ namespace StereoKit
 		/// visualization work. Note that this may not work on some mobile
 		/// OpenGL systems like Quest.</summary>
 		public bool Wireframe {
-			get => NativeAPI.material_get_wireframe(_inst)>0;
+			get => NativeAPI.material_get_wireframe(_inst);
 			set => NativeAPI.material_set_wireframe(_inst, value); }
 		/// <summary>How does this material interact with the ZBuffer? 
 		/// Generally DepthTest.Less would be normal behavior: don't draw
@@ -154,17 +154,22 @@ namespace StereoKit
 		/// 
 		/// Not writing to the buffer can also be faster! :)</summary>
 		public bool DepthWrite {
-			get => NativeAPI.material_get_depth_write(_inst)>0;
+			get => NativeAPI.material_get_depth_write(_inst);
 			set => NativeAPI.material_set_depth_write(_inst, value); }
 		/// <summary>This property will force this material to draw earlier
-		/// or later in the draw queue. Positive values make it draw later, 
-		/// negative makes it earlier. This can be helpful for tweaking 
-		/// performance! If you know an object is always going to be close to 
-		/// the user and likely to obscure lots of objects (like hands), 
-		/// drawing it earlier can mean objects behind it get discarded much 
-		/// faster! Similarly, objects that are far away (skybox!) can be 
-		/// pushed towards the back of the queue, so they're more likely to 
-		/// be discarded early.</summary>
+		/// or later in the draw queue. Positive values make it draw later,
+		/// negative makes it earlier. This is really helpful when doing tricks
+		/// with the depth buffer, or are working with transparent objects.
+		/// Good offset values should probably be specific, well managed, and
+		/// small. Think of it as a layer rather than a distance, so probably
+		/// less than 10, and definitely less than 1000.
+		/// 
+		/// This can also be helpful for tweaking performance! If you know an
+		/// object is always going to be close to the user and likely to
+		/// obscure lots of objects (like hands), drawing it earlier can mean
+		/// objects behind it get discarded much faster! Similarly, objects
+		/// that are far away (skybox!) can be pushed towards the back of the
+		/// queue, so they're more likely to be discarded early.</summary>
 		public int QueueOffset {
 			get => NativeAPI.material_get_queue_offset(_inst);
 			set => NativeAPI.material_set_queue_offset(_inst, value); }
@@ -182,7 +187,7 @@ namespace StereoKit
 		/// using, or overrides the Shader this material uses.</summary>
 		public Shader Shader { 
 			get => new Shader(NativeAPI.material_get_shader(_inst));
-			set => NativeAPI.material_set_shader(_inst, value._inst); }
+			set => NativeAPI.material_set_shader(_inst, value?._inst ?? IntPtr.Zero); }
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managine your assets, or finding
 		/// them later on!</summary>
@@ -190,17 +195,47 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.material_get_id(_inst));
 			set => NativeAPI.material_set_id(_inst, value); }
 
-		/// <summary>Creates a material from a shader, and uses the shader's 
-		/// default settings. Uses an auto-generated id.</summary>
-		/// <param name="shader">Any valid shader.</param>
+		/// <summary>Creates a material from a shader, and uses the shader's
+		/// default settings. If the shader is null, a warning will be added to
+		/// the log, and this Material will default to using an Unlit shader.
+		/// Uses an auto-generated id.</summary>
+		/// <param name="shader">Any valid shader, null is okay, but will log a
+		/// warning and default to Unlit.</param>
 		public Material(Shader shader)
 		{
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
 		}
-		/// <summary>Creates a material from a shader, and uses the shader's 
-		/// default settings.</summary>
+		/// <summary>Loads a Shader asset and creates a Material using it. If
+		/// the shader fails to load, a warning will be added to the log, and
+		/// this Material will default to using an Unlit shader. Uses an
+		/// auto-generated id.</summary>
+		/// <param name="shaderFilename">The filename of a Shader asset. If the
+		/// file is not present, the Shader will default to Unlit.</param>
+		public Material(string shaderFilename)
+		{
+			Shader shader = Shader.FromFile(shaderFilename);
+			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
+		}
+		/// <summary>Loads a Shader asset and creates a Material using it. If
+		/// the shader fails to load, a warning will be added to the log, and
+		/// this Material will default to using an Unlit shader. Uses an
+		/// auto-generated id.</summary>
 		/// <param name="id">Set the material's id to this.</param>
-		/// <param name="shader">Any valid shader.</param>
+		/// <param name="shaderFilename">The filename of a Shader asset. If the
+		/// file is not present, the Shader will default to Unlit.</param>
+		public Material(string id, string shaderFilename)
+		{
+			Shader shader = Shader.FromFile(shaderFilename);
+			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
+			NativeAPI.material_set_id(_inst, id);
+		}
+		/// <summary>Creates a material from a shader, and uses the shader's
+		/// default settings. If the shader is null, a warning will be added to
+		/// the log, and this Material will default to using an Unlit shader.
+		/// </summary>
+		/// <param name="id">Set the material's id to this.</param>
+		/// <param name="shader">Any valid shader, null is okay, but will log a
+		/// warning and default to Unlit.</param>
 		public Material(string id, Shader shader)
 		{
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
@@ -219,6 +254,14 @@ namespace StereoKit
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
+		/// <summary>This array accessor allows for easy access to the shader's
+		/// parameters by their string name! If this is a more standard SK
+		/// shader that adheres to naming conventions, you may be able to use
+		/// a `MatParamName` for better safety.</summary>
+		/// <param name="parameterName">The string name of the parameter listed
+		/// in the shader! This may vary from shader to shader, especially if
+		/// using custom shaders.</param>
+		/// <returns>This is a set only.</returns>
 		public object this[string parameterName] { set { 
 			switch(value)
 			{
@@ -235,6 +278,13 @@ namespace StereoKit
 				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
 			}
 		} }
+		/// <summary>This array accessor allows for easy access to the more
+		/// common shader parameters using a predefined enum! Note that these
+		/// parameters are still not guaranteed to exist.</summary>
+		/// <param name="parameter">The name of the parameter listed in the
+		/// shader! The presence of this parameter may vary from shader to
+		/// shader, especially if using custom shaders.</param>
+		/// <returns>This is a set only.</returns>
 		public object this[MatParamName parameter] { set { this[MaterialParamString(parameter)] = value; } }
 		private string MaterialParamString(MatParamName parameter)
 		{
@@ -426,7 +476,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetBool(string name, bool value)
-			=> NativeAPI.material_set_bool(_inst, name, value?1:0);
+			=> NativeAPI.material_set_bool(_inst, name, value);
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -519,7 +569,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise false.
 		/// </returns>
-		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name)>0;
+		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name);
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of '0' will be returned.

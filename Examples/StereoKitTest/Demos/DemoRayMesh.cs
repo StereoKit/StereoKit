@@ -56,7 +56,7 @@ class DemoRayMesh : ITest
 		Tests.Screenshot("RayMeshIntersect.jpg", 600, 600, 90, new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
 	}
 
-	public void Update()
+	public void Step()
 	{
 		StepRayMesh();
 		Demo.ShowSummary(title, description);

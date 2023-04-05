@@ -47,7 +47,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	o.inst_col       = sk_inst[id].color;
-	o.light_edge.rgb = Lighting(o.normal);
+	o.light_edge.rgb = sk_lighting(o.normal);
 	o.light_edge.a   = input.color.a;
 	o.alpha          = input.color.b > 0.5 ? 1 : (o.inst_col.a-1) * 0.5;
 	o.glow_mask      = input.color.g;
@@ -69,7 +69,7 @@ float3 GetIridescence(uint view_id, float3 world_pos, float3 surface_normal) {
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	FingerDist dist = FingerDistanceInfo(input.world.xyz, input.normal);
+	finger_dist_t dist = sk_finger_distance_info(input.world.xyz, input.normal);
 
 	const float ring_max_dist = 0.14;
 	const float ring_initial  = 0.006;

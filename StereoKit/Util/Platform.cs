@@ -26,15 +26,15 @@ namespace StereoKit
 		/// preferred for accessibility reasons.</summary>
 		public static bool ForceFallbackKeyboard
 		{
-			get => NativeAPI.platform_keyboard_get_force_fallback() > 0;
-			set => NativeAPI.platform_keyboard_set_force_fallback(value?1:0);
+			get => NativeAPI.platform_keyboard_get_force_fallback();
+			set => NativeAPI.platform_keyboard_set_force_fallback(value);
 		}
 
 		/// <summary>Check if a soft keyboard is currently visible. This may be
 		/// an OS provided keyboard or StereoKit's fallback keyboard, but will
 		/// not indicate the presence of a physical keyboard.</summary>
 		public static bool KeyboardVisible
-			=> NativeAPI.platform_keyboard_visible() > 0;
+			=> NativeAPI.platform_keyboard_visible();
 
 		/// <summary>Request or hide a soft keyboard for the user to type on.
 		/// StereoKit will surface OS provided soft keyboards where available,
@@ -48,7 +48,7 @@ namespace StereoKit
 		/// request the soft keyboard layout that most closely represents the
 		/// TextContext provided.</param>
 		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
-			=> NativeAPI.platform_keyboard_show(show?1:0, inputType);
+			=> NativeAPI.platform_keyboard_show(show, inputType);
 		#endregion
 
 		#region File Picker

@@ -102,27 +102,46 @@ namespace StereoKit
 		AnyTransparent = Additive | Blend,
 	}
 
+	/// <summary>This describes where the origin of the application should be. While these
+	/// origins map closely to OpenXR features, not all runtimes support each
+	/// feature. StereoKit will provide reasonable fallback behavior in the event the
+	/// origin mode isn't directly supported.</summary>
+	public enum OriginMode {
+		/// <summary>The origin will be at the location of the user's head when the
+		/// application starts, facing the same direction as the user.</summary>
+		Local,
+		/// <summary>The origin will be at the floor beneath where the user starts, facing the
+		/// direction of the user.</summary>
+		Floor,
+		/// <summary>The origin will be at the center of a safe play area or stage that the
+		/// user or OS has defined, and will face one of the edges of the play
+		/// area.</summary>
+		Stage,
+	}
+
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel {
+		/// <summary>A default log level that indicates it has not yet been
+		/// set.</summary>
 		None         = 0,
 		/// <summary>This is for diagnostic information, where you need to know
 		/// details about what -exactly- is going on in the system. This
 		/// info doesn't surface by default.</summary>
 		Diagnostic,
-		/// <summary>This is non-critical information, just to let you know what's
-		/// going on.</summary>
+		/// <summary>This is non-critical information, just to let you know
+		/// what's going on.</summary>
 		Info,
-		/// <summary>Something bad has happened, but it's still within the realm of
-		/// what's expected.</summary>
+		/// <summary>Something bad has happened, but it's still within the
+		/// realm of what's expected.</summary>
 		Warning,
-		/// <summary>Danger Will Robinson! Something really bad just happened and
-		/// needs fixing!</summary>
+		/// <summary>Danger Will Robinson! Something really bad just happened
+		/// and needs fixing!</summary>
 		Error,
 	}
 
-	/// <summary>When rendering content, you can filter what you're rendering by the
-	/// RenderLayer that they're on. This allows you to draw items that are
-	/// visible in one render, but not another. For example, you may wish
+	/// <summary>When rendering content, you can filter what you're rendering
+	/// by the RenderLayer that they're on. This allows you to draw items that
+	/// are visible in one render, but not another. For example, you may wish
 	/// to draw a player's avatar in a 'mirror' rendertarget, but not in
 	/// the primary display. See `Renderer.LayerFilter` for configuring what
 	/// the primary display renders.</summary>
@@ -164,7 +183,8 @@ namespace StereoKit
 		/// want to render all layers, then this is the layer filter
 		/// you would use. This is the default for render filtering.</summary>
 		All          = 0xFFFF,
-		/// <summary>This is a combination of all layers that are not the VFX layer.</summary>
+		/// <summary>This is a combination of all layers that are not the VFX
+		/// layer.</summary>
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
 		/// <summary>All layers except for the third person layer.</summary>
 		AllFirstPerson = All & ~ThirdPerson,
@@ -172,18 +192,19 @@ namespace StereoKit
 		AllThirdPerson = All & ~FirstPerson,
 	}
 
-	/// <summary>This tells about the app's current focus state, whether it's active and
-	/// receiving input, or if it's backgrounded or hidden. This can be
-	/// important since apps may still run and render when unfocused, as the app
-	/// may still be visible behind the app that _does_ have focus.</summary>
+	/// <summary>This tells about the app's current focus state, whether it's
+	/// active and receiving input, or if it's backgrounded or hidden. This can
+	/// be important since apps may still run and render when unfocused, as the
+	/// app may still be visible behind the app that _does_ have focus.</summary>
 	public enum AppFocus {
-		/// <summary>This StereoKit app is active, focused, and receiving input from the
-		/// user. Application should behave as normal.</summary>
+		/// <summary>This StereoKit app is active, focused, and receiving input
+		/// from the user. Application should behave as normal.</summary>
 		Active,
-		/// <summary>This StereoKit app has been unfocused, something may be compositing
-		/// on top of the app such as an OS dashboard. The app is still visible,
-		/// but some other thing has focus and is receiving input. You may wish
-		/// to pause, disable input tracking, or other such things.</summary>
+		/// <summary>This StereoKit app has been unfocused, something may be
+		/// compositing on top of the app such as an OS dashboard. The app is
+		/// still visible, but some other thing has focus and is receiving
+		/// input. You may wish to pause, disable input tracking, or other such
+		/// things.</summary>
 		Background,
 		/// <summary>This app is not rendering currently.</summary>
 		Hidden,
@@ -235,6 +256,38 @@ namespace StereoKit
 		/// <summary>This memory is now _yours_ and you must free it yourself! Memory has been
 		/// allocated, and the data has been copied over to it. Pricey! But safe.</summary>
 		Copy,
+	}
+
+	/// <summary>What type of user motion is the device capable of tracking? For the normal
+	/// fully capable XR headset, this should be 6dof (rotation and translation), but
+	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
+	/// computers with the simulator off would be none. </summary>
+	public enum DeviceTracking {
+		/// <summary>No tracking is available! This is likely a flatscreen application, not an
+		/// XR applicaion.</summary>
+		None         = 0,
+		/// <summary>This tracks rotation only, this may be a limited device without tracking
+		/// cameras, or could be a more capable headset in a 3dof mode. DoF stands
+		/// for Degrees of Freedom.</summary>
+		DoF3,
+		/// <summary>This is capable of tracking both the position and rotation of the device,
+		/// most fully featured XR headsets (such as a HoloLens 2) will have this.
+		/// DoF stands for Degrees of Freedom.</summary>
+		DoF6,
+	}
+
+	/// <summary>This describes a type of display hardware!</summary>
+	public enum DisplayType {
+		/// <summary>Not a display at all, or the variable hasn't been initialized properly
+		/// yet.</summary>
+		None,
+		/// <summary>This is a stereo display! It has 2 screens, or two sections that display
+		/// content in stereo, one for each eye. This could be a VR headset, or like
+		/// a 3D tv.</summary>
+		Stereo,
+		/// <summary>This is a single flat screen, with no stereo depth. This could be
+		/// something like either a computer monitor, or a phone with passthrough AR.</summary>
+		Flatscreen,
 	}
 
 	/// <summary>Culling is discarding an object from the render pipeline!
@@ -305,29 +358,46 @@ namespace StereoKit
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
 		Rgba32Linear = 2,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in sRGB color space. This is a common swapchain format
+		/// on Windows.</summary>
 		Bgra32       = 3,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in linear color space. This is a common swapchain
+		/// format on Windows.</summary>
 		Bgra32Linear = 4,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Red/Green/Blue data channels, with 11 bits for R and G,
+		/// and 10 bits for blue. This is a great presentation format for high
+		/// bit depth displays that still fits in 32 bits! This format has no
+		/// alpha channel.</summary>
 		Rg11b10      = 5,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Red/Green/Blue/Transparency data channels, with 10 
+		/// bits for R, G, and B, and 2 for alpha. This is a great presentation
+		/// format for high bit depth displays that still fits in 32 bits, and
+		/// also includes at least a bit of transparency!</summary>
 		Rgb10a2      = 6,
-		/// <summary>TODO: remove during major version update</summary>
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. TODO: remove during major version
+		/// update, prefer s, f, or u postfixed versions of this format.</summary>
 		Rgba64       = 7,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The u postfix indicates that the raw
+		/// color data is stored as an unsigned 16 bit integer, which is then
+		/// normalized into the 0, 1 floating point range on the GPU.</summary>
+		Rgba64u      = Rgba64,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The s postfix indicates that the raw
+		/// color data is stored as a signed 16 bit integer, which is then
+		/// normalized into the -1, +1 floating point range on the GPU.</summary>
 		Rgba64s      = 8,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The f postfix indicates that the raw
+		/// color data is stored as 16 bit floats, which may be tricky to work
+		/// with in most languages.</summary>
 		Rgba64f      = 9,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
@@ -359,11 +429,6 @@ namespace StereoKit
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
 		Depth16      = 16,
-		/// <summary>16 bits of depth is not a lot, but it can be enough if
-		/// your far clipping plane is pretty close. If you're seeing lots of
-		/// flickering where two objects overlap, you either need to bring
-		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Rgba64u      = Rgba64,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more

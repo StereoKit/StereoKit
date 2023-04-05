@@ -3,8 +3,11 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "model.h"
+#include "mesh.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform_utils.h"
+#include <DirectXMath.h>
+using namespace DirectX;
 
 #include <stdio.h>
 #include <string.h>
@@ -179,6 +182,44 @@ void model_recalculate_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
+void model_recalculate_bounds_exact(model_t model) {
+	model->bounds_dirty = false;
+	if (model->visuals.count <= 0) {
+		model->bounds = {};
+		return;
+	}
+
+	// Get an initial size
+	vec3     first_corner = model->visuals[0].mesh->verts[0].pos;
+	vec3     minf         = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+	XMVECTOR min          = XMLoadFloat3((XMFLOAT3*)&minf);
+	XMVECTOR max          = XMLoadFloat3((XMFLOAT3*)&minf);
+
+	// Use all the transformed vertices, and factor them in!
+	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&model->visuals[m].transform_model.row);
+		const mesh_t  mesh            = model->visuals[m].mesh;
+		const vert_t* verts           = mesh->verts;
+
+		for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
+			XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
+
+			min = XMVectorMin(min, pt);
+			max = XMVectorMax(max, pt);
+		}
+	}
+
+	// Final bounds value
+
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract   (max, min);
+
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
+}
+
+///////////////////////////////////////////
+
 const char *model_get_name(model_t model, int32_t subset) {
 	assert(subset < model->visuals.count);
 	return model_node_get_name(model, model->visuals[subset].node);
@@ -296,7 +337,13 @@ void model_release(model_t model) {
 ///////////////////////////////////////////
 
 void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
-	render_add_model(model, transform, color_linear, layer);
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void model_draw_mat(model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -486,7 +533,9 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.node            = node_id;
 		visual.visible         = true;
 		node.visual = model->visuals.add(visual);
-		model->bounds = bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
+		model->bounds = model->visuals.count == 1
+			? bounds_transform(mesh_get_bounds(mesh), node.transform_model)
+			: bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
 	}
 
 	model->nodes.add(node);
@@ -824,7 +873,7 @@ void model_set_anim_time(model_t model, float time) {
 		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
 	} else {
-		model->anim_inst.start_time = time_getf() - time;
+		model->anim_inst.start_time = time_totalf() - time;
 	}
 }
 
@@ -871,9 +920,9 @@ float model_anim_active_time(model_t model) {
 
 	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 	switch (model->anim_inst.mode) {
-	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
-	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
-	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_manual: return fminf(                model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_totalf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_totalf() - model->anim_inst.start_time, max_time);
 	default:               return 0;
 	}
 }

@@ -4,7 +4,7 @@ class TestGerman : ITest
 {
 	public void Initialize() { }
 	public void Shutdown() { }
-	public void Update() {
+	public void Step() {
 		Text.Add(
 			"Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.",
 			Matrix.TR(new Vec3(0, 0, 0), Quat.LookDir(0, 0, 1)),

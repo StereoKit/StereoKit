@@ -10,22 +10,22 @@ class DemoEyes : ITest
 	List<LinePoint> points = new List<LinePoint>();
 	Vec3 previous;
 
-	long lastEyesSampleTime;
-	DateTime demoStartTime;
-	int uniqueSamplesCount;
+	long   lastEyesSampleTime;
+	double demoStartTime;
+	int    uniqueSamplesCount;
 
 	public void Initialize()
 	{
-		demoStartTime = DateTime.UtcNow;
+		demoStartTime      = Time.Total;
 		uniqueSamplesCount = 0;
 		lastEyesSampleTime = -1;
 	}
 	public void Shutdown  () { }
 
-	public void Update()
+	public void Step()
 	{
-		Plane plane = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
-		Matrix quadPose = Matrix.TRS(new Vec3(0.54f, 0, -0.468f), Quat.LookDir(plane.normal), 0.5f);
+		Plane  plane    = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
+		Matrix quadPose = Matrix.TRS(new Vec3(0.54f, -0.2f, -0.468f), Quat.LookDir(plane.normal), 0.5f);
 		Mesh.Quad.Draw(Material.Default, quadPose);
 		if (Input.Eyes.Ray.Intersect(plane, out Vec3 at))
 		{
@@ -63,8 +63,8 @@ class DemoEyes : ITest
 				uniqueSamplesCount++;
 			}
 
-			double sampleFrequency = uniqueSamplesCount / (DateTime.UtcNow - demoStartTime).TotalSeconds;
-			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.55f, -0.1f)) * quadPose);
+			double sampleFrequency = uniqueSamplesCount / (Time.Total - demoStartTime);
+			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.75f, -0.1f)) * quadPose);
 		}
 	}
 }

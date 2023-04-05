@@ -24,7 +24,7 @@ class DemoUnicode : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		UI.HandleBegin("", ref clipboardPose, clipboard.Bounds);
 		clipboard.Draw(Matrix.Identity);

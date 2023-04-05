@@ -5,7 +5,7 @@
 namespace sk {
 
 bool world_init();
-void world_update();
+void world_step();
 void world_shutdown();
 void world_refresh_transforms();
 

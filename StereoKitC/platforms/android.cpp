@@ -2,10 +2,9 @@
 #if defined(SK_OS_ANDROID)
 
 #include "../log.h"
+#include "../device.h"
 #include "../xr_backends/openxr.h"
-#include "flatscreen_input.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
@@ -106,6 +105,8 @@ void android_create_swapchain() {
 	android_swapchain_created = true;
 	sk_info.display_width  = android_swapchain.width;
 	sk_info.display_height = android_swapchain.height;
+	device_data.display_width  = android_swapchain.width;
+	device_data.display_height = android_swapchain.height;
 	render_update_projection();
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 }
@@ -123,6 +124,8 @@ void android_resize_swapchain() {
 	skg_swapchain_resize(&android_swapchain, width, height);
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
+	device_data.display_width  = width;
+	device_data.display_height = height;
 	render_update_projection();
 }
 
@@ -155,17 +158,17 @@ bool android_start_post_xr() {
 ///////////////////////////////////////////
 
 bool android_start_flat() {
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 	if (android_window) {
 		android_create_swapchain();
 	}
-	flatscreen_input_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void android_stop_flat() {
-	flatscreen_input_shutdown();
 	if (android_window) {
 		android_swapchain_created = false;
 		skg_swapchain_destroy(&android_swapchain);
@@ -188,8 +191,6 @@ void android_step_begin_xr() {
 ///////////////////////////////////////////
 
 void android_step_begin_flat() {
-	flatscreen_input_update();
-
 	if (android_next_win_ready) {
 		// If we got our window from xamarin, it's a jobject, and needs
 		// converted into an ANativeWindow first!
@@ -209,7 +210,7 @@ void android_step_begin_flat() {
 
 			if (android_next_window) {
 				android_window = (ANativeWindow*)android_next_window;
-				if (sk_display_mode == display_mode_flatscreen)
+				if (device_data.display_type == display_type_flatscreen)
 					android_create_swapchain();
 			}
 		}
@@ -221,8 +222,6 @@ void android_step_begin_flat() {
 ///////////////////////////////////////////
 
 void android_step_end_flat() {
-	input_update_poses(true);
-
 	if (!android_window)
 		return;
 

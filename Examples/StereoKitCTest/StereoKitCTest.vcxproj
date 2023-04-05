@@ -26,10 +26,10 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>StereoKitCTest</ProjectName>
 
-    <OutDir>$(SolutionDir)bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir>$(ProjectDir)..\..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
-    <IntDir>$(SolutionDir)bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir)StereoKitC;$(IncludePath)</IncludePath>
+    <IntDir>$(ProjectDir)..\..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(ProjectDir)..\..\StereoKitC;$(IncludePath)</IncludePath>
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -62,7 +62,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(ProjectDir)..\..\Tools\skshaderc.exe" -O3 -h -t xgew -i "$(ProjectDir)..\..\Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -80,11 +80,12 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Tools\skshaderc.exe" -O3 -h -t xgew -i "$(SolutionDir)Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(ProjectDir)..\..\Tools\skshaderc.exe" -O3 -h -t xgew -i "$(ProjectDir)..\..\Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   
   <ItemGroup>
+    <ClCompile Include="demo_aliasing.cpp" />
     <ClCompile Include="demo_anchors.cpp" />
     <ClCompile Include="demo_bvh.cpp" />
     <ClCompile Include="demo_draw.cpp" />
@@ -103,6 +104,7 @@
     <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="skt_lighting.cpp" />
+    <ClInclude Include="demo_aliasing.h" />
     <ClInclude Include="demo_anchors.h" />
     <ClInclude Include="demo_bvh.h" />
     <ClInclude Include="demo_draw.h" />
@@ -125,13 +127,13 @@
     <ClInclude Include="skt_lighting.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\StereoKitC\StereoKitC.vcxproj">
+    <ProjectReference Include="$(ProjectDir)..\..\StereoKitC\StereoKitC.vcxproj">
       <Project>{95b47c8e-3a66-483c-abee-950e6c2f621a}</Project>
     </ProjectReference>
   </ItemGroup>
   <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
-    <Content Include="$(SolutionDir)Examples\Assets\**">
+    <Content Include="$(ProjectDir)..\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>

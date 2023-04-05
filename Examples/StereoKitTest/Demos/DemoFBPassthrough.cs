@@ -9,7 +9,7 @@ class DemoFBPassthrough : ITest
 	public void Initialize() { }
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Passthrough Settings", ref windowPose);
 		bool toggle = App.passthrough.EnabledPassthrough;

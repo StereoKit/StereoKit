@@ -30,29 +30,35 @@ class DemoWorldMesh : ITest
 	public void Shutdown()
 		=> World.OcclusionMaterial = oldMaterial;
 
-	public void Update() {
+	public void Step() {
 		UI.WindowBegin("Settings", ref windowPose, Vec2.Zero);
-		if (SK.System.worldOcclusionPresent)
-		{ 
-			bool occlusion = World.OcclusionEnabled;
-			if (UI.Toggle("Enable Occlusion", ref occlusion))
-				World.OcclusionEnabled = occlusion;
-			if (UI.Toggle("Wireframe", ref settingsWireframe))
-				occlusionMaterial.Wireframe = settingsWireframe;
-			if (UI.Radio("Red",   settingsColor == 0)) { settingsColor = 0; occlusionMaterial.SetColor("color", Color.HSV(0,1,1)); } UI.SameLine();
-			if (UI.Radio("White", settingsColor == 1)) { settingsColor = 1; occlusionMaterial.SetColor("color", Color.White);      } UI.SameLine();
-			if (UI.Radio("Black", settingsColor == 2)) { settingsColor = 2; occlusionMaterial.SetColor("color", Color.BlackTransparent); }
-		}
-		else UI.Label("World occlusion isn't available on this system");
+
+		if (!SK.System.worldOcclusionPresent)
+			UI.Label("World occlusion isn't available on this system");
+		UI.PushEnabled(SK.System.worldOcclusionPresent);
+
+		bool occlusion = World.OcclusionEnabled;
+		if (UI.Toggle("Enable Occlusion", ref occlusion))
+			World.OcclusionEnabled = occlusion;
+		if (UI.Toggle("Wireframe", ref settingsWireframe))
+			occlusionMaterial.Wireframe = settingsWireframe;
+		if (UI.Radio("Red",   settingsColor == 0)) { settingsColor = 0; occlusionMaterial.SetColor("color", Color.HSV(0,1,1)); } UI.SameLine();
+		if (UI.Radio("White", settingsColor == 1)) { settingsColor = 1; occlusionMaterial.SetColor("color", Color.White);      } UI.SameLine();
+		if (UI.Radio("Black", settingsColor == 2)) { settingsColor = 2; occlusionMaterial.SetColor("color", Color.BlackTransparent); }
+
+		UI.PopEnabled();
 
 		UI.HSeparator();
-		if (SK.System.worldRaycastPresent)
-		{
-			bool raycast = World.RaycastEnabled;
-			if (UI.Toggle("Enable Raycast", ref raycast))
-				World.RaycastEnabled = raycast;
-		}
-		else UI.Label("World raycasting isn't available on this system");
+
+		if (!SK.System.worldRaycastPresent)
+			UI.Label("World raycasting isn't available on this system");
+		UI.PushEnabled(SK.System.worldRaycastPresent);
+
+		bool raycast = World.RaycastEnabled;
+		if (UI.Toggle("Enable Raycast", ref raycast))
+			World.RaycastEnabled = raycast;
+
+		UI.PopEnabled();
 
 		UI.WindowEnd();
 

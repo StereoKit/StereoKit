@@ -1,17 +1,19 @@
 ﻿using Android.App;
+using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Content;
-using StereoKit;
-using Android.Graphics;
-using Java.Lang;
 using AndroidX.AppCompat.App;
+using Java.Lang;
+using StereoKit;
+using System;
+using System.Threading.Tasks;
 
 namespace SKTemplate_Maui;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, Exported = true)]
-[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
+[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 {
 	App                app;

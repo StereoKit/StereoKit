@@ -45,9 +45,32 @@ namespace StereoKit
 			get => NativeAPI.render_get_filter();
 		}
 
+		/// <summary>OpenXR has a recommended default for the main render
+		/// surface, this variable allows you to set SK's surface to a multiple
+		/// of the recommended size. Note that the final resolution may also be
+		/// clamped or quantized. Only works in XR mode. If known in advance,
+		/// set this via SKSettings in initialization. This is a _very_ costly
+		/// change to make.</summary>
+		public static float Scaling {
+			get => NativeAPI.render_get_scaling();
+			set => NativeAPI.render_set_scaling(value);
+		}
+
+		/// <summary>Allows you to set the multisample (MSAA) level of the
+		/// render surface. Valid values are 1, 2, 4, 8, 16, though some OpenXR
+		/// runtimes may clamp this to lower values. Note that while this can
+		/// greatly smooth out edges, it also greatly increases RAM usage and
+		/// fill rate, so use it sparingly. Only works in XR mode. If known in
+		/// advance, set this via SKSettings in initialization. This is a
+		/// _very_ costly change to make.</summary>
+		public static int Multisample {
+			get => NativeAPI.render_get_multisample();
+			set => NativeAPI.render_set_multisample(value);
+		}
+
 		/// <summary>This tells if CaptureFilter has been overridden to a
 		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
-		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
+		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter();
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
@@ -69,7 +92,7 @@ namespace StereoKit
 		/// will then be relative to this point. This is great to use if 
 		/// you're trying to do teleportation, redirected walking, or just 
 		/// shifting the floor around.</summary>
-		public static Matrix CameraRoot 
+		public static Matrix CameraRoot
 		{
 			get => NativeAPI.render_get_cam_root();
 			set => NativeAPI.render_set_cam_root(value);
@@ -103,7 +126,7 @@ namespace StereoKit
 		/// <param name="overrideFilter">The filter for capture rendering to
 		/// use. This is ignored if useOverrideFilter is false.</param>
 		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
-			=> NativeAPI.render_override_capture_filter(useOverrideFilter ? 1 : 0, overrideFilter);
+			=> NativeAPI.render_override_capture_filter(useOverrideFilter, overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with

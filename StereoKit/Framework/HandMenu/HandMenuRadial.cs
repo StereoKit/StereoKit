@@ -208,7 +208,7 @@ namespace StereoKit.Framework
 		void StepMenu(Hand hand)
 		{
 			// Animate the menu a bit
-			float time = Math.Min(1, Time.Elapsedf * 24);
+			float time = Math.Min(1, Time.StepUnscaledf * 24);
 			menuPose.position    = Vec3  .Lerp (menuPose.position,    destPose.position,    time);
 			menuPose.orientation = Quat  .Slerp(menuPose.orientation, destPose.orientation, time);
 			activation           = SKMath.Lerp (activation,           1,                    time);
@@ -232,7 +232,7 @@ namespace StereoKit.Framework
 			bool  focused   = onMenu && magSq > minDist * minDist;
 			bool  selected  = onMenu && magSq > midDist * midDist;
 			bool  cancel    = magSq > maxDist*maxDist;
-			float fitRadius = midDist * Math.Min(90, step) * Units.deg2rad;
+			float arcLength = midDist * Math.Min(90, step) * Units.deg2rad;
 
 			// Find where our finger is pointing to, and draw that
 			float fingerAngle = (float)Math.Atan2(tipLocal.y, tipLocal.x) * Units.rad2deg - (layer.startAngle + angleOffset);
@@ -256,7 +256,7 @@ namespace StereoKit.Framework
 				backgroundEdge.Draw(Material.UI, r, colorPrimary * (highlight ? 2.0f:1.0f));
 				if (layer.items[i].action == HandMenuAction.Layer || layer.items[i].action == HandMenuAction.Back )
 					childIndicator.Draw(Material.UI, Matrix.TR(0, 0, depth, Quat.FromAngles(0, 0, currAngle + halfStep)));
-				layer.items[i].Draw(at, fitRadius, currAngle + halfStep, highlight);
+				layer.items[i].Draw(at, arcLength, currAngle + halfStep, highlight);
 			}
 
 			// Done with local work

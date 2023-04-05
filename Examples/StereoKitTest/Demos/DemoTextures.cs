@@ -77,7 +77,7 @@ class DemoTextures : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0.32f, 0, -0.32f), new Vec3(0.5f, 0, -0.5f));
 

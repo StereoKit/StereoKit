@@ -23,6 +23,8 @@ namespace sk {
 
 void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height);
 bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format);
+void  tex_update_label   (tex_t texture);
+void _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -142,6 +144,39 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 		// This shouldn't happen, tex_load_image_data and tex_load_image_info
 		// should always agree with eachother
 		if (tex->width  != width  ||
+			tex->height != height ||
+			tex->format != format) {
+			log_warnf("Texture data mismatch: %s", data->file_names[i]);
+			tex_set_fallback(tex, tex_error_texture);
+			tex->header.state = asset_state_error;
+			return false;
+		}
+
+		// Release file memory as soon as we're done with it
+		sk_free(data->file_data[i]);
+	}
+	tex->header.state = asset_state_loaded_meta;
+	return true;
+}
+bool32_t tex_set_arr_parse(tex_t tex, tex_load_t* data) {
+	data->color_data = sk_malloc_t(void*, data->file_count);
+
+	// Parse all files
+	for (int32_t i = 0; i < data->file_count; i++) {
+		int         width = 0;
+		int         height = 0;
+		tex_format_ format = tex_format_none;
+		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height);
+
+		if (data->color_data[i] == nullptr) {
+			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
+			tex->header.state = asset_state_error_unsupported;
+			return false;
+		}
+
+		// This shouldn't happen, tex_load_image_data and tex_load_image_info
+		// should always agree with eachother
+		if (tex->width != width ||
 			tex->height != height ||
 			tex->format != format) {
 			log_warnf("Texture data mismatch: %s", data->file_names[i]);
@@ -607,6 +642,17 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 // Texture manipulation functions        //
 ///////////////////////////////////////////
 
+void tex_update_label(tex_t texture) {
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	if (texture->header.id_text != nullptr)
+		skg_tex_name(&texture->tex, texture->header.id_text);
+#else
+	(void)texture;
+#endif
+}
+
+///////////////////////////////////////////
+
 tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err(tex_msg_requires_rendertarget);
@@ -692,6 +738,8 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
 	texture->tex    = skg_tex_create_from_layer(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_index);
+
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////
@@ -723,6 +771,7 @@ tex_t tex_find(const char *id) {
 
 void tex_set_id(tex_t tex, const char *id) {
 	assets_set_id(&tex->header, id);
+	tex_update_label(tex);
 }
 
 ///////////////////////////////////////////
@@ -784,8 +833,6 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 	if (!different_size && (data == nullptr || *data == nullptr))
 		return;
 	if (!skg_tex_is_valid(&texture->tex) || different_size || (!different_size && !dynamic)) {
-		skg_tex_destroy(&texture->tex);
-
 		if (!different_size && !dynamic)
 			texture->type &= tex_type_dynamic;
 
@@ -796,16 +843,21 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **dat
 		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
 		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
-		texture->tex = skg_tex_create(type, use, format, use_mips);
-		tex_set_meta   (texture, width, height, texture->format);
-		tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
 
-		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
+		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
+		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);
+		skg_tex_set_contents_arr(&new_tex, (const void**)data, data_count, width, height, multisample);
+		skg_tex_t old_tex = texture->tex;
+		texture->tex = new_tex;
+		skg_tex_destroy(&old_tex);
+
+		tex_set_meta(texture, width, height, texture->format);
+
 		if (texture->depth_buffer != nullptr) {
 			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
-		
+		tex_update_label(texture);
 	} else if (dynamic) {
 		skg_tex_set_contents_arr(&texture->tex, (const void**)data, data_count, width, height, multisample);
 	} else {
@@ -848,6 +900,50 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 #else
 	_tex_set_color_arr(job_data.texture, job_data.width, job_data.height, job_data.data, job_data.data_count, job_data.sh_lighting_info, job_data.multisample);
 #endif
+}
+
+///////////////////////////////////////////
+
+void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data, bool32_t blocking, int32_t priority) {
+	tex_load_t* load_data = sk_calloc_t(tex_load_t, 1);
+	load_data->is_srgb = srgb_data;
+	load_data->file_count = 1;
+	load_data->file_names = sk_malloc_t(char*, 1);
+	load_data->file_sizes = sk_malloc_t(size_t, 1);
+	load_data->file_data = sk_malloc_t(void*, 1);
+	load_data->file_names[0] = string_copy("(memory)");
+	load_data->file_sizes[0] = data_size;
+	load_data->file_data[0] = sk_malloc(sizeof(uint8_t) * data_size);
+	memcpy(load_data->file_data[0], data, data_size);
+
+	// Grab the file meta right away since we already have the file data, no
+	// point in delaying that until the task.
+	int32_t     width = 0;
+	int32_t     height = 0;
+	tex_format_ format = tex_format_none;
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &width, &height, &format)) {
+		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
+		texture->header.state = asset_state_error_unsupported;
+		return;
+	}
+	tex_set_meta(texture, width, height, format);
+
+	if (blocking) {
+		bool32_t success = tex_set_arr_parse(texture, load_data);
+		if (!success)	tex_set_fallback(texture, tex_error_texture);
+		else			tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
+		tex_load_free(nullptr, load_data);
+	} else {
+		static const asset_load_action_t actions[] = {
+		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
+#if defined(SKG_OPENGL)
+		asset_load_action_t {tex_load_arr_upload, asset_thread_gpu  },
+#else
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+#endif
+		};
+		tex_add_loading_task(texture, load_data, actions, _countof(actions), priority, (float)(width * height));
+	}
 }
 
 ///////////////////////////////////////////
@@ -897,11 +993,7 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 
 ///////////////////////////////////////////
 
-void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
-	texture->address_mode = address_mode;
-	texture->anisotropy   = anisotropy_level;
-	texture->sample_mode  = sample;
-
+void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
 	skg_tex_address_ skg_addr;
 	switch (address_mode) {
 	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
@@ -918,7 +1010,18 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skg_tex_settings(&texture->tex, skg_addr, skg_sample, anisotropy_level);
+	skg_tex_settings(texture, skg_addr, skg_sample, anisotropy_level);
+}
+
+///////////////////////////////////////////
+
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+	texture->address_mode = address_mode;
+	texture->anisotropy   = anisotropy_level;
+	texture->sample_mode  = sample;
+
+	_tex_set_options(&texture->tex, sample, address_mode, anisotropy_level);
+	tex_update_label(texture);
 }
 
 ///////////////////////////////////////////
@@ -1140,6 +1243,49 @@ tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ typ
 	tex_set_colors(result, width, height, color_data);
 
 	sk_free(color_data);
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_t gradient_linear) {
+	if (roundness < 0.00001f)
+		roundness = 0.00001f;
+
+	gradient_t grad = gradient_linear;
+	if (gradient_linear == nullptr) {
+		gradient_key_t keys[2] = {
+			{ {1,1,1,0}, 0 },
+			{ {1,1,1,1}, 1 }
+		};
+		grad = gradient_create_keys(keys, 2);
+	}
+	// Create an array of color values the size of our texture
+	color32* color_data = sk_malloc_t(color32, width * height);
+
+	vec2  center   = { width / 2.0f, height / 2.0f };
+	float max_dist = fminf((float)width, (float)height) / 2.0f;
+	float power    = roundness * 2;
+	for (int32_t px_y=0; px_y<height; px_y++) {
+		for (int32_t px_x=0; px_x<width; px_x++) {
+			// Constrain the point to the top right quadrant
+			vec2 pt = {
+				fabsf(px_x - center.x) / max_dist,
+				fabsf(px_y - center.y) / max_dist};
+			float minkowski_dist = powf(powf(pt.x, power) + powf(pt.y, power), 1.0f / power);
+
+			color_data[px_x + px_y*width] = gradient_get32(grad, 1-minkowski_dist);
+		}
+	}
+
+	// And upload it to the GPU
+	tex_t result = tex_create(tex_type_image, tex_format_rgba32_linear);
+	tex_set_colors(result, width, height, color_data);
+
+	sk_free(color_data);
+	if (gradient_linear == nullptr)
+		gradient_release(grad);
 
 	return result;
 }

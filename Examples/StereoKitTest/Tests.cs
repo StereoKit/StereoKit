@@ -68,7 +68,7 @@ public static class Tests
 			activeScene = nextScene;
 			nextScene   = null;
 		}
-		activeScene.Update();
+		activeScene.Step();
 		sceneFrame++;
 
 		if (IsTesting && FinishedWithTest())
@@ -82,7 +82,7 @@ public static class Tests
 	}
 	public static void Shutdown()
 	{
-		activeScene.Shutdown();
+		activeScene?.Shutdown();
 		activeScene = null;
 		GC.Collect(int.MaxValue, GCCollectionMode.Forced);
 	}

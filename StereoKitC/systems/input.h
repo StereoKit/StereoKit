@@ -18,7 +18,7 @@ pointer_t *input_get_pointer(int32_t id);
 
 bool input_init        ();
 void input_shutdown    ();
-void input_update      ();
+void input_step        ();
 void input_update_poses(bool update_visuals);
 
 inline button_state_ button_make_state(bool32_t was, bool32_t is) { 

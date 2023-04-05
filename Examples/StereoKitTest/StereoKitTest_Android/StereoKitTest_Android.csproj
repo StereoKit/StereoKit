@@ -26,6 +26,10 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
+    <SKOpenXRLoader>Oculus</SKOpenXRLoader>
+    <SKAssetFolder>..\..\Assets</SKAssetFolder>
+    <SKAssetDestination>Assets</SKAssetDestination>
+    <SKShowDebugVars>true</SKShowDebugVars>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -75,21 +79,24 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\App.cs" />
-    <Compile Include="..\DebugToolWindow.cs" />
-    <Compile Include="..\ITest.cs" />
-    <Compile Include="..\Tests.cs" />
-    <Compile Include="..\Demos\*.cs" />
-    <Compile Include="..\Tools\*.cs" />
+    <Compile Include="..\App.cs" Visible="false"/>
+    <Compile Include="..\DebugToolWindow.cs" Visible="false"/>
+    <Compile Include="..\ITest.cs" Visible="false"/>
+    <Compile Include="..\Tests.cs" Visible="false"/>
+    <Compile Include="..\Demos\*.cs" Visible="false"/>
+    <Compile Include="..\Tools\*.cs" Visible="false"/>
   </ItemGroup>
+  
+  <Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
+  <Import Project="$(SolutionDir)StereoKit\SKAssets.targets" />
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+
   <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
     <AndroidAsset Include="$(SolutionDir)Examples\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
-    <SKShader Include="$(SolutionDir)Examples\Assets\**\*.hlsl" BuildRoot="$(SolutionDir)Examples" BuildTo="Assets" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -136,10 +143,12 @@
     <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
+      <Visible>false</Visible>
     </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libopenxr_loader.so">
+    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
+      <Visible>false</Visible>
     </AndroidNativeLibrary>
   </ItemGroup>
   <ItemGroup>

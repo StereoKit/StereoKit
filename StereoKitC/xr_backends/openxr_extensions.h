@@ -8,7 +8,9 @@
 #include "../libraries/array.h"
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
+	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <d3d11.h>
 	#define XR_GFX_EXTENSION XR_KHR_D3D11_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageD3D11KHR
@@ -127,6 +129,7 @@ namespace sk {
 	_(EXT_hand_tracking,                 true) \
 	_(EXT_palm_pose,                     true) \
 	_(EXT_eye_gaze_interaction,          true) \
+	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
 	_(FB_spatial_entity,                 true) \
 	_(OCULUS_audio_device_guid,          true) \
@@ -139,6 +142,7 @@ namespace sk {
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
 	_(MSFT_scene_understanding,          true) \
+	_(PICO_controller_interaction,       true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
 	_(EXTX_overlay,                      true)
 

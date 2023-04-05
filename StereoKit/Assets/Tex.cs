@@ -263,6 +263,29 @@ namespace StereoKit
 			NativeAPI.tex_set_colors(_inst, width, height, data);
 		}
 
+		/// <summary>Loads an image file stored in memory directly into
+		/// the created texture! Supported formats are: jpg, png, tga,
+		/// bmp, psd, gif, hdr, pic. This method introduces a blocking 
+		/// boolean parameter, which allows you to specify whether this
+		/// method blocks until the image fully loads! The default case
+		/// is to have it as part of the asynchronous asset pipeline, in
+		/// which the Asset Id will be the same as the filename.</summary>
+		/// <param name="imageFileData">The binary data of an image file,
+		/// this is NOT a raw RGB color array!</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.
+		/// </param>
+		/// <param name="blocking">Will this method wait for the image 
+		/// to load. By default, we try to load it asynchronously.</param>
+		/// <param name="priority">The priority sort order for this asset in
+		/// the async loading system. Lower values mean loading sooner.</param>
+		public void SetMemory(in byte[] imageFileData, bool sRGBData = true, bool blocking = false, int priority = 10)
+		{
+			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData, blocking, priority);
+		}
+
 		/// <summary>This function is dependent on the graphics backend! It
 		/// will take a texture resource for the current graphics backend (D3D
 		/// or GL) and wrap it in a StereoKit texture for use within StereoKit.
@@ -295,7 +318,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned?1:0);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
@@ -308,13 +331,13 @@ namespace StereoKit
 		public IntPtr GetNativeSurface()
 			=> NativeAPI.tex_get_surface(_inst);
 
-		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously. If the color
 		/// array is the correct size, it will not be re-allocated.</summary>
 		/// <param name="colorData">An array of colors that will be filled out
 		/// with the texture's data. It can be null, or an incorrect size. If
 		/// so, it will be reallocated to the correct size.</param>
-		/// <param name="mipLevel">Retreives the color data for a specific
+		/// <param name="mipLevel">Retrieves the color data for a specific
 		/// mip-mapping level. This function will log a fail and return a black
 		/// array if an invalid mip-level is provided.</param>
 		public void GetColors(ref Color32[] colorData, int mipLevel = 0)
@@ -328,9 +351,9 @@ namespace StereoKit
 			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(count * 4), mipLevel);
 			pinnedArray.Free();
 		}
-		/// <summary>Retreive the color data of the texture from the GPU. This
+		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously.</summary>
-		/// <param name="mipLevel">Retreives the color data for a specific
+		/// <param name="mipLevel">Retrieves the color data for a specific
 		/// mip-mapping level. This function will log a fail and return a black
 		/// array if an invalid mip-level is provided.</param>
 		/// <returns>The texture's color values in an array sized Width*Height.
@@ -413,7 +436,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, IntPtr.Zero, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -438,7 +461,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, out lightingInfo, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, out lightingInfo, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -460,7 +483,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData?1:0, 10);
+			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData, 10);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -484,7 +507,7 @@ namespace StereoKit
 		/// to load.</returns>
 		public static Tex FromFiles(string[] files, bool sRGBData = true, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData?1:0, priority);
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -504,7 +527,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData = true, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0, priority);
+			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -529,7 +552,7 @@ namespace StereoKit
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData?1:0);
+			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -558,7 +581,7 @@ namespace StereoKit
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData ? 1 : 0);
+			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -582,7 +605,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, IntPtr.Zero, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -608,7 +631,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, out lightingInfo, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -631,6 +654,30 @@ namespace StereoKit
 		public static Tex GenColor(Color color, int width, int height, TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32)
 		{
 			IntPtr tex = NativeAPI.tex_gen_color(color, width, height, type, format);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
+		}
+
+		/// <summary>Generates a 'radial' gradient that works well for
+		/// particles, blob shadows, glows, or various other things. The
+		/// roundness can be used to change the shape from round, '1', to
+		/// star-like, '0'. Default color is transparent white to opaque white,
+		/// but this can be configured by providing a Gradient of your own.
+		/// </summary>
+		/// <param name="width">Width of the desired texture, in pixels.
+		/// </param>
+		/// <param name="height">Width of the desired texture, in pixels.
+		/// </param>
+		/// <param name="roundness0to1">Where 0 is a cross, or star-like shape,
+		/// and 1 is a circle. This is clamped to a minimum of 0.00001, but
+		/// values above 1 are still valid, and will just make the shape a
+		/// square near infinity.</param>
+		/// <param name="gradientLinear">A color gradient that starts with the
+		/// background/outside at 0, and progresses to the center at 1.</param>
+		/// <returns>A texture object containing an RGBA linear texture.
+		/// </returns>
+		public static Tex GenParticle(int width, int height, float roundness0to1= 1, Gradient gradientLinear = null)
+		{
+			IntPtr tex = NativeAPI.tex_gen_particle(width, height, roundness0to1, gradientLinear==null?IntPtr.Zero:gradientLinear._inst);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 

@@ -22,7 +22,12 @@ namespace StereoKit
 		/// origin to the surface of the plane.</summary>
 		public float d { get=>p.D; set=>p.D = value; }
 
+		/// <summary>Implicit conversion from the System.Numerics backing type.</summary>
+		/// <param name="p">A System.Numerics plane.</param>
 		public static implicit operator Plane(System.Numerics.Plane p) => new Plane(p.Normal, p.D);
+		/// <summary>Implicit conversion to the System.Numerics backing Plane
+		/// type.</summary>
+		/// <param name="p">The StereoKit Plane.</param>
 		public static implicit operator System.Numerics.Plane(Plane p) => p.p;
 
 		/// <summary>Creates a Plane directly from the ax + by + cz + d = 0

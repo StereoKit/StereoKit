@@ -23,7 +23,9 @@
 #ifdef SK_OS_WINDOWS_UWP
 #include "uwp.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Core.h>
@@ -34,7 +36,9 @@
 #ifdef SK_OS_WINDOWS
 #include "win32.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
@@ -52,6 +56,7 @@
 #ifdef SK_OS_LINUX
 #include <unistd.h>
 #include <dirent.h> 
+#include <libgen.h> 
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
 #endif
@@ -104,6 +109,76 @@ void platform_msgbox_err(const char *text, const char *header) {
 	log_err("No messagebox capability for this platform!");
 #endif
 }
+
+///////////////////////////////////////////
+
+#if !defined(SK_OS_WINDOWS) && !defined(SK_OS_WINDOWS_UWP)
+char* path_absolute(const char* relative_dir) {
+	static char result[1024];
+	size_t write_at = 0;
+	result[0] = '\0';
+
+	// This is not an absolute path, prefix the working directory
+	if (relative_dir[0] != '/' && relative_dir[1] != ':') {
+		if (getcwd(result, sizeof(result)) == nullptr)
+			return nullptr;
+
+		// Ensure that the working path ends with a separator
+		write_at = strlen(result);
+		if (result[write_at] != '/' && result[write_at] != '\\') {
+			result[write_at] = platform_path_separator_c;
+			write_at++;
+		}
+	}
+	else if (relative_dir[0] == '/') {
+		result[0] = '/';
+		write_at += 1;
+	}
+
+	const char* curr = relative_dir;
+	const char* start = relative_dir;
+	while (*curr != '\0') {
+		// Find the next path element
+		while (*curr == '\\' || *curr == '/') {
+			curr++;
+		}
+		start = curr;
+		if (*curr == '\0') break;
+		while (*curr != '\\' && *curr != '/' && *curr != '\0') {
+			curr++;
+		}
+
+		if (curr - start == 2 && start[0] == '.' && start[1] == '.') {
+			// Handle "up" a directory, the '..' path
+			write_at--;
+			while (write_at > 0) {
+				write_at--;
+				if (result[write_at] == '/' || result[write_at] == '\\') {
+					write_at++;
+					break;
+				}
+			}
+		}
+		else if (curr - start == 1 && start[0] == '.') {
+			// We should be able to more or less ignore the current directory
+			// indicator, '.'
+		}
+		else {
+			// Otherwise, just copy in the path element!
+			memcpy(&result[write_at], start, curr - start);
+			write_at += curr - start;
+
+			result[write_at] = platform_path_separator_c;
+			write_at += 1;
+		}
+	}
+	// Terminate the path
+	if (write_at > 0) write_at--;
+	result[write_at] = '\0';
+
+	return result;
+}
+#endif
 
 ///////////////////////////////////////////
 
@@ -163,15 +238,64 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	wchar_t *wfilename = sk_malloc_t(wchar_t, wsize);
 	MultiByteToWideChar(CP_UTF8, 0, slash_fix_filename, -1, wfilename, wsize);
 	FILE *fp = _wfopen(wfilename, L"rb");
+	if (fp == nullptr) {
+		// If the working directory has been changed, and the exe is called
+		// from a folder other than where the exe sits (like dotnet vs VS), the
+		// file may be relative to where the exe is. We attempt to find that
+		// here.
+		wchar_t drive[MAX_PATH];
+		_wsplitpath(wfilename, drive, nullptr, nullptr, nullptr);
+		if (drive[0] == '\0') {
+			wchar_t exe_name[MAX_PATH];
+			wchar_t dir     [MAX_PATH];
+			GetModuleFileNameW(nullptr, exe_name, _countof(exe_name));
+			_wsplitpath(exe_name, drive, dir, nullptr, nullptr);
+			wchar_t fullpath[MAX_PATH];
+			wcscpy(fullpath, drive);
+			wcscat(fullpath, dir);
+			wcscat(fullpath, wfilename);
+			fp = _wfopen(fullpath, L"rb");
+		}
+	}
+	if (fp == nullptr) {
+		wchar_t* buffer      = nullptr;
+		DWORD    buffer_size = GetFullPathNameW(wfilename, 0, buffer, nullptr);
+		buffer = sk_malloc_t(wchar_t, buffer_size);
+		DWORD err = GetFullPathNameW(wfilename, buffer_size, buffer, nullptr);
+
+		if (err == 0) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
+		else          { log_diagf("platform_read_file can't find %ls", buffer); }
+		sk_free(slash_fix_filename);
+		sk_free(buffer);
+		return false;
+	}
 	sk_free(wfilename);
 #else
 	FILE *fp = fopen(slash_fix_filename, "rb");
-#endif
+
+	#if defined(SK_OS_LINUX)
+	// If the working directory has been changed, and the exe is called
+	// from a folder other than where the exe sits (like dotnet vs VS), the
+	// file may be relative to where the exe is. We attempt to find that
+	// here.
+	if (fp == nullptr && slash_fix_filename[0] != '/') {
+		char exe_path[PATH_MAX];
+		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+		exe_path[len] = '\0';
+		char* dir = dirname(exe_path);
+		char  fullpath[PATH_MAX];
+		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
+		fp = fopen(fullpath, "rb");
+	}
+	#endif
 	if (fp == nullptr) {
-		log_diagf("platform_read_file can't find %s", slash_fix_filename);
+		char* real_path = path_absolute(slash_fix_filename);
+		if (real_path == nullptr) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
+		else                      { log_diagf("platform_read_file can't find %s", real_path); }
 		sk_free(slash_fix_filename);
 		return false;
 	}
+#endif
 
 	// Get length of file
 	fseek(fp, 0, SEEK_END);
@@ -423,8 +547,8 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	//   may need some revision based on how people interact with it.
 	const float physical_interact_timeout = 60 * 5; // 5 minutes
 	if (visible == false) virtualkeyboard_open(false, type);
-	else if (sk_active_display_mode() != display_mode_flatscreen &&
-	         (input_last_physical_keypress < 0 || (time_getf()-input_last_physical_keypress) > physical_interact_timeout) ) {
+	else if (device_display_get_type() != display_type_flatscreen &&
+	         (input_last_physical_keypress < 0 || (time_totalf_unscaled()-input_last_physical_keypress) > physical_interact_timeout) ) {
 
 		virtualkeyboard_open(visible, type);
 	}

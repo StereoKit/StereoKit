@@ -8,16 +8,16 @@ class DemoLines : ITest
 	string description = "";
 	
 	Model paletteModel = Model.FromFile("Palette.glb", Default.ShaderUI);
-	Pose  palettePose  = Demo.contentPose * new Pose(-0.2f, 0, 0, Quat.FromAngles(-45,0,0));
+	Pose  palettePose  = Demo.contentPose * new Pose(-0.2f, -0.15f, 0, Quat.FromAngles(-45,0,0));
 	Color activeColor  = Color.White;
 	float lineSize     = 0.02f;
 
 	public void Initialize() { }
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
-		Hierarchy.Push(Matrix.T(0.1f, 0, 0) * Demo.contentPose);
+		Hierarchy.Push(Matrix.T(0.1f, -0.2f, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0, 0, 0));
 		/// :CodeSample: Lines.Add
 		Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
@@ -106,7 +106,7 @@ class DemoLines : ITest
 			Vec3      prev  = drawPoints[drawPoints.Count - 2].pt;
 			Vec3      dir   = (prev - (drawPoints.Count > 2 ? drawPoints[drawPoints.Count - 3].pt : drawPoints[drawPoints.Count - 1].pt)).Normalized;
 			float     dist  = Vec3.Distance(prev, tip);
-			float     speed = Vec3.Distance(tip, prevTip) * Time.Elapsedf;
+			float     speed = Vec3.Distance(tip, prevTip) * Time.Stepf;
 			LinePoint here  = new LinePoint(tip, activeColor, Math.Max(1-speed/0.0003f,0.1f) * lineSize);
 
 			if ((Vec3.Dot( dir, (tip-prev).Normalized ) < 0.99f && dist > 0.01f) || dist > 0.05f) { 

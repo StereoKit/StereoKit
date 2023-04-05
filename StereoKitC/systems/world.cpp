@@ -6,6 +6,7 @@
 #include "../asset_types/assets.h"
 #include "../asset_types/mesh_.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/simulator.h"
 #include "../xr_backends/openxr_extensions.h"
 #include "render.h"
 
@@ -76,27 +77,9 @@ bool world_is_su_needed(scene_request_info_t info) {
 bool world_check_needs_update(scene_request_info_t info) {
 	switch (info.refresh_type) {
 	case world_refresh_area:  return !vec3_in_radius(input_head()->position, info.center, info.radius * 0.5f);
-	case world_refresh_timer: return (time_getf() - xr_scene_last_refresh) >= info.refresh_interval;
+	case world_refresh_timer: return (time_totalf_unscaled() - xr_scene_last_refresh) >= info.refresh_interval;
 	default: return false;
 	}
-}
-
-///////////////////////////////////////////
-
-bool32_t world_has_bounds() {
-	return xr_has_bounds;
-}
-
-///////////////////////////////////////////
-
-vec2 world_get_bounds_size() {
-	return xr_bounds_size;
-}
-
-///////////////////////////////////////////
-
-pose_t world_get_bounds_pose() {
-	return xr_bounds_pose;
 }
 
 ///////////////////////////////////////////
@@ -239,7 +222,7 @@ void world_request_update(scene_request_info_t info) {
 		return;
 
 	xr_scene_last_req.center = input_head()->position;
-	xr_scene_last_refresh    = time_getf();
+	xr_scene_last_refresh    = time_totalf_unscaled();
 
 	if (xr_scene_observer == XR_NULL_HANDLE) {
 		XrSceneObserverCreateInfoMSFT create_info = { (XrStructureType)XR_TYPE_SCENE_OBSERVER_CREATE_INFO_MSFT };
@@ -429,7 +412,7 @@ bool world_init() {
 
 ///////////////////////////////////////////
 
-void world_update() {
+void world_step() {
 	if (world_is_su_needed(xr_scene_next_req) || world_is_su_needed(xr_scene_last_req)) {
 
 		// Check if we've walked away from the current scene's center
@@ -527,7 +510,7 @@ bool world_init() {
 	return true;
 }
 
-void world_update() {
+void world_step() {
 }
 
 void world_shutdown() {
@@ -582,25 +565,42 @@ float world_get_refresh_interval() {
 	return 0;
 }
 
+#endif
 
 ///////////////////////////////////////////
 
 bool32_t world_has_bounds() {
-	return false;
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_has_bounds;
+#endif
+	case backend_xr_type_simulator: return true;
+	default:                        return false;
+	}
 }
 
 ///////////////////////////////////////////
 
 vec2 world_get_bounds_size() {
-	return vec2_zero;
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_bounds_size;
+#endif
+	case backend_xr_type_simulator: return simulator_bounds_size();
+	default:                        return vec2_zero;
+	}
 }
 
 ///////////////////////////////////////////
 
 pose_t world_get_bounds_pose() {
-	return pose_identity;
-}
-
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return xr_bounds_pose;
 #endif
+	case backend_xr_type_simulator: return simulator_bounds_pose();
+	default:                        return pose_identity;
+	}
+}
 
 } // namespace sk
