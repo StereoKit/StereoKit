@@ -359,3 +359,5 @@ build_*/
 
 # Clangd cache
 .clangd/
+
+.deps_cache/
