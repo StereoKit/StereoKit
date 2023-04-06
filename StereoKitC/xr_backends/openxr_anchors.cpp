@@ -5,6 +5,8 @@
 #include "openxr_extensions.h"
 #include "../asset_types/anchor.h"
 
+#include <stdio.h>
+
 namespace sk {
 
 typedef struct oxr_msft_world_anchor_sys_t {
@@ -93,6 +95,8 @@ void oxr_anchor_msft_init() {
 		anchor_data->anchor = anchor;
 		anchor_data->space  = space;
 		anchor_create_manual(oxr_msft_anchor_sys.id, pose, (void*)anchor_data);
+
+		log_diagf("Discovered MSFT anchor: ");
 	}
 }
 
@@ -124,6 +128,15 @@ anchor_t oxr_anchor_msft_on_create(oxr_msft_world_anchor_sys_t* context, pose_t 
 	if (XR_FAILED(result)) {
 		log_infof("xrCreateSpatialAnchorMSFT failed: %s", openxr_string(result));
 		return nullptr;
+	}
+
+	static int32_t id = 0;
+	XrSpatialAnchorPersistenceInfoMSFT persist_info = { XR_TYPE_SPATIAL_ANCHOR_PERSISTENCE_INFO_MSFT };
+	snprintf(persist_info.spatialAnchorPersistenceName.name, 256, "sk_anchor_%d", id++);
+	persist_info.spatialAnchor = anchor;
+	result = xr_extensions.xrPersistSpatialAnchorMSFT(context->store, &persist_info);
+	if (XR_FAILED(result)) {
+		log_infof("xrPersistSpatialAnchorMSFT failed: %s", openxr_string(result));
 	}
 
 	// Create a space for getting the position of the anchor
