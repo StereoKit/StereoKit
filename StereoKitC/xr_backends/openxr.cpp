@@ -1007,7 +1007,10 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 
 	// Convert the space into a pose
 	pose_t result;
-	openxr_get_space(space, &result);
+	if (!openxr_get_space(space, &result)) {
+		xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
+		return pose_identity;
+	}
 
 	// Release the anchor, and return the resulting pose!
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
@@ -1049,7 +1052,11 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 	}
 
 	// Convert the space into a pose
-	openxr_get_space(space, out_pose);
+	if (!openxr_get_space(space, out_pose)) {
+		*out_pose = pose_identity;
+		xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
+		return false;
+	}
 
 	// Release the anchor, and return the resulting pose!
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
