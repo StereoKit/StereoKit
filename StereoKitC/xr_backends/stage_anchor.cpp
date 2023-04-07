@@ -11,7 +11,7 @@ typedef struct stage_anchor_t {
 	pose_t relative_pose;
 } stage_anchor_t;
 
-stage_anchor_sys_t simxr_anchor_sys = {};
+stage_anchor_sys_t stage_anchor_sys = {};
 
 ///////////////////////////////////////////
 
@@ -20,17 +20,17 @@ anchor_t stage_anchor_on_create(stage_anchor_sys_t* context, pose_t pose);
 ///////////////////////////////////////////
 
 void stage_anchor_init() {
-	simxr_anchor_sys = {};
+	stage_anchor_sys = {};
 
 	anchor_system_t stage_anchor_sys = {};
 	stage_anchor_sys.info.description       = "Stage Anchor";
 	stage_anchor_sys.info.type              = anchor_type_stage_anchor;
 	stage_anchor_sys.info.properties        = anchor_props_creatable;
 	stage_anchor_sys.info.requires_enabling = false;
-	stage_anchor_sys.context = &simxr_anchor_sys;
-	stage_anchor_sys.on_create = (bool32_t(*)(void* context, pose_t pose)) stage_anchor_on_create;
+	stage_anchor_sys.context   = &stage_anchor_sys;
+	stage_anchor_sys.on_create = (anchor_t(*)(void* context, pose_t pose)) stage_anchor_on_create;
 
-	simxr_anchor_sys.id = anchors_register_type(stage_anchor_sys);
+	stage_anchor_sys.id = anchors_register_type(stage_anchor_sys);
 }
 
 ///////////////////////////////////////////

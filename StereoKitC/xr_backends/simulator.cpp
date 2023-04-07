@@ -7,6 +7,7 @@
 #include "../platforms/platform_utils.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
+#include "../xr_backends/stage_anchor.h"
 
 namespace sk {
 
@@ -49,12 +50,14 @@ bool simulator_init() {
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
 	simulator_mouse_step();
 
+	stage_anchor_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void simulator_shutdown() {
+	stage_anchor_shutdown();
 }
 
 ///////////////////////////////////////////

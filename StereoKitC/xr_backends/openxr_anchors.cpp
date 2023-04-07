@@ -41,7 +41,7 @@ void oxr_anchor_msft_init() {
 	world_anchor_sys.info.requires_enabling = false;
 	world_anchor_sys.context           = &oxr_msft_anchor_sys;
 	world_anchor_sys.on_destroy_anchor = (void    (*)(void* context, anchor_t anchor, void* data)) oxr_anchor_msft_on_destroy;
-	world_anchor_sys.on_create         = (bool32_t(*)(void* context, pose_t pose))                 oxr_anchor_msft_on_create;
+	world_anchor_sys.on_create         = (anchor_t(*)(void* context, pose_t pose))                 oxr_anchor_msft_on_create;
 	world_anchor_sys.on_clear_stored   = (void    (*)(void* context))                              oxr_anchor_msft_clear_stored;
 
 	if (xr_ext_available.MSFT_spatial_anchor_persistence)
@@ -54,7 +54,7 @@ void oxr_anchor_msft_init() {
 
 	XrResult result = xr_extensions.xrCreateSpatialAnchorStoreConnectionMSFT(xr_session, &oxr_msft_anchor_sys.store);
 	if (XR_FAILED(result)) {
-		log_infof("xrCreateSpatialAnchorStoreConnectionMSFT failed: %s", openxr_string(result));
+		log_warnf("xrCreateSpatialAnchorStoreConnectionMSFT failed: %s", openxr_string(result));
 		return;
 	}
 
@@ -71,8 +71,11 @@ void oxr_anchor_msft_init() {
 		XrSpatialAnchorFromPersistedAnchorCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_FROM_PERSISTED_ANCHOR_CREATE_INFO_MSFT };
 		info.spatialAnchorPersistenceName = names[i];
 		info.spatialAnchorStore           = oxr_msft_anchor_sys.store;
-		if (XR_FAILED(xr_extensions.xrCreateSpatialAnchorFromPersistedNameMSFT(xr_session, &info, &anchor)))
+		result = xr_extensions.xrCreateSpatialAnchorFromPersistedNameMSFT(xr_session, &info, &anchor);
+		if (XR_FAILED(result)) {
+			log_warnf("xrCreateSpatialAnchorFromPersistedNameMSFT failed: %s", openxr_string(result));
 			continue;
+		}
 
 		// Create a space for getting the position of the anchor
 		XrSpatialAnchorSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
@@ -81,7 +84,7 @@ void oxr_anchor_msft_init() {
 		XrSpace space;
 		result = xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &space_info, &space);
 		if (XR_FAILED(result)) {
-			log_infof("xrCreateSpatialAnchorSpaceMSFT failed: %s", openxr_string(result));
+			log_warnf("xrCreateSpatialAnchorSpaceMSFT failed: %s", openxr_string(result));
 			xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 			continue;
 		}
@@ -96,7 +99,7 @@ void oxr_anchor_msft_init() {
 		anchor_data->space  = space;
 		anchor_create_manual(oxr_msft_anchor_sys.id, pose, (void*)anchor_data);
 
-		log_diagf("Discovered MSFT anchor: ");
+		log_diagf("Discovered MSFT anchor: %s", names[i].name);
 	}
 }
 
@@ -126,17 +129,21 @@ anchor_t oxr_anchor_msft_on_create(oxr_msft_world_anchor_sys_t* context, pose_t 
 	XrSpatialAnchorMSFT anchor;
 	XrResult result = xr_extensions.xrCreateSpatialAnchorMSFT(xr_session, &info, &anchor);
 	if (XR_FAILED(result)) {
-		log_infof("xrCreateSpatialAnchorMSFT failed: %s", openxr_string(result));
+		log_warnf("xrCreateSpatialAnchorMSFT failed: %s", openxr_string(result));
 		return nullptr;
 	}
 
-	static int32_t id = 0;
-	XrSpatialAnchorPersistenceInfoMSFT persist_info = { XR_TYPE_SPATIAL_ANCHOR_PERSISTENCE_INFO_MSFT };
-	snprintf(persist_info.spatialAnchorPersistenceName.name, 256, "sk_anchor_%d", id++);
-	persist_info.spatialAnchor = anchor;
-	result = xr_extensions.xrPersistSpatialAnchorMSFT(context->store, &persist_info);
-	if (XR_FAILED(result)) {
-		log_infof("xrPersistSpatialAnchorMSFT failed: %s", openxr_string(result));
+	// Persist the anchor
+	if (xr_ext_available.MSFT_spatial_anchor_persistence) {
+		static int32_t id = 0;
+		XrSpatialAnchorPersistenceInfoMSFT persist_info = { XR_TYPE_SPATIAL_ANCHOR_PERSISTENCE_INFO_MSFT };
+		snprintf(persist_info.spatialAnchorPersistenceName.name, 256, "sk_anchor_%d", id++);
+		persist_info.spatialAnchor = anchor;
+		result = xr_extensions.xrPersistSpatialAnchorMSFT(context->store, &persist_info);
+		if (XR_FAILED(result)) {
+			log_warnf("xrPersistSpatialAnchorMSFT failed: %s", openxr_string(result));
+		}
+		log_infof("Persisted anchor: %s", persist_info.spatialAnchorPersistenceName.name);
 	}
 
 	// Create a space for getting the position of the anchor
@@ -146,7 +153,7 @@ anchor_t oxr_anchor_msft_on_create(oxr_msft_world_anchor_sys_t* context, pose_t 
 	XrSpace space;
 	result = xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &space_info, &space);
 	if (XR_FAILED(result)) {
-		log_infof("xrCreateSpatialAnchorSpaceMSFT failed: %s", openxr_string(result));
+		log_warnf("xrCreateSpatialAnchorSpaceMSFT failed: %s", openxr_string(result));
 		xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 		return nullptr;
 	}

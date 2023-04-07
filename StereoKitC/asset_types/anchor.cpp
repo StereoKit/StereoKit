@@ -19,13 +19,13 @@ anchor_type_id             anch_default_type = -1;
 ///////////////////////////////////////////
 
 anchor_t anchor_create(pose_t pose) {
-	return anchor_create_manual(anch_default_type, pose, nullptr);
+	return anchor_create_type(anch_default_type, pose);
 }
 
 ///////////////////////////////////////////
 
 anchor_t anchor_create_type(anchor_type_id type, pose_t pose) {
-	return anchor_create_manual(type, pose, nullptr);
+	return anch_systems[type].on_create(anch_systems[type].context, pose);
 }
 
 ///////////////////////////////////////////
@@ -167,6 +167,7 @@ void anchor_clear_all_dirty() {
 
 anchor_type_id anchors_register_type(anchor_system_t system) {
 	anch_systems.add(system);
+	anchors_set_default(anch_systems.count - 1);
 	return anch_systems.count - 1;
 }
 
