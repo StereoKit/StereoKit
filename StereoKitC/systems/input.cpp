@@ -30,6 +30,10 @@ button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
 
+void input_mouse_update();
+
+///////////////////////////////////////////
+
 int32_t input_add_pointer(input_source_ source) {
 	return input_pointers.add({ source, button_state_inactive });
 }
@@ -98,6 +102,7 @@ void input_fire_event(input_source_ source, button_state_ event, const pointer_t
 bool input_init() {
 	input_keyboard_initialize();
 	input_hand_init();
+	input_mouse_update();
 	return true;
 }
 
@@ -113,7 +118,7 @@ void input_shutdown() {
 ///////////////////////////////////////////
 
 void input_step() {
-	
+	input_mouse_update();
 	input_keyboard_update();
 	input_hand_update();
 }
@@ -156,6 +161,26 @@ const pose_t *input_eyes() {
 
 button_state_ input_eyes_tracked() {
 	return input_eyes_track_state;
+}
+
+///////////////////////////////////////////
+
+void input_mouse_update() {
+	vec2  mouse_pos    = {};
+	float mouse_scroll = platform_get_scroll();
+	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_app_focus() == app_focus_active;
+
+	// Mouse scroll
+	if (sk_app_focus() == app_focus_active) {
+		input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
+		input_mouse_data.scroll        = mouse_scroll;
+	}
+
+	// Mouse position and on-screen
+	if (input_mouse_data.available) {
+		input_mouse_data.pos_change = mouse_pos - input_mouse_data.pos;
+		input_mouse_data.pos        = mouse_pos;
+	}
 }
 
 } // namespace sk {
