@@ -19,6 +19,7 @@
 #include "../systems/render.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
+#include "../systems/world.h"
 #include "../hands/input_hand.h"
 #include "../platforms/android.h"
 #include "../platforms/linux.h"
@@ -500,7 +501,14 @@ bool openxr_init() {
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	// Create reference spaces! So we can find stuff relative to them :)
-	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &device_data.origin_offset);
+	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset);
+	switch (xr_app_space_type) {
+		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
+		case XR_REFERENCE_SPACE_TYPE_LOCAL:           world_origin_mode = origin_mode_local; break;
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  world_origin_mode = origin_mode_local; break;
+		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: world_origin_mode = origin_mode_floor; break;
+		default:                                      world_origin_mode = origin_mode_local; break;
+	}
 
 	// The space for our head
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
@@ -651,12 +659,10 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, 
 		offset.orientation.x = 0;
 		offset.orientation.z = 0;
 		offset.orientation   = quat_normalize(offset.orientation);
-		
-		device_data.origin_mode = origin_mode_local;
 	} break;
 	case origin_mode_stage: {
-		if      (has_stage)       { base_space = XR_REFERENCE_SPACE_TYPE_STAGE;           device_data.origin_mode = origin_mode_stage; }
-		else if (has_local_floor) { base_space = XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT; device_data.origin_mode = origin_mode_floor; }
+		if      (has_stage)       { base_space = XR_REFERENCE_SPACE_TYPE_STAGE;           }
+		else if (has_local_floor) { base_space = XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT; }
 		else {
 			base_space = has_unbounded ? XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT : XR_REFERENCE_SPACE_TYPE_LOCAL;
 			offset.position.y = -1.5f;

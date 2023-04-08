@@ -335,6 +335,8 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_extensions.h
   StereoKitC/xr_backends/openxr_input.h
   StereoKitC/xr_backends/openxr_input.cpp
+  StereoKitC/xr_backends/openxr_scene_understanding.h
+  StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
   StereoKitC/xr_backends/simulator.h

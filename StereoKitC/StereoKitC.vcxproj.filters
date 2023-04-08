@@ -220,6 +220,9 @@
     <ClCompile Include="xr_backends\none.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -500,6 +503,9 @@
       <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\none.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>

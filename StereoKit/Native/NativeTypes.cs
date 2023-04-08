@@ -98,7 +98,7 @@ namespace StereoKit
 		/// of support on different XR runtimes, and StereoKit will provide
 		/// reasonable fallbacks for each. NOTE that when falling back,
 		/// StereoKit will use a different root origin mode plus an offset. You
-		/// can check Device.OriginMode and Device.OriginOffset to inspect what
+		/// can check World.OriginMode and World.OriginOffset to inspect what
 		/// StereoKit actually landed on.</summary>
 		public OriginMode origin;
 
