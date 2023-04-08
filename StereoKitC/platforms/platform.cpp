@@ -5,6 +5,7 @@
 #include "../_stereokit.h"
 #include "../log.h"
 #include "../libraries/stref.h"
+#include "../systems/input.h"
 #include "win32.h"
 #include "uwp.h"
 #include "linux.h"
@@ -221,6 +222,7 @@ void platform_step_begin() {
 		openxr_step_begin();
 #else
 #endif
+		input_step();
 	} break;
 	case display_type_flatscreen: {
 #if   defined(SK_OS_ANDROID)
@@ -234,6 +236,7 @@ void platform_step_begin() {
 #elif defined(SK_OS_WEB)
 		web_step_begin_flat    ();
 #endif
+		input_step();
 		if (sk_settings.disable_flatscreen_mr_sim) none_step_begin();
 		else                                       simulator_step_begin();
 	} break;
