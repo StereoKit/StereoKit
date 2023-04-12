@@ -21,9 +21,6 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 
 	protected override void OnCreate(Bundle savedInstanceState)
 	{
-		JavaSystem.LoadLibrary("openxr_loader");
-		JavaSystem.LoadLibrary("StereoKitC");
-
 		// Set up a surface for StereoKit to draw on
 		Window.TakeSurface(this);
 		Window.SetFormat(Format.Unknown);

@@ -255,7 +255,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_input.step_dependencies     = input_step_deps;
 	sys_input.step_dependency_count = _countof(input_step_deps);
 	sys_input.func_initialize       = input_init;
-	sys_input.func_step             = input_step;
+	//sys_input.func_step             = input_step; // Handled by the platform, not my fav solution
 	sys_input.func_shutdown         = input_shutdown;
 	systems_add(&sys_input);
 

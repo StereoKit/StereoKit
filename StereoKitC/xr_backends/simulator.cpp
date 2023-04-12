@@ -7,6 +7,7 @@
 #include "../platforms/platform_utils.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
+#include "../systems/world.h"
 #include "../xr_backends/stage_anchor.h"
 
 namespace sk {
@@ -34,21 +35,20 @@ bool simulator_init() {
 	device_data.tracking          = device_tracking_6dof;
 	device_data.name              = string_copy("Simulator");
 
-	sim_head_rot     = { -21, 30.0001f, 0 };
+	sim_head_rot     = { -21, 0.0001f, 0 };
 	sim_head_pos     = { 0, 0.2f, 0.0f };
 	sim_mouse_look   = false;
 	sim_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
 	quat initial_rot = quat_from_angles(0, sim_head_rot.y, 0);
 	switch (sk_settings.origin) {
-	case origin_mode_local: device_data.origin_mode = origin_mode_local; device_data.origin_offset = { sim_head_pos,                  initial_rot }; sim_bounds_pose = { 0,-1.5f,0, quat_inverse(initial_rot) }; break;
-	case origin_mode_floor: device_data.origin_mode = origin_mode_local; device_data.origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { device_data.origin_offset.position, quat_inverse(device_data.origin_offset.orientation) }; break;
-	case origin_mode_stage: device_data.origin_mode = origin_mode_local; device_data.origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { device_data.origin_offset.position, quat_inverse(device_data.origin_offset.orientation) }; break;
+	case origin_mode_local: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos,                  initial_rot }; sim_bounds_pose = { 0,-1.5f,0, quat_inverse(initial_rot) }; break;
+	case origin_mode_floor: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
+	case origin_mode_stage: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
 	}
 
-	render_set_sim_origin(device_data.origin_offset);
+	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
-	simulator_mouse_step();
 
 	stage_anchor_init();
 	return true;
@@ -63,8 +63,6 @@ void simulator_shutdown() {
 ///////////////////////////////////////////
 
 void simulator_step_begin() {
-	simulator_mouse_step();
-
 	if (simulator_is_simulating_movement()) {
 
 		// Get key based movement
@@ -145,26 +143,6 @@ void simulator_set_origin_offset(pose_t offset) {
 
 ///////////////////////////////////////////
 
-void simulator_mouse_step() {
-	vec2  mouse_pos            = {};
-	float mouse_scroll         = platform_get_scroll();
-	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_focus == app_focus_active;
-
-	// Mouse scroll
-	if (sk_focus == app_focus_active) {
-		input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
-		input_mouse_data.scroll        = mouse_scroll;
-	}
-
-	// Mouse position and on-screen
-	if (input_mouse_data.available) {
-		input_mouse_data.pos_change = mouse_pos - input_mouse_data.pos;
-		input_mouse_data.pos        = mouse_pos;
-	}
-}
-
-///////////////////////////////////////////
-
 bool simulator_is_simulating_movement() {
 	return backend_xr_get_type() == backend_xr_type_simulator &&
 		(input_key(key_caps_lock) & button_state_active ||
@@ -181,8 +159,8 @@ vec2 simulator_bounds_size() {
 
 pose_t simulator_bounds_pose() {
 	return matrix_transform_pose(render_get_cam_root(), pose_t{
-		sim_bounds_pose.position - device_data.origin_offset.position,
-		quat_inverse(sim_bounds_pose.orientation * device_data.origin_offset.orientation)
+		sim_bounds_pose.position - world_origin_offset.position,
+		quat_inverse(sim_bounds_pose.orientation * world_origin_offset.orientation)
 	});
 }
 

@@ -478,9 +478,6 @@ SK_API const char*      device_get_name           ();
 SK_API const char*      device_get_gpu            ();
 SK_API bool32_t         device_has_eye_gaze       ();
 SK_API bool32_t         device_has_hand_tracking  ();
-SK_API origin_mode_     device_get_origin_mode    ();
-SK_API pose_t           device_get_origin_offset  ();
-SK_API void             device_set_origin_offset  (pose_t offset);
 
 ///////////////////////////////////////////
 
@@ -2144,6 +2141,9 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        ();
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      ();
+SK_API origin_mode_   world_get_origin_mode           ();
+SK_API pose_t         world_get_origin_offset         ();
+SK_API void           world_set_origin_offset         (pose_t offset);
 
 ///////////////////////////////////////////
 

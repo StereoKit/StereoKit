@@ -19,7 +19,7 @@
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v9.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v10.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
@@ -79,18 +79,16 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\App.cs" Visible="false"/>
-    <Compile Include="..\DebugToolWindow.cs" Visible="false"/>
-    <Compile Include="..\ITest.cs" Visible="false"/>
-    <Compile Include="..\Tests.cs" Visible="false"/>
-    <Compile Include="..\Demos\*.cs" Visible="false"/>
-    <Compile Include="..\Tools\*.cs" Visible="false"/>
+    <Compile Include="..\App.cs" Visible="false" />
+    <Compile Include="..\DebugToolWindow.cs" Visible="false" />
+    <Compile Include="..\ITest.cs" Visible="false" />
+    <Compile Include="..\Tests.cs" Visible="false" />
+    <Compile Include="..\Demos\*.cs" Visible="false" />
+    <Compile Include="..\Tools\*.cs" Visible="false" />
   </ItemGroup>
-  
   <Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
   <Import Project="$(SolutionDir)StereoKit\SKAssets.targets" />
   <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
-
   <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
     <AndroidAsset Include="$(SolutionDir)Examples\Assets\**">
@@ -133,10 +131,9 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.Android.Support.Design" Version="28.0.0.3" />
-    <PackageReference Include="Xamarin.Android.Support.Core.Utils" Version="28.0.0.3" />
-    <PackageReference Include="Xamarin.Android.Support.CustomTabs" Version="28.0.0.3" />
-    <PackageReference Include="Xamarin.Essentials" Version="1.5.3.2" />
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.7.5" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ItemGroup>

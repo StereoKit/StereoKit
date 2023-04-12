@@ -24,8 +24,6 @@ class DemoDevice : ITest
 		UI.Label(Device.DisplayType.ToString(), false);
 		UI.Label("Blend", labelSize); UI.SameLine();
 		UI.Label(Device.DisplayBlend.ToString(), false);
-		UI.Label("Origin", labelSize); UI.SameLine();
-		UI.Label($"{Device.OriginMode} {Device.OriginOffset}", false);
 
 		UI.HSeparator();
 

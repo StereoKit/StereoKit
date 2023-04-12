@@ -1,17 +1,16 @@
-﻿using Android.App;
+﻿using Android;
+using Android.App;
+using Android.Content;
+using Android.Graphics;
 using Android.OS;
-using Android.Support.V7.App;
 using Android.Runtime;
 using Android.Views;
-using Android.Content;
+using AndroidX.AppCompat.App;
+using AndroidX.Core.App;
+using AndroidX.Core.Content;
 using StereoKit;
 using System;
-using Android.Graphics;
-using Java.Lang;
 using System.Threading.Tasks;
-using Android.Support.V4.Content;
-using Android;
-using Android.Support.V4.App;
 
 namespace StereoKitTest_Android
 {
@@ -31,9 +30,6 @@ namespace StereoKitTest_Android
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
-			JavaSystem.LoadLibrary("openxr_loader");
-			JavaSystem.LoadLibrary("StereoKitC");
-
 			// Set up a surface for StereoKit to draw on
 			Window.TakeSurface(this);
 			Window.SetFormat(Format.Unknown);
@@ -63,7 +59,6 @@ namespace StereoKitTest_Android
 			if (running)
 				return;
 			running = true;
-
 			Task.Run(() => {
 				// If the app has a constructor that takes a string array, then
 				// we'll use that, and pass the command line arguments into it on
@@ -73,7 +68,7 @@ namespace StereoKitTest_Android
 					? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
 					: (App)Activator.CreateInstance(appType);
 				if (app == null)
-					throw new System.Exception("StereoKit loader couldn't construct an instance of the App!");
+					throw new Exception("StereoKit loader couldn't construct an instance of the App!");
 
 				// Initialize StereoKit, and the app
 				SKSettings settings = app.Settings;
@@ -91,7 +86,7 @@ namespace StereoKitTest_Android
 				// Now loop until finished, and then shut down
 				SK.Run(app.Step);
 
-				Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
+				Process.KillProcess(Process.MyPid());
 			});
 		}
 
