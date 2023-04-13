@@ -1,7 +1,7 @@
 #include "../platforms/platform_utils.h"
 #if defined(SK_XR_OPENXR)
 
-#include "openxr_anchors.h"
+#include "anchor_openxr_msft.h"
 #include "openxr_extensions.h"
 #include "../asset_types/anchor.h"
 
@@ -30,7 +30,7 @@ bool32_t oxr_anchor_msft_on_persist  (oxr_msft_world_anchor_sys_t* context, anch
 
 ///////////////////////////////////////////
 
-void oxr_anchor_msft_init() {
+void anchor_oxr_msft_init() {
 	if (!xr_ext_available.MSFT_spatial_anchor) return;
 
 	oxr_msft_anchor_sys = {};
@@ -107,7 +107,7 @@ void oxr_anchor_msft_init() {
 
 ///////////////////////////////////////////
 
-void oxr_anchor_msft_shutdown() {
+void anchor_oxr_msft_shutdown() {
 	if (oxr_msft_anchor_sys.store != XR_NULL_HANDLE)
 		xr_extensions.xrDestroySpatialAnchorStoreConnectionMSFT(oxr_msft_anchor_sys.store);
 }

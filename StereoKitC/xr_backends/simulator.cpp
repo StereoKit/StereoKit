@@ -8,7 +8,7 @@
 #include "../systems/input.h"
 #include "../systems/render.h"
 #include "../systems/world.h"
-#include "../xr_backends/stage_anchor.h"
+#include "../xr_backends/anchor_stage.h"
 
 namespace sk {
 
@@ -50,14 +50,14 @@ bool simulator_init() {
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
 
-	stage_anchor_init();
+	anchor_stage_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void simulator_shutdown() {
-	stage_anchor_shutdown();
+	anchor_stage_shutdown();
 }
 
 ///////////////////////////////////////////

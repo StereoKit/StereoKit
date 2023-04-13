@@ -187,12 +187,12 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="utils\sdf.cpp" />
     <ClCompile Include="xr_backends\none.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
-    <ClCompile Include="xr_backends\openxr_anchors.cpp" />
+    <ClCompile Include="xr_backends\anchor_openxr_msft.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
     <ClCompile Include="xr_backends\openxr_scene_understanding.cpp" />
     <ClCompile Include="xr_backends\openxr_view.cpp" />
     <ClCompile Include="xr_backends\simulator.cpp" />
-    <ClCompile Include="xr_backends\stage_anchor.cpp" />
+    <ClCompile Include="xr_backends\anchor_stage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\anchor.h" />
@@ -285,13 +285,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="utils\sdf.h" />
     <ClInclude Include="xr_backends\none.h" />
     <ClInclude Include="xr_backends\openxr.h" />
-    <ClInclude Include="xr_backends\openxr_anchors.h" />
+    <ClInclude Include="xr_backends\anchor_openxr_msft.h" />
     <ClInclude Include="xr_backends\openxr_extensions.h" />
     <ClInclude Include="xr_backends\openxr_input.h" />
     <ClInclude Include="xr_backends\openxr_scene_understanding.h" />
     <ClInclude Include="xr_backends\openxr_view.h" />
     <ClInclude Include="xr_backends\simulator.h" />
-    <ClInclude Include="xr_backends\stage_anchor.h" />
+    <ClInclude Include="xr_backends\anchor_stage.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>

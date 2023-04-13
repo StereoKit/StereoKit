@@ -345,10 +345,10 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/simulator.cpp
   StereoKitC/xr_backends/none.h
   StereoKitC/xr_backends/none.cpp
-  StereoKitC/xr_backends/openxr_anchors.h
-  StereoKitC/xr_backends/openxr_anchors.cpp
-  StereoKitC/xr_backends/stage_anchor.h
-  StereoKitC/xr_backends/stage_anchor.cpp )
+  StereoKitC/xr_backends/anchor_openxr_msft.h
+  StereoKitC/xr_backends/anchor_openxr_msft.cpp
+  StereoKitC/xr_backends/anchor_stage.h
+  StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h

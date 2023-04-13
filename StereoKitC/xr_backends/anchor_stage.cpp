@@ -1,4 +1,4 @@
-#include "stage_anchor.h"
+#include "anchor_stage.h"
 #include "../asset_types/anchor.h"
 #include "../libraries/stref.h"
 
@@ -6,44 +6,44 @@
 
 namespace sk {
 
-typedef struct stage_anchor_sys_t {
+typedef struct anchor_stage_sys_t {
 	anchor_type_id    id;
 	array_t<anchor_t> persistant;
-} stage_anchor_sys_t;
+} anchor_stage_sys_t;
 
-typedef struct stage_anchor_t {
+typedef struct anchor_stage_t {
 	pose_t relative_pose;
-} stage_anchor_t;
+} anchor_stage_t;
 
-stage_anchor_sys_t stage_anchor_sys = {};
+anchor_stage_sys_t anchor_stage_sys = {};
 
-const char* stage_anchor_store_filename = "anchors.txt";
-
-///////////////////////////////////////////
-
-anchor_t stage_anchor_on_create      (stage_anchor_sys_t* context, pose_t pose, const char* name_utf8);
-void     stage_anchor_on_clear_stored(stage_anchor_sys_t* context);
-bool32_t stage_anchor_on_persist     (stage_anchor_sys_t* context, anchor_t anchor, bool32_t persist);
+const char* anchor_stage_store_filename = "anchors.txt";
 
 ///////////////////////////////////////////
 
-void stage_anchor_init() {
-	stage_anchor_sys = {};
+anchor_t anchor_stage_on_create      (anchor_stage_sys_t* context, pose_t pose, const char* name_utf8);
+void     anchor_stage_on_clear_stored(anchor_stage_sys_t* context);
+bool32_t anchor_stage_on_persist     (anchor_stage_sys_t* context, anchor_t anchor, bool32_t persist);
+
+///////////////////////////////////////////
+
+void anchor_stage_init() {
+	anchor_stage_sys = {};
 
 	anchor_system_t anchor_sys = {};
 	anchor_sys.name       = "Stage Anchor";
 	anchor_sys.properties = anchor_props_storable;
-	anchor_sys.context    = &stage_anchor_sys;
-	anchor_sys.on_create       = (anchor_t(*)(void*, pose_t, const char*)) stage_anchor_on_create;
-	anchor_sys.on_clear_stored = (void    (*)(void*))                      stage_anchor_on_clear_stored;
-	anchor_sys.on_persist      = (bool32_t(*)(void*, anchor_t, bool32_t))  stage_anchor_on_persist;
+	anchor_sys.context    = &anchor_stage_sys;
+	anchor_sys.on_create       = (anchor_t(*)(void*, pose_t, const char*)) anchor_stage_on_create;
+	anchor_sys.on_clear_stored = (void    (*)(void*))                      anchor_stage_on_clear_stored;
+	anchor_sys.on_persist      = (bool32_t(*)(void*, anchor_t, bool32_t))  anchor_stage_on_persist;
 
-	stage_anchor_sys.id = anchors_register_type(anchor_sys);
+	anchor_stage_sys.id = anchors_register_type(anchor_sys);
 
 	// Read anchors from a text file
 	char*  anchor_data      = nullptr;
 	size_t anchor_data_size = 0;
-	if (platform_read_file(stage_anchor_store_filename, (void**)&anchor_data, &anchor_data_size)) {
+	if (platform_read_file(anchor_stage_store_filename, (void**)&anchor_data, &anchor_data_size)) {
 		stref_t data_stref = stref_make(anchor_data);
 		stref_t line = {};
 		while (stref_nextline(data_stref, line)) {
@@ -71,9 +71,9 @@ void stage_anchor_init() {
 			char* name = stref_copy(stref_substr(word.start, line.length - (word.start - line.start)));
 
 			// Create a StereoKit anchor
-			stage_anchor_t* anchor_data = sk_malloc_t(stage_anchor_t, 1);
-			anchor_t        anchor      = anchor_create_manual(stage_anchor_sys.id, { pos, rot }, name, (void*)anchor_data);
-			stage_anchor_on_persist(&stage_anchor_sys, anchor, true);
+			anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
+			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
+			anchor_stage_on_persist(&anchor_stage_sys, anchor, true);
 			anchor_notify_discovery(anchor);
 
 			log_diagf("Discovered stage anchor: %s", name);
@@ -85,43 +85,44 @@ void stage_anchor_init() {
 
 ///////////////////////////////////////////
 
-void stage_anchor_shutdown() {
+void anchor_stage_shutdown() {
 	// Write our persistent anchors to file
 	char* file_data = string_copy("");
 	char  line[512];
-	for (int32_t i = 0; i < stage_anchor_sys.persistant.count; i++) {
-		anchor_t a = stage_anchor_sys.persistant[i];
+	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
+		anchor_t a = anchor_stage_sys.persistant[i];
 		snprintf(line, sizeof(line), "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %s\n",
 			a->pose.position.x, a->pose.position.y, a->pose.position.z, 
 			a->pose.orientation.x, a->pose.orientation.y, a->pose.orientation.z, a->pose.orientation.w,
 			a->name);
 		file_data = string_append(file_data, 1, line);
 	}
-	platform_write_file_text(stage_anchor_store_filename, file_data);
+	if (platform_write_file_text(anchor_stage_store_filename, file_data))
+		log_infof("Persisted %d anchors", anchor_stage_sys.persistant.count);
 	sk_free(file_data);
 
 	// Release the persisted anchors and free the array
-	for (int32_t i = 0; i < stage_anchor_sys.persistant.count; i++) {
-		anchor_release(stage_anchor_sys.persistant[i]);
+	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
+		anchor_release(anchor_stage_sys.persistant[i]);
 	}
-	stage_anchor_sys.persistant.free();
+	anchor_stage_sys.persistant.free();
 }
 
 ///////////////////////////////////////////
 
-void stage_anchor_on_clear_stored(stage_anchor_sys_t* context) {
+void anchor_stage_on_clear_stored(anchor_stage_sys_t* context) {
 	// Release the persisted anchors and free the array
-	for (int32_t i = 0; i < stage_anchor_sys.persistant.count; i++) {
-		stage_anchor_sys.persistant[i]->persisted = false;
-		anchor_release(stage_anchor_sys.persistant[i]);
+	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
+		anchor_stage_sys.persistant[i]->persisted = false;
+		anchor_release(anchor_stage_sys.persistant[i]);
 	}
-	stage_anchor_sys.persistant.free();
-	platform_write_file_text(stage_anchor_store_filename, "");
+	anchor_stage_sys.persistant.free();
+	platform_write_file_text(anchor_stage_store_filename, "");
 }
 
 ///////////////////////////////////////////
 
-anchor_t stage_anchor_on_create(stage_anchor_sys_t* context, pose_t pose, const char* name_utf8) {
+anchor_t anchor_stage_on_create(anchor_stage_sys_t* context, pose_t pose, const char* name_utf8) {
 	pose_t relative_pose = pose;
 	if (world_has_bounds()) {
 		matrix to_relative = matrix_invert( pose_matrix(world_get_bounds_pose()) );
@@ -129,7 +130,7 @@ anchor_t stage_anchor_on_create(stage_anchor_sys_t* context, pose_t pose, const 
 	}
 
 	// Create a StereoKit anchor
-	stage_anchor_t* anchor_data = sk_malloc_t(stage_anchor_t, 1);
+	anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
 	anchor_data->relative_pose = pose;
 	anchor_t result = anchor_create_manual(context->id, pose, name_utf8, (void*)anchor_data);
 	anchor_notify_discovery(result);
@@ -138,7 +139,7 @@ anchor_t stage_anchor_on_create(stage_anchor_sys_t* context, pose_t pose, const 
 
 ///////////////////////////////////////////
 
-bool32_t stage_anchor_on_persist(stage_anchor_sys_t* context, anchor_t anchor, bool32_t persist) {
+bool32_t anchor_stage_on_persist(anchor_stage_sys_t* context, anchor_t anchor, bool32_t persist) {
 	if (anchor->persisted == persist) return true;
 	anchor->persisted = persist;
 

@@ -9,8 +9,8 @@
 #include "openxr_extensions.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
-#include "openxr_anchors.h"
-#include "stage_anchor.h"
+#include "anchor_openxr_msft.h"
+#include "anchor_stage.h"
 
 #include "../sk_memory.h"
 #include "../log.h"
@@ -559,9 +559,9 @@ bool openxr_init() {
 #endif
 
 	if (xr_ext_available.MSFT_spatial_anchor) {
-		oxr_anchor_msft_init();
+		anchor_oxr_msft_init();
 	} else {
-		stage_anchor_init();
+		anchor_stage_init();
 	}
 	
 
@@ -749,9 +749,6 @@ void openxr_set_origin_offset(pose_t offset) {
 
 void openxr_cleanup() {
 	if (xr_instance) {
-		oxr_anchor_msft_shutdown();
-		stage_anchor_shutdown();
-
 		// Shut down the input!
 		oxri_shutdown();
 
@@ -768,6 +765,9 @@ void openxr_cleanup() {
 }
 
 void openxr_shutdown() {
+	anchor_oxr_msft_shutdown();
+	anchor_stage_shutdown();
+
 	openxr_cleanup();
 
 	xr_minimum_exts   = false;

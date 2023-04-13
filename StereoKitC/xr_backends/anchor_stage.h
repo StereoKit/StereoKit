@@ -7,7 +7,7 @@
 
 namespace sk {
 
-void stage_anchor_init();
-void stage_anchor_shutdown();
+void anchor_stage_init();
+void anchor_stage_shutdown();
 
 } // namespace sk

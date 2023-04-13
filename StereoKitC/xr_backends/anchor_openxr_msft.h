@@ -11,8 +11,8 @@
 
 namespace sk {
 
-void oxr_anchor_msft_init();
-void oxr_anchor_msft_shutdown();
+void anchor_oxr_msft_init();
+void anchor_oxr_msft_shutdown();
 
 } // namespace sk
 
