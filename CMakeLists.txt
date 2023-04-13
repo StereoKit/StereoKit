@@ -270,7 +270,9 @@ set(SK_SRC_LIBRARIES
 
 set(SK_SRC_UTILS
   StereoKitC/utils/sdf.h
-  StereoKitC/utils/sdf.cpp)
+  StereoKitC/utils/sdf.cpp
+  StereoKitC/utils/random.h
+  StereoKitC/utils/random.cpp)
 
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h

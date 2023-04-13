@@ -1,5 +1,7 @@
 #include "anchor.h"
 #include "../libraries/array.h"
+#include "../libraries/stref.h"
+#include "../utils/random.h"
 
 namespace sk {
 
@@ -14,41 +16,74 @@ array_t<anchor_system_t>   anch_systems      = {};
 array_t<anchor_listener_t> anch_listeners    = {};
 array_t<anchor_t>          anch_list         = {};
 array_t<anchor_t>          anch_changed      = {};
-anchor_type_id             anch_default_type = -1;
 
 ///////////////////////////////////////////
 
-anchor_t anchor_create(pose_t pose) {
-	return anchor_create_type(anch_default_type, pose);
+char to_hex(uint32_t val, uint32_t nibble) {
+	uint32_t byte = (val >> (nibble * 4)) & 0xF;
+	return byte < 10
+		? '0' + byte
+		: 'A' + byte - 10;
 }
 
 ///////////////////////////////////////////
 
-anchor_t anchor_create_type(anchor_type_id type, pose_t pose) {
-	return anch_systems[type].on_create(anch_systems[type].context, pose);
+anchor_t anchor_create(pose_t pose, const char* name_utf8, anchor_props_ properties) {
+	int32_t system = -1;
+	for (int32_t i = 0; i < anch_systems.count; i++) {
+		if ((anch_systems[i].properties & properties) == properties) {
+			system = i;
+			break;
+		}
+	}
+	char gen_name[20];
+	if (name_utf8 == nullptr) {
+		uint32_t a = rand_x();
+		uint32_t b = rand_x();
+		char name[20]{
+			to_hex(a,0), to_hex(a,1), to_hex(a,2), to_hex(a,3), '-',
+			to_hex(a,4), to_hex(a,5), to_hex(a,6), to_hex(a,7), '-',
+			to_hex(b,0), to_hex(b,1), to_hex(b,2), to_hex(b,3), '-',
+			to_hex(b,4), to_hex(b,5), to_hex(b,6), to_hex(b,7), '\0' };
+		// Some juggling since C/C++ doesn't allow us to assign an array to an
+		// existing array.
+		strncpy(gen_name, name, sizeof(gen_name));
+		name_utf8 = gen_name;
+	}
+	return system == -1
+		? nullptr
+		: anch_systems[system].on_create(anch_systems[system].context, pose, name_utf8);
 }
 
 ///////////////////////////////////////////
 
-anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, void* data) {
+anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, const char *name_utf8, void* data) {
 	anchor_t result = (anchor_t)assets_allocate(asset_type_anchor);
 	result->source_system = system_id;
 	result->pose          = pose;
 	result->data          = data;
+	result->name          = string_copy(name_utf8);
 	anch_list.add(result);
 
 	anchor_mark_dirty(result);
-
-	for (int32_t i = 0; i < anch_listeners.count; i++) {
-		anch_listeners[i].on_anchor_discovered(anch_listeners[i].context, result);
-	}
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
+void anchor_notify_discovery(anchor_t anchor) {
+	for (int32_t i = 0; i < anch_listeners.count; i++) {
+		anch_listeners[i].on_anchor_discovered(anch_listeners[i].context, anchor);
+	}
+}
+
+///////////////////////////////////////////
+
 void anchor_destroy(anchor_t anchor) {
+	int32_t idx = anch_list.index_of(anchor);
+	if (idx != -1) anch_list.remove(idx);
+
 	anchor_system_t* sys = &anch_systems[anchor->source_system];
 	if (sys->on_destroy_anchor) {
 		sys->on_destroy_anchor(sys->context, anchor, anchor->data);
@@ -56,10 +91,7 @@ void anchor_destroy(anchor_t anchor) {
 			log_err("Added a reference to an anchor during destruction!");
 		}
 	}
-
-	int32_t idx = anch_list.index_of(anchor);
-	if (idx != -1) anch_list.remove(idx);
-
+	sk_free(anchor->name);
 	*anchor = {};
 }
 
@@ -109,20 +141,22 @@ void anchor_update_manual(anchor_t anchor, pose_t pose) {
 	}
 }
 
-anchor_type_ anchor_get_type(const anchor_t anchor) {
-	return anch_systems[anchor->source_system].info.type;
+///////////////////////////////////////////
+
+bool32_t anchor_set_persistent(anchor_t anchor, bool32_t persistent) {
+	return anch_systems[anchor->source_system].on_persist(anch_systems[anchor->source_system].context, anchor, persistent);
 }
 
 ///////////////////////////////////////////
 
-anchor_type_id anchor_get_type_id(const anchor_t anchor) {
-	return anchor->source_system;
+bool32_t anchor_get_persistent(const anchor_t anchor) {
+	return anchor->persisted;
 }
 
 ///////////////////////////////////////////
 
 anchor_props_ anchor_get_properties(const anchor_t anchor) {
-	return anch_systems[anchor->source_system].info.properties;
+	return anch_systems[anchor->source_system].properties;
 }
 
 ///////////////////////////////////////////
@@ -139,8 +173,14 @@ bool32_t anchor_get_changed(const anchor_t anchor) {
 
 ///////////////////////////////////////////
 
-bounds_t anchor_get_bounds(const anchor_t anchor) {
-	return anchor->bounds;
+const char *anchor_get_name(const anchor_t anchor) {
+	return anchor->name;
+}
+
+///////////////////////////////////////////
+
+button_state_ anchor_get_tracked(const anchor_t anchor) {
+	return anchor->tracked;
 }
 
 ///////////////////////////////////////////
@@ -167,56 +207,15 @@ void anchor_clear_all_dirty() {
 
 anchor_type_id anchors_register_type(anchor_system_t system) {
 	anch_systems.add(system);
-	anchors_set_default(anch_systems.count - 1);
 	return anch_systems.count - 1;
 }
 
 ///////////////////////////////////////////
 
-int32_t anchors_type_count() {
-	return anch_systems.count;
-}
-
-///////////////////////////////////////////
-
-anchor_type_t anchors_type_get(anchor_type_id index) {
-	return (index >= 0 && index < anch_systems.count)
-		? anch_systems[index].info
-		: anchor_type_t{};
-}
-
-///////////////////////////////////////////
-
-bool32_t anchors_type_enable(anchor_type_id index) {
-	return (index >= 0 && index < anch_systems.count && anch_systems[index].on_enable != nullptr)
-		? anch_systems[index].on_enable(anch_systems[index].context)
-		: false;
-}
-
-///////////////////////////////////////////
-
-void anchors_set_default(anchor_type_id id) {
-	if (anch_systems[id].info.properties & anchor_props_creatable) {
-		anch_default_type = id;
-	} else {
-		log_errf("Default anchor type must be creatable!");
-	}
-}
-
-///////////////////////////////////////////
-
-anchor_type_id anchors_get_default(anchor_type_id id) {
-	return anch_default_type;
-}
-
-///////////////////////////////////////////
-
-void anchors_clear_stored(anchor_type_id id) {
-	if (anch_systems[id].info.properties & anchor_props_storable) {
-		if (anch_systems[id].on_clear_stored)
-			anch_systems[id].on_clear_stored(anch_systems[id].context);
-	} else {
-		log_errf("Anchor type must be storable!");
+void anchors_clear_stored() {
+	for (int32_t i = 0; i < anch_systems.count; i++) {
+		if (anch_systems[i].on_clear_stored)
+			anch_systems[i].on_clear_stored(anch_systems[i].context);
 	}
 }
 

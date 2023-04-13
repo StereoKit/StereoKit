@@ -558,8 +558,12 @@ bool openxr_init() {
 	}
 #endif
 
-	stage_anchor_init();
-	oxr_anchor_msft_init();
+	if (xr_ext_available.MSFT_spatial_anchor) {
+		oxr_anchor_msft_init();
+	} else {
+		stage_anchor_init();
+	}
+	
 
 	return true;
 }

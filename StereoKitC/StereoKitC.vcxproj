@@ -183,6 +183,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="ui\ui_core.cpp" />
     <ClCompile Include="ui\ui_layout.cpp" />
     <ClCompile Include="ui\ui_theming.cpp" />
+    <ClCompile Include="utils\random.cpp" />
     <ClCompile Include="utils\sdf.cpp" />
     <ClCompile Include="xr_backends\none.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
@@ -280,6 +281,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="ui\ui_core.h" />
     <ClInclude Include="ui\ui_layout.h" />
     <ClInclude Include="ui\ui_theming.h" />
+    <ClInclude Include="utils\random.h" />
     <ClInclude Include="utils\sdf.h" />
     <ClInclude Include="xr_backends\none.h" />
     <ClInclude Include="xr_backends\openxr.h" />

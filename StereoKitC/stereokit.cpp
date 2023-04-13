@@ -5,6 +5,7 @@
 
 #include "libraries/sokol_time.h"
 #include "libraries/tinycthread.h"
+#include "utils/random.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -152,6 +153,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	stm_setup();
 	sk_step_timer();
+	rand_set_seed((uint32_t)stm_now());
 
 	// Platform related systems
 	system_t sys_platform         = { "Platform"    };
