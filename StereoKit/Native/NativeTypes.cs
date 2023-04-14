@@ -455,14 +455,14 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void RenderOnScreenshotCallback(IntPtr data, int length);
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void RenderOnScreenshotCallback(IntPtr data, int length);
 
-    /// <summary>A callback that generates a sound wave at a particular point
-    /// in time.</summary>
-    /// <param name="time">The time along the wavelength.</param>
-    /// <returns>The waveform position on the sound at this time.</returns>
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	/// <summary>A callback that generates a sound wave at a particular point
+	/// in time.</summary>
+	/// <param name="time">The time along the wavelength.</param>
+	/// <returns>The waveform position on the sound at this time.</returns>
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
