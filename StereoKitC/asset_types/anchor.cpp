@@ -2,6 +2,10 @@
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../utils/random.h"
+#include "../platforms/platform_utils.h"
+
+#include "../xr_backends/anchor_openxr_msft.h"
+#include "../xr_backends/anchor_stage.h"
 
 namespace sk {
 
@@ -12,10 +16,11 @@ typedef struct anchor_listener_t {
 
 ///////////////////////////////////////////
 
-array_t<anchor_system_t>   anch_systems      = {};
 array_t<anchor_listener_t> anch_listeners    = {};
 array_t<anchor_t>          anch_list         = {};
 array_t<anchor_t>          anch_changed      = {};
+anchor_system_             anch_sys          = anchor_system_none;
+bool32_t                   anch_initialized  = false;
 
 ///////////////////////////////////////////
 
@@ -29,13 +34,6 @@ char to_hex(uint32_t val, uint32_t nibble) {
 ///////////////////////////////////////////
 
 anchor_t anchor_create(pose_t pose, const char* name_utf8, anchor_props_ properties) {
-	int32_t system = -1;
-	for (int32_t i = 0; i < anch_systems.count; i++) {
-		if ((anch_systems[i].properties & properties) == properties) {
-			system = i;
-			break;
-		}
-	}
 	char gen_name[20];
 	if (name_utf8 == nullptr) {
 		uint32_t a = rand_x();
@@ -50,9 +48,14 @@ anchor_t anchor_create(pose_t pose, const char* name_utf8, anchor_props_ propert
 		strncpy(gen_name, name, sizeof(gen_name));
 		name_utf8 = gen_name;
 	}
-	return system == -1
-		? nullptr
-		: anch_systems[system].on_create(anch_systems[system].context, pose, name_utf8);
+
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, name_utf8);
+#endif
+	case anchor_system_stage:       return anchor_stage_create   (pose, name_utf8);
+	default: return nullptr;
+	}
 }
 
 ///////////////////////////////////////////
@@ -81,16 +84,14 @@ void anchor_notify_discovery(anchor_t anchor) {
 ///////////////////////////////////////////
 
 void anchor_destroy(anchor_t anchor) {
-	int32_t idx = anch_list.index_of(anchor);
-	if (idx != -1) anch_list.remove(idx);
-
-	anchor_system_t* sys = &anch_systems[anchor->source_system];
-	if (sys->on_destroy_anchor) {
-		sys->on_destroy_anchor(sys->context, anchor, anchor->data);
-		if (anchor->header.refs > 0) {
-			log_err("Added a reference to an anchor during destruction!");
-		}
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: anchor_oxr_msft_destroy(anchor); break;
+#endif
+	//case anchor_system_stage:       anchor_stage_destroy   (anchor); break;
+	default: break;
 	}
+
 	sk_free(anchor->name);
 	*anchor = {};
 }
@@ -144,19 +145,19 @@ void anchor_update_manual(anchor_t anchor, pose_t pose) {
 ///////////////////////////////////////////
 
 bool32_t anchor_set_persistent(anchor_t anchor, bool32_t persistent) {
-	return anch_systems[anchor->source_system].on_persist(anch_systems[anchor->source_system].context, anchor, persistent);
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: return anchor_oxr_msft_persist(anchor, persistent);
+#endif
+	case anchor_system_stage:       return anchor_stage_persist   (anchor, persistent);
+	default: return false;
+	}
 }
 
 ///////////////////////////////////////////
 
 bool32_t anchor_get_persistent(const anchor_t anchor) {
 	return anchor->persisted;
-}
-
-///////////////////////////////////////////
-
-anchor_props_ anchor_get_properties(const anchor_t anchor) {
-	return anch_systems[anchor->source_system].properties;
 }
 
 ///////////////////////////////////////////
@@ -205,17 +206,31 @@ void anchor_clear_all_dirty() {
 
 ///////////////////////////////////////////
 
-anchor_type_id anchors_register_type(anchor_system_t system) {
-	anch_systems.add(system);
-	return anch_systems.count - 1;
+void anchors_clear_stored() {
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: anchor_oxr_msft_clear_stored(); break;
+#endif
+	case anchor_system_stage:       anchor_stage_clear_stored(); break;
+	default: break;
+	}
 }
 
 ///////////////////////////////////////////
 
-void anchors_clear_stored() {
-	for (int32_t i = 0; i < anch_systems.count; i++) {
-		if (anch_systems[i].on_clear_stored)
-			anch_systems[i].on_clear_stored(anch_systems[i].context);
+anchor_system_ anchors_get_system() {
+	return anch_sys;
+}
+
+///////////////////////////////////////////
+
+anchor_props_  anchors_get_properties() {
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: return anchor_oxr_msft_properties();
+#endif
+	case anchor_system_stage:       return anchor_props_storable;
+	default: return (anchor_props_)0;
 	}
 }
 
@@ -245,6 +260,48 @@ void anchors_unsubscribe(void (*on_anchor_discovered)(void* context, anchor_t an
 			return;
 		}
 	}
+}
+
+///////////////////////////////////////////
+
+void anchors_init(anchor_system_ system) {
+	if (anch_initialized) {
+		log_err("Anchor system already initialized!");
+		return;
+	}
+
+	bool32_t result = false;
+	switch (system) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
+#endif
+	case anchor_system_stage:       result = anchor_stage_init(); break;
+	default: break;
+	}
+
+	if (!result) system = anchor_system_none;
+	anch_sys         = system;
+	anch_initialized = true;
+}
+
+///////////////////////////////////////////
+
+void anchors_shutdown() {
+	if (!anch_initialized) return;
+
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: anchor_oxr_msft_shutdown(); break;
+#endif
+	case anchor_system_stage:       anchor_stage_shutdown(); break;
+	default: break;
+	}
+
+	anch_listeners.free();
+	anch_list     .free();
+	anch_changed  .free();
+
+	anch_initialized = false;
 }
 
 }

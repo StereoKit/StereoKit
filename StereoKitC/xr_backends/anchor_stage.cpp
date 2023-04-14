@@ -9,6 +9,7 @@ namespace sk {
 typedef struct anchor_stage_sys_t {
 	anchor_type_id    id;
 	array_t<anchor_t> persistant;
+	bool32_t          loaded;
 } anchor_stage_sys_t;
 
 typedef struct anchor_stage_t {
@@ -21,24 +22,8 @@ const char* anchor_stage_store_filename = "anchors.txt";
 
 ///////////////////////////////////////////
 
-anchor_t anchor_stage_on_create      (anchor_stage_sys_t* context, pose_t pose, const char* name_utf8);
-void     anchor_stage_on_clear_stored(anchor_stage_sys_t* context);
-bool32_t anchor_stage_on_persist     (anchor_stage_sys_t* context, anchor_t anchor, bool32_t persist);
-
-///////////////////////////////////////////
-
-void anchor_stage_init() {
+bool32_t anchor_stage_init() {
 	anchor_stage_sys = {};
-
-	anchor_system_t anchor_sys = {};
-	anchor_sys.name       = "Stage Anchor";
-	anchor_sys.properties = anchor_props_storable;
-	anchor_sys.context    = &anchor_stage_sys;
-	anchor_sys.on_create       = (anchor_t(*)(void*, pose_t, const char*)) anchor_stage_on_create;
-	anchor_sys.on_clear_stored = (void    (*)(void*))                      anchor_stage_on_clear_stored;
-	anchor_sys.on_persist      = (bool32_t(*)(void*, anchor_t, bool32_t))  anchor_stage_on_persist;
-
-	anchor_stage_sys.id = anchors_register_type(anchor_sys);
 
 	// Read anchors from a text file
 	char*  anchor_data      = nullptr;
@@ -73,19 +58,22 @@ void anchor_stage_init() {
 			// Create a StereoKit anchor
 			anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
 			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
-			anchor_stage_on_persist(&anchor_stage_sys, anchor, true);
+			anchor_stage_persist(anchor, true);
 			anchor_notify_discovery(anchor);
 
-			log_diagf("Discovered stage anchor: %s", name);
 			sk_free(name);
 		}
 		sk_free(anchor_data);
 	}
+	anchor_stage_sys.loaded = true;
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void anchor_stage_shutdown() {
+	if (!anchor_stage_sys.loaded) return;
+
 	// Write our persistent anchors to file
 	char* file_data = string_copy("");
 	char  line[512];
@@ -97,8 +85,7 @@ void anchor_stage_shutdown() {
 			a->name);
 		file_data = string_append(file_data, 1, line);
 	}
-	if (platform_write_file_text(anchor_stage_store_filename, file_data))
-		log_infof("Persisted %d anchors", anchor_stage_sys.persistant.count);
+	platform_write_file_text(anchor_stage_store_filename, file_data);
 	sk_free(file_data);
 
 	// Release the persisted anchors and free the array
@@ -110,7 +97,7 @@ void anchor_stage_shutdown() {
 
 ///////////////////////////////////////////
 
-void anchor_stage_on_clear_stored(anchor_stage_sys_t* context) {
+void anchor_stage_clear_stored() {
 	// Release the persisted anchors and free the array
 	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
 		anchor_stage_sys.persistant[i]->persisted = false;
@@ -122,7 +109,7 @@ void anchor_stage_on_clear_stored(anchor_stage_sys_t* context) {
 
 ///////////////////////////////////////////
 
-anchor_t anchor_stage_on_create(anchor_stage_sys_t* context, pose_t pose, const char* name_utf8) {
+anchor_t anchor_stage_create(pose_t pose, const char* name_utf8) {
 	pose_t relative_pose = pose;
 	if (world_has_bounds()) {
 		matrix to_relative = matrix_invert( pose_matrix(world_get_bounds_pose()) );
@@ -132,18 +119,18 @@ anchor_t anchor_stage_on_create(anchor_stage_sys_t* context, pose_t pose, const 
 	// Create a StereoKit anchor
 	anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
 	anchor_data->relative_pose = pose;
-	anchor_t result = anchor_create_manual(context->id, pose, name_utf8, (void*)anchor_data);
+	anchor_t result = anchor_create_manual(anchor_stage_sys.id, pose, name_utf8, (void*)anchor_data);
 	anchor_notify_discovery(result);
 	return result;
 }
 
 ///////////////////////////////////////////
 
-bool32_t anchor_stage_on_persist(anchor_stage_sys_t* context, anchor_t anchor, bool32_t persist) {
+bool32_t anchor_stage_persist(anchor_t anchor, bool32_t persist) {
 	if (anchor->persisted == persist) return true;
 	anchor->persisted = persist;
 
-	array_t<anchor_t>* persist_list = &context->persistant;
+	array_t<anchor_t>* persist_list = &anchor_stage_sys.persistant;
 	if (persist) {
 		anchor_addref(anchor);
 		persist_list->add(anchor);

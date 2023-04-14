@@ -9,8 +9,6 @@
 #include "openxr_extensions.h"
 #include "openxr_input.h"
 #include "openxr_view.h"
-#include "anchor_openxr_msft.h"
-#include "anchor_stage.h"
 
 #include "../sk_memory.h"
 #include "../log.h"
@@ -27,6 +25,7 @@
 #include "../platforms/linux.h"
 #include "../platforms/uwp.h"
 #include "../platforms/win32.h"
+#include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -558,12 +557,9 @@ bool openxr_init() {
 	}
 #endif
 
-	if (xr_ext_available.MSFT_spatial_anchor) {
-		anchor_oxr_msft_init();
-	} else {
-		anchor_stage_init();
-	}
-	
+	anchors_init(xr_ext_available.MSFT_spatial_anchor
+		? anchor_system_openxr_msft
+		: anchor_system_stage);
 
 	return true;
 }
@@ -765,8 +761,7 @@ void openxr_cleanup() {
 }
 
 void openxr_shutdown() {
-	anchor_oxr_msft_shutdown();
-	anchor_stage_shutdown();
+	anchors_shutdown();
 
 	openxr_cleanup();
 

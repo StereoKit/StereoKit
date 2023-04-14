@@ -2047,6 +2047,12 @@ typedef enum anchor_props_ {
 } anchor_properties_;
 SK_MakeFlag(anchor_props_);
 
+typedef enum anchor_system_ {
+	anchor_system_none,
+	anchor_system_stage,
+	anchor_system_openxr_msft,
+} anchor_system_;
+
 SK_API anchor_t       anchor_find           (const char* asset_id);
 SK_API void           anchor_set_id         (anchor_t anchor, const char* asset_id);
 SK_API const char*    anchor_get_id         (const anchor_t anchor);
@@ -2055,7 +2061,6 @@ SK_API void           anchor_release        (anchor_t anchor);
 SK_API anchor_t       anchor_create         (pose_t pose, const char *name_utf8, anchor_props_ properties);
 SK_API bool32_t       anchor_set_persistent (anchor_t anchor, bool32_t persistent);
 SK_API bool32_t       anchor_get_persistent (const anchor_t anchor);
-SK_API anchor_props_  anchor_get_properties (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose       (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed    (const anchor_t anchor);
 SK_API const char*    anchor_get_name       (const anchor_t anchor);
@@ -2064,6 +2069,8 @@ SK_API button_state_  anchor_get_tracked    (const anchor_t anchor);
 SK_API void           anchors_subscribe     (void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context, bool32_t only_new);
 SK_API void           anchors_unsubscribe   (void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context);
 SK_API void           anchors_clear_stored  ();
+SK_API anchor_system_ anchors_get_system    ();
+SK_API anchor_props_  anchors_get_properties(const anchor_t anchor);
 
 ///////////////////////////////////////////
 
