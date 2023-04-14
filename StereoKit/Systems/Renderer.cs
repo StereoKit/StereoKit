@@ -318,6 +318,7 @@ namespace StereoKit
 				byte[] data = new byte[length];
 				Marshal.Copy(ptr, data, 0, length);
 				onGetColors.Invoke(data);
+                _renderCaptureCallbacks.TryDequeue(out _);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
@@ -354,6 +355,7 @@ namespace StereoKit
 				byte[] data = new byte[length];
 				Marshal.Copy(ptr, data, 0, length);
 				onGetColors.Invoke(data);
+                _renderCaptureCallbacks.TryDequeue(out _);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear);
