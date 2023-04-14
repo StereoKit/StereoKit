@@ -666,10 +666,10 @@ void render_screenshot(int w, int h, const matrix* view, const matrix* projectio
 	skg_viewport(viewport);
 
 	float color[4] = {
-	render_clear_col.r / 255.f,
-	render_clear_col.g / 255.f,
-	render_clear_col.b / 255.f,
-	render_clear_col.a / 255.f };
+		render_clear_col.r / 255.f,
+		render_clear_col.g / 255.f,
+		render_clear_col.b / 255.f,
+		render_clear_col.a / 255.f };
 	skg_target_clear(true, color);
 
 	// Render!
@@ -684,11 +684,11 @@ void render_screenshot(int w, int h, const matrix* view, const matrix* projectio
 	int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
 	void* tmp = sk_malloc(line_size);
 	for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
-	void* top_line = ((uint8_t*)buffer) + line_size * y;
-	void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
-	memcpy(tmp, top_line, line_size);
-	memcpy(top_line, bot_line, line_size);
-	memcpy(bot_line, tmp, line_size);
+		void* top_line = ((uint8_t*)buffer) + line_size * y;
+		void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
+		memcpy(tmp, top_line, line_size);
+		memcpy(top_line, bot_line, line_size);
+		memcpy(bot_line, tmp, line_size);
 	}
 	sk_free(tmp);
 #endif
@@ -736,8 +736,8 @@ void render_check_capture_screenshots() {
 		int32_t  h = render_screenshot_capture_list[i].height;
 
 		matrix view = matrix_trs(
-		    render_screenshot_capture_list[i].from,
-		    quat_lookat(render_screenshot_capture_list[i].from, render_screenshot_capture_list[i].at));
+			render_screenshot_capture_list[i].from,
+			quat_lookat(render_screenshot_capture_list[i].from, render_screenshot_capture_list[i].at));
 		matrix_inverse(view, view);
 
 		matrix proj = matrix_perspective(render_screenshot_capture_list[i].fov_degrees, (float)w / h, render_clip_planes.x, render_clip_planes.y);
