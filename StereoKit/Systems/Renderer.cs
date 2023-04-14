@@ -266,7 +266,7 @@ namespace StereoKit
 		/// .jpg regardless of what file extension you use right now.</param>
 		[Obsolete("For removal in v0.4. Use the overload that takes filename first.")]
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
-		    => NativeAPI.render_screenshot(filename, from, at, width, height, 90);
+			=> NativeAPI.render_screenshot(filename, from, at, width, height, 90);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
@@ -284,7 +284,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
-		    => NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
 
 		/// <summary>A thread-safe concurrent queue is used so that you can
 		/// enqueue multiple screenshots while they are being invoked and
@@ -313,14 +313,14 @@ namespace StereoKit
 		/// degrees.</param>
 		public static void Screenshot(Action<byte[]> onGetColors, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 		{
-		    RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
-		    {
-			byte[] data = new byte[length];
-			Marshal.Copy(ptr, data, 0, length);
-			onGetColors.Invoke(data);
-		    };
-		    _renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-		    NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
+			{
+				byte[] data = new byte[length];
+				Marshal.Copy(ptr, data, 0, length);
+				onGetColors.Invoke(data);
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
 		}
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
@@ -349,14 +349,14 @@ namespace StereoKit
 		/// surface!</param>
 		public static void Screenshot(Action<byte[]> onGetColors, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All)
 		{
-		    RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
-		    {
-			byte[] data = new byte[length];
-			Marshal.Copy(ptr, data, 0, length);
-			onGetColors.Invoke(data);
-		    };
-		    _renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-		    NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear);
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
+			{
+				byte[] data = new byte[length];
+				Marshal.Copy(ptr, data, 0, length);
+				onGetColors.Invoke(data);
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear);
 		}
 
 		/// <summary>This renders the current scene to the indicated 
@@ -385,7 +385,7 @@ namespace StereoKit
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-		    => NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
+			=> NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
 
-		}
+	}
 }
