@@ -173,7 +173,7 @@ skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_s
 
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
-void          render_screenshot       (int w, int h, const matrix* view, const matrix* projection, render_layer_ render_layer, void* out_data);
+void          render_draw_screenshot  (int w, int h, const matrix* view, const matrix* projection, render_clear_ render_clear, render_layer_ render_layer, void* out_data);
 void          render_check_screenshots();
 void          render_check_capture_screenshots();
 void          render_check_viewpoint_screenshots();
@@ -654,10 +654,10 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 
 ///////////////////////////////////////////
 
-void render_screenshot(int w, int h, const matrix* view, const matrix* projection, render_layer_ render_layer, void* out_data) {
+void render_draw_screenshot(int w, int h, const matrix* view, const matrix* projection, render_clear_ render_clear, render_layer_ render_layer, void* out_data) {
 	tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 	tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-	tex_release(tex_add_zbuffer(render_capture_surface));
+	tex_add_zbuffer  (render_capture_surface);
 
 	// Setup to render the screenshot
 	skg_tex_target_bind(&render_capture_surface->tex);
@@ -665,12 +665,17 @@ void render_screenshot(int w, int h, const matrix* view, const matrix* projectio
 	int32_t viewport[4] = { 0,0,w,h };
 	skg_viewport(viewport);
 
-	float color[4] = {
-		render_clear_col.r / 255.f,
-		render_clear_col.g / 255.f,
-		render_clear_col.b / 255.f,
-		render_clear_col.a / 255.f };
-	skg_target_clear(true, color);
+    // Clear the viewport
+    if (render_clear != render_clear_none) {
+        float color[4] = {
+            render_clear_col.r / 255.f,
+            render_clear_col.g / 255.f,
+            render_clear_col.b / 255.f,
+            render_clear_col.a / 255.f };
+        skg_target_clear(
+            (render_clear & render_clear_depth),
+            (render_clear & render_clear_color) ? &color[0] : (float*)nullptr);
+    }
 
 	// Render!
 	render_draw_queue(view, projection, render_layer, 1);
@@ -716,7 +721,7 @@ void render_check_screenshots() {
 		color32 *buffer = (color32*)sk_malloc(size);
 
 		// Render the screenshot to a capture surface and retrieve its color data
-		render_screenshot(w, h, &view, &proj, render_primary_filter, buffer);
+        render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
 
 		// And save the screenshot to file
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
@@ -747,7 +752,7 @@ void render_check_capture_screenshots() {
 		uint8_t* buffer = (uint8_t*)sk_malloc(size);
 
 		// Render the screenshot to a capture surface and retrieve its color data
-		render_screenshot(w, h, &view, &proj, render_primary_filter, buffer);
+        render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
 
 		// Notify the managed code that the color data is ready!
 		render_screenshot_capture_list[i].render_on_screenshot_callback(buffer, size);
@@ -773,7 +778,7 @@ void render_check_viewpoint_screenshots() {
 		uint8_t* buffer = (uint8_t*)sk_malloc(size);
 
 		// Render the screenshot to a capture surface and retrieve its color data
-		render_screenshot(w, h, view, proj, render_screenshot_viewpoint_list[i].layer_filter, buffer);
+		render_draw_screenshot(w, h, view, proj, render_screenshot_viewpoint_list[i].clear, render_screenshot_viewpoint_list[i].layer_filter, buffer);
 
 		// Notify the managed code that the color data is ready!
 		render_screenshot_viewpoint_list[i].render_on_screenshot_callback(buffer, size);
