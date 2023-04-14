@@ -173,7 +173,10 @@ skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_s
 
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+void          render_screenshot       (int w, int h, const matrix* view, const matrix* projection, render_layer_ render_layer, void* out_data);
 void          render_check_screenshots();
+void          render_check_capture_screenshots();
+void          render_check_viewpoint_screenshots();
 void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
@@ -645,6 +648,8 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 	render_check_viewpoints();
 	render_draw_queue(views, projections, render_filter, count);
 	render_check_screenshots();
+    render_check_capture_screenshots();
+    render_check_viewpoint_screenshots();
 }
 
 ///////////////////////////////////////////
