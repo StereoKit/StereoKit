@@ -655,10 +655,10 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 ///////////////////////////////////////////
 
 void render_draw_screenshot(int w, int h, const matrix* view, const matrix* projection, render_clear_ render_clear, render_layer_ render_layer, void* out_data) {
-	tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+    tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 	tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-	tex_add_zbuffer  (render_capture_surface);
-
+    tex_t    render_depth_buffer = tex_add_zbuffer(render_capture_surface);
+    
 	// Setup to render the screenshot
 	skg_tex_target_bind(&render_capture_surface->tex);
 
@@ -697,6 +697,7 @@ void render_draw_screenshot(int w, int h, const matrix* view, const matrix* proj
 	}
 	sk_free(tmp);
 #endif
+    tex_release(render_depth_buffer);
 	tex_release(render_capture_surface);
 	tex_release(resolve_tex);
 }
