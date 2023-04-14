@@ -684,8 +684,8 @@ void render_screenshot(int w, int h, const matrix* view, const matrix* projectio
 	int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
 	void* tmp = sk_malloc(line_size);
 	for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
-		void* top_line = ((uint8_t*)buffer) + line_size * y;
-		void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
+		void* top_line = ((uint8_t*)out_data) + line_size * y;
+		void* bot_line = ((uint8_t*)out_data) + line_size * ((resolve_tex->tex.height - 1) - y);
 		memcpy(tmp, top_line, line_size);
 		memcpy(top_line, bot_line, line_size);
 		memcpy(bot_line, tmp, line_size);
