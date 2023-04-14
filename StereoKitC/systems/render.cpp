@@ -665,17 +665,17 @@ void render_draw_screenshot(int w, int h, const matrix* view, const matrix* proj
 	int32_t viewport[4] = { 0,0,w,h };
 	skg_viewport(viewport);
 
-    // Clear the viewport
-    if (render_clear != render_clear_none) {
-        float color[4] = {
-            render_clear_col.r / 255.f,
-            render_clear_col.g / 255.f,
-            render_clear_col.b / 255.f,
-            render_clear_col.a / 255.f };
-        skg_target_clear(
-            (render_clear & render_clear_depth),
-            (render_clear & render_clear_color) ? &color[0] : (float*)nullptr);
-    }
+	// Clear the viewport
+	if (render_clear != render_clear_none) {
+		float color[4] = {
+			render_clear_col.r / 255.f,
+			render_clear_col.g / 255.f,
+			render_clear_col.b / 255.f,
+			render_clear_col.a / 255.f };
+		skg_target_clear(
+			(render_clear & render_clear_depth),
+			(render_clear & render_clear_color) ? &color[0] : (float*)nullptr);
+	}
 
 	// Render!
 	render_draw_queue(view, projection, render_layer, 1);
@@ -721,7 +721,7 @@ void render_check_screenshots() {
 		color32 *buffer = (color32*)sk_malloc(size);
 
 		// Render the screenshot to a capture surface and retrieve its color data
-        render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
+		render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
 
 		// And save the screenshot to file
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
@@ -752,7 +752,7 @@ void render_check_capture_screenshots() {
 		uint8_t* buffer = (uint8_t*)sk_malloc(size);
 
 		// Render the screenshot to a capture surface and retrieve its color data
-        render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
+		render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
 
 		// Notify the managed code that the color data is ready!
 		render_screenshot_capture_list[i].render_on_screenshot_callback(buffer, size);
