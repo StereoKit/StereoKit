@@ -715,10 +715,10 @@ void render_check_screenshots() {
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
 
-	// Render the screenshot to a capture surface and retrieve its color data
-	render_screenshot(w, h, &view, &proj, render_primary_filter, buffer);
+		// Render the screenshot to a capture surface and retrieve its color data
+		render_screenshot(w, h, &view, &proj, render_primary_filter, buffer);
 
-	// And save the screenshot to file
+		// And save the screenshot to file
 		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
 		sk_free(buffer);
 		sk_free(render_screenshot_list[i].filename);
