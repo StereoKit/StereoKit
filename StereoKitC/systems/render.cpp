@@ -634,6 +634,8 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 
 ///////////////////////////////////////////
 
+// The screenshots are produced in FIFO order, meaning the
+// order of screenshot requests by users is preserved.
 void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
 
