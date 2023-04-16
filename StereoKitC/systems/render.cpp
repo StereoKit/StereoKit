@@ -80,12 +80,12 @@ struct render_inst_buffer {
 };
 struct render_screenshot_t {
 	void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
-	void*			context;
-	matrix			camera;
-	matrix			projection;
-	rect_t			viewport;
-	int32_t			width;
-	int32_t			height;
+	void*		context;
+	matrix		camera;
+	matrix		projection;
+	rect_t		viewport;
+	int32_t		width;
+	int32_t		height;
 	render_layer_	layer_filter;
 	render_clear_	clear;
 };
