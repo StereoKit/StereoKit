@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -9,11 +9,9 @@ namespace StereoKit
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
 	public static class Renderer
 	{
-		/// <summary>A thread-safe concurrent queue is used so that you can
-		/// enqueue multiple screenshots while they are being invoked and
-		/// removed from the render thread. Its reference is upheld to prevent
-		/// the garbage collector from finalizing the user-defined delegate.</summary>
-		private static ConcurrentQueue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+		/// <summary>A queue is used to prevent premature garbage collection
+		/// of the user-defined callbacks.</summary>
+		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
 
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
@@ -311,11 +309,11 @@ namespace StereoKit
 		/// degrees.</param>
 		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 		{
-			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
-				if (_renderCaptureCallbacks.TryDequeue(out _))
-					onScreenshot.Invoke(dataPtr, w, h);
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
@@ -348,11 +346,11 @@ namespace StereoKit
 		/// surface!</param>
 		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
 		{
-			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
-				if (_renderCaptureCallbacks.TryDequeue(out _))
-					onScreenshot.Invoke(dataPtr, w, h);
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);

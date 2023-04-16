@@ -648,7 +648,7 @@ void render_check_screenshots() {
 
 		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_t render_depth_buffer = tex_add_zbuffer(render_capture_surface);
+		tex_release(tex_add_zbuffer(render_capture_surface));
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -687,7 +687,7 @@ void render_check_screenshots() {
 		tex_t resolve_tex = tex_create(tex_type_image_nomips);
 		tex_set_colors(resolve_tex, w, h, nullptr);
 		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
-		tex_get_data(resolve_tex, buffer, sizeof(color32) * w * h);
+		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
 		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
 		void* tmp = sk_malloc(line_size);
@@ -700,7 +700,6 @@ void render_check_screenshots() {
 		}
 		sk_free(tmp);
 #endif
-		tex_release(render_depth_buffer);
 		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
 
@@ -905,7 +904,7 @@ void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, i
 		quat_lookat(from_viewpt, at));
 	matrix_inverse(view, view);
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
-	render_screenshot_list.add( render_screenshot_t{ render_save_to_file, file_copy, view, proj, rect_t(), width, height, render_layer_all, render_clear_all });
+	render_screenshot_list.add(render_screenshot_t{ render_save_to_file, file_copy, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all });
 }
 
 void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
@@ -914,7 +913,7 @@ void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* co
 		quat_lookat(from_viewpt, at));
 	matrix_inverse(view, view);
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
-	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t(), width, height, render_layer_all, render_clear_all });
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all });
 }
 
 void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), const matrix& camera, const matrix& projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
