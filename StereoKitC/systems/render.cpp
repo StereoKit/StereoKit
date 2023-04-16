@@ -80,14 +80,14 @@ struct render_inst_buffer {
 };
 struct render_screenshot_t {
 	void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
-	void*		  context;
-	matrix        camera;
-	matrix        projection;
-	rect_t        viewport;
-	int32_t       width;
-	int32_t       height;
-	render_layer_ layer_filter;
-	render_clear_ clear;
+	void*			context;
+	matrix			camera;
+	matrix			projection;
+	rect_t			viewport;
+	int32_t			width;
+	int32_t			height;
+	render_layer_	layer_filter;
+	render_clear_	clear;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -134,8 +134,8 @@ render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
 tex_t                   render_global_textures[16] = {};
 
-array_t<render_screenshot_t>            render_screenshot_list = {};
-array_t<render_viewpoint_t>             render_viewpoint_list  = {};
+array_t<render_screenshot_t> render_screenshot_list = {};
+array_t<render_viewpoint_t>  render_viewpoint_list  = {};
 
 const int32_t           render_skytex_register = 11;
 mesh_t                  render_sky_mesh        = nullptr;

@@ -463,8 +463,8 @@ namespace StereoKit
 	/// <param name="data">The pointer to the color data. A fare warning that the
 	/// memory *will* be freed once this callback completes, so if you need to
 	/// reference this data elsewhere, be sure you store a copy of it!</param>
-	/// <param name="width">The width of the screenshot image.</param>
-	/// <param name="height">The height of the screenshot image.</param>
+	/// <param name="width">The width of the image.</param>
+	/// <param name="height">The height of the image.</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void ScreenshotCallback(IntPtr data, int width, int height);
 

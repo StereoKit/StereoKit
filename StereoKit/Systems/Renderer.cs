@@ -13,8 +13,7 @@ namespace StereoKit
 		/// enqueue multiple screenshots while they are being invoked and
 		/// removed from the render thread. To prevent the garbage collector
 		/// from finalizing the user-defined delegate, its reference is upheld
-		/// until the render thread finishes grabbing the scene's color data.
-		/// </summary>
+		/// until the render thread finishes grabbing the scene's color data.</summary>
 		private static ConcurrentQueue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
 
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
@@ -300,7 +299,7 @@ namespace StereoKit
 		/// thread! You can use the color data directly by saving/processing it
 		/// inside this delegate, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
-		/// <param name="onGetColors">Outputs a reference to the color data
+		/// <param name="onScreenshot">Outputs a reference to the color data
 		/// and its length which represent the current scene from a requested
 		/// viewpoint.</param>
 		/// <param name="from">Viewpoint location.</param>
@@ -311,13 +310,13 @@ namespace StereoKit
 		/// </param>
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
-		public static void Screenshot(ScreenshotCallback onGetColors, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
 				if (_renderCaptureCallbacks.TryDequeue(out _))
-				    onGetColors.Invoke(dataPtr, w, h);
+					onScreenshot.Invoke(dataPtr, w, h);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
@@ -330,7 +329,7 @@ namespace StereoKit
 		/// thread! You can use the color data directly by saving/processing it
 		/// inside this delegate, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
-		/// <param name="onGetColors">Outputs a reference to the color data
+		/// <param name="onScreenshot">Outputs a reference to the color data
 		/// and its length which represent the current scene from a requested
 		/// viewpoint.</param>
 		/// <param name="camera">A TRS matrix representing the location and
@@ -348,13 +347,13 @@ namespace StereoKit
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
-		public static void Screenshot(ScreenshotCallback onGetColors, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
 				if (_renderCaptureCallbacks.TryDequeue(out _))
-				    onGetColors.Invoke(dataPtr, w, h);
+					onScreenshot.Invoke(dataPtr, w, h);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);
