@@ -11,9 +11,8 @@ namespace StereoKit
 	{
 		/// <summary>A thread-safe concurrent queue is used so that you can
 		/// enqueue multiple screenshots while they are being invoked and
-		/// removed from the render thread. To prevent the garbage collector
-		/// from finalizing the user-defined delegate, its reference is upheld
-		/// until the render thread finishes grabbing the scene's color data.</summary>
+		/// removed from the render thread. Its reference is upheld to prevent
+		/// the garbage collector from finalizing the user-defined delegate.</summary>
 		private static ConcurrentQueue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
 
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
@@ -297,7 +296,7 @@ namespace StereoKit
 		/// resolution the same size as the screen's surface. This overload
 		/// allows for retrieval of the color data directly from the render
 		/// thread! You can use the color data directly by saving/processing it
-		/// inside this delegate, or you can keep the data alive for as long as
+		/// inside your callback, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
 		/// <param name="onScreenshot">Outputs a reference to the color data
 		/// and its length which represent the current scene from a requested
@@ -327,7 +326,7 @@ namespace StereoKit
 		/// resolution the same size as the screen's surface. This overload
 		/// allows for retrieval of the color data directly from the render
 		/// thread! You can use the color data directly by saving/processing it
-		/// inside this delegate, or you can keep the data alive for as long as
+		/// inside your callback, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
 		/// <param name="onScreenshot">Outputs a reference to the color data
 		/// and its length which represent the current scene from a requested

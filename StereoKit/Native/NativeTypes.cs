@@ -462,7 +462,7 @@ namespace StereoKit
 	/// of saving it directly to a file.</summary>
 	/// <param name="data">The pointer to the color data. A fare warning that the
 	/// memory *will* be freed once this callback completes, so if you need to
-	/// reference this data elsewhere, be sure you store a copy of it!</param>
+	/// reference this data elsewhere, be sure to store a copy of it!</param>
 	/// <param name="width">The width of the image.</param>
 	/// <param name="height">The height of the image.</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
