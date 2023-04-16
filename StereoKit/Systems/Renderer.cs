@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -8,6 +9,10 @@ namespace StereoKit
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
 	public static class Renderer
 	{
+		/// <summary>A queue is used to prevent premature garbage collection
+		/// of the user-defined callbacks.</summary>
+		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
 		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
@@ -284,6 +289,73 @@ namespace StereoKit
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
 
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. This overload
+		/// allows for retrieval of the color data directly from the render
+		/// thread! You can use the color data directly by saving/processing it
+		/// inside your callback, or you can keep the data alive for as long as
+		/// it is referenced.</summary>
+		/// <param name="onScreenshot">Outputs a reference to the color data
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
+		/// <param name="from">Viewpoint location.</param>
+		/// <param name="at">Direction the viewpoint is looking at.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+		{
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
+			{
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
+		}
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. This overload
+		/// allows for retrieval of the color data directly from the render
+		/// thread! You can use the color data directly by saving/processing it
+		/// inside your callback, or you can keep the data alive for as long as
+		/// it is referenced.</summary>
+		/// <param name="onScreenshot">Outputs a reference to the color data
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use 
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		/// <param name="layerFilter">This is a bit flag that allows you to
+		/// change which layers StereoKit renders for this particular render
+		/// viewpoint. To change what layers a visual is on, use a Draw
+		/// method that includes a RenderLayer as a parameter.</param>
+		/// <param name="clear">Describes if and how the rendertarget should
+		/// be cleared before rendering. Note that clearing the target is
+		/// unaffected by the viewport, so this will clean the entire 
+		/// surface!</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		{
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
+			{
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);
+		}
+
 		/// <summary>This renders the current scene to the indicated 
 		/// rendertarget texture, from the specified viewpoint. This call 
 		/// enqueues a render that occurs immediately before the screen 
@@ -301,7 +373,7 @@ namespace StereoKit
 		/// change which layers StereoKit renders for this particular render
 		/// viewpoint. To change what layers a visual is on, use a Draw
 		/// method that includes a RenderLayer as a parameter.</param>
-		/// <param name="clear">Describes if an how the rendertarget should
+		/// <param name="clear">Describes if and how the rendertarget should
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
