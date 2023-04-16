@@ -79,25 +79,11 @@ struct render_inst_buffer {
 	skg_buffer_t buffer;
 };
 struct render_screenshot_t {
-	char   *filename;
-	vec3    from;
-	vec3    at;
-	int32_t width;
-	int32_t height;
-	float   fov_degrees;
-};
-struct render_screenshot_capture_t {
-	void (*render_on_screenshot_callback)(uint8_t* out_arr_data, int32_t data_length);
-	vec3     from;
-	vec3     at;
-	int32_t  width;
-	int32_t  height;
-	float    fov_degrees;
-};
-struct render_screenshot_viewpoint_t {
-	void (*render_on_screenshot_callback)(uint8_t* out_arr_data, int32_t data_length);
+	void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
+	void*		  context;
 	matrix        camera;
 	matrix        projection;
+	rect_t        viewport;
 	int32_t       width;
 	int32_t       height;
 	render_layer_ layer_filter;
@@ -149,8 +135,6 @@ bool                    render_use_capture_filter = false;
 tex_t                   render_global_textures[16] = {};
 
 array_t<render_screenshot_t>            render_screenshot_list = {};
-array_t<render_screenshot_capture_t>    render_screenshot_capture_list = {};
-array_t<render_screenshot_viewpoint_t>  render_screenshot_viewpoint_list = {};
 array_t<render_viewpoint_t>             render_viewpoint_list  = {};
 
 const int32_t           render_skytex_register = 11;
@@ -173,10 +157,7 @@ skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_s
 
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
-void          render_draw_screenshot  (int w, int h, const matrix* view, const matrix* projection, render_clear_ render_clear, render_layer_ render_layer, void* out_data);
 void          render_check_screenshots();
-void          render_check_capture_screenshots();
-void          render_check_viewpoint_screenshots();
 void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
@@ -648,59 +629,9 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 	render_check_viewpoints();
 	render_draw_queue(views, projections, render_filter, count);
 	render_check_screenshots();
-	render_check_capture_screenshots();
-	render_check_viewpoint_screenshots();
 }
 
 ///////////////////////////////////////////
-
-void render_draw_screenshot(int w, int h, const matrix* view, const matrix* projection, render_clear_ render_clear, render_layer_ render_layer, void* out_data) {
-	tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
-	tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-	tex_t render_depth_buffer = tex_add_zbuffer(render_capture_surface);
-    
-	// Setup to render the screenshot
-	skg_tex_target_bind(&render_capture_surface->tex);
-
-	int32_t viewport[4] = { 0,0,w,h };
-	skg_viewport(viewport);
-
-	// Clear the viewport
-	if (render_clear != render_clear_none) {
-		float color[4] = {
-			render_clear_col.r / 255.f,
-			render_clear_col.g / 255.f,
-			render_clear_col.b / 255.f,
-			render_clear_col.a / 255.f };
-		skg_target_clear(
-			(render_clear & render_clear_depth),
-			(render_clear & render_clear_color) ? &color[0] : (float*)nullptr);
-	}
-
-	// Render!
-	render_draw_queue(view, projection, render_layer, 1);
-	skg_tex_target_bind(nullptr);
-
-	tex_t resolve_tex = tex_create(tex_type_image_nomips);
-	tex_set_colors(resolve_tex, w, h, nullptr);
-	skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
-	tex_get_data(resolve_tex, out_data, sizeof(color32) * w * h);
-#if defined(SKG_OPENGL)
-	int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
-	void* tmp = sk_malloc(line_size);
-	for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
-		void* top_line = ((uint8_t*)out_data) + line_size * y;
-		void* bot_line = ((uint8_t*)out_data) + line_size * ((resolve_tex->tex.height - 1) - y);
-		memcpy(tmp, top_line, line_size);
-		memcpy(top_line, bot_line, line_size);
-		memcpy(bot_line, tmp, line_size);
-	}
-	sk_free(tmp);
-#endif
-	tex_release(render_depth_buffer);
-	tex_release(render_capture_surface);
-	tex_release(resolve_tex);
-}
 
 void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
@@ -710,82 +641,73 @@ void render_check_screenshots() {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
 
-		matrix view = matrix_trs(
-			render_screenshot_list[i].from,
-			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
-		matrix_inverse(view, view);
-
-		matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w/h, render_clip_planes.x, render_clip_planes.y);
-
 		// Create the screenshot surface
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
 
-		// Render the screenshot to a capture surface and retrieve its color data
-		render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
+		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
+		tex_t render_depth_buffer = tex_add_zbuffer(render_capture_surface);
 
-		// And save the screenshot to file
-		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
+		// Setup to render the screenshot
+		skg_tex_target_bind(&render_capture_surface->tex);
+
+		// Set up the viewport if we've got one!
+		if (render_screenshot_list[i].viewport.w != 0) {
+			int32_t viewport[4] =
+			{
+				(int32_t)(render_screenshot_list[i].viewport.x),
+				(int32_t)(render_screenshot_list[i].viewport.y),
+				(int32_t)(render_screenshot_list[i].viewport.w),
+				(int32_t)(render_screenshot_list[i].viewport.h)
+			};
+			skg_viewport(viewport);
+		} else {
+			int32_t viewport[4] = { 0,0,w,h };
+			skg_viewport(viewport);
+		}
+
+		// Clear the viewport
+		if (render_screenshot_list[i].clear != render_clear_none) {
+			float color[4] = {
+				render_clear_col.r / 255.f,
+				render_clear_col.g / 255.f,
+				render_clear_col.b / 255.f,
+				render_clear_col.a / 255.f };
+			skg_target_clear(
+				(render_screenshot_list[i].clear & render_clear_depth),
+				(render_screenshot_list[i].clear & render_clear_color) ? &color[0] : (float*)nullptr);
+		}
+
+		// Render!
+		render_draw_queue(&render_screenshot_list[i].camera, &render_screenshot_list[i].projection, render_screenshot_list[i].layer_filter, 1);
+		skg_tex_target_bind(nullptr);
+
+		tex_t resolve_tex = tex_create(tex_type_image_nomips);
+		tex_set_colors(resolve_tex, w, h, nullptr);
+		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
+		tex_get_data(resolve_tex, buffer, sizeof(color32) * w * h);
+#if defined(SKG_OPENGL)
+		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
+		void* tmp = sk_malloc(line_size);
+		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
+			void* top_line = ((uint8_t*)buffer) + line_size * y;
+			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
+			memcpy(tmp, top_line, line_size);
+			memcpy(top_line, bot_line, line_size);
+			memcpy(bot_line, tmp, line_size);
+		}
+		sk_free(tmp);
+#endif
+		tex_release(render_depth_buffer);
+		tex_release(render_capture_surface);
+		tex_release(resolve_tex);
+
+		// Notify that the color data is ready!
+		render_screenshot_list[i].render_on_screenshot_callback(buffer, w, h, render_screenshot_list[i].context);
 		sk_free(buffer);
-		sk_free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
-	skg_tex_target_bind(old_target);
-}
-
-void render_check_capture_screenshots() {
-	if (render_screenshot_capture_list.count == 0) return;
-
-	skg_tex_t* old_target = skg_tex_target_get();
-	for (int32_t i = 0; i < render_screenshot_capture_list.count; i++) {
-		int32_t  w = render_screenshot_capture_list[i].width;
-		int32_t  h = render_screenshot_capture_list[i].height;
-
-		matrix view = matrix_trs(
-			render_screenshot_capture_list[i].from,
-			quat_lookat(render_screenshot_capture_list[i].from, render_screenshot_capture_list[i].at));
-		matrix_inverse(view, view);
-
-		matrix proj = matrix_perspective(render_screenshot_capture_list[i].fov_degrees, (float)w / h, render_clip_planes.x, render_clip_planes.y);
-
-		// Create the screenshot surface
-		size_t   size = sizeof(color32) * w * h;
-		uint8_t* buffer = (uint8_t*)sk_malloc(size);
-
-		// Render the screenshot to a capture surface and retrieve its color data
-		render_draw_screenshot(w, h, &view, &proj, render_clear_all, render_primary_filter, buffer);
-
-		// Notify the managed code that the color data is ready!
-		render_screenshot_capture_list[i].render_on_screenshot_callback(buffer, size);
-		sk_free(buffer);
-	}
-	render_screenshot_capture_list.clear();
-	skg_tex_target_bind(old_target);
-}
-
-void render_check_viewpoint_screenshots() {
-	if (render_screenshot_viewpoint_list.count == 0) return;
-
-	skg_tex_t* old_target = skg_tex_target_get();
-	for (int32_t i = 0; i < render_screenshot_viewpoint_list.count; i++) {
-		int32_t  w = render_screenshot_viewpoint_list[i].width;
-		int32_t  h = render_screenshot_viewpoint_list[i].height;
-
-		const matrix* view = &render_screenshot_viewpoint_list[i].camera;
-		const matrix* proj = &render_screenshot_viewpoint_list[i].projection;
-
-		// Create the screenshot surface
-		size_t   size = sizeof(color32) * w * h;
-		uint8_t* buffer = (uint8_t*)sk_malloc(size);
-
-		// Render the screenshot to a capture surface and retrieve its color data
-		render_draw_screenshot(w, h, view, proj, render_screenshot_viewpoint_list[i].clear, render_screenshot_viewpoint_list[i].layer_filter, buffer);
-
-		// Notify the managed code that the color data is ready!
-		render_screenshot_viewpoint_list[i].render_on_screenshot_callback(buffer, size);
-		sk_free(buffer);
-	}
-	render_screenshot_viewpoint_list.clear();
 	skg_tex_target_bind(old_target);
 }
 
@@ -970,19 +892,34 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
+void render_save_to_file(color32* color_buffer, int width, int height, void* context) {
+	stbi_write_jpg((char*)context, width, height, 4, color_buffer, 90);
+	sk_free(context);
+}
+
 void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
 	char *file_copy = string_copy(file);
-	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
+	matrix view = matrix_trs(
+		from_viewpt,
+		quat_lookat(from_viewpt, at));
+	matrix_inverse(view, view);
+	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
+	render_screenshot_list.add( render_screenshot_t{ render_save_to_file, file_copy, view, proj, rect_t(), width, height, render_layer_all, render_clear_all });
 }
 
-void render_screenshot_capture(void (*render_on_screenshot_callback)(uint8_t* out_arr_data, int32_t data_length), vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
-	render_screenshot_capture_list.add(render_screenshot_capture_t{ render_on_screenshot_callback, from_viewpt, at, width, height, fov_degrees });
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+	matrix view = matrix_trs(
+		from_viewpt,
+		quat_lookat(from_viewpt, at));
+	matrix_inverse(view, view);
+	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t(), width, height, render_layer_all, render_clear_all });
 }
 
-void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(uint8_t* out_arr_data, int32_t data_length), const matrix& camera, const matrix& projection, int width, int height, render_layer_ layer_filter, render_clear_ clear) {
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), const matrix& camera, const matrix& projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_screenshot_viewpoint_list.add(render_screenshot_viewpoint_t{ render_on_screenshot_callback, inv_cam, projection, width, height, layer_filter, clear });
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear });
 }
 
 ///////////////////////////////////////////

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -10,6 +9,14 @@ namespace StereoKit
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
 	public static class Renderer
 	{
+		/// <summary>A thread-safe concurrent queue is used so that you can
+		/// enqueue multiple screenshots while they are being invoked and
+		/// removed from the render thread. To prevent the garbage collector
+		/// from finalizing the user-defined delegate, its reference is upheld
+		/// until the render thread finishes grabbing the scene's color data.
+		/// </summary>
+		private static ConcurrentQueue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
 		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
@@ -286,14 +293,6 @@ namespace StereoKit
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
 
-		/// <summary>A thread-safe concurrent queue is used so that you can
-		/// enqueue multiple screenshots while they are being invoked and
-		/// removed from the render thread. To prevent the garbage collector
-		/// from finalizing the user-defined delegate, its reference is upheld
-		/// until the render thread finishes grabbing the scene's color data.
-		/// </summary>
-		private static readonly ConcurrentQueue<RenderOnScreenshotCallback> _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
-
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
 		/// resolution the same size as the screen's surface. This overload
@@ -302,7 +301,8 @@ namespace StereoKit
 		/// inside this delegate, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
 		/// <param name="onGetColors">Outputs a reference to the color data
-		/// of the current scene from a requested viewpoint.</param>
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
 		/// <param name="width">Size of the screenshot horizontally, in pixels.
@@ -311,14 +311,13 @@ namespace StereoKit
 		/// </param>
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
-		public static void Screenshot(Action<byte[]> onGetColors, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+		public static void Screenshot(ScreenshotCallback onGetColors, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
 		{
-			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
-				byte[] data = new byte[length];
-				Marshal.Copy(ptr, data, 0, length);
-				onGetColors.Invoke(data);
-				_renderCaptureCallbacks.TryDequeue(out _);
+				if (_renderCaptureCallbacks.TryDequeue(out _))
+				    onGetColors.Invoke(dataPtr, w, h);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
 			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
@@ -332,7 +331,8 @@ namespace StereoKit
 		/// inside this delegate, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
 		/// <param name="onGetColors">Outputs a reference to the color data
-		/// of the current scene from a requested viewpoint.</param>
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
 		/// <param name="camera">A TRS matrix representing the location and
 		/// orientation of the camera. This matrix gets inverted later on, so
 		/// no need to do it yourself.</param>
@@ -348,17 +348,16 @@ namespace StereoKit
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
-		public static void Screenshot(Action<byte[]> onGetColors, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All)
+		public static void Screenshot(ScreenshotCallback onGetColors, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
 		{
-			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr ptr, int length) =>
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new ConcurrentQueue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
 			{
-				byte[] data = new byte[length];
-				Marshal.Copy(ptr, data, 0, length);
-				onGetColors.Invoke(data);
-				_renderCaptureCallbacks.TryDequeue(out _);
+				if (_renderCaptureCallbacks.TryDequeue(out _))
+				    onGetColors.Invoke(dataPtr, w, h);
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);
 		}
 
 		/// <summary>This renders the current scene to the indicated 
