@@ -157,6 +157,7 @@ skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_s
 
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 void          render_check_screenshots();
 void          render_check_viewpoints ();
 
