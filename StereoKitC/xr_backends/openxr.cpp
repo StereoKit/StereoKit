@@ -760,6 +760,8 @@ void openxr_cleanup() {
 	}
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
 	anchors_shutdown();
 
@@ -780,6 +782,8 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
+
+	anchors_step();
 }
 
 ///////////////////////////////////////////

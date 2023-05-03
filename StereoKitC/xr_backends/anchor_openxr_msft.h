@@ -13,6 +13,7 @@ namespace sk {
 
 bool32_t anchor_oxr_msft_init        ();
 void     anchor_oxr_msft_shutdown    ();
+void     anchor_oxr_msft_step        ();
 anchor_t anchor_oxr_msft_create      (pose_t pose, const char* name_utf8);
 void     anchor_oxr_msft_destroy     (anchor_t anchor);
 void     anchor_oxr_msft_clear_stored();

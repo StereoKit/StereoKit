@@ -127,6 +127,8 @@ void simulator_step_begin() {
 	pointer_head->tracked = button_state_active;
 	pointer_head->ray.pos = input_eyes_pose_world.position;
 	pointer_head->ray.dir = input_eyes_pose_world.orientation * vec3_forward;
+
+	anchors_step();
 }
 
 ///////////////////////////////////////////

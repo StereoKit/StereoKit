@@ -24,6 +24,60 @@ bool32_t                   anch_initialized  = false;
 
 ///////////////////////////////////////////
 
+void anchors_init(anchor_system_ system) {
+	if (anch_initialized) {
+		log_err("Anchor system already initialized!");
+		return;
+	}
+
+	bool32_t result = false;
+	switch (system) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
+#endif
+	case anchor_system_stage:       result = anchor_stage_init(); break;
+	default: break;
+	}
+
+	if (!result) system = anchor_system_none;
+	anch_sys         = system;
+	anch_initialized = true;
+}
+
+///////////////////////////////////////////
+
+void anchors_shutdown() {
+	if (!anch_initialized) return;
+
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: anchor_oxr_msft_shutdown(); break;
+#endif
+	case anchor_system_stage:       anchor_stage_shutdown(); break;
+	default: break;
+	}
+
+	anch_listeners.free();
+	anch_list     .free();
+	anch_changed  .free();
+
+	anch_initialized = false;
+}
+
+///////////////////////////////////////////
+
+void anchors_step() {
+	switch (anch_sys) {
+#if defined(SK_XR_OPENXR)
+	case anchor_system_openxr_msft: anchor_oxr_msft_step(); break;
+#endif
+	case anchor_system_stage:       break;
+	default: break;
+	}
+}
+
+///////////////////////////////////////////
+
 char to_hex(uint32_t val, uint32_t nibble) {
 	uint32_t byte = (val >> (nibble * 4)) & 0xF;
 	return byte < 10
@@ -180,7 +234,7 @@ const char *anchor_get_name(const anchor_t anchor) {
 
 ///////////////////////////////////////////
 
-button_state_ anchor_get_tracked(const anchor_t anchor) {
+inp_state_ anchor_get_tracked(const anchor_t anchor) {
 	return anchor->tracked;
 }
 
@@ -214,12 +268,6 @@ void anchors_clear_stored() {
 	case anchor_system_stage:       anchor_stage_clear_stored(); break;
 	default: break;
 	}
-}
-
-///////////////////////////////////////////
-
-anchor_system_ anchors_get_system() {
-	return anch_sys;
 }
 
 ///////////////////////////////////////////
@@ -260,48 +308,6 @@ void anchors_unsubscribe(void (*on_anchor_discovered)(void* context, anchor_t an
 			return;
 		}
 	}
-}
-
-///////////////////////////////////////////
-
-void anchors_init(anchor_system_ system) {
-	if (anch_initialized) {
-		log_err("Anchor system already initialized!");
-		return;
-	}
-
-	bool32_t result = false;
-	switch (system) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
-#endif
-	case anchor_system_stage:       result = anchor_stage_init(); break;
-	default: break;
-	}
-
-	if (!result) system = anchor_system_none;
-	anch_sys         = system;
-	anch_initialized = true;
-}
-
-///////////////////////////////////////////
-
-void anchors_shutdown() {
-	if (!anch_initialized) return;
-
-	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: anchor_oxr_msft_shutdown(); break;
-#endif
-	case anchor_system_stage:       anchor_stage_shutdown(); break;
-	default: break;
-	}
-
-	anch_listeners.free();
-	anch_list     .free();
-	anch_changed  .free();
-
-	anch_initialized = false;
 }
 
 }

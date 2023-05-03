@@ -370,6 +370,23 @@ typedef enum memory_ {
 	memory_copy,
 } memory_;
 
+/*A bit-flag for the current state of an input.*/
+typedef enum inp_state_ {
+	/*Is the input currently inactive?*/
+	inp_state_inactive      = -(1 << 0),
+	/*Has the input just become inactive? Only true for a single frame.*/
+	inp_state_just_inactive = -(1 << 1) | inp_state_inactive,
+	/*Is the input currently active?*/
+	inp_state_active        =   1 << 2,
+	/*Has the input just become active? Only true for a single frame.*/
+	inp_state_just_active   =   1 << 3  | inp_state_active,
+	/*Has the input just changed state this frame?*/
+	inp_state_changed       = inp_state_just_inactive | inp_state_just_active,
+	/*Matches with all states!*/
+	inp_state_any           = 0x7FFFFFFF,
+} inp_state_;
+SK_MakeFlag(inp_state_);
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -1711,6 +1728,7 @@ typedef enum handed_ {
 	handed_max                 = 2,
 } handed_;
 
+// TODO: Remove this in v0.4 in favor of inp_state_
 /*A bit-flag for the current state of a button input.*/
 typedef enum button_state_ {
 	/*Is the button currently up, unpressed?*/
@@ -2047,12 +2065,6 @@ typedef enum anchor_props_ {
 } anchor_properties_;
 SK_MakeFlag(anchor_props_);
 
-typedef enum anchor_system_ {
-	anchor_system_none,
-	anchor_system_stage,
-	anchor_system_openxr_msft,
-} anchor_system_;
-
 SK_API anchor_t       anchor_find           (const char* asset_id);
 SK_API void           anchor_set_id         (anchor_t anchor, const char* asset_id);
 SK_API const char*    anchor_get_id         (const anchor_t anchor);
@@ -2064,13 +2076,12 @@ SK_API bool32_t       anchor_get_persistent (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose       (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed    (const anchor_t anchor);
 SK_API const char*    anchor_get_name       (const anchor_t anchor);
-SK_API button_state_  anchor_get_tracked    (const anchor_t anchor);
+SK_API inp_state_     anchor_get_tracked    (const anchor_t anchor);
 
 SK_API void           anchors_subscribe     (void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context, bool32_t only_new);
 SK_API void           anchors_unsubscribe   (void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context);
 SK_API void           anchors_clear_stored  ();
-SK_API anchor_system_ anchors_get_system    ();
-SK_API anchor_props_  anchors_get_properties(const anchor_t anchor);
+SK_API anchor_props_  anchors_get_properties();
 
 ///////////////////////////////////////////
 
@@ -2109,6 +2120,7 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        ();
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      ();
+SK_API inp_state_     world_get_tracked               ();
 SK_API origin_mode_   world_get_origin_mode           ();
 SK_API pose_t         world_get_origin_offset         ();
 SK_API void           world_set_origin_offset         (pose_t offset);

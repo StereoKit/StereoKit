@@ -13,10 +13,16 @@ struct _anchor_t {
 	pose_t         pose;
 	bool32_t       changed;
 	bool32_t       persisted;
-	button_state_  tracked;
+	inp_state_     tracked;
 	char*          name;
 	void*          data;
 };
+
+typedef enum anchor_system_ {
+	anchor_system_none,
+	anchor_system_stage,
+	anchor_system_openxr_msft,
+} anchor_system_;
 
 void           anchor_destroy         (anchor_t anchor);
 void           anchor_update_manual   (anchor_t anchor, pose_t pose);
@@ -26,5 +32,6 @@ void           anchor_mark_dirty      (anchor_t anchor);
 void           anchor_clear_all_dirty ();
 void           anchors_init           (anchor_system_ system);
 void           anchors_shutdown       ();
+void           anchors_step           ();
 
 }

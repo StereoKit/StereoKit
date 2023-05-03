@@ -30,4 +30,13 @@ inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 	return result;
 }
 
+inline inp_state_ input_make_state(bool32_t was, bool32_t is) {
+	inp_state_ result = is ? inp_state_active : inp_state_inactive;
+	if (was && !is)
+		result |= inp_state_just_inactive;
+	if (is && !was)
+		result |= inp_state_just_active;
+	return result;
+}
+
 } // namespace sk

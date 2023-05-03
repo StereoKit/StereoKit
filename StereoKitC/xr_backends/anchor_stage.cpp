@@ -58,6 +58,7 @@ bool32_t anchor_stage_init() {
 			// Create a StereoKit anchor
 			anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
 			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
+			anchor->tracked = inp_state_active;
 			anchor_stage_persist(anchor, true);
 			anchor_notify_discovery(anchor);
 
@@ -120,6 +121,7 @@ anchor_t anchor_stage_create(pose_t pose, const char* name_utf8) {
 	anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
 	anchor_data->relative_pose = pose;
 	anchor_t result = anchor_create_manual(anchor_stage_sys.id, pose, name_utf8, (void*)anchor_data);
+	result->tracked = inp_state_active;
 	anchor_notify_discovery(result);
 	return result;
 }
