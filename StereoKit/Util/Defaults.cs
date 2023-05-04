@@ -71,10 +71,12 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```
+		/// border_affect_radius - meters
+		/// ```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
 		/// <summary>The material used by the UI for Quadrant Sized UI
@@ -180,10 +182,13 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```</summary>
+		/// border_affect_radius - meters
+		/// ```
+		/// </summary>
 		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a

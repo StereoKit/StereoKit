@@ -465,6 +465,19 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void RenderOnScreenshotCallback(IntPtr data, int width, int height, IntPtr context);
+
+	/// <summary>A callback for receiving the color data of a screenshot, instead
+	/// of saving it directly to a file.</summary>
+	/// <param name="data">The pointer to the color data. A fare warning that the
+	/// memory *will* be freed once this callback completes, so if you need to
+	/// reference this data elsewhere, be sure to store a copy of it!</param>
+	/// <param name="width">The width of the image.</param>
+	/// <param name="height">The height of the image.</param>
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	public delegate void ScreenshotCallback(IntPtr data, int width, int height);
+
 	/// <summary>A callback that generates a sound wave at a particular point
 	/// in time.</summary>
 	/// <param name="time">The time along the wavelength.</param>

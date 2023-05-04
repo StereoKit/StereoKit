@@ -26,7 +26,7 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 
-		<SKOpenXRLoader>Oculus</SKOpenXRLoader>
+		<SKOpenXRLoader>Standard</SKOpenXRLoader>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
