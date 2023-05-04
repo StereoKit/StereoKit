@@ -195,8 +195,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data_mip        (IntPtr texture, IntPtr out_data, UIntPtr out_data_size, int mip_level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_color           (Color color, int width, int height, TexType type, TexFormat format);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_particle        (int width, int height, float roundness, IntPtr gradient);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_particle        (int width, int height, float roundness, IntPtr gradient);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, out SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap_sh      (in SphericalHarmonics lighting, int resolution, float light_spot_size_pct, float light_spot_intensity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat  tex_get_format      (IntPtr texture);
@@ -470,6 +470,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model_mat  (IntPtr model, IntPtr material_override, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_blit           (IntPtr to_rendertarget, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     (string file, Vec3 from_viewpt, Vec3 at, int width, int height, float fov_degrees);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Vec3 from_viewpt, Vec3 at, int width, int height, float fov_degrees);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, in Matrix camera, in Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 
