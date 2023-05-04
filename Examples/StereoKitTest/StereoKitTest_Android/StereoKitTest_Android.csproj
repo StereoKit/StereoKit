@@ -26,7 +26,7 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidClientHandler</AndroidHttpClientHandlerType>
-    <SKOpenXRLoader>Oculus</SKOpenXRLoader>
+    <SKOpenXRLoader>Standard</SKOpenXRLoader>
     <SKAssetFolder>..\..\Assets</SKAssetFolder>
     <SKAssetDestination>Assets</SKAssetDestination>
     <SKShowDebugVars>true</SKShowDebugVars>
