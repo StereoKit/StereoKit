@@ -19,7 +19,7 @@ void on_anchor_found(void* context, anchor_t anchor) {
 ///////////////////////////////////////////
 
 void demo_anchors_init() {
-	anchors_subscribe(on_anchor_found, nullptr, false);
+	anchor_subscribe(on_anchor_found, nullptr, false);
 }
 
 ///////////////////////////////////////////
@@ -27,11 +27,13 @@ void demo_anchors_init() {
 void demo_anchors_update() {
 	// Show settings window
 	static pose_t   window_pose     = pose_t{ {0.4f,0.0,-0.4f}, quat_lookat({}, {-1,0,1}) };
-	static bool32_t persist_anchors = true;
+	static bool32_t persist_anchors = anchor_get_capabilities() & anchor_caps_storable != 0;
 	ui_window_begin("Anchor Options", window_pose);
+	ui_push_enabled(anchor_get_capabilities() & anchor_caps_storable != 0);
 	ui_toggle("Persist New Anchors", persist_anchors);
+	ui_pop_enabled();
 	if (ui_button("Clear Stored Anchors")) {
-		anchors_clear_stored();
+		anchor_clear_stored();
 		for (size_t i = 0; i < anchors.size(); i++) {
 			anchor_release(anchors[i]);
 		}
@@ -55,7 +57,7 @@ void demo_anchors_update() {
 			pose.position = input_hand(handed_left)->pinch_pt;
 		pose.orientation = quat_lookat(pose.position, input_head()->position);
 
-		anchor_t anch = anchor_create(pose, nullptr, anchor_props_storable);
+		anchor_t anch = anchor_create(nullptr, pose);
 		if (anch && persist_anchors)
 			anchor_set_persistent(anch, true);
 	}
@@ -64,7 +66,7 @@ void demo_anchors_update() {
 ///////////////////////////////////////////
 
 void demo_anchors_shutdown() {
-	anchors_unsubscribe(on_anchor_found, nullptr);
+	anchor_unsubscribe(on_anchor_found, nullptr);
 
 	for (size_t i = 0; i < anchors.size(); i++)
 		anchor_release(anchors[i]);

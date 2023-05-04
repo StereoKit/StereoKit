@@ -108,14 +108,21 @@ namespace StereoKit
 	/// origin mode isn't directly supported.</summary>
 	public enum OriginMode {
 		/// <summary>The origin will be at the location of the user's head when the
-		/// application starts, facing the same direction as the user.</summary>
+		/// application starts, facing the same direction as the user. This mode
+		/// is available on all runtimes, and will never fall back to another mode!
+		/// However, due to variances in underlying behavior, StereoKit may introduce
+		/// an origin offset to ensure consistent behavior.</summary>
 		Local,
 		/// <summary>The origin will be at the floor beneath where the user starts, facing the
-		/// direction of the user.</summary>
+		/// direction of the user. If this mode is not natively supported, StereoKit
+		/// will use the stage mode with an offset. If stage mode is unavailable, it
+		/// will fall back to local mode with a -1.5 Y axis offset.</summary>
 		Floor,
 		/// <summary>The origin will be at the center of a safe play area or stage that the
 		/// user or OS has defined, and will face one of the edges of the play
-		/// area.</summary>
+		/// area. If this mode is not natively supported, StereoKit will use the 
+		/// floor origin mode. If floor mode is unavailable, it will fall back to
+		/// local mode with a -1.5 Y axis offset.</summary>
 		Stage,
 	}
 
@@ -256,6 +263,23 @@ namespace StereoKit
 		/// <summary>This memory is now _yours_ and you must free it yourself! Memory has been
 		/// allocated, and the data has been copied over to it. Pricey! But safe.</summary>
 		Copy,
+	}
+
+	/// <summary>A bit-flag for the current state of an input.</summary>
+	[Flags]
+	public enum InpState {
+		/// <summary>Is the input currently inactive?</summary>
+		Inactive     = -(1 << 0),
+		/// <summary>Has the input just become inactive? Only true for a single frame.</summary>
+		JustInactive = -(1 << 1) | Inactive,
+		/// <summary>Is the input currently active?</summary>
+		Active       = 1 << 2,
+		/// <summary>Has the input just become active? Only true for a single frame.</summary>
+		JustActive   = 1 << 3 | Active,
+		/// <summary>Has the input just changed state this frame?</summary>
+		Changed      = JustInactive | JustActive,
+		/// <summary>Matches with all states!</summary>
+		Any          = 0x7FFFFFFF,
 	}
 
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
@@ -794,7 +818,8 @@ namespace StereoKit
 		Max          = 2,
 	}
 
-	/// <summary>A bit-flag for the current state of a button input.</summary>
+	/// <summary>TODO: Remove this in v0.4 in favor of inp_state_
+	/// A bit-flag for the current state of a button input.</summary>
 	[Flags]
 	public enum BtnState {
 		/// <summary>Is the button currently up, unpressed?</summary>
@@ -1044,6 +1069,13 @@ namespace StereoKit
 		MAX          = 0xFF,
 	}
 
+	/// <summary>////////////////////////////////////////</summary>
+	[Flags]
+	public enum AnchorCaps {
+		Storable     = 1 << 0,
+		Stability    = 1 << 1,
+	}
+
 	/// <summary>A settings flag that lets you describe the behavior of how
 	/// StereoKit will refresh data about the world mesh, if applicable. This
 	/// is used with `World.RefreshType`.</summary>
@@ -1146,6 +1178,8 @@ namespace StereoKit
 		Sound,
 		/// <summary>A Solid.</summary>
 		Solid,
+		/// <summary>An Anchor.</summary>
+		Anchor,
 	}
 
 }

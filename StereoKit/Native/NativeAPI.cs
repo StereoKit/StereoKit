@@ -574,6 +574,29 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_find         ([In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_set_id       (IntPtr anchor, [In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_id       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_addref       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_release      (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_create       ([In] byte[] unique_name_utf8, Pose pose);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_set_persistent(IntPtr anchor, [MarshalAs(UnmanagedType.Bool)] bool persistent);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_persistent(IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern Pose                anchor_get_pose     (IntPtr anchor);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_changed  (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_name     (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern InpState            anchor_get_tracked  (IntPtr anchor);
+
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_subscribe    ([MarshalAs(UnmanagedType.FunctionPtr)] OnAnchorDiscovered on_anchor_discovered, IntPtr context, int only_new);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_unsubscribe  ([MarshalAs(UnmanagedType.FunctionPtr)] OnAnchorDiscovered on_anchor_discovered, IntPtr context);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_clear_stored ();
+		[DllImport(dll, CallingConvention = call                 )] public static extern AnchorCaps          anchor_get_capabilities();
+
+		///////////////////////////////////////////
+
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_has_bounds                ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         world_get_bounds_size           ();

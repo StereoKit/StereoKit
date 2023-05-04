@@ -108,10 +108,10 @@ void anchor_oxr_msft_step() {
 
 ///////////////////////////////////////////
 
-anchor_props_ anchor_oxr_msft_properties() {
-	anchor_props_ result = {};
-	if (xr_ext_available.MSFT_spatial_anchor            ) result |= anchor_props_stability;
-	if (xr_ext_available.MSFT_spatial_anchor_persistence) result |= anchor_props_storable;
+anchor_caps_ anchor_oxr_msft_capabilities() {
+	anchor_caps_ result = {};
+	if (xr_ext_available.MSFT_spatial_anchor            ) result |= anchor_caps_stability;
+	if (xr_ext_available.MSFT_spatial_anchor_persistence) result |= anchor_caps_storable;
 	return result;
 }
 

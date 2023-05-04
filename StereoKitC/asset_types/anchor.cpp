@@ -87,9 +87,9 @@ char to_hex(uint32_t val, uint32_t nibble) {
 
 ///////////////////////////////////////////
 
-anchor_t anchor_create(pose_t pose, const char* name_utf8, anchor_props_ properties) {
+anchor_t anchor_create(const char* unique_name_utf8, pose_t pose) {
 	char gen_name[20];
-	if (name_utf8 == nullptr) {
+	if (unique_name_utf8 == nullptr) {
 		uint32_t a = rand_x();
 		uint32_t b = rand_x();
 		char name[20]{
@@ -100,14 +100,14 @@ anchor_t anchor_create(pose_t pose, const char* name_utf8, anchor_props_ propert
 		// Some juggling since C/C++ doesn't allow us to assign an array to an
 		// existing array.
 		strncpy(gen_name, name, sizeof(gen_name));
-		name_utf8 = gen_name;
+		unique_name_utf8 = gen_name;
 	}
 
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, name_utf8);
+	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, unique_name_utf8);
 #endif
-	case anchor_system_stage:       return anchor_stage_create   (pose, name_utf8);
+	case anchor_system_stage:       return anchor_stage_create   (pose, unique_name_utf8);
 	default: return nullptr;
 	}
 }
@@ -260,7 +260,7 @@ void anchor_clear_all_dirty() {
 
 ///////////////////////////////////////////
 
-void anchors_clear_stored() {
+void anchor_clear_stored() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_clear_stored(); break;
@@ -272,19 +272,19 @@ void anchors_clear_stored() {
 
 ///////////////////////////////////////////
 
-anchor_props_  anchors_get_properties() {
+anchor_caps_ anchor_get_capabilities() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_properties();
+	case anchor_system_openxr_msft: return anchor_oxr_msft_capabilities();
 #endif
-	case anchor_system_stage:       return anchor_props_storable;
-	default: return (anchor_props_)0;
+	case anchor_system_stage:       return anchor_caps_storable;
+	default: return (anchor_caps_)0;
 	}
 }
 
 ///////////////////////////////////////////
 
-void anchors_subscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context, bool32_t only_new) {
+void anchor_subscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context, bool32_t only_new) {
 	if (on_anchor_discovered == nullptr) {
 		log_err("anchors_subscribe received a null callback.");
 		return;
@@ -301,7 +301,7 @@ void anchors_subscribe(void (*on_anchor_discovered)(void* context, anchor_t anch
 
 ///////////////////////////////////////////
 
-void anchors_unsubscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context) {
+void anchor_unsubscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context) {
 	for (int32_t i = 0; i < anch_listeners.count; i++) {
 		if (anch_listeners[i].on_anchor_discovered == on_anchor_discovered && anch_listeners[i].context == context) {
 			anch_listeners.remove(i);
