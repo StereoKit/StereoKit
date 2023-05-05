@@ -783,12 +783,14 @@ void openxr_step_begin() {
 	if (xr_running)
 		openxr_poll_actions();
 
-	anchors_step();
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	anchors_step_end();
+
 	if (xr_running)
 		openxr_render_frame();
 

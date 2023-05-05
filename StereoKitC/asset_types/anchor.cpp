@@ -9,18 +9,12 @@
 
 namespace sk {
 
-typedef struct anchor_listener_t {
-	void (*on_anchor_discovered)(void* context, anchor_t anchor);
-	void* context;
-} anchor_listener_t;
-
 ///////////////////////////////////////////
 
-array_t<anchor_listener_t> anch_listeners    = {};
-array_t<anchor_t>          anch_list         = {};
-array_t<anchor_t>          anch_changed      = {};
-anchor_system_             anch_sys          = anchor_system_none;
-bool32_t                   anch_initialized  = false;
+array_t<anchor_t> anch_list         = {};
+array_t<anchor_t> anch_changed      = {};
+anchor_system_    anch_sys          = anchor_system_none;
+bool32_t          anch_initialized  = false;
 
 ///////////////////////////////////////////
 
@@ -49,6 +43,11 @@ void anchors_init(anchor_system_ system) {
 void anchors_shutdown() {
 	if (!anch_initialized) return;
 
+	for (int32_t i = 0; i < anch_list.count;    i++) anchor_release(anch_list[i]);
+	for (int32_t i = 0; i < anch_changed.count; i++) anchor_release(anch_changed[i]);
+	anch_list   .free();
+	anch_changed.free();
+
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_shutdown(); break;
@@ -57,16 +56,12 @@ void anchors_shutdown() {
 	default: break;
 	}
 
-	anch_listeners.free();
-	anch_list     .free();
-	anch_changed  .free();
-
 	anch_initialized = false;
 }
 
 ///////////////////////////////////////////
 
-void anchors_step() {
+void anchors_step_begin() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_step(); break;
@@ -74,6 +69,16 @@ void anchors_step() {
 	case anchor_system_stage:       break;
 	default: break;
 	}
+}
+
+///////////////////////////////////////////
+
+void anchors_step_end() {
+	for (int32_t i = 0; i < anch_changed.count; i++) {
+		//anch_changed[i]->changed = false;
+		anchor_release(anch_changed[i]);
+	}
+	anch_changed.clear();
 }
 
 ///////////////////////////////////////////
@@ -129,14 +134,6 @@ anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, const char 
 
 ///////////////////////////////////////////
 
-void anchor_notify_discovery(anchor_t anchor) {
-	for (int32_t i = 0; i < anch_listeners.count; i++) {
-		anch_listeners[i].on_anchor_discovered(anch_listeners[i].context, anchor);
-	}
-}
-
-///////////////////////////////////////////
-
 void anchor_destroy(anchor_t anchor) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
@@ -145,6 +142,12 @@ void anchor_destroy(anchor_t anchor) {
 	//case anchor_system_stage:       anchor_stage_destroy   (anchor); break;
 	default: break;
 	}
+
+	int32_t idx = anch_list.index_of(anchor);
+	anch_list.remove(idx);
+	idx = anch_changed.index_of(anchor);
+	if (idx >= 0)
+		anch_changed.remove(idx);
 
 	sk_free(anchor->name);
 	*anchor = {};
@@ -198,7 +201,7 @@ void anchor_update_manual(anchor_t anchor, pose_t pose) {
 
 ///////////////////////////////////////////
 
-bool32_t anchor_set_persistent(anchor_t anchor, bool32_t persistent) {
+bool32_t anchor_try_set_persistent(anchor_t anchor, bool32_t persistent) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: return anchor_oxr_msft_persist(anchor, persistent);
@@ -250,16 +253,6 @@ void anchor_mark_dirty(anchor_t anchor) {
 
 ///////////////////////////////////////////
 
-void anchor_clear_all_dirty() {
-	for (int32_t i = 0; i < anch_changed.count; i++) {
-		anch_changed[i]->changed = false;
-		anchor_release(anch_changed[i]);
-	}
-	anch_changed.clear();
-}
-
-///////////////////////////////////////////
-
 void anchor_clear_stored() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
@@ -284,30 +277,34 @@ anchor_caps_ anchor_get_capabilities() {
 
 ///////////////////////////////////////////
 
-void anchor_subscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context, bool32_t only_new) {
-	if (on_anchor_discovered == nullptr) {
-		log_err("anchors_subscribe received a null callback.");
-		return;
-	}
-
-	anch_listeners.add({ on_anchor_discovered, context });
-
-	if (only_new == (bool32_t)true) return;
-
-	for (int32_t i = 0; i < anch_list.count; i++) {
-		on_anchor_discovered(context, anch_list[i]);
-	}
+int32_t anchor_get_count() {
+	return anch_list.count;
 }
 
 ///////////////////////////////////////////
 
-void anchor_unsubscribe(void (*on_anchor_discovered)(void* context, anchor_t anchor), void* context) {
-	for (int32_t i = 0; i < anch_listeners.count; i++) {
-		if (anch_listeners[i].on_anchor_discovered == on_anchor_discovered && anch_listeners[i].context == context) {
-			anch_listeners.remove(i);
-			return;
-		}
-	}
+anchor_t anchor_get_index(int32_t index) {
+	if (index < 0 || index >= anch_list.count)
+		return nullptr;
+
+	anchor_addref(anch_list[index]);
+	return anch_list[index];
+}
+
+///////////////////////////////////////////
+
+int32_t anchor_get_new_count() {
+	return anch_changed.count;
+}
+
+///////////////////////////////////////////
+
+anchor_t anchor_get_new_index(int32_t index) {
+	if (index < 0 || index >= anch_changed.count)
+		return nullptr;
+
+	anchor_addref(anch_changed[index]);
+	return anch_changed[index];
 }
 
 }
