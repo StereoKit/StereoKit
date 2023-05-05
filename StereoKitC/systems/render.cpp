@@ -88,6 +88,7 @@ struct render_screenshot_t {
 	int32_t		height;
 	render_layer_	layer_filter;
 	render_clear_	clear;
+	tex_format_	tex_format;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -648,7 +649,7 @@ void render_check_screenshots() {
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
 
-		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, render_screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
 		tex_release(tex_add_zbuffer(render_capture_surface));
 
@@ -686,7 +687,7 @@ void render_check_screenshots() {
 		render_draw_queue(&render_screenshot_list[i].camera, &render_screenshot_list[i].projection, render_screenshot_list[i].layer_filter, 1);
 		skg_tex_target_bind(nullptr);
 
-		tex_t resolve_tex = tex_create(tex_type_image_nomips);
+		tex_t resolve_tex = tex_create(tex_type_image_nomips, render_screenshot_list[i].tex_format);
 		tex_set_colors(resolve_tex, w, h, nullptr);
 		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
 		tex_get_data(resolve_tex, buffer, size);
@@ -906,22 +907,22 @@ void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, i
 		quat_lookat(from_viewpt, at));
 	matrix_inverse(view, view);
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
-	render_screenshot_list.add(render_screenshot_t{ render_save_to_file, file_copy, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all });
+	render_screenshot_list.add(render_screenshot_t{ render_save_to_file, file_copy, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format_rgba32 });
 }
 
-void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees, tex_format_ tex_format) {
 	matrix view = matrix_trs(
 		from_viewpt,
 		quat_lookat(from_viewpt, at));
 	matrix_inverse(view, view);
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
-	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all });
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
 }
 
-void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), const matrix& camera, const matrix& projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), const matrix& camera, const matrix& projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format) {
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear });
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
 }
 
 ///////////////////////////////////////////
