@@ -133,7 +133,7 @@ namespace StereoKit
 		/// <param name="atlasId">The name of which atlas the sprite should
 		/// belong to, this is only relevant if the SpriteType is Atlased.
 		/// </param>
-		/// <param name="material">By default, sprite's create a copy
+		/// <param name="material">By default, sprites create a copy
 		/// of a clipped unlit shader with transparency and a few other
 		/// settings! Pass in your own material to override the default
 		/// behavior.</param>
@@ -157,7 +157,7 @@ namespace StereoKit
 		/// <param name="atlasId">The name of which atlas the sprite should 
 		/// belong to, this is only relevant if the SpriteType is Atlased.
 		/// </param>
-		/// <param name="material">By default, sprite's create a copy
+		/// <param name="material">By default, sprites create a copy
 		/// of a clipped unlit shader with transparency and a few other
 		/// settings! Pass in your own material to override the default
 		/// behavior.</param>
