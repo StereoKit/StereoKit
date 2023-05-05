@@ -35,7 +35,7 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.sprite_get_id(_inst));
 			set => NativeAPI.sprite_set_id(_inst, value);
 		}
-		
+
 		/// <summary>The aspect ratio of the sprite! This is width/height. 
 		/// You may also be interested in the NormalizedDimensions property, 
 		/// which are normalized to the 0-1 range.</summary>
@@ -46,7 +46,7 @@ namespace StereoKit
 		public int   Height => NativeAPI.sprite_get_height(_inst);
 		/// <summary>Width and height of the sprite, normalized so the
 		/// maximum value is 1.</summary>
-		public Vec2 NormalizedDimensions 
+		public Vec2 NormalizedDimensions
 			=> NativeAPI.sprite_get_dimensions_normalized(_inst);
 
 		internal Sprite(IntPtr inst)
@@ -69,7 +69,7 @@ namespace StereoKit
 		/// <param name="color">Per-instance color data for this render item.
 		/// </param>
 		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
-		public void Draw(in Matrix transform, Color32 color) 
+		public void Draw(in Matrix transform, Color32 color)
 			=> NativeAPI.sprite_draw(_inst, transform, color);
 
 		/// <summary>Draw the sprite on a quad with the provided transform!
@@ -133,11 +133,15 @@ namespace StereoKit
 		/// <param name="atlasId">The name of which atlas the sprite should
 		/// belong to, this is only relevant if the SpriteType is Atlased.
 		/// </param>
+		/// <param name="material">By default, sprite's create a copy
+		/// of a clipped unlit shader with transparency and a few other
+		/// settings! Pass in your own material to override the default
+		/// behavior.</param>
 		/// <returns>A Sprite asset, or null if the image failed to load!
 		/// </returns>
-		public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+		public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default", Material material = null)
 		{
-			IntPtr inst = NativeAPI.sprite_create_file(NativeHelper.ToUtf8(file), type, atlasId);
+			IntPtr inst = NativeAPI.sprite_create_file(NativeHelper.ToUtf8(file), type, atlasId, material._inst);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
 		}
 
@@ -153,11 +157,15 @@ namespace StereoKit
 		/// <param name="atlasId">The name of which atlas the sprite should 
 		/// belong to, this is only relevant if the SpriteType is Atlased.
 		/// </param>
+		/// <param name="material">By default, sprite's create a copy
+		/// of a clipped unlit shader with transparency and a few other
+		/// settings! Pass in your own material to override the default
+		/// behavior.</param>
 		/// <returns>A Sprite asset, or null if the image failed when adding
 		/// to the sprite system!</returns>
-		public static Sprite FromTex(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
+		public static Sprite FromTex(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default", Material material = null)
 		{
-			IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);
+			IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId, material._inst);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
 		}
 

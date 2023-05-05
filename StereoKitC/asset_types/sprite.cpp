@@ -69,7 +69,7 @@ material_t sprite_create_material(int index_id) {
 
 ///////////////////////////////////////////
 
-sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
+sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id, material_t material) {
 	if (type == sprite_type_atlased) {
 		log_diag("sprite_create: Atlased sprites not implemented yet! Switching to single.");
 		type = sprite_type_single;
@@ -105,7 +105,12 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	if (type == sprite_type_single) {
 		result->size         = 1;
 		result->buffer_index = -1;
-		result->material     = sprite_create_material(sprite_index);
+		if (material == nullptr) {
+			result->material = sprite_create_material(sprite_index);
+		} else {
+			material_addref(material);
+			result->material = material;
+		}
 		material_set_texture(result->material, "diffuse", image);
 	} else {
 		// Find the atlas for this id
@@ -128,7 +133,12 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 			*map = {};
 			map->id       = map_id;
-			map->material = sprite_create_material(sprite_index);
+			if (material == nullptr) {
+				map->material = sprite_create_material(sprite_index);
+			} else {
+				material_addref(material);
+				map->material = material;
+			}
 			sprite_drawer_add_buffer(map->material);
 		}
 
@@ -150,12 +160,12 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 ///////////////////////////////////////////
 
-sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id) {
+sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id, material_t material) {
 	tex_t image = tex_create_file(filename);
 	if (image == nullptr) return nullptr;
 
 	tex_set_address(image, tex_address_clamp);
-	sprite_t result = sprite_create(image, type, atlas_id);
+	sprite_t result = sprite_create(image, type, atlas_id, material);
 	tex_release(image);
 	return result;
 }
