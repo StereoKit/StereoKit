@@ -307,7 +307,8 @@ namespace StereoKit
 		/// </param>
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
@@ -316,7 +317,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees, texFormat);
 		}
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
@@ -344,7 +345,8 @@ namespace StereoKit
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
@@ -353,7 +355,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat);
 		}
 
 		/// <summary>This renders the current scene to the indicated 
