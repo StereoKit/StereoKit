@@ -1,5 +1,4 @@
 #include "linux.h"
-#include <cstddef>
 
 #if defined(SK_OS_LINUX)
 
@@ -184,8 +183,8 @@ void linux_events() {
 				else if ((sym & 0xFFFFFF00U) == 0x0000U) key = linux_xk_map_lower[sym];
 
 				if (key != key_none) {
-					if (is_pressed) input_keyboard_inject_press  (key);
-					else            input_keyboard_inject_release(key);
+					if (is_pressed) input_key_inject_press  (key);
+					else            input_key_inject_release(key);
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
@@ -204,11 +203,11 @@ void linux_events() {
 			case ButtonPress: {
 				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
-					case (1): input_keyboard_inject_press(key_mouse_left);    break;
-					case (2): input_keyboard_inject_press(key_mouse_center);  break;
-					case (3): input_keyboard_inject_press(key_mouse_right);   break;
-					case (9): input_keyboard_inject_press(key_mouse_forward); break;
-					case (8): input_keyboard_inject_press(key_mouse_back);    break;
+					case (1): input_key_inject_press(key_mouse_left);    break;
+					case (2): input_key_inject_press(key_mouse_center);  break;
+					case (3): input_key_inject_press(key_mouse_right);   break;
+					case (9): input_key_inject_press(key_mouse_forward); break;
+					case (8): input_key_inject_press(key_mouse_back);    break;
 					case (4): linux_scroll += 120; break; // scroll up
 					case (5): linux_scroll -= 120; break; // scroll down
 					}
@@ -217,11 +216,11 @@ void linux_events() {
 			case ButtonRelease: {
 				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
-					case (1): input_keyboard_inject_release(key_mouse_left);    break;
-					case (2): input_keyboard_inject_release(key_mouse_center);  break;
-					case (3): input_keyboard_inject_release(key_mouse_right);   break;
-					case (9): input_keyboard_inject_release(key_mouse_forward); break;
-					case (8): input_keyboard_inject_release(key_mouse_back);    break;
+					case (1): input_key_inject_release(key_mouse_left);    break;
+					case (2): input_key_inject_release(key_mouse_center);  break;
+					case (3): input_key_inject_release(key_mouse_right);   break;
+					case (9): input_key_inject_release(key_mouse_forward); break;
+					case (8): input_key_inject_release(key_mouse_back);    break;
 					}
 				}
 			} break;

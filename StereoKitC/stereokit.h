@@ -2020,22 +2020,25 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
-SK_API int32_t               input_pointer_count  (input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t*         input_hand           (handed_ hand);
-SK_API void                  input_hand_override  (handed_ hand, const hand_joint_t *in_arr_hand_joints);
-SK_API const controller_t*   input_controller     (handed_ hand);
-SK_API button_state_         input_controller_menu();
-SK_API const pose_t*         input_head           ();
-SK_API const pose_t*         input_eyes           ();
-SK_API button_state_         input_eyes_tracked   ();
-SK_API const mouse_t*        input_mouse          ();
-SK_API button_state_         input_key            (key_ key);
-SK_API char32_t              input_text_consume   ();
-SK_API void                  input_text_reset     ();
-SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
-SK_API void                  input_hand_material  (handed_ hand, material_t material);
+SK_API int32_t               input_pointer_count     (input_source_ filter sk_default(input_source_any));
+SK_API pointer_t             input_pointer           (int32_t index, input_source_ filter sk_default(input_source_any));
+SK_API const hand_t*         input_hand              (handed_ hand);
+SK_API void                  input_hand_override     (handed_ hand, const hand_joint_t *in_arr_hand_joints);
+SK_API const controller_t*   input_controller        (handed_ hand);
+SK_API button_state_         input_controller_menu   ();
+SK_API const pose_t*         input_head              ();
+SK_API const pose_t*         input_eyes              ();
+SK_API button_state_         input_eyes_tracked      ();
+SK_API const mouse_t*        input_mouse             ();
+SK_API button_state_         input_key               (key_ key);
+SK_API void                  input_key_inject_press  (key_ key);
+SK_API void                  input_key_inject_release(key_ key);
+SK_API char32_t              input_text_consume      ();
+SK_API void                  input_text_reset        ();
+SK_API void                  input_text_inject_char  (char32_t character);
+SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
+SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
+SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
 SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));

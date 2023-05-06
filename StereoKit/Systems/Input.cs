@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -467,6 +468,26 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+		/// <summary>This will inject a key press event into StereoKit's input
+		/// event queue. It will be processed at the start of the next frame,
+		/// and will be indistinguishable from a physical key press. Remember
+		/// to release your key as well!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to press.</param>
+		public static void KeyInjectPress(Key key) => NativeAPI.input_key_inject_press(key);
+		/// <summary>This will inject a key release event into StereoKit's
+		/// input event queue. It will be processed at the start of the next
+		/// frame, and will be indistinguishable from a physical key release.
+		/// This should be preceded by a key press!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to release.</param>
+		public static void KeyInjectRelease(Key key) => NativeAPI.input_key_inject_release(key);
 
 		/// <summary>Returns the next text character from the list of
 		/// characters that have been entered this frame! Will return '\0' if
@@ -490,8 +511,52 @@ namespace StereoKit
 		/// in the frame, you would read everything with `TextConsume`, and
 		/// then `TextReset` afterwards to reset the read list for the 
 		/// following `UI.Input`.</summary>
-		public static void TextReset() 
+		public static void TextReset()
 			=> NativeAPI.input_text_reset();
+		/// <summary>This will inject a UTF32 Unicode text character into
+		/// StereoKit's text input queue. It will be available at the start of
+		/// the next frame, and will be indistinguishable from normal text
+		/// entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="unicodeCharUTF32">An unsigned integer representing a
+		/// single UTF32 character.</param>
+		public static void TextInjectChar(uint unicodeCharUTF32) => NativeAPI.input_text_inject_char(unicodeCharUTF32);
+		/// <summary>This will convert a C# string into a number of UTF32
+		/// Unicode text characters, and inject them into StereoKit's text
+		/// input queue. It will be available at the start of the next frame,
+		/// and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A collection of characters to submit as text
+		/// input.</param>
+		public static void TextInjectChar(string chars) {
+			byte[] bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF32, Encoding.Unicode.GetBytes(chars));
+			for (int i = 0; i+4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
+		/// <summary>This will convert a byte array string into a number of
+		/// UTF32 Unicode text characters, and inject them into StereoKit's
+		/// text input queue. It will be available at the start of the next
+		/// frame, and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A byte array representing a string in some
+		/// encoded format.</param>
+		/// <param name="charEncoding">The encoding format of the byte array.
+		/// Note that an encoding of UTF32 will skip converting bytes to UTF32.
+		/// </param>
+		public static void TextInjectChar(byte[] chars, Encoding charEncoding)
+		{
+			byte[] bytes = charEncoding == Encoding.UTF32 && chars.Length % 4 == 0
+				? chars
+				: Encoding.Convert(charEncoding, Encoding.UTF32, chars);
+			for (int i = 0; i + 4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
 
 		/// <summary>The number of Pointer inputs that StereoKit is tracking
 		/// that match the given filter.

@@ -566,8 +566,12 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_press  (Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_release(Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint     input_text_consume ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_reset   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_inject_char(uint character);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, [MarshalAs(UnmanagedType.Bool)] bool visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_solid   (Handed hand, [MarshalAs(UnmanagedType.Bool)] bool solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_material(Handed hand, IntPtr material);

@@ -88,7 +88,7 @@ void input_keyboard_update() {
 
 ///////////////////////////////////////////
 
-void input_keyboard_inject_press(key_ key) {
+void input_key_inject_press(key_ key) {
 	// Don't inject keys if input is suspended
 	if (input_key_suspended) return;
 
@@ -104,7 +104,7 @@ void input_keyboard_inject_press(key_ key) {
 
 ///////////////////////////////////////////
 
-void input_keyboard_inject_release(key_ key) {
+void input_key_inject_release(key_ key) {
 	// Don't inject keys if input is suspended, unless the key was pressed
 	// before input was suspended.
 	if (input_key_suspended && (input_keyboard_get(key) & button_state_inactive))

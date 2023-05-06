@@ -83,8 +83,8 @@ void uwp_on_corewindow_keypress(CoreDispatcher const &, AcceleratorKeyEventArgs 
 	case VK_CONTROL: vk = status.IsExtendedKey    ? VK_RCONTROL : VK_LCONTROL; break;
 	case VK_MENU:    vk = status.IsExtendedKey    ? VK_RMENU    : VK_LMENU;    break;
 	}*/
-	if (down) input_keyboard_inject_press  ((key_)vk);
-	else      input_keyboard_inject_release((key_)vk);
+	if (down) input_key_inject_press  ((key_)vk);
+	else      input_key_inject_release((key_)vk);
 }
 
 inline float dips_to_pixels(float dips, float DPI) {
@@ -286,19 +286,19 @@ protected:
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		if (sk_focus != app_focus_active) return;
-		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
-		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
-		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
-		if (args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_inactive) input_keyboard_inject_press(key_mouse_back);
-		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
+		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_key_inject_press(key_mouse_left);
+		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_key_inject_press(key_mouse_right);
+		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_key_inject_press(key_mouse_center);
+		if (args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_inactive) input_key_inject_press(key_mouse_back);
+		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_key_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		if (sk_focus != app_focus_active) return;
-		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
-		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
-		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
-		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_keyboard_inject_release(key_mouse_back);
-		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_keyboard_inject_release(key_mouse_forward);
+		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_key_inject_release(key_mouse_left);
+		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_key_inject_release(key_mouse_right);
+		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_key_inject_release(key_mouse_center);
+		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_key_inject_release(key_mouse_back);
+		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_key_inject_release(key_mouse_forward);
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
