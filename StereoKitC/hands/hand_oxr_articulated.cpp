@@ -149,7 +149,6 @@ void hand_oxra_shutdown() {
 }
 
 ///////////////////////////////////////////
-
 void hand_oxra_update_joints() {
 	// Generate some shoulder data used for generating hand pointers
 
@@ -189,8 +188,10 @@ void hand_oxra_update_joints() {
 		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
-		// Update the tracking state of the hand
-		bool    valid_joints = (locations.jointLocations[0].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
+		// Update the tracking state of the hand, join definations here: https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_conventions_of_hand_joints
+		// joint 0 is the palm center. joint 1 is the wrist.
+		// joint 0, 6, 11, 16, 21 don't appear to be tracked on Pico 4
+		bool valid_joints = (locations.jointLocations[1].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
 		hand_t *inp_hand     = (hand_t*)input_hand((handed_)h);
 		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, valid_joints);
 		pointer->tracked = inp_hand->tracked_state;
