@@ -31,6 +31,11 @@ In addition to the Windows steps, to build for Android, StereoKit uses [xmake](h
 
 I may update this guide eventually, but if you can track what steps you take while doing this and submit a PR, that would be really incredible!
 
+General Setup steps:
+1. Install xmake
+2. Install the Android NDK. Grab the latest version from [here](https://developer.android.com/ndk/downloads) and unzip into a folder, a path without spaces will make life easier (C:\tools\Android\android-sdk)
+3. Set the NDK path into xmake. This command sets the global config: `xmake g --ndk="C:\tools\Android\android-sdk\android-ndk-rXYZ"`
+
 ## I want to modify code (Linux)
 
 StereoKit official Linux builds currently use xmake running on Windows Subsystems for Linux, however, it's also possible to use cmake, and do either from a normal Linux machine.

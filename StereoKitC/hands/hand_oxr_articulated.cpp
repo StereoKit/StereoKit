@@ -149,6 +149,7 @@ void hand_oxra_shutdown() {
 }
 
 ///////////////////////////////////////////
+
 void hand_oxra_update_joints() {
 	// Generate some shoulder data used for generating hand pointers
 

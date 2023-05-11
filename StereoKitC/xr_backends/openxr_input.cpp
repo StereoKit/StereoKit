@@ -716,7 +716,7 @@ bool oxri_init() {
 		return false;
 	}
 
-	oxri_set_profile(handed_left, xrc_active_profile[handed_left ]);
+	oxri_set_profile(handed_left,  xrc_active_profile[handed_left ]);
 	oxri_set_profile(handed_right, xrc_active_profile[handed_right]);
 	return true;
 }
@@ -944,6 +944,7 @@ void oxri_update_interaction_profile() {
 	XrPath path[2];
 	xrStringToPath(xr_instance, "/user/hand/left",  &path[handed_left]);
 	xrStringToPath(xr_instance, "/user/hand/right", &path[handed_right]);
+
 	XrInteractionProfileState active_profile = { XR_TYPE_INTERACTION_PROFILE_STATE };
 	for (int32_t h = 0; h < handed_max; h++) {
 		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, path[h], &active_profile)))
