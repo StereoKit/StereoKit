@@ -46,7 +46,7 @@ class DemoUnicode : ITest
 		UI.WindowEnd();
 
 		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
-		Tests.Screenshot("Unicode.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
+		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
 
 		Demo.ShowSummary(title, description);
 	}

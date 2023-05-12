@@ -43,6 +43,7 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 #define SK_DeclarePrivateType(name) struct _ ## name; typedef struct _ ## name *name;
 
 #include <stdint.h>
+#include <stddef.h>
 #include <math.h>
 #include <uchar.h>
 
@@ -1580,10 +1581,12 @@ SK_API void                  render_add_mesh       (mesh_t mesh, material_t mate
 SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
-SK_API void                  render_screenshot     (const char *file, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), const sk_ref(matrix) camera, const sk_ref(matrix) projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}));
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+//TODO: for v0.4, replace render_screenshot with render_screenshot_pose
+SK_API void                  render_screenshot     (const char *file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
+SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
+SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
+SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32));
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}), tex_format_ tex_format sk_default(tex_format_rgba32));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 
@@ -2038,22 +2041,25 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
-SK_API int32_t               input_pointer_count  (input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer        (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t*         input_hand           (handed_ hand);
-SK_API void                  input_hand_override  (handed_ hand, const hand_joint_t *in_arr_hand_joints);
-SK_API const controller_t*   input_controller     (handed_ hand);
-SK_API button_state_         input_controller_menu();
-SK_API const pose_t*         input_head           ();
-SK_API const pose_t*         input_eyes           ();
-SK_API button_state_         input_eyes_tracked   ();
-SK_API const mouse_t*        input_mouse          ();
-SK_API button_state_         input_key            (key_ key);
-SK_API char32_t              input_text_consume   ();
-SK_API void                  input_text_reset     ();
-SK_API void                  input_hand_visible   (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid     (handed_ hand, bool32_t solid);
-SK_API void                  input_hand_material  (handed_ hand, material_t material);
+SK_API int32_t               input_pointer_count     (input_source_ filter sk_default(input_source_any));
+SK_API pointer_t             input_pointer           (int32_t index, input_source_ filter sk_default(input_source_any));
+SK_API const hand_t*         input_hand              (handed_ hand);
+SK_API void                  input_hand_override     (handed_ hand, const hand_joint_t *in_arr_hand_joints);
+SK_API const controller_t*   input_controller        (handed_ hand);
+SK_API button_state_         input_controller_menu   ();
+SK_API const pose_t*         input_head              ();
+SK_API const pose_t*         input_eyes              ();
+SK_API button_state_         input_eyes_tracked      ();
+SK_API const mouse_t*        input_mouse             ();
+SK_API button_state_         input_key               (key_ key);
+SK_API void                  input_key_inject_press  (key_ key);
+SK_API void                  input_key_inject_release(key_ key);
+SK_API char32_t              input_text_consume      ();
+SK_API void                  input_text_reset        ();
+SK_API void                  input_text_inject_char  (char32_t character);
+SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
+SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
+SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
 SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));

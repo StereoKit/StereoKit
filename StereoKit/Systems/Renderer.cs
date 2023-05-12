@@ -257,27 +257,32 @@ namespace StereoKit
 		public static void Blit(Tex toRendertarget, Material material)
 			=> NativeAPI.render_blit(toRendertarget._inst, material._inst);
 
-		/// <summary>Schedules a screenshot for the end of the frame! The view will be
-		/// rendered from the given position at the given point, with a resolution the same
-		/// size as the screen's surface. It'll be saved as a .jpg file at the filename
-		/// provided.</summary>
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. It'll be saved as
+		/// a JPEG or PNG file depending on the filename extension provided.
+		/// </summary>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
 		/// <param name="width">Size of the screenshot horizontally, in pixels.</param>
 		/// <param name="height">Size of the screenshot vertically, in pixels.</param>
-		/// <param name="filename">Filename to write the screenshot to! Note this'll be a 
-		/// .jpg regardless of what file extension you use right now.</param>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
 		[Obsolete("For removal in v0.4. Use the overload that takes filename first.")]
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
-			=> NativeAPI.render_screenshot(filename, from, at, width, height, 90);
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, 90);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
 		/// resolution the same size as the screen's surface. It'll be saved as
-		/// a .jpg file at the filename provided.</summary>
-		/// <param name="filename">Filename to write the screenshot to! Note
-		/// this'll be a .jpg regardless of what file extension you use right
-		/// now.</param>
+		/// a JPEG or PNG file depending on the filename extension provided.
+		/// </summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
 		/// <param name="width">Size of the screenshot horizontally, in pixels.
@@ -287,7 +292,45 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given pose, with a resolution the same
+		/// size as the screen's surface. It'll be saved as a JPEG or PNG file
+		/// depending on the filename extension provided.</summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a JPEG if it ends with anything else.</param>
+		/// <param name="fileQuality">For JPEG files, this is the compression
+		/// quality of the file from 0-100, 100 being highest quality, 0 being
+		/// smallest size. SK uses a default of 90 here.</param>
+		/// <param name="viewpoint">Viewpoint location and orientation.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(string filename, int fileQuality, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), fileQuality, viewpoint, width, height, fieldOfViewDegrees);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given pose, with a resolution the same
+		/// size as the screen's surface. It'll be saved as a JPEG or PNG file
+		/// depending on the filename extension provided.</summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
+		/// <param name="viewpoint">Viewpoint location and orientation.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(string filename, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, viewpoint, width, height, fieldOfViewDegrees);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
@@ -307,7 +350,8 @@ namespace StereoKit
 		/// </param>
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
@@ -316,7 +360,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_capture(renderCaptureCallback, from, at, width, height, fieldOfViewDegrees);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat);
 		}
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
@@ -344,7 +388,8 @@ namespace StereoKit
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
 		{
 			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
 			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
@@ -353,7 +398,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat);
 		}
 
 		/// <summary>This renders the current scene to the indicated 

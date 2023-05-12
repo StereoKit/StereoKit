@@ -15,7 +15,6 @@ class App
 	};
 
 	public SKSettings Settings => settings;
-	public static PassthroughFBExt passthrough;
 
 	Model  floorMesh;
 	Matrix floorTr;
@@ -53,7 +52,7 @@ class App
 		Log.Subscribe(OnLog);
 		/// :End:
 		
-		passthrough = SK.AddStepper<PassthroughFBExt>();
+		SK.AddStepper<PassthroughFBExt>();
 	}
 
 	//////////////////////

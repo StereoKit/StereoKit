@@ -559,7 +559,6 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	int64_t pixel_formats[] = {
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32),
-		skg_tex_fmt_to_native(skg_tex_fmt_rg11b10),
 		skg_tex_fmt_to_native(skg_tex_fmt_rgb10a2),
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };

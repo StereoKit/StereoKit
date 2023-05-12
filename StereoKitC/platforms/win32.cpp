@@ -73,18 +73,18 @@ void win32_physical_key_interact() {
 
 bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
-	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
-	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
-	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_center); return true;
+	case WM_XBUTTONDOWN: input_key_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_XBUTTONUP:   input_key_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_KEYDOWN:     input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
+	case WM_KEYUP:       input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYDOWN:  input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYUP:    input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
 	case WM_MOUSEWHEEL:  if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;

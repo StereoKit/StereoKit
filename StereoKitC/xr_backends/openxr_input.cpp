@@ -412,6 +412,84 @@ bool oxri_init() {
 		binding_arr.clear();
 	}
 
+	// Bytedance PICO Neo3
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+	{
+		XrActionSuggestedBinding bindings[] = {
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
+			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
+			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       path_menu_click [0] }, { xrc_action_menu,        path_menu_click [1] },
+			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
+			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
+		};
+		binding_arr.add_range(bindings, _countof(bindings));
+		if (xr_ext_available.EXT_palm_pose) {
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
+		}
+
+		xrStringToPath(xr_instance, "/interaction_profiles/bytedance/pico_neo3_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = binding_arr.data;
+		suggested_binds.countSuggestedBindings = binding_arr.count;
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for PICO Neo3 controllers (untested, assume same as pico 4)
+			xrc_profile_info_t info;
+			info.profile = profile_path;
+			info.name    = "bytedance/pico_neo3_controller";
+			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
+			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
+			info.offset_pos[handed_left ] = { -0.03f, 0.01f, 0.00f };
+			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
+			xrc_profile_offsets.add(info);
+		}
+		binding_arr.clear();
+	}
+
+	// Bytedance Pico 4
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+	// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
+	// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
+	{
+		XrActionSuggestedBinding bindings[] = {
+			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
+			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
+			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
+			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
+			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
+			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
+			{ xrc_action_menu,       path_menu_click [0] },
+			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
+			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
+		};
+		binding_arr.add_range(bindings, _countof(bindings));
+		if (xr_ext_available.EXT_palm_pose) {
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
+			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
+		}
+
+		xrStringToPath(xr_instance, "/interaction_profiles/bytedance/pico4_controller", &profile_path);
+		suggested_binds.interactionProfile     = profile_path;
+		suggested_binds.suggestedBindings      = binding_arr.data;
+		suggested_binds.countSuggestedBindings = binding_arr.count;
+		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
+			// Orientation fix for pico 4 controllers
+			xrc_profile_info_t info;
+			info.profile = profile_path;
+			info.name    = "bytedance/pico4_controller";
+			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
+			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
+			info.offset_pos[handed_left ] = { -0.03f, 0.01f, 0.00f };
+			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
+			xrc_profile_offsets.add(info);
+		}
+		binding_arr.clear();
+	}
+
 	// htc/vive_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_htc_vive_controller_profile
 	{
@@ -513,46 +591,6 @@ bool oxri_init() {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
 			info.name    = "oculus/touch_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
-			info.offset_pos[handed_left ] = {-0.03f, 0.01f, 0.00f };
-			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
-	}
-
-	// pico/neo3_controller
-	// Undocumented :(
-	// https://github.com/picoxr/OpenXR_CloudXR_Client_Demo/blob/main/app/src/main/src/openxr_program.cpp#L516
-	if (xr_ext_available.PICO_controller_interaction)
-	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
-			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
-			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_back_click [0] }, { xrc_action_menu,        path_back_click [1] },
-			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
-			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
-
-		xrStringToPath(xr_instance, "/interaction_profiles/pico/neo3_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for Pico controllers (unverified)
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "pico/neo3_controller";
 			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
 			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
 			info.offset_pos[handed_left ] = {-0.03f, 0.01f, 0.00f };

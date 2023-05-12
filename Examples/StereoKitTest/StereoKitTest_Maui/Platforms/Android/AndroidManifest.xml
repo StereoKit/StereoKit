@@ -3,9 +3,12 @@
 	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
 
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
+		<!-- Oculus -->
 		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
-		<meta-data android:name="pvr.app.type" android:value="vr" /> <!-- Pico -->
+		<!-- Pico -->
+		<meta-data android:name="pvr.app.type" android:value="vr" />
+		<meta-data android:name="handtracking" android:value="1" />
 	</application>
 
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

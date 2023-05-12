@@ -280,6 +280,38 @@ namespace StereoKit
 		/// <returns>The first `IStepper` in the list that is assignable to the
 		/// provided generic type, or null if none is found.</returns>
 		public static object GetStepper(Type type) => _steppers.Get(type);
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// generic type, and if one is not found, it will attempt to create
+		/// one.</summary>
+		/// <typeparam name="T">Any concrete type that contains an empty
+		/// constructor.</typeparam>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or a new object of type T.</returns>
+		public static T GetOrCreateStepper<T>() where T : IStepper
+		{
+			T result = _steppers.Get<T>();
+			if (result == null) result = _steppers.Add<T>();
+			return result;
+		}
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// type, and if one is not found, it will attempt to create one.
+		/// </summary>
+		/// <param name="type">Any concrete type that contains an empty
+		/// constructor.</param>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or a new object of the given type.</returns>
+		public static object GetOrCreateStepper(Type type)
+		{
+			object result = _steppers.Get(type);
+			if (result == null) result = _steppers.Add(type);
+			return result;
+		}
 
 		/// <summary>This will queue up some code to be run on StereoKit's main
 		/// thread! Immediately after StereoKit's Step, all callbacks

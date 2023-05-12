@@ -297,8 +297,8 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 			break;
 		}
 	}
-	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_keyboard_inject_press  (keycode);
-	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_keyboard_inject_release(keycode);
+	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_key_inject_press  (keycode);
+	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_key_inject_release(keycode);
 
 	// Disable/enable pointer lock if shift is released/pressed
 	if (web_mouse_locked                                    &&
@@ -324,8 +324,8 @@ EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_eve
 	case 2: key = key_mouse_right;  break;
 	}
 	if (key != key_none) {
-		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_keyboard_inject_press  (key);
-		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_keyboard_inject_release(key);
+		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_key_inject_press  (key);
+		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_key_inject_release(key);
 	}
 
 	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right) {

@@ -501,6 +501,17 @@ bool openxr_init() {
 	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
 	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
+	if (!openxr_views_create()) {
+		openxr_cleanup();
+		return false;
+	}
+
+	// Wait for the session to start before we do anything more, reference
+	// spaces are sometimes invalid before session start.
+	while (!xr_running && openxr_poll_events()) {
+		platform_sleep(1);
+	}
+
 	// Create reference spaces! So we can find stuff relative to them :)
 	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset);
 	switch (xr_app_space_type) {
@@ -532,7 +543,7 @@ bool openxr_init() {
 		xr_stage_space = {};
 	}
 
-	if (!openxr_views_create() || !oxri_init()) {
+	if (!oxri_init()) {
 		openxr_cleanup();
 		return false;
 	}
@@ -800,8 +811,9 @@ void openxr_step_end() {
 
 ///////////////////////////////////////////
 
-void openxr_poll_events() {
+bool openxr_poll_events() {
 	XrEventDataBuffer event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
+	bool result = true;
 
 	while (xrPollEvent(xr_instance, &event_buffer) == XR_SUCCESS) {
 		switch (event_buffer.type) {
@@ -843,11 +855,11 @@ void openxr_poll_events() {
 				log_diag("OpenXR session begin.");
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break;
-			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; break;
+			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; result = false; break;
 			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
 			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false;              break;
-			case XR_SESSION_STATE_EXITING:      sk_running = false;              break;
+			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false; result = false; break;
+			case XR_SESSION_STATE_EXITING:      sk_running = false; result = false; break;
 			default: break;
 			}
 		} break;
@@ -857,13 +869,12 @@ void openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; return;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
-		}
-			break;
+		} break;
 		default: break;
 		}
 
@@ -873,6 +884,7 @@ void openxr_poll_events() {
 
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
+	return false;
 }
 
 ///////////////////////////////////////////
