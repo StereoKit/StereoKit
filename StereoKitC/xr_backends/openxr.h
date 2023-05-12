@@ -59,7 +59,7 @@ void openxr_cleanup       ();
 void openxr_shutdown      ();
 void openxr_step_begin    ();
 void openxr_step_end      ();
-void openxr_poll_events   ();
+bool openxr_poll_events   ();
 bool openxr_render_frame  ();
 void openxr_poll_actions  ();
 
