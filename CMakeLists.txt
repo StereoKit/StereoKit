@@ -211,6 +211,8 @@ set(SK_SRC_CODE
   StereoKitC/stereokit.cpp )
 
 set(SK_SRC_ASSET_TYPES
+  StereoKitC/asset_types/anchor.h
+  StereoKitC/asset_types/anchor.cpp
   StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
   StereoKitC/asset_types/animation.h

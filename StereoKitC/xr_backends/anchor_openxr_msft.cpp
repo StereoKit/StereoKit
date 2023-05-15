@@ -82,7 +82,6 @@ bool32_t anchor_oxr_msft_init() {
 		sk_anchor->persisted = true;
 		sk_anchor->tracked   = tracked ? inp_state_active : inp_state_inactive;
 		oxr_msft_anchor_sys.anchors.add(sk_anchor);
-		anchor_notify_discovery(sk_anchor);
 	}
 	return true;
 }
@@ -102,7 +101,7 @@ void anchor_oxr_msft_step() {
 		anchor_t                 anchor = oxr_msft_anchor_sys.anchors[i];
 		oxr_msft_world_anchor_t* data   = (oxr_msft_world_anchor_t*)anchor->data;
 
-		anchor->tracked = input_make_state(openxr_get_space(data->space, &anchor->pose), anchor->tracked & inp_state_active != 0);
+		anchor->tracked = input_make_state(openxr_get_space(data->space, &anchor->pose), (anchor->tracked & inp_state_active) != 0);
 	}
 }
 
@@ -156,7 +155,6 @@ anchor_t anchor_oxr_msft_create(pose_t pose, const char* name_utf8) {
 	anchor_data->space  = space;
 	anchor_t sk_anchor = anchor_create_manual(oxr_msft_anchor_sys.id, pose, name_utf8, (void*)anchor_data);
 	oxr_msft_anchor_sys.anchors.add(sk_anchor);
-	anchor_notify_discovery(sk_anchor);
 	return sk_anchor;
 }
 

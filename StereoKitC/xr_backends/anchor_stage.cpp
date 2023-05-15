@@ -60,7 +60,6 @@ bool32_t anchor_stage_init() {
 			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
 			anchor->tracked = inp_state_active;
 			anchor_stage_persist(anchor, true);
-			anchor_notify_discovery(anchor);
 
 			sk_free(name);
 		}
@@ -122,7 +121,6 @@ anchor_t anchor_stage_create(pose_t pose, const char* name_utf8) {
 	anchor_data->relative_pose = pose;
 	anchor_t result = anchor_create_manual(anchor_stage_sys.id, pose, name_utf8, (void*)anchor_data);
 	result->tracked = inp_state_active;
-	anchor_notify_discovery(result);
 	return result;
 }
 
