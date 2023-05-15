@@ -20,6 +20,11 @@ sk_gpu.h
 //#define SKG_FORCE_DIRECT3D11
 //#define SKG_FORCE_OPENGL
 
+// You can disable use of D3DCompile to make building this easier sometimes,
+// since D3DCompile is primarily used to catch .sks shader files built from
+// Linux to run on Windows, and this may not be critical in all cases.
+//#define SKG_NO_D3DCOMPILER
+
 #if   defined( SKG_FORCE_NULL )
 #define SKG_NULL
 #elif defined( SKG_FORCE_DIRECT3D11 )
@@ -717,12 +722,15 @@ SKG_API void                    skg_shader_meta_release        (skg_shader_meta_
 
 #pragma comment(lib,"D3D11.lib")
 #pragma comment(lib,"Dxgi.lib")
-#pragma comment(lib,"d3dcompiler.lib")
 #include <d3d11.h>
 #include <dxgi1_6.h>
-#include <d3dcompiler.h>
-#include <math.h>
 
+#if !defined(SKG_NO_D3DCOMPILER)
+#pragma comment(lib,"d3dcompiler.lib")
+#include <d3dcompiler.h>
+#endif
+
+#include <math.h>
 #include <stdio.h>
 
 // Manually defining this lets us skip d3dcommon.h and dxguid.lib
@@ -1293,6 +1301,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 		buffer      = file_data;
 		buffer_size = shader_size;
 	} else {
+#if !defined(SKG_NO_D3DCOMPILER)
 		DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #if !defined(NDEBUG)
 		flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
@@ -1321,6 +1330,10 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 
 		buffer      = compiled->GetBufferPointer();
 		buffer_size = compiled->GetBufferSize();
+#else
+		skg_log(skg_log_warning, "Raw HLSL not supported in this configuration! (SKG_NO_D3DCOMPILER)");
+		return {};
+#endif
 	}
 
 	// Create a shader from HLSL bytecode
@@ -2605,6 +2618,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	#include <gbm.h>
 	bool       egl_dri     = false;
 	#endif
+
 	EGLDisplay egl_display = EGL_NO_DISPLAY;
 	EGLContext egl_context;
 	EGLConfig  egl_config;
@@ -3189,7 +3203,7 @@ int32_t gl_init_egl() {
 
 	int32_t major=0, minor=0;
 	eglInitialize(egl_display, &major, &minor);
-
+	
 	#if defined(SKG_LINUX_EGL)
 	if (egl_display == EGL_NO_DISPLAY || eglGetError() != EGL_SUCCESS) {
 		skg_log(skg_log_info, "Trying EGL direct rendering from /dev/dri/renderD128");
@@ -4792,8 +4806,8 @@ void skg_logf (skg_log_ level, const char *text, ...) {
 
 	skg_log(level, buffer);
 	free(buffer);
-	va_end(copy);
 	va_end(args);
+	va_end(copy);
 }
 
 ///////////////////////////////////////////

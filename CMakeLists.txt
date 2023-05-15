@@ -89,7 +89,9 @@ elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     Comdlg32
-    WindowsApp) # Required for ISAC spatial audio code
+    DXGI
+    D3D11)
+    #WindowsApp) # Required for ISAC spatial audio code
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
@@ -396,8 +398,8 @@ source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
 source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
-if (UNIX)
-  # DirectXMath on Linux needs a few extra files
+if (NOT MSVC)
+  # DirectXMath on non-msvc compilers needs a few extra files
   set(LINUX_INCLUDES
     StereoKitC/lib/include_no_win/)
 endif()
