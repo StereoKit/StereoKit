@@ -24,13 +24,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(StereoKit VERSION "0.3.7" LANGUAGES CXX C)
 
-# Default build configuration to RelWithDebInfo 
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
-    if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "" FORCE)
-    endif()
-endif()
-
 ###########################################
 ## Options                               ##
 ###########################################
@@ -43,8 +36,37 @@ set(SK_PHYSICS                      ON  CACHE BOOL "Enable physics.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
+## Configuration settings                ##
+###########################################
+
+# Default build configuration to RelWithDebInfo 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "" FORCE)
+    endif()
+endif()
+
+# Create separate debug symbol files
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "/Zi")
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-eliminate-unused-debug-types")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+elseif(MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Z7")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
+  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+endif()
+
+# set NDEBUG if in release mode
+if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
+  add_definitions(-DNDEBUG)
+endif()
+
+###########################################
 ## Pretty colors                         ##
 ###########################################
+
 if(FORCE_COLORED_OUTPUT)
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		add_compile_options(-fdiagnostics-color=always)
@@ -52,7 +74,6 @@ if(FORCE_COLORED_OUTPUT)
 		add_compile_options(-fcolor-diagnostics)
 	endif()
 endif()
-
 
 ###########################################
 ## Platform Specific Settings            ##
@@ -404,6 +425,12 @@ if (NOT MSVC)
   # DirectXMath on non-msvc compilers needs a few extra files
   set(LINUX_INCLUDES
     StereoKitC/lib/include_no_win/)
+
+  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE:StereoKitC>.sym
+    COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:StereoKitC>.sym $<TARGET_FILE:StereoKitC>
+  )
 endif()
 
 target_include_directories(StereoKitC
