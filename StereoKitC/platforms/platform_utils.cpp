@@ -584,8 +584,8 @@ font_t platform_default_font() {
 
 #if __ANDROID_API__ >= 29
 	AFontMatcher *matcher = AFontMatcher_create();
-	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", u"A", 1, nullptr);
-	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", u"あ", 1, nullptr);
+	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"A", 1, nullptr);
+	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"あ", 1, nullptr);
 	if (font_latin   ) file_latin    = AFont_getFontFilePath(font_latin);
 	if (font_japanese) file_japanese = AFont_getFontFilePath(font_japanese);
 #endif
