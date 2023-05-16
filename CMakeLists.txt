@@ -91,7 +91,9 @@ elseif(WIN32)
     Comdlg32
     DXGI
     D3D11)
-    #WindowsApp) # Required for ISAC spatial audio code
+    if (MSVC)
+      list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
+    endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
@@ -428,8 +430,12 @@ target_link_libraries( StereoKitC
 ## StereoKitCTest                        ##
 ###########################################
 
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  set(SK_WIN32 WIN32)
+endif()
+
 if (SK_BUILD_TESTS)
-  add_executable( StereoKitCTest
+  add_executable( StereoKitCTest ${SK_WIN32}
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp

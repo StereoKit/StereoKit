@@ -1,0 +1,282 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 10,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "Uwp",
+        "description": "Build for UWP",
+        "hidden": true,
+        "generator": "Visual Studio 17 2022",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_SYSTEM_NAME": "WindowsStore",
+          "CMAKE_SYSTEM_VERSION": "10.0",
+          "DYNAMIC_LOADER": "ON",
+          "CMAKE_CXX_FLAGS": "/MP"
+        },
+        "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
+      },
+      {
+        "name": "UwpDebug",
+        "description": "Debug build for UWP x64",
+        "inherits": "Uwp",
+        "hidden": true,
+        "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "UwpDebugx64",
+        "description": "Debug build for UWP x64",
+        "inherits": "UwpDebug",
+        "hidden": false,
+        "architecture": "x64",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_x64_Debug"
+      },
+      {
+        "name": "UwpDebugx86",
+        "description": "Debug build for UWP x86",
+        "inherits": "UwpDebug",
+        "hidden": false,
+        "architecture": "Win32",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_x86_Debug"
+      },
+      {
+        "name": "UwpDebugArm32",
+        "description": "Debug build for UWP ARM32",
+        "inherits": "UwpDebug",
+        "hidden": false,
+        "architecture": "ARM",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM_Debug"
+      },
+      {
+        "name": "UwpDebugArm64",
+        "description": "Debug build for UWP ARM64",
+        "inherits": "UwpDebug",
+        "hidden": false,
+        "architecture": "ARM64",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM64_Debug"
+      },
+      {
+        "name": "UwpRelease",
+        "description": "Release build for UWP x64",
+        "inherits": "Uwp",
+        "hidden": true,
+        "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "UwpReleasex64",
+        "description": "Release build for UWP x64",
+        "inherits": "UwpRelease",
+        "hidden": false,
+        "architecture": "x64",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_x64_Release"
+      },
+      {
+        "name": "UwpReleasex86",
+        "description": "Release build for UWP x86",
+        "inherits": "UwpRelease",
+        "hidden": false,
+        "architecture": "Win32",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_x86_Release"
+      },
+      {
+        "name": "UwpReleaseArm32",
+        "description": "Release build for UWP ARM32",
+        "inherits": "UwpRelease",
+        "hidden": false,
+        "architecture": "ARM",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM_Release"
+      },
+      {
+        "name": "UwpReleaseArm64",
+        "description": "Release build for UWP ARM64",
+        "inherits": "UwpRelease",
+        "hidden": false,
+        "architecture": "ARM64",
+        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM64_Release"
+      },
+      {
+        "name": "Win32Releasex64",
+        "description": "Release build for Win32 x64",
+        "hidden": false,
+        "binaryDir": "${sourceDir}/build/cmake/Win32_x64_Release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "Win32Debugx64",
+        "description": "Debug build for Win32 x64",
+        "hidden": false,
+        "binaryDir": "${sourceDir}/build/cmake/Win32_x64_Debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "Linux",
+        "description": "Build for Linux",
+        "hidden": true,
+        "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Linux"
+        }
+      },
+      {
+        "name": "LinuxReleasex64",
+        "description": "Release build for Linux x64",
+        "hidden": false,
+        "inherits": "Linux",
+        "binaryDir": "${sourceDir}/build/cmake/Linux_x64_Release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "LinuxDebugx64",
+        "description": "Debug build for Linux x64",
+        "hidden": false,
+        "inherits": "Linux",
+        "binaryDir": "${sourceDir}/build/cmake/Linux_x64_Debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "LinuxReleaseArm64",
+        "description": "Release build for Linux Arm64",
+        "hidden": false,
+        "inherits": "Linux",
+        "binaryDir": "${sourceDir}/build/cmake/Linux_ARM64_Release",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+        }
+      },
+      {
+        "name": "LinuxDebugArm64",
+        "description": "Debug build for Linux Arm64",
+        "hidden": false,
+        "inherits": "Linux",
+        "binaryDir": "${sourceDir}/build/cmake/Linux_Arm64_Debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug"
+        }
+      },
+      {
+        "name": "Android",
+        "description": "Build for Android",
+        "hidden": true,
+        "generator": "Ninja",
+        "cacheVariables": {
+          "CMAKE_SYSTEM_NAME": "Android",
+          "CMAKE_TOOLCHAIN_FILE":"$env{NDK}/build/cmake/android.toolchain.cmake",
+          "ANDROID_PLATFORM":"android-21",
+          "CMAKE_SYSTEM_VERSION": "21",
+          "DYNAMIC_LOADER": "ON"
+        }
+      },
+      {
+        "name": "AndroidDebugArm64",
+        "description": "Debug build for Android ARM64",
+        "inherits": "Android",
+        "hidden": false,
+        "binaryDir": "${sourceDir}/build/cmake/Android_ARM64_Debug",
+        "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "ANDROID_ABI": "arm64-v8a",
+            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
+        }
+      },
+      {
+        "name": "AndroidReleaseArm64",
+        "description": "Release build for Android ARM64",
+        "inherits": "Android",
+        "hidden": false,
+        "binaryDir": "${sourceDir}/build/cmake/Android_ARM64_Release",
+        "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release",
+            "ANDROID_ABI": "arm64-v8a",
+            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
+        }
+      }
+    ],
+    "buildPresets": [
+        { "name":"UwpDebugx64", "configuration":"Debug", "configurePreset":"UwpDebugx64", "jobs":24  },
+        { "name":"UwpReleasex64", "configuration":"Release", "configurePreset":"UwpReleasex64", "jobs":24  },
+        { "name":"UwpDebugArm32", "configuration":"Debug", "configurePreset":"UwpDebugArm32", "jobs":24  },
+        { "name":"UwpReleaseArm32", "configuration":"Release", "configurePreset":"UwpReleaseArm32", "jobs":24  },
+        { "name":"UwpDebugArm64", "configuration":"Debug", "configurePreset":"UwpDebugArm64", "jobs":24  },
+        { "name":"UwpReleaseArm64", "configuration":"Release", "configurePreset":"UwpReleaseArm64", "jobs":24  },
+        { "name":"Win32Debugx64", "configuration":"Debug", "configurePreset":"Win32Debugx64", "jobs":24  },
+        { "name":"Win32Releasex64", "configuration":"Release", "configurePreset":"Win32Releasex64", "jobs":24  },
+        { "name":"AndroidDebugArm64", "configuration":"Debug", "configurePreset":"AndroidDebugArm64", "jobs":24  },
+        { "name":"AndroidReleaseArm64", "configuration":"Release", "configurePreset":"AndroidReleaseArm64", "jobs":24  },
+        { "name":"LinuxDebugx64", "configuration":"Debug", "configurePreset":"LinuxDebugx64", "jobs":24  },
+        { "name":"LinuxReleasex64", "configuration":"Release", "configurePreset":"LinuxReleasex64", "jobs":24  },
+        { "name":"LinuxDebugArm64", "configuration":"Debug", "configurePreset":"LinuxDebugArm64", "jobs":24  },
+        { "name":"LinuxReleaseArm64", "configuration":"Release", "configurePreset":"LinuxReleaseArm64", "jobs":24  }
+    ],
+    "workflowPresets": [
+        {
+            "name":"Uwpx64",
+            "steps":[
+                { "type": "configure", "name": "UwpReleasex64" },
+                { "type": "build", "name": "UwpReleasex64" } ]
+        },
+        {
+            "name":"UwpArm32",
+            "steps":[
+                { "type": "configure", "name": "UwpReleaseArm32" },
+                { "type": "build", "name": "UwpReleaseArm32" } ]
+        },
+        {
+            "name":"UwpArm64",
+            "steps":[
+                { "type": "configure", "name": "UwpReleaseArm64" },
+                { "type": "build", "name": "UwpReleaseArm64" } ]
+        },
+        {
+            "name":"Win32x64",
+            "steps":[
+                { "type": "configure", "name": "Win32Releasex64" },
+                { "type": "build", "name": "Win32Releasex64" } ]
+        },
+        {
+            "name":"AndroidArm64",
+            "steps":[
+                { "type": "configure", "name": "AndroidReleaseArm64" },
+                { "type": "build", "name": "AndroidReleaseArm64" } ]
+        },
+        {
+            "name":"Linuxx64",
+            "steps":[
+                { "type": "configure", "name": "LinuxReleasex64" },
+                { "type": "build", "name": "LinuxReleasex64" } ]
+        },
+        {
+            "name":"LinuxArm64",
+            "steps":[
+                { "type": "configure", "name": "LinuxReleaseArm64" },
+                { "type": "build", "name": "LinuxReleaseArm64" } ]
+        },
+        {
+            "name":"default",
+            "steps":[
+                { "type": "configure", "name": "Win32Debugx64" },
+                { "type": "build", "name": "Win32Debugx64" } ]
+        }
+    ]
+  }
+  

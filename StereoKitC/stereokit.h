@@ -5,11 +5,11 @@
 #define SK_VERSION_PATCH 7
 #define SK_VERSION_PRERELEASE 9
 
-#if defined(__clang__)
+#if defined(__clang__) && defined(_WIN32)
 	#define SK_DEPRECATED __attribute__((deprecated))
 	#define SK_EXIMPORT __declspec(dllexport)
 	#define SK_CONST static const
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
 	#define SK_EXIMPORT
 	#define SK_CONST static const
