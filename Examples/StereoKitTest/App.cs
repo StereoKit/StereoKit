@@ -33,7 +33,10 @@ class App
 		if (Array.IndexOf(args, "-screenfolder") != -1)
 			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
 		if (Array.IndexOf(args, "-start") != -1)
+		{
 			startTest = args[Array.IndexOf(args, "-start") + 1];
+			Tests.TestSingle = true;
+		}
 
 		if (Tests.IsTesting)
 		{

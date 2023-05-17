@@ -21,6 +21,7 @@ public static class Tests
 	private static Type ActiveTest { set { nextScene = (ITest)Activator.CreateInstance(value); } }
 	public  static int  DemoCount => demoTests.Count;
 	public  static bool IsTesting { get; set; }
+	public  static bool TestSingle { get; set; }
 
 	public static string ScreenshotRoot  { get; set; } = "../../../docs/img/screenshots";
 	public static bool   MakeScreenshots { get; set; } = true;
@@ -38,7 +39,7 @@ public static class Tests
 
 	public static void Initialize()
 	{
-		if (IsTesting) { 
+		if (IsTesting && !TestSingle) {
 			nextScene = null;
 		}
 		if (nextScene == null)
@@ -74,7 +75,7 @@ public static class Tests
 		if (IsTesting && FinishedWithTest())
 		{
 			testIndex += 1;
-			if (testIndex >= allTests.Count)
+			if (testIndex >= allTests.Count || TestSingle)
 				SK.Quit();
 			else
 				SetTestActive(allTests[testIndex].Name);
