@@ -53,6 +53,7 @@ class App
 		/// :End:
 		
 		SK.AddStepper<PassthroughFBExt>();
+		SK.AddStepper<Win32PerformanceCounterExt>();
 	}
 
 	//////////////////////
