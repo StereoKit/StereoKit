@@ -522,6 +522,7 @@ SK_API quat     quat_normalize            (const sk_ref(quat) a);
 SK_API quat     quat_inverse              (const sk_ref(quat) a);
 SK_API quat     quat_mul                  (const sk_ref(quat) a, const sk_ref(quat) b);
 SK_API vec3     quat_mul_vec              (const sk_ref(quat) a, const sk_ref(vec3) b);
+SK_API void     quat_to_axis_angle        (quat a, vec3 *out_axis, float *out_rotation_deg);
 
 SK_API matrix   pose_matrix               (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
 SK_API void     pose_matrix_out           (const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
