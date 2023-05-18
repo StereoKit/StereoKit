@@ -14,8 +14,8 @@ class DemoPicker : ITest
 	bool     showNodes  = false;
 	bool     editNodes  = false;
 	bool     showModel  = true;
-	Pose     modelPose  = new Pose(0.6f,0,0, Quat.LookDir(-Vec3.Forward));
-	Pose     menuPose   = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	Pose     modelPose  = (Matrix.T(-0.4f,-0.3f,0) * Demo.contentPose).Pose;
+	Pose     menuPose   = Demo.contentPose.Pose;
 	Material volumeMat;
 	Material jointMaterial;
 

@@ -5,7 +5,7 @@ class DemoFBPassthrough : ITest
 {
 	string title       = "FB Passthrough Extension";
 	string description = "Passthrough AR!";
-	Pose   windowPose  = Demo.contentPose * Pose.Identity;
+	Pose   windowPose  = Demo.contentPose.Pose;
 	PassthroughFBExt passthrough;
 
 	public void Initialize() { passthrough = SK.GetOrCreateStepper<PassthroughFBExt>(); }

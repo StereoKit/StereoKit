@@ -7,7 +7,7 @@ class DemoNodes : ITest
 	string description = "ModelNode API lets...";
 
 	Model radio     = Model.FromFile("Radio.glb");
-	Pose  radioPose = new Pose(0.5f, -0.25f, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose  radioPose = Demo.contentPose.Pose;
 	Pose  radioPowerPose;
 	Pose  radioSpeakerPose;
 	Pose  radioInterfacePose;

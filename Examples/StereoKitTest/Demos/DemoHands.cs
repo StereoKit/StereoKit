@@ -17,7 +17,7 @@ class DemoHands : ITest
 	string title       = "Hand Input";
 	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
-	static Pose optionsPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	static Pose optionsPose = Demo.contentPose.Pose;
 	bool showHands     = true;
 	bool showJoints    = false;
 	bool showAxes      = true;

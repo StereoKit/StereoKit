@@ -16,7 +16,7 @@ class DemoAssets : ITest
 	/// ![An overly simple asset browser window]({{site.screen_url}}/TinyAssetBrowser.jpg)
 	List<IAsset> filteredAssets = new List<IAsset>();
 	Type         filterType     = typeof(IAsset);
-	Pose         filterWindow   = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
+	Pose         filterWindow   = Demo.contentPose.Pose;
 	float        filterScroll   = 0;
 	const int    filterScrollCt = 12;
 
