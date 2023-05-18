@@ -168,14 +168,14 @@ set(SK_SRC_SHADERS_HLSL
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
-set(SK_SHADER_COMPILER "${CMAKE_SOURCE_DIR}/tools/skshaderc")
+set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
 foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   # Shader compile tool doesn't work on Linux yet, but pre-built
   # shaders should still be in the repository.
   if (WIN32)
     add_custom_command(
-        OUTPUT ${CMAKE_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_SOURCE_DIR}/tools/include -o ${CMAKE_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_SOURCE_DIR}/${SHADER}
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.h
+        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}
         DEPENDS ${SHADER} )
   endif()
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
@@ -461,7 +461,7 @@ if (SK_BUILD_TESTS)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
 
-  set (source      ${CMAKE_SOURCE_DIR}/Examples/Assets)
+  set (source      ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets)
   set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)
   add_custom_command(
     TARGET StereoKitCTest
