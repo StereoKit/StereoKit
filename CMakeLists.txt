@@ -194,14 +194,20 @@ set(SK_SRC_SHADERS_H
 
 set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
 foreach(SHADER ${SK_SRC_SHADERS_HLSL})
-  # Shader compile tool doesn't work on Linux yet, but pre-built
-  # shaders should still be in the repository.
   if (WIN32)
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.h
-        COMMAND ${SK_SHADER_COMPILER} -O3 -h -z -t xge -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}
-        DEPENDS ${SHADER} )
+    set(SK_SHADER_TARGETS "x")
+  elseif(ANDROID)
+    set(SK_SHADER_TARGETS "e")
+  elseif(UNIX)
+    set(SK_SHADER_TARGETS "g")
+  elseif(EMSCRIPTEN)
+    set(SK_SHADER_TARGETS "w")
   endif()
+
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.h
+    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}
+    DEPENDS ${SHADER} )
   list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
 endforeach(SHADER)
 
