@@ -184,7 +184,8 @@
           "CMAKE_TOOLCHAIN_FILE":"$env{NDK}/build/cmake/android.toolchain.cmake",
           "ANDROID_PLATFORM":"android-29",
           "CMAKE_SYSTEM_VERSION": "29",
-          "DYNAMIC_LOADER": "ON"
+          "DYNAMIC_LOADER": "ON",
+          "SK_DYNAMIC_OPENXR": "ON"
         }
       },
       {

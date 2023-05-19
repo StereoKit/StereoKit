@@ -33,6 +33,7 @@ set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. Th
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_PHYSICS                      ON  CACHE BOOL "Enable physics.")
+set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -148,6 +149,8 @@ if(SK_PHYSICS)
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
     GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
     EXCLUDE_FROM_ALL YES
+    OPTIONS
+    "CMAKE_CXX_FLAGS -Wno-dev"
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -168,6 +171,8 @@ CPMAddPackage(
   GIT_TAG "release-1.0.27"
   OPTIONS
   "BUILD_WITH_SYSTEM_JSONCPP OFF"
+  "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
+  "CMAKE_CXX_FLAGS -Wno-dev"
 )
 
 ###########################################
@@ -432,10 +437,13 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
 
   add_custom_command(TARGET StereoKitC POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE:StereoKitC>.sym
+    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>.sym
     COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:StereoKitC>.sym $<TARGET_FILE:StereoKitC>
+    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>.sym $<TARGET_FILE:StereoKitC>
   )
+  set(SK_BIN_DEBUG_EXT ".sym")
+else()
+  set(SK_BIN_DEBUG_EXT ".pdb")
 endif()
 
 target_include_directories(StereoKitC
@@ -457,6 +465,58 @@ target_link_libraries( StereoKitC
   PUBLIC
     ${ANDROID_LIBS}
 )
+
+###########################################
+## Copy binaries to the distribute folder##
+###########################################
+
+if (CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  set(SK_BIN_OS "UWP")
+elseif (WIN32)
+  set(SK_BIN_OS "Win32")
+elseif(ANDROID)
+  set(SK_BIN_OS "Android")
+elseif(UNIX)
+  set(SK_BIN_OS "Linux")
+elseif(EMSCRIPTEN)
+  set(SK_BIN_OS "WASM")
+else()
+  set(SK_BIN_OS "Unknown")
+endif()
+
+if(ANDROID)
+  set(SK_ARCH ${ANDROID_ABI})
+elseif(WIN32)
+  if(CMAKE_VS_PLATFORM_NAME STREQUAL "ARM" OR CMAKE_VS_PLATFORM_NAME STREQUAL "ARM64")
+    set(SK_ARCH ${CMAKE_VS_PLATFORM_NAME})
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(SK_ARCH "x64")
+  else()
+    set(SK_ARCH "x86")
+  endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(SK_ARCH "x64")
+  else()
+    set(SK_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+  endif()
+else()
+  set(SK_ARCH "Unknown")
+endif()
+
+set(SK_DISTRIBUTE_FOLDER "bin/distribute")
+
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>" )
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_BASE_NAME:StereoKitC>$<TARGET_FILE_SUFFIX:StereoKitC>" )
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
+
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include" )
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
 ###########################################
 ## StereoKitCTest                        ##
