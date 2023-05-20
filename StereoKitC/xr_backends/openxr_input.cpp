@@ -70,7 +70,7 @@ bool oxri_init() {
 	xr_eyes_pointer = input_add_pointer(input_source_gaze | (sk_info.eye_tracking_present ? input_source_gaze_eyes : input_source_gaze_head));
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
-	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
+	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "Input");
 	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
 	XrResult result = xrCreateActionSet(xr_instance, &actionset_info, &xrc_action_set);
 	if (XR_FAILED(result)) {
@@ -86,7 +86,7 @@ bool oxri_init() {
 	action_info.countSubactionPaths = _countof(xrc_hand_subaction_path);
 	action_info.subactionPaths      = xrc_hand_subaction_path;
 	action_info.actionType          = XR_ACTION_TYPE_POSE_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip_pose");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Grip Pose");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip Pose");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_pose_grip);
 	if (XR_FAILED(result)) {
@@ -96,7 +96,7 @@ bool oxri_init() {
 
 	// Create an action to track the pointing position and orientation!
 	action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "aim_pose");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Aim Pose");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Aim Pose");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_pose_aim);
 	if (XR_FAILED(result)) {
@@ -107,7 +107,7 @@ bool oxri_init() {
 	// Create an action for listening to the select action! This is primary trigger
 	// on controllers, and an airtap on HoloLens
 	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "trigger");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Trigger");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Trigger");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_trigger);
 	if (XR_FAILED(result)) {
@@ -116,7 +116,7 @@ bool oxri_init() {
 	}
 
 	action_info.actionType = XR_ACTION_TYPE_FLOAT_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "grip");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Grip");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Grip");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_grip);
 	if (XR_FAILED(result)) {
@@ -126,7 +126,7 @@ bool oxri_init() {
 
 	// Stick axes for X and Y
 	action_info.actionType = XR_ACTION_TYPE_VECTOR2F_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "stick_xy");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Stick XY");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Stick XY");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_stick_xy);
 	if (XR_FAILED(result)) {
@@ -137,7 +137,7 @@ bool oxri_init() {
 	// Button actions
 
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "stick_click");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Stick Click");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Stick Click");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_stick_click);
 	if (XR_FAILED(result)) {
@@ -146,7 +146,7 @@ bool oxri_init() {
 	}
 
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "menu");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Menu");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Menu");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_menu);
 	if (XR_FAILED(result)) {
@@ -155,7 +155,7 @@ bool oxri_init() {
 	}
 
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "button_x1");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Button X1");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Button X1");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_x1);
 	if (XR_FAILED(result)) {
@@ -164,7 +164,7 @@ bool oxri_init() {
 	}
 
 	action_info.actionType = XR_ACTION_TYPE_BOOLEAN_INPUT;
-	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "button_x2");
+	snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Button X2");
 	snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Button X2");
 	result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_x2);
 	if (XR_FAILED(result)) {
@@ -175,7 +175,7 @@ bool oxri_init() {
 	// Palm pose extension
 	if (xr_ext_available.EXT_palm_pose) {
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "palm_pose");
+		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Palm Pose");
 		snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Palm Pose");
 		result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_pose_palm);
 		if (XR_FAILED(result)) {
@@ -188,7 +188,7 @@ bool oxri_init() {
 	if (sk_info.eye_tracking_present) {
 		action_info = { XR_TYPE_ACTION_CREATE_INFO };
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
-		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
+		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "Eye Gaze");
 		snprintf(action_info.localizedActionName, sizeof(action_info.localizedActionName), "Eye Gaze");
 		result = xrCreateAction(xrc_action_set, &action_info, &xrc_action_eyes);
 		if (XR_FAILED(result)) {
