@@ -15,8 +15,9 @@
 namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
-float             au_mix_temp[4096];
 matrix            au_head_transform;
+const int32_t     au_mix_temp_size = 4096;
+float*            au_mix_temp;
 
 ma_context        au_context        = {};
 ma_decoder_config au_decoder_config = {};
@@ -50,7 +51,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// the output buffer by simply adding the samples together.
 	vec3      head_pos          = input_head()->position;
 	vec3      head_right        = vec3_normalize(input_head()->orientation * vec3_right);
-	ma_uint64 frame_cap         = _countof(au_mix_temp) / channel_count;
+	ma_uint64 frame_cap         = au_mix_temp_size / channel_count;
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -154,7 +155,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 	*position = matrix_transform_pt(au_head_transform, inst.position);
 	*volume   = inst.volume;
 
-	ma_uint64 frame_cap         = _countof(au_mix_temp);
+	ma_uint64 frame_cap         = au_mix_temp_size;
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -341,7 +342,8 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
-	memset(au_mix_temp, 0, sizeof(au_mix_temp));
+	au_mix_temp = sk_malloc_t(float, au_mix_temp_size);
+	memset(au_mix_temp, 0, sizeof(float) * au_mix_temp_size);
 
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {
 		return false;
@@ -437,6 +439,7 @@ void audio_shutdown() {
 
 	sound_release(au_mic_sound);
 	au_mic_sound = nullptr;
+	sk_free(au_mix_temp);
 }
 
 }
