@@ -128,6 +128,11 @@
         "name": "Linux",
         "description": "Build for Linux",
         "hidden": true,
+        "cacheVariables": {
+          "CMAKE_SYSTEM_NAME": "Linux",
+          "CMAKE_C_COMPILER": "clang",
+          "CMAKE_CXX_COMPILER": "clang++"
+        },
         "condition": {
             "type": "equals",
             "lhs": "${hostSystemName}",
