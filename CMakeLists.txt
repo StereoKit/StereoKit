@@ -149,8 +149,6 @@ if(SK_PHYSICS)
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
     GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
     EXCLUDE_FROM_ALL YES
-    OPTIONS
-    "CMAKE_CXX_FLAGS -Wno-dev"
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -172,7 +170,6 @@ CPMAddPackage(
   OPTIONS
   "BUILD_WITH_SYSTEM_JSONCPP OFF"
   "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
-  "CMAKE_CXX_FLAGS -Wno-dev"
 )
 
 ###########################################
@@ -495,10 +492,10 @@ elseif(WIN32)
     set(SK_ARCH "x86")
   endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    set(SK_ARCH "x64")
-  else()
+  if(CMAKE_SYSTEM_PROCESSOR)
     set(SK_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+  else()
+    set(SK_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
   endif()
 else()
   set(SK_ARCH "Unknown")
