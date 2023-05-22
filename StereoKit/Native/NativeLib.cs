@@ -9,6 +9,8 @@ namespace StereoKit
 	static class NativeLib
 	{
 		static bool _loaded = false;
+		internal static IntPtr androidActivityHandle;
+
 		internal static bool Load()
 		{
 			if (_loaded)
@@ -57,6 +59,13 @@ namespace StereoKit
 			MethodInfo runOnUiThread = activity.GetMethod  ("RunOnUiThread", new Type[] { typeof(Action) });
 			if (runOnUiThread == null) return false;
 
+			// Grab the activity handle as well, while we're here
+			PropertyInfo activityGetHandle = activity.GetProperty("Handle");
+			if (activityGetHandle == null) return false;
+
+			object activityObject = currentActivity.GetValue(null);
+			androidActivityHandle = (IntPtr)activityGetHandle.GetValue(activityObject);
+
 			// Ask the UI thread to load the libraries, then sleep this thread
 			// until it has succeeded or failed.
 			int loaded = 0;
@@ -72,7 +81,7 @@ namespace StereoKit
 				}
 				catch { loaded = -1; }
 			};
-			runOnUiThread.Invoke(currentActivity.GetValue(null), new object[] { loadLibs });
+			runOnUiThread.Invoke(activityObject, new object[] { loadLibs });
 
 			while (loaded == 0) Thread.Sleep(10);
 			return loaded == 1;

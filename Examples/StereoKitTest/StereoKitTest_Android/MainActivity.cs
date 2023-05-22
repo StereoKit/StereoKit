@@ -40,7 +40,7 @@ namespace StereoKitTest_Android
 			base.OnCreate(savedInstanceState);
 			Xamarin.Essentials.Platform.Init(this, savedInstanceState);
 
-			Run(Handle);
+			Run();
 		}
 		protected override void OnDestroy()
 		{
@@ -54,7 +54,7 @@ namespace StereoKitTest_Android
 		}
 
 		static bool running = false;
-		void Run(IntPtr activityHandle)
+		void Run()
 		{
 			if (running)
 				return;
@@ -70,18 +70,14 @@ namespace StereoKitTest_Android
 				if (app == null)
 					throw new Exception("StereoKit loader couldn't construct an instance of the App!");
 
-				// Initialize StereoKit, and the app
-				SKSettings settings = app.Settings;
-				settings.androidActivity = activityHandle;
-				settings.assetsFolder    = "";
-
 				// For requesting permission to use the Microphone
 				if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
 					ActivityCompat.RequestPermissions(this, new string[] { Manifest.Permission.RecordAudio }, 1);
 				if (ContextCompat.CheckSelfPermission(this, "com.oculus.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
 					ActivityCompat.RequestPermissions(this, new string[] { "com.oculus.permission.EYE_TRACKING" }, 1);
 
-				if (!SK.Initialize(settings))
+				// Initialize StereoKit, and the app
+				if (!SK.Initialize(app.Settings))
 					return;
 				app.Init();
 

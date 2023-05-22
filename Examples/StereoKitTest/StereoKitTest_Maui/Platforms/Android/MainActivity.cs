@@ -31,7 +31,7 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 		base.OnCreate(savedInstanceState);
 		Microsoft.Maui.ApplicationModel.Platform.Init(this, savedInstanceState);
 
-		Run(Handle);
+		Run();
 	}
 	protected override void OnDestroy()
 	{
@@ -45,7 +45,7 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 	}
 
 	static bool running = false;
-	void Run(IntPtr activityHandle)
+	void Run()
 	{
 		if (running)
 			return;
@@ -63,9 +63,7 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 				throw new System.Exception("StereoKit loader couldn't construct an instance of the App!");
 
 			// Initialize StereoKit, and the app
-			SKSettings settings = app.Settings;
-			settings.androidActivity = activityHandle;
-			if (!SK.Initialize(settings))
+			if (!SK.Initialize(app.Settings))
 				return;
 			app.Init();
 
