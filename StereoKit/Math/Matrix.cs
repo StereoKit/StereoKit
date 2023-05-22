@@ -465,8 +465,8 @@ namespace StereoKit
 		{
 			float l = nearClip / focalLength.x * -principalPoint.x;
 			float r = nearClip / focalLength.x * (imageResolution.x - principalPoint.x);
-			float t = nearClip / focalLength.y * principalPoint.y;
 			float b = nearClip / focalLength.y * (principalPoint.y - imageResolution.y);
+			float t = nearClip / focalLength.y * principalPoint.y;
 			return Matrix4x4.CreatePerspectiveOffCenter(l, r, b, t, nearClip, farClip);
 		}
 
