@@ -445,6 +445,32 @@ namespace StereoKit
 		}
 		
 		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. With the known camera 
+		/// intrinsics, you can replicate its perspective!</summary>
+		/// <param name="imageResolution">The resolution of the image. This
+		/// should be the image's width and height in pixels.</param>
+		/// <param name="focalLength">The focal length of the camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="principalPoint">The principal point of the camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
+		{
+			float l = nearClip / focalLength.x * -principalPoint.x;
+			float r = nearClip / focalLength.x * (imageResolution.x - principalPoint.x);
+			float t = nearClip / focalLength.y * principalPoint.y;
+			float b = nearClip / focalLength.y * (principalPoint.y - imageResolution.y);
+			return Matrix4x4.CreatePerspectiveOffCenter(l, r, b, t, nearClip, farClip);
+		}
+
+		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
 		/// matrices will preserve parallel lines. This is great for 2D 
 		/// scenes or content.</summary>
