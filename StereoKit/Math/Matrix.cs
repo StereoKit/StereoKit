@@ -438,6 +438,13 @@ namespace StereoKit
 		/// should not be too far away, or you'll see bad z-fighting 
 		/// artifacts.</param>
 		/// <returns>The final perspective matrix.</returns>
+		/// <remarks>Think of the optical axis as an imaginary line that passes through
+		/// the camera lens. In front of the camera lens, there's an image plane, 
+		/// perpendicular to the optical axis, where the image of the scene being 
+		/// captured is formed. Its distance is equal to the focal length of the camera 
+		/// from the center of the lens. Here, we find the ratio between the size of 
+		/// the image plane and distance from the camera in one unit distance and multiply 
+		/// it by the near clip distance to find a near plane that is parallel.</remarks>
 		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, float nearClip, float farClip)
 		{
 			Vec2 nearPlaneDimensions = imageResolution / focalLength * nearClip;
@@ -461,6 +468,16 @@ namespace StereoKit
 		/// should not be too far away, or you'll see bad z-fighting 
 		/// artifacts.</param>
 		/// <returns>The final perspective matrix.</returns>
+		/// <remarks>The principal point is usually close to the center of the image
+		/// but there may be an offset due to various factors, like lens misalignment
+		/// or manufacturing imperfections. Think of the optical axis as an imaginary line
+		/// that passes through the camera lens. In front of the camera lens, there's an 
+		/// image plane, perpendicular to the optical axis, where the image of the scene 
+		/// being captured is formed. Its distance is equal to the focal length of the
+		/// camera from the center of the lens. The principal point is the point on the 
+		/// image plane where the optical axis intersects it, which may be offset from
+		/// the center of the image. Here, we calculate the left, right, bottom, and top
+		/// values of the view frustum from the principal point on the near plane.</remarks>
 		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
 		{
 			float l = nearClip / focalLength.x * -principalPoint.x;
