@@ -428,7 +428,7 @@ namespace StereoKit
 		/// intrinsics, you can replicate its perspective!</summary>
 		/// <param name="imageResolution">The resolution of the image. This
 		/// should be the image's width and height in pixels.</param>
-		/// <param name="focalLength">The focal length of camera in pixels,
+		/// <param name="focalLengthPx">The focal length of camera in pixels,
 		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
 		/// <param name="nearClip">Anything closer than this distance (in
 		/// meters) will be discarded. Must not be zero, and if you make this
@@ -445,9 +445,9 @@ namespace StereoKit
 		/// from the center of the lens. Here, we find the ratio between the size of 
 		/// the image plane and distance from the camera in one unit distance and multiply 
 		/// it by the near clip distance to find a near plane that is parallel.</remarks>
-		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, float nearClip, float farClip)
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLengthPx, float nearClip, float farClip)
 		{
-			Vec2 nearPlaneDimensions = imageResolution / focalLength * nearClip;
+			Vec2 nearPlaneDimensions = imageResolution / focalLengthPx * nearClip;
 			return Matrix4x4.CreatePerspective(nearPlaneDimensions.x, nearPlaneDimensions.y, nearClip, farClip);
 		}
 		
@@ -456,9 +456,9 @@ namespace StereoKit
 		/// intrinsics, you can replicate its perspective!</summary>
 		/// <param name="imageResolution">The resolution of the image. This
 		/// should be the image's width and height in pixels.</param>
-		/// <param name="focalLength">The focal length of the camera in pixels,
+		/// <param name="focalLengthPx">The focal length of the camera in pixels,
 		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
-		/// <param name="principalPoint">The principal point of the camera in pixels,
+		/// <param name="principalPointPx">The principal point of the camera in pixels,
 		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
 		/// <param name="nearClip">Anything closer than this distance (in
 		/// meters) will be discarded. Must not be zero, and if you make this
@@ -478,12 +478,12 @@ namespace StereoKit
 		/// image plane where the optical axis intersects it, which may be offset from
 		/// the center of the image. Here, we calculate the left, right, bottom, and top
 		/// values of the view frustum from the principal point on the near plane.</remarks>
-		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLength, Vec2 principalPoint, float nearClip, float farClip)
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLengthPx, Vec2 principalPointPx, float nearClip, float farClip)
 		{
-			float l = nearClip / focalLength.x * -principalPoint.x;
-			float r = nearClip / focalLength.x * (imageResolution.x - principalPoint.x);
-			float b = nearClip / focalLength.y * (principalPoint.y - imageResolution.y);
-			float t = nearClip / focalLength.y * principalPoint.y;
+			float l = nearClip / focalLengthPx.x * -principalPointPx.x;
+			float r = nearClip / focalLengthPx.x * (imageResolution.x - principalPointPx.x);
+			float b = nearClip / focalLengthPx.y * (principalPointPx.y - imageResolution.y);
+			float t = nearClip / focalLengthPx.y * principalPointPx.y;
 			return Matrix4x4.CreatePerspectiveOffCenter(l, r, b, t, nearClip, farClip);
 		}
 
