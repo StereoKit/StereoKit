@@ -12,6 +12,7 @@ namespace StereoKit
 		/// <summary>A queue is used to prevent premature garbage collection
 		/// of the user-defined callbacks.</summary>
 		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+		private static Queue<RenderOnTextureCallback> _renderTextureCallbacks;
 
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
@@ -386,5 +387,16 @@ namespace StereoKit
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
 			=> NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
 
+		public static void RenderTo(Action onRender, Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		{
+			if (_renderTextureCallbacks is null) _renderTextureCallbacks = new Queue<RenderOnTextureCallback>();
+			RenderOnTextureCallback renderTextureCallback = context =>
+			{
+				onRender.Invoke();
+				_ = _renderTextureCallbacks.Dequeue();
+			};
+			_renderTextureCallbacks.Enqueue(renderTextureCallback);
+			NativeAPI.render_to_callback(renderTextureCallback, toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
+		}
 	}
 }

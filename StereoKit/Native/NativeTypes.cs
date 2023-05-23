@@ -458,6 +458,9 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void RenderOnScreenshotCallback(IntPtr data, int width, int height, IntPtr context);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void RenderOnTextureCallback(IntPtr context);
+
 	/// <summary>A callback for receiving the color data of a screenshot, instead
 	/// of saving it directly to a file.</summary>
 	/// <param name="data">The pointer to the color data. A fare warning that the

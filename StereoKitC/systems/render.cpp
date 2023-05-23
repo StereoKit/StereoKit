@@ -91,6 +91,8 @@ struct render_screenshot_t {
 	tex_format_	tex_format;
 };
 struct render_viewpoint_t {
+	void (*render_on_texture_callback)(void* context);
+	void*         context;
 	tex_t         rendertarget;
 	matrix        camera;
 	matrix        projection;
@@ -750,6 +752,10 @@ void render_check_viewpoints() {
 		render_draw_queue(&render_viewpoint_list[i].camera, &render_viewpoint_list[i].projection, render_viewpoint_list[i].layer_filter, 1);
 		skg_tex_target_bind(nullptr);
 
+		if (render_viewpoint_list[i].render_on_texture_callback != nullptr) {
+			render_viewpoint_list[i].render_on_texture_callback(render_viewpoint_list[i].context);
+		}
+
 		// Release the reference we added, the user should have their own ref
 		tex_release(render_viewpoint_list[i].rendertarget);
 	}
@@ -931,9 +937,13 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 	render_material_to(to_rendertarget, nullptr, camera, projection, layer_filter, clear, viewport);
 }
 
+void render_to_callback(void (*render_on_texture_callback)(void* context), tex_t to_rendertarget, const matrix &camera, const matrix &projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+	render_material_to(to_rendertarget, nullptr, camera, projection, layer_filter, clear, viewport, render_on_texture_callback);
+}
+
 ///////////////////////////////////////////
 
-void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, void (*render_on_texture_callback)(void* context), void* context) {
 	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
@@ -942,14 +952,17 @@ void render_material_to(tex_t to_rendertarget, material_t override_material, con
 
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_viewpoint_t viewpoint = {};
-	viewpoint.rendertarget      = to_rendertarget;
-	viewpoint.camera            = inv_cam;
-	viewpoint.projection        = projection;
-	viewpoint.layer_filter      = layer_filter;
-	viewpoint.viewport          = viewport;
-	viewpoint.clear             = clear;
-	viewpoint.override_material = override_material;
+	render_viewpoint_t viewpoint = {
+		render_on_texture_callback,
+		context,
+		to_rendertarget,
+		inv_cam,
+		projection,
+		viewport,
+		override_material,
+		layer_filter,
+		clear
+	};
 	render_viewpoint_list.add(viewpoint);
 }
 
