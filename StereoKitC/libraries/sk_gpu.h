@@ -4157,8 +4157,8 @@ layout(location = 3) in vec4 in_var_COLOR;
 out vec2 fs_var_TEXCOORD0;
 
 void main() {
-    gl_Position = in_var_SV_POSITION;
-    fs_var_TEXCOORD0 = in_var_TEXCOORD0;
+	gl_Position = in_var_SV_POSITION;
+	fs_var_TEXCOORD0 = in_var_TEXCOORD0;
 })_";
 	const char *ps = R"_(#version 300 es
 precision mediump float;
@@ -4171,7 +4171,7 @@ layout(location = 0) out highp vec4 out_var_SV_TARGET;
 
 void main() {
 	vec4 color = texture(tex, fs_var_TEXCOORD0);
-    out_var_SV_TARGET = vec4(pow(color.xyz, vec3(1.0 / 2.2)), color.w);
+	out_var_SV_TARGET = vec4(pow(color.xyz, vec3(1.0 / 2.2)), color.w);
 })_";
 
 	skg_shader_meta_t *meta = (skg_shader_meta_t *)malloc(sizeof(skg_shader_meta_t));
@@ -5009,7 +5009,7 @@ skg_color128_t skg_col_lch128(float h, float c, float l, float alpha) {
 
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
 
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
@@ -5097,9 +5097,9 @@ skg_color128_t jchz2srgb(float h, float s, float l, float alpha) {
 	float m_ = iz + az* -0.13860504327153927f + bz* -0.058047316156118904f;
 	float s_ = iz + az* -0.09601924202631895f + bz* -0.811891896056039000f;
 
-	      l = lms(l_);
+		  l = lms(l_);
 	float m = lms(m_);
-	      s = lms(s_);
+		  s = lms(s_);
 
 	float lr = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
 	float lg = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
@@ -5128,7 +5128,7 @@ skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 
 	float r = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
 	float g = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
-	      b = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
+		  b = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
 
 	/*float x = +1.661373055774069e+00f * L - 9.145230923250668e-01f * M + 2.313620767186147e-01f * S;
 	float y = -3.250758740427037e-01f * L + 1.571847038366936e+00f * M - 2.182538318672940e-01f * S;
@@ -5137,7 +5137,7 @@ skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 	// XYZ to sRGB
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;*/
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;*/
 
 	// to sRGB
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
@@ -5191,7 +5191,7 @@ skg_color128_t skg_col_lab128(float l, float a, float b, float alpha) {
 
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
 
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
