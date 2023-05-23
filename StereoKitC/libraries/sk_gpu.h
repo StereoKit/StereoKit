@@ -4157,8 +4157,8 @@ layout(location = 3) in vec4 in_var_COLOR;
 out vec2 fs_var_TEXCOORD0;
 
 void main() {
-	gl_Position = in_var_SV_POSITION;
-	fs_var_TEXCOORD0 = in_var_TEXCOORD0;
+    gl_Position = in_var_SV_POSITION;
+    fs_var_TEXCOORD0 = in_var_TEXCOORD0;
 })_";
 	const char *ps = R"_(#version 300 es
 precision mediump float;
@@ -5636,3 +5636,4 @@ ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
+
