@@ -140,6 +140,7 @@ typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_depthstencil,
 	skg_tex_fmt_depth32,
 	skg_tex_fmt_depth16,
+	skg_tex_fmt_r8g8,
 } skg_tex_fmt_;
 
 typedef enum skg_fmt_ {
@@ -373,6 +374,9 @@ typedef struct skg_swapchain_t {
 
 typedef struct skg_platform_data_t {
 	void *_d3d11_device;
+	void *_d3d11_deferred_context;
+	void *_d3d_deferred_mtx;
+	uint32_t _d3d_main_thread_id;
 } skg_platform_data_t;
 
 #elif defined(SKG_DIRECT3D12)
@@ -937,7 +941,9 @@ void skg_draw_begin() {
 skg_platform_data_t skg_get_platform_data() {
 	skg_platform_data_t result = {};
 	result._d3d11_device = d3d_device;
-
+	result._d3d11_deferred_context = d3d_deferred;
+	result._d3d_deferred_mtx = d3d_deferred_mtx;
+	result._d3d_main_thread_id = d3d_main_thread;
 	return result;
 }
 
@@ -1126,13 +1132,35 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 		return;
 	}
 
-	D3D11_MAPPED_SUBRESOURCE resource;
-	HRESULT hr = d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-	if (SUCCEEDED(hr)) {
-		memcpy(resource.pData, data, size_bytes);
+	HRESULT hr = E_FAIL;
+	D3D11_MAPPED_SUBRESOURCE resource = {};
+
+	// Map the memory so we can access it on CPU! In a multi-threaded
+	// context this can be tricky, here we're using a deferred context to
+	// push this operation over to the main thread. The deferred context is
+	// then executed in skg_draw_begin.
+	bool on_main = GetCurrentThreadId() == d3d_main_thread;
+	if (on_main) {
+		hr = d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	} else {
+		WaitForSingleObject(d3d_deferred_mtx, INFINITE);
+		hr = d3d_deferred->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	}
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type: 0x%08X", hr);
+		if (!on_main) {
+			ReleaseMutex(d3d_deferred_mtx);
+		}
+		return;
+	}
+
+	memcpy(resource.pData, data, size_bytes);
+		
+	if (on_main) {
 		d3d_context->Unmap(buffer->_buffer, 0);
 	} else {
-		skg_logf(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type: 0x%08X", hr);
+		d3d_deferred->Unmap(buffer->_buffer, 0);
+		ReleaseMutex(d3d_deferred_mtx);
 	}
 }
 
@@ -1976,6 +2004,7 @@ bool skg_can_make_mips(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r32:
 	case skg_tex_fmt_depth16:
 	case skg_tex_fmt_r16:
+	case skg_tex_fmt_r8g8:
 	case skg_tex_fmt_r8: return true;
 	default: return false;
 	}
@@ -2012,6 +2041,7 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 			break;
 		case skg_tex_fmt_depth16:
 		case skg_tex_fmt_r16:
+		case skg_tex_fmt_r8g8:
 			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_r8:
@@ -2251,6 +2281,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		}
 		if (FAILED(hr)) {
 			skg_logf(skg_log_critical, "Failed mapping a texture: 0x%08X", hr);
+			if (!on_main) {
+				ReleaseMutex(d3d_deferred_mtx);
+			}
 			return;
 		}
 
@@ -2530,6 +2563,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	case skg_tex_fmt_r8:            return DXGI_FORMAT_R8_UNORM;
 	case skg_tex_fmt_r16:           return DXGI_FORMAT_R16_UNORM;
 	case skg_tex_fmt_r32:           return DXGI_FORMAT_R32_FLOAT;
+	case skg_tex_fmt_r8g8:          return DXGI_FORMAT_R8G8_UNORM;
 	default: return DXGI_FORMAT_UNKNOWN;
 	}
 }
@@ -2554,6 +2588,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case DXGI_FORMAT_R8_UNORM:            return skg_tex_fmt_r8;
 	case DXGI_FORMAT_R16_UNORM:           return skg_tex_fmt_r16;
 	case DXGI_FORMAT_R32_FLOAT:           return skg_tex_fmt_r32;
+	case DXGI_FORMAT_R8G8_UNORM:          return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
 	}
 }
@@ -4122,8 +4157,8 @@ layout(location = 3) in vec4 in_var_COLOR;
 out vec2 fs_var_TEXCOORD0;
 
 void main() {
-    gl_Position = in_var_SV_POSITION;
-    fs_var_TEXCOORD0 = in_var_TEXCOORD0;
+	gl_Position = in_var_SV_POSITION;
+	fs_var_TEXCOORD0 = in_var_TEXCOORD0;
 })_";
 	const char *ps = R"_(#version 300 es
 precision mediump float;
@@ -4136,7 +4171,7 @@ layout(location = 0) out highp vec4 out_var_SV_TARGET;
 
 void main() {
 	vec4 color = texture(tex, fs_var_TEXCOORD0);
-    out_var_SV_TARGET = vec4(pow(color.xyz, vec3(1.0 / 2.2)), color.w);
+	out_var_SV_TARGET = vec4(pow(color.xyz, vec3(1.0 / 2.2)), color.w);
 })_";
 
 	skg_shader_meta_t *meta = (skg_shader_meta_t *)malloc(sizeof(skg_shader_meta_t));
@@ -4645,6 +4680,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return GL_R8;
 	case skg_tex_fmt_r16:           return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
+	case skg_tex_fmt_r8g8:          return GL_RG8;
 	default: return 0;
 	}
 }
@@ -4667,6 +4703,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case GL_R8:                 return skg_tex_fmt_r8;
 	case GL_R16UI:              return skg_tex_fmt_r16;
 	case GL_R32F:               return skg_tex_fmt_r32;
+	case GL_RG8:                return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
 	}
 }
@@ -4696,6 +4733,7 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:
 	case skg_tex_fmt_r16:
 	case skg_tex_fmt_r32:           return GL_RED;
+	case skg_tex_fmt_r8g8:          return GL_RG;
 	default: return 0;
 	}
 }
@@ -4720,6 +4758,7 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_r16:           return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_r32:           return GL_FLOAT;
+	case skg_tex_fmt_r8g8:          return GL_UNSIGNED_SHORT;
 	default: return 0;
 	}
 }
@@ -4970,7 +5009,7 @@ skg_color128_t skg_col_lch128(float h, float c, float l, float alpha) {
 
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
 
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
@@ -5058,9 +5097,9 @@ skg_color128_t jchz2srgb(float h, float s, float l, float alpha) {
 	float m_ = iz + az* -0.13860504327153927f + bz* -0.058047316156118904f;
 	float s_ = iz + az* -0.09601924202631895f + bz* -0.811891896056039000f;
 
-	      l = lms(l_);
+		  l = lms(l_);
 	float m = lms(m_);
-	      s = lms(s_);
+		  s = lms(s_);
 
 	float lr = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
 	float lg = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
@@ -5089,7 +5128,7 @@ skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 
 	float r = l* +0.0592896375540425100e4f + m* -0.052239474257975140e4f + s* +0.003259644233339027e4f;
 	float g = l* -0.0222329579044572220e4f + m* +0.038215274736946150e4f + s* -0.005703433147128812e4f;
-	      b = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
+		  b = l* +0.0006270913830078808e4f + m* -0.007021906556220012e4f + s* +0.016669756032437408e4f;
 
 	/*float x = +1.661373055774069e+00f * L - 9.145230923250668e-01f * M + 2.313620767186147e-01f * S;
 	float y = -3.250758740427037e-01f * L + 1.571847038366936e+00f * M - 2.182538318672940e-01f * S;
@@ -5098,7 +5137,7 @@ skg_color128_t skg_col_jab128(float j, float a, float b, float alpha) {
 	// XYZ to sRGB
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;*/
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;*/
 
 	// to sRGB
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
@@ -5152,7 +5191,7 @@ skg_color128_t skg_col_lab128(float l, float a, float b, float alpha) {
 
 	float r = x *  3.2406f + y * -1.5372f + z * -0.4986f;
 	float g = x * -0.9689f + y *  1.8758f + z *  0.0415f;
-	      b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
+		  b = x *  0.0557f + y * -0.2040f + z *  1.0570f;
 
 	r = (r > 0.0031308f) ? (1.055f * powf(r, 1/2.4f) - 0.055f) : 12.92f * r;
 	g = (g > 0.0031308f) ? (1.055f * powf(g, 1/2.4f) - 0.055f) : 12.92f * g;
@@ -5551,6 +5590,7 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return sizeof(uint8_t );
 	case skg_tex_fmt_r16:           return sizeof(uint16_t);
 	case skg_tex_fmt_r32:           return sizeof(uint32_t);
+	case skg_tex_fmt_r8g8:          return sizeof(uint16_t);
 	default: return 0;
 	}
 }
