@@ -115,7 +115,10 @@ namespace StereoKit
 
 			// Make sure we have a valid name
 			if (string.IsNullOrEmpty(settings.appName))
-				settings.appName = Assembly.GetEntryAssembly().GetName().Name;
+			{
+				try { settings.appName = Assembly.GetEntryAssembly()?.GetName()?.Name ?? "StereoKit App"; }
+				catch { settings.appName = "StereoKit App"; }
+			}
 
 			// If we don't have an android activity, the loader will also have
 			// one we can use.
