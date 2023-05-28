@@ -198,7 +198,7 @@ void *backend_d3d11_get_d3d_context() {
 
 ///////////////////////////////////////////
 
-void* backend_d3d11_get_d3d_deferred_context() {
+void* backend_d3d11_get_deferred_d3d_context() {
 #if !defined(SKG_DIRECT3D11)
 	log_err(backend_err_wrong_backend);
 	return nullptr;
@@ -210,7 +210,7 @@ void* backend_d3d11_get_d3d_deferred_context() {
 
 ///////////////////////////////////////////
 
-void* backend_d3d11_get_d3d_deferred_mtx() {
+void* backend_d3d11_get_deferred_mtx() {
 #if !defined(SKG_DIRECT3D11)
 	log_err(backend_err_wrong_backend);
 	return nullptr;
@@ -222,7 +222,7 @@ void* backend_d3d11_get_d3d_deferred_mtx() {
 
 ///////////////////////////////////////////
 
-uint32_t backend_d3d11_get_d3d_main_thread_id() {
+uint32_t backend_d3d11_get_main_thread_id() {
 #if !defined(SKG_DIRECT3D11)
 	log_err(backend_err_wrong_backend);
 	return nullptr;
