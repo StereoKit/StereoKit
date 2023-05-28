@@ -909,6 +909,9 @@ typedef enum tex_format_ {
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
 	tex_format_depth16 = 16,
+	/*A double channel of data that supports 8 bits for the red
+	  channel and 8 bits for the green channel.*/
+	tex_format_r8g8 = 17,
 
 } tex_format_;
 
@@ -2134,6 +2137,9 @@ SK_API void*             backend_android_get_jni_env  ();
 SK_API backend_graphics_ backend_graphics_get           ();
 SK_API void             *backend_d3d11_get_d3d_device   ();
 SK_API void             *backend_d3d11_get_d3d_context  ();
+SK_API void             *backend_d3d11_get_deferred_d3d_context();
+SK_API void             *backend_d3d11_get_deferred_mtx();
+SK_API uint32_t         backend_d3d11_get_main_thread_id();
 SK_API void             *backend_opengl_wgl_get_hdc     ();
 SK_API void             *backend_opengl_wgl_get_hglrc   ();
 SK_API void             *backend_opengl_glx_get_context ();
