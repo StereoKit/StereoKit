@@ -936,6 +936,9 @@ typedef enum tex_format_ {
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
 	tex_format_depth16 = 16,
+	/*A double channel of data that supports 8 bits for the red
+	  channel and 8 bits for the green channel.*/
+	tex_format_r8g8 = 17,
 
 } tex_format_;
 
@@ -1569,7 +1572,7 @@ SK_API void                  render_screenshot     (const char *file_utf8, vec3 
 SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32));
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}), tex_format_ tex_format sk_default(tex_format_rgba32));
+SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 
@@ -2172,6 +2175,9 @@ SK_API void*             backend_android_get_jni_env  ();
 SK_API backend_graphics_ backend_graphics_get           ();
 SK_API void             *backend_d3d11_get_d3d_device   ();
 SK_API void             *backend_d3d11_get_d3d_context  ();
+SK_API void             *backend_d3d11_get_deferred_d3d_context();
+SK_API void             *backend_d3d11_get_deferred_mtx();
+SK_API uint32_t         backend_d3d11_get_main_thread_id();
 SK_API void             *backend_opengl_wgl_get_hdc     ();
 SK_API void             *backend_opengl_wgl_get_hglrc   ();
 SK_API void             *backend_opengl_glx_get_context ();
