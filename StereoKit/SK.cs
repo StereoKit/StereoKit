@@ -143,11 +143,6 @@ namespace StereoKit
 				catch { settings.appName = "StereoKit App"; }
 			}
 
-			// If we don't have an android activity, the loader will also have
-			// one we can use.
-			if (settings.androidActivity == IntPtr.Zero)
-				settings.androidActivity = NativeLib.androidActivityHandle;
-
 			// DllImport finds the function at the beginning of the function 
 			// call, so this needs to be in a separate function from 
 			// NativeLib.LoadDll
