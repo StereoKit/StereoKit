@@ -50,6 +50,12 @@ namespace StereoKit
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
+		/// <summary>On Android systems, this must be assigned right away,
+		/// before _any_ access to SK methods. When using the SK templates,
+		/// this will be done automatically. This will be set to null after
+		/// SK.Initialize is called.</summary>
+		public static object AndroidActivity { get; set; }
+
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
 		/// <param name="settings">The configuration settings for StereoKit.
@@ -61,6 +67,22 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
+			if (settings.androidActivity == IntPtr.Zero && AndroidActivity != null)
+			{
+				Type         javaObject = Type.GetType("Java.Lang.Object, Mono.Android");
+				PropertyInfo handle     = javaObject?.GetProperty("Handle", BindingFlags.Instance | BindingFlags.Public);
+				if (handle != null)
+					settings.androidActivity = (IntPtr)handle.GetValue(AndroidActivity);
+			}
+			if (AndroidActivity == null && settings.androidActivity != IntPtr.Zero)
+			{
+				Type activityType           = Type.GetType("Android.App.Activity, Mono.Android");
+				Type jniHandleOwnershipType = Type.GetType("Android.Runtime.JniHandleOwnership, Mono.Android");
+				ConstructorInfo constructor = activityType?.GetConstructor(new Type[] { typeof(IntPtr), jniHandleOwnershipType });
+				if (constructor != null)
+					AndroidActivity = constructor.Invoke(new object[] { settings.androidActivity, 0 }); ;
+			}
+
 			if (!NativeLib.Load()) {
 				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
 				Console.WriteLine                         ("[SK error] Failed to load StereoKitC!");
@@ -68,6 +90,7 @@ namespace StereoKit
 			}
 
 			IsInitialized = InitializeCall(settings);
+			AndroidActivity = null;
 			return IsInitialized;
 		}
 

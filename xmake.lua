@@ -120,6 +120,7 @@ target("StereoKitC")
 
     elseif is_plat("android") then
         add_links("EGL", "OpenSLES", "android")
+        add_defines("SK_DYNAMIC_OPENXR")
 
     elseif is_plat("wasm") then
         set_kind("static")

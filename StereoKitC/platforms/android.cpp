@@ -15,6 +15,8 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
+#include <dlfcn.h>
+
 namespace sk {
 
 JavaVM           *android_vm              = nullptr;
@@ -43,7 +45,7 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 
 bool android_init() {
 	android_render_sys = systems_find("FrameRender");
-	android_activity = (jobject)sk_settings.android_activity;
+	android_activity   = (jobject)sk_settings.android_activity;
 	if (android_vm == nullptr)
 		android_vm = (JavaVM*)sk_settings.android_java_vm;
 
@@ -83,7 +85,7 @@ bool android_init() {
 
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
-	jclass    activity_class           = android_env->GetObjectClass(android_activity);
+	jclass    activity_class = android_env->GetObjectClass(android_activity);
 	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
 	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
@@ -92,6 +94,16 @@ bool android_init() {
 		log_fail_reason(95, log_error, "Couldn't get the Android asset manager!");
 		return false;
 	}
+
+#if defined(SK_DYNAMIC_OPENXR)
+	// Android has no universally supported openxr_loader yet, so on this
+	// platform we don't static link it, and instead provide devs a way to ship
+	// other loaders.
+	if (sk_settings.display_preference == display_mode_mixedreality && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
+		log_fail_reason(95, log_error, "openxr_loader failed to load!");
+		return false;
+	}
+#endif
 
 	return true;
 }

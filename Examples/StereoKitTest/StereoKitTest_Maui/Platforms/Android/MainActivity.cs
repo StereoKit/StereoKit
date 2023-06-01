@@ -1,12 +1,11 @@
 ﻿using Android.App;
+using Android.Content;
+using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
-using Android.Content;
-using StereoKit;
-using Android.Graphics;
-using Java.Lang;
 using AndroidX.AppCompat.App;
+using StereoKit;
 using System;
 using System.Threading.Tasks;
 
@@ -16,21 +15,13 @@ namespace SKTemplate_Maui;
 [IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 {
-	App                app;
-	Android.Views.View surface;
+	App  app;
+	View surface;
 
 	protected override void OnCreate(Bundle savedInstanceState)
 	{
-		// Set up a surface for StereoKit to draw on
-		Window.TakeSurface(this);
-		Window.SetFormat(Format.Unknown);
-		surface = new(this);
-		SetContentView(surface);
-		surface.RequestFocus();
-
 		base.OnCreate(savedInstanceState);
 		Microsoft.Maui.ApplicationModel.Platform.Init(this, savedInstanceState);
-
 		Run();
 	}
 	protected override void OnDestroy()
@@ -47,9 +38,13 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 	static bool running = false;
 	void Run()
 	{
-		if (running)
-			return;
+		if (running) return;
 		running = true;
+
+		// Before anything else, give StereoKit the Activity. This should
+		// be set before any other SK calls, otherwise native library
+		// loading may fail.
+		SK.AndroidActivity = this;
 
 		Task.Run(() => {
 			// If the app has a constructor that takes a string array, then
@@ -60,7 +55,18 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 				? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
 				: (App)Activator.CreateInstance(appType);
 			if (app == null)
-				throw new System.Exception("StereoKit loader couldn't construct an instance of the App!");
+				throw new Exception("StereoKit loader couldn't construct an instance of the App!");
+
+			// Set up a surface for StereoKit to draw on, this is only really
+			// important for flatscreen experiences.
+			if (app.Settings.displayPreference == DisplayMode.Flatscreen)
+			{
+				Window.TakeSurface(this);
+				Window.SetFormat(Format.Unknown);
+				surface = new View(this);
+				SetContentView(surface);
+				surface.RequestFocus();
+			}
 
 			// Initialize StereoKit, and the app
 			if (!SK.Initialize(app.Settings))
@@ -70,7 +76,7 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 			// Now loop until finished, and then shut down
 			SK.Run(app.Step);
 
-			Android.OS.Process.KillProcess(Android.OS.Process.MyPid());
+			Process.KillProcess(Process.MyPid());
 		});
 	}
 

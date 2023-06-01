@@ -16,6 +16,10 @@
 #     library. This is off by default.
 # - SK_BUILD_SHARED_LIBS
 #     Should StereoKit build as a shared, or static library?
+# - SK_DYNAMIC_OPENXR
+#     Dynamic link with the standard OpenXR Loader. Not what you want
+#     on desktop, but on Android you may need to dynamic link with other
+#     loaders.
 
 cmake_minimum_required(VERSION 3.10)
 
@@ -23,6 +27,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(StereoKit VERSION "0.3.7" LANGUAGES CXX C)
+
+# Add this repository's cmake modules to CMAKE_MODULE_PATH
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 ###########################################
 ## Options                               ##
@@ -40,10 +47,10 @@ set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored 
 ## Configuration settings                ##
 ###########################################
 
-# Default build configuration to RelWithDebInfo 
+# Default build configuration to Release 
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     if (NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "" FORCE)
+        set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
     endif()
 endif()
 
@@ -51,21 +58,42 @@ endif()
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 
-# Create separate debug symbol files
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -g")
-if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-  add_compile_options(-fdata-sections -ffunction-sections -flto)
-  add_link_options(-Wl,--gc-sections -flto)
-elseif(MSVC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Z7")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /O2")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
-endif()
-
-# set NDEBUG if in release mode
+# Release mode settings
 if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
   add_definitions(-DNDEBUG)
+
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    # Always generate debug symbol files, we split them out later
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+    add_compile_options(-fdata-sections -ffunction-sections -flto)
+    add_link_options(-Wl,--gc-sections -flto)
+  elseif(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /O2")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF") # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
+
+    # Something is setting /RTC1, which is not compatible with /O2
+    string(REPLACE "/RTC1" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REPLACE "/RTC1" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  endif()
+endif()
+
+###########################################
+## Source Link                           ##
+###########################################
+
+if (MSVC)
+  if ("${CMAKE_C_COMPILER_VERSION}" VERSION_GREATER_EQUAL "19.20")
+    include(SourceLink)
+    file(TO_NATIVE_PATH "${PROJECT_BINARY_DIR}/source_link.json" SOURCE_LINK_JSON)
+    source_link(${PROJECT_SOURCE_DIR} ${SOURCE_LINK_JSON})
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SOURCELINK:${SOURCE_LINK_JSON}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SOURCELINK:${SOURCE_LINK_JSON}")
+  else()
+    message(WARNING "Disabling SourceLink due to old version of MSVC. Please update to VS2019!")
+  endif()
 endif()
 
 ###########################################
@@ -90,6 +118,9 @@ if (ANDROID)
     log
     android
     EGL)
+  if (SK_DYNAMIC_OPENXR)
+    add_definitions("-DSK_DYNAMIC_OPENXR")
+  endif()
 elseif (UNIX)
   set(LINUX_LIBS
     Threads::Threads

@@ -30,16 +30,8 @@ namespace StereoKitTest_Android
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
-			// Set up a surface for StereoKit to draw on
-			Window.TakeSurface(this);
-			Window.SetFormat(Format.Unknown);
-			surface = new View(this);
-			SetContentView(surface);
-			surface.RequestFocus();
-
 			base.OnCreate(savedInstanceState);
 			Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-
 			Run();
 		}
 		protected override void OnDestroy()
@@ -56,13 +48,19 @@ namespace StereoKitTest_Android
 		static bool running = false;
 		void Run()
 		{
-			if (running)
-				return;
+			if (running) return;
 			running = true;
+
+			// Before anything else, give StereoKit the Activity. This should
+			// be set before any other SK calls, otherwise native library
+			// loading may fail.
+			SK.AndroidActivity = this;
+
+			// Start up a thread for StereoKit to run in
 			Task.Run(() => {
 				// If the app has a constructor that takes a string array, then
-				// we'll use that, and pass the command line arguments into it on
-				// creation
+				// we'll use that, and pass the command line arguments into it
+				// on creation
 				Type appType = typeof(App);
 				app = appType.GetConstructor(new Type[] { typeof(string[]) }) != null
 					? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
@@ -70,7 +68,19 @@ namespace StereoKitTest_Android
 				if (app == null)
 					throw new Exception("StereoKit loader couldn't construct an instance of the App!");
 
-				// For requesting permission to use the Microphone
+				// Set up a surface for StereoKit to draw on, this is only really
+				// important for flatscreen experiences.
+				if (app.Settings.displayPreference == DisplayMode.Flatscreen)
+				{
+					Window.TakeSurface(this);
+					Window.SetFormat(Format.Unknown);
+					surface = new View(this);
+					SetContentView(surface);
+					surface.RequestFocus();
+				}
+
+				// For requesting permission to use the microphone and eye
+				// tracking
 				if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
 					ActivityCompat.RequestPermissions(this, new string[] { Manifest.Permission.RecordAudio }, 1);
 				if (ContextCompat.CheckSelfPermission(this, "com.oculus.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
