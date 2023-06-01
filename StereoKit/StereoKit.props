@@ -4,7 +4,7 @@
 		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
 		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
 		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
-		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Oculus</SKOpenXRLoader>
+		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Standard</SKOpenXRLoader>
 		<SKShowDebugVars    Condition="'$(SKShowDebugVars)'    == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders  Condition="'$(SKAutoFindShaders)'  == ''">True</SKAutoFindShaders>
 	</PropertyGroup>
