@@ -41,11 +41,6 @@ public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 		if (running) return;
 		running = true;
 
-		// Before anything else, give StereoKit the Activity. This should
-		// be set before any other SK calls, otherwise native library
-		// loading may fail.
-		SK.AndroidActivity = this;
-
 		Task.Run(() => {
 			// If the app has a constructor that takes a string array, then
 			// we'll use that, and pass the command line arguments into it on

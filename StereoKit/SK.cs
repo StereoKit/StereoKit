@@ -51,9 +51,9 @@ namespace StereoKit
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
 		/// <summary>On Android systems, this must be assigned right away,
-		/// before _any_ access to SK methods. When using the SK templates,
-		/// this will be done automatically. This will be set to null after
-		/// SK.Initialize is called.</summary>
+		/// before _any_ access to SK methods. When using Xamarin.Essentials or
+		/// Microsoft.Maui.Essentials, this will be done automatically. This
+		/// will be set to null after SK.Initialize is called.</summary>
 		public static object AndroidActivity { get; set; }
 
 		/// <summary>Initializes StereoKit window, default resources, systems,
