@@ -778,7 +778,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.viewConfigurationType = layer.type;
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
+	xr_check(xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views),
+		"xrLocateViews [%s]")
 
 	// Copy over the FoV so it's available to the users
 	if (layer.view_count > 0 && layer.type != xr_display_primary) {
