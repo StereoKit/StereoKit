@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -19,8 +19,8 @@ namespace StereoKit
 			if (RuntimeInformation.OSDescription == "Browser")
 				return true;
 
-			// Xamarin and Maui both have Java.Lang.JavaSystem.LoadLibrary(string)
-			if (Type.GetType("Java.Lang.JavaSystem, Mono.Android") != null)
+			// Android using Xamarin or Maui both use Mono.Android
+			if (IsAssemblyLoaded("Mono.Android"))
 			{
 				_loaded = LoadAndroid();
 				return _loaded;
@@ -54,6 +54,22 @@ namespace StereoKit
 				return true;
 			} catch {
 				// We can't invoke on the main thread without the Activity!
+
+				Type activity = Type.GetType("Android.App.Activity, Mono.Android");
+				if (activity == null) return false;
+
+				if (SK.AndroidActivity == null)
+				{
+					// If we have Xamarin.Essentials or Maui.Essentials, we can
+					// grab the Activity from their Platform.CurrentActivity
+					// property.
+					Type platform = null;
+					if      (IsAssemblyLoaded("Xamarin.Essentials"       )) platform = Type.GetType("Xamarin.Essentials.Platform, Xamarin.Essentials");
+					else if (IsAssemblyLoaded("Microsoft.Maui.Essentials")) platform = Type.GetType("Microsoft.Maui.ApplicationModel.Platform, Microsoft.Maui.Essentials");
+					PropertyInfo currentActivity = platform?.GetProperty("CurrentActivity", BindingFlags.Static | BindingFlags.Public);
+					if (currentActivity != null)
+						SK.AndroidActivity = currentActivity.GetValue(null);
+				}
 				if (SK.AndroidActivity == null)
 				{
 					System.Diagnostics.Debug.WriteLine("[SK error] SK.AndroidActivity must be set before this point!");
@@ -63,8 +79,6 @@ namespace StereoKit
 
 				// We're likely not on the main/UI thread, so lets get a way to
 				// insert our code onto the main/UI thread.
-				Type activity = Type.GetType("Android.App.Activity, Mono.Android");
-				if (activity == null) return false;
 				MethodInfo runOnUiThread = activity.GetMethod  ("RunOnUiThread", new Type[] { typeof(Action) });
 				if (runOnUiThread == null) return false;
 
@@ -72,10 +86,10 @@ namespace StereoKit
 				// thread until it has succeeded or failed.
 				int loaded = 0;
 				Action loadLibs = () => {
-					try { loadLibrary.Invoke(null, new object[] { "StereoKitC" }); loaded = 1; }
+					try   { loadLibrary.Invoke(null, new object[] { "StereoKitC" }); loaded = 1; }
 					catch { loaded = -1; }
 				};
-				try { runOnUiThread.Invoke(SK.AndroidActivity, new object[] { loadLibs }); }
+				try   { runOnUiThread.Invoke(SK.AndroidActivity, new object[] { loadLibs }); }
 				catch { loaded = -1; }
 
 				while (loaded == 0)
@@ -121,5 +135,10 @@ namespace StereoKit
 			if (dlopen2("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			return false;
 		}
+
+		static bool IsAssemblyLoaded(string assembly)
+			=> AppDomain.CurrentDomain
+				.GetAssemblies()
+				.Any(a => a.GetName().Name == assembly);
 	}
 }
