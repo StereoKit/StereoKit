@@ -31,7 +31,6 @@ namespace sk {
 
 const char   *sk_app_name;
 void        (*sk_app_step_func)(void);
-bool          sk_no_flatscreen_fallback = false;
 sk_settings_t sk_settings    = {};
 system_info_t sk_info        = {};
 app_focus_    sk_focus       = app_focus_active;
@@ -128,10 +127,9 @@ void sk_app_step() {
 ///////////////////////////////////////////
 
 bool32_t sk_init(sk_settings_t settings) {
-	sk_settings               = settings;
-	sk_no_flatscreen_fallback = sk_settings.no_flatscreen_fallback;
-	sk_app_name               = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
-	sk_init_thread            = thrd_id_current();
+	sk_settings    = settings;
+	sk_app_name    = sk_settings.app_name == nullptr ? "StereoKit App" : sk_settings.app_name;
+	sk_init_thread = thrd_id_current();
 	if (sk_settings.log_filter != log_none)
 		log_set_filter(sk_settings.log_filter);
 

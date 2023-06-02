@@ -44,6 +44,9 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 ///////////////////////////////////////////
 
 bool android_init() {
+	// don't allow flatscreen fallback on Android
+	sk_settings.no_flatscreen_fallback = true;
+
 	android_render_sys = systems_find("FrameRender");
 	android_activity   = (jobject)sk_settings.android_activity;
 	if (android_vm == nullptr)

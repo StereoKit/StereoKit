@@ -7,7 +7,6 @@ namespace sk {
 extern const char   *sk_app_name;
 extern sk_settings_t sk_settings;
 extern system_info_t sk_info;
-extern bool          sk_no_flatscreen_fallback;
 
 extern app_focus_ sk_focus;
 extern bool32_t   sk_running;

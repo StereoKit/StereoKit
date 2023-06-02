@@ -72,7 +72,7 @@ bool platform_init() {
 
 	// Start up the current mode!
 	if (!platform_set_mode(display_type)) {
-		if (!sk_no_flatscreen_fallback && display_type != display_type_flatscreen) {
+		if (!sk_settings.no_flatscreen_fallback && display_type != display_type_flatscreen) {
 			log_clear_any_fail_reason();
 			log_infof("Couldn't create a stereo display, falling back to flatscreen");
 			if (!platform_set_mode(display_type_flatscreen))
