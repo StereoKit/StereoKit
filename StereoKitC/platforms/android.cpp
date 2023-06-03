@@ -257,6 +257,89 @@ void android_step_end_flat() {
 
 ///////////////////////////////////////////
 
+const int32_t PERMISSION_DENIED  = -1;
+const int32_t PERMISSION_GRANTED = 0;
+
+///////////////////////////////////////////
+
+bool android_check_app_permission(const char* permission) {
+	jclass    class_activity               = android_env->GetObjectClass(android_activity);
+	jmethodID activity_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+
+	jstring jobj_permission = android_env->NewStringUTF(permission);
+	jint    result          = android_env->CallIntMethod(android_activity, activity_checkSelfPermission, jobj_permission);
+
+	android_env->DeleteLocalRef(jobj_permission);
+
+	return result == PERMISSION_GRANTED;
+}
+
+///////////////////////////////////////////
+
+bool android_check_manifest_permission(const char* permission)
+{
+	jclass       class_activity                =          android_env->GetObjectClass  (android_activity);
+	jmethodID    activity_getPackageManager    =          android_env->GetMethodID     (class_activity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+	jmethodID    activity_getPackageName       =          android_env->GetMethodID     (class_activity, "getPackageName", "()Ljava/lang/String;");
+	jobject      jobj_packageManager           =          android_env->CallObjectMethod(android_activity, activity_getPackageManager);
+	jclass       class_packageManager          =          android_env->GetObjectClass  (jobj_packageManager);
+	jmethodID    packageManager_getPackageInfo =          android_env->GetMethodID     (class_packageManager, "getPackageInfo", "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+	jstring      jobj_packageName              = (jstring)android_env->CallObjectMethod(android_activity, activity_getPackageName);
+
+	jint         flags = 4096; // PackageManager.GET_PERMISSIONS
+	jobject      jobj_packageInfo  = android_env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
+	jclass       class_packageInfo = android_env->GetObjectClass(jobj_packageInfo);
+
+	jfieldID     packageInfo_requestedPermissions = android_env->GetFieldID(class_packageInfo, "requestedPermissions", "[Ljava/lang/String;");
+	jobjectArray jobj_requestedPermissions        = (jobjectArray)android_env->GetObjectField(jobj_packageInfo, packageInfo_requestedPermissions);
+
+	jstring      jobj_permission = android_env->NewStringUTF(permission);
+	jclass       class_string    = android_env->GetObjectClass(jobj_permission);
+	jmethodID    string_equals   = android_env->GetMethodID(class_string, "equals", "(Ljava/lang/Object;)Z");
+
+	// Iterate over the array
+	jsize length = android_env->GetArrayLength(jobj_requestedPermissions);
+	bool  result = false;
+	for (jsize i = 0; i < length; i++) {
+		jstring jobj_currPermission = (jstring)android_env->GetObjectArrayElement(jobj_requestedPermissions, i);
+		bool match = android_env->CallBooleanMethod(jobj_permission, string_equals, jobj_currPermission);
+		android_env->DeleteLocalRef(jobj_currPermission);
+
+		if (match) {
+			result = true;
+			break;
+		}
+	}
+
+	android_env->DeleteLocalRef(jobj_packageManager);
+	android_env->DeleteLocalRef(jobj_packageName);
+	android_env->DeleteLocalRef(jobj_packageInfo);
+	android_env->DeleteLocalRef(jobj_requestedPermissions);
+	android_env->DeleteLocalRef(jobj_permission);
+
+	return result;
+
+}
+
+///////////////////////////////////////////
+
+void android_request_permission(const char* permission) {
+	jclass    class_activity                    = android_env->GetObjectClass(android_activity);
+	jmethodID contextCompat_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jmethodID activity_requestPermissions       = android_env->GetMethodID   (class_activity, "requestPermissions",  "([Ljava/lang/String;I)V");
+
+	jstring      jobj_permission      = android_env->NewStringUTF  (permission);
+	jobjectArray jobj_permission_list = android_env->NewObjectArray(1, android_env->FindClass("java/lang/String"), NULL);
+
+	android_env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
+	android_env->CallVoidMethod       (android_activity, activity_requestPermissions, jobj_permission_list, 0);
+
+	android_env->DeleteLocalRef(jobj_permission);
+	android_env->DeleteLocalRef(jobj_permission_list);
+}
+
+///////////////////////////////////////////
+
 void *backend_android_get_java_vm () { return android_vm; }
 void *backend_android_get_activity() { return android_activity; }
 void *backend_android_get_jni_env () { return android_env; }
