@@ -605,13 +605,13 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 ///////////////////////////////////////////
 
 pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType space_type, XrReferenceSpaceType base_space_type) {
-	XrSpace base_space;
+	XrSpace base_space = {};
 	XrReferenceSpaceCreateInfo view_info = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	view_info.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	view_info.referenceSpaceType   = base_space_type;
 	xrCreateReferenceSpace(session, &view_info, &base_space);
 
-	XrSpace space;
+	XrSpace space = {};
 	view_info.referenceSpaceType   = space_type;
 	xrCreateReferenceSpace(session, &view_info, &space);
 
@@ -624,8 +624,8 @@ pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType 
 	} else {
 		log_err("Failed to find a space offset!");
 	}
-	xrDestroySpace(base_space);
-	xrDestroySpace(space);
+	if (base_space != XR_NULL_HANDLE) xrDestroySpace(base_space);
+	if (space      != XR_NULL_HANDLE) xrDestroySpace(space);
 	return result;
 }
 

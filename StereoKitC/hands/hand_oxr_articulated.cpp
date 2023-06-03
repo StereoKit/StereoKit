@@ -142,7 +142,7 @@ void hand_oxra_shutdown() {
 	
 	for (int32_t h = 0; h < handed_max; h++) {
 		xr_extensions.xrDestroyHandTrackerEXT(oxra_hand_tracker[h]);
-		xrDestroySpace(oxra_hand_space[h]);
+		if (oxra_hand_space[h] != XR_NULL_HANDLE) xrDestroySpace(oxra_hand_space[h]);
 		sk_free(oxra_mesh_src[h].indexBuffer.indices);
 		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
 	}
