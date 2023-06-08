@@ -65,7 +65,7 @@
 		/// <summary>Converts a world pose relative to the current 
 		/// hierarchy stack into local space!</summary>
 		/// <param name="worldPose">A pose in world space.</param>
-		/// <returns>The provided pose now in world space!</returns>
+		/// <returns>The provided pose now in local hierarchy space!</returns>
 		public static Pose ToLocal(Pose worldPose)
 			=> NativeAPI.hierarchy_to_local_pose(worldPose);
 
