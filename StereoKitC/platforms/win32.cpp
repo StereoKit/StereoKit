@@ -4,6 +4,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
@@ -23,6 +24,7 @@ namespace sk {
 
 HWND            win32_window              = nullptr;
 HINSTANCE       win32_hinst               = nullptr;
+HICON           win32_icon                = nullptr;
 skg_swapchain_t win32_swapchain           = {};
 bool            win32_swapchain_initialized = false;
 tex_t           win32_target              = {};
@@ -122,6 +124,7 @@ bool win32_start_post_xr() {
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
+	wc.hIcon         = win32_icon;
 	if( !RegisterClassW(&wc) ) return false;
 
 	win32_window = CreateWindowW(
@@ -144,6 +147,12 @@ bool win32_start_post_xr() {
 
 bool win32_init() {
 	win32_render_sys = systems_find("FrameRender");
+
+	// Find the icon from the exe itself
+	wchar_t path[MAX_PATH];
+	if (GetModuleFileNameW(GetModuleHandle(nullptr), path, MAX_PATH) != 0)
+		ExtractIconExW(path, 0, &win32_icon, nullptr, 1);
+
 	return true;
 }
 
@@ -203,6 +212,7 @@ bool win32_start_flat() {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	wc.hIcon         = win32_icon;
 	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
 	win32_hinst = wc.hInstance;
 
@@ -285,10 +295,16 @@ void win32_stop_flat() {
 	skg_swapchain_destroy(&win32_swapchain);
 	win32_swapchain_initialized = false;
 
-	DestroyWindow(win32_window); win32_window = nullptr;
+
+	if (win32_icon)   DestroyIcon  (win32_icon);
+	if (win32_window) DestroyWindow(win32_window);
 	wchar_t* app_name_w = platform_to_wchar(sk_app_name);
-	UnregisterClassW(app_name_w, win32_hinst); win32_hinst = nullptr;
+	UnregisterClassW(app_name_w, win32_hinst);
 	sk_free(app_name_w);
+
+	win32_icon   = nullptr;
+	win32_window = nullptr;
+	win32_hinst  = nullptr;
 }
 
 ///////////////////////////////////////////
