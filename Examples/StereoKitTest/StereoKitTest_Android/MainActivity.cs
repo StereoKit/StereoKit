@@ -76,10 +76,10 @@ namespace StereoKitTest_Android
 
 				// For requesting permission to use the microphone and eye
 				// tracking
-				if (ContextCompat.CheckSelfPermission(this, Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
-					ActivityCompat.RequestPermissions(this, new string[] { Manifest.Permission.RecordAudio }, 1);
-				if (ContextCompat.CheckSelfPermission(this, "com.oculus.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
-					ActivityCompat.RequestPermissions(this, new string[] { "com.oculus.permission.EYE_TRACKING" }, 1);
+				if (CheckSelfPermission(Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
+					RequestPermissions(new string[] { Manifest.Permission.RecordAudio }, 1);
+				if (CheckSelfPermission("com.oculus.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
+					RequestPermissions(new string[] { "com.oculus.permission.EYE_TRACKING" }, 1);
 
 				// Initialize StereoKit, and the app
 				if (!SK.Initialize(app.Settings))
