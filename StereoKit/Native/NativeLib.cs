@@ -55,7 +55,7 @@ namespace StereoKit
 			const int RTLD_NOW = 2;
 			if (dlopen($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen("./libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			return false;
 		}
 
@@ -67,7 +67,7 @@ namespace StereoKit
 			const int RTLD_NOW = 2;
 			if (dlopen2($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			if (dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen2("libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen2("./libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
 			return false;
 		}
 	}
