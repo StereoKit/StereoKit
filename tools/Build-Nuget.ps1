@@ -44,7 +44,7 @@ function Build {
 ###########################################
 
 function Test {
-    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitTest' | Out-Null
+    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitTest' '/p:SKIgnoreMissingBinaries=true' | Out-Null
     if ($LASTEXITCODE -ne 0) {
         return $LASTEXITCODE
     }

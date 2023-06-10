@@ -81,7 +81,7 @@
 	</ItemGroup>
 
 	<!-- Error if we're missing binaries for release builds! -->
-	<Target Name="SKErrPlatformFiles" BeforeTargets="BeforeBuild" Condition="'$(Configuration)'=='Release'">
+	<Target Name="SKErrPlatformFiles" BeforeTargets="BeforeBuild" Condition="'$(Configuration)'=='Release' and '$(SKIgnoreMissingBinaries)' != 'true'">
 		<Error Condition="!Exists('..\bin\x64_Release\StereoKitC\StereoKitC.dll')"                     Text="[SK NuGet] Missing Win32 x64 binaries." />
 		<Error Condition="!Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Error Condition="!Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
