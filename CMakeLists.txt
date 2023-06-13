@@ -242,11 +242,11 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
     set(SK_SHADER_TARGETS "w")
   endif()
 
+  get_filename_component(SHADER_NAME ${SHADER} NAME)
   add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.h
-    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/shaders_builtin/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}
-    DEPENDS ${SHADER} )
-  list(APPEND SK_SRC_SHADERS_H ${SHADER}.h)
+    OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h
+    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
+  list(APPEND SK_SRC_SHADERS_H ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h)
 endforeach(SHADER)
 
 ###########################################
@@ -486,6 +486,7 @@ target_include_directories(StereoKitC
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
+    ${CMAKE_BINARY_DIR}/shaders/
 )
 
 target_link_libraries( StereoKitC

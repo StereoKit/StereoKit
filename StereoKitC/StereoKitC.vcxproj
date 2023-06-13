@@ -47,16 +47,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -109,8 +109,9 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
       <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
+      <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
-"$(ProjectDir)..\tools\skshaderc.exe" -O3 -h -z -t xgew -i "$(ProjectDir)..\tools\include" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+"$(ProjectDir)..\tools\skshaderc.exe" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$(ProjectDir)..\tools\include" -o "$(IntermediateOutputPath)shaders" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -237,21 +238,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="platforms\web.h" />
     <ClInclude Include="platforms\win32.h" />
     <ClInclude Include="rect_atlas.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_equirect.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_font.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_lines.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_skybox.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_ui.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h" />
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit.hlsl.h" />
     <ClInclude Include="sk_math_dx.h" />
     <ClInclude Include="sk_memory.h" />
     <ClInclude Include="spherical_harmonics.h" />
@@ -297,29 +285,17 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <None Include="shaders_builtin\shader_builtin_font.hlsl" />
     <None Include="shaders_builtin\shader_builtin_lines.hlsl" />
     <None Include="shaders_builtin\shader_builtin_pbr.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl" />
     <None Include="shaders_builtin\shader_builtin_skybox.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders_builtin\shader_builtin_pbr_clip.hlsl">
-      <FileType>Document</FileType>
-    </None>
+    <None Include="shaders_builtin\shader_builtin_blit.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders_builtin\shader_builtin_blit.hlsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -327,4 +303,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
   </ImportGroup>
+  <Target Name="SKCleanShaders" AfterTargets="Clean">
+    <RemoveDir Directories="$(IntermediateOutputPath)shaders" />
+  </Target>
 </Project>

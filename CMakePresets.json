@@ -140,7 +140,7 @@
         }
       },
       {
-        "name": "LinuxReleasex64",
+        "name": "Linuxx64Release",
         "description": "Release build for Linux x64",
         "hidden": false,
         "inherits": "Linux",
@@ -160,7 +160,7 @@
         }
       },
       {
-        "name": "LinuxReleaseArm64",
+        "name": "LinuxArm64Release",
         "description": "Release build for Linux Arm64",
         "hidden": false,
         "inherits": "Linux",
@@ -232,9 +232,9 @@
         { "name":"AndroidArm64Debug", "configuration":"Debug", "configurePreset":"AndroidArm64Debug", "jobs":24  },
         { "name":"AndroidArm64Release", "configuration":"Release", "configurePreset":"AndroidArm64Release", "jobs":24  },
         { "name":"LinuxDebugx64", "configuration":"Debug", "configurePreset":"LinuxDebugx64", "jobs":24  },
-        { "name":"LinuxReleasex64", "configuration":"Release", "configurePreset":"LinuxReleasex64", "jobs":24  },
+        { "name":"Linuxx64Release", "configuration":"Release", "configurePreset":"Linuxx64Release", "jobs":24 },
         { "name":"LinuxDebugArm64", "configuration":"Debug", "configurePreset":"LinuxDebugArm64", "jobs":24  },
-        { "name":"LinuxReleaseArm64", "configuration":"Release", "configurePreset":"LinuxReleaseArm64", "jobs":24  }
+        { "name":"LinuxArm64Release", "configuration":"Release", "configurePreset":"LinuxArm64Release", "jobs":24  }
     ],
     "workflowPresets": [
         {
@@ -274,16 +274,16 @@
                 { "type": "build", "name": "AndroidArm64Debug" } ]
         },
         {
-            "name":"Linuxx64",
+            "name":"Linuxx64Release",
             "steps":[
-                { "type": "configure", "name": "LinuxReleasex64" },
-                { "type": "build", "name": "LinuxReleasex64" } ]
+                { "type": "configure", "name": "Linuxx64Release" },
+                { "type": "build", "name": "Linuxx64Release" } ]
         },
         {
-            "name":"LinuxArm64",
+            "name":"LinuxArm64Release",
             "steps":[
-                { "type": "configure", "name": "LinuxReleaseArm64" },
-                { "type": "build", "name": "LinuxReleaseArm64" } ]
+                { "type": "configure", "name": "LinuxArm64Release" },
+                { "type": "build", "name": "LinuxArm64Release" } ]
         },
         {
             "name":"default",
