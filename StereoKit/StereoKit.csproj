@@ -43,8 +43,8 @@
 		<Content Pack="true" Visible="false" Include="..\bin\netstandard2.0\StereoKit.pdb" PackagePath="lib\netstandard2.0\" />
 		
 		<!-- Win32 DLLs -->
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release\StereoKitC\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" Condition="Exists('..\bin\x64_Release\StereoKitC\StereoKitC.dll')"/>
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release\StereoKitC\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" Condition="Exists('..\bin\x64_Release\StereoKitC\StereoKitC.pdb')"/>
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Win32\x64\Release\StereoKitC.dll" PackagePath="runtimes\win-x64\native\" Condition="Exists('..\bin\distribute\bin\x64\Release\StereoKitC.dll')"/>
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Win32\x64\Release\StereoKitC.pdb" PackagePath="runtimes\win-x64\native\" Condition="Exists('..\bin\distribute\bin\x64\Release\StereoKitC.pdb')"/>
 
 		<!-- Android Libraries -->
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so"             PackagePath="runtimes\android-arm64\native"   Condition="Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so')" />
@@ -58,12 +58,12 @@
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\StereoKitC.sym"   PackagePath="runtimes\linux-arm64\native\" Condition="Exists('..\bin\distribute\bin\Linux\arm64\release\StereoKitC.sym')"/>
 
 		<!-- UWP DLLs -->
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\"   Condition="Exists('..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')" />
-		<Content Pack="true" Visible="false" Include="..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\"   Condition="Exists('..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb')" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" Condition="Exists('..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" Condition="Exists('..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.pdb')" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\"   Condition="Exists('..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll')" />
-		<Content Pack="true" Visible="false" Include="..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\"   Condition="Exists('..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.pdb')"  />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\"   Condition="Exists('..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\x64\Release\StereoKitC.pdb"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\"   Condition="Exists('..\bin\distribute\bin\UWP\x64\Release\StereoKitC.pdb')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.dll" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" Condition="Exists('..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.dll')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.pdb" PackagePath="runtimes\win10-arm64\nativeassets\uap10.0\" Condition="Exists('..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.pdb')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.dll"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\"   Condition="Exists('..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.dll')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.pdb"   PackagePath="runtimes\win10-arm\nativeassets\uap10.0\"   Condition="Exists('..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.pdb')"  />
 
 		<!-- Shader compile tools -->
 		<Content Pack="true" Visible="false" Include="..\tools\skshaderc.exe" PackagePath="tools\" />
@@ -81,22 +81,22 @@
 	</ItemGroup>
 
 	<!-- Error if we're missing binaries for release builds! -->
-	<Target Name="SKErrPlatformFiles" BeforeTargets="BeforeBuild" Condition="'$(Configuration)'=='Release' and '$(SKIgnoreMissingBinaries)' != 'true'">
-		<Error Condition="!Exists('..\bin\x64_Release\StereoKitC\StereoKitC.dll')"                     Text="[SK NuGet] Missing Win32 x64 binaries." />
+	<Target Name="SKErrPlatformFiles" AfterTargets="BeforeBuild" BeforeTargets="CoreBuild" Condition="'$(GeneratePackageOnBuild)'=='true' and '$(SKIgnoreMissingBinaries)' != 'true'">
+		<Error Condition="!Exists('..\bin\distribute\bin\Win32\x64\Release\StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
 		<Error Condition="!Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Error Condition="!Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
 		<Error Condition="!Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
-		<Error Condition="!Exists('..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
-		<Error Condition="!Exists('..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
-		<Error Condition="!Exists('..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
+		<Error Condition="!Exists('..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
+		<Error Condition="!Exists('..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
+		<Error Condition="!Exists('..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
 	</Target>
-	<Target Name="SKWarnPlatformFiles" BeforeTargets="BeforeBuild" Condition="'$(Configuration)'=='Debug'">
-		<Warning Condition="!Exists('..\bin\x64_Release\StereoKitC\StereoKitC.dll')"                     Text="[SK NuGet] Missing Win32 x64 binaries." />
+	<Target Name="SKWarnPlatformFiles" AfterTargets="BeforeBuild" BeforeTargets="CoreBuild" Condition="'$(GeneratePackageOnBuild)'=='true'">
+		<Warning Condition="!Exists('..\bin\distribute\bin\Win32\x64\Release\StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
 		<Warning Condition="!Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Warning Condition="!Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
 		<Warning Condition="!Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
-		<Warning Condition="!Exists('..\bin\x64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
-		<Warning Condition="!Exists('..\bin\ARM64_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
-		<Warning Condition="!Exists('..\bin\ARM_Release_UWP\StereoKitC_UWP\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
+		<Warning Condition="!Exists('..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
+		<Warning Condition="!Exists('..\bin\distribute\bin\UWP\ARM64\Release\StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
+		<Warning Condition="!Exists('..\bin\distribute\bin\UWP\ARM\Release\StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
 	</Target>
 </Project>

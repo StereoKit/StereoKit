@@ -72,20 +72,19 @@
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
 	<ItemGroup>
 		<ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.dll" Include="$(ProjectDir)../../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll" />
-		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.pdb" Include="$(ProjectDir)../../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.pdb" />
-		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../../bin/distribute/bin/linux/x64/release/libStereoKitC.so" />
-		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym" Include="$(ProjectDir)../../../bin/distribute/bin/linux/x64/release/StereoKitC.sym" />
+		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.dll"     Include="$(ProjectDir)../../../bin/distribute/bin/Win32/x64/$(Configuration)/StereoKitC.dll" />
+		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.pdb"     Include="$(ProjectDir)../../../bin/distribute/bin/Win32/x64/$(Configuration)/StereoKitC.pdb" />
+		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../../bin/distribute/bin/linux/x64/$(Configuration)/libStereoKitC.so" />
+		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\StereoKitC.sym"   Include="$(ProjectDir)../../../bin/distribute/bin/linux/x64/$(Configuration)/StereoKitC.sym" />
 	</ItemGroup>
 
 	<!-- Error out if StereoKitC hasn't successfully built! -->
 	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
-		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)../../../bin/x64_$(Configuration)/StereoKitC/StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
-		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../../bin/distribute/bin/linux/x64/release/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Win32\x64\$(Configuration)\StereoKitC.dll')"   Text="StereoKitC was not properly built! Binary files are missing." />
+		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\linux\x64\$(Configuration)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
 	</Target>
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-	  <Exec Command="cd $(SolutionDir)
-xmake f -p android -a arm64-v8a -y -m $(ConfigurationName) --oculus-openxr=y
-xmake" />
+	  <Exec Command="cd $(ProjectDir)..\..\..\
+cmake --workflow --preset AndroidArm64$(Configuration)" />
 	</Target>
 </Project>
