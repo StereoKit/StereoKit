@@ -194,7 +194,7 @@
         }
       },
       {
-        "name": "AndroidDebugArm64",
+        "name": "AndroidArm64Debug",
         "description": "Debug build for Android ARM64",
         "inherits": "Android",
         "hidden": false,
@@ -202,11 +202,12 @@
         "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Debug",
             "ANDROID_ABI": "arm64-v8a",
-            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
+            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+            "SK_DYNAMIC_OPENXR": "ON"
         }
       },
       {
-        "name": "AndroidReleaseArm64",
+        "name": "AndroidArm64Release",
         "description": "Release build for Android ARM64",
         "inherits": "Android",
         "hidden": false,
@@ -214,7 +215,8 @@
         "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Release",
             "ANDROID_ABI": "arm64-v8a",
-            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
+            "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+            "SK_DYNAMIC_OPENXR": "ON"
         }
       }
     ],
@@ -227,8 +229,8 @@
         { "name":"UwpReleaseArm64", "configuration":"Release", "configurePreset":"UwpReleaseArm64", "jobs":24  },
         { "name":"Win32Debugx64", "configuration":"Debug", "configurePreset":"Win32Debugx64", "jobs":24  },
         { "name":"Win32Releasex64", "configuration":"Release", "configurePreset":"Win32Releasex64", "jobs":24  },
-        { "name":"AndroidDebugArm64", "configuration":"Debug", "configurePreset":"AndroidDebugArm64", "jobs":24  },
-        { "name":"AndroidReleaseArm64", "configuration":"Release", "configurePreset":"AndroidReleaseArm64", "jobs":24  },
+        { "name":"AndroidArm64Debug", "configuration":"Debug", "configurePreset":"AndroidArm64Debug", "jobs":24  },
+        { "name":"AndroidArm64Release", "configuration":"Release", "configurePreset":"AndroidArm64Release", "jobs":24  },
         { "name":"LinuxDebugx64", "configuration":"Debug", "configurePreset":"LinuxDebugx64", "jobs":24  },
         { "name":"LinuxReleasex64", "configuration":"Release", "configurePreset":"LinuxReleasex64", "jobs":24  },
         { "name":"LinuxDebugArm64", "configuration":"Debug", "configurePreset":"LinuxDebugArm64", "jobs":24  },
@@ -260,10 +262,16 @@
                 { "type": "build", "name": "Win32Releasex64" } ]
         },
         {
-            "name":"AndroidArm64",
+            "name":"AndroidArm64Release",
             "steps":[
-                { "type": "configure", "name": "AndroidReleaseArm64" },
-                { "type": "build", "name": "AndroidReleaseArm64" } ]
+                { "type": "configure", "name": "AndroidArm64Release" },
+                { "type": "build", "name": "AndroidArm64Release" } ]
+        },
+        {
+            "name":"AndroidArm64Debug",
+            "steps":[
+                { "type": "configure", "name": "AndroidArm64Debug" },
+                { "type": "build", "name": "AndroidArm64Debug" } ]
         },
         {
             "name":"Linuxx64",
