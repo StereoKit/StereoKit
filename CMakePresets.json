@@ -39,7 +39,7 @@
         "inherits": "UwpDebug",
         "hidden": false,
         "architecture": "x64",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_x64_Debug"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_x64_Debug"
       },
       {
         "name": "UwpDebugx86",
@@ -47,7 +47,7 @@
         "inherits": "UwpDebug",
         "hidden": false,
         "architecture": "Win32",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_x86_Debug"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_x86_Debug"
       },
       {
         "name": "UwpDebugArm32",
@@ -55,7 +55,7 @@
         "inherits": "UwpDebug",
         "hidden": false,
         "architecture": "ARM",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM_Debug"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_ARM_Debug"
       },
       {
         "name": "UwpDebugArm64",
@@ -63,7 +63,7 @@
         "inherits": "UwpDebug",
         "hidden": false,
         "architecture": "ARM64",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM64_Debug"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_ARM64_Debug"
       },
       {
         "name": "UwpRelease",
@@ -80,7 +80,7 @@
         "inherits": "UwpRelease",
         "hidden": false,
         "architecture": "x64",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_x64_Release"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_x64_Release"
       },
       {
         "name": "UwpReleasex86",
@@ -88,7 +88,7 @@
         "inherits": "UwpRelease",
         "hidden": false,
         "architecture": "Win32",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_x86_Release"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_x86_Release"
       },
       {
         "name": "UwpReleaseArm32",
@@ -96,7 +96,7 @@
         "inherits": "UwpRelease",
         "hidden": false,
         "architecture": "ARM",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM_Release"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_ARM_Release"
       },
       {
         "name": "UwpReleaseArm64",
@@ -104,13 +104,13 @@
         "inherits": "UwpRelease",
         "hidden": false,
         "architecture": "ARM64",
-        "binaryDir": "${sourceDir}/build/cmake/UWP_ARM64_Release"
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_UWP_ARM64_Release"
       },
       {
         "name": "Win32Releasex64",
         "description": "Release build for Win32 x64",
         "hidden": false,
-        "binaryDir": "${sourceDir}/build/cmake/Win32_x64_Release",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Win32_x64_Release",
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Release"
         }
@@ -119,7 +119,7 @@
         "name": "Win32Debugx64",
         "description": "Debug build for Win32 x64",
         "hidden": false,
-        "binaryDir": "${sourceDir}/build/cmake/Win32_x64_Debug",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Win32_x64_Debug",
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug"
         }
@@ -144,7 +144,7 @@
         "description": "Release build for Linux x64",
         "hidden": false,
         "inherits": "Linux",
-        "binaryDir": "${sourceDir}/build/cmake/Linux_x64_Release",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Linux_x64_Release",
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Release"
         }
@@ -154,7 +154,7 @@
         "description": "Debug build for Linux x64",
         "hidden": false,
         "inherits": "Linux",
-        "binaryDir": "${sourceDir}/build/cmake/Linux_x64_Debug",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Linux_x64_Debug",
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug"
         }
@@ -164,9 +164,12 @@
         "description": "Release build for Linux Arm64",
         "hidden": false,
         "inherits": "Linux",
-        "binaryDir": "${sourceDir}/build/cmake/Linux_ARM64_Release",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Linux_ARM64_Release",
         "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Release"
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_C_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
+          "CMAKE_CXX_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
+          "CMAKE_EXE_LINKER_FLAGS":"-fuse-ld=lld"
         }
       },
       {
@@ -174,9 +177,11 @@
         "description": "Debug build for Linux Arm64",
         "hidden": false,
         "inherits": "Linux",
-        "binaryDir": "${sourceDir}/build/cmake/Linux_Arm64_Debug",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Linux_Arm64_Debug",
         "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Debug"
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_C_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
+          "CMAKE_CXX_COMPILER_TARGET": "gcc-aarch64-linux-gnu"
         }
       },
       {
@@ -198,7 +203,7 @@
         "description": "Debug build for Android ARM64",
         "inherits": "Android",
         "hidden": false,
-        "binaryDir": "${sourceDir}/build/cmake/Android_ARM64_Debug",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Android_ARM64_Debug",
         "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Debug",
             "ANDROID_ABI": "arm64-v8a",
@@ -211,7 +216,7 @@
         "description": "Release build for Android ARM64",
         "inherits": "Android",
         "hidden": false,
-        "binaryDir": "${sourceDir}/build/cmake/Android_ARM64_Release",
+        "binaryDir": "${sourceDir}/bin/intermediate/cmake_Android_ARM64_Release",
         "cacheVariables": {
             "CMAKE_BUILD_TYPE": "Release",
             "ANDROID_ABI": "arm64-v8a",

@@ -64,13 +64,11 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInf
 
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # Always generate debug symbol files, we split them out later
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-    add_compile_options(-fdata-sections -ffunction-sections -flto)
-    add_link_options(-Wl,--gc-sections -flto)
+    add_compile_options(-g -O3 -fdata-sections -ffunction-sections -flto)
+    add_link_options   (-Wl,--gc-sections -flto)
   elseif(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /O2")
-    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF") # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
+    add_compile_options(/Zi /O2)
+    add_link_options   (/DEBUG /OPT:REF /OPT:ICF) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
 
     # Something is setting /RTC1, which is not compatible with /O2
     string(REPLACE "/RTC1" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
@@ -199,7 +197,7 @@ endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
 CPMAddPackage(
-  NAME OpenXR
+  NAME openxr_loader
   VERSION 1.0.27
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG "release-1.0.27"
@@ -207,6 +205,15 @@ CPMAddPackage(
   "BUILD_WITH_SYSTEM_JSONCPP OFF"
   "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
 )
+
+# Hide warnings for dependencies, not our code
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(openxr_loader PRIVATE -w)
+  target_compile_options(reactphysics3d PRIVATE -w)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  target_compile_options(openxr_loader PRIVATE /W0)
+  target_compile_options(reactphysics3d PRIVATE /W0)
+endif()
 
 ###########################################
 ## Shader Compiler                       ##
@@ -242,10 +249,16 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
     set(SK_SHADER_TARGETS "w")
   endif()
 
+  # Hide shader compile metadata unless we're in verbose mode
+  set(SK_SHADER_VERBOSITY "-si")
+  if(CMAKE_VERBOSE_MAKEFILE)
+    set(SK_SHADER_VERBOSITY "")
+  endif()
+
   get_filename_component(SHADER_NAME ${SHADER} NAME)
   add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h
-    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
+    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
   list(APPEND SK_SRC_SHADERS_H ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h)
 endforeach(SHADER)
 
@@ -474,6 +487,11 @@ if (NOT MSVC)
     COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
     COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>.sym $<TARGET_FILE:StereoKitC>
   )
+  if (SK_DYNAMIC_OPENXR)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
+    )
+  endif()
   set(SK_BIN_DEBUG_EXT ".sym")
 else()
   set(SK_BIN_DEBUG_EXT ".pdb")
@@ -543,22 +561,16 @@ endif()
 set(SK_DISTRIBUTE_FOLDER "bin/distribute")
 
 add_custom_command(TARGET StereoKitC POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>" )
-add_custom_command(TARGET StereoKitC POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>" )
-add_custom_command(TARGET StereoKitC POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 if (SK_DYNAMIC_OPENXR)
   add_custom_command(TARGET StereoKitC POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard" )
-  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:openxr_loader>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard/$<TARGET_FILE_NAME:openxr_loader>" )
 endif()
-
-add_custom_command(TARGET StereoKitC POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include" )
-add_custom_command(TARGET StereoKitC POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
 ###########################################
 ## StereoKitCTest                        ##
