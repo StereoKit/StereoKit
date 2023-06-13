@@ -4,6 +4,7 @@
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
+#include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
@@ -33,6 +34,7 @@ struct text_buffer_t {
 	uint32_t       id;
 	int32_t        vert_count;
 	int32_t        vert_cap;
+	bool32_t       dirty_inds;
 };
 
 struct text_stepper_t {
@@ -73,8 +75,16 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + (int32_t)characters*4 <= buffer.vert_cap)
 		return;
 
-	buffer.vert_cap = buffer.vert_count + (int)characters * 4;
-	buffer.verts    = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
+	buffer.vert_cap   = maxi(buffer.vert_count + (int)characters * 4, buffer.vert_cap * 2);
+	buffer.verts      = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
+	buffer.dirty_inds = true;
+}
+
+//////////////////////////////////////////
+
+void text_buffer_check_dirty_inds(text_buffer_t& buffer) {
+	if (!buffer.dirty_inds) return;
+	buffer.dirty_inds = false;
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
@@ -598,6 +608,8 @@ void text_step() {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
+
+		text_buffer_check_dirty_inds(buffer);
 
 		mesh_set_verts    (buffer.mesh, buffer.verts, buffer.vert_count, false);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
