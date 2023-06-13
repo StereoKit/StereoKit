@@ -86,12 +86,12 @@
     <Compile Include="..\Demos\*.cs" Visible="false" />
     <Compile Include="..\Tools\*.cs" Visible="false" />
   </ItemGroup>
-  <Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
-  <Import Project="$(SolutionDir)StereoKit\SKAssets.targets" />
-  <Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
   <!-- Copy assets, and build the app's shaders into the final app folder -->
   <ItemGroup>
-    <AndroidAsset Include="$(SolutionDir)Examples\Assets\**">
+    <AndroidAsset Include="$(ProjectDir)..\..\..\Examples\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </AndroidAsset>
@@ -137,19 +137,19 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ItemGroup>
-    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
+    <AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
       <Visible>false</Visible>
     </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
+    <AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
       <Visible>false</Visible>
     </AndroidNativeLibrary>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\StereoKit\StereoKit.csproj">
+    <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj">
       <Project>{0152979d-5d5e-4d18-9ef7-7261581b2bc6}</Project>
       <Name>StereoKit</Name>
     </ProjectReference>

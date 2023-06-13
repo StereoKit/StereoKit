@@ -53,17 +53,17 @@
 		<Compile Include="..\Tools\*.cs" Visible="false" />
 	</ItemGroup>
 
-	<Import Project="$(SolutionDir)StereoKit\StereoKit.props" />
-	<Import Project="$(SolutionDir)StereoKit\SKAssets.targets" />
-	<Import Project="$(SolutionDir)StereoKit\SKShaders.targets" />
-	<Import Project="$(SolutionDir)StereoKit\SKMaui.targets" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKMaui.targets" />
 
 	<ItemGroup>
-		<AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
+		<AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Abi>arm64-v8a</Abi>
 		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Include="$(SolutionDir)bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\*.so">
+		<AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\*.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<Abi>arm64-v8a</Abi>
 		</AndroidNativeLibrary>
