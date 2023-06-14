@@ -20,15 +20,15 @@
 	
 	<!-- Exclude the subfolders for different platform projects -->
 	<ItemGroup>
-		<Compile Remove="StereoKitTest_Android\**" />
+		<Compile Remove="StereoKitTest_NetAndroid\**" />
 		<Compile Remove="StereoKitTest_UWP\**" />
-		<Compile Remove="StereoKitTest_Maui\**" />
-		<EmbeddedResource Remove="StereoKitTest_Android\**" />
+		<Compile Remove="StereoKitTest_Xamarin\**" />
+		<EmbeddedResource Remove="StereoKitTest_NatAndroid\**" />
 		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
-		<EmbeddedResource Remove="StereoKitTest_Maui\**" />
-		<None Remove="StereoKitTest_Android\**" />
+		<EmbeddedResource Remove="StereoKitTest_Xamarin\**" />
+		<None Remove="StereoKitTest_NetAndroid\**" />
 		<None Remove="StereoKitTest_UWP\**" />
-		<None Remove="StereoKitTest_Maui\**" />
+		<None Remove="StereoKitTest_Xamarin\**" />
 	</ItemGroup>
 	
 	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->

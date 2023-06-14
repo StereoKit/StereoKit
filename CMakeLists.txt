@@ -178,10 +178,10 @@ endif()
 
 #### ReactPhysics3D - https://www.reactphysics3d.com/ ####
 if(SK_PHYSICS)
-  CPMAddPackage(
-    NAME reactphysics3d
+  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+    NAME reactphysics3d # 0.9.0
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 # v0.9.0
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 
     EXCLUDE_FROM_ALL YES
   )
   # Something in reactphysics3d seems to require -fPIC
@@ -196,8 +196,8 @@ if(SK_PHYSICS)
 endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
-CPMAddPackage(
-  NAME openxr_loader
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME openxr_loader # 1.0.27
   VERSION 1.0.27
   GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
   GIT_TAG "release-1.0.27"

@@ -8,9 +8,10 @@ using Android.Views;
 using AndroidX.AppCompat.App;
 using StereoKit;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
-namespace StereoKitTest_Android
+namespace StereoKitTest_Xamarin
 {
 	// NativeActivity seems to work fine, so here's a link to that code
 	// https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/app/NativeActivity.java
@@ -23,7 +24,6 @@ namespace StereoKitTest_Android
 	[IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 	public class MainActivity : AppCompatActivity, ISurfaceHolderCallback2
 	{
-		App  app;
 		View surface;
 
 		protected override void OnCreate(Bundle savedInstanceState)
@@ -51,27 +51,6 @@ namespace StereoKitTest_Android
 
 			// Start up a thread for StereoKit to run in
 			Task.Run(() => {
-				// If the app has a constructor that takes a string array, then
-				// we'll use that, and pass the command line arguments into it
-				// on creation
-				Type appType = typeof(App);
-				app = appType.GetConstructor(new Type[] { typeof(string[]) }) != null
-					? (App)Activator.CreateInstance(appType, new object[] { new string[0] { } })
-					: (App)Activator.CreateInstance(appType);
-				if (app == null)
-					throw new Exception("StereoKit loader couldn't construct an instance of the App!");
-
-				// Set up a surface for StereoKit to draw on, this is only really
-				// important for flatscreen experiences.
-				if (app.Settings.displayPreference == DisplayMode.Flatscreen)
-				{
-					Window.TakeSurface(this);
-					Window.SetFormat(Format.Unknown);
-					surface = new View(this);
-					SetContentView(surface);
-					surface.RequestFocus();
-				}
-
 				// For requesting permission to use the microphone and eye
 				// tracking
 				if (CheckSelfPermission(Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
@@ -79,13 +58,26 @@ namespace StereoKitTest_Android
 				if (CheckSelfPermission("com.oculus.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
 					RequestPermissions(new string[] { "com.oculus.permission.EYE_TRACKING" }, 1);
 
-				// Initialize StereoKit, and the app
-				if (!SK.Initialize(app.Settings))
-					return;
-				app.Init();
+				// Set up a surface for StereoKit to draw on, this is only really
+				// important for flatscreen experiences.
+				Window.TakeSurface(this);
+				Window.SetFormat(Format.Unknown);
+				surface = new View(this);
+				SetContentView(surface);
+				surface.RequestFocus();
 
-				// Now loop until finished, and then shut down
-				SK.Run(app.Step);
+				Type       entryClass = typeof(Program);
+				MethodInfo entryPoint = entryClass?.GetMethod("Main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+				// There are a number of potential method signatures for Main, so
+				// we need to check each one, and give it the correct values.
+				ParameterInfo[] entryParams = entryPoint?.GetParameters();
+				if (entryParams == null || entryParams.Length == 0)
+					entryPoint.Invoke(null, null);
+				else if (entryParams?.Length == 1 && entryParams[0].ParameterType == typeof(string[]))
+					entryPoint.Invoke(null, new object[] { new string[0] });
+				else
+					throw new Exception("Couldn't invoke Program.Main!");
 
 				Process.KillProcess(Process.MyPid());
 			});
