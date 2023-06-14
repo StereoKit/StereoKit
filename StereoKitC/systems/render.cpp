@@ -18,6 +18,8 @@
 #include "../systems/input.h"
 #include "../platforms/platform_utils.h"
 
+#include <limits.h>
+
 #pragma warning(push)
 #pragma warning(disable : 26451 26819 6386 6385 )
 #if defined(_WIN32)
@@ -173,8 +175,11 @@ void          radix_sort_clean        ();
 
 ///////////////////////////////////////////
 
-inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
+inline uint64_t render_sort_id(material_t material, mesh_t mesh) {
 	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
+}
+inline uint64_t render_sort_id_from_queue(int32_t queue_position) {
+	return (uint64_t)(queue_position) << 32;
 }
 
 ///////////////////////////////////////////
@@ -536,7 +541,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	material_t curr = material;
 	while (curr != nullptr) {
 		item.material = curr;
-		item.sort_id  = render_queue_id(curr, mesh);
+		item.sort_id  = render_sort_id(curr, mesh);
 		render_list_add(&item);
 		curr = curr->chain;
 	}
@@ -567,7 +572,7 @@ void render_add_model_mat(model_t model, material_t material_override, const mat
 		material_t curr = material_override == nullptr ? vis->material : material_override;
 		while (curr != nullptr) {
 			item.material = curr;
-			item.sort_id  = render_queue_id(curr, vis->mesh);
+			item.sort_id  = render_sort_id(curr, vis->mesh);
 			render_list_add(&item);
 			curr = curr->chain;
 		}
@@ -644,7 +649,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		}
 	}
 
-	render_list_execute(render_list_primary, filter, view_count);
+	render_list_execute(render_list_primary, filter, view_count, 0, INT_MAX);
 }
 
 ///////////////////////////////////////////
@@ -1150,22 +1155,26 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
+void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered;
+		list->state = render_list_state_rendered; 
 		return;
 	}
 	render_list_prep(list_id);
+	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
+	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
 	render_item_t *run_start = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0) continue;
+		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
+		// End early if we're past the end of the desired queue range
+		if (item->sort_id >= sort_id_end) break;
 
 		// If it's the first in the run, record the material/mesh
 		if (run_start == nullptr) {
@@ -1196,7 +1205,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
+void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
@@ -1208,13 +1217,17 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	// solely by the mesh id since we only have one single material.
 	render_list_prep(list_id);
 	material_check_dirty(override_material);
+	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
+	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
 	render_item_t *run_start = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0) continue;
+		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
+		// End early if we're past the end of the desired queue range
+		if (item->sort_id >= sort_id_end) break;
 
 		// If it's the first in the run, record the material/mesh
 		if (run_start == nullptr) {
