@@ -6,8 +6,6 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using AndroidX.AppCompat.App;
-using AndroidX.Core.App;
-using AndroidX.Core.Content;
 using StereoKit;
 using System;
 using System.Threading.Tasks;

@@ -137,16 +137,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ItemGroup>
-    <AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Abi>arm64-v8a</Abi>
-      <Visible>false</Visible>
-    </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Abi>arm64-v8a</Abi>
-      <Visible>false</Visible>
-    </AndroidNativeLibrary>
+    <AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+    <AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+    <AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj">
@@ -158,6 +151,10 @@
     <PreBuildEvent>cd $(ProjectDir)..\..\..\
 cmake --workflow --preset AndroidArm64$(Configuration)</PreBuildEvent>
   </PropertyGroup>
+  <!-- Error out if StereoKitC hasn't successfully built! -->
+  <Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
+    <Error Condition="!Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
     Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">

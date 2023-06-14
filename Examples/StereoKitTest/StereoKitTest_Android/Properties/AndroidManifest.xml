@@ -3,9 +3,12 @@
 	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
 
 	<application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/AppTheme">
+		<!-- Oculus -->
 		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
-		<meta-data android:name="pvr.app.type" android:value="vr" /> <!-- Pico -->
+		<!-- Pico -->
+		<meta-data android:name="pvr.app.type" android:value="vr" />
+		<meta-data android:name="handtracking" android:value="1" />
 	</application>
 
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -24,6 +27,9 @@
 	<!-- Vive specific items  -->
 	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
 	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
+
+	<!-- Snapdragon specific items -->
+	<uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" android:required="false"/>
 
 	<!-- Oculus specific items -->
 	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" android:required="false"/>

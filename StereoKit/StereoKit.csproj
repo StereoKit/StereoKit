@@ -48,14 +48,14 @@
 
 		<!-- Android Libraries -->
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so"             PackagePath="runtimes\android-arm64\native"   Condition="Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so')" />
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.sym"            PackagePath="runtimes\android-arm64\native"   Condition="Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.sym')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so.dbg"         PackagePath="runtimes\android-arm64\native"   Condition="Exists('..\bin\distribute\bin\Android\arm64-v8a\release\libStereoKitC.so.dbg')" />
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Android\arm64-v8a\release\standard\libopenxr_loader.so" PackagePath="android_openxr_loaders\standard" Condition="Exists('..\bin\distribute\bin\Android\arm64-v8a\release\standard\libopenxr_loader.so')" />
 
 		<!-- Linux Libraries -->
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so"    PackagePath="runtimes\linux-x64\native\"   Condition="Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so')" />
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.sym"   PackagePath="runtimes\linux-x64\native\"   Condition="Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.sym')"/>
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so"  PackagePath="runtimes\linux-arm64\native\" Condition="Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so')"/>
-		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.sym" PackagePath="runtimes\linux-arm64\native\" Condition="Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.sym')"/>
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so"       PackagePath="runtimes\linux-x64\native\"   Condition="Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so')" />
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so.dbg"   PackagePath="runtimes\linux-x64\native\"   Condition="Exists('..\bin\distribute\bin\Linux\x64\release\libStereoKitC.so.dbg')"/>
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so"     PackagePath="runtimes\linux-arm64\native\" Condition="Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so')"/>
+		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so.dbg" PackagePath="runtimes\linux-arm64\native\" Condition="Exists('..\bin\distribute\bin\Linux\arm64\release\libStereoKitC.so.dbg')"/>
 
 		<!-- UWP DLLs -->
 		<Content Pack="true" Visible="false" Include="..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll"   PackagePath="runtimes\win10-x64\nativeassets\uap10.0\"   Condition="Exists('..\bin\distribute\bin\UWP\x64\Release\StereoKitC.dll')" />
