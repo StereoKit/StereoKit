@@ -117,7 +117,10 @@ bool win32_start_post_xr() {
 	WNDCLASSW wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
-			return DefWindowProcW(hWnd, message, wParam, lParam);
+			switch (message) {
+			case WM_CLOSE: sk_quit(); PostQuitMessage(0); break;
+			default: return DefWindowProcW(hWnd, message, wParam, lParam);
+			}
 		}
 		return (LRESULT)0;
 	};
@@ -173,9 +176,9 @@ bool win32_start_flat() {
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
-			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
-			case WM_SETFOCUS:   sk_focus   = app_focus_active;          break;
-			case WM_KILLFOCUS:  sk_focus   = app_focus_background;      break;
+			case WM_CLOSE:      sk_quit(); PostQuitMessage(0);   break;
+			case WM_SETFOCUS:   sk_focus = app_focus_active;     break;
+			case WM_KILLFOCUS:  sk_focus = app_focus_background; break;
 			case WM_MOUSEWHEEL: if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); break;
 			case WM_SYSCOMMAND: {
 				// Has the user pressed the restore/'un-maximize' button?
