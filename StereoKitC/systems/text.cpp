@@ -580,13 +580,22 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	bool     clip       = fit & text_fit_clip;
 	char32_t c          = 0;
 	text_step_next_line<C, char_decode_b_T>(text, step);
-	while(char_decode_b_T(text, &text, &c)) {
-		const font_char_t *char_info = font_get_glyph(step.style->font, c);
-		if (!text_is_space(c)) {
-			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
-			else      text_add_quad        (step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
+	if (clip) {
+		while(char_decode_b_T(text, &text, &c)) {
+			const font_char_t *char_info = font_get_glyph(step.style->font, c);
+			if (!text_is_space(c)) {
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
+			}
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 		}
-		text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+	} else {
+		while (char_decode_b_T(text, &text, &c)) {
+			const font_char_t* char_info = font_get_glyph(step.style->font, c);
+			if (!text_is_space(c)) {
+				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
+			}
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+		}
 	}
 	return (step.start.y - step.pos.y) - step.style->char_height;
 }
