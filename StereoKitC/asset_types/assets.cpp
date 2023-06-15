@@ -173,6 +173,9 @@ void assets_releaseref(asset_header_t *asset) {
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
+	if (!asset_thread_enabled)
+		return;
+
 	// Manage the reference count
 	if (atomic_decrement(&asset_header->refs) == 0) {
 		mtx_lock(&assets_multithread_destroy_lock);
