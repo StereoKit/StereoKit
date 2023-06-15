@@ -168,13 +168,6 @@ endif()
 
 # See: https://github.com/cpm-cmake/CPM.cmake
 include("cmake/CPM.cmake")
-if (UNIX)
-  # Linux users/devs prefer shared system libraries rather than
-  # static libraries. Linux OpenXR runtimes are responsible for
-  # providing the shared OpenXR loader there. On Windows and
-  # Android, static linking is necessary.
-  set(CPM_USE_LOCAL_PACKAGES ON) # Tell CPM to prefer locally installed packages
-endif()
 
 #### ReactPhysics3D - https://www.reactphysics3d.com/ ####
 if(SK_PHYSICS)
