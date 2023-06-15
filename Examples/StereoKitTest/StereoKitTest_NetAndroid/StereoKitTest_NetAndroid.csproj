@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net7.0-android</TargetFramework>
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
 		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
 		<OutputType>Exe</OutputType>
-		<ApplicationId>net.stereokit.StereoKitTest_NetAndroid</ApplicationId>
+		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-		<RootNamespace>StereoKitTest_NetAndroid</RootNamespace>
+		<RootNamespace>StereoKitTest</RootNamespace>
 		<ReadOnlyProject>true</ReadOnlyProject>
 
 		<SKOpenXRLoader>Standard</SKOpenXRLoader>
@@ -16,7 +17,7 @@
 
 		<!--Suppress targetSdkVersion 29 warnings. XR devices use old versions
 		    of Android.-->
-		<NoWarn>XA4211;XA1006;XA4301</NoWarn>
+		<NoWarn>XA4211;XA1006;XA4301;CS1587</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -46,16 +47,21 @@
 	<PropertyGroup>
 		<!--Unlike the other projects, this seems to invoke from the bin
 		    folder, and $(ProjectDir) doesn't work.-->
-		<PreBuildEvent>cd ..\..\..\..\..\..\ &amp; cmake --workflow --preset AndroidArm64Release</PreBuildEvent>
+		<PreBuildEvent>cd ..\..\..\..\..\..\ &amp; cmake --workflow --preset AndroidArm64$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />
+	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
+		<RemoveDir Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
+	</Target>
 
 	<Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
 		<Error Condition="!Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
 	</Target>
 
 	<ItemGroup>
-		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<None                 Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
 		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
 	</ItemGroup>
 </Project>

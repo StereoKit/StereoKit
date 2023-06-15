@@ -14,7 +14,7 @@ public class MainActivity : Activity
 	{
 		base.OnCreate(savedInstanceState);
 		Run();
-		SetContentView(StereoKitTest_NetAndroid.Resource.Layout.activity_main);
+		SetContentView(StereoKitTest.Resource.Layout.activity_main);
 	}
 
 	protected override void OnDestroy()

@@ -11,6 +11,8 @@
 
 		<SKAssetFolder>..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
+
+		<NoWarn>CS1587</NoWarn>
 	</PropertyGroup>
 	
 	<!-- IF YOU ARE LOOKING AT THIS FILE AS REFERENCE, I recommend that you

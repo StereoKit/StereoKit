@@ -49,6 +49,11 @@ namespace StereoKitTest_Xamarin
 			if (running) return;
 			running = true;
 
+			// Before anything else, give StereoKit the Activity. This should
+			// be set before any other SK calls, otherwise native library
+			// loading may fail.
+			SK.AndroidActivity = this;
+
 			// Start up a thread for StereoKit to run in
 			Task.Run(() => {
 				// For requesting permission to use the microphone and eye
