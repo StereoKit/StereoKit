@@ -78,6 +78,7 @@ bool           xr_system_created = false;
 bool           xr_system_success = false;
 
 array_t<const char*> xr_exts_user    = {};
+array_t<const char*> xr_exts_exclude = {};
 array_t<uint64_t>    xr_exts_loaded  = {};
 bool32_t             xr_minimum_exts = false;
 
@@ -164,7 +165,7 @@ bool openxr_create_system() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_minimum_exts, [](const char *ext) {log_diagf("available: %s", ext);});
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("available: %s", ext);});
 	extensions.each([](const char *&ext) { 
 		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
 		xr_exts_loaded.add(hash_fnv64_string(ext));
@@ -773,8 +774,9 @@ void openxr_shutdown() {
 	xr_system_created = false;
 	xr_system_success = false;
 
-	xr_exts_loaded.free();
-	xr_exts_user  .free();
+	xr_exts_loaded .free();
+	xr_exts_user   .free();
+	xr_exts_exclude.free();
 	xr_callbacks_pre_session_create.free();
 }
 
@@ -1167,7 +1169,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 
 void backend_openxr_ext_request(const char *extension_name) {
 	if (sk_initialized) {
-		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
 		return;
 	}
 
@@ -1176,9 +1178,20 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 ///////////////////////////////////////////
 
+void backend_openxr_ext_exclude(const char* extension_name) {
+	if (sk_initialized) {
+		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
+		return;
+	}
+
+	xr_exts_exclude.add(string_copy(extension_name));
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 	if (sk_initialized) {
-		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
 		return;
 	}
 
@@ -1189,7 +1202,7 @@ void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
 	if (sk_initialized) {
-		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
+		log_err("backend_openxr_ pre_session must be called BEFORE StereoKit initialization!");
 		return;
 	}
 
