@@ -168,9 +168,15 @@
       "binaryDir": "${sourceDir}/bin/intermediate/cmake/Linux_ARM64_Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
-        "CMAKE_CXX_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
-        "CMAKE_EXE_LINKER_FLAGS":"-fuse-ld=lld"
+        "CMAKE_AR": "aarch64-linux-gnu-ar",
+        "CMAKE_LINKER": "aarch64-linux-gnu-ld",
+        "CMAKE_OBJCOPY": "aarch64-linux-gnu-objcopy",
+        "CMAKE_RANLIB": "aarch64-linux-gnu-ranlib",
+        "CMAKE_SIZE": "aarch64-linux-gnu-size",
+        "CMAKE_STRIP": "aarch64-linux-gnu-strip",
+        "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64"
       }
     },
     {
@@ -181,8 +187,14 @@
       "binaryDir": "${sourceDir}/bin/intermediate/cmake/Linux_Arm64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER_TARGET": "gcc-aarch64-linux-gnu",
-        "CMAKE_CXX_COMPILER_TARGET": "gcc-aarch64-linux-gnu"
+        "CMAKE_LINKER": "aarch64-linux-gnu-ld",
+        "CMAKE_OBJCOPY": "aarch64-linux-gnu-objcopy",
+        "CMAKE_RANLIB": "aarch64-linux-gnu-ranlib",
+        "CMAKE_SIZE": "aarch64-linux-gnu-size",
+        "CMAKE_STRIP": "aarch64-linux-gnu-strip",
+        "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++",
+        "CMAKE_SYSTEM_PROCESSOR": "arm64"
       }
     },
     {

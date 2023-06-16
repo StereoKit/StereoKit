@@ -44,6 +44,22 @@ function Get-Key {
 
 ###########################################
 
+function Build-Preset {
+    param($preset, $presetName, [switch]$wsl = $false)
+
+    Write-Host "--- Beginning build: $presetName ---" -ForegroundColor green
+    if ($wsl -eq $true) { & wsl cmake --workflow --preset $preset }
+    else                { & cmake --workflow --preset $preset }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '--- $presetName build failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
+        exit
+    }
+    Write-Host "--- Finished building: $presetName ---" -ForegroundColor green
+}
+
+###########################################
+
 function Build-Sizes {
     $size_x64        = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
     $size_x64_linux  = (Get-Item "bin/distribute/bin/Linux/x64/release/libStereoKitC.so").length
@@ -159,42 +175,11 @@ __      __          _
 
 "@ -ForegroundColor White
 
-    # Build Win32 first
-    Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
-    & cmake --workflow --preset Win32x64Release
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
-
-    # Build UWP next
+    Build-Preset -preset Win32x64Release -presetName 'Win32 x64'
     if ($buildWindowsUWP) {
-        Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
-        & cmake --workflow --preset Uwpx64Release
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
-        Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
-        & cmake --workflow --preset UwpArm32Release
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
-        Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
-        & cmake --workflow --preset UwpArm64Release
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
+        Build-Preset -preset Uwpx64Release   -presetName 'UWP x64'
+        Build-Preset -preset UwpArm32Release -presetName 'UWP ARM32'
+        Build-Preset -preset UwpArm64Release -presetName 'UWP ARM64'
     }
 }
 
@@ -209,31 +194,8 @@ if ($buildLinux) {
                       
 "@ -ForegroundColor White
 
-    # Find the correct WSL folder
-    $linux_folder = ''+$PSScriptRoot
-    $linux_folder = $linux_folder.replace('\', '/')
-    $linux_folder = $linux_folder.replace(':', '')
-    $linux_folder = '/mnt/'+$linux_folder
-    Write-Output $linux_folder
-
-    # Linux, via WSL
-    #Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
-    #& wsl cmake --workflow --preset LinuxArm64Release
-    #if ($LASTEXITCODE -ne 0) {
-    #    Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-    #    Pop-Location
-    #    exit
-    #}
-    #Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
-
-    Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
-    & wsl cmake --workflow --preset Linuxx64Release
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
+    # Build-Preset -preset LinuxArm64Release -presetName 'Linux ARM64' -wsl
+    Build-Preset -preset Linuxx64Release -presetName 'Linux x64' -wsl
 }
 
 #### Build Android ########################
@@ -248,47 +210,15 @@ if ($buildAndroid) {
                       
 "@ -ForegroundColor White
 
-    Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
-    & cmake --workflow --preset AndroidArm64Release
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
+    #Build-Preset -preset Androidx64Release -presetName 'Android x64'
+    Build-Preset -preset AndroidArm64Release -presetName 'Android arm64-v8a'
 }
 
 #### Run tests ########################
 
 # Run tests!
 if ($fast -eq $false -and $skipTest -eq $false) {
-    Write-Host "`nRunning Tests!"
-    # build a non-nuget version of C#'s StereoKit.dll for testing
-    & dotnet build StereoKit\StereoKit.csproj -c Release -p:SKIgnoreMissingBinaries=true
-    if ($LASTEXITCODE -ne 0 ) {
-        Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-
-    # And run tests for a few platforms
-    if ($buildWindows) {
-        & dotnet run -c Release --project Examples\StereoKitTest\StereoKitTest.csproj -- -test -screenfolder "$PSScriptRoot/Screenshots/" | Write-Host
-        if ($LASTEXITCODE -ne 0 ) {
-            Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-    }
-    if ($buildLinux) {
-        & wsl LIBGL_ALWAYS_SOFTWARE=1 dotnet run -c Release --project Examples/StereoKitTest/StereoKitTest.csproj -- -test -noscreens | Write-Host
-        if ($LASTEXITCODE -ne 0 ) {
-            Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-    }
-    Write-Host 'Tests passed!' -ForegroundColor green
+    Run-Tests
 } else {
     Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
 }
