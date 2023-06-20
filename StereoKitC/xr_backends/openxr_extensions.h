@@ -246,9 +246,7 @@ typedef struct XrExtInfo {
 } XrExtInfo;
 extern XrExtInfo xr_ext_available;
 
-#define CHECK_EXT(name, available) else if (!minimum_exts && available && strcmp("XR_"#name, exts[i].extensionName) == 0) {xr_ext_available.name = true; result.add("XR_"#name);}
-#define CHECK_NAME(name, available) else if (strcmp("XR_"#name, exts[i].extensionName) == 0) {xr_ext_available.name = true;}
-inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_exts, bool minimum_exts, void (*on_available)(const char *name)) {
+inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_exts, array_t<const char*> exclude_exts, bool minimum_exts, void (*on_available)(const char *name)) {
 	array_t<const char *> result = {};
 
 	// Enumerate the list of extensions available on the system
@@ -259,26 +257,40 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
 
-	// Identify which of these we want, mark them as available, and put them
-	// in the final list.
+	// See which of the available extensions we want to use
 	for (uint32_t i = 0; i < ext_count; i++) {
-		if      (strcmp(XR_GFX_EXTENSION,  exts[i].extensionName) == 0) { xr_ext_available.gfx_extension  = true; result.add(XR_GFX_EXTENSION);  }
-		else if (strcmp(XR_TIME_EXTENSION, exts[i].extensionName) == 0) { xr_ext_available.time_extension = true; result.add(XR_TIME_EXTENSION); }
-		FOR_EACH_EXT_ALL    (CHECK_EXT)
-		FOR_EACH_EXT_UWP    (CHECK_EXT)
-		FOR_EACH_EXT_ANDROID(CHECK_EXT)
-		FOR_EACH_EXT_LINUX  (CHECK_EXT)
-		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
+		// These extensions are required for StereoKit to function
+		if (strcmp(exts[i].extensionName, XR_GFX_EXTENSION)  == 0) { result.add(XR_GFX_EXTENSION);  continue; }
+		if (strcmp(exts[i].extensionName, XR_TIME_EXTENSION) == 0) { result.add(XR_TIME_EXTENSION); continue; }
+
+		// We're only interested required extensions if we're using minimum
+		// extension mode
+		if (minimum_exts) { if (on_available != nullptr) { on_available(exts[i].extensionName); } continue; }
+
+		// Skip this extension if it's a specifically excluded one
+		bool skip = false;
+		for (int32_t e = 0; e < exclude_exts.count; e++) {
+			if (strcmp(exts[i].extensionName, exclude_exts[e]) == 0) {
+				skip = true;
+				break;
+			}
+		}
+		if (skip) { if (on_available != nullptr) { on_available(exts[i].extensionName); } continue; }
+
+		// Check if this extension matches any extensions that StereoKit wants
+#define ADD_NAME(name, available) else if (available && strcmp("XR_"#name, exts[i].extensionName) == 0) {result.add("XR_"#name);}
+		if (false) {}
+		FOR_EACH_EXT_ALL    (ADD_NAME)
+		FOR_EACH_EXT_UWP    (ADD_NAME)
+		FOR_EACH_EXT_ANDROID(ADD_NAME)
+		FOR_EACH_EXT_LINUX  (ADD_NAME)
+		FOR_EACH_EXT_DEBUG  (ADD_NAME)
 		else {
+			// Check if the current extension is a user requested extra, and if
+			// so, add it
 			bool found = false;
 			for (int32_t e = 0; e < extra_exts.count; e++) {
-				if (strcmp(extra_exts[e], exts[i].extensionName) == 0) {
-					if (false) {}
-					FOR_EACH_EXT_ALL    (CHECK_NAME)
-					FOR_EACH_EXT_UWP    (CHECK_NAME)
-					FOR_EACH_EXT_ANDROID(CHECK_NAME)
-					FOR_EACH_EXT_LINUX  (CHECK_NAME)
-					FOR_EACH_EXT_DEBUG  (CHECK_NAME)
+				if (strcmp(exts[i].extensionName, extra_exts[e]) == 0) {
 					result.add(extra_exts[e]);
 					found = true;
 					break;
@@ -286,14 +298,26 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 			}
 			if (!found && on_available != nullptr) { on_available(exts[i].extensionName); }
 		}
+#undef ADD_NAME
 	}
 
+	// Mark each extension that made it to this point as available in the
+	// xr_ext_available struct
+	for (int32_t i = 0; i < result.count; i++) {
+#define CHECK_EXT(name, available) else if (strcmp("XR_"#name, result[i]) == 0) {xr_ext_available.name = true;}
+		if (false) {}
+		FOR_EACH_EXT_ALL    (CHECK_EXT)
+		FOR_EACH_EXT_UWP    (CHECK_EXT)
+		FOR_EACH_EXT_ANDROID(CHECK_EXT)
+		FOR_EACH_EXT_LINUX  (CHECK_EXT)
+		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
+#undef CHECK_EXT
+	}
+	
 	sk_free(exts);
 	return result;
 }
 
-#undef CHECK_EXT
-#undef CHECK_NAME
 #undef DEFINE_EXT_INFO
 #undef EXT_AVAILABLE_UWP
 #undef EXT_AVAILABLE_ANDROID

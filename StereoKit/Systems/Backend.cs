@@ -119,6 +119,16 @@ namespace StereoKit
 			public  static void RequestExt (string extensionName) { NativeLib.Load(); _RequestExt(extensionName); }
 			private static void _RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
 
+			/// <summary>This ensures that StereoKit does not load a particular
+			/// extension! StereoKit will behave as if the extension is not
+			/// available on the device. It will also be excluded even if you
+			/// explicitly requested it with `RequestExt` earlier, or
+			/// afterwards. This MUST be called before SK.Initialize.</summary>
+			/// <param name="extensionName">The extension name as listed in the
+			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
+			public  static void ExcludeExt (string extensionName) { NativeLib.Load(); _ExcludeExt(extensionName); }
+			private static void _ExcludeExt(string extensionName) => NativeAPI.backend_openxr_ext_exclude(extensionName);
+
 			/// <summary>This allows you to add XrCompositionLayers to the list
 			/// that StereoKit submits to xrEndFrame. You must call this every
 			/// frame you wish the layer to be included.</summary>
