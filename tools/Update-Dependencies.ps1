@@ -121,7 +121,7 @@ $dependencies = @(
 Push-Location -Path $PSScriptRoot
 
 # Get the files that contain data about the current dependencies
-$sourceFile = Get-Content -Path '..\xmake.lua'
+$sourceFile = Get-Content -Path '..\CMakeLists.txt'
 $depsFile   = ''
 if (Test-Path -Path 'deps_current.txt' -PathType Leaf) {
     $depsFile = Get-Content -Path 'deps_current.txt' -Raw
@@ -131,8 +131,8 @@ $dependencyVersions = ConvertFrom-StringData -String $depsFile
 
 # Check each dependency to see if it needs to be built
 $dependenciesDirty = $false
-foreach($dep in $dependencies) {
-    $desiredVersion = $sourceFile | Select-String -Pattern "add_requires\(`"$($dep.Name) (.*?)`"" | %{$_.Matches.Groups[1].Value}
+foreach($dep in $dependencies) { # NAME\s*$($dep.Name)\s*#\s*([\d.]*)
+    $desiredVersion = $sourceFile | Select-String -Pattern "NAME\s*$($dep.Name)\s*#\s*([\d.]*)" | %{$_.Matches.Groups[1].Value}
     $currentVersion = $dependencyVersions[$dep.Key()]
 
     if ($desiredVersion -ne $currentVersion) {

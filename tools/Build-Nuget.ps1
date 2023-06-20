@@ -1,6 +1,7 @@
 param(
     [switch]$upload = $false,
     [switch]$fast = $false,
+    [switch]$skipTest = $false,
     [string]$key = ''
 )
 
@@ -13,16 +14,6 @@ $buildWindowsUWP = $true
 $buildLinux      = $true
 $buildAndroid    = $true
 
-# Get the Visual Studio executable for building
-$vsWhere        = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
-$vsVersionRange = '[16.0,18.0)'
-$vsExe          = & $vsWhere -latest -property productPath -version $vsVersionRange
-if (!$vsExe) {
-    Write-Host "$(Get-ScriptName)($(Get-LineNumber),0): error: Valid Visual Studio version not found!" -ForegroundColor red
-    exit 
-}
-$vsExe = [io.path]::ChangeExtension($vsExe, '.com')
-
 ###########################################
 ## Functions                             ##
 ###########################################
@@ -31,27 +22,6 @@ function Replace-In-File {
     param($file, $text, $with)
 
     ((Get-Content -path $file) -replace $text,$with) | Set-Content -path $file
-}
-
-###########################################
-
-function Build {
-    param([parameter(Mandatory)][string] $mode, [parameter(Mandatory)][string] $project)
-    & $vsExe 'StereoKit.sln' '/Build' $mode '/Project' $project | Write-Host
-    return $LASTEXITCODE
-}
-
-###########################################
-
-function Test {
-    & $vsExe 'StereoKit.sln' '/Build' 'Release|X64' '/Project' 'StereoKitTest' '/p:SKIgnoreMissingBinaries=true' | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        return $LASTEXITCODE
-    }
-    Push-Location -Path "$PSScriptRoot\..\bin\x64_Release\StereoKitTest"
-    & '.\StereoKitTest.exe' '-test' '-screenfolder' "$PSScriptRoot/Screenshots/" | Write-Host
-    Pop-Location
-    return $LASTEXITCODE
 }
 
 ###########################################
@@ -74,12 +44,28 @@ function Get-Key {
 
 ###########################################
 
+function Build-Preset {
+    param($preset, $presetName, [switch]$wsl = $false)
+
+    Write-Host "--- Beginning build: $presetName ---" -ForegroundColor green
+    if ($wsl -eq $true) { & wsl cmake --workflow --preset $preset }
+    else                { & cmake --workflow --preset $preset }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '--- $presetName build failed! Stopping build! ---' -ForegroundColor red
+        Pop-Location
+        exit
+    }
+    Write-Host "--- Finished building: $presetName ---" -ForegroundColor green
+}
+
+###########################################
+
 function Build-Sizes {
     $size_x64        = (Get-Item "bin/distribute/bin/Win32/x64/Release/StereoKitC.dll").length
-    $size_x64_linux  = (Get-Item "bin/distribute/bin/linux/x64/release/libStereoKitC.so").length
+    $size_x64_linux  = (Get-Item "bin/distribute/bin/Linux/x64/release/libStereoKitC.so").length
     $size_x64_uwp    = (Get-Item "bin/distribute/bin/UWP/x64/Release/StereoKitC.dll").length
-    $size_arm64      = (Get-Item "bin/distribute/bin/android/arm64-v8a/release/libStereoKitC.so").length
-    $size_arm64_linux= (Get-Item "bin/distribute/bin/linux/arm64/release/libStereoKitC.so").length
+    $size_arm64      = (Get-Item "bin/distribute/bin/Android/arm64-v8a/release/libStereoKitC.so").length
+    $size_arm64_linux= (Get-Item "bin/distribute/bin/Linux/arm64/release/libStereoKitC.so").length
     $size_arm64_uwp  = (Get-Item "bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll").length
     $size_arm_uwp    = (Get-Item "bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll").length
 
@@ -161,23 +147,19 @@ Write-Host "v$version`n" -ForegroundColor Cyan
 
 # Ensure the version string for the package matches the StereoKit version
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text '<Version>(.*)</Version>' -with "<Version>$version</Version>"
-Replace-In-File -file 'xmake.lua' -text 'set_version(.*)' -with "set_version(`"$version`")"
 Replace-In-File -file 'CMakeLists.txt' -text 'StereoKit VERSION "(.*)"' -with "StereoKit VERSION `"$major.$minor.$patch`""
 
 #### Clean Project ########################
 
 # Clean out the old files, do a full build
+Write-Host 'Cleaning old files...'
 if (Test-Path 'bin\distribute') {
     Remove-Item 'bin\distribute' -Recurse
 }
-Write-Host 'Cleaning old files...'
 if ($fast -eq $false) {
-    & $vsExe 'StereoKit.sln' '/Clean' 'Release|X64' | Out-Null
-    Write-Host '..cleaned Release x64'
-    & $vsExe 'StereoKit.sln' '/Clean' 'Release|ARM64' | Out-Null
-    Write-Host '..cleaned Release ARM64'
-    & $vsExe 'StereoKit.sln' '/Clean' 'Release|ARM' | Out-Null
-    Write-Host '..cleaned Release ARM'
+    if (Test-Path 'bin\intermediate\cmake') {
+        Remove-Item 'bin\intermediate\cmake' -Recurse -Force
+    }
 }
 Write-Host 'Cleaned'
 
@@ -193,68 +175,11 @@ __      __          _
 
 "@ -ForegroundColor White
 
-    # Platform specific shader compile for shaders bundled in the platform binary!
-    Write-Host "--- Compiling shaders as Windows only ---" -ForegroundColor green
-    & 'tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'x' '-i' 'tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
-
-    # Build Win32 first
-    Write-Host "--- Beginning build: Win32 x64 ---" -ForegroundColor green
-    $result = Build -mode "Release|X64" -project "StereoKitC"
-    if ($result -ne 0) {
-        Write-Host '--- Win32 x64 build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host "--- Finished building: Win32 x64 ---" -ForegroundColor green
-    #Write-Host "--- Beginning build: Win32 ARM64 ---" -ForegroundColor green
-    #$result = Build -mode "Release|ARM64" -project "StereoKitC"
-    #if ($result -ne 0) {
-    #    Write-Host '--- Win32 ARM64 build failed! Stopping build! ---' -ForegroundColor red
-    #    exit
-    #}
-    #Write-Host "--- Finished building: Win32 ARM64 ---" -ForegroundColor green
-
-    # Build UWP next
+    Build-Preset -preset Win32x64Release -presetName 'Win32 x64'
     if ($buildWindowsUWP) {
-        Write-Host "--- Beginning build: UWP x64 ---" -ForegroundColor green
-        $result = Build -mode "Release|X64" -project "StereoKitC_UWP"
-        if ($result -ne 0) {
-            Write-Host '--- UWP x64 build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP x64 ---" -ForegroundColor green
-        Write-Host "--- Beginning build: UWP ARM64 ---" -ForegroundColor green
-        $result = Build -mode "Release|ARM64" -project "StereoKitC_UWP"
-        if ($result -ne 0) {
-            Write-Host '--- UWP ARM64 build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP ARM64 ---" -ForegroundColor green
-        Write-Host "--- Beginning build: UWP ARM ---" -ForegroundColor green
-        $result = Build -mode "Release|ARM" -project "StereoKitC_UWP"
-        if ($result -ne 0) {
-            Write-Host '--- UWP ARM build failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host "--- Finished building: UWP ARM ---" -ForegroundColor green
-    }
-
-    #### Execute Windows Tests ########################
-
-    # Run tests!
-    if ($fast -eq $false) {
-        Write-Host "`nRunning Windows Tests!"
-        if ( Test -ne 0 ) {
-            Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-            Pop-Location
-            exit
-        }
-        Write-Host 'Tests passed!' -ForegroundColor green
-    } else {
-        Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
+        Build-Preset -preset Uwpx64Release   -presetName 'UWP x64'
+        Build-Preset -preset UwpArm32Release -presetName 'UWP ARM32'
+        Build-Preset -preset UwpArm64Release -presetName 'UWP ARM64'
     }
 }
 
@@ -269,44 +194,8 @@ if ($buildLinux) {
                       
 "@ -ForegroundColor White
 
-    # Platform specific shader compile for shaders bundled in the platform binary!
-    Write-Host "--- Compiling shaders as Linux only ---" -ForegroundColor green
-    & 'tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'g' '-i' 'tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
-
-    # Find the correct WSL folder
-    $linux_folder = ''+$PSScriptRoot
-    $linux_folder = $linux_folder.replace('\', '/')
-    $linux_folder = $linux_folder.replace(':', '')
-    $linux_folder = '/mnt/'+$linux_folder
-    Write-Output $linux_folder
-
-    # Linux, via WSL
-    Write-Host '--- Beginning WSL build: Linux ARM64 ---' -ForegroundColor green
-    if ($fast -eq $false) {
-        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake -r"
-    } else {
-        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a arm64 -m release -y ; xmake"
-    }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host '--- Finished building: Linux ARM64 ---' -ForegroundColor green
-
-
-    Write-Host '--- Beginning WSL build: Linux x64 ---' -ForegroundColor green
-    if ($fast -eq $false) {
-        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake -r"
-    } else {
-        cmd /c "wsl cd '${linux_folder}' ; xmake f -p linux -a x64 -m release -y ; xmake"
-    }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Linux build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host '--- Finished building: Linux x64 ---' -ForegroundColor green
+    # Build-Preset -preset LinuxArm64Release -presetName 'Linux ARM64' -wsl
+    Build-Preset -preset Linuxx64Release -presetName 'Linux x64' -wsl
 }
 
 #### Build Android ########################
@@ -321,24 +210,17 @@ if ($buildAndroid) {
                       
 "@ -ForegroundColor White
 
-    # Platform specific shader compile for shaders bundled in the platform binary!
-    Write-Host "--- Compiling shaders as Android only ---" -ForegroundColor green
-    & 'tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'e' '-i' 'tools/include' 'StereoKitC/shaders_builtin/*.hlsl'
+    #Build-Preset -preset Androidx64Release -presetName 'Android x64'
+    Build-Preset -preset AndroidArm64Release -presetName 'Android arm64-v8a'
+}
 
-    # Do cross platform build code first
-    Write-Host '--- Beginning build: Android arm64-v8a' -ForegroundColor green
-    xmake f -p android -a arm64-v8a -m release -y --oculus-openxr=y
-    if ($fast -eq $false) {
-        xmake -r
-    } else {
-        xmake
-    }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host '--- Android build failed! Stopping build! ---' -ForegroundColor red
-        Pop-Location
-        exit
-    }
-    Write-Host '--- Finished building: Android arm64-v8a ---' -ForegroundColor green
+#### Run tests ########################
+
+# Run tests!
+if ($fast -eq $false -and $skipTest -eq $false) {
+    Run-Tests
+} else {
+    Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
 }
 
 #### Assemble NuGet Package ###############
@@ -357,9 +239,9 @@ Write-Host "--- Beginning build: NuGet package ---" -ForegroundColor green
 $packageOff = '<GeneratePackageOnBuild>false</GeneratePackageOnBuild>'
 $packageOn  = '<GeneratePackageOnBuild>true</GeneratePackageOnBuild>'
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOff -with $packageOn
-$result = Build -mode "Release|Any CPU" -project "StereoKit"
+& dotnet build StereoKit\StereoKit.csproj
 Replace-In-File -file 'StereoKit\StereoKit.csproj' -text $packageOn -with $packageOff
-if ($result -ne 0) {
+if ($LASTEXITCODE -ne 0) {
     Write-Host '--- NuGet build failed! Stopping build! ---' -ForegroundColor red
     Pop-Location
     exit
@@ -385,10 +267,6 @@ if ($upload) {
         Write-Host 'No key, cancelling upload'
     }
 }
-
-# Put the shaders back to cross-platform to make dev a little nicer!
-Write-Host "--- Restoring shaders to portable format for dev ---" -ForegroundColor green
-& 'tools/skshaderc.exe' '-O3' '-h' '-z' '-f' '-t' 'xge' '-i' 'tools/include' 'StereoKitC/shaders_builtin/*.hlsl' | Out-Null
 
 Write-Host "Done!" -ForegroundColor green
 
