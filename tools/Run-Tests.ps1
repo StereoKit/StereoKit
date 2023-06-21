@@ -7,8 +7,6 @@ Write-Host "`nRunning Tests!"
 # build a non-nuget version of C#'s StereoKit.dll for testing
 & dotnet build "$PSScriptRoot\..\StereoKit\StereoKit.csproj" -c Release -p:SKIgnoreMissingBinaries=true
 if ($LASTEXITCODE -ne 0 ) {
-    Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
-    Pop-Location
     exit 1
 }
 
@@ -16,10 +14,10 @@ if ($LASTEXITCODE -ne 0 ) {
 if ($noWindows -ne $true) {
     & dotnet run -c Release --project "$PSScriptRoot\..\Examples\StereoKitTest\StereoKitTest.csproj" -- -test -screenfolder "$PSScriptRoot/Screenshots/"
     if ($LASTEXITCODE -ne 0 ) {
-        Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
         exit 1
     }
 }
+
 if ($noLinux -ne $true) {
     $linux_folder = ''+$PSScriptRoot
     $linux_folder = $linux_folder.replace('\', '/')
@@ -29,8 +27,6 @@ if ($noLinux -ne $true) {
 
     & wsl LIBGL_ALWAYS_SOFTWARE=1 dotnet run -c Release --project "$linux_folder/../Examples/StereoKitTest/StereoKitTest.csproj" -- -test -noscreens
     if ($LASTEXITCODE -ne 0 ) {
-        Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
         exit 1
     }
 }
-Write-Host 'Tests passed!' -ForegroundColor green
