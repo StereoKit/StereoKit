@@ -13,8 +13,8 @@ function Unix-Size-Summary($report) {
         $sizes[$_.Groups[2].Value] += [System.Convert]::ToInt64($_.Groups[1].Value, 16)
     }
 
-    $breakdown = "| Prefix/Func | Size |
-| ----------- | ---- |
+    $breakdown = "|      Prefix/Function | kb   |
+| -------------------- | ---- |
 "
     $total         = 0
     $summary_total = 0
@@ -23,7 +23,7 @@ function Unix-Size-Summary($report) {
         if ($_.Value -gt 10kb) { 
             $summary_total += $_.Value
             $size = [math]::Round($_.Value/1kb)
-            $breakdown += "| {0} | {1}kb |`n" -f $_.Key, $size
+            $breakdown += "| {0,20:N0} | {1,-4:N0} |`n" -f $_.Key, $size
         }
     }
     $total         = [math]::Round($total/1kb)
@@ -82,7 +82,6 @@ $build_sizes
 ## Linux x64 Binary Breakdown
 
 $linux_x64_summary
-
 ## Android arm64 Binary Breakdown
 
 $android_arm64_summary"
