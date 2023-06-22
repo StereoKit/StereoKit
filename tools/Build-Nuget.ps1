@@ -1,6 +1,5 @@
 param(
     [switch]$upload = $false,
-    [switch]$fast = $false,
     [switch]$noTest = $false,
     [switch]$noBuild = $false,
     [string]$key = '',
@@ -40,20 +39,12 @@ function Build-Preset {
 ## Main                                  ##
 ###########################################
 
-# Notify about our upload flag status 
-if ($fast -and $upload) {
-    Write-Host "Let's not upload a fast build, just in case! Try again without the fast flag :)" -ForegroundColor yellow
-    exit
-}
+# Notify about our upload flag status
 Write-Host 'Building... ' -NoNewline
 if ($upload) { Write-Host 'AND UPLOADING!' -ForegroundColor Green }
 else         { Write-Host 'local only.'    -ForegroundColor White }
-if ($fast) {
-    Write-Host 'Making a "fast" build, incremental build issues may be present.'
-}
 
 # Switch to the right folder
-
 Push-Location -Path "$PSScriptRoot\.."
 
 #### Update Version #######################
@@ -81,10 +72,8 @@ if ($clean) {
     if (Test-Path 'bin\distribute') {
         Remove-Item 'bin\distribute' -Recurse
     }
-    if ($fast -eq $false) {
-        if (Test-Path 'bin\intermediate\cmake') {
-            Remove-Item 'bin\intermediate\cmake' -Recurse -Force
-        }
+    if (Test-Path 'bin\intermediate\cmake') {
+        Remove-Item 'bin\intermediate\cmake' -Recurse -Force
     }
     Write-Host 'Cleaned'
 } else {
@@ -142,7 +131,7 @@ if ($buildAndroid) {
 #### Run tests ########################
 
 # Run tests!
-if ($fast -eq $false -and $noTest -eq $false) {
+if ($noTest -eq $false) {
     & $PSScriptRoot/Run-Tests.ps1
     if ($LASTEXITCODE -ne 0) {
         Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
@@ -151,7 +140,7 @@ if ($fast -eq $false -and $noTest -eq $false) {
     }
     Write-Host 'Tests passed!' -ForegroundColor green
 } else {
-    Write-Host "`nSkipping tests for fast build!" -ForegroundColor yellow
+    Write-Host "`nSkipping tests!" -ForegroundColor yellow
 }
 
 #### Assemble NuGet Package ###############

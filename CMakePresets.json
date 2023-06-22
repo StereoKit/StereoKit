@@ -132,7 +132,9 @@
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
         "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_FLAGS": "-fuse-ld=lld",
+        "CMAKE_CXX_FLAGS": "-fuse-ld=lld"
       },
       "condition": {
         "type": "equals",

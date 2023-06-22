@@ -8,6 +8,8 @@ function File-Length($path) {
 }
 
 function Unix-Size-Summary($report) {
+    if ($report -eq '') { return '' }
+    
     $sizes = @{}
     ($report | Select-String -Pattern "\w* ([0-9a-fA-F]*) \w* ([^_:<(]*)(?:[_:<(]*)([^_:<(]*)" -AllMatches).Matches | ForEach-Object {
         $sizes[$_.Groups[2].Value] += [System.Convert]::ToInt64($_.Groups[1].Value, 16)
@@ -35,10 +37,10 @@ function Unix-Size-Summary($report) {
 # Get size of all the binaries
 $rootFolder = "$PSScriptRoot/../bin/distribute/bin"
 $size_x64        = File-Length "$rootFolder/Win32/x64/Release/StereoKitC.dll"
-$size_x64_linux  = File-Length "$rootFolder/Linux/x64/release/libStereoKitC.so"
+$size_x64_linux  = File-Length "$rootFolder/Linux/x64/Release/libStereoKitC.so"
 $size_x64_uwp    = File-Length "$rootFolder/UWP/x64/Release/StereoKitC.dll"
-$size_arm64      = File-Length "$rootFolder/Android/arm64-v8a/release/libStereoKitC.so"
-$size_arm64_linux= File-Length "$rootFolder/Linux/arm64/release/libStereoKitC.so"
+$size_arm64      = File-Length "$rootFolder/Android/arm64-v8a/Release/libStereoKitC.so"
+$size_arm64_linux= File-Length "$rootFolder/Linux/arm64/Release/libStereoKitC.so"
 $size_arm64_uwp  = File-Length "$rootFolder/UWP/ARM64/Release/StereoKitC.dll"
 $size_arm_uwp    = File-Length "$rootFolder/UWP/ARM/Release/StereoKitC.dll"
 
@@ -63,28 +65,39 @@ $build_sizes = (@"
        [math]::Round($size_arm64      /1kb), $size_arm64
        ))
 
+$linux_x64_report = ''
+$android_arm64_report = ''
 # Get a binary breakdown of Android and Linux
-$linux_folder = ''+$PSScriptRoot
-$linux_folder = $linux_folder.replace('\', '/')
-$linux_folder = $linux_folder.replace(':', '')
-$linux_folder = '/mnt/'+$linux_folder
-$linux_folder = $linux_folder.replace('/C/', '/c/')
-$linux_x64_report      = & wsl nm -CSr --size-sort $linux_folder/../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so.dbg
+if (Get-Command "nm" -ErrorAction SilentlyContinue) {
+    $linux_x64_report      = & nm -CSr --size-sort $PSScriptRoot/../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so.dbg
+    $android_arm64_report  = & nm -CSr --size-sort $PSScriptRoot/../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so.dbg
+} elseif (Get-Command "wsl" -ErrorAction SilentlyContinue) {
+    $linux_folder = ''+$PSScriptRoot
+    $linux_folder = $linux_folder.replace('\', '/')
+    $linux_folder = $linux_folder.replace(':', '')
+    $linux_folder = '/mnt/'+$linux_folder
+    $linux_folder = $linux_folder.replace('/C/', '/c/')
+    $linux_x64_report      = & wsl nm -CSr --size-sort $linux_folder/../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so.dbg
+    $android_arm64_report  = & wsl nm -CSr --size-sort $linux_folder/../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so.dbg
+}
 $linux_x64_summary     = Unix-Size-Summary $linux_x64_report 
-$android_arm64_report  = & wsl nm -CSr --size-sort $linux_folder/../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so.dbg
 $android_arm64_summary = Unix-Size-Summary $android_arm64_report
 
 # Write up a markdown summary
 $build_info = "# StereoKit Build Information
 
 $build_sizes
+"
+if ($linux_x64_summary -ne '') {
+    $build_info += "## Linux x64 Binary Breakdown
 
-## Linux x64 Binary Breakdown
-
-$linux_x64_summary
-## Android arm64 Binary Breakdown
+$linux_x64_summary"
+}
+if ($android_arm64_summary -ne '') {
+    $build_info += "## Android arm64 Binary Breakdown
 
 $android_arm64_summary"
+}
 
 # Write it to file, and print it
 Set-Content -path "$PSScriptRoot/BuildInfo.md" -value $build_info

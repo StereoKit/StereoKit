@@ -40,9 +40,7 @@
 #elif defined(XR_USE_PLATFORM_XLIB) && defined(XR_USE_GRAPHICS_API_OPENGL)
 	#include<X11/X.h>
 	#include<X11/Xlib.h>
-	#include<GL/gl.h>
 	#include<GL/glx.h>
-	#include<GL/glu.h>
 	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageOpenGLKHR
 	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
