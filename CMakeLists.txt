@@ -35,6 +35,7 @@ endif()
 ## Options                               ##
 ###########################################
 
+set(SK_BUILD_OPENXR_LOADER          ON  CACHE BOOL  "Build the openxr_loader target from StereoKit")
 set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
@@ -137,14 +138,16 @@ if(SK_PHYSICS)
 endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
-CPMAddPackage(
-  NAME OpenXR
-  VERSION 1.0.24
-  GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG "release-1.0.24"
-  OPTIONS
-  "BUILD_WITH_SYSTEM_JSONCPP OFF"
-)
+if (SK_BUILD_OPENXR_LOADER)
+  CPMAddPackage(
+    NAME OpenXR
+    VERSION 1.0.24
+    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
+    GIT_TAG "release-1.0.24"
+    OPTIONS
+    "BUILD_WITH_SYSTEM_JSONCPP OFF"
+  )
+endif()
 
 ###########################################
 ## Shader Compiler                       ##
