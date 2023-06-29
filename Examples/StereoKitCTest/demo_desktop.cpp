@@ -1,5 +1,7 @@
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "demo_desktop.h"
 
