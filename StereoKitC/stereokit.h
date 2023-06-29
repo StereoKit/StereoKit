@@ -14,7 +14,7 @@
 	#if defined(_DLL) || defined(BUILDING_DLL)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
-		#define SK_EXIMPORT __declspec(dllimport)
+		#define SK_EXIMPORT
 	#endif
 	#define SK_CONST extern const __declspec(selectany)
 #endif
