@@ -16,8 +16,8 @@ void demo_aliasing_update() {
 	static pose_t window_pose =
 		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 
-	static float render_scale       = render_get_scaling();
-	static float render_multisample = render_get_multisample();
+	static float render_scale       =        render_get_scaling();
+	static float render_multisample = (float)render_get_multisample();
 
 	ui_window_begin("Aliasing settings", window_pose);
 	ui_label("These settings only work in XR!");
@@ -45,8 +45,8 @@ void demo_aliasing_update() {
 
 	if (input_key(key_left ) & button_state_just_active) { render_scale -= 0.1f; render_set_scaling(render_scale); }
 	if (input_key(key_right) & button_state_just_active) { render_scale += 0.1f; render_set_scaling(render_scale); }
-	if (input_key(key_up   ) & button_state_just_active) { render_multisample += 1; render_set_multisample(render_multisample); }
-	if (input_key(key_down ) & button_state_just_active) { render_multisample -= 1; render_set_multisample(render_multisample); }
+	if (input_key(key_up   ) & button_state_just_active) { render_multisample += 1; render_set_multisample((int32_t)render_multisample); }
+	if (input_key(key_down ) & button_state_just_active) { render_multisample -= 1; render_set_multisample((int32_t)render_multisample); }
 }
 
 ///////////////////////////////////////////
