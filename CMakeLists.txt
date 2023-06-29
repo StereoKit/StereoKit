@@ -171,11 +171,13 @@ include("cmake/CPM.cmake")
 
 #### ReactPhysics3D - https://www.reactphysics3d.com/ ####
 if(SK_PHYSICS)
+  set(reactphysics_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME reactphysics3d # 0.9.0
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0 
+    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1
     EXCLUDE_FROM_ALL YES
+    PATCH_COMMAND ${reactphysics_patch}
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
