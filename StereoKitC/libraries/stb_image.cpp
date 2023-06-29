@@ -10,5 +10,6 @@
 #if defined (_M_ARM)
 	#define STBI_NEON
 #endif
+#define STB_IMAGE_STATIC
 #include "stb_image.h"
 #pragma warning(pop)

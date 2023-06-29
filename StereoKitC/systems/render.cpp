@@ -26,6 +26,7 @@
 #define __STDC_LIB_EXT1__
 #endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_STATIC
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)

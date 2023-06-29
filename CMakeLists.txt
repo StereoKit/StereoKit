@@ -35,6 +35,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
 ## Options                               ##
 ###########################################
 
+set(SK_BUILD_OPENXR_LOADER          ON  CACHE BOOL  "Build the openxr_loader target from StereoKit")
 set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
@@ -191,15 +192,17 @@ if(SK_PHYSICS)
 endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
-CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME openxr_loader # 1.0.27
-  VERSION 1.0.27
-  GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-  GIT_TAG "release-1.0.27"
-  OPTIONS
-  "BUILD_WITH_SYSTEM_JSONCPP OFF"
-  "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
-)
+if (SK_BUILD_OPENXR_LOADER)
+  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+    NAME openxr_loader # 1.0.27
+    VERSION 1.0.27
+    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
+    GIT_TAG "release-1.0.27"
+    OPTIONS
+    "BUILD_WITH_SYSTEM_JSONCPP OFF"
+    "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
+  )
+endif()
 
 # Hide warnings for dependencies, not our code
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
