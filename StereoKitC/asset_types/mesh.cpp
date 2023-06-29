@@ -1133,8 +1133,8 @@ mesh_t mesh_gen_cone(float diameter, float depth, vec3 dir, int32_t subdivisions
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
