@@ -147,7 +147,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
-    <ClCompile Include="libraries\stb_image.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />

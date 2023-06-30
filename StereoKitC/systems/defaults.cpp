@@ -3,7 +3,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
-#include "../libraries/stb_image.h"
+#include "../asset_types/texture_.h"
 
 #include <string.h>
 
@@ -177,7 +177,7 @@ bool defaults_init() {
 	// Shaders
 	int32_t size = 0;
 	void*   data = nullptr;
-#define SHADER_DECODE(shader_mem) { sk_free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
+#define SHADER_DECODE(shader_mem) { sk_free(data); data = unzip_malloc(shader_mem, sizeof(shader_mem), &size); }
 	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);

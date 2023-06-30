@@ -133,9 +133,6 @@
     <ClCompile Include="tools\virtual_keyboard.cpp">
       <Filter>tools</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\stb_image.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="ui\stereokit_ui.cpp">
       <Filter>ui</Filter>
     </ClCompile>
