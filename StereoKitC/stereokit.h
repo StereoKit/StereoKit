@@ -2026,6 +2026,18 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
+typedef enum controller_key_ {
+	controller_key_none = 0,
+	controller_key_trigger,
+	controller_key_grip,
+	controller_key_x1,
+	controller_key_x2,
+	controller_key_stick,
+	controller_key_menu,
+} controller_key_;
+
+typedef int32_t hand_sim_id_t;
+
 SK_API int32_t               input_pointer_count     (input_source_ filter sk_default(input_source_any));
 SK_API pointer_t             input_pointer           (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t*         input_hand              (handed_ hand);
@@ -2045,6 +2057,10 @@ SK_API void                  input_text_inject_char  (char32_t character);
 SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
+
+SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
+SK_API void                  input_hand_sim_pose_remove(hand_sim_id_t id);
+SK_API void                  input_hand_sim_pose_clear ();
 
 SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
