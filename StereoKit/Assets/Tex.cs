@@ -384,8 +384,8 @@ namespace StereoKit
 		/// use when rendering to it.</summary>
 		/// <param name="depthFormat">The format of the depth texture, must
 		/// be a depth format type!</param>
-		public void AddZBuffer(TexFormat depthFormat)
-			=> NativeAPI.tex_add_zbuffer(_inst, depthFormat);
+		public Tex AddZBuffer(TexFormat depthFormat)
+			=> new Tex(NativeAPI.tex_add_zbuffer(_inst, depthFormat));
 		#endregion
 
 		#region Static Methods
