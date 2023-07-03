@@ -29,6 +29,10 @@ on:
         type: boolean
         required: false
         default: false
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
   workflow_call:
     inputs:
       major:
@@ -58,6 +62,10 @@ on:
         type: boolean
         required: false
         default: false
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -74,6 +82,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
@@ -111,6 +121,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
@@ -157,6 +169,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with: 
