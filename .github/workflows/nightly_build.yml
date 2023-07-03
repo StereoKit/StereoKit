@@ -11,8 +11,8 @@ on:
   - cron: '0 9 * * *'
 
 permissions:
-  actions: read
-  contents: read
+  actions: write
+  contents: write
 
 jobs:
   check:
@@ -134,3 +134,4 @@ jobs:
       patch: ${{ needs.check.outputs.patch }}
       pre: ${{ needs.check.outputs.pre }}
       branch: ${{ vars.NIGHTLY_BRANCH }}
+      upload: true

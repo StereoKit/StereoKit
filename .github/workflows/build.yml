@@ -2,6 +2,20 @@ name: Build Package
 on: 
   workflow_dispatch:
     inputs:
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
+      upload:
+        description: 'Upload to NuGet'
+        type: boolean
+        required: false
+        default: false
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
       major:
         description: 'Major version number'
         type: number
@@ -24,17 +38,22 @@ on:
         type: string
         required: false
         default: 'preview'
-      commitChanges:
-        description: 'Commit changed files'
-        type: boolean
-        required: false
-        default: false
+  workflow_call:
+    inputs:
       branch:
         description: 'Branch to build'
         type: string
         required: true
-  workflow_call:
-    inputs:
+      upload:
+        description: 'Upload to NuGet'
+        type: boolean
+        required: false
+        default: false
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
       major:
         description: 'Major version number'
         type: string
@@ -57,15 +76,6 @@ on:
         type: string
         required: false
         default: 'preview'
-      commitChanges:
-        description: 'Commit changed files'
-        type: boolean
-        required: false
-        default: false
-      branch:
-        description: 'Branch to build'
-        type: string
-        required: true
 
 permissions:
   contents: write
