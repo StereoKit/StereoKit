@@ -152,7 +152,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+        sudo apt-get install lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
     
     - name: Set Version
       shell: pwsh
@@ -211,7 +211,7 @@ jobs:
       run: ./tools/Build-Nuget.ps1 -nobuild -notest
 
     - name: Commit Build Changes
-      if: ${{inputs.commitChanges}} && ${{ inputs.pre }} == '0'
+      if: inputs.commitChanges == true && inputs.pre == '0'
       run: |
         git config --global user.name 'SK Automation'
         git config --global user.email 'automation@stereokit.net'
