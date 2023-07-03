@@ -85,7 +85,7 @@
 		<Error Condition="!Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
-		<Error Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/x64/Release/StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
