@@ -1044,6 +1044,16 @@ namespace StereoKit
 		MAX          = 0xFF,
 	}
 
+	public enum ControllerKey {
+		None         = 0,
+		Trigger,
+		Grip,
+		X1,
+		X2,
+		Stick,
+		Menu,
+	}
+
 	/// <summary>A settings flag that lets you describe the behavior of how
 	/// StereoKit will refresh data about the world mesh, if applicable. This
 	/// is used with `World.RefreshType`.</summary>

@@ -771,4 +771,13 @@ namespace StereoKit
 		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
 	}
+
+	public struct HandSimId
+	{
+		private int id;
+		public static HandSimId None { get { return new HandSimId { id = 0 }; } }
+		// override equality
+		public static bool operator == (HandSimId a, HandSimId b) { return a.id == b.id; }
+		public static bool operator != (HandSimId a, HandSimId b) { return a.id != b.id; }
+	}
 }

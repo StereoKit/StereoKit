@@ -434,6 +434,14 @@ namespace StereoKit
 		/// </param>
 		public static void HandClearOverride(Handed hand)
 			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+
+		public static HandSimId HandSimPoseAdd(Pose[] handJoints25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
+			=> NativeAPI.input_hand_sim_pose_add(handJoints25, button1, andButton2, orHotkey1, andHotkey2);
+		public static void HandSimPoseRemove(HandSimId id)
+			=> NativeAPI.input_hand_sim_pose_remove(id);
+		public static void HandSimPoseClear()
+			=> NativeAPI.input_hand_sim_pose_clear();
+
 		/// <summary>Sets whether or not StereoKit should render the hand for
 		/// you. Turn this to false if you're going to render your own, or 
 		/// don't need the hand itself to be visible.</summary>
