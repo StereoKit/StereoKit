@@ -199,15 +199,11 @@ jobs:
     - name: Build Package and Upload
       if: inputs.upload == true
       shell: pwsh
-      env:
-        NUGET_KEY: ${{ secrets.NUGET_KEY }}
-      run: ./tools/Build-Nuget.ps1 -nobuild -notest -upload -key $env:NUGET_KEY
+      run: ./tools/Build-Nuget.ps1 -nobuild -notest -upload -key ${{ secrets.NUGET_KEY }}
 
     - name: Build Package without Upload
       if: inputs.upload == false
       shell: pwsh
-      env:
-        NUGET_KEY: ${{ secrets.NUGET_KEY }}
       run: ./tools/Build-Nuget.ps1 -nobuild -notest
 
     - name: Commit Build Changes
