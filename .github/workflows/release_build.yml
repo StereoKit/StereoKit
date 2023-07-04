@@ -41,3 +41,4 @@ jobs:
       commitChanges: true
       upload: true
       branch: ${{ github.head_ref || github.ref_name }} 
+    secrets: inherit
