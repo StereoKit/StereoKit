@@ -24,10 +24,10 @@ jobs:
           .deps_cache
 
     - name: Build Native Win32 x64
-      run: cmake --workflow --preset Win32x64Release
+      run: cmake --workflow --preset Win32x64Fast
 
     - name: Build Native UWP x64
-      run: cmake --workflow --preset Uwpx64Release
+      run: cmake --workflow --preset Uwpx64Fast
 
   native-linux-android-dotnet:
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
         sudo apt-get install libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
 
     - name: Build Native Linux x64
-      run: cmake --workflow --preset Linuxx64Release
+      run: cmake --workflow --preset Linuxx64Fast
 
     - name: Set up Android NDK
       uses: nttld/setup-ndk@v1
@@ -61,7 +61,7 @@ jobs:
         local-cache: true
 
     - name: Build Native Android ARM64
-      run: cmake --workflow --preset AndroidArm64Release
+      run: cmake --workflow --preset AndroidArm64Fast
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
