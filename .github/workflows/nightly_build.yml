@@ -11,8 +11,8 @@ on:
   - cron: '0 9 * * *'
 
 permissions:
-  actions: read
-  contents: read
+  actions: write
+  contents: write
 
 jobs:
   check:
@@ -32,6 +32,7 @@ jobs:
         REPO_NAME: ${{ github.repository }}
         WORKFLOW_RUN_ID: ${{ github.run_id }}
         SKIP_TIME_CHECK: ${{ inputs.skip_time_check }}
+        BRANCH: ${{ vars.NIGHTLY_BRANCH }}
       run: |
         $urlBase = "https://api.github.com/repos/$env:REPO_NAME"
         $header  = @{
@@ -56,7 +57,7 @@ jobs:
         Write-Output "Last run was at $lastRunTimestamp, $([math]::Round(($now - $lastRunTimestamp).TotalHours,1)) hours ago."
 
         # Get the list of commits
-        $commits             = Invoke-RestMethod -Uri "$urlBase/commits" -Headers $header
+        $commits             = Invoke-RestMethod -Uri "$urlBase/commits?sha=$env:BRANCH" -Headers $header
         $lastCommitTimestamp = [DateTime]::Parse($commits[0].commit.committer.date).ToUniversalTime()
         Write-Output "Last commit was $lastCommitTimestamp, $([math]::Round(($now - $lastCommitTimestamp).TotalHours,1)) hours ago."
 
@@ -72,6 +73,8 @@ jobs:
         }
 
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ vars.NIGHTLY_BRANCH }}
       if: steps.check.outputs.shouldBuild == 'true'
 
     - name: Get the version
@@ -111,7 +114,7 @@ jobs:
             $prevDate = [DateTime]::Parse($commit.author.date).ToUniversalTime()
         }
         $currVersion.pre = [int](([DateTime]::UtcNow - $prevDate).TotalDays * 4)
-        $nightlyName = "v$($currVersion.major).$($currVersion.minor).$($currVersion.patch)-preview.$($currVersion.pre))"
+        $nightlyName = "v$($currVersion.major).$($currVersion.minor).$($currVersion.patch)-preview.$($currVersion.pre)"
         Write-Output "Nightly is $nightlyName"
         
         Write-Output "major=$($currVersion.major)" >> $env:GITHUB_OUTPUT
@@ -130,3 +133,7 @@ jobs:
       minor: ${{ needs.check.outputs.minor }}
       patch: ${{ needs.check.outputs.patch }}
       pre: ${{ needs.check.outputs.pre }}
+      branch: ${{ vars.NIGHTLY_BRANCH }}
+      upload: true
+      commitChanges: false
+    secrets: inherit

@@ -39,3 +39,6 @@ jobs:
       minor: ${{ needs.check.outputs.minor }}
       patch: ${{ needs.check.outputs.patch }}
       commitChanges: true
+      upload: true
+      branch: ${{ github.head_ref || github.ref_name }} 
+    secrets: inherit

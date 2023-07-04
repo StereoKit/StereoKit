@@ -2,6 +2,20 @@ name: Build Package
 on: 
   workflow_dispatch:
     inputs:
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
+      upload:
+        description: 'Upload to NuGet'
+        type: boolean
+        required: false
+        default: false
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
       major:
         description: 'Major version number'
         type: number
@@ -24,13 +38,22 @@ on:
         type: string
         required: false
         default: 'preview'
-      commitChanges:
-        description: 'Commit changed files'
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
+      upload:
+        description: 'Upload to NuGet'
         type: boolean
         required: false
         default: false
-  workflow_call:
-    inputs:
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
       major:
         description: 'Major version number'
         type: string
@@ -53,11 +76,9 @@ on:
         type: string
         required: false
         default: 'preview'
-      commitChanges:
-        description: 'Commit changed files'
-        type: boolean
-        required: false
-        default: false
+    secrets:
+      NUGET_KEY:
+        required: true
 
 permissions:
   contents: write
@@ -74,6 +95,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
@@ -111,6 +134,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
@@ -130,7 +155,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+        sudo apt-get install lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
     
     - name: Set Version
       shell: pwsh
@@ -157,6 +182,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with: 
@@ -172,14 +199,18 @@ jobs:
       shell: pwsh
       run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
 
-    - name: Build Package
+    - name: Build Package and Upload
+      if: inputs.upload == true
       shell: pwsh
-      env:
-        NUGET_KEY: ${{ secrets.NUGET_KEY }}
-      run: ./tools/Build-Nuget.ps1 -nobuild -notest -upload -key $env:NUGET_KEY
+      run: ./tools/Build-Nuget.ps1 -nobuild -notest -upload -key ${{ secrets.NUGET_KEY }}
+
+    - name: Build Package without Upload
+      if: inputs.upload == false
+      shell: pwsh
+      run: ./tools/Build-Nuget.ps1 -nobuild -notest
 
     - name: Commit Build Changes
-      if: ${{inputs.commitChanges}} && ${{ inputs.pre }} == '0'
+      if: inputs.commitChanges == true && inputs.pre == '0'
       run: |
         git config --global user.name 'SK Automation'
         git config --global user.email 'automation@stereokit.net'
