@@ -136,3 +136,4 @@ jobs:
       branch: ${{ vars.NIGHTLY_BRANCH }}
       upload: true
       commitChanges: false
+    secrets: inherit
