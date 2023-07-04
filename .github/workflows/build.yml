@@ -76,6 +76,9 @@ on:
         type: string
         required: false
         default: 'preview'
+    secrets:
+      NUGET_KEY:
+        required: true
 
 permissions:
   contents: write
