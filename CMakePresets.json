@@ -83,6 +83,15 @@
       "binaryDir": "${sourceDir}/bin/intermediate/cmake/UWP_x64_Release"
     },
     {
+      "name": "Uwpx64ReleaseFast",
+      "inherits": "Uwpx64Release",
+      "description": "Fast build for UWP x64",
+      "hidden": false,
+      "cacheVariables": {
+        "SK_PHYSICS": "Off"
+      }
+    },
+    {
       "name": "UwpReleasex86",
       "description": "Release build for UWP x86",
       "inherits": "UwpRelease",
@@ -113,6 +122,15 @@
       "binaryDir": "${sourceDir}/bin/intermediate/cmake/Win32_x64_Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "Win32Releasex64Fast",
+      "description": "Fast build for Win32 x64",
+      "hidden": false,
+      "inherits": "Win32Releasex64",
+      "cacheVariables": {
+        "SK_PHYSICS": "Off"
       }
     },
     {
@@ -150,6 +168,15 @@
       "binaryDir": "${sourceDir}/bin/intermediate/cmake/Linux_x64_Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "Linuxx64ReleaseFast",
+      "description": "Fast build for Linux x64",
+      "hidden": false,
+      "inherits": "Linuxx64Release",
+      "cacheVariables": {
+        "SK_PHYSICS": "Off"
       }
     },
     {
@@ -238,21 +265,34 @@
           "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
           "SK_DYNAMIC_OPENXR": "ON"
       }
+    },
+    {
+      "name": "AndroidArm64ReleaseFast",
+      "description": "Fast build for Android ARM64",
+      "inherits": "AndroidArm64Release",
+      "hidden": false,
+      "cacheVariables": {
+          "SK_PHYSICS": "Off"
+      }
     }
   ],
   "buildPresets": [
       { "name":"UwpDebugx64", "configuration":"Debug", "configurePreset":"UwpDebugx64", "jobs":24  },
       { "name":"Uwpx64Release", "configuration":"Release", "configurePreset":"Uwpx64Release", "jobs":24  },
+      { "name":"Uwpx64ReleaseFast", "configuration":"Release", "configurePreset":"Uwpx64ReleaseFast", "jobs":24  },
       { "name":"UwpDebugArm32", "configuration":"Debug", "configurePreset":"UwpDebugArm32", "jobs":24  },
       { "name":"UwpArm32Release", "configuration":"Release", "configurePreset":"UwpArm32Release", "jobs":24  },
       { "name":"UwpDebugArm64", "configuration":"Debug", "configurePreset":"UwpDebugArm64", "jobs":24  },
       { "name":"UwpArm64Release", "configuration":"Release", "configurePreset":"UwpArm64Release", "jobs":24  },
       { "name":"Win32x64Debug", "configuration":"Debug", "configurePreset":"Win32x64Debug", "jobs":24  },
       { "name":"Win32Releasex64", "configuration":"Release", "configurePreset":"Win32Releasex64", "jobs":24  },
+      { "name":"Win32Releasex64Fast", "configuration":"Release", "configurePreset":"Win32Releasex64Fast", "jobs":24  },
       { "name":"AndroidArm64Debug", "configuration":"Debug", "configurePreset":"AndroidArm64Debug", "jobs":24  },
       { "name":"AndroidArm64Release", "configuration":"Release", "configurePreset":"AndroidArm64Release", "jobs":24  },
+      { "name":"AndroidArm64ReleaseFast", "configuration":"Release", "configurePreset":"AndroidArm64ReleaseFast", "jobs":24  },
       { "name":"LinuxDebugx64", "configuration":"Debug", "configurePreset":"LinuxDebugx64", "jobs":24  },
       { "name":"Linuxx64Release", "configuration":"Release", "configurePreset":"Linuxx64Release", "jobs":24 },
+      { "name":"Linuxx64ReleaseFast", "configuration":"Release", "configurePreset":"Linuxx64ReleaseFast", "jobs":24 },
       { "name":"LinuxDebugArm64", "configuration":"Debug", "configurePreset":"LinuxDebugArm64", "jobs":24  },
       { "name":"LinuxArm64Release", "configuration":"Release", "configurePreset":"LinuxArm64Release", "jobs":24  }
   ],
@@ -262,6 +302,12 @@
       "steps":[
         { "type": "configure", "name": "Uwpx64Release" },
         { "type": "build", "name": "Uwpx64Release" } ]
+    },
+    {
+      "name":"Uwpx64Fast",
+      "steps":[
+        { "type": "configure", "name": "Uwpx64ReleaseFast" },
+        { "type": "build", "name": "Uwpx64ReleaseFast" } ]
     },
     {
       "name":"UwpArm32Release",
@@ -282,6 +328,12 @@
         { "type": "build", "name": "Win32Releasex64" } ]
     },
     {
+      "name":"Win32x64Fast",
+      "steps":[
+        { "type": "configure", "name": "Win32Releasex64Fast" },
+        { "type": "build", "name": "Win32Releasex64Fast" } ]
+    },
+    {
       "name":"Win32x64Debug",
       "steps":[
         { "type": "configure", "name": "Win32x64Debug" },
@@ -294,6 +346,12 @@
         { "type": "build", "name": "AndroidArm64Release" } ]
     },
     {
+      "name":"AndroidArm64Fast",
+      "steps":[
+        { "type": "configure", "name": "AndroidArm64ReleaseFast" },
+        { "type": "build", "name": "AndroidArm64ReleaseFast" } ]
+    },
+    {
       "name":"AndroidArm64Debug",
       "steps":[
         { "type": "configure", "name": "AndroidArm64Debug" },
@@ -304,6 +362,12 @@
       "steps":[
         { "type": "configure", "name": "Linuxx64Release" },
         { "type": "build", "name": "Linuxx64Release" } ]
+    },
+    {
+      "name":"Linuxx64Fast",
+      "steps":[
+        { "type": "configure", "name": "Linuxx64ReleaseFast" },
+        { "type": "build", "name": "Linuxx64ReleaseFast" } ]
     },
     {
       "name":"LinuxArm64Release",

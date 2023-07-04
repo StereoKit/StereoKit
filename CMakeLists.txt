@@ -207,10 +207,14 @@ endif()
 # Hide warnings for dependencies, not our code
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(openxr_loader PRIVATE -w)
-  target_compile_options(reactphysics3d PRIVATE -w)
+  if (SK_PHYSICS)
+    target_compile_options(reactphysics3d PRIVATE -w)
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   target_compile_options(openxr_loader PRIVATE /W0)
-  target_compile_options(reactphysics3d PRIVATE /W0)
+  if (SK_PHYSICS)
+    target_compile_options(reactphysics3d PRIVATE /W0)
+  endif()
 endif()
 
 ###########################################
