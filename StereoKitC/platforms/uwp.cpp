@@ -436,7 +436,7 @@ void uwp_set_mouse(vec2 window_pos) {
 ///////////////////////////////////////////
 
 float uwp_get_scroll() {
-	return ViewProvider::inst->mouse_scroll;
+	return ViewProvider::inst != nullptr ? ViewProvider::inst->mouse_scroll : 0;
 }
 
 ///////////////////////////////////////////
