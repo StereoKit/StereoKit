@@ -194,10 +194,10 @@ if ($upload) {
             $key = ''
         }
     }
-    $key = $key.Trim()
 
     # Upload with our key!
     if ($key -ne '') {
+        $key = $key.Trim()
         & dotnet nuget push "bin\StereoKit.$version.nupkg" -k $key -s https://api.nuget.org/v3/index.json
     } else {
         Write-Host 'No key, cancelling upload'
