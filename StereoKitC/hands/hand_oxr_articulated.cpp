@@ -20,7 +20,7 @@ namespace sk {
 
 XrHandTrackerEXT oxra_hand_tracker[2];
 XrSpace          oxra_hand_space[2];
-hand_joint_t     oxra_hand_joints[2][26];
+hand_joint_t     oxra_hand_joints[2][27];
 bool             oxra_hand_active = true;
 bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
@@ -54,10 +54,10 @@ bool hand_oxra_is_tracked() {
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
 
-		XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
+		XrHandJointLocationEXT  joint_locations[XR_HAND_FOREARM_JOINT_COUNT_ULTRALEAP];
 		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
 		locations.isActive       = XR_FALSE;
-		locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
+		locations.jointCount     = XR_HAND_FOREARM_JOINT_COUNT_ULTRALEAP;
 		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
@@ -79,7 +79,7 @@ void hand_oxra_init() {
 	for (int32_t h = 0; h < handed_max; h++) {
 		XrHandTrackerCreateInfoEXT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT };
 		info.hand         = h == handed_left ? XR_HAND_LEFT_EXT : XR_HAND_RIGHT_EXT;
-		info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+		info.handJointSet = XR_HAND_JOINT_SET_HAND_WITH_FOREARM_ULTRALEAP;
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
@@ -182,10 +182,10 @@ void hand_oxra_update_joints() {
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
 
-		XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
+		XrHandJointLocationEXT  joint_locations[XR_HAND_FOREARM_JOINT_COUNT_ULTRALEAP];
 		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
 		locations.isActive       = XR_FALSE;
-		locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
+		locations.jointCount     = XR_HAND_FOREARM_JOINT_COUNT_ULTRALEAP;
 		locations.jointLocations = joint_locations;
 		xr_extensions.xrLocateHandJointsEXT(oxra_hand_tracker[h], &locate_info, &locations);
 
@@ -230,6 +230,7 @@ void hand_oxra_update_joints() {
 		static const quat face_forward = quat_from_angles(-90,0,0);
 		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+		inp_hand->elbow = pose_t{ oxra_hand_joints[h][XR_HAND_FOREARM_JOINT_ELBOW_ULTRALEAP].position,  oxra_hand_joints[h][XR_HAND_FOREARM_JOINT_ELBOW_ULTRALEAP].orientation };
 
 		// Create pointers for the hands
 		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);

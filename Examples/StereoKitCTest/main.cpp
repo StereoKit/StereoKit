@@ -253,6 +253,9 @@ void common_update() {
 
 	ruler_window();
 	log_window();
+	line_add_axis(input_hand(sk::handed_left)->elbow, 0.01f);
+	quat q = input_hand(sk::handed_left)->elbow.orientation;
+	sk::log_diagf("%f %f %f %f", q.w, q.x, q.y, q.z);
 }
 
 void common_shutdown() {
