@@ -1054,13 +1054,27 @@ namespace StereoKit
 		MAX          = 0xFF,
 	}
 
+	/// <summary>Represents an input from an XR headset's controller!</summary>
 	public enum ControllerKey {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
 		None         = 0,
+		/// <summary>The trigger button on the controller, where the user's index finger
+		/// typically sits.</summary>
 		Trigger,
+		/// <summary>The grip button on the controller, usually where the fingers that are not
+		/// the index finger sit.</summary>
 		Grip,
+		/// <summary>This is the lower of the two primary thumb buttons, sometimes labelled X,
+		/// and sometimes A. </summary>
 		X1,
+		/// <summary>This is the upper of the two primary thumb buttons, sometimes labelled Y,
+		/// and sometimes B. </summary>
 		X2,
+		/// <summary>This is when the thumbstick on the controller is actually pressed. This
+		/// has nothing to do with the horizontal or vertical movement of the stick.</summary>
 		Stick,
+		/// <summary>This is the menu, or settings button of the controller.</summary>
 		Menu,
 	}
 
