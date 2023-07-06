@@ -54,7 +54,11 @@ typedef struct poll_event_callback_t {
 
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
+#if defined(SK_DEBUG)
+	"XR_APILAYER_LUNARG_core_validation",
+#else
 	"",
+#endif
 };
 bool xr_has_articulated_hands = false;
 bool xr_has_hand_meshes       = false;
