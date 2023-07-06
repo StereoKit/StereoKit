@@ -10,11 +10,13 @@ namespace sk {
 
 struct keyboard_event_t {
 	key_    key;
+	uint8_t code;
 	int16_t down;
 };
 
 struct keyboard_t {
 	uint8_t                   keys[key_MAX];
+	uint8_t                   codes[key_MAX];
 	array_t<keyboard_event_t> events;
 	array_t<char32_t>         characters;
 	int32_t                   queue_counter;
@@ -57,10 +59,14 @@ void input_keyboard_update() {
 	// Clear any just_in/active flags that were set on the last frame
 	array_t<keyboard_event_t> &evts = input_key_data.events;
 	for (int32_t i = 0; i < evts.count; i++) {
-		if (evts[i].down)
-			input_key_data.keys[evts[i].key] &= ~button_state_just_active;
-		else
-			input_key_data.keys[evts[i].key] &= ~button_state_just_inactive;
+		if (evts[i].down) {
+			input_key_data.keys [evts[i].key] &= ~button_state_just_active;
+			input_key_data.codes[evts[i].code] &= ~button_state_just_active;
+		}
+		else {
+			input_key_data.keys [evts[i].key] &= ~button_state_just_inactive;
+			input_key_data.codes[evts[i].code] &= ~button_state_just_inactive;
+		}
 	}
 
 	// Thread safe copy new key events into the main thread
@@ -78,17 +84,21 @@ void input_keyboard_update() {
 	for (int32_t i = 0; i < evts.count; i++) {
 		keyboard_event_t &evt = evts.get(i);
 		if (evt.down) {
-			input_key_data.keys[evt.key] |= button_state_just_active | button_state_active;
+			input_key_data.keys [evt.key]  |= button_state_just_active | button_state_active;
+			input_key_data.codes[evt.code] |= button_state_just_active | button_state_active;
 		} else {
 			input_key_data.keys[evt.key] &= ~button_state_active;
 			input_key_data.keys[evt.key] |=  button_state_just_inactive;
+
+			input_key_data.codes[evt.code] &= ~button_state_active;
+			input_key_data.codes[evt.code] |=  button_state_just_inactive;
 		}
 	}
 }
 
 ///////////////////////////////////////////
 
-void input_key_inject_press(key_ key) {
+void input_key_inject_press(key_ key, uint8_t code) {
 	// Don't inject keys if input is suspended
 	if (input_key_suspended) return;
 
@@ -96,6 +106,7 @@ void input_key_inject_press(key_ key) {
 
 	keyboard_event_t evt;
 	evt.key  = key;
+	evt.code = code;
 	evt.down = 1;
 	input_key_pending.add(evt);
 
@@ -104,7 +115,7 @@ void input_key_inject_press(key_ key) {
 
 ///////////////////////////////////////////
 
-void input_key_inject_release(key_ key) {
+void input_key_inject_release(key_ key, uint8_t code) {
 	// Don't inject keys if input is suspended, unless the key was pressed
 	// before input was suspended.
 	if (input_key_suspended && (input_keyboard_get(key) & button_state_inactive))
@@ -114,6 +125,7 @@ void input_key_inject_release(key_ key) {
 
 	keyboard_event_t evt;
 	evt.key  = key;
+	evt.code = code;
 	evt.down = 0;
 	input_key_pending.add(evt);
 
@@ -122,7 +134,10 @@ void input_key_inject_release(key_ key) {
 
 ///////////////////////////////////////////
 
-button_state_ input_keyboard_get(key_ key) {
+button_state_ input_keyboard_get(key_ key, uint8_t code) {
+	if (code != key_none)
+		return (button_state_)input_key_data.codes[code];
+
 	return (button_state_)input_key_data.keys[key];
 }
 

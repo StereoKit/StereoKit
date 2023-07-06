@@ -141,8 +141,8 @@ const mouse_t *input_mouse() {
 
 ///////////////////////////////////////////
 
-button_state_ input_key(key_ key) {
-	return input_keyboard_get(key);
+button_state_ input_key(key_ key, uint8_t code) {
+	return input_keyboard_get(key, code);
 }
 
 ///////////////////////////////////////////

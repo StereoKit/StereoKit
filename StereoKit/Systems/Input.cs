@@ -472,10 +472,11 @@ namespace StereoKit
 		/// even standalone MR devices can have bluetooth keyboards, or even
 		/// just holographic system keyboards!</summary>
 		/// <param name="key">The key to get the state of. Any key!</param>
+		/// <param name="code">Specify the scan_code / keycode instead!</param>
 		/// <returns>A BtnState with a number of different bits of info about
 		/// whether or not the key was pressed or released this frame.</returns>
-		public static BtnState Key(Key key)
-			=> NativeAPI.input_key(key);
+		public static BtnState Key(Key key, uint code = 0)
+			=> NativeAPI.input_key(key, code);
 		/// <summary>This will inject a key press event into StereoKit's input
 		/// event queue. It will be processed at the start of the next frame,
 		/// and will be indistinguishable from a physical key press. Remember

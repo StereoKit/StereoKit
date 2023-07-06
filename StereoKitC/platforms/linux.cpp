@@ -183,8 +183,8 @@ void linux_events() {
 				else if ((sym & 0xFFFFFF00U) == 0x0000U) key = linux_xk_map_lower[sym];
 
 				if (key != key_none) {
-					if (is_pressed) input_key_inject_press  (key);
-					else            input_key_inject_release(key);
+					if (is_pressed) input_key_inject_press  (key, event.xkey.keycode);
+					else            input_key_inject_release(key, event.xkey.keycode);
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
