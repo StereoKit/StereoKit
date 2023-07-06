@@ -417,12 +417,22 @@ bool openxr_init() {
 	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
 	XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
 	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
-	properties         .next = &properties_tracking;
-	properties_tracking.next = &properties_handmesh;
-	properties_handmesh.next = &properties_gaze;
+	// Validation layer does not seem to like 'next' chaining beyond a depth of
+	// 1, so we'll just call these one at a time.
+	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	if (xr_ext_available.EXT_hand_tracking) {
+		properties.next = &properties_tracking;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
+	if (xr_ext_available.MSFT_hand_tracking_mesh) {
+		properties.next = &properties_handmesh;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
+	if (xr_ext_available.EXT_eye_gaze_interaction) {
+		properties.next = &properties_gaze;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
 
-	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
-		"xrGetSystemProperties failed [%s]");
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
 	device_data.name = string_copy(properties.systemName);
 
