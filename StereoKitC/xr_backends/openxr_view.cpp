@@ -881,8 +881,9 @@ void openxr_views_update_fov() {
 	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
 	locate_info.viewConfigurationType = disp->type;
 	locate_info.displayTime           = xr_time;
-	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views);
+	locate_info.space                 = xr_head_space; // We don't need app space here, and app space may not be valid yet
+	if (XR_FAILED(xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views)))
+		return;
 
 	// Copy over the FoV so it's available to the users
 	if (disp->view_count > 0) {
