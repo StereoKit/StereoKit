@@ -12,7 +12,6 @@
       "hidden": true,
       "generator": "Visual Studio 17 2022",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_SYSTEM_NAME": "WindowsStore",
         "CMAKE_SYSTEM_VERSION": "10.0",
         "DYNAMIC_LOADER": "ON",
@@ -28,10 +27,7 @@
       "name": "UwpDebug",
       "description": "Debug build for UWP x64",
       "inherits": "Uwp",
-      "hidden": true,
-      "cacheVariables": {
-          "CMAKE_BUILD_TYPE": "Debug"
-      }
+      "hidden": true
     },
     {
       "name": "UwpDebugx64",
@@ -119,10 +115,7 @@
       "name": "Win32Releasex64",
       "description": "Release build for Win32 x64",
       "hidden": false,
-      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Win32_x64_Release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
+      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Win32_x64_Release"
     },
     {
       "name": "Win32Releasex64Fast",
@@ -137,10 +130,7 @@
       "name": "Win32x64Debug",
       "description": "Debug build for Win32 x64",
       "hidden": false,
-      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Win32_x64_Debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
+      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Win32_x64_Debug"
     },
     {
       "name": "Linux",
