@@ -550,7 +550,7 @@ bool openxr_init() {
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
-	while (!openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space)) {
+	while (!openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) && openxr_poll_events()) {
 		platform_sleep(1);
 	}
 	switch (xr_app_space_type) {
@@ -906,7 +906,7 @@ bool openxr_poll_events() {
 
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
-	return false;
+	return result;
 }
 
 ///////////////////////////////////////////
