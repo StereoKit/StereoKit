@@ -2032,13 +2032,27 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
+/*Represents an input from an XR headset's controller!*/
 typedef enum controller_key_ {
+	/*Doesn't represent a key, generally means this item has not been set to
+	  any particular value!*/
 	controller_key_none = 0,
+	/*The trigger button on the controller, where the user's index finger
+	  typically sits.*/
 	controller_key_trigger,
+	/*The grip button on the controller, usually where the fingers that are not
+	  the index finger sit.*/
 	controller_key_grip,
+	/*This is the lower of the two primary thumb buttons, sometimes labelled X,
+	  and sometimes A. */
 	controller_key_x1,
+	/*This is the upper of the two primary thumb buttons, sometimes labelled Y,
+	  and sometimes B. */
 	controller_key_x2,
+	/*This is when the thumbstick on the controller is actually pressed. This
+	  has nothing to do with the horizontal or vertical movement of the stick.*/
 	controller_key_stick,
+	/*This is the menu, or settings button of the controller.*/
 	controller_key_menu,
 } controller_key_;
 

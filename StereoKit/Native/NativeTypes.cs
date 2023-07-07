@@ -772,12 +772,34 @@ namespace StereoKit
 		Bottom,
 	}
 
+	/// <summary>Id of a simulated hand pose, for use with
+	/// `Input.HandSimPoseRemove`</summary>
 	public struct HandSimId
 	{
 		private int id;
+		/// <summary>An id for testing emptiness.</summary>
 		public static HandSimId None { get { return new HandSimId { id = 0 }; } }
-		// override equality
+		
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a == b</returns>
 		public static bool operator == (HandSimId a, HandSimId b) { return a.id == b.id; }
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a != b</returns>
 		public static bool operator != (HandSimId a, HandSimId b) { return a.id != b.id; }
+		/// <summary>Same as ==</summary>
+		/// <param name="obj">Must be a HandSimId</param>
+		/// <returns>Equality.</returns>
+		public override bool Equals(object obj)
+			=> id.Equals(((HandSimId)obj).id);
+		/// <summary>Hash code of the id.</summary>
+		/// <returns>Hash code of the id.</returns>
+		public override int GetHashCode()
+			=> id.GetHashCode();
 	}
 }

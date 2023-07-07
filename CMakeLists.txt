@@ -59,26 +59,6 @@ endif()
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 
-# Release mode settings
-if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
-  add_definitions(-DNDEBUG)
-
-  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    # Always generate debug symbol files, we split them out later
-    add_compile_options(-g -O3 -fdata-sections -ffunction-sections -flto)
-    add_link_options   (-Wl,--gc-sections -flto)
-  elseif(MSVC)
-    add_compile_options(/Zi /O2)
-    add_link_options   (/DEBUG /OPT:REF /OPT:ICF) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
-
-    # Something is setting /RTC1, which is not compatible with /O2
-    string(REPLACE "/RTC1" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-    string(REPLACE "/RTC1" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  endif()
-endif()
-
 ###########################################
 ## Source Link                           ##
 ###########################################
@@ -182,10 +162,6 @@ if(SK_PHYSICS)
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
-  # Disable warnings for reactphysics3d, it's a little horrifying
-  target_compile_options(reactphysics3d PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W0>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-w> )
 
   set(PHYSICS_LIB
     reactphysics3d)
@@ -202,19 +178,6 @@ if (SK_BUILD_OPENXR_LOADER)
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
-endif()
-
-# Hide warnings for dependencies, not our code
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  target_compile_options(openxr_loader PRIVATE -w)
-  if (SK_PHYSICS)
-    target_compile_options(reactphysics3d PRIVATE -w)
-  endif()
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  target_compile_options(openxr_loader PRIVATE /W0)
-  if (SK_PHYSICS)
-    target_compile_options(reactphysics3d PRIVATE /W0)
-  endif()
 endif()
 
 ###########################################
@@ -518,6 +481,30 @@ target_link_libraries( StereoKitC
   PUBLIC
     ${ANDROID_LIBS}
 )
+
+# Compiler options for all the targets, now that they're all present
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
+  set(SK_RELEASE_LINK    -Wl,--gc-sections -flto)
+  set(SK_WARNING_FLAG    -w)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy)
+  set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
+  set(SK_WARNING_FLAG    /W0)
+endif()
+
+if (SK_BUILD_OPENXR_LOADER)
+  target_compile_options(openxr_loader PRIVATE ${SK_WARNING_FLAG})
+  target_compile_options(openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+  target_link_options   (openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
+endif()
+if (SK_PHYSICS)
+  target_compile_options(reactphysics3d PRIVATE ${SK_WARNING_FLAG})
+  target_compile_options(reactphysics3d PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+  target_link_options   (reactphysics3d PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
+endif()
+target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 
 ###########################################
 ## Copy binaries to the distribute folder##

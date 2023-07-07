@@ -54,7 +54,11 @@ typedef struct poll_event_callback_t {
 
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
+#if defined(SK_DEBUG)
+	"XR_APILAYER_LUNARG_core_validation",
+#else
 	"",
+#endif
 };
 bool xr_has_articulated_hands = false;
 bool xr_has_hand_meshes       = false;
@@ -95,9 +99,9 @@ XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-XrSpace              openxr_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset);
-void                 openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers);
-XrTime               openxr_acquire_time    ();
+bool32_t             openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
+void                 openxr_preferred_layers (uint32_t &out_layer_count, const char **out_layers);
+XrTime               openxr_acquire_time     ();
 
 ///////////////////////////////////////////
 
@@ -417,12 +421,22 @@ bool openxr_init() {
 	XrSystemHandTrackingPropertiesEXT       properties_tracking = { XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT };
 	XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };
 	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
-	properties         .next = &properties_tracking;
-	properties_tracking.next = &properties_handmesh;
-	properties_handmesh.next = &properties_gaze;
+	// Validation layer does not seem to like 'next' chaining beyond a depth of
+	// 1, so we'll just call these one at a time.
+	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	if (xr_ext_available.EXT_hand_tracking) {
+		properties.next = &properties_tracking;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
+	if (xr_ext_available.MSFT_hand_tracking_mesh) {
+		properties.next = &properties_handmesh;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
+	if (xr_ext_available.EXT_eye_gaze_interaction) {
+		properties.next = &properties_gaze;
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	}
 
-	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
-		"xrGetSystemProperties failed [%s]");
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
 	device_data.name = string_copy(properties.systemName);
 
@@ -506,22 +520,6 @@ bool openxr_init() {
 		return false;
 	}
 
-	// Wait for the session to start before we do anything more, reference
-	// spaces are sometimes invalid before session start.
-	while (!xr_running && openxr_poll_events()) {
-		platform_sleep(1);
-	}
-
-	// Create reference spaces! So we can find stuff relative to them :)
-	xr_app_space = openxr_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset);
-	switch (xr_app_space_type) {
-		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
-		case XR_REFERENCE_SPACE_TYPE_LOCAL:           world_origin_mode = origin_mode_local; break;
-		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  world_origin_mode = origin_mode_local; break;
-		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: world_origin_mode = origin_mode_floor; break;
-		default:                                      world_origin_mode = origin_mode_local; break;
-	}
-
 	// The space for our head
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
@@ -541,6 +539,26 @@ bool openxr_init() {
 	result = xrCreateReferenceSpace(xr_session, &ref_space, &xr_stage_space);
 	if (XR_FAILED(result)) {
 		xr_stage_space = {};
+	}
+
+	// Wait for the session to start before we do anything more with the 
+	// spaces, reference spaces are sometimes invalid before session start.
+	while (!xr_running && openxr_poll_events()) {
+		platform_sleep(1);
+	}
+
+	// Create reference spaces! So we can find stuff relative to them :) Some
+	// platforms still take time after session start before the spaces provide
+	// valid data, so we'll wait for that here.
+	while (!openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space)) {
+		platform_sleep(1);
+	}
+	switch (xr_app_space_type) {
+		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
+		case XR_REFERENCE_SPACE_TYPE_LOCAL:           world_origin_mode = origin_mode_local; break;
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  world_origin_mode = origin_mode_local; break;
+		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: world_origin_mode = origin_mode_floor; break;
+		default:                                      world_origin_mode = origin_mode_local; break;
 	}
 
 	if (!oxri_init()) {
@@ -605,25 +623,33 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 
 ///////////////////////////////////////////
 
-pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType space_type, XrReferenceSpaceType base_space_type) {
-	XrSpace base_space = {};
+bool32_t openxr_space_try_get_offset(XrSession session, XrTime time, XrReferenceSpaceType space_type, XrReferenceSpaceType base_space_type, pose_t *out_pose) {
+	*out_pose = pose_identity;
+
+	bool32_t result     = false;
+	XrSpace  base_space = {};
 	XrReferenceSpaceCreateInfo view_info = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	view_info.poseInReferenceSpace = { {0,0,0,1}, {0,0,0} };
 	view_info.referenceSpaceType   = base_space_type;
-	xrCreateReferenceSpace(session, &view_info, &base_space);
+	if (XR_FAILED(xrCreateReferenceSpace(session, &view_info, &base_space))) {
+		return false;
+	}
 
 	XrSpace space = {};
-	view_info.referenceSpaceType   = space_type;
-	xrCreateReferenceSpace(session, &view_info, &space);
+	view_info.referenceSpaceType = space_type;
+	if (XR_FAILED(xrCreateReferenceSpace(session, &view_info, &space))) {
+		if (base_space != XR_NULL_HANDLE) xrDestroySpace(base_space);
+		return false;
+	}
 
-	XrSpaceLocation loc    = { XR_TYPE_SPACE_LOCATION };
-	XrResult        res    = xrLocateSpace(space, base_space, time, &loc);
-	pose_t          result = pose_identity;
+	XrSpaceLocation loc = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res = xrLocateSpace(space, base_space, time, &loc);
 	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(loc)) {
-		memcpy(&result.position,    &loc.pose.position,    sizeof(vec3));
-		memcpy(&result.orientation, &loc.pose.orientation, sizeof(quat));
+		result = true;
+		memcpy(&out_pose->position,    &loc.pose.position,    sizeof(vec3));
+		memcpy(&out_pose->orientation, &loc.pose.orientation, sizeof(quat));
 	} else {
-		log_err("Failed to find a space offset!");
+		result = false;
 	}
 	if (base_space != XR_NULL_HANDLE) xrDestroySpace(base_space);
 	if (space      != XR_NULL_HANDLE) xrDestroySpace(space);
@@ -632,7 +658,7 @@ pose_t openxr_space_offset(XrSession session, XrTime time, XrReferenceSpaceType 
 
 ///////////////////////////////////////////
 
-XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t *out_space_offset) {
+bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t *out_space_offset, XrSpace *out_app_space) {
 	// Find the spaces OpenXR has access to on this device
 	uint32_t refspace_count = 0;
 	xrEnumerateReferenceSpaces(session, 0, &refspace_count, nullptr);
@@ -654,7 +680,6 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, 
 	}
 	sk_free(refspace_types);
 
-	XrSpace              result     = {};
 	XrReferenceSpaceType base_space = XR_REFERENCE_SPACE_TYPE_LOCAL;
 	pose_t               offset     = pose_identity;
 	switch (mode) {
@@ -667,7 +692,8 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, 
 		// If head is offset from the origin, then the runtime's implementation
 		// varies from StereoKit's promise. Here we set the space offset to be
 		// the inverse of whatever that offset is.
-		offset = openxr_space_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, base_space);
+		if (!openxr_space_try_get_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, base_space, &offset))
+			return false;
 		offset.orientation.x = 0;
 		offset.orientation.z = 0;
 		offset.orientation   = quat_normalize(offset.orientation);
@@ -688,7 +714,8 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, 
 			// Stage will have a different orientation and XZ location from a
 			// LOCAL_FLOOR, so we need to calculate those. This should be a
 			// perfect fallback from LOCAL_FLOOR
-			offset = openxr_space_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, XR_REFERENCE_SPACE_TYPE_STAGE);
+			if (!openxr_space_try_get_offset(session, time, XR_REFERENCE_SPACE_TYPE_VIEW, XR_REFERENCE_SPACE_TYPE_STAGE, &offset))
+				return false;
 			offset.orientation.x = 0;
 			offset.orientation.z = 0;
 			offset.orientation   = quat_normalize(offset.orientation);
@@ -700,14 +727,20 @@ XrSpace openxr_get_app_space(XrSession session, origin_mode_ mode, XrTime time, 
 	} break;
 	}
 
+	bool32_t result = false;
 	XrReferenceSpaceCreateInfo ref_space = { XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
 	ref_space.referenceSpaceType = base_space;
 	memcpy(&ref_space.poseInReferenceSpace.position,    &offset.position,    sizeof(offset.position));
 	memcpy(&ref_space.poseInReferenceSpace.orientation, &offset.orientation, sizeof(offset.orientation));
-	XrResult err = xrCreateReferenceSpace(session, &ref_space, &result);
+	XrSpace app_space = XR_NULL_HANDLE;
+	XrResult err = xrCreateReferenceSpace(session, &ref_space, &app_space);
 	if (XR_FAILED(err)) {
-		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(err));
+		result = false;
+		*out_app_space = XR_NULL_HANDLE;
 	} else {
+		result = true;
+		*out_app_space = app_space;
+
 		const char *space_name = "";
 		if      (base_space == XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT)  space_name = "unbounded";
 		else if (base_space == XR_REFERENCE_SPACE_TYPE_LOCAL)           space_name = "local";
