@@ -17,7 +17,7 @@ class DemoRenderScaling : ITest
 		scaling     = Renderer.Scaling;
 	}
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Aliasing Settings", ref windowPose);
 

@@ -1,0 +1,230 @@
+name: Build Package
+on: 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
+      upload:
+        description: 'Upload to NuGet'
+        type: boolean
+        required: false
+        default: false
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
+      major:
+        description: 'Major version number'
+        type: number
+        required: true
+      minor:
+        description: 'Minor version number'
+        type: number
+        required: true
+      patch:
+        description: 'Patch version number'
+        type: number
+        required: true
+      pre:
+        description: 'Prerelease version number'
+        type: number
+        required: false
+        default: 0
+      preName:
+        description: 'Prerelease name'
+        type: string
+        required: false
+        default: 'preview'
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        type: string
+        required: true
+      upload:
+        description: 'Upload to NuGet'
+        type: boolean
+        required: false
+        default: false
+      commitChanges:
+        description: 'Commit changed files (versions, build size, etc.)'
+        type: boolean
+        required: false
+        default: false
+      major:
+        description: 'Major version number'
+        type: string
+        required: true
+      minor:
+        description: 'Minor version number'
+        type: string
+        required: true
+      patch:
+        description: 'Patch version number'
+        type: string
+        required: true
+      pre:
+        description: 'Prerelease version number'
+        type: string
+        required: false
+        default: '0'
+      preName:
+        description: 'Prerelease name'
+        type: string
+        required: false
+        default: 'preview'
+    secrets:
+      NUGET_KEY:
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+
+###########################################
+
+  build-windows:
+    runs-on: windows-latest
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+    - uses: lukka/get-cmake@v3.26.3
+
+    - name: Get Cache
+      uses: actions/cache@v3
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+
+    - name: Set Version
+      shell: pwsh
+      run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
+
+    - name: Build Native Win32 x64
+      run: cmake --workflow --preset Win32x64Release
+    - name: Build Native UWP x64
+      run: cmake --workflow --preset Uwpx64Release
+    - name: Build Native UWP ARM64
+      run: cmake --workflow --preset UwpArm64Release
+    - name: Build Native UWP ARM32
+      run: cmake --workflow --preset UwpArm32Release
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries
+        path: bin/distribute/
+
+###########################################
+
+  build-linux:
+    runs-on: ubuntu-latest
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+    - uses: lukka/get-cmake@v3.26.3
+
+    - name: Get Cache
+      uses: actions/cache@v3
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      id: setup-ndk
+      with:
+        ndk-version: r21e
+        local-cache: true
+
+    - name: Install Prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+    
+    - name: Set Version
+      shell: pwsh
+      run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
+  
+    - name: Build Native Linux x64
+      run: cmake --workflow --preset Linuxx64Release
+    - name: Build Native Android ARM64
+      run: cmake --workflow --preset AndroidArm64Release
+      env:
+        NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries
+        path: bin/distribute/
+  
+  ###########################################
+
+  build-package:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with: 
+        dotnet-version: 7.0.x
+    
+    - name: Get Artifacts from Previous
+      uses: actions/download-artifact@v3
+      with:
+        name: binaries
+        path: bin/distribute/
+
+    - name: Set Version
+      shell: pwsh
+      run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
+
+    - name: Build Package and Upload
+      if: inputs.upload == true
+      shell: pwsh
+      run: ./tools/Build-Nuget.ps1 -nobuild -notest -upload -key ${{ secrets.NUGET_KEY }}
+
+    - name: Build Package without Upload
+      if: inputs.upload == false
+      shell: pwsh
+      run: ./tools/Build-Nuget.ps1 -nobuild -notest
+
+    - name: Commit Build Changes
+      if: inputs.commitChanges == true && inputs.pre == '0'
+      run: |
+        git config --global user.name 'SK Automation'
+        git config --global user.email 'automation@stereokit.net'
+        git branch
+        git add --all
+        git status
+        git commit -m "v${{inputs.major}}.${{inputs.minor}}.${{inputs.patch}}"
+
+        git tag -a v${{inputs.major}}.${{inputs.minor}}.${{inputs.patch}} -m "v${{inputs.major}}.${{inputs.minor}}.${{inputs.patch}}"
+        git push
+        git push origin v${{inputs.major}}.${{inputs.minor}}.${{inputs.patch}}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: package
+        path: bin/StereoKit.*.nupkg

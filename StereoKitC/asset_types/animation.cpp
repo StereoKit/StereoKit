@@ -341,7 +341,7 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 
 ///////////////////////////////////////////
 
-void anim_update() {
+void anim_step() {
 	animation_list.each(_anim_update_skin);
 	animation_list.clear();
 }

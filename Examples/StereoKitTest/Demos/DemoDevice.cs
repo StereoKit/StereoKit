@@ -10,7 +10,7 @@ class DemoDevice : ITest
 	public void Initialize() { }
 	public void Shutdown  () { }
 
-	public void Update() {
+	public void Step() {
 		UI.WindowBegin("Device Info", ref windowPose);
 
 		Vec2 labelSize = V.XY(0.08f,0);

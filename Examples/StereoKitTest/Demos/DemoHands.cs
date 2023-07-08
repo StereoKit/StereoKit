@@ -17,7 +17,7 @@ class DemoHands : ITest
 	string title       = "Hand Input";
 	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
-	static Pose optionsPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	static Pose optionsPose = Demo.contentPose.Pose;
 	bool showHands     = true;
 	bool showJoints    = false;
 	bool showAxes      = true;
@@ -101,7 +101,7 @@ class DemoHands : ITest
 		/// :End:
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Vec2 size = V.XY(8, 0) * U.cm;
 
@@ -128,7 +128,7 @@ class DemoHands : ITest
 		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Color");
 		if (UI.Button("Rainbow", size))
-			ColorizeFingers(16, 
+			ColorizeFingers(16, true,
 				new Gradient(
 					new GradientKey(Color.HSV(0.0f,1,1), 0.1f),
 					new GradientKey(Color.HSV(0.2f,1,1), 0.3f),
@@ -140,31 +140,39 @@ class DemoHands : ITest
 					new GradientKey(new Color(1,1,1,0), 0.4f),
 					new GradientKey(new Color(1,1,1,1), 0.9f)));
 		UI.SameLine();
-		if (UI.Button("Black", size))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1,1,1,0), 0),
-					new GradientKey(new Color(1,1,1,0), 0.4f),
-					new GradientKey(new Color(1,1,1,1), 0.6f),
-					new GradientKey(new Color(1,1,1,1), 0.9f)));
-		UI.SameLine();
-		if (UI.Button("Full Black", size))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1, 1, 1, 0), 0),
-					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
-					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
-
 		if (UI.Button("Normal", size))
-			ColorizeFingers(16,
+			ColorizeFingers(16, true,
 				new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 				new Gradient(
 					new GradientKey(new Color(.4f,.4f,.4f,0), 0),
 					new GradientKey(new Color(.6f,.6f,.6f,0), 0.4f),
 					new GradientKey(new Color(.8f,.8f,.8f,1), 0.55f),
 					new GradientKey(new Color(1,1,1,1),       1)));
+
+		if (UI.Button("Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1,1,1,0), 0),
+					new GradientKey(new Color(1,1,1,0), 0.4f),
+					new GradientKey(new Color(1,1,1,1), 0.6f),
+					new GradientKey(new Color(1,1,1,1), 0.9f)));
+
+		UI.SameLine();
+		if (UI.Button("Full Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1, 1, 1, 0), 0),
+					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
+					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
+
+		UI.SameLine();
+		if (UI.Button("Cutout Black", size))
+			ColorizeFingers(16, false,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)),
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)));
+
 		UI.PanelEnd();
 		UI.WindowEnd();
 
@@ -183,7 +191,7 @@ class DemoHands : ITest
 		Demo.ShowSummary(title, description);
 	}
 
-	private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
+	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)
 	{
 		Tex tex = new Tex(TexType.Image, TexFormat.Rgba32Linear);
 		tex.AddressMode = TexAddress.Clamp;
@@ -201,6 +209,9 @@ class DemoHands : ITest
 		tex.SetColors(size, size, pixels);
 
 		Default.MaterialHand[MatParamName.DiffuseTex] = tex;
+		Default.MaterialHand.Transparency = transparent
+			? Transparency.Blend
+			: Transparency.None;
 	}
 
 	/// :CodeDoc: Guides Using Hands

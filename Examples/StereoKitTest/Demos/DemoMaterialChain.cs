@@ -33,14 +33,13 @@ class DemoMaterialChain : ITest
 
 	public void Initialize() => CreateShellMaterial();
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
-		Vec3 at = new Vec3(0.5f, -0.1f, -0.5f);
-		Hierarchy.Push(Matrix.T(at));
+		Hierarchy.Push(Demo.contentPose);
 		DrawOutlineObject();
 		Hierarchy.Pop();
 
-		Tests.Screenshot("InvertedShell.jpg", 400, 400, 90, at + V.XYZ(-0.2f, -0.04f, 0.2f), at);
+		Tests.Screenshot("InvertedShell.jpg", 400, 400, 90, Demo.contentPose.Translation + V.XYZ(-0.2f, -0.04f, 0.2f), Demo.contentPose.Translation);
 
 		Demo.ShowSummary(title, description);
 	}

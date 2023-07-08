@@ -107,7 +107,7 @@ class GuideUsingTheSimulator : ITest
 		Input.HandClearOverride(Handed.Right);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("HandOverride.jpg", 1, 600, 600, 45, new Vec3(0.055f, -0.047f, 0.047f), new Vec3(0.155f, -0.500f, -0.838f));
 	}

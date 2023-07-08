@@ -26,7 +26,7 @@ class TestShaderAssign : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Mesh.Cube.Draw(mat1, Matrix.TS(-1.5f,0,-1.5f,0.75f));
 		Mesh.Cube.Draw(mat2, Matrix.TS(-0.5f,0,-1.5f,0.75f));

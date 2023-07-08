@@ -5,12 +5,15 @@
 #include "../_stereokit.h"
 #include "../log.h"
 #include "../libraries/stref.h"
+#include "../systems/input.h"
 #include "win32.h"
 #include "uwp.h"
 #include "linux.h"
 #include "android.h"
 #include "web.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/simulator.h"
+#include "../xr_backends/none.h"
 
 #include "../libraries/sk_gpu.h"
 
@@ -19,6 +22,8 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool platform_init() {
+	device_data_init(&device_data);
+
 	// Set up any platform dependent variables
 #if   defined(SK_OS_ANDROID)
 	bool result = android_init();
@@ -67,7 +72,7 @@ bool platform_init() {
 
 	// Start up the current mode!
 	if (!platform_set_mode(display_type)) {
-		if (!sk_no_flatscreen_fallback && display_type != display_type_flatscreen) {
+		if (!sk_settings.no_flatscreen_fallback && display_type != display_type_flatscreen) {
 			log_clear_any_fail_reason();
 			log_infof("Couldn't create a stereo display, falling back to flatscreen");
 			if (!platform_set_mode(display_type_flatscreen))
@@ -129,9 +134,9 @@ bool platform_set_mode(display_type_ mode) {
 		return true;
 
 	switch (mode) {
-	case display_type_none:       log_diag("Starting a headless display"); break;
-	case display_type_stereo:     log_diag("Starting a stereo display"); break;
-	case display_type_flatscreen: log_diag("Starting a flatscreen display"); break;
+	case display_type_none:       log_diagf("Starting a <~grn>%s<~clr> display", "headless"  ); break;
+	case display_type_stereo:     log_diagf("Starting a <~grn>%s<~clr> display", "stereo"    ); break;
+	case display_type_flatscreen: log_diagf("Starting a <~grn>%s<~clr> display", "flatscreen"); break;
 	}
 
 	platform_stop_mode();
@@ -188,6 +193,8 @@ bool platform_set_mode(display_type_ mode) {
 #elif defined(SK_OS_WEB)
 		result = web_start_flat    ();
 #endif
+		if (sk_settings.disable_flatscreen_mr_sim) none_init();
+		else                                       simulator_init();
 	}
 
 	return result;
@@ -215,6 +222,7 @@ void platform_step_begin() {
 		openxr_step_begin();
 #else
 #endif
+		input_step();
 	} break;
 	case display_type_flatscreen: {
 #if   defined(SK_OS_ANDROID)
@@ -228,6 +236,9 @@ void platform_step_begin() {
 #elif defined(SK_OS_WEB)
 		web_step_begin_flat    ();
 #endif
+		input_step();
+		if (sk_settings.disable_flatscreen_mr_sim) none_step_begin();
+		else                                       simulator_step_begin();
 	} break;
 	}
 	platform_utils_update();
@@ -245,6 +256,8 @@ void platform_step_end() {
 #endif
 		break;
 	case display_type_flatscreen: {
+		if (sk_settings.disable_flatscreen_mr_sim) none_step_end();
+		else                                       simulator_step_end();
 #if   defined(SK_OS_ANDROID)
 		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
@@ -272,6 +285,8 @@ void platform_stop_mode() {
 #endif
 		break;
 	case display_type_flatscreen: {
+		if (sk_settings.disable_flatscreen_mr_sim) none_shutdown();
+		else                                       simulator_shutdown();
 #if   defined(SK_OS_ANDROID)
 		android_stop_flat();
 #elif defined(SK_OS_LINUX)

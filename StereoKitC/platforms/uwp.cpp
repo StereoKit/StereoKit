@@ -14,7 +14,6 @@
 #include "../systems/render.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -84,8 +83,8 @@ void uwp_on_corewindow_keypress(CoreDispatcher const &, AcceleratorKeyEventArgs 
 	case VK_CONTROL: vk = status.IsExtendedKey    ? VK_RCONTROL : VK_LCONTROL; break;
 	case VK_MENU:    vk = status.IsExtendedKey    ? VK_RMENU    : VK_LMENU;    break;
 	}*/
-	if (down) input_keyboard_inject_press  ((key_)vk);
-	else      input_keyboard_inject_release((key_)vk);
+	if (down) input_key_inject_press  ((key_)vk);
+	else      input_key_inject_release((key_)vk);
 }
 
 inline float dips_to_pixels(float dips, float DPI) {
@@ -287,19 +286,19 @@ protected:
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		if (sk_focus != app_focus_active) return;
-		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_keyboard_inject_press(key_mouse_left);
-		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_keyboard_inject_press(key_mouse_right);
-		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_keyboard_inject_press(key_mouse_center);
-		if (args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_inactive) input_keyboard_inject_press(key_mouse_back);
-		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_keyboard_inject_press(key_mouse_forward);
+		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_key_inject_press(key_mouse_left);
+		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_key_inject_press(key_mouse_right);
+		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_key_inject_press(key_mouse_center);
+		if (args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_inactive) input_key_inject_press(key_mouse_back);
+		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_key_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		if (sk_focus != app_focus_active) return;
-		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_keyboard_inject_release(key_mouse_left);
-		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_keyboard_inject_release(key_mouse_right);
-		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_keyboard_inject_release(key_mouse_center);
-		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_keyboard_inject_release(key_mouse_back);
-		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_keyboard_inject_release(key_mouse_forward);
+		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_key_inject_release(key_mouse_left);
+		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_key_inject_release(key_mouse_right);
+		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_key_inject_release(key_mouse_center);
+		if (!args.CurrentPoint().Properties().IsXButton1Pressed    () && input_key(key_mouse_back)    == button_state_active) input_key_inject_release(key_mouse_back);
+		if (!args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_active) input_key_inject_release(key_mouse_forward);
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
@@ -437,7 +436,7 @@ void uwp_set_mouse(vec2 window_pos) {
 ///////////////////////////////////////////
 
 float uwp_get_scroll() {
-	return ViewProvider::inst->mouse_scroll;
+	return ViewProvider::inst != nullptr ? ViewProvider::inst->mouse_scroll : 0;
 }
 
 ///////////////////////////////////////////
@@ -508,20 +507,8 @@ void uwp_shutdown() {
 ///////////////////////////////////////////
 
 bool uwp_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
-	device_data.display_blend  = display_blend_opaque;
-	device_data.display_width  = sk_settings.flatscreen_width;
-	device_data.display_height = sk_settings.flatscreen_height;
-	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
-		? device_tracking_6dof
-		: device_tracking_none;
-	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
-		? string_copy("Simulator")
-		: string_copy("None");
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	_beginthread(window_thread, 0, nullptr);
 	
@@ -544,7 +531,6 @@ bool uwp_start_flat() {
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", uwp_swapchain.width, uwp_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 
-	flatscreen_input_init();
 	return ViewProvider::inst->valid;
 }
 
@@ -571,7 +557,6 @@ void uwp_step_begin_flat() {
 	}
 
 	uwp_mouse_frame_get = ViewProvider::inst->mouse_point;
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -603,8 +588,6 @@ void uwp_step_end_flat() {
 ///////////////////////////////////////////
 
 void uwp_stop_flat() {
-	flatscreen_input_shutdown();
-
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 	tex_release          (uwp_target);
 	skg_swapchain_destroy(&uwp_swapchain);

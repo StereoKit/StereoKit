@@ -4,19 +4,19 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../device.h"
+#include "../sk_math.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../hands/input_hand.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -24,6 +24,7 @@ namespace sk {
 
 HWND            win32_window              = nullptr;
 HINSTANCE       win32_hinst               = nullptr;
+HICON           win32_icon                = nullptr;
 skg_swapchain_t win32_swapchain           = {};
 bool            win32_swapchain_initialized = false;
 tex_t           win32_target              = {};
@@ -41,6 +42,10 @@ const int32_t win32_multisample = 1;
 #else
 const int32_t win32_multisample = 8;
 #endif
+
+// Constants for the registry key and value names
+const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
+const wchar_t* REG_VALUE_NAME = L"WindowLocation";
 
 ///////////////////////////////////////////
 
@@ -70,18 +75,18 @@ void win32_physical_key_interact() {
 
 bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
 	switch(message) {
-	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_keyboard_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_keyboard_inject_release(key_mouse_center); return true;
-	case WM_XBUTTONDOWN: input_keyboard_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_XBUTTONUP:   input_keyboard_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
-	case WM_KEYUP:       input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYDOWN:  input_keyboard_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYUP:    input_keyboard_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_LBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_left);   return true;
+	case WM_LBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_left);   return true;
+	case WM_RBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_right);  return true;
+	case WM_RBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_right);  return true;
+	case WM_MBUTTONDOWN: if (sk_focus == app_focus_active) input_key_inject_press  (key_mouse_center); return true;
+	case WM_MBUTTONUP:   if (sk_focus == app_focus_active) input_key_inject_release(key_mouse_center); return true;
+	case WM_XBUTTONDOWN: input_key_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_XBUTTONUP:   input_key_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
+	case WM_KEYDOWN:     input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
+	case WM_KEYUP:       input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYDOWN:  input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
+	case WM_SYSKEYUP:    input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
 	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
 	case WM_MOUSEWHEEL:  if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); return true;
 	default: return false;
@@ -112,13 +117,17 @@ bool win32_start_post_xr() {
 	WNDCLASSW wc = {0}; 
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
-			return DefWindowProcW(hWnd, message, wParam, lParam);
+			switch (message) {
+			case WM_CLOSE: sk_quit(); PostQuitMessage(0); break;
+			default: return DefWindowProcW(hWnd, message, wParam, lParam);
+			}
 		}
 		return (LRESULT)0;
 	};
 	wc.hInstance     = GetModuleHandle(NULL);
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
+	wc.hIcon         = win32_icon;
 	if( !RegisterClassW(&wc) ) return false;
 
 	win32_window = CreateWindowW(
@@ -141,6 +150,12 @@ bool win32_start_post_xr() {
 
 bool win32_init() {
 	win32_render_sys = systems_find("FrameRender");
+
+	// Find the icon from the exe itself
+	wchar_t path[MAX_PATH];
+	if (GetModuleFileNameW(GetModuleHandle(nullptr), path, MAX_PATH) != 0)
+		ExtractIconExW(path, 0, &win32_icon, nullptr, 1);
+
 	return true;
 }
 
@@ -152,20 +167,8 @@ void win32_shutdown() {
 ///////////////////////////////////////////
 
 bool win32_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
-	device_data.display_blend  = display_blend_opaque;
-	device_data.display_width  = sk_settings.flatscreen_width;
-	device_data.display_height = sk_settings.flatscreen_height;
-	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
-		? device_tracking_6dof
-		: device_tracking_none;
-	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
-		? string_copy("Simulator")
-		: string_copy("None");
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	wchar_t *app_name_w = platform_to_wchar(sk_app_name);
 
@@ -173,9 +176,9 @@ bool win32_start_flat() {
 	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		if (!win32_window_message_common(message, wParam, lParam)) {
 			switch(message) {
-			case WM_CLOSE:      sk_running = false; PostQuitMessage(0); break;
-			case WM_SETFOCUS:   sk_focus   = app_focus_active;          break;
-			case WM_KILLFOCUS:  sk_focus   = app_focus_background;      break;
+			case WM_CLOSE:      sk_quit(); PostQuitMessage(0);   break;
+			case WM_SETFOCUS:   sk_focus = app_focus_active;     break;
+			case WM_KILLFOCUS:  sk_focus = app_focus_background; break;
 			case WM_MOUSEWHEEL: if (sk_focus == app_focus_active) win32_scroll += (short)HIWORD(wParam); break;
 			case WM_SYSCOMMAND: {
 				// Has the user pressed the restore/'un-maximize' button?
@@ -212,23 +215,34 @@ bool win32_start_flat() {
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.lpszClassName = app_name_w;
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	wc.hIcon         = win32_icon;
 	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
 	win32_hinst = wc.hInstance;
 
-	RECT r;
-	r.left   = sk_settings.flatscreen_pos_x;
-	r.right  = sk_settings.flatscreen_pos_x + sk_info.display_width;
-	r.top    = sk_settings.flatscreen_pos_y;
-	r.bottom = sk_settings.flatscreen_pos_y + sk_info.display_height;
-	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	RECT rect = {};
+	HKEY reg_key;
+	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
+		DWORD data_size = sizeof(RECT);
+		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
+		RegCloseKey     (reg_key);
+	} else {
+		rect.left   = sk_settings.flatscreen_pos_x;
+		rect.right  = sk_settings.flatscreen_pos_x + sk_settings.flatscreen_width;
+		rect.top    = sk_settings.flatscreen_pos_y;
+		rect.bottom = sk_settings.flatscreen_pos_y + sk_settings.flatscreen_height;
+		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	}
+	if (rect.right == rect.left) rect.right  = rect.left + sk_settings.flatscreen_width;
+	if (rect.top == rect.bottom) rect.bottom = rect.top  + sk_settings.flatscreen_height;
+	
 	win32_window = CreateWindowW(
 		app_name_w,
 		app_name_w,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		max(0,r.left),
-		max(0,r.top),
-		r.right  - r.left,
-		r.bottom - r.top,
+		maxi(0,rect.left),
+		maxi(0,rect.top),
+		rect.right  - rect.left,
+		rect.bottom - rect.top,
 		0, 0, 
 		wc.hInstance,
 		nullptr);
@@ -264,23 +278,36 @@ bool win32_start_flat() {
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 	render_update_projection();
 
-	flatscreen_input_init();
-
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void win32_stop_flat() {
-	flatscreen_input_shutdown();
+void win32_stop_flat() { 
+	if (backend_xr_get_type() == backend_xr_type_simulator) {
+		RECT rect;
+		HKEY reg_key;
+		GetWindowRect(win32_window, &rect);
+		if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) == ERROR_SUCCESS) {
+			RegSetValueExW(reg_key, REG_VALUE_NAME, 0, REG_BINARY, (const BYTE*)&rect, sizeof(RECT));
+			RegCloseKey   (reg_key);
+		}
+	}
+
 	tex_release          (win32_target);
 	skg_swapchain_destroy(&win32_swapchain);
 	win32_swapchain_initialized = false;
 
-	DestroyWindow(win32_window); win32_window = nullptr;
+
+	if (win32_icon)   DestroyIcon  (win32_icon);
+	if (win32_window) DestroyWindow(win32_window);
 	wchar_t* app_name_w = platform_to_wchar(sk_app_name);
-	UnregisterClassW(app_name_w, win32_hinst); win32_hinst = nullptr;
+	UnregisterClassW(app_name_w, win32_hinst);
 	sk_free(app_name_w);
+
+	win32_icon   = nullptr;
+	win32_window = nullptr;
+	win32_hinst  = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -293,13 +320,14 @@ void win32_step_begin_xr() {
 	}
 }
 
+///////////////////////////////////////////
+
 void win32_step_begin_flat() {
 	MSG msg = {0};
 	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
 	}
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -314,8 +342,6 @@ void win32_step_end_flat() {
 	skg_tex_target_bind(&win32_target->tex);
 #endif
 	skg_target_clear(true, &col.r);
-
-	input_update_poses(true);
 
 	matrix view = render_get_cam_final        ();
 	matrix proj = render_get_projection_matrix();

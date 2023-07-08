@@ -18,7 +18,7 @@ namespace StereoKitTest
 
 		public void Shutdown() { }
 
-		public void Update()
+		public void Step()
 		{
 			Pose curr = poseCache[0];
 			UI.Handle("Model", ref curr, model.Bounds * 0.1f);

@@ -35,7 +35,7 @@ class DemoSky : ITest
 
 	public void Initialize() { }
 	public void Shutdown() => Platform.FilePickerClose();
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Lighting Source", ref windowPose);
 		UI.Label("Mode");

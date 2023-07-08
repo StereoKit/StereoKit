@@ -9,7 +9,8 @@
 	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
 		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
-
+		<Error Condition="'$(SKBuildPlatform)'=='Android' and '$(SKOpenXRLoader)'!='None' and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so') and !Exists('$(ProjectDir)openxr_loader/$(SKOpenXRLoader)/libopenxr_loader.so')" Text="StereoKit could not find the Android OpenXR Loader indicated by &lt;SKOpenXRLoader&gt;! Please copy your platform specific libopenxr_loader.so file in this folder: $(ProjectDir)openxr_loader/$(SKOpenXRLoader)/" />
+		
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
 		<Copy
@@ -51,7 +52,10 @@
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../runtimes/android-arm64/native/libStereoKitC.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/libopenxr_loader.so">
+		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/*.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(ProjectDir)openxr_loader/$(SKOpenXRLoader)/*.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
 	</ItemGroup>

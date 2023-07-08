@@ -92,6 +92,16 @@ namespace StereoKit
 		/// unnecessary swapchain object. Default value is 1.</summary>
 		public int renderMultisample;
 
+		/// <summary>Set the behavior of StereoKit's initial origin. Default
+		/// behavior is OriginMode.Local, which is the most universally
+		/// supported origin mode. Different origin modes have varying levels
+		/// of support on different XR runtimes, and StereoKit will provide
+		/// reasonable fallbacks for each. NOTE that when falling back,
+		/// StereoKit will use a different root origin mode plus an offset. You
+		/// can check World.OriginMode and World.OriginOffset to inspect what
+		/// StereoKit actually landed on.</summary>
+		public OriginMode origin;
+
 		/// <summary>A pointer to the JNI's JavaVM structure, only used for
 		/// Android applications. This is optional, even for Android.</summary>
 		public IntPtr androidJavaVm;
@@ -455,6 +465,19 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void RenderOnScreenshotCallback(IntPtr data, int width, int height, IntPtr context);
+
+	/// <summary>A callback for receiving the color data of a screenshot, instead
+	/// of saving it directly to a file.</summary>
+	/// <param name="data">The pointer to the color data. A fare warning that the
+	/// memory *will* be freed once this callback completes, so if you need to
+	/// reference this data elsewhere, be sure to store a copy of it!</param>
+	/// <param name="width">The width of the image.</param>
+	/// <param name="height">The height of the image.</param>
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	public delegate void ScreenshotCallback(IntPtr data, int width, int height);
+
 	/// <summary>A callback that generates a sound wave at a particular point
 	/// in time.</summary>
 	/// <param name="time">The time along the wavelength.</param>
@@ -557,6 +580,25 @@ namespace StereoKit
 		/// slider creates a scaled slider that lets you adjust the slider at a
 		/// more granular resolution.</summary>
 		VariablePinch
+	}
+
+	/// <summary>This is a bit flag that describes different types and
+	/// combinations of gestures used within the UI system.</summary>
+	[Flags]
+	public enum UIGesture
+	{
+		/// <summary>Default zero state, no gesture at all.</summary>
+		None = 0,
+		/// <summary>A pinching action, calculated by taking the distance
+		/// between the tip of the thumb and the index finger.</summary>
+		Pinch = 1 << 0,
+		/// <summary>A gripping or grasping motion meant to represent a full
+		/// hand grab. This is calculated using the distance between the root
+		/// and the tip of the ring finger.</summary>
+		Grip = 1 << 1,
+		/// <summary>This is a bit flag combination of both Pinch and Grip.
+		/// </summary>
+		PinchGrip = Pinch | Grip,
 	}
 
 	/// <summary>Determines when this UI function returns true.</summary>
@@ -728,5 +770,36 @@ namespace StereoKit
 		/// layout. This will work for layouts that are fixed sized, but not
 		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
+	}
+
+	/// <summary>Id of a simulated hand pose, for use with
+	/// `Input.HandSimPoseRemove`</summary>
+	public struct HandSimId
+	{
+		private int id;
+		/// <summary>An id for testing emptiness.</summary>
+		public static HandSimId None { get { return new HandSimId { id = 0 }; } }
+		
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a == b</returns>
+		public static bool operator == (HandSimId a, HandSimId b) { return a.id == b.id; }
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a != b</returns>
+		public static bool operator != (HandSimId a, HandSimId b) { return a.id != b.id; }
+		/// <summary>Same as ==</summary>
+		/// <param name="obj">Must be a HandSimId</param>
+		/// <returns>Equality.</returns>
+		public override bool Equals(object obj)
+			=> id.Equals(((HandSimId)obj).id);
+		/// <summary>Hash code of the id.</summary>
+		/// <returns>Hash code of the id.</returns>
+		public override int GetHashCode()
+			=> id.GetHashCode();
 	}
 }

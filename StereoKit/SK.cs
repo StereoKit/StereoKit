@@ -50,6 +50,12 @@ namespace StereoKit
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
+		/// <summary>On Android systems, this must be assigned right away,
+		/// before _any_ access to SK methods. When using Xamarin.Essentials or
+		/// Microsoft.Maui.Essentials, this will be done automatically. This
+		/// will be set to null after SK.Initialize is called.</summary>
+		public static object AndroidActivity { get; set; }
+
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
 		/// <param name="settings">The configuration settings for StereoKit.
@@ -61,6 +67,22 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
+			if (settings.androidActivity == IntPtr.Zero && AndroidActivity != null)
+			{
+				Type         javaObject = Type.GetType("Java.Lang.Object, Mono.Android");
+				PropertyInfo handle     = javaObject?.GetProperty("Handle", BindingFlags.Instance | BindingFlags.Public);
+				if (handle != null)
+					settings.androidActivity = (IntPtr)handle.GetValue(AndroidActivity);
+			}
+			if (AndroidActivity == null && settings.androidActivity != IntPtr.Zero)
+			{
+				Type activityType           = Type.GetType("Android.App.Activity, Mono.Android");
+				Type jniHandleOwnershipType = Type.GetType("Android.Runtime.JniHandleOwnership, Mono.Android");
+				ConstructorInfo constructor = activityType?.GetConstructor(new Type[] { typeof(IntPtr), jniHandleOwnershipType });
+				if (constructor != null)
+					AndroidActivity = constructor.Invoke(new object[] { settings.androidActivity, 0 }); ;
+			}
+
 			if (!NativeLib.Load()) {
 				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
 				Console.WriteLine                         ("[SK error] Failed to load StereoKitC!");
@@ -68,6 +90,7 @@ namespace StereoKit
 			}
 
 			IsInitialized = InitializeCall(settings);
+			AndroidActivity = null;
 			return IsInitialized;
 		}
 
@@ -115,12 +138,15 @@ namespace StereoKit
 
 			// Make sure we have a valid name
 			if (string.IsNullOrEmpty(settings.appName))
-				settings.appName = Assembly.GetEntryAssembly().GetName().Name;
+			{
+				try { settings.appName = Assembly.GetEntryAssembly()?.GetName()?.Name ?? "StereoKit App"; }
+				catch { settings.appName = "StereoKit App"; }
+			}
 
 			// DllImport finds the function at the beginning of the function 
 			// call, so this needs to be in a separate function from 
 			// NativeLib.LoadDll
-			bool result = NativeAPI.sk_init(settings) > 0;
+			bool result = NativeAPI.sk_init(settings);
 			Settings = settings;
 
 			// Get system information
@@ -141,7 +167,7 @@ namespace StereoKit
 		/// using SK.Run, as it is called automatically there.</summary>
 		public static void Shutdown()
 		{
-			if (NativeAPI.sk_is_stepping() > 0)
+			if (NativeAPI.sk_is_stepping())
 				throw new Exception("SK.Shutdown is for cleanup and should not be used within SK.Step/Run, please use SK.Quit to exit your app!");
 
 			if (IsInitialized)
@@ -170,7 +196,7 @@ namespace StereoKit
 		public static bool Step(Action onStep = null)
 		{
 			_stepCallback = onStep;
-			return NativeAPI.sk_step(_stepAction) > 0;
+			return NativeAPI.sk_step(_stepAction);
 		}
 		// This pattern is a little weird, but it avoids continuous Action
 		// allocations, and saves our GC a surprising amount of work.
@@ -254,13 +280,64 @@ namespace StereoKit
 		/// <summary>This removes all IStepper instances that are assignable to
 		/// the generic type specified. This will call the IStepper's Shutdown
 		/// method on each removed instance before returning.</summary>
-		/// <param name="type">Any type.</param>
+		/// <param name="type">Any parent or exact type.</param>
 		public static void RemoveStepper(Type type) => _steppers.Remove(type);
 		/// <summary>This removes all IStepper instances that are assignable to
 		/// the generic type specified. This will call the IStepper's Shutdown
 		/// method on each removed instance before returning.</summary>
-		/// <typeparam name="T">An IStepper type.</typeparam>
+		/// <typeparam name="T">Any parent or exact type.</typeparam>
 		public static void RemoveStepper<T>() => _steppers.Remove<T>();
+
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// generic type.</summary>
+		/// <typeparam name="T">Any parent or exact type.</typeparam>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or null if none is found.</returns>
+		public static T GetStepper<T>() => _steppers.Get<T>();
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// type.</summary>
+		/// <param name="type">Any parent or exact type.</param>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or null if none is found.</returns>
+		public static object GetStepper(Type type) => _steppers.Get(type);
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// generic type, and if one is not found, it will attempt to create
+		/// one.</summary>
+		/// <typeparam name="T">Any concrete type that contains an empty
+		/// constructor.</typeparam>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or a new object of type T.</returns>
+		public static T GetOrCreateStepper<T>() where T : IStepper
+		{
+			T result = _steppers.Get<T>();
+			if (result == null) result = _steppers.Add<T>();
+			return result;
+		}
+		/// <summary>This will search the list of `IStepper`s that are
+		/// currently attached to StereoKit. This includes `IStepper`s that
+		/// have been added but are not yet initialized. This will return the
+		/// first `IStepper` in the list that is assignable to the provided
+		/// type, and if one is not found, it will attempt to create one.
+		/// </summary>
+		/// <param name="type">Any concrete type that contains an empty
+		/// constructor.</param>
+		/// <returns>The first `IStepper` in the list that is assignable to the
+		/// provided generic type, or a new object of the given type.</returns>
+		public static object GetOrCreateStepper(Type type)
+		{
+			object result = _steppers.Get(type);
+			if (result == null) result = _steppers.Add(type);
+			return result;
+		}
 
 		/// <summary>This will queue up some code to be run on StereoKit's main
 		/// thread! Immediately after StereoKit's Step, all callbacks

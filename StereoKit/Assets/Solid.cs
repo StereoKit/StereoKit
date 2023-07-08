@@ -111,7 +111,7 @@ namespace StereoKit
 		/// <param name="enabled">False to disable physics on this object, 
 		/// true to enable it.</param>
 		public void SetEnabled(bool enabled)
-			=> NativeAPI.solid_set_enabled(_inst, enabled?1:0);
+			=> NativeAPI.solid_set_enabled(_inst, enabled);
 
 		/// <summary>This moves the Solid from its current location through 
 		/// space to the new location provided, colliding with things along

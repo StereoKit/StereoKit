@@ -153,8 +153,8 @@ void demo_bvh_update() {
     const double t0 = time_total_raw();
 
     mesh_t      isec_mesh = nullptr;
-    matrix      isec_matrix;
-    uint32_t    isec_start_inds;
+    matrix      isec_matrix = matrix_identity;
+    uint32_t    isec_start_inds = 0;
 
     if (use_bvh)
         have_intersection = model_ray_intersect_bvh_detailed(model_to_intersect, model_ray, &intersection, &isec_mesh, &isec_matrix, &isec_start_inds, cull_mode);
@@ -162,7 +162,7 @@ void demo_bvh_update() {
         have_intersection = model_ray_intersect(model_to_intersect, model_ray, &intersection, cull_mode);
 
     const double t1 = time_total_raw();
-    intersect_time = t1 - t0;
+    intersect_time = (float)(t1 - t0);
 
     // Intersection result
 

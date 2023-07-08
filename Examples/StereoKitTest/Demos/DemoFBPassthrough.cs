@@ -1,23 +1,27 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 
 class DemoFBPassthrough : ITest
 {
 	string title       = "FB Passthrough Extension";
 	string description = "Passthrough AR!";
-	Pose   windowPose  = Demo.contentPose * Pose.Identity;
+	Pose   windowPose  = Demo.contentPose.Pose;
+	PassthroughFBExt passthrough;
 
-	public void Initialize() { }
+	public void Initialize() { passthrough = SK.GetOrCreateStepper<PassthroughFBExt>(); }
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Passthrough Settings", ref windowPose);
-		bool toggle = App.passthrough.EnabledPassthrough;
-		UI.Label(App.passthrough.Available
+		bool toggle = passthrough.Enabled;
+		UI.Label(passthrough.Available
 			? "Passthrough EXT available!"
 			: "No passthrough EXT available :(");
+		UI.PushEnabled(passthrough.Available);
 		if (UI.Toggle("Passthrough", ref toggle))
-			App.passthrough.EnabledPassthrough = toggle;
+			passthrough.Enabled = toggle;
+		UI.PopEnabled();
 		UI.WindowEnd();
 
 		Demo.ShowSummary(title, description);

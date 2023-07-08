@@ -16,8 +16,9 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/flatscreen_input.h"
 #include "../platforms/platform_utils.h"
+
+#include <limits.h>
 
 #pragma warning(push)
 #pragma warning(disable : 26451 26819 6386 6385 )
@@ -25,6 +26,8 @@
 #define __STDC_LIB_EXT1__
 #endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_STATIC
+#define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
 #pragma warning(pop)
 
@@ -79,12 +82,16 @@ struct render_inst_buffer {
 	skg_buffer_t buffer;
 };
 struct render_screenshot_t {
-	char   *filename;
-	vec3    from;
-	vec3    at;
-	int32_t width;
-	int32_t height;
-	float   fov_degrees;
+	void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
+	void*		context;
+	matrix		camera;
+	matrix		projection;
+	rect_t		viewport;
+	int32_t		width;
+	int32_t		height;
+	render_layer_	layer_filter;
+	render_clear_	clear;
+	tex_format_	tex_format;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -108,6 +115,8 @@ matrix                  render_camera_root           = matrix_identity;
 matrix                  render_camera_root_final     = matrix_identity;
 matrix                  render_camera_root_final_inv = matrix_identity;
 matrix                  render_default_camera_proj;
+matrix                  render_sim_origin            = matrix_identity;
+matrix                  render_sim_head              = matrix_identity;
 
 vec2                    render_clip_planes     = {0.02f, 50};
 float                   render_fov             = 90;
@@ -131,8 +140,8 @@ render_layer_           render_capture_filter  = render_layer_all_first_person;
 bool                    render_use_capture_filter = false;
 tex_t                   render_global_textures[16] = {};
 
-array_t<render_screenshot_t>  render_screenshot_list = {};
-array_t<render_viewpoint_t>   render_viewpoint_list  = {};
+array_t<render_screenshot_t> render_screenshot_list = {};
+array_t<render_viewpoint_t>  render_viewpoint_list  = {};
 
 const int32_t           render_skytex_register = 11;
 mesh_t                  render_sky_mesh        = nullptr;
@@ -154,6 +163,7 @@ skg_bind_t              render_list_blit_bind   = { 2,  skg_stage_vertex | skg_s
 
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 void          render_check_screenshots();
 void          render_check_viewpoints ();
 
@@ -166,8 +176,11 @@ void          radix_sort_clean        ();
 
 ///////////////////////////////////////////
 
-inline uint64_t render_queue_id(material_t material, mesh_t mesh) {
+inline uint64_t render_sort_id(material_t material, mesh_t mesh) {
 	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
+}
+inline uint64_t render_sort_id_from_queue(int32_t queue_position) {
+	return (uint64_t)(queue_position) << 32;
 }
 
 ///////////////////////////////////////////
@@ -340,7 +353,7 @@ matrix render_get_cam_final_inv() {
 
 void render_set_cam_root(const matrix &cam_root) {
 	render_camera_root       = cam_root;
-	render_camera_root_final = fltscr_transform * cam_root;
+	render_camera_root_final = render_sim_head * cam_root * render_sim_origin;
 	matrix_inverse(render_camera_root_final, render_camera_root_final_inv);
 
 	// TODO: May want to also update controllers/hands?
@@ -352,6 +365,20 @@ void render_set_cam_root(const matrix &cam_root) {
 
 	world_refresh_transforms();
 	input_update_poses(false);
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_origin(pose_t pose) {
+	render_sim_origin = matrix_invert(pose_matrix(pose));
+	render_set_cam_root(render_get_cam_root());
+}
+
+///////////////////////////////////////////
+
+void render_set_sim_head(pose_t pose) {
+	render_sim_head = pose_matrix(pose);
+	render_set_cam_root(render_get_cam_root());
 }
 
 ///////////////////////////////////////////
@@ -515,7 +542,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 	material_t curr = material;
 	while (curr != nullptr) {
 		item.material = curr;
-		item.sort_id  = render_queue_id(curr, mesh);
+		item.sort_id  = render_sort_id(curr, mesh);
 		render_list_add(&item);
 		curr = curr->chain;
 	}
@@ -523,7 +550,7 @@ void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, 
 
 ///////////////////////////////////////////
 
-void render_add_model(model_t model, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
 	XMMATRIX root;
 	if (hierarchy_enabled) {
 		matrix_mul(transform, hierarchy_stack.last().transform, root);
@@ -539,14 +566,14 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		render_item_t item;
 		item.mesh      = vis->mesh;
 		item.mesh_inds = vis->mesh->ind_count;
-		item.color     = color;
+		item.color     = color_linear;
 		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
 
-		material_t curr = vis->material;
+		material_t curr = material_override == nullptr ? vis->material : material_override;
 		while (curr != nullptr) {
 			item.material = curr;
-			item.sort_id  = render_queue_id(curr, vis->mesh);
+			item.sort_id  = render_sort_id(curr, vis->mesh);
 			render_list_add(&item);
 			curr = curr->chain;
 		}
@@ -556,6 +583,12 @@ void render_add_model(model_t model, const matrix &transform, color128 color, re
 		model->transforms_changed = false;
 		anim_update_skin(model);
 	}
+}
+
+///////////////////////////////////////////
+
+void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -617,7 +650,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		}
 	}
 
-	render_list_execute(render_list_primary, filter, view_count);
+	render_list_execute(render_list_primary, filter, view_count, 0, INT_MAX);
 }
 
 ///////////////////////////////////////////
@@ -630,6 +663,8 @@ void render_draw_matrix(const matrix* views, const matrix* projections, int32_t 
 
 ///////////////////////////////////////////
 
+// The screenshots are produced in FIFO order, meaning the
+// order of screenshot requests by users is preserved.
 void render_check_screenshots() {
 	if (render_screenshot_list.count == 0) return;
 
@@ -638,60 +673,70 @@ void render_check_screenshots() {
 		int32_t  w = render_screenshot_list[i].width;
 		int32_t  h = render_screenshot_list[i].height;
 
-		matrix view = matrix_trs(
-			render_screenshot_list[i].from,
-			quat_lookat(render_screenshot_list[i].from, render_screenshot_list[i].at));
-		matrix_inverse(view, view);
-
-		matrix proj = matrix_perspective(render_screenshot_list[i].fov_degrees, (float)w/h, render_clip_planes.x, render_clip_planes.y);
-
 		// Create the screenshot surface
-		
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
-		tex_t    render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget);
+
+		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, render_screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
 		tex_release(tex_add_zbuffer(render_capture_surface));
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
 
-		int32_t viewport[4] = { 0,0,w,h };
-		skg_viewport(viewport);
+		// Set up the viewport if we've got one!
+		if (render_screenshot_list[i].viewport.w != 0) {
+			int32_t viewport[4] =
+			{
+				(int32_t)(render_screenshot_list[i].viewport.x),
+				(int32_t)(render_screenshot_list[i].viewport.y),
+				(int32_t)(render_screenshot_list[i].viewport.w),
+				(int32_t)(render_screenshot_list[i].viewport.h)
+			};
+			skg_viewport(viewport);
+		} else {
+			int32_t viewport[4] = { 0,0,w,h };
+			skg_viewport(viewport);
+		}
 
-		float color[4] = {
-			render_clear_col.r / 255.f,
-			render_clear_col.g / 255.f,
-			render_clear_col.b / 255.f,
-			render_clear_col.a / 255.f };
-		skg_target_clear(true, color);
-		
+		// Clear the viewport
+		if (render_screenshot_list[i].clear != render_clear_none) {
+			float color[4] = {
+				render_clear_col.r / 255.f,
+				render_clear_col.g / 255.f,
+				render_clear_col.b / 255.f,
+				render_clear_col.a / 255.f };
+			skg_target_clear(
+				(render_screenshot_list[i].clear & render_clear_depth),
+				(render_screenshot_list[i].clear & render_clear_color) ? &color[0] : (float*)nullptr);
+		}
+
 		// Render!
-		render_draw_queue(&view, &proj, render_primary_filter, 1);
+		render_draw_queue(&render_screenshot_list[i].camera, &render_screenshot_list[i].projection, render_screenshot_list[i].layer_filter, 1);
 		skg_tex_target_bind(nullptr);
-		
-		// And save the screenshot to file
-		tex_t resolve_tex = tex_create(tex_type_image_nomips);
+
+		tex_t resolve_tex = tex_create(tex_type_image_nomips, render_screenshot_list[i].tex_format);
 		tex_set_colors(resolve_tex, w, h, nullptr);
 		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
 		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
-		void   *tmp       = sk_malloc(line_size);
-		for (int32_t y = 0; y < resolve_tex->tex.height/2; y++) {
-			void *top_line = ((uint8_t*)buffer) + line_size * y;
-			void *bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height-1) - y);
-			memcpy(tmp,      top_line, line_size);
+		void* tmp = sk_malloc(line_size);
+		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
+			void* top_line = ((uint8_t*)buffer) + line_size * y;
+			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
+			memcpy(tmp, top_line, line_size);
 			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp,      line_size);
+			memcpy(bot_line, tmp, line_size);
 		}
 		sk_free(tmp);
 #endif
 		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
-		stbi_write_jpg(render_screenshot_list[i].filename, w, h, 4, buffer, 90);
+
+		// Notify that the color data is ready!
+		render_screenshot_list[i].render_on_screenshot_callback(buffer, w, h, render_screenshot_list[i].context);
 		sk_free(buffer);
-		sk_free(render_screenshot_list[i].filename);
 	}
 	render_screenshot_list.clear();
 	skg_tex_target_bind(old_target);
@@ -798,7 +843,7 @@ bool render_init() {
 
 ///////////////////////////////////////////
 
-void render_update() {
+void render_step() {
 	if (hierarchy_stack.count > 0)
 		log_err("Render transform stack doesn't have matching begin/end calls!");
 
@@ -878,9 +923,53 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char *file, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
-	char *file_copy = string_copy(file);
-	render_screenshot_list.add( render_screenshot_t{ file_copy, from_viewpt, at, width, height, fov_degrees });
+void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
+}
+
+///////////////////////////////////////////
+
+struct screenshot_ctx_t {
+	char*   filename;
+	int32_t quality;
+};
+
+void render_save_to_file(color32* color_buffer, int width, int height, void* context) {
+	screenshot_ctx_t *ctx = (screenshot_ctx_t*)context;
+	if (string_endswith(ctx->filename, ".png", false)) {
+		stbi_write_png(ctx->filename, width, height, 4, color_buffer, 0);
+	} else {
+		stbi_write_jpg(ctx->filename, width, height, 4, color_buffer, ctx->quality);
+	}
+	sk_free(ctx->filename);
+	sk_free(ctx);
+}
+
+///////////////////////////////////////////
+
+void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int width, int height, float fov_degrees) {
+	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
+	ctx->filename = string_copy(file_utf8);
+	ctx->quality  = file_quality_100;
+
+	matrix view = matrix_invert(pose_matrix(viewpoint));
+	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
+	render_screenshot_list.add(render_screenshot_t{ render_save_to_file, ctx, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format_rgba32 });
+}
+
+///////////////////////////////////////////
+
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), pose_t viewpoint, int width, int height, float fov_degrees, tex_format_ tex_format) {
+	matrix view = matrix_invert(pose_matrix(viewpoint));
+	matrix proj = matrix_perspective(fov_degrees, (float)width / height, render_clip_planes.x, render_clip_planes.y);
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
+}
+
+///////////////////////////////////////////
+
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), matrix camera, matrix projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format) {
+	matrix inv_cam = matrix_invert(camera);
+	render_screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
 }
 
 ///////////////////////////////////////////
@@ -1067,22 +1156,26 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count) {
+void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered;
+		list->state = render_list_state_rendered; 
 		return;
 	}
 	render_list_prep(list_id);
+	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
+	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
 	render_item_t *run_start = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
 		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0) continue;
+		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
+		// End early if we're past the end of the desired queue range
+		if (item->sort_id >= sort_id_end) break;
 
 		// If it's the first in the run, record the material/mesh
 		if (run_start == nullptr) {
@@ -1113,7 +1206,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, material_t override_material) {
+void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
 	_render_list_t *list = &render_lists[list_id];
 	list->state = render_list_state_rendering;
 
@@ -1125,13 +1218,17 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	// solely by the mesh id since we only have one single material.
 	render_list_prep(list_id);
 	material_check_dirty(override_material);
+	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
+	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
 	render_item_t *run_start = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0) continue;
+		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
+		// End early if we're past the end of the desired queue range
+		if (item->sort_id >= sort_id_end) break;
 
 		// If it's the first in the run, record the material/mesh
 		if (run_start == nullptr) {
@@ -1199,7 +1296,7 @@ void render_list_clear(render_list_t list) {
 
 // https://travisdowns.github.io/blog/2019/05/22/sorting.html
 
-#if _WIN32
+#if _MSC_VER
 #include <intrin.h>
 #endif
 

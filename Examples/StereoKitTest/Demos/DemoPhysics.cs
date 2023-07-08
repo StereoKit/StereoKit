@@ -10,7 +10,7 @@ class DemoPhysics : ITest
 	Solid       floorSolid;
 	Model       gltf;
 	List<Solid> objects     = new List<Solid>();
-	Pose        optionsPose = new Pose(0.5f, 0,-0.5f, Quat.LookDir(-1,0,1));
+	Pose        optionsPose = Demo.contentPose.Pose;
 
 	public void Initialize()
 	{
@@ -23,7 +23,7 @@ class DemoPhysics : ITest
 		Default.MaterialHand[MatParamName.ColorTint] = new Color(1, 1, 1, 0.4f);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Pose solidPose;
 		for (int i = 0; i < objects.Count; i++)

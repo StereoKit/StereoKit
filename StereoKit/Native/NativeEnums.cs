@@ -102,6 +102,30 @@ namespace StereoKit
 		AnyTransparent = Additive | Blend,
 	}
 
+	/// <summary>This describes where the origin of the application should be. While these
+	/// origins map closely to OpenXR features, not all runtimes support each
+	/// feature. StereoKit will provide reasonable fallback behavior in the event the
+	/// origin mode isn't directly supported.</summary>
+	public enum OriginMode {
+		/// <summary>The origin will be at the location of the user's head when the
+		/// application starts, facing the same direction as the user. This mode
+		/// is available on all runtimes, and will never fall back to another mode!
+		/// However, due to variances in underlying behavior, StereoKit may introduce
+		/// an origin offset to ensure consistent behavior.</summary>
+		Local,
+		/// <summary>The origin will be at the floor beneath where the user starts, facing the
+		/// direction of the user. If this mode is not natively supported, StereoKit
+		/// will use the stage mode with an offset. If stage mode is unavailable, it
+		/// will fall back to local mode with a -1.5 Y axis offset.</summary>
+		Floor,
+		/// <summary>The origin will be at the center of a safe play area or stage that the
+		/// user or OS has defined, and will face one of the edges of the play
+		/// area. If this mode is not natively supported, StereoKit will use the 
+		/// floor origin mode. If floor mode is unavailable, it will fall back to
+		/// local mode with a -1.5 Y axis offset.</summary>
+		Stage,
+	}
+
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel {
 		/// <summary>A default log level that indicates it has not yet been
@@ -412,6 +436,9 @@ namespace StereoKit
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
 		Depth16      = 16,
+		/// <summary>A double channel of data that supports 8 bits for the red
+		/// channel and 8 bits for the green channel.</summary>
+		R8g8         = 17,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more
@@ -1025,6 +1052,30 @@ namespace StereoKit
 		Divide       = 0x6F,
 		/// <summary>Maximum value for key codes.</summary>
 		MAX          = 0xFF,
+	}
+
+	/// <summary>Represents an input from an XR headset's controller!</summary>
+	public enum ControllerKey {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
+		None         = 0,
+		/// <summary>The trigger button on the controller, where the user's index finger
+		/// typically sits.</summary>
+		Trigger,
+		/// <summary>The grip button on the controller, usually where the fingers that are not
+		/// the index finger sit.</summary>
+		Grip,
+		/// <summary>This is the lower of the two primary thumb buttons, sometimes labelled X,
+		/// and sometimes A. </summary>
+		X1,
+		/// <summary>This is the upper of the two primary thumb buttons, sometimes labelled Y,
+		/// and sometimes B. </summary>
+		X2,
+		/// <summary>This is when the thumbstick on the controller is actually pressed. This
+		/// has nothing to do with the horizontal or vertical movement of the stick.</summary>
+		Stick,
+		/// <summary>This is the menu, or settings button of the controller.</summary>
+		Menu,
 	}
 
 	/// <summary>A settings flag that lets you describe the behavior of how

@@ -1,12 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform_utils.h"
-#include <DirectXMath.h>
+
 using namespace DirectX;
 
 #include <stdio.h>
@@ -337,7 +338,13 @@ void model_release(model_t model) {
 ///////////////////////////////////////////
 
 void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
-	render_add_model(model, transform, color_linear, layer);
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void model_draw_mat(model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////

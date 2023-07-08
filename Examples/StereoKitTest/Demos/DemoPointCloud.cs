@@ -86,11 +86,11 @@ class DemoPointCloud : ITest
 	string     title        = "Point Clouds";
 	string     description  = "Point clouds are not a built-in feature of StereoKit, but it's not hard to do this yourself! Check out the code for this demo for a class that'll help you do this directly from data, or from a Model.";
 
-	Pose       cloudPose    = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose       cloudPose    = (Matrix.T(0,-0.1f,0) * Demo.contentPose).Pose;
 	float      cloudScale   = 1;
 	PointCloud cloud;
 
-	Pose       settingsPose = new Pose(0.8f, 0.05f, -0.2f, Quat.LookDir(-1, 0, 1));
+	Pose       settingsPose = (Matrix.T(-0.4f,0,0) * Demo.contentPose).Pose;
 	float      pointSize    = 0.01f;
 
 	public void Initialize()
@@ -128,7 +128,7 @@ class DemoPointCloud : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		cloud.Draw(cloudPose.ToMatrix(cloudScale));
 

@@ -1,7 +1,7 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../systems/input.h"
-#include "../platforms/flatscreen_input.h"
+#include "../xr_backends/simulator.h"
 #include "input_hand.h"
 
 namespace sk {
@@ -85,7 +85,7 @@ void hand_mouse_update_frame() {
 	bool hand_tracked = hand_mouse_update_position();
 	if (hand_tracked) {
 		l_pressed = input_key(key_mouse_left ) & button_state_active;
-		r_pressed = flatscreen_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
+		r_pressed = simulator_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
 	}
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
 	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);

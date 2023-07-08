@@ -24,8 +24,8 @@ struct solid_move_t {
 };
 array_t<solid_move_t> solid_moves = {};
 
-double physics_sim_time = 0;
-double physics_step = 1 / 90.0;
+double physics_sim_time  = 0;
+double physics_step_time = 1 / 90.0;
 
 #if !defined(SK_PHYSICS_PASSTHROUGH)
 PhysicsCommon physics_common;
@@ -58,13 +58,13 @@ void physics_shutdown() {
 
 ///////////////////////////////////////////
 
-void physics_update() {
+void physics_step() {
 	// How many physics frames are we going to be calculating this time?
-	int32_t frames = (int32_t)ceil((time_total() - physics_sim_time) / physics_step);
+	int32_t frames = (int32_t)ceil((time_total() - physics_sim_time) / physics_step_time);
 	if (frames <= 0)
 		return;
-	if (frames > (0.5f/physics_step))
-		frames = (int32_t)(0.5f/physics_step);
+	if (frames > (0.5f/physics_step_time))
+		frames = (int32_t)(0.5f/physics_step_time);
 
 #if !defined(SK_PHYSICS_PASSTHROUGH)
 	// Calculate move velocities for objects that need to be at their destination by the end of this function!
@@ -75,7 +75,7 @@ void physics_update() {
 		// Position
 		move.old_velocity = vec3_rp_to_sk( body->getLinearVelocity() );
 		vec3 pos      = vec3_rp_to_sk(body->getTransform().getPosition());
-		vec3 velocity = (move.dest - pos) / (float)(physics_step * frames);
+		vec3 velocity = (move.dest - pos) / (float)(physics_step_time * frames);
 		body->setLinearVelocity(vec3_sk_to_rp(velocity));
 		// Rotation
 		move.old_rot_velocity = vec3_rp_to_sk(body->getAngularVelocity());
@@ -86,15 +86,15 @@ void physics_update() {
 			Vector3    axis;
 			delta.getRotationAngleAxis(angle, axis);
 			if (!isnan(angle)) {
-				body->setAngularVelocity((angle / (reactphysics3d::decimal)(physics_step * frames)) * axis.getUnit());
+				body->setAngularVelocity((angle / (reactphysics3d::decimal)(physics_step_time * frames)) * axis.getUnit());
 			}
 		}
 	}
 
 	// Sim physics!
 	while (physics_sim_time < time_total()) {
-		physics_world->update((reactphysics3d::decimal)physics_step);
-		physics_sim_time += physics_step;
+		physics_world->update((reactphysics3d::decimal)physics_step_time);
+		physics_sim_time += physics_step_time;
 	}
 
 	// Reset moved objects back to their original values, and clear out our list

@@ -168,11 +168,11 @@ class DemoGeo : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
-		Hierarchy.Push(Matrix.TRS(V.XYZ(0.5f, -0.25f, -0.5f), Quat.LookDir(-1,0,1), 0.2f));
+		Hierarchy.Push(Matrix.S(0.2f) * Demo.contentPose);
 
-		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, V.XYZ(0.29f, -0.29f, -0.29f), V.XYZ(0.5f, -0.29f, -0.5f));
+		Tests.Screenshot("ProceduralGeometry.jpg", 600, 600, Hierarchy.ToWorld(V.XYZ(0, -0.15f, 1.6f)), Hierarchy.ToWorld(V.XYZ(0, -0.15f, 0)));
 		Tests.Screenshot("ProceduralGrid.jpg",     600, 600, Hierarchy.ToWorld(V.X0Z(-2, -0.7f)), Hierarchy.ToWorld(V.X0Z(-2, 0)));
 
 		// Circle!

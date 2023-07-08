@@ -52,6 +52,22 @@ namespace StereoKit.Framework
 			_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
 		}
 
+		public T Get<T>() => (T)Get(typeof(T));
+		public object Get(Type type)
+		{
+			foreach (IStepper stepper in _steppers)
+			{
+				if (type.IsAssignableFrom(stepper.GetType()))
+					return stepper;
+			}
+			foreach (StepperAction action in _actions)
+			{
+				if (type.IsAssignableFrom(action.stepper.GetType()))
+					return action.stepper;
+			}
+			return null;
+		}
+
 		public void Step()
 		{
 			// Execute all stepper actions on the main thread in the order they

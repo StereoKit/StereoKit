@@ -142,11 +142,14 @@ UI.SetThemeColor(UIColor.Text,       new Color({text.r      :0.000}f,{text.g    
 			UI.PanelBegin();
 
 			bool colorDirty = false;
-			colorDirty = UI.HSlider("x", ref hsv.v.X, 0, 1, 0) || colorDirty;
-			colorDirty = UI.HSlider("y", ref hsv.v.Y, 0, 1, 0) || colorDirty;
-			colorDirty = UI.HSlider("z", ref hsv.v.Z, 0, 1, 0) || colorDirty;
+			float x = hsv.x;
+			float y = hsv.y;
+			float z = hsv.z;
+			colorDirty = UI.HSlider("x", ref x, 0, 1, 0) || colorDirty;
+			colorDirty = UI.HSlider("y", ref y, 0, 1, 0) || colorDirty;
+			colorDirty = UI.HSlider("z", ref z, 0, 1, 0) || colorDirty;
 
-			Color  color  = Color.HSV(hsv);
+			Color  color  = Color.HSV(x,y,z);
 			Bounds bounds = UI.LayoutReserve(Vec2.Zero, false, 0.002f);
 			Mesh.Cube.Draw(Material.Unlit, Matrix.TS(bounds.center, bounds.dimensions), color.ToLinear());
 

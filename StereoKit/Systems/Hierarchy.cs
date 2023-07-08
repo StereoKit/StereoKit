@@ -32,8 +32,8 @@
 		/// any draw call to ignore any Matrices that are on the Hierarchy
 		/// stack.</summary>
 		public static bool Enabled {
-			get => NativeAPI.hierarchy_is_enabled() > 0;
-			set => NativeAPI.hierarchy_set_enabled(value?1:0);
+			get => NativeAPI.hierarchy_is_enabled();
+			set => NativeAPI.hierarchy_set_enabled(value);
 		}
 
 		/// <summary>Converts a world space point into the local space of the
@@ -65,7 +65,7 @@
 		/// <summary>Converts a world pose relative to the current 
 		/// hierarchy stack into local space!</summary>
 		/// <param name="worldPose">A pose in world space.</param>
-		/// <returns>The provided pose now in world space!</returns>
+		/// <returns>The provided pose now in local hierarchy space!</returns>
 		public static Pose ToLocal(Pose worldPose)
 			=> NativeAPI.hierarchy_to_local_pose(worldPose);
 

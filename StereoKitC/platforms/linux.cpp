@@ -1,5 +1,4 @@
 #include "linux.h"
-#include <cstddef>
 
 #if defined(SK_OS_LINUX)
 
@@ -10,9 +9,7 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "../xr_backends/openxr.h"
-#include "flatscreen_input.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
@@ -186,8 +183,8 @@ void linux_events() {
 				else if ((sym & 0xFFFFFF00U) == 0x0000U) key = linux_xk_map_lower[sym];
 
 				if (key != key_none) {
-					if (is_pressed) input_keyboard_inject_press  (key);
-					else            input_keyboard_inject_release(key);
+					if (is_pressed) input_key_inject_press  (key);
+					else            input_key_inject_release(key);
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
@@ -206,11 +203,11 @@ void linux_events() {
 			case ButtonPress: {
 				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
-					case (1): input_keyboard_inject_press(key_mouse_left);    break;
-					case (2): input_keyboard_inject_press(key_mouse_center);  break;
-					case (3): input_keyboard_inject_press(key_mouse_right);   break;
-					case (9): input_keyboard_inject_press(key_mouse_forward); break;
-					case (8): input_keyboard_inject_press(key_mouse_back);    break;
+					case (1): input_key_inject_press(key_mouse_left);    break;
+					case (2): input_key_inject_press(key_mouse_center);  break;
+					case (3): input_key_inject_press(key_mouse_right);   break;
+					case (9): input_key_inject_press(key_mouse_forward); break;
+					case (8): input_key_inject_press(key_mouse_back);    break;
 					case (4): linux_scroll += 120; break; // scroll up
 					case (5): linux_scroll -= 120; break; // scroll down
 					}
@@ -219,11 +216,11 @@ void linux_events() {
 			case ButtonRelease: {
 				if (sk_focus == app_focus_active) {
 					switch (event.xbutton.button) {
-					case (1): input_keyboard_inject_release(key_mouse_left);    break;
-					case (2): input_keyboard_inject_release(key_mouse_center);  break;
-					case (3): input_keyboard_inject_release(key_mouse_right);   break;
-					case (9): input_keyboard_inject_release(key_mouse_forward); break;
-					case (8): input_keyboard_inject_release(key_mouse_back);    break;
+					case (1): input_key_inject_release(key_mouse_left);    break;
+					case (2): input_key_inject_release(key_mouse_center);  break;
+					case (3): input_key_inject_release(key_mouse_right);   break;
+					case (9): input_key_inject_release(key_mouse_forward); break;
+					case (8): input_key_inject_release(key_mouse_back);    break;
 					}
 				}
 			} break;
@@ -373,15 +370,14 @@ bool setup_x_window() {
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	linux_swapchain_initialized = true;
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
+	device_data.display_width  = linux_swapchain.width;
+	device_data.display_height = linux_swapchain.height;
 
 	XWindowAttributes wa;
 	XGetWindowAttributes(x_dpy,x_win,&wa);
@@ -433,24 +429,13 @@ bool linux_start_post_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_flat() {
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
+
 	#if defined(SKG_LINUX_EGL)
 	if (!setup_x_window())
 		return false;
 	#endif
-
-	device_data.display_blend  = display_blend_opaque;
-	device_data.display_width  = sk_settings.flatscreen_width;
-	device_data.display_height = sk_settings.flatscreen_height;
-	device_data.has_hand_tracking = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.has_eye_gaze      = backend_xr_get_type() == backend_xr_type_simulator;
-	device_data.tracking          = backend_xr_get_type() == backend_xr_type_simulator
-		? device_tracking_6dof
-		: device_tracking_none;
-	device_data.name = backend_xr_get_type() == backend_xr_type_simulator
-		? string_copy("Simulator")
-		: string_copy("None");
-	
-	flatscreen_input_init();
 
 	return true;
 }
@@ -507,7 +492,6 @@ void linux_set_cursor(vec2 window_pos) {
 ///////////////////////////////////////////
 
 void linux_stop_flat() {
-	flatscreen_input_shutdown();
 	skg_swapchain_destroy(&linux_swapchain);
 }
 
@@ -521,20 +505,19 @@ void linux_shutdown() {
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
-  #if defined(SKG_LINUX_EGL)
+#if defined(SKG_LINUX_EGL)
 	if(!sk_settings.disable_desktop_input_window) {
 		linux_events();
 	}
-  #else
+#else
 	linux_events();
-  #endif
+#endif
 }
 
 ///////////////////////////////////////////
 
 void linux_step_begin_flat() {
 	linux_events();
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -547,8 +530,6 @@ void linux_step_end_flat() {
 	skg_target_clear(true, &col.r);
 
 	linux_render_sys->profile_frame_start = stm_now();
-
-	input_update_poses(true);
 
 	matrix view = render_get_cam_final        ();
 	matrix proj = render_get_projection_matrix();

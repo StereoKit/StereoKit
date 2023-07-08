@@ -13,7 +13,7 @@ class TestMatrixShaderParam : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Mesh.Cube.Draw(_material, Matrix.Identity);
 

@@ -4,9 +4,12 @@
 		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
 		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
 		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
-		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Oculus</SKOpenXRLoader>
+		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Standard</SKOpenXRLoader>
 		<SKShowDebugVars    Condition="'$(SKShowDebugVars)'    == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders  Condition="'$(SKAutoFindShaders)'  == ''">True</SKAutoFindShaders>
+
+		<!--Quest no longer uses a custom loader-->
+		<SKOpenXRLoader Condition="'$(SKOpenXRLoader.ToLower())' == 'oculus'">Standard</SKOpenXRLoader>
 	</PropertyGroup>
 	
 	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">

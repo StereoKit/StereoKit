@@ -36,7 +36,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	o.uv         = input.uv * tex_scale;
 	o.color      = color * input.col * sk_inst[id].color;
-	o.color.rgb *= Lighting(normal);
+	o.color.rgb *= sk_lighting(normal);
 	return o;
 }
 

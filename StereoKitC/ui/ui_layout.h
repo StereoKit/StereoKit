@@ -16,14 +16,18 @@ struct ui_layout_t {
 	ui_window_t* window;
 	vec3         offset_initial;
 	vec3         offset;
+	vec3         offset_prev;
 	vec2         size;
-	float        line_height;
-	float        max_x;
-	vec3         prev_offset;
-	float        prev_line_height;
+	vec2         size_used;
+	vec2         line;
+	vec2         line_prev;
+	float        line_pad;
 };
 
 extern ui_settings_t skui_settings;
+
+void ui_layout_init    ();
+void ui_layout_shutdown();
 
 ui_window_t* ui_layout_curr_window        ();
 ui_layout_t* ui_layout_curr               ();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -8,6 +9,10 @@ namespace StereoKit
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
 	public static class Renderer
 	{
+		/// <summary>A queue is used to prevent premature garbage collection
+		/// of the user-defined callbacks.</summary>
+		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
 		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
@@ -31,8 +36,8 @@ namespace StereoKit
 		/// displays, and completely unavailable for transparent displays.</summary>
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex() > 0;
-			set => NativeAPI.render_enable_skytex(value?1:0);
+			get => NativeAPI.render_enabled_skytex();
+			set => NativeAPI.render_enable_skytex(value);
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.
@@ -70,7 +75,7 @@ namespace StereoKit
 
 		/// <summary>This tells if CaptureFilter has been overridden to a
 		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
-		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter() > 0;
+		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter();
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
@@ -126,7 +131,7 @@ namespace StereoKit
 		/// <param name="overrideFilter">The filter for capture rendering to
 		/// use. This is ignored if useOverrideFilter is false.</param>
 		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
-			=> NativeAPI.render_override_capture_filter(useOverrideFilter ? 1 : 0, overrideFilter);
+			=> NativeAPI.render_override_capture_filter(useOverrideFilter, overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -252,27 +257,32 @@ namespace StereoKit
 		public static void Blit(Tex toRendertarget, Material material)
 			=> NativeAPI.render_blit(toRendertarget._inst, material._inst);
 
-		/// <summary>Schedules a screenshot for the end of the frame! The view will be
-		/// rendered from the given position at the given point, with a resolution the same
-		/// size as the screen's surface. It'll be saved as a .jpg file at the filename
-		/// provided.</summary>
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. It'll be saved as
+		/// a JPEG or PNG file depending on the filename extension provided.
+		/// </summary>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
 		/// <param name="width">Size of the screenshot horizontally, in pixels.</param>
 		/// <param name="height">Size of the screenshot vertically, in pixels.</param>
-		/// <param name="filename">Filename to write the screenshot to! Note this'll be a 
-		/// .jpg regardless of what file extension you use right now.</param>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
 		[Obsolete("For removal in v0.4. Use the overload that takes filename first.")]
 		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
-			=> NativeAPI.render_screenshot(filename, from, at, width, height, 90);
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, 90);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
 		/// resolution the same size as the screen's surface. It'll be saved as
-		/// a .jpg file at the filename provided.</summary>
-		/// <param name="filename">Filename to write the screenshot to! Note
-		/// this'll be a .jpg regardless of what file extension you use right
-		/// now.</param>
+		/// a JPEG or PNG file depending on the filename extension provided.
+		/// </summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
 		/// <param name="width">Size of the screenshot horizontally, in pixels.
@@ -282,7 +292,114 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot(filename, from, at, width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given pose, with a resolution the same
+		/// size as the screen's surface. It'll be saved as a JPEG or PNG file
+		/// depending on the filename extension provided.</summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a JPEG if it ends with anything else.</param>
+		/// <param name="fileQuality">For JPEG files, this is the compression
+		/// quality of the file from 0-100, 100 being highest quality, 0 being
+		/// smallest size. SK uses a default of 90 here.</param>
+		/// <param name="viewpoint">Viewpoint location and orientation.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(string filename, int fileQuality, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), fileQuality, viewpoint, width, height, fieldOfViewDegrees);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given pose, with a resolution the same
+		/// size as the screen's surface. It'll be saved as a JPEG or PNG file
+		/// depending on the filename extension provided.</summary>
+		/// <param name="filename">Filename to write the screenshot to! This
+		/// will be a PNG if the extension ends with (case insensitive)
+		/// ".png", and will be a 90 quality JPEG if it ends with anything
+		/// else.</param>
+		/// <param name="viewpoint">Viewpoint location and orientation.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		public static void Screenshot(string filename, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
+			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, viewpoint, width, height, fieldOfViewDegrees);
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. This overload
+		/// allows for retrieval of the color data directly from the render
+		/// thread! You can use the color data directly by saving/processing it
+		/// inside your callback, or you can keep the data alive for as long as
+		/// it is referenced.</summary>
+		/// <param name="onScreenshot">Outputs a reference to the color data
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
+		/// <param name="from">Viewpoint location.</param>
+		/// <param name="at">Direction the viewpoint is looking at.</param>
+		/// <param name="width">Size of the screenshot horizontally, in pixels.
+		/// </param>
+		/// <param name="height">Size of the screenshot vertically, in pixels.
+		/// </param>
+		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
+		/// degrees.</param>
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
+		{
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
+			{
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat);
+		}
+
+		/// <summary>Schedules a screenshot for the end of the frame! The view
+		/// will be rendered from the given position at the given point, with a
+		/// resolution the same size as the screen's surface. This overload
+		/// allows for retrieval of the color data directly from the render
+		/// thread! You can use the color data directly by saving/processing it
+		/// inside your callback, or you can keep the data alive for as long as
+		/// it is referenced.</summary>
+		/// <param name="onScreenshot">Outputs a reference to the color data
+		/// and its length which represent the current scene from a requested
+		/// viewpoint.</param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use 
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		/// <param name="layerFilter">This is a bit flag that allows you to
+		/// change which layers StereoKit renders for this particular render
+		/// viewpoint. To change what layers a visual is on, use a Draw
+		/// method that includes a RenderLayer as a parameter.</param>
+		/// <param name="clear">Describes if and how the rendertarget should
+		/// be cleared before rendering. Note that clearing the target is
+		/// unaffected by the viewport, so this will clean the entire 
+		/// surface!</param>
+		/// <param name="texFormat">The pixel format of the color data.</param>
+		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
+		{
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
+			{
+				onScreenshot.Invoke(dataPtr, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
+			};
+			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat);
+		}
 
 		/// <summary>This renders the current scene to the indicated 
 		/// rendertarget texture, from the specified viewpoint. This call 
@@ -301,7 +418,7 @@ namespace StereoKit
 		/// change which layers StereoKit renders for this particular render
 		/// viewpoint. To change what layers a visual is on, use a Draw
 		/// method that includes a RenderLayer as a parameter.</param>
-		/// <param name="clear">Describes if an how the rendertarget should
+		/// <param name="clear">Describes if and how the rendertarget should
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>

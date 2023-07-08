@@ -13,10 +13,8 @@
 #include "../libraries/stref.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../hands/input_hand.h"
-#include "flatscreen_input.h"
 
 namespace sk {
 
@@ -148,9 +146,11 @@ WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
 		return;
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
+	device_data.display_width  = width;
+	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skg_swapchain_resize(&web_swapchain, sk_info.display_width, sk_info.display_height);
+	skg_swapchain_resize(&web_swapchain, width, height);
 	render_update_projection();
 }
 
@@ -181,21 +181,20 @@ void web_shutdown() {
 ///////////////////////////////////////////
 
 bool web_start_flat() {
-	sk_info.display_width  = sk_settings.flatscreen_width;
-	sk_info.display_height = sk_settings.flatscreen_height;
-	sk_info.display_type   = display_opaque;
+	sk_info.display_type      = display_opaque;
+	device_data.display_blend = display_blend_opaque;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
-	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
 	web_swapchain_initialized = true;
 	sk_info.display_width  = web_swapchain.width;
 	sk_info.display_height = web_swapchain.height;
+	device_data.display_width  = web_swapchain.width;
+	device_data.display_height = web_swapchain.height;
 	
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", web_swapchain.width, web_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-
-	flatscreen_input_init();
 
 	return true;
 }
@@ -203,8 +202,7 @@ bool web_start_flat() {
 ///////////////////////////////////////////
 
 void web_stop_flat() {
-	flatscreen_input_shutdown();
-	skg_swapchain_destroy    (&web_swapchain);
+	skg_swapchain_destroy(&web_swapchain);
 	web_swapchain_initialized = false;
 }
 
@@ -216,7 +214,6 @@ void web_step_begin_xr() {
 ///////////////////////////////////////////
 
 void web_step_begin_flat() {
-	flatscreen_input_update();
 }
 
 ///////////////////////////////////////////
@@ -227,8 +224,6 @@ void web_step_end_flat() {
 	color128 col = render_get_clear_color_ln();
 	skg_swapchain_bind(&web_swapchain);
 	skg_target_clear(true, &col.r);
-
-	input_update_poses(true);
 
 	matrix view = render_get_cam_final ();
 	matrix proj = render_get_projection_matrix();
@@ -302,8 +297,8 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 			break;
 		}
 	}
-	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_keyboard_inject_press  (keycode);
-	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_keyboard_inject_release(keycode);
+	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_key_inject_press  (keycode);
+	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_key_inject_release(keycode);
 
 	// Disable/enable pointer lock if shift is released/pressed
 	if (web_mouse_locked                                    &&
@@ -329,8 +324,8 @@ EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_eve
 	case 2: key = key_mouse_right;  break;
 	}
 	if (key != key_none) {
-		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_keyboard_inject_press  (key);
-		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_keyboard_inject_release(key);
+		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_key_inject_press  (key);
+		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_key_inject_release(key);
 	}
 
 	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right) {

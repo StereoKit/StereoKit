@@ -4,8 +4,7 @@
 
 namespace sk {
 
-const float hand_joint_size [5] = {0.014f, 0.037f, 0.032f, 0.028f, 0.021f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
-const float hand_finger_size[5] = {1.15f,  1,      1,      0.85f,  0.75f }; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
+const float hand_joint_size[25] = {0.020f, 0.020f, 0.012f, 0.010f, 0.009f, 0.021f, 0.010f, 0.009f, 0.008f, 0.007f, 0.021f, 0.011f, 0.008f, 0.008f, 0.007f, 0.019f, 0.010f, 0.008f, 0.007f, 0.006f, 0.018f, 0.009f, 0.007f, 0.006f, 0.005f};
 
 pose_t input_pose_fist[5][5] = { 
 	{ {{0.005665252f,0.01743333f,0.05084944f}, {-0.2242406f,0.9484599f,0.2183491f,0.04963366f}}, {{0.005665252f,0.01743333f,0.05084944f}, {-0.1694278f,0.9491727f,0.07223327f,0.2552404f}}, {{0.02554873f,0.02709787f,0.0137122f}, {-0.0821283f,0.933144f,-0.2426009f,0.2522737f}}, {{0.04050829f,0.01504829f,-0.00840535f}, {0.01753761f,0.8112059f,-0.541218f,0.220727f}}, {{0.04574133f,0.001379195f,-0.0132927f}, {0.01753761f,0.8112059f,-0.541218f,0.220727f}}}, 

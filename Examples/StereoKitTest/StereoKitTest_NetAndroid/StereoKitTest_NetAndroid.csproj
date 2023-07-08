@@ -1,0 +1,67 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net7.0-android</TargetFramework>
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+		<OutputType>Exe</OutputType>
+		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<RootNamespace>StereoKitTest</RootNamespace>
+		<ReadOnlyProject>true</ReadOnlyProject>
+
+		<SKOpenXRLoader>Standard</SKOpenXRLoader>
+		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
+
+		<!--Suppress targetSdkVersion 29 warnings. XR devices use old versions
+		    of Android.-->
+		<NoWarn>XA4211;XA1006;XA4301;CS1587</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\StereoKit\StereoKit.csproj" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<AndroidManifest          >AndroidManifest.xml</AndroidManifest>
+		<MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
+		<MonoAndroidAssetsPrefix  >Assets</MonoAndroidAssetsPrefix>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\Program.cs" Visible="false" />
+		<Compile Include="..\DebugToolWindow.cs" Visible="false" />
+		<Compile Include="..\ITest.cs" Visible="false" />
+		<Compile Include="..\Tests.cs" Visible="false" />
+		<Compile Include="..\Demos\*.cs" Visible="false" />
+		<Compile Include="..\Tools\*.cs" Visible="false" />
+	</ItemGroup>
+
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
+
+	<!-- Make sure the Android binaries are built and included. -->
+	<PropertyGroup>
+		<!--Unlike the other projects, this seems to invoke from the bin
+		    folder, and $(ProjectDir) doesn't work.-->
+		<PreBuildEvent>cd ..\..\..\..\..\..\ &amp; cmake --workflow --preset AndroidArm64$(Configuration)</PreBuildEvent>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />
+	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
+		<RemoveDir Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
+	</Target>
+
+	<Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
+		<Error Condition="!Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+	</Target>
+
+	<ItemGroup>
+		<None                 Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+	</ItemGroup>
+</Project>

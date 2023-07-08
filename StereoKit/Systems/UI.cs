@@ -92,7 +92,7 @@ namespace StereoKit
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
-			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
+			=> NativeAPI.ui_layout_reserve(size, addPadding, depth);
 
 		/// <summary>This pushes a layout rect onto the layout stack. All UI
 		/// elements using the layout system will now exist inside this layout
@@ -107,7 +107,7 @@ namespace StereoKit
 		/// <param name="addMargin">Adds a spacing margin to the interior of
 		/// the layout. Most of the time you won't need this, but may be useful
 		/// when working without a Window.</param>
-		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, addMargin ? 1 : 0);
+		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, addMargin);
 		/// <summary>This cuts off a portion of the current layout area, and
 		/// pushes that new area onto the layout stack. Left and Top cuts will
 		/// always work, but Right and Bottom cuts can only exist inside of a
@@ -124,7 +124,7 @@ namespace StereoKit
 		/// <param name="addMargin">Adds a spacing margin to the interior of
 		/// the layout. Most of the time you won't need this, but may be useful
 		/// when working without a Window.</param>
-		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin ? 1 : 0);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin);
 		/// <summary>This removes a layout from the layout stack that was
 		/// previously added using LayoutPush, or LayoutPushCut.</summary>
 		public static void LayoutPop() => NativeAPI.ui_layout_pop();
@@ -254,12 +254,12 @@ namespace StereoKit
 		/// <param name="dimensions">The size of the layout area from the top
 		/// left, in local meters.</param>
 		public static void LayoutArea(Vec3 start, Vec2 dimensions, bool addMargin = true)
-			=> NativeAPI.ui_layout_area(start, dimensions, addMargin ? 1 : 0);
+			=> NativeAPI.ui_layout_area(start, dimensions, addMargin);
 
 		/// <summary>Use LayoutReserve, removing in v0.4</summary>
 		[Obsolete("Use LayoutReserve, removing in v0.4")]
 		public static void ReserveBox(Vec2 size) 
-			=> NativeAPI.ui_layout_reserve(size);
+			=> NativeAPI.ui_layout_reserve(size, false, 0);
 
 		/// <summary>Moves the current layout position back to the end of the
 		/// line that just finished, so it can continue on the same line as the
@@ -360,7 +360,7 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label (string text, bool usePadding = true)
-			=> NativeAPI.ui_label_16(text, usePadding?1:0);
+			=> NativeAPI.ui_label_16(text, usePadding);
 
 		/// <summary>Adds some text to the layout, but this overload allows you
 		/// can specify the size that you want it to use. Text uses the UI's
@@ -376,7 +376,7 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label(string text, Vec2 size, bool usePadding = true)
-			=> NativeAPI.ui_label_sz_16(text, size, usePadding?1:0);
+			=> NativeAPI.ui_label_sz_16(text, size, usePadding);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -530,8 +530,16 @@ namespace StereoKit
 		/// </returns>
 		public static bool Radio(string text, bool active)
 		{
-			int iActive = active?1:0;
-			return NativeAPI.ui_toggle_img_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && iActive>0;
+			// Android (only Android!) does something strange here in the most
+			// straightforward implementation of this code. There may be some
+			// issue with marshalling that prevents the ref value from
+			// resolving before the condition is tested?
+			//
+			// So, this doesn't work:
+			// NativeAPI.ui_toggle_img_16(text, ref active, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && active;
+
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool)"/>
@@ -541,8 +549,8 @@ namespace StereoKit
 		/// is UI.LineHeight.</param>
 		public static bool Radio(string text, bool active, Vec2 size)
 		{
-			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && iActive>0;
+			bool value = active;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && !active;
 		}
 
 		/// <summary>A Radio is similar to a button, except you can specify if
@@ -567,8 +575,8 @@ namespace StereoKit
 		/// </returns>
 		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
 		{
-			int iActive = active?1:0;
-			return NativeAPI.ui_toggle_img_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout) && iActive>0;
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
@@ -578,8 +586,8 @@ namespace StereoKit
 		/// is UI.LineHeight.</param>
 		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec2 size)
 		{
-			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_img_sz_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size) && iActive>0;
+			bool value = active;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
@@ -589,8 +597,8 @@ namespace StereoKit
 		/// space.</param>
 		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
 		{
-			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_img_at_16(text, ref iActive, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && iActive > 0;
+			bool value = active;
+			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && !active;
 		}
 
 		/// <summary>A pressable button! A button will expand to fit the text
@@ -634,15 +642,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle (string text, ref bool value)
-		{
-			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_16(text, ref iVal))
-			{
-				value = iVal>0?true:false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_16(text, ref value);
 
 
 		/// <summary>A toggleable button! A button will expand to fit the
@@ -686,15 +686,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
-		{
-			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_img_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout))
-			{
-				value = iVal>0?true:false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -744,15 +736,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
-		{
-			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_img_sz_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size))
-			{
-				value = iVal > 0 ? true : false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_img_sz_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size);
 
 		/// <inheritdoc cref="Toggle(string, ref bool)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -760,15 +744,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool Toggle(string text, ref bool value, Vec2 size)
-		{
-			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_sz_16(text, ref iVal, size))
-			{
-				value = iVal>0?true:false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -784,15 +760,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Vec3 topLeftCorner, Vec2 size)
-		{
-			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_at_16(text, ref iVal, topLeftCorner, size))
-			{
-				value = iVal > 0 ? true : false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_at_16(text, ref value, topLeftCorner, size);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -836,15 +804,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-		{
-			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_img_at_16(text, ref iVal, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size))
-			{
-				value = iVal > 0 ? true : false;
-				return true;
-			}
-			return false;
-		}
+		=> NativeAPI.ui_toggle_img_at_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size);
 
 		/// <summary>This adds a non-interactive Model to the UI panel layout.
 		/// </summary>
@@ -1110,28 +1070,31 @@ namespace StereoKit
 		public static bool VSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
 			=> NativeAPI.ui_vslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
-		/// <summary>This begins a new UI group with its own layout! Much 
-		/// like a window, except with a more flexible handle, and no header.
-		/// You can draw the handle, but it will have no text on it.
-		/// The pose value is always relative to the current hierarchy stack.
-		/// This call will also push the pose transform onto the hierarchy stack, so
-		/// any objects drawn up to the corresponding UI.HandleEnd() will get transformed 
-		/// by the handle pose. Returns true for every frame the user is grabbing the handle.</summary>
+		/// <summary>This begins a new UI group with its own layout! Much like
+		/// a window, except with a more flexible handle, and no header. You
+		/// can draw the handle, but it will have no text on it. The pose value
+		/// is always relative to the current hierarchy stack. This call will
+		/// also push the pose transform onto the hierarchy stack, so any
+		/// objects drawn up to the corresponding UI.HandleEnd() will get
+		/// transformed by the handle pose. Returns true for every frame the
+		/// user is grabbing the handle.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
-		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around. The pose is relative
+		/// <param name="pose">The pose state for the handle! The user will be
+		/// able to grab this handle and move it around. The pose is relative
 		/// to the current hierarchy stack.</param>
-		/// <param name="handle">Size and location of the handle, relative to 
+		/// <param name="handle">Size and location of the handle, relative to
 		/// the pose.</param>
-		/// <param name="drawHandle">Should this function draw the handle 
+		/// <param name="drawHandle">Should this function draw the handle
 		/// visual for you, or will you draw that yourself?</param>
-		/// <param name="moveType">Describes how the handle will move when 
+		/// <param name="moveType">Describes how the handle will move when
 		/// dragged around.</param>
-		/// <returns>Returns true for every frame the user is grabbing the 
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
+		/// <returns>Returns true for every frame the user is grabbing the
 		/// handle.</returns>
-		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
+		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn. Pops the pose transform pushed
@@ -1155,11 +1118,13 @@ namespace StereoKit
 		/// you, or will you draw that yourself?</param>
 		/// <param name="moveType">Describes how the handle will move when 
 		/// dragged around.</param>
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
-		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
 		{
-			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -1239,7 +1204,7 @@ namespace StereoKit
 		/// will NOT hide the keyboard. If false, interaction will hide the
 		/// keyboard.</param>
 		public static void PushPreserveKeyboard(bool preserveKeyboard)
-			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard?1:0);
+			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard);
 
 		/// <summary>This pops the keyboard presentation state to what it was
 		/// previously.</summary>
@@ -1281,7 +1246,7 @@ namespace StereoKit
 		/// <param name="enabled">Should the following elements be enabled and
 		/// interactable?</param>
 		public static void PushEnabled(bool enabled)
-			=> NativeAPI.ui_push_enabled(enabled?1:0);
+			=> NativeAPI.ui_push_enabled(enabled);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>

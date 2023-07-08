@@ -78,7 +78,7 @@ class DemoWorldAnchor : ITest
 	}
 
 	Pose pose = Demo.contentPose.Pose;
-	public void Update()
+	public void Step()
 	{
 		Vec3 wandTip = wandModel.Bounds.center + wandModel.Bounds.dimensions.y * 0.5f * Vec3.Up;
 

@@ -19,10 +19,82 @@ namespace StereoKit
 
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
-		public float CharHeight => NativeAPI.text_style_get_char_height(this);
+		public float CharHeight
+		{
+			get => NativeAPI.text_style_get_char_height(this);
+			set => NativeAPI.text_style_set_char_height(this, value);
+		} 
 
 		/// <summary>This is the default text style used by StereoKit.</summary>
 		public static TextStyle Default { get => new TextStyle { _id = 0 }; }
+
+		/// <summary>Create a text style for use with other text functions! A
+		/// text style is a font plus size/color/material parameters, and are
+		/// used to keep text looking more consistent through the application
+		/// by encouraging devs to re-use styles throughout the project.
+		/// 
+		/// This overload will create a unique Material for this style based
+		/// on Default.ShaderFont.</summary>
+		/// <param name="font">Font asset you want attached to this style.
+		/// </param>
+		/// <param name="characterHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="colorGamma">The gamma space color of the text
+		/// style. This will be embedded in the vertex color of the text
+		/// mesh.</param>
+		/// <returns>A text style id for use with text rendering functions.
+		/// </returns>
+		public static TextStyle FromFont(Font font, float characterHeightMeters, Color colorGamma)
+			=> NativeAPI.text_make_style(font._inst, characterHeightMeters, colorGamma);
+
+		/// <summary>Create a text style for use with other text functions! A
+		/// text style is a font plus size/color/material parameters, and are
+		/// used to keep text looking more consistent through the application
+		/// by encouraging devs to re-use styles throughout the project.
+		/// 
+		/// This overload will create a unique Material for this style based
+		/// on the provided Shader.</summary>
+		/// <param name="font">Font asset you want attached to this style.
+		/// </param>
+		/// <param name="characterHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="shader">This style will create and use a unique
+		/// Material based on the Shader that you provide here.</param>
+		/// <param name="colorGamma">The gamma space color of the text
+		/// style. This will be embedded in the vertex color of the text
+		/// mesh.</param>
+		/// <returns>A text style id for use with text rendering functions.
+		/// </returns>
+		public static TextStyle FromFont(Font font, float characterHeightMeters, Shader shader, Color colorGamma)
+			=> NativeAPI.text_make_style_shader(font._inst, characterHeightMeters, shader._inst, colorGamma);
+
+		/// <summary>Create a text style for use with other text functions! A
+		/// text style is a font plus size/color/material parameters, and are
+		/// used to keep text looking more consistent through the application
+		/// by encouraging devs to re-use styles throughout the project.
+		/// 
+		/// This overload allows you to set the specific Material that is 
+		/// used. This can be helpful if you're keeping styles similar enough
+		/// to re-use the material and save on draw calls. If you don't know
+		/// what that means, then prefer using the overload that takes a 
+		/// Shader, or takes neither a Shader nor a Material!</summary>
+		/// <param name="font">Font asset you want attached to this style.
+		/// </param>
+		/// <param name="characterHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="material">Which material should be used to render
+		/// the text with? Note that this does NOT duplicate the material, so
+		/// some parameters of this Material instance will get overwritten, 
+		/// like the texture used for the glyph atlas. You should either use
+		/// a new Material, or a Material that was already used with this
+		/// same font.</param>
+		/// <param name="colorGamma">The gamma space color of the text
+		/// style. This will be embedded in the vertex color of the text
+		/// mesh.</param>
+		/// <returns>A text style id for use with text rendering functions.
+		/// </returns>
+		public static TextStyle FromFont(Font font, float characterHeightMeters, Material material, Color colorGamma)
+			=> NativeAPI.text_make_style_mat(font._inst, characterHeightMeters, material._inst, colorGamma);
 	}
 
 	/// <summary>A collection of functions for rendering and working with text.

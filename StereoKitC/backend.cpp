@@ -198,6 +198,42 @@ void *backend_d3d11_get_d3d_context() {
 
 ///////////////////////////////////////////
 
+void* backend_d3d11_get_deferred_d3d_context() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d11_deferred_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_d3d11_get_deferred_mtx() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_deferred_mtx;
+#endif
+}
+
+///////////////////////////////////////////
+
+uint32_t backend_d3d11_get_main_thread_id() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return 0;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_main_thread_id;
+#endif
+}
+
+///////////////////////////////////////////
+
 void* backend_opengl_wgl_get_hdc() {
 #if !defined(_SKG_GL_LOAD_WGL)
 	log_err(backend_err_wrong_backend);

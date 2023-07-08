@@ -16,6 +16,8 @@ extern tex_t        sk_default_tex_devtex;
 extern tex_t        sk_default_tex_error;
 extern tex_t        sk_default_cubemap;
 extern mesh_t       sk_default_quad;
+extern mesh_t       sk_default_sphere;
+extern mesh_t       sk_default_cube;
 extern shader_t     sk_default_shader;
 extern shader_t     sk_default_shader_blit;
 extern shader_t     sk_default_shader_pbr;

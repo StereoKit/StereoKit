@@ -52,7 +52,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float2 glow = FingerGlowEx(input.world.xyz, input.normal);
+	float2 glow = sk_finger_glow_ex(input.world.xyz, input.normal);
 	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
 	glow.x = max(0,1-(glow.x / border_affect_radius));
 	

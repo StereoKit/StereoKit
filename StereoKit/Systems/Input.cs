@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -177,12 +178,12 @@ namespace StereoKit
 		/// <summary>Sets whether or not StereoKit should render this hand
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
-		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value?1:0); } }
+		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
 		/// </summary>
-		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value?1:0); } }
+		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -433,6 +434,35 @@ namespace StereoKit
 		/// </param>
 		public static void HandClearOverride(Handed hand)
 			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+
+		/// <summary>StereoKit will use controller inputs to simulate an
+		/// articulated hand. This function allows you to add new simulated
+		/// poses to different controller or keyboard buttons!</summary>
+		/// <param name="handJoints25">25 joint poses, thumb to pinky, and root
+		/// to tip with two duplicate poses for the thumb root joint.</param>
+		/// <param name="button1">Controller button to activate this pose, can
+		/// be None if this is a keyboard only pose.</param>
+		/// <param name="andButton2">Second controller button required to
+		/// activate this pose. First must also be pressed. Can be None if it's
+		/// only a single button pose.</param>
+		/// <param name="orHotkey1">Keyboard key to activate this pose, can be
+		/// None if this is a controller only pose.</param>
+		/// <param name="andHotkey2">Second keyboard key required to activate
+		/// this pose. First must also be pressed. Can be None if it's only a
+		/// single key pose.</param>
+		/// <returns>Returns the id of the hand sim pose, so it can be removed
+		/// later.</returns>
+		public static HandSimId HandSimPoseAdd(Pose[] handJoints25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
+			=> NativeAPI.input_hand_sim_pose_add(handJoints25, button1, andButton2, orHotkey1, andHotkey2);
+		/// <summary>Lets you remove an existing hand pose.</summary>
+		/// <param name="id">Any valid or invalid hand sim pose id.</param>
+		public static void HandSimPoseRemove(HandSimId id)
+			=> NativeAPI.input_hand_sim_pose_remove(id);
+		/// <summary>This clears all registered hand simulation poses,
+		/// including the ones that StereoKit registers by default!</summary>
+		public static void HandSimPoseClear()
+			=> NativeAPI.input_hand_sim_pose_clear();
+
 		/// <summary>Sets whether or not StereoKit should render the hand for
 		/// you. Turn this to false if you're going to render your own, or 
 		/// don't need the hand itself to be visible.</summary>
@@ -441,7 +471,7 @@ namespace StereoKit
 		/// <param name="visible">True, StereoKit renders this. False, it
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
-			=> NativeAPI.input_hand_visible(hand, visible?1:0);
+			=> NativeAPI.input_hand_visible(hand, visible);
 		/// <summary>Does StereoKit register the hand with the physics
 		/// system? By default, this is true. Right now this is just a single
 		/// block collider, but later will involve per-joint colliders!
@@ -450,7 +480,7 @@ namespace StereoKit
 		/// both hands.</param>
 		/// <param name="solid">True? Physics! False? No physics.</param>
 		public static void HandSolid(Handed hand, bool solid)
-			=> NativeAPI.input_hand_solid(hand, solid?1:0);
+			=> NativeAPI.input_hand_solid(hand, solid);
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
@@ -467,6 +497,26 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+		/// <summary>This will inject a key press event into StereoKit's input
+		/// event queue. It will be processed at the start of the next frame,
+		/// and will be indistinguishable from a physical key press. Remember
+		/// to release your key as well!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to press.</param>
+		public static void KeyInjectPress(Key key) => NativeAPI.input_key_inject_press(key);
+		/// <summary>This will inject a key release event into StereoKit's
+		/// input event queue. It will be processed at the start of the next
+		/// frame, and will be indistinguishable from a physical key release.
+		/// This should be preceded by a key press!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to release.</param>
+		public static void KeyInjectRelease(Key key) => NativeAPI.input_key_inject_release(key);
 
 		/// <summary>Returns the next text character from the list of
 		/// characters that have been entered this frame! Will return '\0' if
@@ -490,8 +540,52 @@ namespace StereoKit
 		/// in the frame, you would read everything with `TextConsume`, and
 		/// then `TextReset` afterwards to reset the read list for the 
 		/// following `UI.Input`.</summary>
-		public static void TextReset() 
+		public static void TextReset()
 			=> NativeAPI.input_text_reset();
+		/// <summary>This will inject a UTF32 Unicode text character into
+		/// StereoKit's text input queue. It will be available at the start of
+		/// the next frame, and will be indistinguishable from normal text
+		/// entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="unicodeCharUTF32">An unsigned integer representing a
+		/// single UTF32 character.</param>
+		public static void TextInjectChar(uint unicodeCharUTF32) => NativeAPI.input_text_inject_char(unicodeCharUTF32);
+		/// <summary>This will convert a C# string into a number of UTF32
+		/// Unicode text characters, and inject them into StereoKit's text
+		/// input queue. It will be available at the start of the next frame,
+		/// and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A collection of characters to submit as text
+		/// input.</param>
+		public static void TextInjectChar(string chars) {
+			byte[] bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF32, Encoding.Unicode.GetBytes(chars));
+			for (int i = 0; i+4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
+		/// <summary>This will convert a byte array string into a number of
+		/// UTF32 Unicode text characters, and inject them into StereoKit's
+		/// text input queue. It will be available at the start of the next
+		/// frame, and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A byte array representing a string in some
+		/// encoded format.</param>
+		/// <param name="charEncoding">The encoding format of the byte array.
+		/// Note that an encoding of UTF32 will skip converting bytes to UTF32.
+		/// </param>
+		public static void TextInjectChar(byte[] chars, Encoding charEncoding)
+		{
+			byte[] bytes = charEncoding == Encoding.UTF32 && chars.Length % 4 == 0
+				? chars
+				: Encoding.Convert(charEncoding, Encoding.UTF32, chars);
+			for (int i = 0; i + 4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
 
 		/// <summary>The number of Pointer inputs that StereoKit is tracking
 		/// that match the given filter.

@@ -30,7 +30,7 @@ class DemoText : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 

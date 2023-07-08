@@ -20,6 +20,11 @@ sk_gpu.h
 //#define SKG_FORCE_DIRECT3D11
 //#define SKG_FORCE_OPENGL
 
+// You can disable use of D3DCompile to make building this easier sometimes,
+// since D3DCompile is primarily used to catch .sks shader files built from
+// Linux to run on Windows, and this may not be critical in all cases.
+//#define SKG_NO_D3DCOMPILER
+
 #if   defined( SKG_FORCE_NULL )
 #define SKG_NULL
 #elif defined( SKG_FORCE_DIRECT3D11 )
@@ -140,6 +145,7 @@ typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_depthstencil,
 	skg_tex_fmt_depth32,
 	skg_tex_fmt_depth16,
+	skg_tex_fmt_r8g8,
 } skg_tex_fmt_;
 
 typedef enum skg_fmt_ {
@@ -286,11 +292,24 @@ typedef struct skg_shader_meta_t {
 #if defined(SKG_DIRECT3D11)
 
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <d3d11.h>
-#include <dxgi1_6.h>
+
+// Forward declare our D3D structs, so we don't have to pay the cost for
+// including the d3d11 header in every file that includes this one.
+struct ID3D11Buffer;
+struct ID3D11ShaderResourceView;
+struct ID3D11UnorderedAccessView;
+struct ID3D11InputLayout;
+struct ID3D11VertexShader;
+struct ID3D11PixelShader;
+struct ID3D11ComputeShader;
+struct ID3D11BlendState;
+struct ID3D11RasterizerState;
+struct ID3D11DepthStencilState;
+struct ID3D11SamplerState;
+struct ID3D11RenderTargetView;
+struct ID3D11DepthStencilView;
+struct IDXGISwapChain1;
+struct ID3D11Texture2D;
 
 ///////////////////////////////////////////
 
@@ -373,6 +392,9 @@ typedef struct skg_swapchain_t {
 
 typedef struct skg_platform_data_t {
 	void *_d3d11_device;
+	void *_d3d11_deferred_context;
+	void *_d3d_deferred_mtx;
+	uint32_t _d3d_main_thread_id;
 } skg_platform_data_t;
 
 #elif defined(SKG_DIRECT3D12)
@@ -717,12 +739,20 @@ SKG_API void                    skg_shader_meta_release        (skg_shader_meta_
 
 #pragma comment(lib,"D3D11.lib")
 #pragma comment(lib,"Dxgi.lib")
-#pragma comment(lib,"d3dcompiler.lib")
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <d3d11.h>
 #include <dxgi1_6.h>
-#include <d3dcompiler.h>
-#include <math.h>
 
+#if !defined(SKG_NO_D3DCOMPILER)
+#pragma comment(lib,"d3dcompiler.lib")
+#include <d3dcompiler.h>
+#endif
+
+#include <math.h>
 #include <stdio.h>
 
 // Manually defining this lets us skip d3dcommon.h and dxguid.lib
@@ -937,7 +967,9 @@ void skg_draw_begin() {
 skg_platform_data_t skg_get_platform_data() {
 	skg_platform_data_t result = {};
 	result._d3d11_device = d3d_device;
-
+	result._d3d11_deferred_context = d3d_deferred;
+	result._d3d_deferred_mtx = d3d_deferred_mtx;
+	result._d3d_main_thread_id = d3d_main_thread;
 	return result;
 }
 
@@ -967,7 +999,10 @@ void skg_tex_target_bind(skg_tex_t *render_target) {
 	if (render_target->type != skg_tex_type_rendertarget)
 		return;
 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)render_target->width, (float)render_target->height);
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width    = (float)render_target->width;
+	viewport.Height   = (float)render_target->height;
+	viewport.MaxDepth = 1.0f;
 	d3d_context->RSSetViewports(1, &viewport);
 	d3d_context->OMSetRenderTargets(1, &render_target->_target_view, render_target->_depth_view);
 }
@@ -1005,7 +1040,12 @@ void skg_compute(uint32_t thread_count_x, uint32_t thread_count_y, uint32_t thre
 ///////////////////////////////////////////
 
 void skg_viewport(const int32_t *xywh) {
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT((float)xywh[0], (float)xywh[1], (float)xywh[2], (float)xywh[3]);
+	D3D11_VIEWPORT viewport = {};
+	viewport.TopLeftX = (float)xywh[0];
+	viewport.TopLeftY = (float)xywh[1];
+	viewport.Width    = (float)xywh[2];
+	viewport.Height   = (float)xywh[3];
+	viewport.MaxDepth = 1.0f;
 	d3d_context->RSSetViewports(1, &viewport);
 }
 
@@ -1126,13 +1166,35 @@ void skg_buffer_set_contents(skg_buffer_t *buffer, const void *data, uint32_t si
 		return;
 	}
 
-	D3D11_MAPPED_SUBRESOURCE resource;
-	HRESULT hr = d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-	if (SUCCEEDED(hr)) {
-		memcpy(resource.pData, data, size_bytes);
+	HRESULT hr = E_FAIL;
+	D3D11_MAPPED_SUBRESOURCE resource = {};
+
+	// Map the memory so we can access it on CPU! In a multi-threaded
+	// context this can be tricky, here we're using a deferred context to
+	// push this operation over to the main thread. The deferred context is
+	// then executed in skg_draw_begin.
+	bool on_main = GetCurrentThreadId() == d3d_main_thread;
+	if (on_main) {
+		hr = d3d_context->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	} else {
+		WaitForSingleObject(d3d_deferred_mtx, INFINITE);
+		hr = d3d_deferred->Map(buffer->_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	}
+	if (FAILED(hr)) {
+		skg_logf(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type: 0x%08X", hr);
+		if (!on_main) {
+			ReleaseMutex(d3d_deferred_mtx);
+		}
+		return;
+	}
+
+	memcpy(resource.pData, data, size_bytes);
+		
+	if (on_main) {
 		d3d_context->Unmap(buffer->_buffer, 0);
 	} else {
-		skg_logf(skg_log_critical, "Failed to set contents of buffer, may not be using a writeable buffer type: 0x%08X", hr);
+		d3d_deferred->Unmap(buffer->_buffer, 0);
+		ReleaseMutex(d3d_deferred_mtx);
 	}
 }
 
@@ -1285,6 +1347,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 		buffer      = file_data;
 		buffer_size = shader_size;
 	} else {
+#if !defined(SKG_NO_D3DCOMPILER)
 		DWORD flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #if !defined(NDEBUG)
 		flags |= D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG;
@@ -1313,6 +1376,10 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 
 		buffer      = compiled->GetBufferPointer();
 		buffer_size = compiled->GetBufferSize();
+#else
+		skg_log(skg_log_warning, "Raw HLSL not supported in this configuration! (SKG_NO_D3DCOMPILER)");
+		return {};
+#endif
 	}
 
 	// Create a shader from HLSL bytecode
@@ -1976,6 +2043,7 @@ bool skg_can_make_mips(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r32:
 	case skg_tex_fmt_depth16:
 	case skg_tex_fmt_r16:
+	case skg_tex_fmt_r8g8:
 	case skg_tex_fmt_r8: return true;
 	default: return false;
 	}
@@ -2012,6 +2080,7 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 			break;
 		case skg_tex_fmt_depth16:
 		case skg_tex_fmt_r16:
+		case skg_tex_fmt_r8g8:
 			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_r8:
@@ -2251,6 +2320,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		}
 		if (FAILED(hr)) {
 			skg_logf(skg_log_critical, "Failed mapping a texture: 0x%08X", hr);
+			if (!on_main) {
+				ReleaseMutex(d3d_deferred_mtx);
+			}
 			return;
 		}
 
@@ -2530,6 +2602,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	case skg_tex_fmt_r8:            return DXGI_FORMAT_R8_UNORM;
 	case skg_tex_fmt_r16:           return DXGI_FORMAT_R16_UNORM;
 	case skg_tex_fmt_r32:           return DXGI_FORMAT_R32_FLOAT;
+	case skg_tex_fmt_r8g8:          return DXGI_FORMAT_R8G8_UNORM;
 	default: return DXGI_FORMAT_UNKNOWN;
 	}
 }
@@ -2554,6 +2627,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case DXGI_FORMAT_R8_UNORM:            return skg_tex_fmt_r8;
 	case DXGI_FORMAT_R16_UNORM:           return skg_tex_fmt_r16;
 	case DXGI_FORMAT_R32_FLOAT:           return skg_tex_fmt_r32;
+	case DXGI_FORMAT_R8G8_UNORM:          return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
 	}
 }
@@ -2597,6 +2671,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	#include <gbm.h>
 	bool       egl_dri     = false;
 	#endif
+
 	EGLDisplay egl_display = EGL_NO_DISPLAY;
 	EGLContext egl_context;
 	EGLConfig  egl_config;
@@ -3181,7 +3256,7 @@ int32_t gl_init_egl() {
 
 	int32_t major=0, minor=0;
 	eglInitialize(egl_display, &major, &minor);
-
+	
 	#if defined(SKG_LINUX_EGL)
 	if (egl_display == EGL_NO_DISPLAY || eglGetError() != EGL_SUCCESS) {
 		skg_log(skg_log_info, "Trying EGL direct rendering from /dev/dri/renderD128");
@@ -4645,6 +4720,7 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return GL_R8;
 	case skg_tex_fmt_r16:           return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
+	case skg_tex_fmt_r8g8:          return GL_RG8;
 	default: return 0;
 	}
 }
@@ -4667,6 +4743,7 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case GL_R8:                 return skg_tex_fmt_r8;
 	case GL_R16UI:              return skg_tex_fmt_r16;
 	case GL_R32F:               return skg_tex_fmt_r32;
+	case GL_RG8:                return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
 	}
 }
@@ -4696,6 +4773,7 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:
 	case skg_tex_fmt_r16:
 	case skg_tex_fmt_r32:           return GL_RED;
+	case skg_tex_fmt_r8g8:          return GL_RG;
 	default: return 0;
 	}
 }
@@ -4720,6 +4798,7 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return GL_UNSIGNED_BYTE;
 	case skg_tex_fmt_r16:           return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_r32:           return GL_FLOAT;
+	case skg_tex_fmt_r8g8:          return GL_UNSIGNED_SHORT;
 	default: return 0;
 	}
 }
@@ -4784,8 +4863,8 @@ void skg_logf (skg_log_ level, const char *text, ...) {
 
 	skg_log(level, buffer);
 	free(buffer);
-	va_end(copy);
 	va_end(args);
+	va_end(copy);
 }
 
 ///////////////////////////////////////////
@@ -5551,6 +5630,7 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r8:            return sizeof(uint8_t );
 	case skg_tex_fmt_r16:           return sizeof(uint16_t);
 	case skg_tex_fmt_r32:           return sizeof(uint32_t);
+	case skg_tex_fmt_r8g8:          return sizeof(uint16_t);
 	default: return 0;
 	}
 }

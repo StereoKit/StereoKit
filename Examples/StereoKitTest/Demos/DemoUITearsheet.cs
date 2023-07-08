@@ -163,7 +163,7 @@ class DemoUITearsheet : ITest
 		UI.WindowEnd();
 	}
 
-	public void Update()
+	public void Step()
 	{
 		index = 0;
 		Hierarchy.Push(Demo.contentPose);

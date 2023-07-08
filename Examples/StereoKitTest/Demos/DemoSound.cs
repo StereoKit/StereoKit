@@ -101,7 +101,7 @@ class DemoSound : ITest
 	}
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		StepWand();
 

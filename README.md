@@ -40,13 +40,12 @@ StereoKit supports HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Deskt
 
 These are the binaries that currently ship in the NuGet package. StereoKit developers working from C/C++ should be fine to build any architecture from this list of platforms.
 
-| Platform | x86 | x64 | ARM | ARM64 |
-|----------|-----|-----|-----|-------|
-| Windows (Desktop/Win32) |      | X |   |   |
-| Windows (HoloLens/UWP)  |      | X | X | X |
-| Linux                   |      | X |   | X |
-| Android                 |      |   |   | X |
-| Web (WASM)              | Soon |   |   |   |
+| Platform | x64 | ARM | ARM64 |
+|----------|-----|-----|-------|
+| Windows (Desktop/Win32) | X |   |   |
+| Windows (HoloLens/UWP)  | X | X | X |
+| Linux                   | X |   | X |
+| Android                 |   |   | X |
 
 Architecture support has focused on 64 bit architectures, with exceptions for certain platforms. (If you require an additional architecture in the NuGet, please propose it as an Issue!) Here, UWP's ARM builds much faster than UWP's ARM64, and WASM only comes in 32 bit flavors.
 
@@ -70,25 +69,33 @@ SK.Run(() => {
 
 ![Hello World](/Tools/img/StereoKitMin.gif)
 
-## Building or Contributing
+## FAQ
 
-For those that wish to build the test project, or perhaps the whole library, there's a [guide to building StereoKit's repository](/BUILDING.md)! For those that wish to contribute features or fixes to StereoKit, awesome! Check out the [contributor's guide](/CONTRIBUTING.md). In addition, you may want to check with the maintainers on either GitHub Issues or the Discord channel to help make sure contributions meet the project's standards.
+- **How do I get started using StereoKit?**
+  
+  For the majority of users, [go here](https://stereokit.net/Pages/Guides/Getting-Started.html), this is a Visual Studio centric introduction to StereoKit, and contains the most resources for getting started! For VS Code users, [go here](https://stereokit.net/Pages/Guides/Getting-Started-VS-Code.html), and for C/C++ users, [see here](https://stereokit.net/Pages/Guides/Getting-Started-Native.html)!
+
+- **How do I use this repository?**
+  
+  This is where StereoKit's core SDK code resides, and the majority of users will not need to use it directly. C# developers will rely on [prebuilt packages from NuGet](https://www.nuget.org/packages/StereoKit/) and should refer to the getting started guides for instructions. If you wish to build StereoKit or the samples from scratch, see [the build guide](BUILDING.md)!
+
+- **I would like to contribute to StereoKit! How do I start?**
+  
+  First off, thank you! :) Get comfortable with [building StereoKit from source](/BUILDING.md), and then check out [our contributor's guide](/CONTRIBUTING.md). Our maintainers are easily available on the StereoKit Discord, as well as GitHub Issues/Discussions! We'll be happy to help you out with whatever's on your mind!
+
+- **Why is the MIT License appropriate for this project?**
+  
+  The MIT License is a copyright license that is easy to read and has a long history in open source. The MIT License is considered to be a low-friction choice for multiple downstream licensing models, including incorporation into commercial code.
 
 ## Dependencies
 
 Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
 
 - [OpenXR](https://www.khronos.org/openxr/)
-- [ReactPhysics3D](https://www.reactphysics3d.com/) - physics
-- [cgltf](https://github.com/jkuhlmann/cgltf) - gltf format support
-- [Sean Barrett's stb libraries](https://github.com/nothings/stb) - image and font format support
-- [QOI](https://github.com/phoboslab/qoi) - image format support
-- [miniaudio](https://github.com/dr-soft/miniaudio) - audio playback
-- [sokol_time](https://github.com/floooh/sokol) - cross platform high performance time
-- [TinyCThread](https://github.com/tinycthread/tinycthread) - for portable threading
-
-And some of my own libraries that I maintain separately from this repository.
-
-- [sk_gpu.h](https://github.com/StereoKit/sk_gpu) - cross platform graphics API
-- [ferr_hash.h](https://github.com/maluoi/header-libs) - string and data hashing
-- [array.h](https://github.com/maluoi/header-libs) - dynamic arrays
+- [ReactPhysics3D](https://www.reactphysics3d.com/) - Physics.
+- [cgltf](https://github.com/jkuhlmann/cgltf) - Gltf format support.
+- [Sean Barrett's stb libraries](https://github.com/nothings/stb) - Image and font format support.
+- [QOI](https://github.com/phoboslab/qoi) - Image format support.
+- [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.
+- [sokol_time](https://github.com/floooh/sokol) - Cross platform high performance time.
+- [TinyCThread](https://github.com/tinycthread/tinycthread) - For portable threading.

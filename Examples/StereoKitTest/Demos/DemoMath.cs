@@ -13,7 +13,7 @@ class DemoMath : ITest
 	Pose poseMeshRay    = new Pose(-.5f,  0,  0.5f, Quat.Identity);
 	Pose poseCross      = new Pose(0,     0,  0.5f, Quat.Identity);
 
-	public void Update()
+	public void Step()
 	{
 		Color colIntersect = Color.HSV(0, 0.8f, 1);
 		Color colTest      = Color.HSV(0, 0.6f, 1);

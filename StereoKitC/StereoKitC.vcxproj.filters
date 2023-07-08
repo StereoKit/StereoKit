@@ -133,9 +133,6 @@
     <ClCompile Include="tools\virtual_keyboard.cpp">
       <Filter>tools</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\stb_image.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="ui\stereokit_ui.cpp">
       <Filter>ui</Filter>
     </ClCompile>
@@ -152,9 +149,6 @@
       <Filter>systems</Filter>
     </ClCompile>
     <ClCompile Include="platforms\android.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
-    <ClCompile Include="platforms\flatscreen_input.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
     <ClCompile Include="platforms\linux.cpp">
@@ -207,6 +201,24 @@
     </ClCompile>
     <ClCompile Include="device.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_core.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\sdf.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_theming.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\simulator.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\none.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
+      <Filter>xr_backends</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -418,9 +430,6 @@
     <ClInclude Include="platforms\android.h">
       <Filter>platforms</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\flatscreen_input.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
     <ClInclude Include="platforms\linux.h">
       <Filter>platforms</Filter>
     </ClInclude>
@@ -478,6 +487,24 @@
     <ClInclude Include="device.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="ui\ui_core.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\sdf.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_theming.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\simulator.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\none.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -509,6 +536,9 @@
     </Filter>
     <Filter Include="xr_backends">
       <UniqueIdentifier>{16429ea8-7ffe-4668-8807-596c42670405}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{cc487034-d7b8-48bc-85ed-fba2b844bd5e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -21,7 +21,7 @@ class DocHandleNode : ITest
 		handleNode = model.FindNode("HandleNode");
 	}
 
-	public void Update()
+	public void Step()
 	{
 		UI.PushSurface(modelPose);
 

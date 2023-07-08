@@ -48,7 +48,7 @@ class TestFromThread : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		if (running) { frames += 1; Tests.RunForFrames(frames); }
 

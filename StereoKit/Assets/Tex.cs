@@ -283,7 +283,7 @@ namespace StereoKit
 		/// the async loading system. Lower values mean loading sooner.</param>
 		public void SetMemory(in byte[] imageFileData, bool sRGBData = true, bool blocking = false, int priority = 10)
 		{
-			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0, blocking, priority);
+			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData, blocking, priority);
 		}
 
 		/// <summary>This function is dependent on the graphics backend! It
@@ -318,7 +318,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned?1:0);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
@@ -384,8 +384,8 @@ namespace StereoKit
 		/// use when rendering to it.</summary>
 		/// <param name="depthFormat">The format of the depth texture, must
 		/// be a depth format type!</param>
-		public void AddZBuffer(TexFormat depthFormat)
-			=> NativeAPI.tex_add_zbuffer(_inst, depthFormat);
+		public Tex AddZBuffer(TexFormat depthFormat)
+			=> new Tex(NativeAPI.tex_add_zbuffer(_inst, depthFormat));
 		#endregion
 
 		#region Static Methods
@@ -436,7 +436,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, IntPtr.Zero, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -461,7 +461,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData?1:0, out lightingInfo, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, out lightingInfo, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -483,7 +483,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData?1:0, 10);
+			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData, 10);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -507,7 +507,7 @@ namespace StereoKit
 		/// to load.</returns>
 		public static Tex FromFiles(string[] files, bool sRGBData = true, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData?1:0, priority);
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -527,7 +527,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData = true, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData?1:0, priority);
+			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -552,7 +552,7 @@ namespace StereoKit
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData?1:0);
+			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -581,7 +581,7 @@ namespace StereoKit
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData ? 1 : 0);
+			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -605,7 +605,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, IntPtr.Zero, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -631,7 +631,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData?1:0, out lightingInfo, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 

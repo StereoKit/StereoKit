@@ -15,7 +15,7 @@ class DemoControllers : ITest
 		Default.MaterialHand[MatParamName.ColorTint] = new Color(1,1,1,1);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		ShowController(Handed.Right);
 		ShowController(Handed.Left);

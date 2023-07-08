@@ -2,10 +2,17 @@
 #include "stereokit.h"
 #include "sk_memory.h"
 #include "xr_backends/openxr_view.h"
+#include "xr_backends/openxr.h"
+#include "xr_backends/simulator.h"
 
 namespace sk {
 
 device_data_t device_data = {};
+
+///////////////////////////////////////////
+
+void device_data_init(device_data_t* data) {
+}
 
 ///////////////////////////////////////////
 
@@ -102,7 +109,5 @@ bool32_t device_has_eye_gaze() {
 bool32_t device_has_hand_tracking() {
 	return device_data.has_hand_tracking;
 }
-
-///////////////////////////////////////////
 
 }

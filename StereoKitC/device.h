@@ -20,6 +20,7 @@ struct device_data_t {
 
 extern device_data_t device_data;
 
+void device_data_init(device_data_t *data);
 void device_data_free(device_data_t *data);
 
 }

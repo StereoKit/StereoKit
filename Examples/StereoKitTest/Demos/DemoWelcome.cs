@@ -10,7 +10,7 @@ class DemoWelcome : ITest
 		logo = Model.FromFile("StereoKit.glb");
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Hierarchy.Push(Matrix.T(-0.8f, 0.05f, -0.7f));
 		float scale = 1.3f;

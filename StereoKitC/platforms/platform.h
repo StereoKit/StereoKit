@@ -13,18 +13,22 @@ namespace sk {
 //    platform_start_post_xr()
 // Flatscreen:
 //    platform_start_flat()
+//    simulator_init();
 //
 //// Main loop
 // Mixed Reality:
 //    platform_step_begin_xr()
 // Flatscreen:
 //    platform_step_begin_flat()
+//    simulator_step_begin();
+//    simulator_step_end();
 //    platform_step_end_flat()
 //
 //// Shutdown
 // Mixed Reality:
 //    openxr_shutdown()
 // Flatscreen:
+//    simulator_shutdown();
 //    platform_stop_flat()
 // platform_shutdown()
 

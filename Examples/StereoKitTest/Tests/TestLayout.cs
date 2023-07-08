@@ -4,7 +4,7 @@ class TestLayout : ITest
 {
 	public void Initialize() { Tests.RunForFrames(2); }
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("Tests/Layout.jpg", 1, 400, 600, 90, V.XYZ(0, -0.1f, 0.25f), V.XYZ(0, -0.1f, 0));
 

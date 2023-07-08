@@ -559,7 +559,6 @@ void openxr_preferred_format(int64_t &out_color_dx, int64_t &out_depth_dx) {
 	int64_t pixel_formats[] = {
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32),
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32),
-		skg_tex_fmt_to_native(skg_tex_fmt_rg11b10),
 		skg_tex_fmt_to_native(skg_tex_fmt_rgb10a2),
 		skg_tex_fmt_to_native(skg_tex_fmt_rgba32_linear),
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
@@ -779,7 +778,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.viewConfigurationType = layer.type;
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
+	xr_check(xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views),
+		"xrLocateViews [%s]")
 
 	// Copy over the FoV so it's available to the users
 	if (layer.view_count > 0 && layer.type != xr_display_primary) {
@@ -881,8 +881,9 @@ void openxr_views_update_fov() {
 	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
 	locate_info.viewConfigurationType = disp->type;
 	locate_info.displayTime           = xr_time;
-	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views);
+	locate_info.space                 = xr_head_space; // We don't need app space here, and app space may not be valid yet
+	if (XR_FAILED(xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views)))
+		return;
 
 	// Copy over the FoV so it's available to the users
 	if (disp->view_count > 0) {

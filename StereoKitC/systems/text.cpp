@@ -4,6 +4,7 @@
 #include "../systems/defaults.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
+#include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
@@ -33,6 +34,7 @@ struct text_buffer_t {
 	uint32_t       id;
 	int32_t        vert_count;
 	int32_t        vert_cap;
+	bool32_t       dirty_inds;
 };
 
 struct text_stepper_t {
@@ -73,8 +75,16 @@ void text_buffer_ensure_capacity(text_buffer_t &buffer, size_t characters) {
 	if (buffer.vert_count + (int32_t)characters*4 <= buffer.vert_cap)
 		return;
 
-	buffer.vert_cap = buffer.vert_count + (int)characters * 4;
-	buffer.verts    = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
+	buffer.vert_cap   = maxi(buffer.vert_count + (int)characters * 4, buffer.vert_cap * 2);
+	buffer.verts      = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
+	buffer.dirty_inds = true;
+}
+
+//////////////////////////////////////////
+
+void text_buffer_check_dirty_inds(text_buffer_t& buffer) {
+	if (!buffer.dirty_inds) return;
+	buffer.dirty_inds = false;
 
 	// regenerate indices
 	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
@@ -184,6 +194,12 @@ material_t text_style_get_material(text_style_t style) {
 
 float text_style_get_char_height(text_style_t style) {
 	return text_styles[style].char_height;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_char_height(text_style_t style, float height_meters) {
+	text_styles[style].char_height = height_meters;
 }
 
 ///////////////////////////////////////////
@@ -488,6 +504,7 @@ void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	if (text == nullptr) return 0;
+	if (size.x <= 0) return 0; // Zero width text isn't visible, and causes issues when trying to determine text height.
 
 	XMMATRIX tr;
 	if (hierarchy_enabled) {
@@ -563,13 +580,22 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	bool     clip       = fit & text_fit_clip;
 	char32_t c          = 0;
 	text_step_next_line<C, char_decode_b_T>(text, step);
-	while(char_decode_b_T(text, &text, &c)) {
-		const font_char_t *char_info = font_get_glyph(step.style->font, c);
-		if (!text_is_space(c)) {
-			if (clip) text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
-			else      text_add_quad        (step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
+	if (clip) {
+		while(char_decode_b_T(text, &text, &c)) {
+			const font_char_t *char_info = font_get_glyph(step.style->font, c);
+			if (!text_is_space(c)) {
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
+			}
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 		}
-		text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+	} else {
+		while (char_decode_b_T(text, &text, &c)) {
+			const font_char_t* char_info = font_get_glyph(step.style->font, c);
+			if (!text_is_space(c)) {
+				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
+			}
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+		}
 	}
 	return (step.start.y - step.pos.y) - step.style->char_height;
 }
@@ -584,13 +610,15 @@ float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, t
 
 ///////////////////////////////////////////
 
-void text_update() {
+void text_step() {
 	font_update_fonts();
 
 	for (int32_t i = 0; i < text_buffers.count; i++) {
 		text_buffer_t &buffer = text_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
+
+		text_buffer_check_dirty_inds(buffer);
 
 		mesh_set_verts    (buffer.mesh, buffer.verts, buffer.vert_count, false);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);

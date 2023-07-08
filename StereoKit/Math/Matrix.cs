@@ -424,6 +424,70 @@ namespace StereoKit
 			=> Matrix4x4.CreatePerspectiveFieldOfView(fovDegrees*Units.deg2rad, aspectRatio, nearClip, farClip);
 
 		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. With the known camera 
+		/// intrinsics, you can replicate its perspective!</summary>
+		/// <param name="imageResolution">The resolution of the image. This
+		/// should be the image's width and height in pixels.</param>
+		/// <param name="focalLengthPx">The focal length of camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		/// <remarks>Think of the optical axis as an imaginary line that passes through
+		/// the camera lens. In front of the camera lens, there's an image plane, 
+		/// perpendicular to the optical axis, where the image of the scene being 
+		/// captured is formed. Its distance is equal to the focal length of the camera 
+		/// from the center of the lens. Here, we find the ratio between the size of 
+		/// the image plane and distance from the camera in one unit distance and multiply 
+		/// it by the near clip distance to find a near plane that is parallel.</remarks>
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLengthPx, float nearClip, float farClip)
+		{
+			Vec2 nearPlaneDimensions = imageResolution / focalLengthPx * nearClip;
+			return Matrix4x4.CreatePerspective(nearPlaneDimensions.x, nearPlaneDimensions.y, nearClip, farClip);
+		}
+		
+		/// <summary>This creates a matrix used for projecting 3D geometry
+		/// onto a 2D surface for rasterization. With the known camera 
+		/// intrinsics, you can replicate its perspective!</summary>
+		/// <param name="imageResolution">The resolution of the image. This
+		/// should be the image's width and height in pixels.</param>
+		/// <param name="focalLengthPx">The focal length of the camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="principalPointPx">The principal point of the camera in pixels,
+		/// with image coordinates +X (pointing right) and +Y (pointing up).</param>
+		/// <param name="nearClip">Anything closer than this distance (in
+		/// meters) will be discarded. Must not be zero, and if you make this
+		/// too small, you may experience glitching in your depth buffer.</param>
+		/// <param name="farClip">Anything further than this distance (in
+		/// meters) will be discarded. For low resolution depth buffers, this
+		/// should not be too far away, or you'll see bad z-fighting 
+		/// artifacts.</param>
+		/// <returns>The final perspective matrix.</returns>
+		/// <remarks>The principal point is usually close to the center of the image
+		/// but there may be an offset due to various factors, like lens misalignment
+		/// or manufacturing imperfections. Think of the optical axis as an imaginary line
+		/// that passes through the camera lens. In front of the camera lens, there's an 
+		/// image plane, perpendicular to the optical axis, where the image of the scene 
+		/// being captured is formed. Its distance is equal to the focal length of the
+		/// camera from the center of the lens. The principal point is the point on the 
+		/// image plane where the optical axis intersects it, which may be offset from
+		/// the center of the image. Here, we calculate the left, right, bottom, and top
+		/// values of the view frustum from the principal point on the near plane.</remarks>
+		public static Matrix Perspective(Vec2 imageResolution, Vec2 focalLengthPx, Vec2 principalPointPx, float nearClip, float farClip)
+		{
+			float l = nearClip / focalLengthPx.x * -principalPointPx.x;
+			float r = nearClip / focalLengthPx.x * (imageResolution.x - principalPointPx.x);
+			float b = nearClip / focalLengthPx.y * (principalPointPx.y - imageResolution.y);
+			float t = nearClip / focalLengthPx.y * principalPointPx.y;
+			return Matrix4x4.CreatePerspectiveOffCenter(l, r, b, t, nearClip, farClip);
+		}
+
+		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Orthographic projection 
 		/// matrices will preserve parallel lines. This is great for 2D 
 		/// scenes or content.</summary>

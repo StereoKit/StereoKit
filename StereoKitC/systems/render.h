@@ -36,17 +36,19 @@ void          render_update_projection    ();
 const char   *render_fmt_name             (tex_format_ format);
 tex_format_   render_preferred_depth_fmt  ();
 void          render_blit_to_bound        (material_t material);
+void          render_set_sim_origin       (pose_t pose);
+void          render_set_sim_head         (pose_t pose);
 
 bool          render_init                 ();
-void          render_update               ();
+void          render_step                 ();
 void          render_shutdown             ();
 
 render_list_t render_list_create          ();
 void          render_list_release         (render_list_t list);
 void          render_list_push            (render_list_t list);
 void          render_list_pop             ();
-void          render_list_execute         (render_list_t list, render_layer_ filter,  uint32_t view_count);
-void          render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, material_t override_material);
+void          render_list_execute         (render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end);
+void          render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material);
 void          render_list_clear           (render_list_t list);
 
 } // namespace sk

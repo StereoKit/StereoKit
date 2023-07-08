@@ -173,6 +173,9 @@ void assets_releaseref(asset_header_t *asset) {
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
+	if (!asset_thread_enabled)
+		return;
+
 	// Manage the reference count
 	if (atomic_decrement(&asset_header->refs) == 0) {
 		mtx_lock(&assets_multithread_destroy_lock);
@@ -349,7 +352,7 @@ bool assets_init() {
 ///////////////////////////////////////////
 
 array_t<asset_load_callback_t> assets_load_call_list = {};
-void assets_update() {
+void assets_step() {
 	// If we have no asset threads for some reason (like WASM), then we'll need
 	// to make sure assets still get loaded here!
 	if (asset_threads.count <= 0) {
@@ -405,7 +408,7 @@ void assets_shutdown() {
 	cnd_broadcast(&asset_tasks_available);
 	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
-			assets_update();
+			assets_step();
 			thrd_yield();
 		}
 	}
@@ -762,7 +765,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 	while (asset->state < state && asset->state >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
+		assets_step();
 	}
 }
 
@@ -783,7 +786,7 @@ void assets_block_for_priority(int32_t priority) {
 	while (curr_priority <= priority && curr_priority != INT_MAX) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
+		assets_step();
 		curr_priority = assets_current_task_priority();
 	}
 }

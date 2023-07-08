@@ -120,6 +120,15 @@ namespace StereoKit
 		public static Pose Lerp(Pose a, Pose b, float percent)
 			=> new Pose(Vec3.Lerp(a.position, b.position, percent), Quat.Slerp(a.orientation, b.orientation, percent));
 
+		/// <summary>Creates a Pose that looks from one location in the
+		/// direction of another location. This leaves "Up" as the +Y axis.
+		/// </summary>
+		/// <param name="from">Starting location.</param>
+		/// <param name="at">Lookat location.</param>
+		/// <returns>A pose at position `from`, oriented to look towards `at`.
+		/// </returns>
+		public static Pose LookAt(Vec3 from, Vec3 at) => new Pose(from, Quat.LookAt(from, at));
+
 		/// <summary>A string representation of the Pose, in the format of
 		/// "position, Forward". Mostly for debug visualization.</summary>
 		/// <returns>A string representation of the Pose, in the format of

@@ -87,14 +87,13 @@ quat quat_inverse(const quat &a) {
 
 ///////////////////////////////////////////
 
-vec4 quat_to_axis_angle(quat a) {
+void quat_to_axis_angle(quat a, vec3* out_axis, float* out_rotation_deg) {
 	float    angle;
-	XMVECTOR xaxis;
-	XMQuaternionToAxisAngle(&xaxis, &angle, math_quat_to_fast(a));
+	XMVECTOR axis;
+	XMQuaternionToAxisAngle(&axis, &angle, math_quat_to_fast(a));
 
-	vec4 result = math_fast_to_vec4(xaxis);
-	result.w = angle * rad2deg;
-	return result;
+	if (out_axis)         *out_axis         = math_fast_to_vec3(axis);
+	if (out_rotation_deg) *out_rotation_deg = angle * rad2deg;
 }
 
 ///////////////////////////////////////////

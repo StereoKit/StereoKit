@@ -5,7 +5,7 @@ class DocLastElement : ITest
 	float sliderVal  = 0.5f;
 	Pose  windowPose = new Pose(0,0,-0.5f, Quat.LookDir(0,0,1));
 
-	public void Update()
+	public void Step()
 	{
 		/// :CodeSample: UI.LastElementHandActive UI.LastElementHandFocused UI.LastElementActive UI.LastElementFocused
 		/// ### Checking UI element status

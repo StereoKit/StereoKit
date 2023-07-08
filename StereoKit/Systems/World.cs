@@ -34,7 +34,7 @@ namespace StereoKit
 		/// <summary>This refers to the play boundary, or guardian system
 		/// that the system may have! Not all systems have this, so it's
 		/// always a good idea to check this first!</summary>
-		public static bool HasBounds  => NativeAPI.world_has_bounds() > 0;
+		public static bool HasBounds  => NativeAPI.world_has_bounds();
 		/// <summary>This is the size of a rectangle within the play
 		/// boundary/guardian's space, in meters if one exists. Check
 		/// `World.BoundsPose` for the center point and orientation of the
@@ -46,6 +46,24 @@ namespace StereoKit
 		/// Not all systems have a boundary, so be sure to check 
 		/// `World.HasBounds` first.</summary>
 		public static Pose BoundsPose => NativeAPI.world_get_bounds_pose();
+
+		/// <summary>The mode or "reference space" that StereoKit uses for
+		/// determining its base origin. This is determined by the initial
+		/// value provided in SKSettings.origin, as well as by support from the
+		/// underlying runtime. The mode reported here will _not_ necessarily
+		/// be the one requested in initialization, as fallbacks are
+		/// implemented using different available modes.</summary>
+		public static OriginMode OriginMode => NativeAPI.world_get_origin_mode();
+
+		/// <summary>This is relative to the base reference point and is NOT
+		/// in world space! The origin StereoKit uses is actually a base
+		/// reference point combined with an offset! You can use this to read
+		/// or set the offset from the OriginMode reference point. </summary>
+		public static Pose OriginOffset
+		{
+			get => NativeAPI.world_get_origin_offset();
+			set => NativeAPI.world_set_origin_offset(value);
+		}
 
 		/// <summary>What information should StereoKit use to determine when
 		/// the next world data refresh happens? See the `WorldRefresh` enum
@@ -87,7 +105,7 @@ namespace StereoKit
 		/// <returns>A Pose representing the current orientation of the
 		/// spatial node.</returns>
 		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime);
+			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime);
 
 		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
 		/// based on its current position and rotation! Check
@@ -105,7 +123,7 @@ namespace StereoKit
 		/// <returns>True if FromSpatialNode succeeded, and false if it failed.
 		/// </returns>
 		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime, out pose) > 0;
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime, out pose);
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
 		/// into SteroKit's coordinate system. This can be great for
@@ -142,9 +160,9 @@ namespace StereoKit
 		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
-			int    result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
+			bool   result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
 			Marshal.Release(unknown);
-			return result>0;
+			return result;
 		}
 
 		/// <summary>World.RaycastEnabled must be set to true first! 
@@ -162,7 +180,7 @@ namespace StereoKit
 		/// <returns>True if an intersection is detected, false if raycasting
 		/// is disabled, or there was no intersection.</returns>
 		public static bool Raycast(Ray ray, out Ray intersection)
-			=> NativeAPI.world_raycast(ray, out intersection) > 0;
+			=> NativeAPI.world_raycast(ray, out intersection);
 
 		/// <summary>Off by default. This tells StereoKit to load up and
 		/// display an occlusion surface that allows the real world to
@@ -174,8 +192,8 @@ namespace StereoKit
 		/// possible. Loading occlusion data is asynchronous, so occlusion
 		/// may not occur immediately after setting this flag.</summary>
 		public static bool OcclusionEnabled { 
-			get => NativeAPI.world_get_occlusion_enabled() > 0;
-			set => NativeAPI.world_set_occlusion_enabled(value?1:0); }
+			get => NativeAPI.world_get_occlusion_enabled();
+			set => NativeAPI.world_set_occlusion_enabled(value); }
 
 		/// <summary>Off by default. This tells StereoKit to load up 
 		/// collision meshes for the environment, for use with World.Raycast.
@@ -185,8 +203,8 @@ namespace StereoKit
 		/// surfaces may not be available immediately after setting this
 		/// flag.</summary>
 		public static bool RaycastEnabled { 
-			get => NativeAPI.world_get_raycast_enabled() > 0;
-			set => NativeAPI.world_set_raycast_enabled(value?1:0); }
+			get => NativeAPI.world_get_raycast_enabled();
+			set => NativeAPI.world_set_raycast_enabled(value); }
 
 		/// <summary>By default, this is a black(0,0,0,0) opaque unlit
 		/// material that will occlude geometry, but won't show up as visible

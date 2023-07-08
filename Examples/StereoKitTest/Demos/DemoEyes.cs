@@ -1,5 +1,4 @@
-﻿using System;
-using StereoKit;
+﻿using StereoKit;
 using System.Collections.Generic;
 
 class DemoEyes : ITest
@@ -22,10 +21,10 @@ class DemoEyes : ITest
 	}
 	public void Shutdown  () { }
 
-	public void Update()
+	public void Step()
 	{
-		Plane  plane    = new Plane(new Vec3(0.5f,0,-0.5f), V.XYZ(-0.5f,0,0.5f));
-		Matrix quadPose = Matrix.TRS(new Vec3(0.54f, -0.2f, -0.468f), Quat.LookDir(plane.normal), 0.5f);
+		Matrix quadPose = Matrix.S(0.4f) * Demo.contentPose;
+		Plane  plane    = new Plane(quadPose * Vec3.Zero, quadPose.TransformNormal(Vec3.Forward));
 		Mesh.Quad.Draw(Material.Default, quadPose);
 		if (Input.Eyes.Ray.Intersect(plane, out Vec3 at))
 		{
@@ -53,9 +52,7 @@ class DemoEyes : ITest
 
 		Lines.Add(points.ToArray());
 
-		Demo.ShowSummary(title, description);
-
-		if (Backend.XRType == BackendXRType.OpenXR)
+		if (Backend.XRType == BackendXRType.OpenXR && Device.HasEyeGaze)
 		{
 			if (Backend.OpenXR.EyesSampleTime != lastEyesSampleTime)
 			{
@@ -66,5 +63,7 @@ class DemoEyes : ITest
 			double sampleFrequency = uniqueSamplesCount / (Time.Total - demoStartTime);
 			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.75f, -0.1f)) * quadPose);
 		}
+
+		Demo.ShowSummary(title, description);
 	}
 }

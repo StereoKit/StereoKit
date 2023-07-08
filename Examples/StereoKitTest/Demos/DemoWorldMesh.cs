@@ -30,7 +30,7 @@ class DemoWorldMesh : ITest
 	public void Shutdown()
 		=> World.OcclusionMaterial = oldMaterial;
 
-	public void Update() {
+	public void Step() {
 		UI.WindowBegin("Settings", ref windowPose, Vec2.Zero);
 
 		if (!SK.System.worldOcclusionPresent)
