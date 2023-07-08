@@ -148,6 +148,24 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
+#if defined(SK_DEBUG)
+XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFlagsEXT severity,
+                                                   XrDebugUtilsMessageTypeFlagsEXT,
+                                                   const XrDebugUtilsMessengerCallbackDataEXT *msg,
+                                                   void*) {
+	// Print the debug message we got! There's a bunch more info we could
+	// add here too, but this is a pretty good start, and you can always
+	// add a breakpoint this line!
+	log_ level = log_diagnostic;
+	if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
+	else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
+	log_writef(level, "%s: %s", msg->functionName, msg->message);
+
+	// Returning XR_TRUE here will force the calling function to fail
+	return (XrBool32)XR_FALSE;
+}
+#endif
+
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
 	xr_system_success = false;
@@ -248,18 +266,8 @@ bool openxr_create_system() {
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT, const XrDebugUtilsMessengerCallbackDataEXT *msg, void*) {
-		// Print the debug message we got! There's a bunch more info we could
-		// add here too, but this is a pretty good start, and you can always
-		// add a breakpoint this line!
-		log_ level = log_diagnostic;
-		if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
-		else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
-		log_writef(level, "%s: %s", msg->functionName, msg->message);
 
-		// Returning XR_TRUE here will force the calling function to fail
-		return (XrBool32)XR_FALSE;
-	};
+	debug_info.userCallback = openxr_debug_messenger_callback;
 	// Start up the debug utils!
 	if (xr_ext_available.EXT_debug_utils)
 		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
