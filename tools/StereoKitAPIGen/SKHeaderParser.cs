@@ -300,8 +300,11 @@ static class SKHeaderParser
 		SKParameter result = new();
 		result.name         = param.Name;
 		result.nameFlagless = "";
-		result.type         = ParseType(param.Type);
 		result.defaultValue = param.InitExpression;
+		result.type         = ParseType(param.Type);
+		if (result.type.functionPtr != null)
+			result.type.name = param.Name;
+
 		string[] words = param.Name.Split('_');
 		foreach (string word in words)
 		{

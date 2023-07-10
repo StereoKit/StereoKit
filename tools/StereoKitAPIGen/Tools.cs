@@ -162,7 +162,7 @@ class Tools
 		bool first = true;
 		for (int i = 0; i < words.Length; i++)
 		{
-			if (first && words[i].Length > 0)
+			if (!first && words[i].Length > 0)
 				words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
 			if (words[i] != "") first = false;
 		}
