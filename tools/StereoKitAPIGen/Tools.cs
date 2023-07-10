@@ -1,5 +1,7 @@
 ﻿using CppAst;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 ///////////////////////////////////////////
 
@@ -78,35 +80,97 @@ struct SKType
 
 class Tools
 {
-	static bool IsCommand(CppComment cmd)
+	public static string ToStrComment(string comment, string prefix, int columns = 80)
 	{
-		if (cmd.Kind == CppCommentKind.InlineCommand) return true;
-		if (cmd.Kind == CppCommentKind.Text) { string txt = ((CppCommentText)cmd).Text; return txt == "@" || txt == "&" || txt == "<" || txt == ">"; }
-		return false;
-	}
-
-	public static string BuildCommentSummary(CppComment comment)
-	{
-		// Assemble a comment that ignores inline commands
-		string txt        = "";
-		var    children   = comment.Children[0].Children;
-		for (int i = 0; i < children.Count; i++)
+		int    tabExtra  = prefix.Count(c => c == '\t') * 3;
+		string lineStart = $"{prefix}";
+		string result = "";
+		string[] paragraphs = comment.Split("\n");
+		for (int i = 0; i < paragraphs.Length; i++)
 		{
-			bool isCommand   = IsCommand(children[i]);
-			bool nextCommand = i+1 == children.Count
-				? false
-				: IsCommand(children[i+1]);
-
-			if (children[i] is CppCommentInlineCommand) txt += "@" + ((CppCommentInlineCommand)children[i]).CommandName; 
-			else                                        txt += children[i].ToString();
-			
-			if (!(nextCommand || isCommand) && i+1 < children.Count)
-				txt += "\n";
+			string[] words = paragraphs[i].Split(" ");
+			string line = lineStart;
+			for (int w = 0; w < words.Length; w++)
+			{
+				if (line.Length + words[w].Length + 2 + tabExtra > columns)
+				{
+					result += line;
+					line = "\r\n" + lineStart;
+				}
+				line += " " + words[w];
+			}
+			result += line;
+			if (i < paragraphs.Length - 1)
+				result += $"\r\n{prefix}\r\n";
 		}
-		txt = txt.Replace("&", "&amp;");
-		txt = txt.Replace("<", "&lt;");
-		txt = txt.Replace(">", "&gt;");
-
-		return txt;
+		return result;
 	}
+
+	///////////////////////////////////////////
+
+	public static string BuildExpression(CppExpression exp, Func<string, string> renamer)
+	{
+		string result = "";
+		while (exp != null)
+		{
+			CppExpression curr = exp;
+			if (exp is CppBinaryExpression bExp) curr = bExp.Arguments[1];
+			
+			switch(curr.Kind)
+			{
+				case CppExpressionKind.DeclRef: {
+					result = renamer(((CppRawExpression)curr).Text) + result;
+				} break;
+				case CppExpressionKind.UnaryOperator: {
+					CppExpression arg  = ((CppUnaryExpression)curr).Arguments[0];
+					string        name = arg.ToString();
+					if (arg.Kind == CppExpressionKind.DeclRef) {
+						name = renamer(name);
+					}
+					result = ((CppUnaryExpression)curr).Operator + name + result;
+				} break;
+				default: result = curr + result; break;
+			}
+
+			if (exp is CppBinaryExpression bExp2) {
+				result = " " + bExp2.Operator + " " + result;
+				exp    = bExp2.Arguments[0];
+			} else {
+				exp = null;
+			}
+		}
+		return result;
+	}
+
+	///////////////////////////////////////////
+
+	public static string SnakeToCamelU(string snake)
+	{
+		string[] words = snake.Split("_");
+
+		for (int i = 0; i < words.Length; i++)
+			words[i] = words[i].Length > 0 ? char.ToUpper(words[i][0]) + words[i].Substring(1) : "";
+		return string.Join("", words);
+	}
+
+	///////////////////////////////////////////
+
+	public static string SnakeToCamelL(string snake)
+	{
+		string[] words = snake.Split("_");
+
+		bool first = true;
+		for (int i = 0; i < words.Length; i++)
+		{
+			if (first && words[i].Length > 0)
+				words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
+			if (words[i] != "") first = false;
+		}
+		return string.Join("", words);
+	}
+
+	///////////////////////////////////////////
+
+	public static string RemovePrefix(string str, string prefix)
+		=> str.StartsWith(prefix) ? str.Substring(prefix.Length) : str;
 }

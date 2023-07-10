@@ -119,9 +119,9 @@ class Program
 		// And create bindings for it all!
 		switch(lang)
 		{
-			case BindLang.CSharp: BindCSharp.Bind(ast, destFolder); break;
 			case BindLang.Zig:    BindZig   .Bind(ast, destFolder); break;
-			case BindLang.Debug:  BindDebug .Bind(parseData);       break;
+			case BindLang.CSharp: BindCSharp.Bind(parseData, destFolder); break;
+			case BindLang.Debug:  BindDebug .Bind(parseData);             break;
 		}
 	}
 

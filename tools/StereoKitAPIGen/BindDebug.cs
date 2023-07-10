@@ -29,11 +29,11 @@ class BindDebug
 	{
 		foreach (var e in data.enums)
 		{
-			Console.WriteLine(ToStrComment(e.comment, "//"));
+			Console.WriteLine(Tools.ToStrComment(e.comment, "//"));
 			Console.WriteLine($"{(e.isBitflag?"flag":"enum")} {e.name}");
 			foreach (var i in e.items)
 			{
-				Console.WriteLine(ToStrComment(i.comment, "  //"));
+				Console.WriteLine(Tools.ToStrComment(i.comment, "  //"));
 				Console.WriteLine(i.value == null ? $"  {i.name}" : $"  {i.name} = {i.value}");
 			}
 			Console.WriteLine();
@@ -97,33 +97,6 @@ class BindDebug
 		if (type.pointerLvl == 1) result += "*";
 		if (type.pointerLvl == 2) result += "**";
 		if (type.pointerLvl == 3) result += "***";
-		return result;
-	}
-
-	///////////////////////////////////////////
-
-	static string ToStrComment(string comment, string prefix, int columns = 80)
-	{
-		string   lineStart  = $"{prefix}";
-		string   result     = "";
-		string[] paragraphs = comment.Split("\n");
-		for (int i = 0; i < paragraphs.Length; i++)
-		{
-			string[] words = paragraphs[i].Split(" ");
-			string   line  = lineStart;
-			for (int w = 0; w < words.Length; w++)
-			{
-				if (line.Length + words[w].Length+1 > columns)
-				{
-					result += line;
-					line = "\n" + lineStart;
-				}
-				line += " " + words[w];
-			}
-			result += line;
-			if (i<paragraphs.Length-1)
-				result += $"\n{prefix}\n";
-		}
 		return result;
 	}
 }
