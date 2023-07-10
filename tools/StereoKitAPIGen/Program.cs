@@ -1,4 +1,5 @@
 ﻿using CppAst;
+using StereoKitAPIGen;
 using System;
 using System.Collections.Generic;
 
@@ -7,6 +8,7 @@ class Program
 	enum BindLang
 	{
 		None,
+		Debug,
 		CSharp,
 		Zig,
 	}
@@ -100,11 +102,26 @@ class Program
 		Console.WriteLine($"Parsing {files.Count} file(s)");
 		CppCompilation ast = CppParser.ParseFiles(files);
 
+		// Any exception here is room for improvement
+		ModuleException[] moduleExceptions = new[]
+		{
+			// These modules are multiple word names, which isn't so clear
+			new ModuleException { name = "model_node",       prefix = "model_node_" },
+			new ModuleException { name = "text_style",       prefix = "text_style_" },
+			// Nested modules don't have great support in the header
+			new ModuleException { name = "backend_openxr",  prefix = "backend_openxr_" },
+			new ModuleException { name = "backend_android", prefix = "backend_android_" },
+			new ModuleException { name = "backend_d3d11",   prefix = "backend_d3d11_" },
+			new ModuleException { name = "backend_opengl",  prefix = "backend_opengl_" },
+		};
+		SKHeaderData parseData = SKHeaderParser.Parse(files, moduleExceptions);
+
 		// And create bindings for it all!
 		switch(lang)
 		{
 			case BindLang.CSharp: BindCSharp.Bind(ast, destFolder); break;
 			case BindLang.Zig:    BindZig   .Bind(ast, destFolder); break;
+			case BindLang.Debug:  BindDebug .Bind(parseData);       break;
 		}
 	}
 
@@ -122,6 +139,6 @@ class Program
                   parsing and converting. You can provide more than one file
                   this way.
     -l language   Binding language. What bindings are generated from the the 
-                  provided header files. Valid options are: CSharp, Zig.");
+                  provided header files. Valid options are: Debug, CSharp, Zig.");
 	}
 }
