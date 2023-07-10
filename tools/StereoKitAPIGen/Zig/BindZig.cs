@@ -1,37 +1,44 @@
 ﻿using CppAst;
+using StereoKitAPIGen;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 class BindZig
 {
-	public static void Bind(CppCompilation ast, string outputFolder)
+	public static void Bind(SKHeaderData data, string outputFolder)
 	{
-		StereoKitTypes.Parse(ast);
-		
 		StringBuilder text = new StringBuilder();
-		text.Append(@"// This is a generated file based on stereokit.h! Please don't modify it
-// directly :) Instead, modify the header file, and run the StereoKitAPIGen
-// project.
+		text.Append(
+			"""
+			// This is a generated file based on stereokit.h! Please don't modify it
+			// directly :) Instead, modify the header file, and run the StereoKitAPIGen
+			// project.
 
-const bool32 = i32;
-const TextStyle = u32;
+			const bool32 = i32;
+			const TextStyle = u32;
 
-");
+			""");
 
-		var ns = ast.Namespaces[0];
-		foreach (var e in ns.Enums)
+		/*foreach (var e in data.enums)
 		{
-			BuildEnum(text, e, 0);
-			text.AppendLine("");
-		}
+			BuildEnum(text, e);
+			text.AppendLine();
+		}*/
 
-		Dictionary<string, string> delegates = new Dictionary<string, string>();
-		foreach (var m in ParseModules(ast))
-			m.BuildRawModule(text, delegates, "");
+		foreach (var m in data.modules)
+			if (m.fields.Length != 0)
+				BuildModule(data, text, m);
+
+		foreach (var m in data.modules)
+			if (m.fields.Length == 0 && m.isAsset)
+				BuildModule(data, text, m);
+
+		foreach (var m in data.modules)
+			if (m.fields.Length == 0 && !m.isAsset)
+				BuildModule(data, text, m);
 
 		File.WriteAllText(Path.Combine(outputFolder, "StereoKit.zig"), text.ToString());
 		Console.WriteLine(text.ToString());
@@ -39,96 +46,124 @@ const TextStyle = u32;
 
 	///////////////////////////////////////////
 
-	static void BuildEnum(StringBuilder enumText, CppEnum e, int indentPrefix)
+	static string ZigTypeName(string sourceName)
+		=> NameOverrides.TryGet(sourceName, out string custom)
+			? custom
+			: Tools.SnakeToCamelU(sourceName.EndsWith("_t") ? sourceName[..^2] : sourceName);
+
+	static string ZigMethodName(string sourceName, string modulePrefix)
+		=> NameOverrides.TryGet(sourceName, out string custom)
+			? custom
+			: Tools.SnakeToCamelU(sourceName.StartsWith(modulePrefix) ? sourceName[modulePrefix.Length..] : sourceName);
+
+	///////////////////////////////////////////
+
+	static string ZigFieldName(string sourceName)
+		=> NameOverrides.TryGet(sourceName, out string custom)
+			? custom
+			: Tools.SnakeToCamelL(sourceName);
+
+	static string ZigParamName(string sourceName)
+		=> ZigFieldName(sourceName);
+
+	///////////////////////////////////////////
+
+	static void BuildEnum(StringBuilder text, SKEnum e)
 	{
-		bool flags = false;
-		foreach (var i in e.Items)
-		{
-			if (i.ValueExpression != null && i.ValueExpression.ToString().Contains("<<"))
-			{
-				flags = true;
-				break;
-			}
-		}
+		string enumName = ZigTypeName(e.name);
 
-		string prefix = new string('\t', indentPrefix);
+		Func<string, string> enumItemName = (str) =>
+			NameOverrides.TryGet(str, out string custom)
+				? custom
+				: Tools.SnakeToCamelU(Tools.RemovePrefix(str, e.name));
+		Func<string, string> innerItemName = (str) =>
+			enumName + "." + (NameOverrides.TryGet(str, out string custom)
+				? custom
+				: Tools.SnakeToCamelU(Tools.RemovePrefix(str, e.name)));
 
-		if (e.Comment != null) enumText.AppendLine(BuildCommentSummary(e.Comment, indentPrefix));
-		//if (flags)             enumText.AppendLine($"{prefix}[Flags]");
-		string enumName = CSTypes.SnakeToCamel(e.Name, true, 0);
-		enumText.AppendLine($"{prefix}pub const {enumName} = enum(c_int) {{");
-		foreach (var i in e.Items)
+		text.AppendLine(Tools.ToStrComment(e.comment, "//"));
+		text.AppendLine($"pub const {enumName} = enum(c_int) {{");
+		foreach (var i in e.items)
 		{
-			if (i.Comment         != null) enumText.AppendLine(BuildCommentSummary(i.Comment, indentPrefix+1));
-			if (i.ValueExpression == null) enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length)},");
-			else                           enumText.AppendLine($"{prefix}	{CSTypes.SnakeToCamel(i.Name, true, e.Name.Length),-12} = {BindCSharp.BuildExpression(i.ValueExpression, e.Name, enumName+".")},");
+			text.AppendLine(Tools.ToStrComment(i.comment, "\t//"));
+			text.AppendLine(i.value == null 
+				? $"\t{enumItemName(i.name)},"
+				: $"\t{enumItemName(i.name)} = {Tools.BuildExpression(i.value, innerItemName)},");
 		}
-		enumText.AppendLine($"{prefix}}};");
+		text.AppendLine($"}};");
 	}
 
 	///////////////////////////////////////////
 
-	static List<ZigModule> ParseModules(CppCompilation ast)
+	static void BuildModule(SKHeaderData data, StringBuilder text, SKModule m)
 	{
-		Dictionary<string, ZigModule> modules = new Dictionary<string, ZigModule>();
+		SKFunction[] moduleFunctions = SKHeaderData.GetModuleFunctions(m, data.functions);
 
-		foreach (var c in ast.Namespaces[0].Classes)
+		text.AppendLine($"\r\n///////////////////////////////////////////\r\n");
+		text.AppendLine($"pub const {ZigTypeName(m.name)} = extern struct {{");
+		if (m.isAsset)
+			text.AppendLine($"\t_inst: ?*opaque{{}} = null,\r\n");
+
+		foreach (var f in m.fields)
 		{
-			string modName = CSTypes.SnakeToCamel(c.Name.EndsWith("_t")
-				? c.Name.Substring(0,c.Name.Length-2)
-				: c.Name, true, 0);
+			// Default values need to know a bit more about the type
+			//string defaultVal = 
+			//	paramType.source.TypeKind == CppTypeKind.Primitive ||
+			//	(paramType.source.TypeKind == CppTypeKind.Typedef && ((CppTypedef)paramType.source).ElementType.TypeKind == CppTypeKind.Primitive)
+			//		? "0"
+			//		: ".{}";
+			//text.AppendLine($"{ZigFieldName(f.name) + ":"} {ZigTypeToStr(f.type)} = {defaultVal},");
+			text.AppendLine($"\t{ZigFieldName(f.name) + ":"} {ZigTypeToStr(f.type)},");
+		}
+		if (m.fields.Length > 0) text.AppendLine();
 
-			ZigModule mod = null;
-			if (!modules.TryGetValue(modName, out mod))
-			{
-				mod = new ZigModule(modName);
-				modules.Add(modName, mod);
-			}
 
-			if (c.Name.StartsWith("_"))
-			{
-				mod.isAsset = true;
-				continue;
-			}
+		// These are the directly imported functions
+		foreach (var f in moduleFunctions)
+		{
+			string paramList = f.parameters.Aggregate("", (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
+			if (paramList != "") paramList = paramList[..^2];
+			text.AppendLine($"\textern fn {f.name}({paramList}) {ZigTypeToStr(f.returnType)};");
+		}
+		if (moduleFunctions.Length > 0) text.AppendLine();
 
-			foreach (var f in c.Fields)
-				mod.AddField(f);
+
+		// These are idiomatic Zig wrappers for the bound functions
+		foreach (var f in moduleFunctions)
+		{
+			SKFunctionRelation rel = SKHeaderData.GetFunctionRelation(m, f);
+
+			string paramList = rel == SKFunctionRelation.Instance ? $"self: *{ZigTypeName(m.name)}, " : "";
+			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
+			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
+			if (paramList != "") paramList = paramList[..^2];
+			text.AppendLine($"\tpub fn {ZigMethodName(f.name, m.modulePrefix)}({paramList}) {ZigTypeToStr(f.returnType)} {{");
+			if (!f.returnType.IsVoid) text.Append("\t\treturn ");
+			else                      text.Append("\t\t");
+			text.Append(f.name+"(");
+			string argList = "";
+			if (rel == SKFunctionRelation.Instance) argList = "self._inst.?, ";
+			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}, ");
+			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}, ");
+			if (argList != "") argList = argList[..^2];
+			text.AppendLine($"{argList});");
+			text.AppendLine("\t}");
 		}
 
-		foreach (var f in ast.Functions)
-		{
-			string[]  words   = f.Name.Split('_');
-			ZigModule mod     = null;
-			string    modName = CSTypes.SnakeToCamel(words[0], true, 0);
-			if (!modules.TryGetValue(modName, out mod))
-			{
-				mod = new ZigModule(modName);
-				modules.Add(modName, mod);
-			}
-
-			mod.AddFunction(f);
-		}
-
-		return new List<ZigModule>(modules.Values);
+		text.AppendLine("};");
 	}
 
 	///////////////////////////////////////////
 
-	public static string BuildCommentSummary(CppComment comment, int indent)
+	static string ZigTypeToStr(SKType type)
 	{
-		string   txt    = Tools.BuildCommentSummary(comment);
-		string   prefix = new string('\t', indent) + "// ";
-		string[] lines  = txt.Split("\n");
-
-		for (int i = 0; i < lines.Length; i++)
-			lines[i] = prefix + lines[i];
-		
-		return string.Join("\r\n", lines);
+		// This needs more work
+		string zigName = ZigTypeName(type.name);
+		if          (type.arraySize1 > 0) return $"[{type.arraySize1}]{(type.isConst ? "const " : "")}{zigName}";
+		else return (type.pointerLvl > 0 ? "*" : "") + zigName;
 	}
 
-	///////////////////////////////////////////
-	
-	public static string TypeToName(SKType type)
+	/*public static string TypeToName(SKType type)
 	{
 		if      (type.special == SKSpecialType.VoidPtr) return "?*anyopaque";
 		else if (type.special == SKSpecialType.Utf8   ) return type.constant ? "[*]const u8"  : "[*]u8";
@@ -149,5 +184,5 @@ const TextStyle = u32;
 		else return type.array
 			? $"[{(type.fixedArray != 0? type.fixedArray:"*")}]{(type.constant?"const ":"")}{CSTypes.SnakeToCamel(type.raw, true, 0)}"
 			: (type.constant?"":"")+(type.pointer > 0 ? "*":"")+CSTypes.SnakeToCamel(type.raw, true, 0);
-	}
+	}*/
 }

@@ -63,7 +63,7 @@ class CSTypes
 
 	///////////////////////////////////////////
 	
-	public static string CallbackDefinition(CppFunctionType fn, string varName)
+	/*public static string CallbackDefinition(CppFunctionType fn, string varName)
 	{
 		bool isVoidRet = fn.ReturnType.TypeKind == CppTypeKind.Primitive && ((CppPrimitiveType)fn.ReturnType).Kind == CppPrimitiveKind.Void;
 		if (isVoidRet == true && fn.Parameters.Count == 0)
@@ -91,11 +91,11 @@ class CSTypes
 	public static string CallbackParameter(CppFunctionType fn, string varName)
 	{
 		return $"[MarshalAs(UnmanagedType.FunctionPtr)] {CallbackType(fn, varName)}";
-	}
+	}*/
 
 	///////////////////////////////////////////
 
-	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions, bool constant, int pointer, int arraySize)
+	/*public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions, bool constant, int pointer, int arraySize)
 	{
 		// const
 		if (type.TypeKind == CppTypeKind.Qualified && ((CppQualifiedType)type).Qualifier == CppTypeQualifier.Const)
@@ -168,6 +168,6 @@ class CSTypes
 			: new SKType(type, SnakeToCamel(name, true, 0), dir, array, constant, SKSpecialType.None, arraySize);
 	}
 	public static SKType TypeName(CppType type, string varName, Dictionary<string, string> delegateDefinitions)
-		=> TypeName(type, varName, delegateDefinitions, false, 0, 0);
+		=> TypeName(type, varName, delegateDefinitions, false, 0, 0);*/
 	
 }

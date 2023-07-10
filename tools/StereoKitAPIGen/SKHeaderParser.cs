@@ -62,6 +62,8 @@ struct SKType
 	public bool   isConst;
 	public int    pointerLvl;
 	public Opt<SKFunction> functionPtr;
+
+	public bool IsVoid => name == "void" && arraySize1 == 0 && arraySize2 == 0 && pointerLvl == 0 && isConst == false && functionPtr == null;
 }
 
 ///////////////////////////////////////////

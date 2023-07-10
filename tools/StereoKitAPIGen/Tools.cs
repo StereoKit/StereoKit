@@ -24,7 +24,7 @@ enum SKSpecialType
 
 ///////////////////////////////////////////
 
-struct SKType
+/*struct SKType
 {
 	public string          raw;
 	public SKTypeDirection direction;
@@ -74,7 +74,7 @@ struct SKType
 
 		return new SKType(type, type.GetDisplayName(), dir, array, constant, special, arraySize, pointer);
 	}
-}
+}*/
 
 ///////////////////////////////////////////
 

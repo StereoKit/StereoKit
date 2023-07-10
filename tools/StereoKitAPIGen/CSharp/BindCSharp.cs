@@ -100,7 +100,7 @@ namespace StereoKit
 
 	///////////////////////////////////////////
 
-	static List<CSModule> ParseModules(CppCompilation ast)
+	/*static List<CSModule> ParseModules(CppCompilation ast)
 	{
 		Dictionary<string, CSModule> modules = new Dictionary<string, CSModule>();
 		
@@ -118,12 +118,12 @@ namespace StereoKit
 		}
 
 		return new List<CSModule>(modules.Values);
-	}
+	}*/
 
-	public static string TypeToName(SKType type)
+	/*public static string TypeToName(SKType type)
 	{
 		return type.array
 			? $"{(type.direction != SKTypeDirection.None ? $"[{(type.direction == SKTypeDirection.Ref ? "In, Out" : type.direction)}] " : "")}{type.raw}[]"
 			: $"{(type.direction != SKTypeDirection.None ? type.direction.ToString().ToLower() + " " : "")}{type.raw}";
-	}
+	}*/
 }

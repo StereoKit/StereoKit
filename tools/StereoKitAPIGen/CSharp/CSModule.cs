@@ -16,7 +16,7 @@ class CSModule
 
 	///////////////////////////////////////////
 
-	static void BuildRawFunction(StringBuilder fnText, Dictionary<string, string> delegateText, CppFunction fn)
+	/*static void BuildRawFunction(StringBuilder fnText, Dictionary<string, string> delegateText, CppFunction fn)
 	{
 		SKType        returnType = CSTypes.TypeName(fn.ReturnType, "", null);
 		SKSpecialType textType   = returnType.special;
@@ -60,11 +60,11 @@ class CSModule
 		};
 		line = $"[DllImport(dll, CallingConvention = call{charSet,-17})] public static extern " + line;
 		fnText.AppendLine(line);
-	}
+	}*/
 
 	///////////////////////////////////////////
 
-	public void BuildRawModule(StringBuilder builder, Dictionary<string, string> delegates, string indent)
+	/*public void BuildRawModule(StringBuilder builder, Dictionary<string, string> delegates, string indent)
 	{
 		builder.Append($"\r\n{indent}///////////////////////////////////////////\r\n\r\n");
 		for (int i = 0; i < functions.Count; i++)
@@ -72,5 +72,5 @@ class CSModule
 			builder.Append(indent);
 			BuildRawFunction(builder, delegates, functions[i]);
 		}
-	}
+	}*/
 }

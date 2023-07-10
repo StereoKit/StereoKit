@@ -100,7 +100,6 @@ class Program
 
 		// Parse the files provided
 		Console.WriteLine($"Parsing {files.Count} file(s)");
-		CppCompilation ast = CppParser.ParseFiles(files);
 
 		// Any exception here is room for improvement
 		ModuleException[] moduleExceptions = new[]
@@ -119,8 +118,8 @@ class Program
 		// And create bindings for it all!
 		switch(lang)
 		{
-			case BindLang.Zig:    BindZig   .Bind(ast, destFolder); break;
 			case BindLang.CSharp: BindCSharp.Bind(parseData, destFolder); break;
+			case BindLang.Zig:    BindZig   .Bind(parseData, destFolder); break;
 			case BindLang.Debug:  BindDebug .Bind(parseData);             break;
 		}
 	}
