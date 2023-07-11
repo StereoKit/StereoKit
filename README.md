@@ -45,7 +45,7 @@ These are the binaries that currently ship in the NuGet package. StereoKit devel
 | Windows (Desktop/Win32) | X |   |   |
 | Windows (HoloLens/UWP)  | X | X | X |
 | Linux                   | X |   | X |
-| Android                 |   |   | X |
+| Android                 | X |   | X |
 
 Architecture support has focused on 64 bit architectures, with exceptions for certain platforms. (If you require an additional architecture in the NuGet, please propose it as an Issue!) Here, UWP's ARM builds much faster than UWP's ARM64, and WASM only comes in 32 bit flavors.
 

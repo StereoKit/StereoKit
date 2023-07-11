@@ -124,7 +124,7 @@ if ($buildAndroid) {
                       
 "@ -ForegroundColor White
 
-    #Build-Preset -preset Androidx64Release -presetName 'Android x64'
+    Build-Preset -preset Androidx64Release -presetName 'Android x64'
     Build-Preset -preset AndroidArm64Release -presetName 'Android arm64-v8a'
 }
 

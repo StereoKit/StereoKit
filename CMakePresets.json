@@ -276,6 +276,19 @@
           "CMAKE_ANDROID_ARCH_ABI": "x86_64",
           "SK_DYNAMIC_OPENXR": "ON"
       }
+    },
+    {
+      "name": "Androidx64Debug",
+      "description": "Debug build for Android x64",
+      "inherits": "Android",
+      "hidden": false,
+      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Android_x64_Debug",
+      "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "ANDROID_ABI": "x86_64",
+          "CMAKE_ANDROID_ARCH_ABI": "x86_64",
+          "SK_DYNAMIC_OPENXR": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -293,6 +306,7 @@
       { "name":"AndroidArm64Release", "configuration":"Release", "configurePreset":"AndroidArm64Release", "jobs":24  },
       { "name":"AndroidArm64ReleaseFast", "configuration":"Release", "configurePreset":"AndroidArm64ReleaseFast", "jobs":24  },
       { "name":"Androidx64Release", "configuration":"Release", "configurePreset":"Androidx64Release", "jobs":24  },
+      { "name":"Androidx64Debug", "configuration":"Debug", "configurePreset":"Androidx64Debug", "jobs":24  },
       { "name":"LinuxDebugx64", "configuration":"Debug", "configurePreset":"LinuxDebugx64", "jobs":24  },
       { "name":"Linuxx64Release", "configuration":"Release", "configurePreset":"Linuxx64Release", "jobs":24 },
       { "name":"Linuxx64ReleaseFast", "configuration":"Release", "configurePreset":"Linuxx64ReleaseFast", "jobs":24 },
@@ -359,6 +373,12 @@
       "steps":[
         { "type": "configure", "name": "Androidx64Release" },
         { "type": "build", "name": "Androidx64Release" } ]
+    },
+    {
+      "name":"Androidx64Debug",
+      "steps":[
+        { "type": "configure", "name": "Androidx64Debug" },
+        { "type": "build", "name": "Androidx64Debug" } ]
     },
     {
       "name":"AndroidArm64Debug",
