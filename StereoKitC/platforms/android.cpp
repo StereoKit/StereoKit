@@ -33,6 +33,11 @@ system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
 
+// When consumed as a static library, the user's app will need to provide its
+// own JNI_OnLoad function, which will then conflict with this one. So we only
+// provide this for shared libraries.
+#if defined(SK_BUILD_SHARED)
+
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	android_vm = vm;
 	return JNI_VERSION_1_6;
@@ -40,6 +45,8 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 	return JNI_OnLoad(vm, reserved);
 }
+
+#endif
 
 ///////////////////////////////////////////
 
