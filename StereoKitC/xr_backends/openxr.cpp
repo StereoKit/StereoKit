@@ -553,17 +553,24 @@ bool openxr_init() {
 	// Wait for the session to start before we do anything more with the 
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
-	while (openxr_poll_events() && (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_READY)) {
+	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN)
+		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
+	// Blank frames should only be submitted when the session is READY
+	while (xr_session_state == XR_SESSION_STATE_READY) {
 		openxr_blank_frame();
+		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
+	// TODO: Loop here may be optional, but some platforms may need it? Waiting
+	// for some feedback here.
 	int32_t ref_space_tries = 10;
 	while (openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
-		openxr_blank_frame();
 		ref_space_tries--;
+		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
+		openxr_blank_frame();
 	}
 	switch (xr_app_space_type) {
 		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
@@ -614,8 +621,10 @@ bool openxr_blank_frame() {
 		"blank xrBeginFrame [%s]");
 
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
-	end_info.displayTime          = frame_state.predictedDisplayTime;
-	end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+	end_info.displayTime = frame_state.predictedDisplayTime;
+	if      (xr_blend_valid(display_blend_opaque  )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+	else if (xr_blend_valid(display_blend_additive)) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
+	else if (xr_blend_valid(display_blend_blend   )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
 	xr_check(xrEndFrame(xr_session, &end_info),
 		"blank xrEndFrame [%s]");
 
