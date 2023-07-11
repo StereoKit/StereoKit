@@ -143,6 +143,14 @@ else()
   message("-- Building with physics!")
 endif()
 
+# On Android, shared lib SK has a JNI_OnLoad, which can conflict with dev
+# provided JNI_OnLoad in apps that consume SK as a static library.
+if (SK_BUILD_SHARED_LIBS)
+  add_definitions("-DSK_BUILD_SHARED")
+else()
+  add_definitions("-DSK_BUILD_STATIC")
+endif()
+
 ###########################################
 ## Dependencies                          ##
 ###########################################
