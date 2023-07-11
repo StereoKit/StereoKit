@@ -498,7 +498,9 @@ void linux_stop_flat() {
 ///////////////////////////////////////////
 
 void linux_shutdown() {
-	XCloseDisplay(x_dpy);
+	if (x_dpy) { 
+		XCloseDisplay(x_dpy);
+	}
 	linux_swapchain_initialized = false;
 }
 
