@@ -102,6 +102,7 @@ XrReferenceSpaceType     xr_refspace;
 bool32_t             openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
 void                 openxr_preferred_layers (uint32_t &out_layer_count, const char **out_layers);
 XrTime               openxr_acquire_time     ();
+bool                 openxr_blank_frame      ();
 
 ///////////////////////////////////////////
 
@@ -542,16 +543,19 @@ bool openxr_init() {
 	}
 
 	// Wait for the session to start before we do anything more with the 
-	// spaces, reference spaces are sometimes invalid before session start.
-	while (!xr_running && openxr_poll_events()) {
-		platform_sleep(1);
+	// spaces, reference spaces are sometimes invalid before session start. We
+	// need to submit blank frames in order to get past the READY state.
+	while (openxr_poll_events() && (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_READY)) {
+		openxr_blank_frame();
 	}
 
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
-	while (!openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) && openxr_poll_events()) {
-		platform_sleep(1);
+	int32_t ref_space_tries = 10;
+	while (openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
+		openxr_blank_frame();
+		ref_space_tries--;
 	}
 	switch (xr_app_space_type) {
 		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
@@ -585,6 +589,27 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool openxr_blank_frame() {
+	XrFrameWaitInfo wait_info   = { XR_TYPE_FRAME_WAIT_INFO };
+	XrFrameState    frame_state = { XR_TYPE_FRAME_STATE };
+	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
+		"blank xrWaitFrame [%s]");
+
+	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
+	xr_check(xrBeginFrame(xr_session, &begin_info),
+		"blank xrBeginFrame [%s]");
+
+	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
+	end_info.displayTime          = frame_state.predictedDisplayTime;
+	end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+	xr_check(xrEndFrame(xr_session, &end_info),
+		"blank xrEndFrame [%s]");
 
 	return true;
 }
