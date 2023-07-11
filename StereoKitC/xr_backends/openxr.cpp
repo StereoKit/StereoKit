@@ -717,7 +717,9 @@ bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime t
 		case XR_REFERENCE_SPACE_TYPE_LOCAL:           has_local       = true; break;
 		case XR_REFERENCE_SPACE_TYPE_STAGE:           has_stage       = true; break;
 		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: has_local_floor = true; break;
-		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = true; break;
+		// It's possible runtimes may be providing this despite the extension
+		// not being enabled? So we're forcing it here.
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext_available.MSFT_unbounded_reference_space; break;
 		}
 	}
 	sk_free(refspace_types);
