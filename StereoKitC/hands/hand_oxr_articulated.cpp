@@ -80,6 +80,17 @@ void hand_oxra_init() {
 		XrHandTrackerCreateInfoEXT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT };
 		info.hand         = h == handed_left ? XR_HAND_LEFT_EXT : XR_HAND_RIGHT_EXT;
 		info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+
+		// Tell OpenXR we _only_ want real articulated hands, nothing simulated
+		// from controllers. Only works when EXT_hand_tracking_data_source is
+		// present.
+		XrHandTrackingDataSourceEXT     unobstructed = XR_HAND_TRACKING_DATA_SOURCE_UNOBSTRUCTED_EXT;
+		XrHandTrackingDataSourceInfoEXT data_source  = { XR_TYPE_HAND_TRACKING_DATA_SOURCE_INFO_EXT };
+		data_source.requestedDataSourceCount = 1;
+		data_source.requestedDataSources     = &unobstructed;
+		if (xr_ext_available.EXT_hand_tracking_data_source)
+			info.next = &data_source;
+
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));

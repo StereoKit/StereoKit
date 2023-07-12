@@ -466,31 +466,34 @@ bool openxr_init() {
 	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
 	// tracking layer is present.
 	//
-	// TODO: Remove this when the hand tracking extension is improved.
+	// TODO: Remove this when the hand tracking data source extension is more
+	// generally available.
 #if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
-	// We don't need to ask for the Ultraleap layer above so we don't have it
-	// stored anywhere. Gotta check it again.
-	bool     has_leap_layer = false;
-	uint32_t xr_layer_count = 0;
-	xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
-	XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
-	for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
-	xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
-	for (uint32_t i = 0; i < xr_layer_count; i++) {
-		if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
-			has_leap_layer = true;
-			break;
+	if (xr_ext_available.EXT_hand_tracking_data_source == false) {
+		// We don't need to ask for the Ultraleap layer above so we don't have it
+		// stored anywhere. Gotta check it again.
+		bool     has_leap_layer = false;
+		uint32_t xr_layer_count = 0;
+		xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
+		XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
+		for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
+		xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
+		for (uint32_t i = 0; i < xr_layer_count; i++) {
+			if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
+				has_leap_layer = true;
+				break;
+			}
 		}
-	}
-	sk_free(xr_layers);
+		sk_free(xr_layers);
 
-	// The Leap hand tracking layer seems to supercede the built-in extensions.
-	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
-			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
-			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
-			xr_has_articulated_hands = false;
-			xr_has_hand_meshes       = false;
+		// The Leap hand tracking layer seems to supercede the built-in extensions.
+		if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
+			if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
+				strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+				log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
+				xr_has_articulated_hands = false;
+				xr_has_hand_meshes       = false;
+			}
 		}
 	}
 #endif
