@@ -24,6 +24,10 @@ using StereoKit;
 
 class DemoUI : ITest
 {
+	string title       = "UI";
+	string description = "...";
+
+
 	/// :CodeDoc: Guides User Interface
 	/// ## Making a Window
 	/// 
@@ -35,7 +39,7 @@ class DemoUI : ITest
 	/// Pose for the window, off to the left and facing to the right, as well
 	/// as a boolean for a toggle, and a float that we'll use as a slider!
 	/// We'll add this code to our initialization section.
-	Pose  windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1,0,1));
+	Pose  windowPose = new Pose(-.2f, 0, -0.6f, Quat.LookDir(0,0,1));
 
 	bool  showHeader = true;
 	float slider     = 0.5f;
@@ -45,7 +49,7 @@ class DemoUI : ITest
 
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
-	Pose   clipboardPose = (Demo.contentPose * Matrix.T(0,0,0)).Pose;
+	Pose   clipboardPose = new Pose(0.2f, 0, -0.6f, Quat.LookDir(0,0,1));
 	bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;
@@ -231,7 +235,7 @@ class DemoUI : ITest
 		/// ![UI.InteractVolume]({{site.screen_url}}/InteractVolume.jpg)
 		/// 
 		// Draw a transparent volume so the user can see this space
-		Vec3  volumeAt   = new Vec3(0,0.2f,-0.4f);
+		Vec3  volumeAt   = new Vec3(0,-0.4f,-0.6f);
 		float volumeSize = 0.2f;
 		Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(volumeAt, volumeSize));
 
@@ -247,6 +251,7 @@ class DemoUI : ITest
 		/// :End:
 		
 		Tests.Screenshot("InteractVolume.jpg", 1, 600, 600, 90, new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.16f), V.XYZ(.8f, .8f, 0.1f)));
 	}
 
 	public void Initialize() {

@@ -22,10 +22,10 @@ class DemoUIGrabBar : ITest
 	{
 		Tests.Screenshot("UIGrabBarWindow.jpg", 1, 400, 400, 90, grabBarPose.position + V.XYZ(-0.2f, -0.23f, 0.2f), grabBarPose.position - V.XYZ(0, 0.23f, 0));
 		GrabBarWindow();
-		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.04f), V.XYZ(.2f, .2f, 0)));
 	}
 
-	Pose grabBarPose = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
+	Pose grabBarPose = (Demo.contentPose * Matrix.T(0,-0.1f,0)).Pose;
 	Vec2 windowSize  = Vec2.Zero; // First frame will not be in the right spot unless we know window size in advance.
 	public void GrabBarWindow()
 	{

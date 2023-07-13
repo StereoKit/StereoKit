@@ -13,8 +13,8 @@ class DemoUnicode : ITest
 	Model atlasModel;
 	Model clipboard = Model.FromFile("Clipboard.glb", Shader.UI);
 
-	Pose  clipboardPose  = new Pose(0.8f,-0.15f,-0.2f, Quat.LookDir(-1,0,1));
-	Pose  unicodeWinPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	Pose  clipboardPose  = (Demo.contentPose * Matrix.T(0.16f,-0.17f,0)).Pose;
+	Pose  unicodeWinPose = (Demo.contentPose * Matrix.T(-0.16f,0,0)).Pose;
 
 	string unicodeText = "";
 
@@ -53,6 +53,6 @@ class DemoUnicode : ITest
 		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
 		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
 
-		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.17f), V.XYZ(.7f, .44f, 0.1f)));
 	}
 }
