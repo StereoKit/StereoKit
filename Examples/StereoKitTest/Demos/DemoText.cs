@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoText : ITest
 {
@@ -7,7 +12,7 @@ class DemoText : ITest
 
 	TextAlign alignX      = TextAlign.XLeft;
 	TextAlign alignY      = TextAlign.YTop;
-	Pose      alignWindow = new Pose(0.4f, 0, 0, Quat.LookDir(-1, 0, 1));
+	Pose      alignWindow = (Demo.contentPose * Matrix.T(0,-0.3f,0)).Pose;
 
 	/// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
 	/// ### Drawing text with and without a TextStyle
@@ -32,7 +37,6 @@ class DemoText : ITest
 
 	public void Step()
 	{
-		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 
 		UI.WindowBegin("Alignment", ref alignWindow);
 		Vec2 size = new Vec2(8 * U.cm, UI.LineHeight);
@@ -44,6 +48,7 @@ class DemoText : ITest
 		if (UI.Radio("Bottom" , alignY == TextAlign.YBottom, size)) alignY = TextAlign.YBottom;
 		UI.WindowEnd();
 
+		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0.1f,0,0));
 		Text.Add("X Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.Center,      alignX | alignY);
 		Text.Add("X Left",   Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.CenterLeft,  alignX | alignY);
@@ -93,6 +98,6 @@ class DemoText : ITest
 
 		Hierarchy.Pop();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.07f), V.XYZ(.4f, .68f, 0.1f)));
 	}
 }

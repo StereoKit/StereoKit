@@ -1,4 +1,9 @@
-﻿/// :CodeDoc: Guides 3 User Interface
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+/// :CodeDoc: Guides 3 User Interface
 /// # Building UI in StereoKit
 /// 
 /// StereoKit uses an immediate mode UI system. Basically, you define the UI 
@@ -40,7 +45,7 @@ class DemoUI : ITest
 
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
-	Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+	Pose   clipboardPose = (Demo.contentPose * Matrix.T(0,0,0)).Pose;
 	bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;
@@ -140,24 +145,24 @@ class DemoUI : ITest
 		/// model, so you'll need to plan this around the size of your
 		/// object!
 		/// 
-		UI.LayoutArea(new Vec3(12, 15, 0) * U.cm, new Vec2(24, 30) * U.cm);
+		UI.LayoutArea(new Vec3(13, 15, 0) * U.cm, new Vec2(26, 30) * U.cm);
 		///
 		/// Then after that? We can just add UI elements like normal!
 		/// 
 		UI.Image(logoSprite, new Vec2(22,0) * U.cm);
 
 		UI.Toggle("Toggle", ref clipToggle);
-		UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * U.cm);
+		UI.HSlider("Slide", ref clipSlider, 0, 1, 0);
 		///
 		/// And while we're at it, here's a quick example of doing a radio
 		/// button group! Not much 'radio' actually happening, but it's still
 		/// pretty simple. Pair it with an enum, or an integer, and have fun!
 		///
-		if (UI.Radio("Radio1", clipOption == 1)) clipOption = 1;
+		if (UI.Radio("Opt1", clipOption == 1)) clipOption = 1;
 		UI.SameLine();
-		if (UI.Radio("Radio2", clipOption == 2)) clipOption = 2;
+		if (UI.Radio("Opt2", clipOption == 2)) clipOption = 2;
 		UI.SameLine();
-		if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
+		if (UI.Radio("Opt3", clipOption == 3)) clipOption = 3;
 		///
 		/// As with windows, Handles need an End call.
 		/// 

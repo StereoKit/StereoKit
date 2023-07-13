@@ -1,4 +1,8 @@
-﻿
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using StereoKit;
 
 class DemoUIGrabBar : ITest
@@ -18,7 +22,7 @@ class DemoUIGrabBar : ITest
 	{
 		Tests.Screenshot("UIGrabBarWindow.jpg", 1, 400, 400, 90, grabBarPose.position + V.XYZ(-0.2f, -0.23f, 0.2f), grabBarPose.position - V.XYZ(0, 0.23f, 0));
 		GrabBarWindow();
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
 	}
 
 	Pose grabBarPose = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));

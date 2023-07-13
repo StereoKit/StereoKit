@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System.Collections.Generic;
 
 class DemoEyes : ITest
@@ -64,6 +69,6 @@ class DemoEyes : ITest
 			Text.Add($"Eye tracker sampling frequency: {sampleFrequency:0.#} Hz", Matrix.T(V.XYZ(0, -0.75f, -0.1f)) * quadPose);
 		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.44f, .44f, 0.1f));
 	}
 }

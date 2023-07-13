@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 
 class DemoUITearsheet : ITest
@@ -178,6 +183,6 @@ class DemoUITearsheet : ITest
 		Hierarchy.Pop();
 
 		Tests.Screenshot("Tests/UITearsheet.jpg", 1, 1000, 500, 60, from, at);
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
 	}
 }

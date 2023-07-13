@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using StereoKit;
 
 class DemoPicker : ITest
 {
 	string title       = "File Picker";
 	string description = "Applications need to save and load files at runtime! StereoKit has a cross-platform, MR compatible file picker built in, Platform.FilePicker.\n\nOn systems/conditions where a native file picker is available, that's what you'll get! Otherwise, StereoKit will fall back to a custom picker built with StereoKit's UI.";
-	
 
 	Model    model      = null;
 	float    modelScale = 1;
@@ -93,7 +97,7 @@ class DemoPicker : ITest
 			Hierarchy.Pop();
 		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.34f, .34f, .1f)));
 	}
 
 	/// :CodeSample: Platform.FilePicker Platform.FilePickerVisible

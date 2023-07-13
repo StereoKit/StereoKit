@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoTextures : ITest
 {
@@ -81,8 +86,8 @@ class DemoTextures : ITest
 	{
 		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0.32f, 0, -0.32f), new Vec3(0.5f, 0, -0.5f));
 
-		quad.Draw(exampleMaterial, Matrix.TR(0.5f, 0, -0.5f, Quat.LookDir(1, 0, -1)));
+		quad.Draw(exampleMaterial,  Matrix.R(0,180,0) * Demo.contentPose);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.44f, .44f, 0.1f));
 	}
 }

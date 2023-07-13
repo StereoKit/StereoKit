@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoRayMesh : ITest
 {
@@ -15,8 +20,8 @@ class DemoRayMesh : ITest
 	///
 	Mesh sphereMesh = Default.MeshSphere;
 	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
-	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
-	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
+	Pose boxPose    = (Demo.contentPose * Matrix.T(0, -0.1f, 0)).Pose;
+	Pose castPose   = (Demo.contentPose * Matrix.T(0.25f, 0.11f, 0.2f)).Pose;
 
 	public void StepRayMesh()
 	{
@@ -59,7 +64,7 @@ class DemoRayMesh : ITest
 	public void Step()
 	{
 		StepRayMesh();
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(-0.08f,-0.04f,-0.06f), V.XYZ(.44f, .36f, .36f)));
 	}
 
 	public void Shutdown  () { }

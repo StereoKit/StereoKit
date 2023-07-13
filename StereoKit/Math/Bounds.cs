@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using System.Collections.Generic;
 using System;
 using System.Diagnostics.Contracts;
@@ -39,10 +44,15 @@ namespace StereoKit
 		/// end to the other. This is the width, height, and depth of the
 		/// Bounds.</param>
 		public Bounds(Vec3 totalDimensions)
-		{
-			this.center = Vec3.Zero;
-			dimensions = totalDimensions;
-		}
+			: this(Vec3.Zero, totalDimensions) { }
+
+		/// <summary>Creates a bounding box object centered around zero!
+		/// </summary>
+		/// <param name="totalDimensionX">Total size on the X axis.</param>
+		/// <param name="totalDimensionY">Total size on the Y axis.</param>
+		/// <param name="totalDimensionZ">Total size on the Z axis.</param>
+		public Bounds(float totalDimensionX, float totalDimensionY, float totalDimensionZ)
+			: this(Vec3.Zero, new Vec3(totalDimensionX, totalDimensionY, totalDimensionZ)) { }
 
 		/// <summary>Create a bounding box from a corner, plus box dimensions.
 		/// </summary>

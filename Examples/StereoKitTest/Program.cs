@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using System;
 using System.Collections.Generic;
 using StereoKit;
@@ -78,8 +83,8 @@ class Program
 
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
-		demoSelectPose.position    = new Vec3(0, 0, -0.6f);
-		demoSelectPose.orientation = Quat.LookDir(-Vec3.Forward);
+		demoSelectPose.position    = new Vec3(-0.7f, 0, -0.3f);
+		demoSelectPose.orientation = Quat.LookDir(1,0,1);
 
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);

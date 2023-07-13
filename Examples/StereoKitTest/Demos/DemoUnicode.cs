@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoUnicode : ITest
 {
@@ -48,6 +53,6 @@ class DemoUnicode : ITest
 		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
 		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
 	}
 }
