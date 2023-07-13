@@ -77,6 +77,6 @@ class DemoWorldMesh : ITest
 				Mesh.Sphere.Draw(Material.Default, Matrix.TS(at.position, 0.03f), new Color(1, 0, 0));
 		}
 
-		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.12f), V.XYZ(.38f, .34f, 0.1f)));
 	}
 }
