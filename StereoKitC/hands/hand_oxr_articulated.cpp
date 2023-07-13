@@ -25,10 +25,17 @@ bool             oxra_hand_active = true;
 bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
 XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
+float            oxra_hand_joint_scale = 1;
 
 ///////////////////////////////////////////
 
 void hand_oxra_update_system_meshes();
+
+///////////////////////////////////////////
+
+void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
+	oxra_hand_joint_scale = joint_scale_factor;
+}
 
 ///////////////////////////////////////////
 
@@ -157,6 +164,8 @@ void hand_oxra_shutdown() {
 		sk_free(oxra_mesh_src[h].indexBuffer.indices);
 		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
 	}
+
+	oxra_hand_joint_scale = 1;
 }
 
 ///////////////////////////////////////////
@@ -228,7 +237,7 @@ void hand_oxra_update_joints() {
 		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
-			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
+			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius * oxra_hand_joint_scale;
 			oxra_hand_joints[h][j].position    = matrix_transform_pt(root, oxra_hand_joints[h][j].position);
 			oxra_hand_joints[h][j].orientation = oxra_hand_joints[h][j].orientation * root_q;
 		}

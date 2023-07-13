@@ -109,6 +109,15 @@ namespace StereoKit
 				return Marshal.GetDelegateForFunctionPointer<TDelegate>(fn);
 			}
 
+			/// <summary>This sets a scaling value for joints provided by the
+			/// articulated hand extension. Some systems just don't seem to get
+			/// their joint sizes right!</summary>
+			/// <param name="scaleFactor">1 being the default value, 2 being
+			/// twice as large as normal, and 0.5 being half as big as normal.
+			/// </param>
+			public static void SetHandJointScale(float scaleFactor)
+				=> NativeAPI.backend_openxr_set_hand_joint_scale(scaleFactor);
+
 			/// <summary>Requests that OpenXR load a particular extension. This
 			/// MUST be called before SK.Initialize. Note that it's entirely
 			/// possible that your extension will not load on certain runtimes,

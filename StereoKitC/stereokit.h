@@ -2199,6 +2199,7 @@ SK_API void              backend_openxr_ext_exclude         (const char *extensi
 SK_API void              backend_openxr_use_minimum_exts    (bool32_t use_minimum_exts);
 SK_API void              backend_openxr_composition_layer   (void *XrCompositionLayerBaseHeader, int32_t data_size, int32_t sort_order);
 SK_API void              backend_openxr_end_frame_chain     (void *XrBaseHeader, int32_t data_size);
+SK_API void              backend_openxr_set_hand_joint_scale(float joint_scale_factor);
 
 SK_API void              backend_openxr_add_callback_pre_session_create(void (*xr_pre_session_create_callback)(void* context), void* context);
 SK_API void              backend_openxr_add_callback_poll_event        (void (*xr_poll_event_callback)(void* context, void* XrEventDataBuffer), void* context);

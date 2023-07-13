@@ -124,6 +124,11 @@ void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_
 
 ///////////////////////////////////////////
 
+void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
+}
+
+///////////////////////////////////////////
+
 #endif
 
 ///////////////////////////////////////////
