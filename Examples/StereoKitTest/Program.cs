@@ -157,11 +157,9 @@ class Program
 		for (int i = 0; i < demoNames.Count; i++)
 		{
 			float width = Text.Size(demoNames[i], style).x + uiSettings.padding * 2;
-			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth || i == demoNames.Count-1)
+			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth)
 			{
-				float inflate = i == demoNames.Count - 1
-					? 0 
-					: (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
+				float inflate = (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
 				for (int t = start; t < i; t++)
 				{
 					float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2 + inflate;
@@ -174,6 +172,13 @@ class Program
 			if (start == i)
 				currWidthTotal = uiSettings.margin * 2;
 			currWidthTotal += width + uiSettings.gutter;
+		}
+		for (int t = start; t < demoNames.Count; t++)
+		{
+			float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2;
+			if (UI.Button(demoNames[t], new Vec2(currWidth, 0)))
+				Tests.SetDemoActive(t);
+			UI.SameLine();
 		}
 		UI.NextLine();
 		UI.HSeparator();
