@@ -31,8 +31,13 @@ class DemoHands : ITest
 	bool showHandSize  = true;
 
 	HandMenuRadial handMenu;
+	HandMenuRadial prevHandMenu;
 
 	public void Initialize() {
+		prevHandMenu = SK.GetStepper<HandMenuRadial>();
+		if (prevHandMenu != null)
+			SK.RemoveStepper(prevHandMenu);
+
 		/// :CodeDoc: Guides Using Hands
 		/// ## Accessing Joints
 		/// 
@@ -102,8 +107,10 @@ class DemoHands : ITest
 	public void Shutdown()
 	{
 		/// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
-		SK.RemoveStepper(handMenu); 
+		SK.RemoveStepper(handMenu);
 		/// :End:
+
+		SK.AddStepper(prevHandMenu);
 	}
 
 	public void Step()
