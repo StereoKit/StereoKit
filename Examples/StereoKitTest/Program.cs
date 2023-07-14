@@ -228,7 +228,7 @@ class Program
 	static string       logString = "";
 	static void OnLog(LogLevel level, string text)
 	{
-		logList.Insert(0, text.Length < 100 ? text : text.Substring(0, 100) + "...\n");
+		logList.Insert(0, text.Length < 100 ? text + "\n" : text.Substring(0, 100) + "...\n");
 		UpdateLogStr((int)logIndex);
 	}
 
