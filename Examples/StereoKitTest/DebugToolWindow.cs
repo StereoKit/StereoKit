@@ -68,54 +68,109 @@ class DemoAnim<T>
 	}
 }
 
-class DebugToolWindow
+class DebugToolWindow : IStepper
 {
-	static List<(float time, Pose        pose)> recordingHead = new List<(float time, Pose        pose)>();
-	static List<(float time, HandJoint[] pose)> recordingHand = new List<(float time, HandJoint[] pose)>();
-	static bool recordHead   = false;
-	static bool recordHand   = false;
-	static Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
-	static bool screenshots  = false;
-	static int  screenshotId = 1;
-	static AvatarSkeleton avatar = null;
-	static ThemeEditor    theme = null;
+	public bool Enabled => true;
 
-	static DemoAnim<Pose>        headAnim = null;
-	static DemoAnim<HandJoint[]> handAnim = null;
+	List<(float time, Pose        pose)> recordingHead = new List<(float time, Pose        pose)>();
+	List<(float time, HandJoint[] pose)> recordingHand = new List<(float time, HandJoint[] pose)>();
+	bool recordHead   = false;
+	bool recordHand   = false;
+	bool showRuler    = false;
+	Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
+	int  screenshotId = 1;
 
-	public static void Step()
+	AvatarSkeleton      skeleton = null;
+	ReadyPlayerMeAvatar avatar   = null;
+	ThemeEditor         theme    = null;
+	RenderCamera        camera   = null;
+
+	DemoAnim<Pose>        headAnim = null;
+	DemoAnim<HandJoint[]> handAnim = null;
+
+	HandMenuRadial handMenu;
+
+	HandMenuItem itemDemos;
+	HandMenuItem itemConsole;
+	HandMenuItem itemToolsSkeleton;
+	HandMenuItem itemToolsAvatar;
+	HandMenuItem itemToolsTheme;
+	HandMenuItem itemToolsCamera;
+	HandMenuItem itemToolsRuler;
+	HandMenuItem itemRecordHead;
+	HandMenuItem itemRecordHand;
+
+	public bool Initialize()
 	{
-		UI.WindowBegin("Helper", ref pose, new Vec2(20, 0)*U.cm);
-		if (UI.Button("Print Screenshot Pose") || Input.Key(Key.F7).IsJustActive()) HeadshotPose();
-		if (UI.Button("Print R Hand Pose") || Input.Key(Key.F8).IsJustActive()) HandshotPose(Handed.Right);
-		if (UI.Button("Print L Hand Pose") || Input.Key(Key.F9).IsJustActive()) HandshotPose(Handed.Left);
-		if (UI.Button("Print R Finger")) Log.Info(Input.Hand(Handed.Right)[FingerId.Index,JointId.Tip].position.ToString());
-		if (UI.Toggle("Record Head", ref recordHead)) ToggleRecordHead();
-		if (headAnim != null) {
-			UI.SameLine();
-			if (UI.Button("Play1")) headAnim.Play();
-		}
-		if (UI.Toggle("Record Hand", ref recordHand)) ToggleRecordHand();
-		if (handAnim != null) {
-			UI.SameLine();
-			if (UI.Button("Play2")) handAnim.Play();
-		}
-		UI.Toggle("Enable Screenshots", ref screenshots);
-		bool showAvatar = avatar != null;
-		if (UI.Toggle("Show Skeleton", ref showAvatar))
-		{
-			if (showAvatar) avatar = SK.AddStepper<AvatarSkeleton>();
-			else { SK.RemoveStepper(avatar); avatar = null; }
-		}
-		bool showTheme = theme != null;
-		if (UI.Toggle("Show Theme Editor", ref showTheme))
-		{
-			if (showTheme) theme = SK.AddStepper<ThemeEditor>();
-			else { SK.RemoveStepper(theme); theme = null; }
-		}
-		UI.WindowEnd();
+		itemDemos         = new HandMenuItem("Demos",        Sprite.ToggleOn,  () => Program.WindowDemoShow = !Program.WindowDemoShow);
+		itemConsole       = new HandMenuItem("Console",      Sprite.ToggleOn,  () => Program.WindowConsoleShow = !Program.WindowConsoleShow);
+		itemToolsAvatar   = new HandMenuItem("Avatar",       Sprite.ToggleOff, () => ToggleAvatar() );
+		itemToolsSkeleton = new HandMenuItem("Skeleton",     Sprite.ToggleOff, () => skeleton = ToggleTool(skeleton) );
+		itemToolsTheme    = new HandMenuItem("Theme Editor", Sprite.ToggleOff, () => theme    = ToggleTool(theme) );
+		itemToolsCamera   = new HandMenuItem("Camera",       Sprite.ToggleOff, () => camera   = ToggleTool(camera, () => new RenderCamera(UI.PopupPose(), 1000, 1000)) );
+		itemToolsRuler    = new HandMenuItem("Ruler",        Sprite.ToggleOff, () => showRuler = !showRuler );
+		itemRecordHead    = new HandMenuItem("Record Head",  Sprite.ToggleOff, () => ToggleRecordHead() );
+		itemRecordHand    = new HandMenuItem("Record Hand",  Sprite.ToggleOff, () => ToggleRecordHand() );
 
-		if (screenshots) TakeScreenshots();
+		handMenu = new HandMenuRadial(
+			new HandRadialLayer("Debug",
+				itemDemos,
+				itemConsole,
+				new HandMenuItem("Tools",     null, null, "Tools"),
+				new HandMenuItem("Print",     null, null, "Print"),
+				new HandMenuItem("Recording", null, null, "Recording")
+				),
+			new HandRadialLayer("Tools",
+				itemToolsAvatar,
+				itemToolsSkeleton,
+				itemToolsTheme,
+				itemToolsCamera,
+				new HandMenuItem("Back", null, null, HandMenuAction.Back)
+				),
+			new HandRadialLayer("Print",
+				new HandMenuItem("R Hand Pose", null, () => HandshotPose(Handed.Right) ),
+				new HandMenuItem("L Hand Pose", null, () => HandshotPose(Handed.Left) ),
+				new HandMenuItem("R Finger",    null, () => Log.Info(Input.Hand(Handed.Right)[FingerId.Index, JointId.Tip].position.ToString())),
+				new HandMenuItem("L Finger",    null, () => Log.Info(Input.Hand(Handed.Left)[FingerId.Index, JointId.Tip].position.ToString())),
+				new HandMenuItem("Back",        null, null, HandMenuAction.Back)
+				),
+			new HandRadialLayer("Recording",
+				itemRecordHead,
+				new HandMenuItem("Play Head",   null, () => headAnim.Play()),
+				itemRecordHand,
+				new HandMenuItem("Play Hand",   null, () => handAnim.Play()),
+				new HandMenuItem("Screenshot",  null, () => HeadshotPose()),
+				new HandMenuItem("Back",        null, null, HandMenuAction.Back)
+				)
+			);
+
+		SK.AddStepper(handMenu);
+
+		return true;
+	}
+
+	public void Shutdown()
+	{
+		SK.RemoveStepper(handMenu);
+		SK.RemoveStepper(skeleton);
+		SK.RemoveStepper(theme);
+		SK.RemoveStepper(camera);
+		SK.RemoveStepper(avatar);
+	}
+
+	public void Step()
+	{
+		itemDemos        .image = Program.WindowDemoShow    ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemConsole      .image = Program.WindowConsoleShow ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemToolsAvatar  .image = avatar   != null ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemToolsSkeleton.image = skeleton != null ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemToolsTheme   .image = theme    != null ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemToolsCamera  .image = camera   != null ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemToolsRuler   .image = showRuler  ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemRecordHead   .image = recordHead ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemRecordHand   .image = recordHand ? Sprite.ToggleOn : Sprite.ToggleOff;
+
+		TakeScreenshots();
 		if (recordHead)  RecordHead();
 		if (recordHand)  RecordHand();
 		if (headAnim != null && headAnim.Playing)
@@ -124,26 +179,43 @@ class DebugToolWindow
 			Input.HandOverride(Handed.Right, handAnim.Current);
 		else
 			Input.HandClearOverride(Handed.Right);
+		if (showRuler) RulerWindow();
 
 		ScreenshotPreview();
 	}
 
-	static void TakeScreenshots()
+	static T ToggleTool<T>(T stepper, Func<T> makeT = null) where T : IStepper
 	{
-		// Take a screenshot on the first frame both hands are gripped
-		bool valid =
-			Input.Hand(Handed.Left ).IsTracked &&
-			Input.Hand(Handed.Right).IsTracked;
-		BtnState right = Input.Hand(Handed.Right).grip;
-		BtnState left  = Input.Hand(Handed.Left ).grip;
-		if (valid && left.IsActive() && right.IsActive() && (left.IsJustActive() || right.IsJustActive()))
+		if (stepper == null)
+			return makeT == null ? SK.AddStepper<T>() : SK.AddStepper(makeT());
+		else
+		{
+			SK.RemoveStepper(stepper);
+			return default(T);
+		}
+	}
+
+	void ToggleAvatar()
+	{
+		if (avatar == null)
+			Platform.FilePicker(PickerMode.Open, (filename) => avatar = SK.AddStepper(new ReadyPlayerMeAvatar(Model.FromFile(filename))), null, Assets.ModelFormats);
+		else
+		{
+			SK.RemoveStepper(avatar);
+			avatar = null;
+		}
+	}
+
+	void TakeScreenshots()
+	{
+		if (Input.Key(Key.Printscreen).IsJustActive() || Input.Key(Key.F12).IsJustActive())
 		{
 			Renderer.Screenshot("Screenshot" + screenshotId + ".jpg", Input.Head.position, Input.Head.Forward, 1920 * 2, 1080 * 2);
 			screenshotId += 1;
 		}
 	}
 
-	static void RecordHead()
+	void RecordHead()
 	{
 		Pose prev = recordingHead[recordingHead.Count - 1].pose;
 		Quat diff = Quat.Delta(Input.Head.orientation, prev.orientation);
@@ -152,9 +224,10 @@ class DebugToolWindow
 			recordingHead.Add((Time.Totalf, Input.Head));
 
 	}
-	static void ToggleRecordHead()
+	void ToggleRecordHead()
 	{
 		recordingHead.Add((Time.Totalf, Input.Head));
+		recordHead = !recordHead;
 		if (!recordHead)
 		{
 			float  rootTime = recordingHead[0].time;
@@ -175,61 +248,56 @@ class DebugToolWindow
 		}
 	}
 
-	static void RecordHand()
+	void RecordHand()
 	{
-		if (Time.Totalf - recordingHand[recordingHand.Count-1].time > 0.2f) {
-			Hand        h      = Input.Hand(Handed.Right);
-			HandJoint[] joints = new HandJoint[27];
-			Array.Copy(h.fingers,0,joints,0,25);
-			joints[25] = new HandJoint(h.palm.position,  h.palm.orientation,  0);
-			joints[26] = new HandJoint(h.wrist.position, h.wrist.orientation, 0);
-			recordingHand.Add((Time.Totalf, joints));
-		}
-	}
-	static void ToggleRecordHand()
-	{
+		if (recordingHand.Count != 0 && Time.Totalf - recordingHand[recordingHand.Count - 1].time < 0.2f)
+			return;
+
 		Hand        h      = Input.Hand(Handed.Right);
 		HandJoint[] joints = new HandJoint[27];
 		Array.Copy(h.fingers,0,joints,0,25);
 		joints[25] = new HandJoint(h.palm.position,  h.palm.orientation,  0);
 		joints[26] = new HandJoint(h.wrist.position, h.wrist.orientation, 0);
 		recordingHand.Add((Time.Totalf, joints));
-		if (!recordHand)
+	}
+	void ToggleRecordHand()
+	{
+		recordHand = !recordHand;
+		if (recordHand) return;
+
+		float         rootTime = recordingHand[0].time;
+		StringBuilder result   = new StringBuilder();
+		result.Append("DemoAnim<HandJoint[]> anim = new DemoAnim<HandJoint[]>(JointsLerp,");
+		for (int i = 0; i < recordingHand.Count; i++)
 		{
-			float  rootTime = recordingHand[0].time;
-			StringBuilder result = new StringBuilder();
-			result.Append("DemoAnim<HandJoint[]> anim = new DemoAnim<HandJoint[]>(JointsLerp,");
-			for (int i = 0; i < recordingHand.Count; i++)
+			recordingHand[i] = (recordingHand[i].time - rootTime, recordingHand[i].pose);
+			var f = recordingHand[i];
+			result.Append( $"({f.time}f,new HandJoint[]{{" );
+			for (int j = 0; j < f.pose.Length; j++)
 			{
-				recordingHand[i] = (recordingHand[i].time - rootTime, recordingHand[i].pose);
-				var f = recordingHand[i];
-				result.Append( $"({f.time}f,new HandJoint[]{{" );
-				for (int j = 0; j < f.pose.Length; j++)
-				{
-					result.Append($"new HandJoint(new Vec3({f.pose[j].position.x:0.000}f,{f.pose[j].position.y:0.000}f,{f.pose[j].position.z:0.000}f), new Quat({f.pose[j].orientation.x:0.000}f,{f.pose[j].orientation.y:0.000}f,{f.pose[j].orientation.z:0.000}f,{f.pose[j].orientation.w:0.000}f), {f.pose[j].radius:0.000}f)");
-					if (j < f.pose.Length - 1)
-						result.Append(",");
-				}
-				result.Append("})");
-				if (i < recordingHand.Count - 1)
+				result.Append($"new HandJoint(new Vec3({f.pose[j].position.x:0.000}f,{f.pose[j].position.y:0.000}f,{f.pose[j].position.z:0.000}f), new Quat({f.pose[j].orientation.x:0.000}f,{f.pose[j].orientation.y:0.000}f,{f.pose[j].orientation.z:0.000}f,{f.pose[j].orientation.w:0.000}f), {f.pose[j].radius:0.000}f)");
+				if (j < f.pose.Length - 1)
 					result.Append(",");
 			}
-			result.Append(");");
-			Log.Info(result.ToString());
-
-			handAnim = new DemoAnim<HandJoint[]>(JointsLerp, recordingHand.ToArray());
-			recordingHand.Clear();
+			result.Append("})");
+			if (i < recordingHand.Count - 1)
+				result.Append(",");
 		}
+		result.Append(");");
+		Log.Info(result.ToString());
+
+		handAnim = new DemoAnim<HandJoint[]>(JointsLerp, recordingHand.ToArray());
+		recordingHand.Clear();
 	}
 
-	static void HeadshotPose()
+	void HeadshotPose()
 	{
 		Vec3 pos = Input.Head.position + Input.Head.Forward * 10 * U.cm;
 		Vec3 fwd = pos + Input.Head.Forward;
 		Log.Info($"Tests.Screenshot(\"image.jpg\", 600, 600, new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
-	static void HandshotPose(Handed hand)
+	void HandshotPose(Handed hand)
 	{
 		Hand h = Input.Hand(hand);
 		HandJoint[] joints = new HandJoint[27];
@@ -260,10 +328,10 @@ class DebugToolWindow
 		return result;
 	}
 
-	static Sprite screenshot;
-	static Pose   screenshotPose;
-	static bool   screenshotVisible;
-	static void PreviewScreenshot(Vec3 from, Vec3 at)
+	Sprite screenshot;
+	Pose   screenshotPose;
+	bool   screenshotVisible;
+	void PreviewScreenshot(Vec3 from, Vec3 at)
 	{
 		string path = Path.GetTempFileName();
 		path = Path.ChangeExtension(path, "jpg");
@@ -279,7 +347,7 @@ class DebugToolWindow
 		}
 		screenshotVisible = true;
 	}
-	static void ScreenshotPreview()
+	void ScreenshotPreview()
 	{
 		if (!screenshotVisible)
 			return;
@@ -293,5 +361,30 @@ class DebugToolWindow
 			screenshot = null;
 		}
 		UI.WindowEnd();
+	}
+
+	
+	//////////////////
+	// Ruler object //
+	//////////////////
+
+	static Pose     rulerPose   = new Pose(0, 0, .5f, Quat.Identity);
+	static string[] rulerLabels = { "0", "5", "10", "15", "20", "25" };
+	static void RulerWindow()
+	{
+		UI.HandleBegin("Ruler", ref rulerPose, new Bounds(new Vec3(31,4,1)*U.cm), true);
+		Color32 color = Color.HSV(.6f, 0.5f, 1);
+		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), TextAlign.BottomLeft);
+		for (int d = 0; d <= 60; d+=1)
+		{
+			float x    = d/2.0f;
+			float size = d%2==0?.5f:0.15f;
+			if (d%10 == 0 && d/2 != 30) {
+				size = 1;
+				Text.Add(rulerLabels[d/10], Matrix.TS(new Vec3(15-x-0.1f, 2-size, -.6f) * U.cm, .2f), TextAlign.BottomLeft);
+			}
+			Lines.Add(new Vec3(15-x, 1.8f, -.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
+		}
+		UI.HandleEnd();
 	}
 }

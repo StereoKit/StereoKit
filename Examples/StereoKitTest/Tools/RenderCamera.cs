@@ -31,7 +31,7 @@ namespace StereoKit.Framework
 			FrameRate = framerate;
 
 			at   = startAt;
-			from = new Pose(at.position+V.XYZ(0, 0, 0.1f)*at.orientation, at.orientation);
+			from = new Pose(at.position+V.XYZ(0, 0, 0.3f)*at.orientation, at.orientation);
 			_renderFrom = at;
 		}
 

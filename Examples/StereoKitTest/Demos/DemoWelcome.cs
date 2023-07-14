@@ -8,7 +8,7 @@ using StereoKit;
 class DemoWelcome : ITest
 {
 	Model  logo;
-	string message = "Welcome fellow developer!\n\nThis is the StereoKit test app, a collection of demos and tests that cover StereoKit's major features. Use the panel to your left to navigate around the app, and enjoy!\n\nCheck behind you for some debugging tools :)";
+	string message = "Welcome fellow developer!\n\nThis is the StereoKit test app, a collection of demos and tests that cover StereoKit's major features. Use the panel to your left to navigate around the app, and enjoy!\n\nCheck your hand menu, (or '~' for keyboard users) for some debugging tools :)";
 
 	public void Initialize()
 	{
