@@ -56,8 +56,8 @@ class DemoUI : ITest
 
 	public void Step()
 	{
-		Tests.Screenshot("GuideUserInterface.jpg", 600, 400, new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
-		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 600, new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
+		Tests.Screenshot("GuideUserInterface.jpg",       600, 400, windowPose   .position + V.XYZ(0.02f,0.01f,0.1f), windowPose   .position + V.XYZ(0,-0.03f,0));
+		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 550, clipboardPose.position + V.XYZ(0,0.005f,0.21f),    clipboardPose.position + V.XYZ(0,0.005f,0));
 
 		/// :CodeDoc: Guides User Interface
 		/// Then we'll move over to the application step where we'll do the

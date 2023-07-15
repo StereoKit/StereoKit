@@ -177,7 +177,7 @@ class DemoUITearsheet : ITest
 		ShowTextWindow  ();
 		ShowLayouts     ();
 
-		Vec3 off  = new Vec3(-0.45f, -0.2f, 0);
+		Vec3 off  = new Vec3(0, -0.2f, 0);
 		Vec3 at   = Hierarchy.ToWorld(Vec3.Zero + off);
 		Vec3 from = Hierarchy.ToWorld(new Vec3(0,0,-0.55f) + off);
 		Hierarchy.Pop();
