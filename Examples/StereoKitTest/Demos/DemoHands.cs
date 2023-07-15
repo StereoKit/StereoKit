@@ -110,7 +110,8 @@ class DemoHands : ITest
 		SK.RemoveStepper(handMenu);
 		/// :End:
 
-		SK.AddStepper(prevHandMenu);
+		if (prevHandMenu != null)
+			SK.AddStepper(prevHandMenu);
 	}
 
 	public void Step()
