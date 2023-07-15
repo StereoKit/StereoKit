@@ -85,6 +85,8 @@ class Program
 		/// :End:
 		
 		SK.AddStepper<PassthroughFBExt>();
+
+		SK.AddStepper<LogWindow>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
 
 		// Initialize StereoKit
