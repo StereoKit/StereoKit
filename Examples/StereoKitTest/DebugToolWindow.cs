@@ -77,7 +77,6 @@ class DebugToolWindow : IStepper
 	bool recordHead   = false;
 	bool recordHand   = false;
 	bool showRuler    = false;
-	Pose pose         = new Pose(0, 0.3f, .5f, Quat.LookAt(new Vec3(0, 0.3f, .5f), new Vec3(0, 0.3f, 0)));
 	int  screenshotId = 1;
 
 	AvatarSkeleton      skeleton = null;

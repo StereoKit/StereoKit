@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace StereoKit.Framework
 {
@@ -12,7 +11,7 @@ namespace StereoKit.Framework
 			public string   text;
 			public int      count;
 		}
-		public bool Enabled => true;
+		public bool Enabled { get; set; } = true;
 
 		public Pose pose = Pose.Identity;
 
@@ -22,8 +21,7 @@ namespace StereoKit.Framework
 		TextStyle styleErr;
 
 		List<LogItem> items = new List<LogItem>();
-		const int maxItems = 1000;
-		static float logIndex = 0;
+		static float  logIndex = 0;
 
 		public LogWindow()
 			=> Log.Subscribe(OnLog);
@@ -54,6 +52,8 @@ namespace StereoKit.Framework
 
 		public void Step()
 		{
+			if (!Enabled) return;
+
 			UI.WindowBegin("Log", ref pose, new Vec2(40, 0) * U.cm);
 
 			UI.LayoutPushCut(UICut.Right, UI.LineHeight*0.6f);
