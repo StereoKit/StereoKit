@@ -177,8 +177,8 @@ class DemoMaterial : ITest
 		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");
-		ShowMaterial(Mesh.Cube,  matUIBox,      "MaterialUIBox.jpg", new Vec3( 0.07f, 0.07f, -0.08f));
-		ShowMaterial(Mesh.Cube,  matUI,         "MaterialUI.jpg",    new Vec3(-0.07f, 0.07f, -0.08f));
+		ShowMaterial(Mesh.Cube,  matUIBox,      "MaterialUIBox.jpg", new Vec3( 0.14f, 0.14f, -0.16f));
+		ShowMaterial(Mesh.Cube,  matUI,         "MaterialUI.jpg",    new Vec3(-0.14f, 0.14f, -0.16f));
 
 		Demo.ShowSummary(title, description, new Bounds(.5f, .7f, 0.2f));
 	}

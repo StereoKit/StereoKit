@@ -84,7 +84,7 @@ class DemoTextures : ITest
 
 	public void Step()
 	{
-		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0.32f, 0, -0.32f), new Vec3(0.5f, 0, -0.5f));
+		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, Demo.contentPose.Translation + new Vec3(0, 0, 0.24f), Demo.contentPose.Translation );
 
 		quad.Draw(exampleMaterial,  Matrix.R(0,180,0) * Demo.contentPose);
 

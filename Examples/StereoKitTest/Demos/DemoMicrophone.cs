@@ -113,7 +113,7 @@ class DemoMicrophone : ITest
 	public void Step()
 	{
 		ShowMicDeviceWindow();
-		Tests.Screenshot("MicrophoneSelector.jpg", 1, 400, 400, 90, micSelectPose.position+V.XYZ(-0.15f, -0.02f, 0.15f), micSelectPose.position-V.XYZ(0,0.12f,0));
+		Tests.Screenshot("MicrophoneSelector.jpg", 1, 400, 400, 90, micSelectPose.position+V.XYZ(0, -0.1f, 0.18f), micSelectPose.position+V.XYZ(0,-0.1f,0));
 
 		Hierarchy.Push(Demo.contentPose);
 		if (Microphone.IsRecording)

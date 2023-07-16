@@ -21,6 +21,8 @@ class DemoMath : ITest
 	Pose poseBoundsLine = new Pose(Demo.contentPose.Transform(Grid(4)));
 	Pose poseMeshRay    = new Pose(Demo.contentPose.Transform(Grid(5)));
 	Pose poseCross      = new Pose(Demo.contentPose.Transform(Grid(6)));
+	Vec3 screenshotFrom = new Vec3(0.1f, 0.1f, 0.5f);
+	Vec3 screenshotAt   = new Vec3(0,0,0);
 
 	public void Step()
 	{
@@ -44,7 +46,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("RayIntersectPlane.jpg", 400, 400, posePlaneRay.position + new Vec3(0.0f, 0.3f, 0.15f), posePlaneRay.position + Vec3.Up * 0.1f);
+		Tests.Screenshot("RayIntersectPlane.jpg", 0, 400, 400, 20, posePlaneRay.position + screenshotFrom, posePlaneRay.position + screenshotAt);
 
 		// Line and Plane
 		bool linePlaneActive = UI.HandleBegin("LinePlane", ref poseLinePlane, new Bounds(Vec3.One * 0.1f));
@@ -65,7 +67,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("LineIntersectPlane.jpg", 400, 400, poseLinePlane.position + new Vec3(0.0f, 0.3f, 0.15f), poseLinePlane.position + Vec3.Up * 0.1f);
+		Tests.Screenshot("LineIntersectPlane.jpg", 0, 400, 400, 20, poseLinePlane.position + screenshotFrom, poseLinePlane.position + screenshotAt);
 
 		// Sphere and Ray
 		bool sphereRayActive = UI.HandleBegin("SphereRay", ref poseSphereRay, new Bounds(Vec3.One * 0.1f));
@@ -82,7 +84,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("RayIntersectSphere.jpg", 400, 400, poseSphereRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseSphereRay.position);
+		Tests.Screenshot("RayIntersectSphere.jpg", 0, 400, 400, 20, poseSphereRay.position + screenshotFrom, poseSphereRay.position + screenshotAt);
 
 		// Bounds and Ray
 		bool boundsRayActive = UI.HandleBegin("BoundsRay", ref poseBoundsRay, new Bounds(Vec3.One * 0.1f));
@@ -99,7 +101,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("RayIntersectBounds.jpg", 400, 400, poseBoundsRay.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsRay.position);
+		Tests.Screenshot("RayIntersectBounds.jpg", 0, 400, 400, 20, poseBoundsRay.position + screenshotFrom, poseBoundsRay.position + screenshotAt);
 
 		// Bounds and Line
 		bool boundsLineActive = UI.HandleBegin("BoundsLine", ref poseBoundsLine, new Bounds(Vec3.One * 0.1f));
@@ -117,7 +119,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("LineIntersectBounds.jpg", 400, 400, poseBoundsLine.position + new Vec3(0.0f, 0.3f, 0.15f), poseBoundsLine.position);
+		Tests.Screenshot("LineIntersectBounds.jpg", 0, 400, 400, 20, poseBoundsLine.position + screenshotFrom, poseBoundsLine.position + screenshotAt);
 
 		// Mesh and Ray
 		bool meshRayActive = UI.HandleBegin("MeshRay", ref poseMeshRay, new Bounds(Vec3.One * 0.1f));
@@ -156,7 +158,7 @@ class DemoMath : ITest
 
 		UI.HandleEnd();
 
-		Tests.Screenshot("CrossProduct.jpg", 400, 400, poseCross.position + new Vec3(0.075f, 0.1f, 0.15f), poseCross.position + new Vec3(0.075f,0,0));
+		Tests.Screenshot("CrossProduct.jpg", 0, 400, 400, 20, poseCross.position + screenshotFrom, poseCross.position + screenshotAt);
 
 		Demo.ShowSummary(title, description, new Bounds(.8f, .3f, .1f));
 	}
