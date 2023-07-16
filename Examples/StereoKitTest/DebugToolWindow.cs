@@ -127,11 +127,12 @@ class DebugToolWindow : IStepper
 				new HandMenuItem("Back", null, null, HandMenuAction.Back)
 				),
 			new HandRadialLayer("Print",
-				new HandMenuItem("R Hand Pose", null, () => HandshotPose(Handed.Right) ),
-				new HandMenuItem("L Hand Pose", null, () => HandshotPose(Handed.Left) ),
-				new HandMenuItem("R Finger",    null, () => Log.Info(Input.Hand(Handed.Right)[FingerId.Index, JointId.Tip].position.ToString())),
-				new HandMenuItem("L Finger",    null, () => Log.Info(Input.Hand(Handed.Left)[FingerId.Index, JointId.Tip].position.ToString())),
-				new HandMenuItem("Back",        null, null, HandMenuAction.Back)
+				new HandMenuItem("R Hand Pose",   null, () => HandshotPose(Handed.Right) ),
+				new HandMenuItem("L Hand Pose",   null, () => HandshotPose(Handed.Left) ),
+				new HandMenuItem("R Finger",      null, () => Log.Info(Input.Hand(Handed.Right)[FingerId.Index, JointId.Tip].position.ToString())),
+				new HandMenuItem("L Finger",      null, () => Log.Info(Input.Hand(Handed.Left )[FingerId.Index, JointId.Tip].position.ToString())),
+				new HandMenuItem("Cam Screenshot",null, () => CameraPose()),
+				new HandMenuItem("Back",          null, null, HandMenuAction.Back)
 				),
 			new HandRadialLayer("Recording",
 				itemRecordHead,
@@ -296,6 +297,20 @@ class DebugToolWindow : IStepper
 		Log.Info($"Tests.Screenshot(\"image.jpg\", 600, 600, new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f), new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
 		PreviewScreenshot(pos, fwd);
 	}
+
+	void CameraPose()
+	{
+		if (camera == null)
+		{
+			Log.Warn("Camera should be enabled before printing screenshot pose.");
+			return;
+		}
+		Matrix toLocal = Demo.contentPose.Inverse;
+		Vec3 pos = toLocal *  camera.CamAt;
+		Vec3 fwd = toLocal * (camera.CamAt + camera.CamDir);
+		Log.Info($"Tests.Screenshot(\"image.jpg\", 0, 600, 600, {(int)camera.Fov},\n\tDemo.contentPose * new Vec3({pos.x:0.000}f, {pos.y:0.000}f, {pos.z:0.000}f),\n\tDemo.contentPose * new Vec3({fwd.x:0.000}f, {fwd.y:0.000}f, {fwd.z:0.000}f));");
+	}
+
 	void HandshotPose(Handed hand)
 	{
 		Hand h = Input.Hand(hand);

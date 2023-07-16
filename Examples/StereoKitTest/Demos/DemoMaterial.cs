@@ -162,7 +162,7 @@ class DemoMaterial : ITest
 
 		Vec3 at = Demo.contentPose.Transform(new Vec3(x, y-0.08f, 0));
 		mesh.Draw(material, Matrix.TS(at, 0.1f));
-		Tests.Screenshot(screenshotName, 0, 400, 400, 45, at + (from ?? new Vec3(0, 0, -0.08f)), at);
+		Tests.Screenshot(screenshotName, 0, 400, 400, 45, at + (from ?? new Vec3(0, 0, -0.16f)), at);
 	}
 
 	public void Step()
