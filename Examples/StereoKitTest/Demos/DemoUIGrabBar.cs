@@ -20,7 +20,7 @@ class DemoUIGrabBar : ITest
 
 	public void Step()
 	{
-		Tests.Screenshot("UIGrabBarWindow.jpg", 1, 400, 400, 90, grabBarPose.position + V.XYZ(-0.2f, -0.23f, 0.2f), grabBarPose.position - V.XYZ(0, 0.23f, 0));
+		Tests.Screenshot("UIGrabBarWindow.jpg", 1, 400, 400, 90, grabBarPose.position + V.XYZ(0, 0.06f, 0.12f), grabBarPose.position + V.XYZ(0, 0.06f, 0));
 		GrabBarWindow();
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.04f), V.XYZ(.2f, .2f, 0)));
 	}

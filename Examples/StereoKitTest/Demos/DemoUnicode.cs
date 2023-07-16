@@ -50,8 +50,8 @@ class DemoUnicode : ITest
 		UI.Text("Windows only symbols:\n");
 		UI.WindowEnd();
 
-		Vec3 at = V.XYZ(0.65f, -.15f, -.35f);
-		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(.19f,0,-.19f), at);
+		Vec3 at = Demo.contentPose.Translation + V.XY0(0,-0.17f);
+		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(0,0,-.22f), at);
 
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.17f), V.XYZ(.7f, .44f, 0.1f)));
 	}
