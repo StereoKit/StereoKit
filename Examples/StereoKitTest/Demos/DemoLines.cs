@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
 
@@ -6,9 +11,9 @@ class DemoLines : ITest
 {
 	string title       = "Lines";
 	string description = "";
-	
+
 	Model paletteModel = Model.FromFile("Palette.glb", Default.ShaderUI);
-	Pose  palettePose  = Demo.contentPose * new Pose(-0.2f, -0.15f, 0, Quat.FromAngles(-45,0,0));
+	Pose  palettePose  = Demo.contentPose * new Pose(-0.12f, -0.15f, 0, Quat.FromAngles(-45,0,0));
 	Color activeColor  = Color.White;
 	float lineSize     = 0.02f;
 
@@ -17,7 +22,7 @@ class DemoLines : ITest
 
 	public void Step()
 	{
-		Hierarchy.Push(Matrix.T(0.1f, -0.2f, 0) * Demo.contentPose);
+		Hierarchy.Push(Matrix.T(0.18f, -0.2f, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0, 0, 0));
 		/// :CodeSample: Lines.Add
 		Lines.Add(new Vec3(0.1f,0,0), new Vec3(-0.1f,0,0), Color.White, 0.01f);
@@ -44,7 +49,8 @@ class DemoLines : ITest
 		DrawMenu();
 		Draw(Handed.Right);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description,
+			new Bounds(V.XY0(0,-0.12f), V.XYZ(.6f, .3f, .2f)));
 	}
 
 	void DrawMenu()

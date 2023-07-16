@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 
 class DemoNodes : ITest
@@ -77,7 +82,7 @@ class DemoNodes : ITest
 			radioSound.WriteSamples(radioSoundBuffer);
 		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.5f, .5f, .2f)));
 	}
 
 	void UpdateLine(LinePoint[] line, float freq)

@@ -1,12 +1,17 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoUISettings : ITest
 {
 	string title       = "UI Settings";
 	string description = "";
 
-	Pose              settingsPose   = Demo.contentPose * new Pose(  0f, 0, 0);
-	Pose              colorPose      = Demo.contentPose * new Pose(-.3f, 0, 0);
+	Pose              settingsPose   = (Demo.contentPose * Matrix.T(-0.15f,0,0)).Pose;
+	Pose              colorPose      = (Demo.contentPose * Matrix.T( 0.15f,0,0)).Pose;
 	UISettings        initialSettings;
 	static UISettings activeSettings;
 	static Vec3       colorScheme    = new Vec3(0.07f, 0.5f, 0.8f);
@@ -72,7 +77,7 @@ class DemoUISettings : ITest
 
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.18f), V.XYZ(0.58f, .46f, 0.1f)));
 	}
 
 	public void Initialize() { activeSettings = UI.Settings; initialSettings = UI.Settings; }

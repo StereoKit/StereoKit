@@ -1,11 +1,16 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System.Collections.Generic;
 using System.Linq;
 
 class DemoPhysics : ITest
 {
-	string      title       = "Physics";
-	string      description = "StereoKit supports some basic rigidbody physics simulation. See the 'Solid' class in the docs.\n\nUse the panel to add or clear physics objects from the scene, and make a fist to interact with them yourself!";
+	string title       = "Physics";
+	string description = "StereoKit supports some basic rigidbody physics simulation. See the 'Solid' class in the docs.\n\nUse the panel to add or clear physics objects from the scene, and make a fist to interact with them yourself!";
 
 	Solid       floorSolid;
 	Model       gltf;
@@ -57,7 +62,7 @@ class DemoPhysics : ITest
 			objects.Clear();
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.025f), V.XYZ(.2f, .2f, 0.1f)));
 	}
 
 	public void Shutdown()

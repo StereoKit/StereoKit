@@ -241,7 +241,8 @@ namespace StereoKit
 		/// right away, and Initialize is called right after SK.Initialize, or
 		/// at the start of the next frame before the next main Step callback
 		/// if SK is already initialized.</summary>
-		/// <param name="stepper">An instance of an IStepper object.</param>
+		/// <param name="stepper">An instance of an IStepper object. Must not
+		/// be null.</param>
 		/// <typeparam name="T">An IStepper type.</typeparam>
 		/// <returns>Just for convenience, this returns the instance that was
 		/// just added.</returns>
@@ -275,7 +276,7 @@ namespace StereoKit
 		/// This will call the IStepper's Shutdown method before returning.
 		/// </summary>
 		/// <param name="stepper">The specific IStepper instance to remove.
-		/// </param>
+		/// Fine if it's null.</param>
 		public static void RemoveStepper(IStepper stepper) => _steppers.Remove(stepper);
 		/// <summary>This removes all IStepper instances that are assignable to
 		/// the generic type specified. This will call the IStepper's Shutdown

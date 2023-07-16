@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoMaterialChain : ITest
 {
@@ -41,6 +46,6 @@ class DemoMaterialChain : ITest
 
 		Tests.Screenshot("InvertedShell.jpg", 400, 400, 90, Demo.contentPose.Translation + V.XYZ(-0.2f, -0.04f, 0.2f), Demo.contentPose.Translation);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.4f, .4f, .4f)); 
 	}
 }
