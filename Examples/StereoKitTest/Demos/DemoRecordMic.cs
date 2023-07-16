@@ -83,7 +83,7 @@ class DemoRecordMic : ITest
 		ShowMicDeviceWindow();
 		RecordAudio();
 
-		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(-0.08f, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
+		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(0, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
 
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.7f, .36f, 0.1f)));
 	}
