@@ -66,12 +66,12 @@ void simulator_step_begin() {
 		vec3 movement = {};
 		if (!ui_has_keyboard_focus()) {
 			// Don't do keyboard movement if the UI is using the keyboard!
-			if (input_key(key_w) & button_state_active) movement += vec3_forward;
-			if (input_key(key_s) & button_state_active) movement -= vec3_forward;
-			if (input_key(key_d) & button_state_active) movement += vec3_right;
-			if (input_key(key_a) & button_state_active) movement -= vec3_right;
-			if (input_key(key_e) & button_state_active) movement += vec3_up;
-			if (input_key(key_q) & button_state_active) movement -= vec3_up;
+			if (input_keycode(key_w) & button_state_active) movement += vec3_forward;
+			if (input_keycode(key_s) & button_state_active) movement -= vec3_forward;
+			if (input_keycode(key_d) & button_state_active) movement += vec3_right;
+			if (input_keycode(key_a) & button_state_active) movement -= vec3_right;
+			if (input_keycode(key_e) & button_state_active) movement += vec3_up;
+			if (input_keycode(key_q) & button_state_active) movement -= vec3_up;
 		}
 		if (vec3_magnitude_sq( movement ) != 0)
 			movement = vec3_normalize(movement);

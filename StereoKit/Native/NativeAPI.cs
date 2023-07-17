@@ -566,13 +566,14 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_keycode      (Key key);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSimId input_hand_sim_pose_add   ([In] Pose[] in_arr_hand_joints_25, ControllerKey button1, ControllerKey and_button2, Key or_hotkey1, Key and_hotkey2);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      input_hand_sim_pose_remove(HandSimId id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      input_hand_sim_pose_clear ();
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_press  (Key key);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_release(Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_press  (Key key, byte scan = 0, byte code = 0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_release(Key key, byte scan = 0, byte code = 0);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint     input_text_consume ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_reset   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_inject_char(uint character);

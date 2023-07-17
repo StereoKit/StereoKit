@@ -147,6 +147,12 @@ button_state_ input_key(key_ key) {
 
 ///////////////////////////////////////////
 
+button_state_ input_keycode(key_ key) {
+	return input_keyboard_get_code(key);
+}
+
+///////////////////////////////////////////
+
 const pose_t *input_head() {
 	return &input_head_pose_world;
 }

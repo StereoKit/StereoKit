@@ -15,6 +15,7 @@ void          input_keyboard_shutdown  ();
 void          input_keyboard_suspend   (bool suspend);
 void          input_keyboard_update    ();
 button_state_ input_keyboard_get       (key_ key);
+button_state_ input_keyboard_get_code  (key_ key);
 
 extern float input_last_physical_keypress;
 
