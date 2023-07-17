@@ -9,6 +9,8 @@
 		<RootNamespace>StereoKitTest</RootNamespace>
 		<ReadOnlyProject>true</ReadOnlyProject>
 
+		<SKOpenXRLoaderFolder Condition="'$(OS)'!='Windows_NT'">/mnt/c/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
+		<SKOpenXRLoaderFolder Condition="'$(OS)'=='Windows_NT'">C:/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
 		<SKOpenXRLoader>Standard</SKOpenXRLoader>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
