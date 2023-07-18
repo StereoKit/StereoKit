@@ -1,8 +1,16 @@
 {
   "profiles": {
-    "StereoKitAPIGen": {
+    "StereoKitAPIGen Zig": {
       "commandName": "Project",
       "commandLineArgs": "-f ../../../../../StereoKitC/stereokit.h -l Zig -d ../../../../../Examples/StereoKitZig/StereoKit -o SKOverrideZig.txt"
+    },
+    "StereoKitAPIGen CSharp": {
+      "commandName": "Project",
+      "commandLineArgs": "-f ../../../../../StereoKitC/stereokit.h -l CSharp -d ../../../../../StereoKit/Native -o SKOverrides.txt"
+    },
+    "StereoKitAPIGen Parse": {
+      "commandName": "Project",
+      "commandLineArgs": "-f ../../../../../StereoKitC/stereokit.h -l Debug -d ../../../../../Examples/StereoKitZig/StereoKit -o SKOverrideZig.txt"
     }
   }
 }

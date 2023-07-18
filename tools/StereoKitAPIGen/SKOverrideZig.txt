@@ -12,6 +12,9 @@ float f32
 double f64
 void void
 char32_t u32
+char16_t u16
+char8_t u8
+char u8
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -67,6 +70,7 @@ button_state_ BtnState
 color128 Color
 
 sk SK
+sk_settings_t SKSettings
 vind_t u32
 vert_t Vert
 model_node_id i32

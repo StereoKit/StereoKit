@@ -1,24 +1,31 @@
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
-    var exe = b.addExecutable("main", "main.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
+    var exe = b.addExecutable(.{
+        .name = "StereoKitZigTest",
+        .root_source_file = .{ .path = "main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const stereokit_module = b.createModule(.{
+        .source_file = .{ .path = "StereoKit/StereoKit.zig" },
+        .dependencies = &.{},
+    });
 
     exe.addIncludePath("../../bin/distribute/include");
     exe.addLibraryPath("../../bin/distribute/bin/Win32/x64/Release");
-    exe.addPackagePath("StereoKit", "StereoKit/StereoKit.zig");
-
-    b.installFile("../../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll", "bin/StereoKitC.dll");
-
+    exe.addModule("StereoKit", stereokit_module);
     exe.linkSystemLibrary("c");
     exe.linkSystemLibrary("StereoKitC");
-    exe.install();
 
-    const run_cmd = exe.run();
+    b.installArtifact(exe);
+    b.installFile("../../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll", "bin/StereoKitC.dll");
+
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
