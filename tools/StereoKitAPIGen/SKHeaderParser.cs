@@ -9,6 +9,7 @@ namespace StereoKitAPIGen;
 
 enum SKStringType
 {
+	None,
 	ASCII,
 	UTF8,
 	UTF16
@@ -18,7 +19,7 @@ enum SKStringType
 
 enum SKPassType
 {
-	Copy,
+	None,
 	Ref,
 	In,
 	Out
@@ -201,7 +202,16 @@ static class SKHeaderParser
 							returnType = ParseType(fun.ReturnType)
 						});
 						curr = null;
-					}break;
+					} break;
+				case CppUnexposedType unexposed:
+					{
+						// Seems like char16/32_t are somewhat exceptional
+						// types here!
+						if      (unexposed.Name == "const char16_t") result.name = "char16_t";
+						else if (unexposed.Name == "char32_t")       result.name = "char32_t";
+						else throw new Exception("Unknown type: " + unexposed.Name);
+						curr = null;
+					} break;
 				default: result.name = curr.GetDisplayName(); curr = null; break;
 			}
 		}
@@ -304,6 +314,7 @@ static class SKHeaderParser
 		result.nameFlagless = "";
 		result.defaultValue = param.InitExpression;
 		result.type         = ParseType(param.Type);
+		result.stringType   = result.type.name == "char" ? SKStringType.ASCII : SKStringType.None;
 		if (result.type.functionPtr != null)
 			result.type.name = param.Name;
 

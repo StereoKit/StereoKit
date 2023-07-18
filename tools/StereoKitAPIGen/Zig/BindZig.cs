@@ -46,31 +46,31 @@ class BindZig
 
 	///////////////////////////////////////////
 
-	static string ZigTypeName(string sourceName)
+	static string NameType(string sourceName)
 		=> NameOverrides.TryGet(sourceName, out string custom)
 			? custom
 			: Tools.SnakeToCamelU(sourceName.EndsWith("_t") ? sourceName[..^2] : sourceName);
 
-	static string ZigMethodName(string sourceName, string modulePrefix)
+	static string NameMethod(string sourceName, string modulePrefix)
 		=> NameOverrides.TryGet(sourceName, out string custom)
 			? custom
 			: Tools.SnakeToCamelU(sourceName.StartsWith(modulePrefix) ? sourceName[modulePrefix.Length..] : sourceName);
 
 	///////////////////////////////////////////
 
-	static string ZigFieldName(string sourceName)
+	static string NameField(string sourceName)
 		=> NameOverrides.TryGet(sourceName, out string custom)
 			? custom
 			: Tools.SnakeToCamelL(sourceName);
 
-	static string ZigParamName(string sourceName)
-		=> ZigFieldName(sourceName);
+	static string NameParam(string sourceName)
+		=> NameField(sourceName);
 
 	///////////////////////////////////////////
 
 	static void BuildEnum(StringBuilder text, SKEnum e)
 	{
-		string enumName = ZigTypeName(e.name);
+		string enumName = NameType(e.name);
 
 		Func<string, string> enumItemName = (str) =>
 			NameOverrides.TryGet(str, out string custom)
@@ -100,7 +100,7 @@ class BindZig
 		SKFunction[] moduleFunctions = SKHeaderData.GetModuleFunctions(m, data.functions);
 
 		text.AppendLine($"\r\n///////////////////////////////////////////\r\n");
-		text.AppendLine($"pub const {ZigTypeName(m.name)} = extern struct {{");
+		text.AppendLine($"pub const {NameType(m.name)} = extern struct {{");
 		if (m.isAsset)
 			text.AppendLine($"\t_inst: ?*opaque{{}} = null,\r\n");
 
@@ -113,7 +113,7 @@ class BindZig
 			//		? "0"
 			//		: ".{}";
 			//text.AppendLine($"{ZigFieldName(f.name) + ":"} {ZigTypeToStr(f.type)} = {defaultVal},");
-			text.AppendLine($"\t{ZigFieldName(f.name) + ":"} {ZigTypeToStr(f.type)},");
+			text.AppendLine($"\t{NameField(f.name) + ":"} {TypeToStr(f.type)},");
 		}
 		if (m.fields.Length > 0) text.AppendLine();
 
@@ -121,9 +121,9 @@ class BindZig
 		// These are the directly imported functions
 		foreach (var f in moduleFunctions)
 		{
-			string paramList = f.parameters.Aggregate("", (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
+			string paramList = f.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {TypeToStr(p.type)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			text.AppendLine($"\textern fn {f.name}({paramList}) {ZigTypeToStr(f.returnType)};");
+			text.AppendLine($"\textern fn {f.name}({paramList}) {TypeToStr(f.returnType)};");
 		}
 		if (moduleFunctions.Length > 0) text.AppendLine();
 
@@ -133,18 +133,18 @@ class BindZig
 		{
 			SKFunctionRelation rel = SKHeaderData.GetFunctionRelation(m, f);
 
-			string paramList = rel == SKFunctionRelation.Instance ? $"self: *{ZigTypeName(m.name)}, " : "";
-			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
-			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}: {ZigTypeToStr(p.type)}, ");
+			string paramList = rel == SKFunctionRelation.Instance ? $"self: *{NameType(m.name)}, " : "";
+			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {TypeToStr(p.type)}, ");
+			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {TypeToStr(p.type)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			text.AppendLine($"\tpub fn {ZigMethodName(f.name, m.modulePrefix)}({paramList}) {ZigTypeToStr(f.returnType)} {{");
+			text.AppendLine($"\tpub fn {NameMethod(f.name, m.modulePrefix)}({paramList}) {TypeToStr(f.returnType)} {{");
 			if (!f.returnType.IsVoid) text.Append("\t\treturn ");
 			else                      text.Append("\t\t");
 			text.Append(f.name+"(");
 			string argList = "";
 			if (rel == SKFunctionRelation.Instance) argList = "self._inst.?, ";
-			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}, ");
-			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{ZigParamName(p.nameFlagless)}, ");
+			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
+			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
 			if (argList != "") argList = argList[..^2];
 			text.AppendLine($"{argList});");
 			text.AppendLine("\t}");
@@ -155,10 +155,10 @@ class BindZig
 
 	///////////////////////////////////////////
 
-	static string ZigTypeToStr(SKType type)
+	static string TypeToStr(SKType type)
 	{
 		// This needs more work
-		string zigName = ZigTypeName(type.name);
+		string zigName = NameType(type.name);
 		if          (type.arraySize1 > 0) return $"[{type.arraySize1}]{(type.isConst ? "const " : "")}{zigName}";
 		else return (type.pointerLvl > 0 ? "*" : "") + zigName;
 	}

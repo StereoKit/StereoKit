@@ -7,7 +7,7 @@ uint8_t byte
 uint16_t ushort
 uint32_t uint
 uint64_t ulong
-bool32_t int
+bool32_t bool
 float float
 double double
 void void

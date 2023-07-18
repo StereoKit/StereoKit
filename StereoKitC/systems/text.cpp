@@ -227,7 +227,7 @@ inline vec2 text_size_g(const C *text, text_style_t style) {
 	return vec2{ max_x, (y + (y - 1) * text_styles[style].line_spacing) * text_styles[style].char_height };
 }
 
-vec2 text_size   (const char     *text_utf8,  text_style_t style) { return text_size_g<char,     utf8_decode_fast_b >(text_utf8,  style); }
+vec2 text_size   (const char8_t  *text_utf8,  text_style_t style) { return text_size_g<char,     utf8_decode_fast_b >(text_utf8,  style); }
 vec2 text_size_16(const char16_t *text_utf16, text_style_t style) { return text_size_g<char16_t, utf16_decode_fast_b>(text_utf16, style); }
 
 ///////////////////////////////////////////
@@ -307,7 +307,7 @@ inline vec2 text_char_at_g(const C *text, text_style_t style, int32_t char_index
 	return step.pos;
 }
 
-vec2 text_char_at   (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_g<char,     utf8_decode_fast_b >(text_utf8,  style, char_index, opt_size, fit, position, align); }
+vec2 text_char_at   (const char8_t*  text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_g<char,     utf8_decode_fast_b >(text_utf8,  style, char_index, opt_size, fit, position, align); }
 vec2 text_char_at_16(const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_g<char16_t, utf16_decode_fast_b>(text_utf16, style, char_index, opt_size, fit, position, align); }
 
 ///////////////////////////////////////////
@@ -489,7 +489,7 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 
 ///////////////////////////////////////////
 
-void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+void text_add_at(const char8_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	text_add_in(text, transform, text_size(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
@@ -601,7 +601,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 }
 
 
-float text_add_in(const char *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+float text_add_in(const char8_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	return text_add_in_g<char, utf8_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
