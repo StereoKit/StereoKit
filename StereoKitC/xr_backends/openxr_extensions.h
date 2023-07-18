@@ -125,6 +125,7 @@ namespace sk {
 #define FOR_EACH_EXT_ALL(_) \
 	_(KHR_composition_layer_depth,       true) \
 	_(EXT_hand_tracking,                 true) \
+	_(EXT_hand_tracking_data_source,     true) \
 	_(EXT_palm_pose,                     true) \
 	_(EXT_eye_gaze_interaction,          true) \
 	_(EXT_local_floor,                   true) \

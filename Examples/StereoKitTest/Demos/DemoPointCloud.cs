@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Linq;
 
@@ -83,14 +88,14 @@ public class PointCloud
 
 class DemoPointCloud : ITest
 {
-	string     title        = "Point Clouds";
-	string     description  = "Point clouds are not a built-in feature of StereoKit, but it's not hard to do this yourself! Check out the code for this demo for a class that'll help you do this directly from data, or from a Model.";
+	string title       = "Point Clouds";
+	string description = "Point clouds are not a built-in feature of StereoKit, but it's not hard to do this yourself! Check out the code for this demo for a class that'll help you do this directly from data, or from a Model.";
 
-	Pose       cloudPose    = (Matrix.T(0,-0.1f,0) * Demo.contentPose).Pose;
+	Pose       cloudPose    = (Matrix.T(0.2f,-0.1f,0) * Demo.contentPose).Pose;
 	float      cloudScale   = 1;
 	PointCloud cloud;
 
-	Pose       settingsPose = (Matrix.T(-0.4f,0,0) * Demo.contentPose).Pose;
+	Pose       settingsPose = (Matrix.T(-0.2f,0,0) * Demo.contentPose).Pose;
 	float      pointSize    = 0.01f;
 
 	public void Initialize()
@@ -161,6 +166,6 @@ class DemoPointCloud : ITest
 		}
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f),  V.XYZ(.8f, .5f, 0.5f)));
 	}
 }

@@ -31,8 +31,9 @@ namespace StereoKit.Framework
 			_actions.Enqueue(new StepperAction(inst, ActionType.Add));
 			return inst;
 		}
-		public T Add<T>(T stepper) where T:IStepper 
+		public T Add<T>(T stepper) where T:IStepper
 		{
+			if (stepper == null) throw new ArgumentNullException();
 			_actions.Enqueue(new StepperAction(stepper, ActionType.Add));
 			return stepper;
 		}
@@ -49,7 +50,8 @@ namespace StereoKit.Framework
 		}
 		public void Remove(IStepper stepper)
 		{
-			_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
+			if (stepper != null)
+				_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
 		}
 
 		public T Get<T>() => (T)Get(typeof(T));

@@ -1,7 +1,15 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoPBR : ITest
 {
+	string title       = "PBR Shaders";
+	string description = "Shaders!";
+
 	const int  materialGrid = 6;
 	Material[] pbrMaterials;
 	Model      pbrModel;
@@ -79,5 +87,7 @@ class DemoPBR : ITest
 		Text.Add("Metallic -->",  Matrix.TRS(new Vec3(0, materialGrid/8.0f+0.2f,  -0.25f), Quat.FromAngles(0,180, 0 ), 4));
 		Text.Add("Roughness -->", Matrix.TRS(new Vec3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
 		Hierarchy.Pop();
+
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0, 0, 0.5f), V.XYZ(2.2f, 2.2f, .5f)));
 	}
 }

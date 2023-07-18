@@ -37,9 +37,10 @@ function Unix-Size-Summary($report) {
 # Get size of all the binaries
 $rootFolder = "$PSScriptRoot/../bin/distribute/bin"
 $size_x64        = File-Length "$rootFolder/Win32/x64/Release/StereoKitC.dll"
+$size_x64_and    = File-Length "$rootFolder/Android/x86_64/Release/libStereoKitC.so"
 $size_x64_linux  = File-Length "$rootFolder/Linux/x64/Release/libStereoKitC.so"
 $size_x64_uwp    = File-Length "$rootFolder/UWP/x64/Release/StereoKitC.dll"
-$size_arm64      = File-Length "$rootFolder/Android/arm64-v8a/Release/libStereoKitC.so"
+$size_arm64_and  = File-Length "$rootFolder/Android/arm64-v8a/Release/libStereoKitC.so"
 $size_arm64_linux= File-Length "$rootFolder/Linux/arm64/Release/libStereoKitC.so"
 $size_arm64_uwp  = File-Length "$rootFolder/UWP/ARM64/Release/StereoKitC.dll"
 $size_arm_uwp    = File-Length "$rootFolder/UWP/ARM/Release/StereoKitC.dll"
@@ -55,14 +56,16 @@ $build_sizes = (@"
 | UWP      | ARM   | {6,8:N0} | {7,11:N0} |
 | Linux    | x64   | {8,8:N0} | {9,11:N0} |
 | Linux    | ARM64 | {10,8:N0} | {11,11:N0} |
-| Android  | ARM64 | {12,8:N0} | {13,11:N0} |
+| Android  | x64   | {12,8:N0} | {13,11:N0} |
+| Android  | ARM64 | {14,8:N0} | {15,11:N0} |
 "@ -f ([math]::Round($size_x64        /1kb), $size_x64,
        [math]::Round($size_x64_uwp    /1kb), $size_x64_uwp,
        [math]::Round($size_arm64_uwp  /1kb), $size_arm64_uwp,
        [math]::Round($size_arm_uwp    /1kb), $size_arm_uwp,
        [math]::Round($size_x64_linux  /1kb), $size_x64_linux,
        [math]::Round($size_arm64_linux/1kb), $size_arm64_linux,
-       [math]::Round($size_arm64      /1kb), $size_arm64
+       [math]::Round($size_x64_and  /1kb), $size_x64_and,
+       [math]::Round($size_arm64_and  /1kb), $size_arm64_and
        ))
 
 $linux_x64_report = ''

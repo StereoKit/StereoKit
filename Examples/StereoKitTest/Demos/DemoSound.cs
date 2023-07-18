@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+ 
+using StereoKit;
 using System;
 using System.Collections.Generic;
 
@@ -7,18 +12,18 @@ class DemoSound : ITest
 	string title       = "Sound";
 	string description = "";
 
-	Pose  windowPose = new Pose(.4f, 0, -0.4f, Quat.LookDir(-1,0,1));
+	Pose  windowPose = (Demo.contentPose * Matrix.T(0.1f,0,0)).Pose;
 	Sound fileSound  = Sound.FromFile("BlipNoise.wav");
 
 	float      genDuration = 0.5f;
 	Sound      genSound;
-	Bounds     genVolume = new Bounds(new Vec3(.5f, 0, 0), new Vec3(0.25f, 0.25f, 0.25f));
+	Bounds     genVolume = new Bounds( Demo.contentPose.Translation + new Vec3(0, -0.3f, 0), new Vec3(0.25f, 0.25f, 0.25f));
 	bool       genPrevContains = false;
 	List<LinePoint> genPath = new List<LinePoint>();
 
 	Sound       wandStream;
 	SoundInst   wandStreamInst;
-	Pose        wandPose = new Pose(.5f, 0, -0.3f, Quat.LookDir(1,0,0));
+	Pose        wandPose = (Demo.contentPose * Matrix.T(-0.1f,0,0)).Pose;
 	Model       wandModel;
 	Vec3        wandTipPrev;
 	LinePoint[] wandFollow = null;
@@ -158,6 +163,6 @@ class DemoSound : ITest
 		Lines.Add(genPath.ToArray());
 		genPrevContains = contains;
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.4f, .6f, 0.3f)));
 	}
 }

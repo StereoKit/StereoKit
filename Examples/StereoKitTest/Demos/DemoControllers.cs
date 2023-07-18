@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoControllers : ITest
 {
@@ -20,7 +25,7 @@ class DemoControllers : ITest
 		ShowController(Handed.Right);
 		ShowController(Handed.Left);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
 	}
 
 	/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose

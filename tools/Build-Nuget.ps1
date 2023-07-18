@@ -3,17 +3,21 @@ param(
     [switch]$noTest = $false,
     [switch]$noBuild = $false,
     [string]$key = '',
-    [string]$saveKey = ''
+    [string]$saveKey = '',
+    [switch]$noLinux = $false,
+    [switch]$noWin32 = $false,
+    [switch]$noUWP = $false,
+    [switch]$noAndroid = $false
 )
 
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
 function Get-ScriptName { return $MyInvocation.ScriptName }
 
 # In case we only want to build a subset of the package
-$buildWindows    = $true -and -not $noBuild
-$buildWindowsUWP = $true -and -not $noBuild
-$buildLinux      = $true -and -not $noBuild
-$buildAndroid    = $true -and -not $noBuild
+$buildWindows    = -not $noWin32 -and -not $noBuild
+$buildWindowsUWP = -not $noUWP -and -not $noBuild
+$buildLinux      = -not $noLinux -and -not $noBuild
+$buildAndroid    = -not $noAndroid -and -not $noBuild
 
 $clean = $true -and -not $noBuild
 
@@ -124,7 +128,7 @@ if ($buildAndroid) {
                       
 "@ -ForegroundColor White
 
-    #Build-Preset -preset Androidx64Release -presetName 'Android x64'
+    Build-Preset -preset Androidx64Release -presetName 'Android x64'
     Build-Preset -preset AndroidArm64Release -presetName 'Android arm64-v8a'
 }
 

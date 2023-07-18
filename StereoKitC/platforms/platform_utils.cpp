@@ -412,8 +412,21 @@ float platform_get_scroll() {
 
 void platform_debug_output(log_ level, const char *text) {
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	OutputDebugStringA(text);
-	(void)level;
+	const char* tag = "";
+	switch (level) {
+	case log_diagnostic: tag = "diagnostic"; break;
+	case log_inform:     tag = "info";       break;
+	case log_warning:    tag = "warning";    break;
+	case log_error:      tag = "error";      break;
+	default: break;
+	}
+
+	size_t expand_size = strlen(text) + _countof("[SK diagnostic] \n");
+	char*  expanded    = (char*)alloca(sizeof(char) * expand_size);
+	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
+
+	OutputDebugStringA(expanded);
+
 #elif defined(SK_OS_ANDROID)
 	int32_t priority = ANDROID_LOG_INFO;
 	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;

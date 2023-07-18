@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 
 class DemoUITearsheet : ITest
@@ -22,7 +27,7 @@ class DemoUITearsheet : ITest
 	int index = 1;
 	void Unique(Action a) { UI.PushId(index); index += 1; a(); UI.PopId(); }
 
-	Pose   buttonWindowPose = new Pose(0,0,0);
+	Pose   buttonWindowPose = new Pose(0.45f,0,0);
 	bool[] toggles          = new bool[10];
 	int    radio            = 0;
 	void ShowButtonWindow()
@@ -64,7 +69,7 @@ class DemoUITearsheet : ITest
 		UI.WindowEnd();
 	}
 
-	Pose   sliderWindowPose = new Pose(-0.3f, 0, 0);
+	Pose   sliderWindowPose = new Pose(0.15f, 0, 0);
 	float  sliderValf1 = 0;
 	float  sliderValf2 = 0;
 	float  sliderValf3 = 0;
@@ -87,7 +92,7 @@ class DemoUITearsheet : ITest
 		UI.WindowEnd();
 	}
 
-	Pose   textWindowPose = new Pose(-0.6f, 0, 0);
+	Pose   textWindowPose = new Pose(-0.15f, 0, 0);
 	string textInput = "Text here please :)";
 	string textPassword = "Text here please :)";
 	void ShowTextWindow()
@@ -126,7 +131,7 @@ class DemoUITearsheet : ITest
 		UI.WindowEnd();
 	}
 
-	Pose layoutWindowPose = new Pose(-0.9f, 0, 0);
+	Pose layoutWindowPose = new Pose(-0.45f, 0, 0);
 	void ShowLayouts()
 	{
 		UI.WindowBegin("Layouts", ref layoutWindowPose, V.XY(0.25f, 0.25f));
@@ -172,12 +177,12 @@ class DemoUITearsheet : ITest
 		ShowTextWindow  ();
 		ShowLayouts     ();
 
-		Vec3 off  = new Vec3(-0.45f, -0.2f, 0);
+		Vec3 off  = new Vec3(0, -0.2f, 0);
 		Vec3 at   = Hierarchy.ToWorld(Vec3.Zero + off);
 		Vec3 from = Hierarchy.ToWorld(new Vec3(0,0,-0.55f) + off);
 		Hierarchy.Pop();
 
 		Tests.Screenshot("Tests/UITearsheet.jpg", 1, 1000, 500, 60, from, at);
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.23f), V.XYZ(1.3f, .6f, .1f)));
 	}
 }

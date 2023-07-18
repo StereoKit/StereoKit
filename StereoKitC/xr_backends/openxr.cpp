@@ -102,6 +102,7 @@ XrReferenceSpaceType     xr_refspace;
 bool32_t             openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
 void                 openxr_preferred_layers (uint32_t &out_layer_count, const char **out_layers);
 XrTime               openxr_acquire_time     ();
+bool                 openxr_blank_frame      ();
 
 ///////////////////////////////////////////
 
@@ -147,6 +148,24 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 }
 
 ///////////////////////////////////////////
+
+#if defined(SK_DEBUG)
+XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFlagsEXT severity,
+                                                   XrDebugUtilsMessageTypeFlagsEXT,
+                                                   const XrDebugUtilsMessengerCallbackDataEXT *msg,
+                                                   void*) {
+	// Print the debug message we got! There's a bunch more info we could
+	// add here too, but this is a pretty good start, and you can always
+	// add a breakpoint this line!
+	log_ level = log_diagnostic;
+	if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
+	else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
+	log_writef(level, "%s: %s", msg->functionName, msg->message);
+
+	// Returning XR_TRUE here will force the calling function to fail
+	return (XrBool32)XR_FALSE;
+}
+#endif
 
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
@@ -248,18 +267,8 @@ bool openxr_create_system() {
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT, const XrDebugUtilsMessengerCallbackDataEXT *msg, void*) {
-		// Print the debug message we got! There's a bunch more info we could
-		// add here too, but this is a pretty good start, and you can always
-		// add a breakpoint this line!
-		log_ level = log_diagnostic;
-		if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
-		else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
-		log_writef(level, "%s: %s", msg->functionName, msg->message);
 
-		// Returning XR_TRUE here will force the calling function to fail
-		return (XrBool32)XR_FALSE;
-	};
+	debug_info.userCallback = openxr_debug_messenger_callback;
 	// Start up the debug utils!
 	if (xr_ext_available.EXT_debug_utils)
 		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
@@ -457,31 +466,34 @@ bool openxr_init() {
 	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
 	// tracking layer is present.
 	//
-	// TODO: Remove this when the hand tracking extension is improved.
+	// TODO: Remove this when the hand tracking data source extension is more
+	// generally available.
 #if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
-	// We don't need to ask for the Ultraleap layer above so we don't have it
-	// stored anywhere. Gotta check it again.
-	bool     has_leap_layer = false;
-	uint32_t xr_layer_count = 0;
-	xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
-	XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
-	for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
-	xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
-	for (uint32_t i = 0; i < xr_layer_count; i++) {
-		if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
-			has_leap_layer = true;
-			break;
+	if (xr_ext_available.EXT_hand_tracking_data_source == false) {
+		// We don't need to ask for the Ultraleap layer above so we don't have it
+		// stored anywhere. Gotta check it again.
+		bool     has_leap_layer = false;
+		uint32_t xr_layer_count = 0;
+		xrEnumerateApiLayerProperties(0, &xr_layer_count, nullptr);
+		XrApiLayerProperties *xr_layers = sk_malloc_t(XrApiLayerProperties, xr_layer_count);
+		for (uint32_t i = 0; i < xr_layer_count; i++) xr_layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
+		xrEnumerateApiLayerProperties(xr_layer_count, &xr_layer_count, xr_layers);
+		for (uint32_t i = 0; i < xr_layer_count; i++) {
+			if (strcmp(xr_layers[i].layerName, "XR_APILAYER_ULTRALEAP_hand_tracking") == 0) {
+				has_leap_layer = true;
+				break;
+			}
 		}
-	}
-	sk_free(xr_layers);
+		sk_free(xr_layers);
 
-	// The Leap hand tracking layer seems to supercede the built-in extensions.
-	if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-		if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
-			strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
-			log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
-			xr_has_articulated_hands = false;
-			xr_has_hand_meshes       = false;
+		// The Leap hand tracking layer seems to supercede the built-in extensions.
+		if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
+			if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
+				strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+				log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
+				xr_has_articulated_hands = false;
+				xr_has_hand_meshes       = false;
+			}
 		}
 	}
 #endif
@@ -542,16 +554,26 @@ bool openxr_init() {
 	}
 
 	// Wait for the session to start before we do anything more with the 
-	// spaces, reference spaces are sometimes invalid before session start.
-	while (!xr_running && openxr_poll_events()) {
-		platform_sleep(1);
+	// spaces, reference spaces are sometimes invalid before session start. We
+	// need to submit blank frames in order to get past the READY state.
+	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN)
+		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
+	// Blank frames should only be submitted when the session is READY
+	while (xr_session_state == XR_SESSION_STATE_READY) {
+		openxr_blank_frame();
+		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
-	while (!openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) && openxr_poll_events()) {
-		platform_sleep(1);
+	// TODO: Loop here may be optional, but some platforms may need it? Waiting
+	// for some feedback here.
+	int32_t ref_space_tries = 10;
+	while (openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
+		ref_space_tries--;
+		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
+		openxr_blank_frame();
 	}
 	switch (xr_app_space_type) {
 		case XR_REFERENCE_SPACE_TYPE_STAGE:           world_origin_mode = origin_mode_stage; break;
@@ -585,6 +607,29 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool openxr_blank_frame() {
+	XrFrameWaitInfo wait_info   = { XR_TYPE_FRAME_WAIT_INFO };
+	XrFrameState    frame_state = { XR_TYPE_FRAME_STATE };
+	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
+		"blank xrWaitFrame [%s]");
+
+	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
+	xr_check(xrBeginFrame(xr_session, &begin_info),
+		"blank xrBeginFrame [%s]");
+
+	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
+	end_info.displayTime = frame_state.predictedDisplayTime;
+	if      (xr_blend_valid(display_blend_opaque  )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+	else if (xr_blend_valid(display_blend_additive)) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
+	else if (xr_blend_valid(display_blend_blend   )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
+	xr_check(xrEndFrame(xr_session, &end_info),
+		"blank xrEndFrame [%s]");
 
 	return true;
 }
@@ -675,7 +720,9 @@ bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime t
 		case XR_REFERENCE_SPACE_TYPE_LOCAL:           has_local       = true; break;
 		case XR_REFERENCE_SPACE_TYPE_STAGE:           has_stage       = true; break;
 		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: has_local_floor = true; break;
-		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = true; break;
+		// It's possible runtimes may be providing this despite the extension
+		// not being enabled? So we're forcing it here.
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext_available.MSFT_unbounded_reference_space; break;
 		}
 	}
 	sk_free(refspace_types);

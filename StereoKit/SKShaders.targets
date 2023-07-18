@@ -39,12 +39,16 @@
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
 			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
+			
+			<!-- Needs to be normalized for Linux, also a trailing '\' will act
+			     as an escape character for quotes. -->
+			<IncludeFolderNormalized>$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))</IncludeFolderNormalized>
 		</PropertyGroup>
 
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)../tools/'))include" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
 				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>

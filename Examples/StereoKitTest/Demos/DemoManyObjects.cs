@@ -1,42 +1,51 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
 
-namespace StereoKitTest
+class DemoManyObjects : ITest
 {
-	class DemoManyObjects : ITest
+	string title       = "Many Objects";
+	string description = "......";
+
+	Model model = Model.FromFile("DamagedHelmet.gltf");
+	const int cacheCount = 100;
+	List<Pose> poseCache = new List<Pose>(cacheCount); 
+
+	public void Initialize() {
+		for (int i = 0; i < cacheCount; i++) {
+			poseCache.Add(Demo.contentPose.Pose);
+		}
+	}
+
+	public void Shutdown() { }
+
+	public void Step()
 	{
-		Model model = Model.FromFile("DamagedHelmet.gltf");
-		const int cacheCount = 100;
-		List<Pose> poseCache = new List<Pose>(cacheCount); 
+		Pose curr = poseCache[0];
+		UI.Handle("Model", ref curr, model.Bounds * 0.04f);
+		poseCache.RemoveAt(poseCache.Count-1);
+		poseCache.Insert(0, curr);
 
-		public void Initialize() {
-			for (int i = 0; i < cacheCount; i++) {
-				poseCache.Add(Pose.Identity);
-			}
-		}
+		Mesh.Cube.Draw(Material.UIBox, Matrix.TS(model.Bounds.center*0.04f, model.Bounds.dimensions*0.04f)* curr.ToMatrix());
 
-		public void Shutdown() { }
-
-		public void Step()
+		for (int y = 0; y < 5; y++)
 		{
-			Pose curr = poseCache[0];
-			UI.Handle("Model", ref curr, model.Bounds * 0.1f);
-
-			for (int y = 0; y < 5; y++)
+			for (int x = 0; x < 5; x++)
 			{
-				for (int x = 0; x < 5; x++)
-				{
-					Vec3  grid = new Vec3(x-2f, 0, y-4) * 0.5f;
-					float dist = Math.Min(1, grid.Length/10.0f);
-					Pose  pose = poseCache[(int)(dist * (cacheCount-1))];
-					pose.position += grid;
-					model.Draw(pose.ToMatrix(0.1f));
-				}
+				Vec3  grid = new Vec3(x-2f, y-2, 0) ;
+				float dist = Math.Min(1, grid.Length/14.0f);
+				Pose  pose = poseCache[(int)(dist * (cacheCount-1))];
+				//pose.position += grid* 0.1f;
+				model.Draw(Matrix.TS(grid*0.1f, 0.04f) * pose.ToMatrix());
 			}
-
-			poseCache.RemoveAt(poseCache.Count-1);
-			poseCache.Insert(0, curr);
 		}
+
+		Demo.ShowSummary(title, description,
+			new Bounds(.6f, .6f, .1f));
 	}
 }
