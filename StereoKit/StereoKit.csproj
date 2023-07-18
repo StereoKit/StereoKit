@@ -49,10 +49,10 @@
 		<!-- Android Libraries -->
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so"             PackagePath="runtimes/android-arm64/native/"         Condition="Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so')" />
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so.dbg"         PackagePath="runtimes/android-arm64/native/"         Condition="Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so.dbg')" />
-		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/arm64-v8a/Release/standard/libopenxr_loader.so" PackagePath="android_openxr_loaders/arm64/standard/" Condition="Exists('../bin/distribute/bin/Android/arm64-v8a/Release/standard/libopenxr_loader.so')" />
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/arm64-v8a/Release/standard/libopenxr_loader.so" PackagePath="android_openxr_loaders/standard/arm64/" Condition="Exists('../bin/distribute/bin/Android/arm64-v8a/Release/standard/libopenxr_loader.so')" />
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so"             PackagePath="runtimes/android-x64/native/"         Condition="Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so')" />
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so.dbg"         PackagePath="runtimes/android-x64/native/"         Condition="Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so.dbg')" />
-		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/x86_64/Release/standard/libopenxr_loader.so" PackagePath="android_openxr_loaders/x64/standard/" Condition="Exists('../bin/distribute/bin/Android/x86_64/Release/standard/libopenxr_loader.so')" />
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/x86_64/Release/standard/libopenxr_loader.so" PackagePath="android_openxr_loaders/standard/x64/" Condition="Exists('../bin/distribute/bin/Android/x86_64/Release/standard/libopenxr_loader.so')" />
 
 		<!-- Linux Libraries -->
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so"       PackagePath="runtimes/linux-x64/native/"   Condition="Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')" />
