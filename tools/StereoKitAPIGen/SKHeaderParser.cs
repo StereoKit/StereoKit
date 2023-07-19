@@ -36,6 +36,16 @@ enum SKFunctionRelation
 
 ///////////////////////////////////////////
 
+enum SKModuleType
+{
+	None,
+	Struct,
+	Union,
+	Refcounted,
+}
+
+///////////////////////////////////////////
+
 struct SKEnumItem
 {
 	public string        comment;
@@ -105,10 +115,11 @@ struct SKFunction
 
 class SKModule
 {
-	public string    name;
-	public string    modulePrefix;
-	public bool      isAsset;
-	public SKField[] fields = new SKField[0];
+	public string       name;
+	public string       modulePrefix;
+	public bool         isAsset;
+	public SKField[]    fields = new SKField[0];
+	public SKModuleType type;
 
 	public override bool Equals(object obj) => modulePrefix.Equals(((SKModule)obj).modulePrefix);
 	public override int GetHashCode() => modulePrefix.GetHashCode();
@@ -223,9 +234,10 @@ static class SKHeaderParser
 	static IEnumerable<SKModule> FindStructModules(CppNamespace ns)
 		=> ns.Classes
 			.Select(t => new SKModule {
-				name         = t.Name.StartsWith("_")? t.Name[1..] : t.Name,
-				modulePrefix = t.Name.EndsWith("_t") ? (t.Name.StartsWith("_")? t.Name[1..^1] : t.Name[..^1]) : t.Name+"_",
+				name         = t.Name.StartsWith("_")? t.Name[1..] : (t.Name == "color128" ? "color" : t.Name),
+				modulePrefix = t.Name.EndsWith("_t") ? (t.Name.StartsWith("_")? t.Name[1..^1] : t.Name[..^1]) : (t.Name == "color128" ? "color_" : t.Name + "_"),
 				isAsset      = t.Name.StartsWith("_"),
+				type         = t.ClassKind == CppClassKind.Union ? SKModuleType.Union : SKModuleType.Struct,
 				fields       = t.Fields.Select(f => new SKField {
 					name = f.Name,
 					type = ParseType(f.Type),

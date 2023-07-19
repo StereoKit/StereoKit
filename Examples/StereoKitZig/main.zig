@@ -1,5 +1,6 @@
 const std = @import("std");
 const sk = @import("StereoKit");
+//const csk = @cImport("stereokit.h");
 
 //var cubeMesh: sk.mesh_t = null;
 //var material: sk.material_t = null;
@@ -20,6 +21,6 @@ pub fn main() !void {
 }
 
 export fn step() void {
-    cubeMesh.draw(material, sk.Matrix.ts(.{ 0, 0, -0.5 }, .{ 0.1, 0.1, 0.1 }), .{ 1, 1, 1, 1 }, sk.RenderLayer.Layer0);
+    cubeMesh.draw(material, sk.Matrix.ts(.{ .x = 0, .y = 0, .z = -0.5 }, .{ .x = 0.1, .y = 0.1, .z = 0.1 }), .{ .r = 1, .g = 1, .b = 1, .a = 1 }, sk.RenderLayer.Layer0);
     //sk.mesh_draw(cubeMesh, material, sk.matrix_ts(sk.vec3{ .x = 0, .y = 0, .z = -0.5 }, sk.vec3{ .x = 0.1, .y = 0.1, .z = 0.1 }), sk.color128{ .r = 1, .g = 1, .b = 1, .a = 1 }, sk.render_layer_0);
 }

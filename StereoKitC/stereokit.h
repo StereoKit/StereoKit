@@ -1428,16 +1428,16 @@ SK_API int32_t       model_add_subset              (model_t model, mesh_t mesh, 
 SK_API int32_t       model_subset_count            (model_t model);
 
 
-SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
-SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
+SK_API model_node_id model_node_add                (model_t model,                            const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
+SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent_node, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
 SK_API model_node_id model_node_find               (model_t model, const char *name);
 SK_API model_node_id model_node_sibling            (model_t model, model_node_id node);
 SK_API model_node_id model_node_parent             (model_t model, model_node_id node);
 SK_API model_node_id model_node_child              (model_t model, model_node_id node);
 SK_API int32_t       model_node_count              (model_t model);
-SK_API model_node_id model_node_index              (model_t model, int32_t index);
+SK_API model_node_id model_node_index              (model_t model, int32_t idx);
 SK_API int32_t       model_node_visual_count       (model_t model);
-SK_API model_node_id model_node_visual_index       (model_t model, int32_t index);
+SK_API model_node_id model_node_visual_index       (model_t model, int32_t idx);
 SK_API model_node_id model_node_iterate            (model_t model, model_node_id node);
 SK_API model_node_id model_node_get_root           (model_t model);
 SK_API const char*   model_node_get_name           (model_t model, model_node_id node);
@@ -2197,7 +2197,7 @@ SK_API void*             backend_openxr_get_function        (const char *functio
 SK_API bool32_t          backend_openxr_ext_enabled         (const char *extension_name);
 SK_API void              backend_openxr_ext_request         (const char *extension_name);
 SK_API void              backend_openxr_ext_exclude         (const char *extension_name);
-SK_API void              backend_openxr_use_minimum_exts    (bool32_t use_minimum_exts);
+SK_API void              backend_openxr_use_minimum_exts    (bool32_t use_min_exts);
 SK_API void              backend_openxr_composition_layer   (void *XrCompositionLayerBaseHeader, int32_t data_size, int32_t sort_order);
 SK_API void              backend_openxr_end_frame_chain     (void *XrBaseHeader, int32_t data_size);
 SK_API void              backend_openxr_set_hand_joint_scale(float joint_scale_factor);

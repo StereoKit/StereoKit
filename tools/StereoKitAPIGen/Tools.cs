@@ -144,6 +144,48 @@ class Tools
 
 	///////////////////////////////////////////
 
+	public static long EvaluateIntExpression(CppExpression exp, Func<string, long> evalName)
+	{
+		if (exp is CppBinaryExpression bExp)
+		{
+			long a = EvaluateIntExpression(bExp.Arguments[0], evalName);
+			long b = EvaluateIntExpression(bExp.Arguments[1], evalName);
+
+			if      (bExp.Operator == "<<") return a << (int)b;
+			else if (bExp.Operator == ">>") return a >> (int)b;
+			else if (bExp.Operator == "|") return a | b;
+			else if (bExp.Operator == "&") return a & b;
+			else if (bExp.Operator == "+") return a + b;
+			else if (bExp.Operator == "-") return a - b;
+			else throw new Exception("Unimplemented binary operator: " + bExp.Operator);
+		}
+		else if (exp is CppUnaryExpression uExp)
+		{
+			long a = EvaluateIntExpression(uExp.Arguments[0], evalName);
+
+			if      (uExp.Operator == "-") return -a;
+			else if (uExp.Operator == "~") return ~a;
+			else throw new Exception("Unimplemented unary operator: " + uExp.Operator);
+		}
+		else if (exp.Kind == CppExpressionKind.DeclRef)
+		{
+			return evalName(((CppRawExpression)exp).Text);
+		}
+		else if (exp.Kind == CppExpressionKind.IntegerLiteral)
+		{
+			string val = ((CppLiteralExpression)exp).Value;
+
+			if (val.StartsWith("0x")) return Convert.ToInt32(val, 16);
+			else return long.Parse(val);
+		}
+		else
+		{
+			throw new Exception("Unimplemented expression type: " + exp.Kind);
+		}
+	}
+
+	///////////////////////////////////////////
+
 	public static string SnakeToCamelU(string snake)
 	{
 		string[] words = snake.Split("_");

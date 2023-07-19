@@ -5,6 +5,7 @@
 
 using StereoKitAPIGen;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,7 +22,8 @@ class BindZig
 			// project.
 
 			const bool32 = i32;
-			const TextStyle = u32;
+			const HandSimId = i32;
+
 
 			""");
 
@@ -69,20 +71,23 @@ class BindZig
 	static string NameParam(string sourceName)
 		=> NameField(sourceName);
 
+	static string NameEnumField(string sourceName, string sourcePrefix) 
+		=> NameOverrides.TryGet(sourceName, out string custom)
+			? custom
+			: Tools.SnakeToCamelU(Tools.RemovePrefix(sourceName, sourcePrefix));
+
 	///////////////////////////////////////////
 
 	static void BuildEnum(StringBuilder text, SKEnum e)
 	{
 		string enumName = NameType(e.name);
 
-		Func<string, string> enumItemName = (str) =>
-			NameOverrides.TryGet(str, out string custom)
-				? custom
-				: Tools.SnakeToCamelU(Tools.RemovePrefix(str, e.name));
-		Func<string, string> innerItemName = (str) =>
-			enumName + "." + (NameOverrides.TryGet(str, out string custom)
-				? custom
-				: Tools.SnakeToCamelU(Tools.RemovePrefix(str, e.name)));
+		Func<string, string> enumItemName = (str) => NameEnumField(str, e.name);
+
+		Func<string, long> innerItemVal = (str) => {
+			SKEnumItem item = e.items.First((i) => i.name == str);
+			return Tools.EvaluateIntExpression(item.value, null);
+		};
 
 		text.AppendLine(Tools.ToStrComment(e.comment, "//"));
 		text.AppendLine($"pub const {enumName} = enum(c_int) {{");
@@ -91,7 +96,7 @@ class BindZig
 			text.AppendLine(Tools.ToStrComment(i.comment, "\t//"));
 			text.AppendLine(i.value == null 
 				? $"\t{enumItemName(i.name)},"
-				: $"\t{enumItemName(i.name)} = {Tools.BuildExpression(i.value, innerItemName)},");
+				: $"\t{enumItemName(i.name)} = {Tools.EvaluateIntExpression(i.value, innerItemVal)}, // {Tools.BuildExpression(i.value, enumItemName)}");
 		}
 		text.AppendLine($"}};");
 	}
@@ -103,20 +108,40 @@ class BindZig
 		SKFunction[] moduleFunctions = SKHeaderData.GetModuleFunctions(m, data.functions);
 
 		text.AppendLine($"\r\n///////////////////////////////////////////\r\n");
-		text.AppendLine($"pub const {NameType(m.name)} = extern struct {{");
+		text.AppendLine($"pub const {NameType(m.name)} = extern {(m.type == SKModuleType.Union ? "union" : "struct")} {{ // {m.name}");
 		if (m.isAsset)
 			text.AppendLine($"\t_inst: ?*opaque{{}} = null,\r\n");
 
 		foreach (var f in m.fields)
 		{
-			// Default values need to know a bit more about the type
-			//string defaultVal = 
-			//	paramType.source.TypeKind == CppTypeKind.Primitive ||
-			//	(paramType.source.TypeKind == CppTypeKind.Typedef && ((CppTypedef)paramType.source).ElementType.TypeKind == CppTypeKind.Primitive)
-			//		? "0"
-			//		: ".{}";
-			//text.AppendLine($"{ZigFieldName(f.name) + ":"} {ZigTypeToStr(f.type)} = {defaultVal},");
-			text.AppendLine($"\t{NameField(f.name) + ":"} {TypeToStr(f.type)},");
+			string defaultVal = " = .{}";
+			if (f.type.pointerLvl > 0) defaultVal = " = null";
+			else if (
+				f.type.name == "int64_t" ||
+				f.type.name == "int32_t" ||
+				f.type.name == "int16_t" ||
+				f.type.name == "int8_t" ||
+				f.type.name == "int8_t" ||
+				f.type.name == "uint64_t" ||
+				f.type.name == "uint32_t" ||
+				f.type.name == "uint16_t" ||
+				f.type.name == "uint8_t" ||
+				f.type.name == "uint8_t" ||
+				f.type.name == "float" ||
+				f.type.name == "double"
+				) defaultVal = " = 0";
+			else
+			{
+				SKEnum e = data.enums.FirstOrDefault((e) => e.name == f.type.name);
+				if (e.name != null)
+				{
+					string enumName = NameType(e.name);
+					string itemName = NameEnumField(e.items[0].name, e.name);
+					defaultVal = $" = {enumName}.{itemName}";
+				}
+			}
+			if (m.type == SKModuleType.Union) defaultVal = "";
+			text.AppendLine($"\t{NameField(f.name) + ":"} {TypeToStr(f.type)}{defaultVal},");
 		}
 		if (m.fields.Length > 0) text.AppendLine();
 
@@ -160,6 +185,13 @@ class BindZig
 
 	static string TypeToStr(SKType type)
 	{
+		if (type.functionPtr != null)
+		{
+			string paramList = type.functionPtr.Val.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
+			if (paramList != "") paramList = paramList[..^2];
+			return $"*const fn ({paramList}) {TypeToStr(type.functionPtr.Val.returnType)}";
+		}
+
 		// This needs more work
 		string prefix = "";
 		if      (type.arraySize1 > 0) prefix += $"[{type.arraySize1}]";
@@ -168,7 +200,7 @@ class BindZig
 
 		if (type.arraySize2 > 0) prefix += $"[{type.arraySize2}]";
 
-		if (type.isConst) prefix += "const ";
+		if (type.isConst && type.pointerLvl > 0) prefix += "const ";
 
 		string zigName = NameType(type.name);
 		if (type.name == "void" && type.pointerLvl > 0)
@@ -184,6 +216,13 @@ class BindZig
 
 	static string ParamTypeToStr(SKParameter param)
 	{
+		if (param.type.functionPtr != null)
+		{
+			string paramList = param.type.functionPtr.Val.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
+			if (paramList != "") paramList = paramList[..^2];
+			return $"*const fn ({paramList}) {TypeToStr(param.type.functionPtr.Val.returnType)}";
+		}
+
 		// This needs more work
 		//string zigName = NameType(param.name);
 		//if (type.arraySize1 > 0) return $"[{type.arraySize1}]{(type.isConst ? "const " : "")}{zigName}";
@@ -198,7 +237,7 @@ class BindZig
 
 		if (param.type.arraySize2 > 0) prefix += $"[{param.type.arraySize2}]";
 
-		if (param.type.isConst) prefix += "const ";
+		if (param.type.isConst && param.type.pointerLvl > 0) prefix += "const ";
 
 		string zigName = NameType(param.type.name);
 
