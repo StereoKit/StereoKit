@@ -111,9 +111,13 @@ class BindZig
 		SKFunction[] moduleFunctions = SKHeaderData.GetModuleFunctions(m, data.functions);
 
 		text.AppendLine($"\r\n///////////////////////////////////////////\r\n");
-		text.AppendLine($"pub const {NameType(m.name)} = extern {(m.type == SKModuleType.Union ? "union" : "struct")} {{ // {m.name}");
+
+		string indent= m.name == "sk" ? "" : "\t";
+		if (m.name != "sk")
+			text.AppendLine($"pub const {NameType(m.name)} = extern {(m.type == SKModuleType.Union ? "union" : "struct")} {{ // {m.name}");
+
 		if (m.isAsset)
-			text.AppendLine($"\t_inst: ?*opaque{{}} = null,\r\n");
+			text.AppendLine($"{indent}_inst: ?*opaque{{}} = null,\r\n");
 
 		foreach (var f in m.fields)
 		{
@@ -145,7 +149,7 @@ class BindZig
 				}
 			}
 			if (m.type == SKModuleType.Union) defaultVal = "";
-			text.AppendLine($"\t{NameField(f.name) + ":"} {TypeToStr(f.type)}{defaultVal},");
+			text.AppendLine($"{indent}{NameField(f.name) + ":"} {TypeToStr(f.type)}{defaultVal},");
 		}
 		if (m.fields.Length > 0) text.AppendLine();
 
@@ -155,7 +159,7 @@ class BindZig
 		{
 			string paramList = f.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			text.AppendLine($"\textern fn {f.name}({paramList}) {TypeToStr(f.returnType)};");
+			text.AppendLine($"{indent}extern fn {f.name}({paramList}) {TypeToStr(f.returnType)};");
 		}
 		if (moduleFunctions.Length > 0) text.AppendLine();
 
@@ -169,9 +173,9 @@ class BindZig
 			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
 			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			text.AppendLine($"\tpub fn {NameMethod(f.name, m.modulePrefix)}({paramList}) {TypeToStr(f.returnType)} {{");
-			if (!f.returnType.IsVoid) text.Append("\t\treturn ");
-			else                      text.Append("\t\t");
+			text.AppendLine($"{indent}pub fn {NameMethod(f.name, m.modulePrefix)}({paramList}) {TypeToStr(f.returnType)} {{");
+			if (!f.returnType.IsVoid) text.Append($"{indent}\treturn ");
+			else                      text.Append($"{indent}\t");
 			text.Append(f.name+"(");
 			string argList = "";
 			if (rel == SKFunctionRelation.Instance) argList = "self.*, ";
@@ -179,10 +183,11 @@ class BindZig
 			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
 			if (argList != "") argList = argList[..^2];
 			text.AppendLine($"{argList});");
-			text.AppendLine("\t}");
+			text.AppendLine($"{indent}}}");
 		}
 
-		text.AppendLine("};");
+		if (m.name != "sk")
+			text.AppendLine("};");
 	}
 
 	///////////////////////////////////////////
