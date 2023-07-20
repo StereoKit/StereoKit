@@ -1,26 +1,21 @@
 const std = @import("std");
-const sk = @import("StereoKit");
-//const csk = @cImport("stereokit.h");
+const SK = @import("StereoKit");
 
-//var cubeMesh: sk.mesh_t = null;
-//var material: sk.material_t = null;
-
-var cubeMesh: sk.Mesh = .{};
-var material: sk.Material = .{};
+var cubeMesh: SK.Mesh = .{};
+var material: SK.Material = .{};
 
 pub fn main() !void {
-    _ = sk.SK.init(.{});
-    //_ = sk.sk_init(std.mem.zeroInit(sk.sk_settings_t, .{ .app_name = "StereoKit Zig" }));
+    std.debug.print("bool size: {}", .{@sizeOf(bool)});
+    _ = SK.SK.init(.{
+        .appName = "StereoKit Zig",
+    });
 
-    //cubeMesh = sk.mesh_find(sk.default_id_mesh_cube);
-    //material = sk.material_find(sk.default_id_material);
+    cubeMesh = SK.Mesh.find("default/mesh_cube");
+    material = SK.Material.find("default/material");
 
-    sk.Mesh.find("default/mesh_sphere");
-
-    sk.SK.run(step, null);
+    SK.SK.run(step, null);
 }
 
 export fn step() void {
-    cubeMesh.draw(material, sk.Matrix.ts(.{ .x = 0, .y = 0, .z = -0.5 }, .{ .x = 0.1, .y = 0.1, .z = 0.1 }), .{ .r = 1, .g = 1, .b = 1, .a = 1 }, sk.RenderLayer.Layer0);
-    //sk.mesh_draw(cubeMesh, material, sk.matrix_ts(sk.vec3{ .x = 0, .y = 0, .z = -0.5 }, sk.vec3{ .x = 0.1, .y = 0.1, .z = 0.1 }), sk.color128{ .r = 1, .g = 1, .b = 1, .a = 1 }, sk.render_layer_0);
+    cubeMesh.draw(material, SK.Matrix.ts(.{ .x = 0, .y = 0, .z = -0.5 }, .{ .x = 0.1, .y = 0.1, .z = 0.1 }), .{ .r = 1, .g = 1, .b = 1, .a = 1 }, SK.RenderLayer.Layer0);
 }

@@ -22,6 +22,9 @@ class BindZig
 			// project.
 
 			const bool32 = i32;
+			const false32 = 0;
+			const true32  = 1;
+
 			const HandSimId = i32;
 
 
@@ -130,6 +133,7 @@ class BindZig
 				f.type.name == "float" ||
 				f.type.name == "double"
 				) defaultVal = " = 0";
+			else if (f.type.name == "bool32_t") defaultVal = " = false32";
 			else
 			{
 				SKEnum e = data.enums.FirstOrDefault((e) => e.name == f.type.name);
@@ -170,7 +174,7 @@ class BindZig
 			else                      text.Append("\t\t");
 			text.Append(f.name+"(");
 			string argList = "";
-			if (rel == SKFunctionRelation.Instance) argList = "self._inst.?, ";
+			if (rel == SKFunctionRelation.Instance) argList = "self.*, ";
 			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
 			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
 			if (argList != "") argList = argList[..^2];
@@ -189,11 +193,13 @@ class BindZig
 		{
 			string paramList = type.functionPtr.Val.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			return $"*const fn ({paramList}) {TypeToStr(type.functionPtr.Val.returnType)}";
+			return $"{(type.isOptional?"?":"")}*const fn ({paramList}) {TypeToStr(type.functionPtr.Val.returnType)}";
 		}
 
 		// This needs more work
 		string prefix = "";
+		if (type.isOptional) prefix += "?";
+
 		if      (type.arraySize1 > 0) prefix += $"[{type.arraySize1}]";
 		else if (type.pointerLvl > 0 && (type.name == "char" || type.name == "char8_t" || type.name == "char16_t" || type.name == "char32_t")) prefix += $"[*]";
 		else if (type.pointerLvl > 0) prefix += "*";
@@ -206,7 +212,6 @@ class BindZig
 		if (type.name == "void" && type.pointerLvl > 0)
 		{
 			zigName = "anyopaque";
-			prefix = "?*";
 		}
 
 		return $"{prefix}{zigName}";
@@ -220,16 +225,11 @@ class BindZig
 		{
 			string paramList = param.type.functionPtr.Val.parameters.Aggregate("", (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			return $"*const fn ({paramList}) {TypeToStr(param.type.functionPtr.Val.returnType)}";
+			return $"{(param.type.isOptional?"?":"")}*const fn ({paramList}) callconv(.C) {TypeToStr(param.type.functionPtr.Val.returnType)}";
 		}
 
-		// This needs more work
-		//string zigName = NameType(param.name);
-		//if (type.arraySize1 > 0) return $"[{type.arraySize1}]{(type.isConst ? "const " : "")}{zigName}";
-		//else return (type.pointerLvl > 0 ? "*" : "") + zigName;
-
 		string prefix = "";
-		if      (param.isOptional) prefix += "?";
+		if      (param.type.isOptional) prefix += "?";
 
 		if      (param.type.arraySize1 > 0)                                 prefix += $"[{param.type.arraySize1}]";
 		else if (param.isArrayPtr || param.stringType != SKStringType.None) prefix += "[*]";
@@ -240,30 +240,9 @@ class BindZig
 		if (param.type.isConst && param.type.pointerLvl > 0) prefix += "const ";
 
 		string zigName = NameType(param.type.name);
+		if (param.type.name == "void" && param.type.pointerLvl > 0)
+			zigName = "anyopaque";
 
-		return $"{prefix}{NameType(param.type.name)}";
+		return $"{prefix}{zigName}";
 	}
-
-	/*public static string TypeToName(SKType type)
-	{
-		if      (type.special == SKSpecialType.VoidPtr) return "?*anyopaque";
-		else if (type.special == SKSpecialType.Utf8   ) return type.constant ? "[*]const u8"  : "[*]u8";
-		else if (type.special == SKSpecialType.Utf16  ) return type.constant ? "[*]const u16" : "[*]u16";
-		else if (type.special == SKSpecialType.Ascii  ) return type.constant ? "[*]const u8"  : "[*]u8";
-		else if (type.special == SKSpecialType.FnPtr  ) {
-			string result = "*const fn(";
-			CppFunctionType fn = type.source as CppFunctionType;
-			for (int i = 0; i < fn.Parameters.Count; i++)
-			{
-				SKType t = SKType.Create(fn.Parameters[i].Type, fn.Parameters[i].Name);
-				result += $"{NameOverrides.Check(fn.Parameters[i].Name)}: {TypeToName(t)}";
-				if (i < fn.Parameters.Count-1) result += ", "; 
-			}
-			SKType r = SKType.Create(fn.ReturnType, "");
-			return result+ ") callconv(.C) " + TypeToName(r);
-		}
-		else return type.array
-			? $"[{(type.fixedArray != 0? type.fixedArray:"*")}]{(type.constant?"const ":"")}{CSTypes.SnakeToCamel(type.raw, true, 0)}"
-			: (type.constant?"":"")+(type.pointer > 0 ? "*":"")+CSTypes.SnakeToCamel(type.raw, true, 0);
-	}*/
 }

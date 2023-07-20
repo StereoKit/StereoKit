@@ -19,7 +19,6 @@ pub fn build(b: *std.Build) void {
     exe.addIncludePath("../../bin/distribute/include");
     exe.addLibraryPath("../../bin/distribute/bin/Win32/x64/Release");
     exe.addModule("StereoKit", stereokit_module);
-    exe.linkSystemLibrary("c");
     exe.linkSystemLibrary("StereoKitC");
 
     b.installArtifact(exe);

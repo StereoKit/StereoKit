@@ -71,6 +71,7 @@ struct SKType
 	public int    arraySize1;
 	public int    arraySize2;
 	public bool   isConst;
+	public bool   isOptional;
 	public int    pointerLvl;
 	public Opt<SKFunction> functionPtr;
 
@@ -93,7 +94,6 @@ struct SKParameter
 	public string nameFlagless;
 
 	public SKType       type;
-	public bool         isOptional;
 	public bool         isArrayPtr;
 	public SKStringType stringType;
 	public SKPassType   passType;
@@ -231,6 +231,15 @@ static class SKHeaderParser
 
 	///////////////////////////////////////////
 
+	static SKType ParseStructType(CppType type)
+	{
+		SKType result = ParseType(type);
+		if (result.pointerLvl > 0) result.isOptional = true;
+		return result;
+	}
+
+	///////////////////////////////////////////
+
 	static IEnumerable<SKModule> FindStructModules(CppNamespace ns)
 		=> ns.Classes
 			.Select(t => new SKModule {
@@ -240,7 +249,7 @@ static class SKHeaderParser
 				type         = t.ClassKind == CppClassKind.Union ? SKModuleType.Union : SKModuleType.Struct,
 				fields       = t.Fields.Select(f => new SKField {
 					name = f.Name,
-					type = ParseType(f.Type),
+					type = ParseStructType(f.Type),
 				}).ToArray()
 			});
 
@@ -336,7 +345,7 @@ static class SKHeaderParser
 			if      (word == "in"   ) result.passType   = SKPassType.In;
 			else if (word == "out"  ) result.passType   = SKPassType.Out;
 			else if (word == "ref"  ) result.passType   = SKPassType.Ref;
-			else if (word == "opt"  ) result.isOptional = true;
+			else if (word == "opt"  ) result.type.isOptional = true;
 			else if (word == "arr"  ) result.isArrayPtr = true;
 			else if (word == "utf8" ) result.stringType = SKStringType.UTF8;
 			else if (word == "utf16") result.stringType = SKStringType.UTF16;
