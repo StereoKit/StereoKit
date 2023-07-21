@@ -32,6 +32,7 @@ struct hand_state_t {
 	solid_t     solids[SK_FINGER_SOLIDS];
 	material_t  material;
 	hand_mesh_t mesh;
+	vec3        pinch_pt_relative;
 	bool        visible;
 	bool        enabled;
 	bool        solid;
@@ -70,7 +71,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_poses },
 #if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
-		0.2f,
+		0.3f,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
@@ -364,7 +365,7 @@ void input_hand_state_update(handed_ handedness) {
 	hand.grip_state  = button_state_inactive;
 	
 	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
-	const float pinch_activation_dist = (was_trigger ? 2 : 1) * cm2m;
+	const float pinch_activation_dist = (was_trigger ? 1.5f : 1.0f) * cm2m;
 	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
 	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
@@ -377,15 +378,28 @@ void input_hand_state_update(handed_ handedness) {
 	bool is_trigger = finger_dist <= pinch_activation_dist;
 	bool is_grip    = grip_dist   <= grip_activation_dist;
 
+	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
+	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
+	if (is_trigger) hand.pinch_state |= button_state_active;
+	if (is_grip)    hand.grip_state  |= button_state_active;
+
 	hand.pinch_pt = vec3_lerp(
 		hand.fingers[0][4].position,
 		hand.fingers[1][4].position,
 		hand_sources[hand_system].pinch_blend);
 
-	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
-	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
-	if (is_trigger) hand.pinch_state |= button_state_active;
-	if (is_grip)    hand.grip_state  |= button_state_active;
+	if (hand_sources[hand_system].system == hand_system_oxr_articulated) {
+		// Preserve the pinch point relative to the root of the index finger
+		// while the pinch is active. This helps prevent traveling of the pinch
+		// point during release on real articulated hands.
+		if ((hand.pinch_state & button_state_just_active) > 0) {
+			matrix to_relative = matrix_invert(matrix_trs(hand.fingers[1][0].position, hand.fingers[1][0].orientation, vec3_one));
+			hand_state[handedness].pinch_pt_relative = matrix_transform_pt(to_relative, hand.pinch_pt);
+		} else if ((hand.pinch_state & button_state_active) > 0 || (hand.pinch_state & button_state_just_inactive) > 0) {
+			matrix from_relative = matrix_trs(hand.fingers[1][0].position, hand.fingers[1][0].orientation, vec3_one);
+			hand.pinch_pt = matrix_transform_pt(from_relative, hand_state[handedness].pinch_pt_relative);
+		}
+	}
 }
 
 ///////////////////////////////////////////
