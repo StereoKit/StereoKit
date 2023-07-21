@@ -29,6 +29,7 @@ class DemoHands : ITest
 	bool showPointers  = true;
 	bool showHandMenus = true;
 	bool showHandSize  = true;
+	bool showPinchPt   = true;
 
 	HandMenuRadial handMenu;
 	HandMenuRadial prevHandMenu;
@@ -134,6 +135,8 @@ class DemoHands : ITest
 		UI.Toggle("Pointers",  ref showPointers,  size);
 		UI.SameLine();
 		UI.Toggle("Menu",      ref showHandMenus, size);
+
+		UI.Toggle("Pinch Pt" , ref showPinchPt,   size);
 		UI.PanelEnd();
 
 		UI.HSeparator();
@@ -197,6 +200,11 @@ class DemoHands : ITest
 		{ 
 			DrawHandMenu(Handed.Right);
 			DrawHandMenu(Handed.Left);
+		}
+		if (showPinchPt)
+		{
+			Mesh.Sphere.Draw(Default.Material, Matrix.TS(Input.Hand(Handed.Left).pinchPt, 0.005f));
+			Mesh.Sphere.Draw(Default.Material, Matrix.TS(Input.Hand(Handed.Right).pinchPt, 0.005f));
 		}
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
