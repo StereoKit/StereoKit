@@ -561,7 +561,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	const float physical_interact_timeout = 60 * 5; // 5 minutes
 	if (visible == false) virtualkeyboard_open(false, type);
 	else if (device_display_get_type() != display_type_flatscreen &&
-	         (input_last_physical_keypress < 0 || (time_totalf_unscaled()-input_last_physical_keypress) > physical_interact_timeout) ) {
+	         (input_get_last_physical_keypress_time() < 0 || (time_totalf_unscaled()-input_get_last_physical_keypress_time()) > physical_interact_timeout) ) {
 
 		virtualkeyboard_open(visible, type);
 	}
