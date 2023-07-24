@@ -60,6 +60,8 @@ class DemoUITearsheet : ITest
 		UI.SameLine();
 		Unique(() => UI.Toggle("UI.Toggle", ref toggles[3], sprToggleOff, sprToggleOn, UIBtnLayout.Left, new Vec2(0.14f, 0)));
 
+		Unique(() => UI.Toggle("UI.Toggle", ref toggles[4], null, null));
+
 		Unique(() => { if (UI.Radio("UI.Radio", radio == 0)) radio = 0; });
 		UI.SameLine();
 		Unique(() => { if (UI.Radio("UI.Radio", radio == 1)) radio = 1; });

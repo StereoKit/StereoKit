@@ -306,7 +306,7 @@ vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_lay
 		size = text_size(text, ui_get_text_style());
 	} else {
 		vec2  txt_size   = text_size(text, ui_get_text_style());
-		float aspect     = sprite_get_aspect(image);
+		float aspect     = image != nullptr ? sprite_get_aspect(image) : 1;
 		float image_size = font_size * aspect;
 		size = vec2{ txt_size.x + image_size + skui_settings.gutter, font_size };
 	}
