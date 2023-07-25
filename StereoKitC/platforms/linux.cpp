@@ -188,7 +188,7 @@ void linux_events() {
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
-					input_last_physical_keypress = time_totalf();
+					input_set_last_physical_keypress_time(time_totalf());
 					platform_keyboard_show(false, text_context_text);
 
 					// Some non-text characters get fed into the text system as
