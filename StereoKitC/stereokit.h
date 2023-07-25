@@ -1762,6 +1762,29 @@ typedef enum track_state_ {
 	track_state_known          = 2,
 } track_state_;
 
+/*This enum provides information about StereoKit's hand tracking data source.
+  It allows you to distinguish between true hand data such as that provided by
+  a Leap Motion Controller, and simulated data that StereoKit provides when
+  true hand data is not present.*/
+typedef enum hand_source_ {
+	/*There is currently no source of hand data! This means there are no
+	  tracked controllers, or active hand tracking systems. This may happen if
+	  the user has hand tracking disabled, and no active controllers.*/
+	hand_source_none = 0,
+	/*The current hand data is a simulation of hand data rather than true hand
+	  data. It is backed by either a controller, or a mouse, and may have a
+	  more limited range of motion. */
+	hand_source_simulated,
+	/*This is true hand data which exhibits the full range of motion of a
+	  normal hand. It is backed by something like a Leap Motion Controller, or
+	  some other optical (or maybe glove?) hand tracking system.*/
+	hand_source_articulated,
+	/*This hand data is provided by your use of SK's override functionality.
+	  What properties it exhibits depends on what override data you're sending
+	  to StereoKit!*/
+	hand_source_overridden,
+} hand_source_;
+
 typedef struct pointer_t {
 	input_source_ source;
 	button_state_ tracked;
@@ -2062,6 +2085,7 @@ SK_API int32_t               input_pointer_count     (input_source_ filter sk_de
 SK_API pointer_t             input_pointer           (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t*         input_hand              (handed_ hand);
 SK_API void                  input_hand_override     (handed_ hand, const hand_joint_t *in_arr_hand_joints);
+SK_API hand_source_          input_hand_source       (handed_ hand);
 SK_API const controller_t*   input_controller        (handed_ hand);
 SK_API button_state_         input_controller_menu   (void);
 SK_API const pose_t*         input_head              (void);

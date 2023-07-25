@@ -554,18 +554,19 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      input_pointer_count(InputSource filter = InputSource.Any);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer  input_pointer      (int index, InputSource filter = InputSource.Any);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_hand         (Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_controller   (Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_controller_menu();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_override(Handed hand, [In] HandJoint[] hand_joints);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_override(Handed hand, IntPtr hand_joints);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_mouse        ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_head         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        input_pointer_count  (InputSource filter = InputSource.Any);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer    input_pointer        (int index, InputSource filter = InputSource.Any);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_hand           (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSource input_hand_source    (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_controller     (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_controller_menu();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, [In] HandJoint[] hand_joints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, IntPtr hand_joints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_mouse          ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_head           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_eyes           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_eyes_tracked   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_key            (Key key);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSimId input_hand_sim_pose_add   ([In] Pose[] in_arr_hand_joints_25, ControllerKey button1, ControllerKey and_button2, Key or_hotkey1, Key and_hotkey2);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      input_hand_sim_pose_remove(HandSimId id);

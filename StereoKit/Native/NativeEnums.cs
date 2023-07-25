@@ -444,7 +444,7 @@ namespace StereoKit
 	/// <summary>How does the shader grab pixels from the texture? Or more
 	/// specifically, how does the shader grab colors between the provided
 	/// pixels? If you'd like an in-depth explanation of these topics, check
-	/// out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+	/// out [this exploration of texture filtering](https://bgolus.medium.com/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
 	/// by graphics wizard Ben Golus.</summary>
 	public enum TexSample {
 		/// <summary>Use a linear blend between adjacent pixels, this creates
@@ -839,6 +839,29 @@ namespace StereoKit
 		/// the constraints of the relevant hardware's capabilities, this is
 		/// as accurate as it gets!</summary>
 		Known        = 2,
+	}
+
+	/// <summary>This enum provides information about StereoKit's hand tracking data source.
+	/// It allows you to distinguish between true hand data such as that provided by
+	/// a Leap Motion Controller, and simulated data that StereoKit provides when
+	/// true hand data is not present.</summary>
+	public enum HandSource {
+		/// <summary>There is currently no source of hand data! This means there are no
+		/// tracked controllers, or active hand tracking systems. This may happen if
+		/// the user has hand tracking disabled, and no active controllers.</summary>
+		None         = 0,
+		/// <summary>The current hand data is a simulation of hand data rather than true hand
+		/// data. It is backed by either a controller, or a mouse, and may have a
+		/// more limited range of motion. </summary>
+		Simulated,
+		/// <summary>This is true hand data which exhibits the full range of motion of a
+		/// normal hand. It is backed by something like a Leap Motion Controller, or
+		/// some other optical (or maybe glove?) hand tracking system.</summary>
+		Articulated,
+		/// <summary>This hand data is provided by your use of SK's override functionality.
+		/// What properties it exhibits depends on what override data you're sending
+		/// to StereoKit!</summary>
+		Overridden,
 	}
 
 	/// <summary>A collection of system key codes, representing keyboard

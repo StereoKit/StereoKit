@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -417,6 +422,14 @@ namespace StereoKit
 			Marshal.PtrToStructure(NativeAPI.input_hand((Handed)handed), hands[handed]);
 			return hands[handed];
 		}
+
+		/// <summary>This gets the _current_ source of the hand joints! This
+		/// allows you to distinguish between fully articulated joints, and
+		/// simulated hand joints that may not have the same range of mobility.
+		/// Note that this may change during a session, the user may put down
+		/// their controllers, automatically switching to hands, or visa versa.
+		/// </summary>
+		public static HandSource HandSource(Handed hand) => NativeAPI.input_hand_source(hand);
 
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is

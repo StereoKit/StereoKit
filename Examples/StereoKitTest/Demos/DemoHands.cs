@@ -121,6 +121,8 @@ class DemoHands : ITest
 
 		UI.WindowBegin("Options", ref optionsPose, new Vec2(0, 0)*U.cm);
 
+		UI.Label($"Hand source: {Input.HandSource(Handed.Right)}");
+
 		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Show");
 		if (UI.Toggle("Hands", ref showHands,     size))
@@ -203,8 +205,10 @@ class DemoHands : ITest
 		}
 		if (showPinchPt)
 		{
-			Mesh.Sphere.Draw(Default.Material, Matrix.TS(Input.Hand(Handed.Left).pinchPt, 0.005f));
-			Mesh.Sphere.Draw(Default.Material, Matrix.TS(Input.Hand(Handed.Right).pinchPt, 0.005f));
+			Hand l = Input.Hand(Handed.Left);
+			Hand r = Input.Hand(Handed.Right);
+			if (l.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(l.pinchPt, 0.005f));
+			if (r.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(r.pinchPt, 0.005f));
 		}
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
