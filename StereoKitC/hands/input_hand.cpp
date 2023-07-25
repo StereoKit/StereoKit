@@ -475,8 +475,8 @@ bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) 
 	case controller_key_stick: return (input_controllers[hand].stick_click & button_state_active) > 0;
 	case controller_key_x1:    return (input_controllers[hand].x1 & button_state_active) > 0;
 	case controller_key_x2:    return (input_controllers[hand].x2 & button_state_active) > 0;
+	default: return false;
 	}
-	return false;
 }
 ///////////////////////////////////////////
 

@@ -18,7 +18,6 @@ float  cutoff;
 //--diffuse   = white
 //--emission  = white
 //--metal     = white
-//--normal    = flat
 //--occlusion = white
 Texture2D    diffuse     : register(t0);
 SamplerState diffuse_s   : register(s0);
@@ -26,10 +25,8 @@ Texture2D    emission    : register(t1);
 SamplerState emission_s  : register(s1);
 Texture2D    metal       : register(t2);
 SamplerState metal_s     : register(s2);
-Texture2D    normal      : register(t3);
-SamplerState normal_s    : register(s3);
-Texture2D    occlusion   : register(t4);
-SamplerState occlusion_s : register(s4);
+Texture2D    occlusion   : register(t3);
+SamplerState occlusion_s : register(s3);
 
 struct vsIn {
 	float4 pos     : SV_Position;
