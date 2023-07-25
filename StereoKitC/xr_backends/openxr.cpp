@@ -723,6 +723,7 @@ bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime t
 		// It's possible runtimes may be providing this despite the extension
 		// not being enabled? So we're forcing it here.
 		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext_available.MSFT_unbounded_reference_space; break;
+		default: break;
 		}
 	}
 	sk_free(refspace_types);
