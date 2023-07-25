@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "../stereokit.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -51,6 +56,7 @@ typedef struct hand_sim_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
+	hand_source_ source;
 	float pinch_blend;
 	bool (*available)();
 	void (*init)();
@@ -62,6 +68,7 @@ typedef struct hand_system_t {
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override,
+		hand_source_overridden,
 		0.2f,
 		hand_override_available,
 		hand_override_init,
@@ -71,6 +78,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_poses },
 #if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
+		hand_source_articulated,
 		0.3f,
 		hand_oxra_available,
 		hand_oxra_init,
@@ -79,6 +87,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxra_update_frame,
 		hand_oxra_update_poses },
 	{ hand_system_oxr_controllers,
+		hand_source_simulated,
 		0.6f,
 		hand_oxrc_available,
 		hand_oxrc_init,
@@ -88,6 +97,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxrc_update_poses },
 #endif
 	{ hand_system_mouse,
+		hand_source_simulated,
 		1,
 		hand_mouse_available,
 		hand_mouse_init,
@@ -96,6 +106,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_mouse_update_frame,
 		hand_mouse_update_poses },
 	{ hand_system_none,
+		hand_source_none,
 		1,
 		[]() {return true;},
 		[]() {},
@@ -117,6 +128,12 @@ void input_hand_update_mesh(handed_ hand);
 
 const hand_t *input_hand(handed_ hand) {
 	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
+hand_source_ input_hand_source(handed_ hand) {
+	return hand_sources[hand_system].source;
 }
 
 ///////////////////////////////////////////
