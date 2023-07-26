@@ -7,6 +7,7 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../device.h"
+#include "../sk_math.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/stref.h"
@@ -384,23 +385,23 @@ private:
 	}
 
 	void HandleWindowSizeChanged() {
-		int outputWidth  = (int)dips_to_pixels(m_logicalWidth, m_DPI);
-		int outputHeight = (int)dips_to_pixels(m_logicalHeight, m_DPI);
+		int32_t output_width  = maxi(1,(int32_t)dips_to_pixels(m_logicalWidth,  m_DPI));
+		int32_t output_height = maxi(1,(int32_t)dips_to_pixels(m_logicalHeight, m_DPI));
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			int swap_tmp = outputWidth;
-			outputWidth  = outputHeight;
-			outputHeight = swap_tmp;
+			int swap_tmp = output_width;
+			output_width  = output_height;
+			output_height = swap_tmp;
 		}
 
-		if (outputWidth == sk_info.display_width && outputHeight == sk_info.display_height)
+		if (output_width == sk_info.display_width && output_height == sk_info.display_height)
 			return;
 
 		uwp_resize_pending = true;
-		uwp_resize_width   = outputWidth;
-		uwp_resize_height  = outputHeight;
+		uwp_resize_width   = output_width;
+		uwp_resize_height  = output_height;
 	}
 };
 ViewProvider *ViewProvider::inst = nullptr;
@@ -516,9 +517,12 @@ bool uwp_start_flat() {
 		Sleep(1);
 	}
 
+	int32_t width  = maxi(1, sk_settings.flatscreen_width);
+	int32_t height = maxi(1, sk_settings.flatscreen_height);
+
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
+	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, width, height);
 	sk_info.display_width  = uwp_swapchain.width;
 	sk_info.display_height = uwp_swapchain.height;
 	device_data.display_width  = uwp_swapchain.width;
