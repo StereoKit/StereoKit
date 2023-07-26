@@ -233,7 +233,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		return nullptr;
 	}
 	if (p->has_draco_mesh_compression) {
-		log_errf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
+		gltf_add_warning(warnings, "GLTF Draco Mesh Compression not currently supported");
 		return nullptr;
 	}
 
@@ -823,13 +823,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	node_map->set(node, node_id);
 
 	// Copy the GLTF's extras into a dictionary
-	int64_t extras_size_i = (int64_t)node->extras.end_offset - (int64_t)node->extras.start_offset;
-	size_t  extras_size   = extras_size_i < 0 ? 0 : extras_size_i;
-	if (extras_size > 0) {
-		char* extras_json = sk_malloc_t(char, extras_size+1);
-		cgltf_copy_extras_json(data, &node->extras, extras_json, &extras_size);
-		gltf_parse_extras(model, node_id, extras_json, extras_size);
-		sk_free(extras_json);
+	if (node->extras.data) {
+		gltf_parse_extras(model, node_id, node->extras.data, strlen(node->extras.data));
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
