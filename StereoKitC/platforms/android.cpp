@@ -3,6 +3,7 @@
 
 #include "../log.h"
 #include "../device.h"
+#include "../sk_math.h"
 #include "../xr_backends/openxr.h"
 #include "../systems/render.h"
 #include "../systems/system.h"
@@ -136,8 +137,8 @@ void android_create_swapchain() {
 ///////////////////////////////////////////
 
 void android_resize_swapchain() {
-	int32_t height = ANativeWindow_getWidth (android_window);
-	int32_t width  = ANativeWindow_getHeight(android_window);
+	int32_t height = maxi(1,ANativeWindow_getWidth (android_window));
+	int32_t width  = maxi(1,ANativeWindow_getHeight(android_window));
 
 	if (!android_swapchain_created || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
