@@ -17,6 +17,7 @@ namespace sk {
 struct layer_t {
 	vec3         finger_pos   [handed_max];
 	vec3         finger_prev  [handed_max];
+	vec3         thumb_pos    [handed_max];
 	vec3         pinch_pt_pos [handed_max];
 	vec3         pinch_pt_prev[handed_max];
 };
@@ -88,6 +89,7 @@ void ui_core_update() {
 		skui_finger_radius += hand->fingers[1][4].radius;
 		skui_hand[i].finger_world_prev   = skui_hand[i].finger_world;
 		skui_hand[i].finger_world        = hand->fingers[1][4].position;
+		skui_hand[i].thumb_world         = hand->fingers[0][4].position;
 		skui_hand[i].pinch_pt_world_prev = skui_hand[i].pinch_pt;
 		skui_hand[i].pinch_pt_world      = hand->pinch_pt;
 		skui_hand[i].focused_prev_prev   = skui_hand[i].focused_prev;
@@ -99,6 +101,7 @@ void ui_core_update() {
 		skui_hand[i].active  = 0;
 		skui_hand[i].finger       = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
 		skui_hand[i].finger_prev  = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
+		skui_hand[i].thumb        = matrix_transform_pt(*to_local, skui_hand[i].thumb_world);
 		skui_hand[i].pinch_pt     = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt);
 		skui_hand[i].pinch_pt_prev= matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_prev);
 		skui_hand[i].tracked      = hand->tracked_state & button_state_active;
@@ -337,7 +340,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 			// Check to see if the handle has focus
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
 			float hand_attention_dist = 0;
-			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, handle_bounds)) {
+			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].thumb, skui_finger_radius, handle_bounds)) {
 				has_hand_attention = true;
 			} else if (skui_hand[i].ray_enabled && ui_far_interact_enabled()) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
@@ -534,7 +537,7 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 			box_size  = box_focused_size;
 		}
 
-		bool          in_box = skui_hand[i].tracked && ui_in_box(skui_hand[i].pinch_pt, skui_hand[i].pinch_pt_prev, skui_finger_radius, ui_size_box(box_start, box_size));
+		bool          in_box = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].thumb, skui_finger_radius, ui_size_box(box_start, box_size));
 		button_state_ focus  = ui_focus_set(i, id, in_box, 0);
 		if (focus != button_state_inactive) {
 			*out_hand        = i;
@@ -602,6 +605,7 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 	for (int32_t i = 0; i < handed_max; i++) {
 		layer->finger_pos   [i] = skui_hand[i].finger        = matrix_transform_pt(*to_local, skui_hand[i].finger_world);
 		layer->finger_prev  [i] = skui_hand[i].finger_prev   = matrix_transform_pt(*to_local, skui_hand[i].finger_world_prev);
+		layer->thumb_pos    [i] = skui_hand[i].thumb         = matrix_transform_pt(*to_local, skui_hand[i].thumb_world);
 		layer->pinch_pt_pos [i] = skui_hand[i].pinch_pt      = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world);
 		layer->pinch_pt_prev[i] = skui_hand[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_hand[i].pinch_pt_world_prev);
 	}
@@ -618,6 +622,7 @@ void ui_pop_surface() {
 		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = skui_hand[i].finger_world;
 			skui_hand[i].finger_prev   = skui_hand[i].finger_world_prev;
+			skui_hand[i].thumb         = skui_hand[i].thumb_world;
 			skui_hand[i].pinch_pt      = skui_hand[i].pinch_pt_world;
 			skui_hand[i].pinch_pt_prev = skui_hand[i].pinch_pt_world_prev;
 		}
@@ -626,6 +631,7 @@ void ui_pop_surface() {
 		for (int32_t i = 0; i < handed_max; i++) {
 			skui_hand[i].finger        = layer->finger_pos[i];
 			skui_hand[i].finger_prev   = layer->finger_prev[i];
+			skui_hand[i].thumb         = layer->thumb_pos[i];
 			skui_hand[i].pinch_pt      = layer->pinch_pt_pos[i];
 			skui_hand[i].pinch_pt_prev = layer->pinch_pt_prev[i];
 		}
