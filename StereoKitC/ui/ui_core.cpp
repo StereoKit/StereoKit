@@ -339,24 +339,27 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 
 			// Check to see if the handle has focus
 			bool  has_hand_attention  = skui_hand[i].active_prev == id;
+			bool  is_far_interact     = false;
 			float hand_attention_dist = 0;
 			if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].thumb, skui_finger_radius, handle_bounds)) {
-				has_hand_attention = true;
+				has_hand_attention  = true;
+				hand_attention_dist = bounds_sdf(handle_bounds, skui_hand[i].pinch_pt) + vec3_distance(skui_hand[i].pinch_pt, skui_hand[i].thumb);
 			} else if (skui_hand[i].ray_enabled && ui_far_interact_enabled()) {
 				pointer_t *ptr = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       at;
 				if (ptr->tracked & button_state_active && bounds_ray_intersect(handle_bounds, hierarchy_to_local_ray(ptr->ray), &at)) {
-					vec3  window_world = hierarchy_to_world_point(at);
-					float head_dist    = vec3_distance_sq(input_head_pose_world.position, window_world);
-					float hand_dist    = vec3_distance_sq(hand->palm.position,            window_world);
+					vec3  head_local = hierarchy_to_local_point(input_head()->position);
+					float head_dist  = bounds_sdf(handle_bounds, head_local);
+					float hand_dist  = bounds_sdf(handle_bounds, skui_hand[i].pinch_pt);
 
-					if (head_dist < 0.65f * 0.65f || hand_dist < 0.2f * 0.2f) {
+					if (head_dist < 0.65f || hand_dist < 0.2f) {
 						// Reset id to zero if we found a window that's within
 						// touching distance
 						ui_focus_set(i, 0, true, 10);
 						skui_hand[i].ray_discard = true;
 					} else {
 						has_hand_attention  = true;
+						is_far_interact     = true;
 						hand_attention_dist = head_dist + 10;
 					}
 				}
@@ -366,7 +369,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 			// If this is the second frame this window has focus for, and it's
 			// at a distance, then draw a line to it.
 			vec3 from_pt = local_pt[i];
-			if (hand_attention_dist && focused & button_state_active && !(focused & button_state_just_active)) {
+			if (is_far_interact && focused & button_state_active && !(focused & button_state_just_active)) {
 				pointer_t *ptr   = input_get_pointer(input_hand_pointer_id[i]);
 				vec3       start = hierarchy_to_local_point(ptr->ray.pos);
 				line_add(start*0.75f, vec3_zero, { 50,50,50,0 }, { 255,255,255,255 }, 0.002f);
@@ -537,8 +540,13 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 			box_size  = box_focused_size;
 		}
 
-		bool          in_box = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].thumb, skui_finger_radius, ui_size_box(box_start, box_size));
-		button_state_ focus  = ui_focus_set(i, id, in_box, 0);
+		bounds_t bounds   = ui_size_box(box_start, box_size);
+		bool     in_box   = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].thumb, skui_finger_radius, bounds);
+		float    priority = in_box
+			? bounds_sdf(bounds, skui_hand[i].pinch_pt) + vec3_distance(skui_hand[i].thumb, skui_hand[i].pinch_pt)
+			: FLT_MAX;
+
+		button_state_ focus  = ui_focus_set(i, id, in_box, priority);
 		if (focus != button_state_inactive) {
 			*out_hand        = i;
 			*out_focus_state = focus;
@@ -578,8 +586,13 @@ void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_
 			box_size  = box_focused_size;
 		}
 
-		bool          in_box = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, ui_size_box(box_start, box_size));
-		button_state_ focus  = ui_focus_set(i, id, in_box, 0);
+		bounds_t bounds   = ui_size_box(box_start, box_size);
+		bool     in_box   = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, bounds);
+		float    priority = in_box
+			? bounds_sdf(bounds, skui_hand[i].finger)
+			: FLT_MAX;
+
+		button_state_ focus = ui_focus_set(i, id, in_box, priority);
 		if (focus != button_state_inactive) {
 			*out_hand        = i;
 			*out_focus_state = focus;
