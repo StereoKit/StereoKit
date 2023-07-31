@@ -171,17 +171,18 @@ class BindZig
 			SKFunctionRelation rel = SKHeaderData.GetFunctionRelation(m, f);
 
 			string paramList = rel == SKFunctionRelation.Instance ? $"self: *{NameType(m.name)}, " : "";
-			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
-			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStr(p)}, ");
+			if (rel == SKFunctionRelation.Instance) paramList = f.parameters.Skip(1).Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStrIdiomatic(p)}, ");
+			else                                    paramList = f.parameters        .Aggregate(paramList, (s, p) => s + $"{NameParam(p.nameFlagless)}: {ParamTypeToStrIdiomatic(p)}, ");
 			if (paramList != "") paramList = paramList[..^2];
-			text.AppendLine($"{indent}pub fn {NameMethod(f.name, m.modulePrefix)}({paramList}) {TypeToStr(f.returnType)} {{");
+			text.AppendLine($"{indent}pub fn {NameMethod(f.name, m.modulePrefix)}({paramList}) {TypeToStrIdiomatic(f.returnType)} {{");
 			if (!f.returnType.IsVoid) text.Append($"{indent}\treturn ");
 			else                      text.Append($"{indent}\t");
+			if (f.returnType.name == "bool32_t") text.Append("0 != ");
 			text.Append(f.name+"(");
 			string argList = "";
 			if (rel == SKFunctionRelation.Instance) argList = "self.*, ";
-			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
-			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{NameParam(p.nameFlagless)}, ");
+			if (rel == SKFunctionRelation.Instance) argList = f.parameters.Skip(1).Aggregate(argList, (s, p) => s + $"{ArgToStr(p)}, ");
+			else                                    argList = f.parameters        .Aggregate(argList, (s, p) => s + $"{ArgToStr(p)}, ");
 			if (argList != "") argList = argList[..^2];
 			text.AppendLine($"{argList});");
 			text.AppendLine($"{indent}}}");
@@ -189,6 +190,14 @@ class BindZig
 
 		if (m.name != "sk")
 			text.AppendLine("};");
+	}
+
+	///////////////////////////////////////////
+
+	static string ArgToStr(SKParameter p)
+	{
+		if (p.type.name == "bool32_t") return $"@intFromBool({NameParam(p.nameFlagless)})";
+		else return NameParam(p.nameFlagless);
 	}
 
 	///////////////////////////////////////////
@@ -225,6 +234,14 @@ class BindZig
 
 	///////////////////////////////////////////
 
+	static string TypeToStrIdiomatic(SKType type)
+	{
+		if (type.name == "bool32_t") return "bool";
+		return TypeToStr(type);
+	}
+
+	///////////////////////////////////////////
+
 	static string ParamTypeToStr(SKParameter param)
 	{
 		if (param.type.functionPtr != null)
@@ -250,5 +267,13 @@ class BindZig
 			zigName = "anyopaque";
 
 		return $"{prefix}{zigName}";
+	}
+
+	///////////////////////////////////////////
+
+	static string ParamTypeToStrIdiomatic(SKParameter param)
+	{
+		if (param.type.name == "bool32_t") return "bool";
+		return ParamTypeToStr(param);
 	}
 }
