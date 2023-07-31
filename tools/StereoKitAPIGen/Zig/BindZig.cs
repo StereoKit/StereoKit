@@ -65,6 +65,11 @@ class BindZig
 			? custom
 			: Tools.SnakeToCamelL(sourceName.StartsWith(modulePrefix) ? sourceName[modulePrefix.Length..] : sourceName);
 
+	static string NameConstant(string sourceName, string modulePrefix)
+		=> NameOverrides.TryGet(sourceName, out string custom)
+			? custom
+			: Tools.SnakeToCamelL(sourceName.StartsWith(modulePrefix) ? sourceName[modulePrefix.Length..] : sourceName);
+
 	///////////////////////////////////////////
 
 	static string NameField(string sourceName)
@@ -117,9 +122,11 @@ class BindZig
 		if (m.name != "sk")
 			text.AppendLine($"pub const {NameType(m.name)} = extern {(m.type == SKModuleType.Union ? "union" : "struct")} {{ // {m.name}");
 
+		// Instance value for assets
 		if (m.isAsset)
 			text.AppendLine($"{indent}_inst: ?*opaque{{}} = null,\r\n");
 
+		// Fields for structs
 		foreach (var f in m.fields)
 		{
 			string defaultVal = " = .{}";
@@ -154,6 +161,14 @@ class BindZig
 		}
 		if (m.fields.Length > 0) text.AppendLine();
 
+		// Constants for the module
+		SKConstant[] moduleConstants = SKHeaderData.GetModuleConstants(m, data.constants);
+		foreach (var c in moduleConstants)
+		{
+			//string val = c.value.ToString().Replace("{", ".{");// "ahh";// Tools.EvaluateIntExpression(c.value, null).ToString();
+			//text.AppendLine($"{indent}pub const {NameConstant(c.name, m.modulePrefix)}: {TypeToStr(c.type)} = {val};");
+		}
+		//if (moduleConstants.Length > 0) text.AppendLine();
 
 		// These are the directly imported functions
 		foreach (var f in moduleFunctions)

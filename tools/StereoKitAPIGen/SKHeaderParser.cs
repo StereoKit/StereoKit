@@ -103,6 +103,16 @@ struct SKParameter
 
 ///////////////////////////////////////////
 
+struct SKConstant
+{
+	public string name;
+	public SKType type;
+	public SKModule module;
+	public CppExpression value;
+}
+
+///////////////////////////////////////////
+
 struct SKFunction
 {
 	public SKType        returnType;
@@ -132,9 +142,12 @@ class SKHeaderData
 	public SKModule[]   modules;
 	public SKEnum[]     enums;
 	public SKFunction[] functions;
+	public SKConstant[] constants;
 
 	public static SKFunction[] GetModuleFunctions(SKModule module, SKFunction[] functions)
 		=> functions.Where(f=> f.module == module).ToArray();
+	public static SKConstant[] GetModuleConstants(SKModule module, SKConstant[] functions)
+		=> functions.Where(f => f.module == module).ToArray();
 	public static SKFunctionRelation GetFunctionRelation(SKModule module, SKFunction function)
 	{
 		if (function.parameters.Length > 0 && 
@@ -179,6 +192,15 @@ static class SKHeaderParser
 				r.module = data.modules.Aggregate(default(SKModule), (m, c) => f.name.StartsWith(c.modulePrefix) && c.modulePrefix.Length > (m?.modulePrefix.Length ?? 0) ? c : m);
 				return r;
 			} )
+			.ToArray();
+		data.constants = ast.Namespaces[0].Fields
+			.Select((f) => new SKConstant
+			{
+				name   = f.Name,
+				type   = ParseType(f.Type),
+				module = data.modules.Aggregate(default(SKModule), (m, c) => f.Name.StartsWith(c.modulePrefix) && c.modulePrefix.Length > (m?.modulePrefix.Length ?? 0) ? c : m),
+				value  = f.InitExpression
+			})
 			.ToArray();
 
 		return data;
