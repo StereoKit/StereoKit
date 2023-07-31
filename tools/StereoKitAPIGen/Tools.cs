@@ -191,7 +191,12 @@ class Tools
 		string[] words = snake.Split("_");
 
 		for (int i = 0; i < words.Length; i++)
-			words[i] = words[i].Length > 0 ? char.ToUpper(words[i][0]) + words[i].Substring(1) : "";
+		{
+			if (words[i].Length == 0) continue;
+			words[i] = (words[i] == "sk" || words[i] == "ui" || words[i] == "sh" || words[i] == "xr")
+				? words[i].ToUpper()
+				: char.ToUpper(words[i][0]) + words[i].Substring(1);
+		}
 		return string.Join("", words);
 	}
 
@@ -205,7 +210,11 @@ class Tools
 		for (int i = 0; i < words.Length; i++)
 		{
 			if (!first && words[i].Length > 0)
-				words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
+			{
+				words[i] = (words[i] == "sk" || words[i] == "ui" || words[i] == "sh" || words[i] == "xr")
+					? words[i].ToUpper()
+					: char.ToUpper(words[i][0]) + words[i].Substring(1);
+			}
 			if (words[i] != "") first = false;
 		}
 		return string.Join("", words);

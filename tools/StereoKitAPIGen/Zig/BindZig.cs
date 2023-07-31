@@ -5,7 +5,6 @@
 
 using StereoKitAPIGen;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,11 +20,11 @@ class BindZig
 			// directly :) Instead, modify the header file, and run the StereoKitAPIGen
 			// project.
 
-			const bool32 = i32;
-			const false32 = 0;
-			const true32  = 1;
+			pub const bool32 = i32;
+			pub const false32 = 0;
+			pub const true32  = 1;
 
-			const HandSimId = i32;
+			pub const HandSimId = i32;
 
 
 			""");
@@ -47,6 +46,8 @@ class BindZig
 		foreach (var m in data.modules)
 			if (m.fields.Length == 0 && !m.isAsset)
 				BuildModule(data, text, m);
+
+		text.Append(File.ReadAllText("Zig/ZigPostfix.zig"));
 
 		File.WriteAllText(Path.Combine(outputFolder, "StereoKit.zig"), text.ToString());
 		Console.WriteLine(text.ToString());

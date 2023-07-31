@@ -219,6 +219,7 @@ static class SKHeaderParser
 						// Seems like char16/32_t are somewhat exceptional
 						// types here!
 						if      (unexposed.Name == "const char16_t") result.name = "char16_t";
+						else if (unexposed.Name == "char16_t")       result.name = "char16_t";
 						else if (unexposed.Name == "char32_t")       result.name = "char32_t";
 						else throw new Exception("Unknown type: " + unexposed.Name);
 						curr = null;
@@ -283,13 +284,13 @@ static class SKHeaderParser
 	///////////////////////////////////////////
 
 	static string BuildComment(CppComment comment)
-		=> comment.Children
+		=> comment?.Children
 		.Aggregate("", (str, c) => str + c.Kind switch
 			{
 				CppCommentKind.Paragraph => c.Children.Aggregate("", (p, s) => p + s.ToString().Trim() + " ") + "\n",
 				_ => c.ToString().Trim() + " ",
 			})
-		.Trim();
+		.Trim() ?? "";
 
 	///////////////////////////////////////////
 

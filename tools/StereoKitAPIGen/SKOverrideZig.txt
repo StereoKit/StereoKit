@@ -51,6 +51,7 @@ material_param_uint4 UInt4
 log_ LogLevel
 log_inform Info
 
+backend_openxr BackendOpenXR
 backend_xr_type_ BackendXRType
 backend_xr_type_webxr WebXR
 backend_xr_type_openxr OpenXR
@@ -69,8 +70,6 @@ tex_format_depthstencil DepthStencil
 button_state_ BtnState
 color128 Color
 
-sk SK
-sk_settings_t SKSettings
 vind_t u32
 vert_t Vert
 model_node_id i32
@@ -100,3 +99,5 @@ time_scale setScale
 sound_duration getDuration
 text_size sizeOf
 text_size_16 sizeOf16
+
+ui_settings setSettings

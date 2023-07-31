@@ -2,7 +2,7 @@
   "profiles": {
     "StereoKitAPIGen Zig": {
       "commandName": "Project",
-      "commandLineArgs": "-f ../../../../../StereoKitC/stereokit.h -l Zig -d ../../../../../Examples/StereoKitZig/StereoKit -o SKOverrideZig.txt"
+      "commandLineArgs": "-f ../../../../../StereoKitC/stereokit.h -f ../../../../../StereoKitC/stereokit_ui.h -l Zig -d ../../../../../Examples/StereoKitZig/StereoKit -o SKOverrideZig.txt"
     },
     "StereoKitAPIGen CSharp": {
       "commandName": "Project",

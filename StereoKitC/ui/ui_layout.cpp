@@ -343,12 +343,12 @@ void ui_sameline() {
 
 ///////////////////////////////////////////
 
-void ui_space(float space) {
+void ui_space(float space_size) {
 	ui_layout_t *layout = &skui_layouts.last();
 	if (layout->offset.x == layout->offset_initial.x)
-		layout->offset.y -= space;
+		layout->offset.y -= space_size;
 	else
-		layout->offset.x -= space;
+		layout->offset.x -= space_size;
 }
 
 ///////////////////////////////////////////

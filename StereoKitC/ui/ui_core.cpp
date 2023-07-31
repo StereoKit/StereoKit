@@ -492,11 +492,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 
 ///////////////////////////////////////////
 
-bool32_t ui_handle_begin(const char *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	return _ui_handle_begin(ui_stack_hash(text), movement, handle, draw, move_type, allowed_gestures);
+bool32_t ui_handle_begin(const char *id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash(id), movement, handle, draw, move_type, allowed_gestures);
 }
-bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	return _ui_handle_begin(ui_stack_hash_16(text), movement, handle, draw, move_type, allowed_gestures);
+bool32_t ui_handle_begin_16(const char16_t *id, pose_t &movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash_16(id), movement, handle, draw, move_type, allowed_gestures);
 }
 
 ///////////////////////////////////////////

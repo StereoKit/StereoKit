@@ -1022,8 +1022,8 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 ///////////////////////////////////////////
 
 template<typename C>
-void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	uint64_t id = ui_push_id(text);
+void ui_window_begin_g(const C *title, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	uint64_t id = ui_push_id(title);
 	int32_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
 	if (index < 0) {
 		index = ~index;
@@ -1059,22 +1059,22 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	if (window.type & ui_win_head) {
 		ui_layout_t* layout = ui_layout_curr();
 
-		vec2 txt_size = text_size(text, ui_get_text_style());
+		vec2 txt_size = text_size(title, ui_get_text_style());
 		vec2 size     = vec2{ window_size.x == 0 ? txt_size.x : window_size.x-(skui_settings.margin*2), ui_line_height() };
 		vec3 at       = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
 
-		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
+		ui_text_at(title, text_align_center_left, text_fit_squeeze, at, size);
 
 		if (layout->size_used.x < (size.x + skui_settings.padding*2))
 			layout->size_used.x = (size.x + skui_settings.padding*2);
 	}
 	window.pose = pose;
 }
-void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char>(text, pose, window_size, window_type, move_type);
+void ui_window_begin(const char * title, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char>(title, pose, window_size, window_type, move_type);
 }
-void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char16_t>(text, pose, window_size, window_type, move_type);
+void ui_window_begin_16(const char16_t * title, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char16_t>(title, pose, window_size, window_type, move_type);
 }
 
 ///////////////////////////////////////////
