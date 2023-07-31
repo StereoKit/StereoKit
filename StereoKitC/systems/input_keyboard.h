@@ -16,6 +16,7 @@ void          input_keyboard_suspend   (bool suspend);
 void          input_keyboard_update    ();
 button_state_ input_keyboard_get       (key_ key);
 
-extern float input_last_physical_keypress;
+float         input_get_last_physical_keypress_time();
+void          input_set_last_physical_keypress_time(float time);
 
 } // namespace sk

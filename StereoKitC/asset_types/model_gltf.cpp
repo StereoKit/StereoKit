@@ -233,7 +233,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		return nullptr;
 	}
 	if (p->has_draco_mesh_compression) {
-		log_errf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
+		gltf_add_warning(warnings, "GLTF Draco Mesh Compression not currently supported");
 		return nullptr;
 	}
 
@@ -249,9 +249,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 
 	bool has_normals = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
-		cgltf_attribute   *attr   = &p->attributes[a];
-		cgltf_buffer_view *buff   = attr->data->buffer_view;
-		size_t             offset = buff->offset + attr->data->offset;
+		cgltf_attribute* attr = &p->attributes[a];
+		const uint8_t*   buff = cgltf_buffer_view_data(attr->data->buffer_view) + attr->data->offset;
 		
 		// Make sure we have memory for our verts
 		if (vert_count < (int32_t)attr->data->count) {
@@ -269,7 +268,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (cgltf_size v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec3 *pos = (vec3 *)(buff + (attr->data->stride * v));
 					verts[v].pos = *pos;
 				}
 			} else {
@@ -295,7 +294,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec3 *norm = (vec3 *)(buff + (attr->data->stride * v));
 					verts[v].norm = *norm;
 				}
 			} else {
@@ -320,7 +319,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
 				// Ideal case is vec2 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec2 *uv = (vec2 *)(buff + (attr->data->stride * v));
 					verts[v].uv = *uv;
 				}
 			} else {
@@ -345,13 +344,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					color32 *col = (color32 *)(buff + (attr->data->stride * v));
 					verts[v].col = *col;
 				}
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
 				// vec4 float colors are also pretty straightforward
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					color128 *col = (color128 *)(buff + (attr->data->stride * v));
 					verts[v].col = color_to_32(*col);
 				}
 			} else {
@@ -394,31 +393,32 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		// Extract indices from the index buffer
 		ind_count = p->indices->count;
 		inds      = sk_malloc_t(vind_t, ind_count);
+
+		const uint8_t* buff = cgltf_buffer_view_data(p->indices->buffer_view) + p->indices->offset;
 		if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
-			cgltf_buffer_view *buff   = p->indices->buffer_view;
-			size_t             offset = buff->offset + p->indices->offset;
 			for (size_t v = 0; v < ind_count; v++) {
-				uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
+				uint8_t *ind = (uint8_t *)(buff + (p->indices->stride * v));
 				inds[v] = *ind;
 			}
 		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
-			cgltf_buffer_view *buff   = p->indices->buffer_view;
-			size_t             offset = buff->offset + p->indices->offset;
 			for (size_t v = 0; v < ind_count; v++) {
-				uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
+				uint16_t *ind = (uint16_t *)(buff + (p->indices->stride * v));
 				inds[v] = *ind;
 			}
 		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
-			cgltf_buffer_view *buff   = p->indices->buffer_view;
-			size_t             offset = buff->offset + p->indices->offset;
-			for (size_t v = 0; v < ind_count; v++) {
-				uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-				inds[v] = *ind;
+			if (p->indices->stride == sizeof(uint32_t)) {
+				// Fast path!
+				memcpy(inds, buff, ind_count * sizeof(uint32_t));
+			} else {
+				for (size_t v = 0; v < ind_count; v++) {
+					uint32_t *ind = (uint32_t *)(buff + (p->indices->stride * v));
+					inds[v] = *ind;
+				}
 			}
 		} else {
 			gltf_add_warning(warnings, "Unimplemented vertex index format");
 		}
-		}
+	}
 
 	if (!has_normals) {
 		mesh_calculate_normals(verts, vert_count, inds, (int32_t)ind_count);
@@ -823,13 +823,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	node_map->set(node, node_id);
 
 	// Copy the GLTF's extras into a dictionary
-	int64_t extras_size_i = (int64_t)node->extras.end_offset - (int64_t)node->extras.start_offset;
-	size_t  extras_size   = extras_size_i < 0 ? 0 : extras_size_i;
-	if (extras_size > 0) {
-		char* extras_json = sk_malloc_t(char, extras_size+1);
-		cgltf_copy_extras_json(data, &node->extras, extras_json, &extras_size);
-		gltf_parse_extras(model, node_id, extras_json, extras_size);
-		sk_free(extras_json);
+	if (node->extras.data) {
+		gltf_parse_extras(model, node_id, node->extras.data, strlen(node->extras.data));
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
@@ -849,6 +844,8 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
 		sk_free(data);
 	};
+	options.memory.alloc_func = [](void *user, cgltf_size size) { return sk_malloc(size); };
+	options.memory.free_func  = [](void *user, void* data) { sk_free(data); };
 
 	cgltf_data*  data   = nullptr;
 	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);

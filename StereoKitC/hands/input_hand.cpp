@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "../stereokit.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -32,6 +37,7 @@ struct hand_state_t {
 	solid_t     solids[SK_FINGER_SOLIDS];
 	material_t  material;
 	hand_mesh_t mesh;
+	vec3        pinch_pt_relative;
 	bool        visible;
 	bool        enabled;
 	bool        solid;
@@ -50,6 +56,7 @@ typedef struct hand_sim_t {
 
 typedef struct hand_system_t {
 	hand_system_ system;
+	hand_source_ source;
 	float pinch_blend;
 	bool (*available)();
 	void (*init)();
@@ -61,6 +68,7 @@ typedef struct hand_system_t {
 
 hand_system_t hand_sources[] = { // In order of priority
 	{ hand_system_override,
+		hand_source_overridden,
 		0.2f,
 		hand_override_available,
 		hand_override_init,
@@ -70,7 +78,8 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_update_poses },
 #if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
-		0.2f,
+		hand_source_articulated,
+		0.3f,
 		hand_oxra_available,
 		hand_oxra_init,
 		hand_oxra_shutdown,
@@ -78,6 +87,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxra_update_frame,
 		hand_oxra_update_poses },
 	{ hand_system_oxr_controllers,
+		hand_source_simulated,
 		0.6f,
 		hand_oxrc_available,
 		hand_oxrc_init,
@@ -87,6 +97,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_oxrc_update_poses },
 #endif
 	{ hand_system_mouse,
+		hand_source_simulated,
 		1,
 		hand_mouse_available,
 		hand_mouse_init,
@@ -95,6 +106,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_mouse_update_frame,
 		hand_mouse_update_poses },
 	{ hand_system_none,
+		hand_source_none,
 		1,
 		[]() {return true;},
 		[]() {},
@@ -116,6 +128,12 @@ void input_hand_update_mesh(handed_ hand);
 
 const hand_t *input_hand(handed_ hand) {
 	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
+hand_source_ input_hand_source(handed_ hand) {
+	return hand_sources[hand_system].source;
 }
 
 ///////////////////////////////////////////
@@ -364,7 +382,7 @@ void input_hand_state_update(handed_ handedness) {
 	hand.grip_state  = button_state_inactive;
 	
 	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
-	const float pinch_activation_dist = (was_trigger ? 2 : 1) * cm2m;
+	const float pinch_activation_dist = (was_trigger ? 1.5f : 1.0f) * cm2m;
 	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
 	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
 	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
@@ -377,15 +395,28 @@ void input_hand_state_update(handed_ handedness) {
 	bool is_trigger = finger_dist <= pinch_activation_dist;
 	bool is_grip    = grip_dist   <= grip_activation_dist;
 
+	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
+	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
+	if (is_trigger) hand.pinch_state |= button_state_active;
+	if (is_grip)    hand.grip_state  |= button_state_active;
+
 	hand.pinch_pt = vec3_lerp(
 		hand.fingers[0][4].position,
 		hand.fingers[1][4].position,
 		hand_sources[hand_system].pinch_blend);
 
-	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
-	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
-	if (is_trigger) hand.pinch_state |= button_state_active;
-	if (is_grip)    hand.grip_state  |= button_state_active;
+	if (hand_sources[hand_system].system == hand_system_oxr_articulated) {
+		// Preserve the pinch point relative to the root of the index finger
+		// while the pinch is active. This helps prevent traveling of the pinch
+		// point during release on real articulated hands.
+		if ((hand.pinch_state & button_state_just_active) > 0) {
+			matrix to_relative = matrix_invert(matrix_trs(hand.fingers[1][0].position, hand.fingers[1][0].orientation, vec3_one));
+			hand_state[handedness].pinch_pt_relative = matrix_transform_pt(to_relative, hand.pinch_pt);
+		} else if ((hand.pinch_state & button_state_active) > 0 || (hand.pinch_state & button_state_just_inactive) > 0) {
+			matrix from_relative = matrix_trs(hand.fingers[1][0].position, hand.fingers[1][0].orientation, vec3_one);
+			hand.pinch_pt = matrix_transform_pt(from_relative, hand_state[handedness].pinch_pt_relative);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -461,8 +492,8 @@ bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) 
 	case controller_key_stick: return (input_controllers[hand].stick_click & button_state_active) > 0;
 	case controller_key_x1:    return (input_controllers[hand].x1 & button_state_active) > 0;
 	case controller_key_x2:    return (input_controllers[hand].x2 & button_state_active) > 0;
+	default: return false;
 	}
-	return false;
 }
 ///////////////////////////////////////////
 

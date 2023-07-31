@@ -216,7 +216,7 @@ void common_update() {
 		log_infof("Eyes:     %s", device_has_eye_gaze()?"true":"false");
 		switch (device_display_get_type()) { case display_type_none: text = "none"; break; case display_type_flatscreen: text = "flatscreen"; break; case display_type_stereo: text = "stereo"; break; }
 		log_infof("Display Type:  %s", text);
-		switch (device_display_get_blend()) { case display_blend_additive: text = "additive"; break; case display_blend_blend: text = "blend"; break; case display_blend_opaque: text = "opaque"; break; case display_blend_none: text = "none"; break; }
+		switch (device_display_get_blend()) { case display_blend_additive: text = "additive"; break; case display_blend_blend: text = "blend"; break; case display_blend_opaque: text = "opaque"; break; case display_blend_none: text = "none"; break; default: text = "unknown";  break; }
 		log_infof("Display Blend: %s", text);
 		log_infof("Display FoV:   %.0f, %.0f, %.0f, %.0f",
 			device_display_get_fov().right,

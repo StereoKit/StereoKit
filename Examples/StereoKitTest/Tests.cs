@@ -23,8 +23,10 @@ public static class Tests
 	public  static bool IsTesting { get; set; }
 	public  static bool TestSingle { get; set; }
 
-	public static string ScreenshotRoot  { get; set; } = "../../../docs/img/screenshots";
-	public static bool   MakeScreenshots { get; set; } = true;
+	public static string ScreenshotRoot     { get; set; } = "../../../docs/img/screenshots";
+	public static bool   MakeScreenshots    { get; set; } = true;
+	public static string GltfFolders        { get; set; } = null; // "C:\\Tools\\glTF-Sample-Models-master\\2.0";
+	public static string GltfScreenshotRoot { get; set; } = null;
 
 	public static void FindTests()
 	{
@@ -148,10 +150,23 @@ public static class Tests
 		screens.Add(name);
 
 		string file = Path.Combine(ScreenshotRoot, name);
-		string dir = Path.GetDirectoryName(file);
+		string dir  = Path.GetDirectoryName(file);
 		if (!Directory.Exists(dir))
 			Directory.CreateDirectory(dir);
 		Renderer.Screenshot(file, from, at, width, height, fov);
+	}
+
+	public static void ScreenshotGltf(string name, int width, int height, Vec3 from, Vec3 at)
+	{
+		if (!IsTesting || screens.Contains(name) || !MakeScreenshots || GltfScreenshotRoot == null)
+			return;
+		screens.Add(name);
+
+		string file = Path.Combine(GltfScreenshotRoot, name);
+		string dir  = Path.GetDirectoryName(file);
+		if (!Directory.Exists(dir))
+			Directory.CreateDirectory(dir);
+		Renderer.Screenshot(file, from, at, width, height, 45);
 	}
 
 	public static void Hand(in HandJoint[] joints) => Hand(Handed.Right, joints);

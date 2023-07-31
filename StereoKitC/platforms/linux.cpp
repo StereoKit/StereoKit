@@ -15,6 +15,7 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../log.h"
+#include "../sk_math.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
@@ -188,7 +189,7 @@ void linux_events() {
 
 					// On desktop, we want to hide soft keyboards on physical
 					// presses
-					input_last_physical_keypress = time_totalf();
+					input_set_last_physical_keypress_time(time_totalf());
 					platform_keyboard_show(false, text_context_text);
 
 					// Some non-text characters get fed into the text system as
@@ -370,9 +371,12 @@ bool setup_x_window() {
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
+	int32_t width  = maxi(1, sk_settings.flatscreen_width);
+	int32_t height = maxi(1, sk_settings.flatscreen_height);
+
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
+	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, width, height);
 	linux_swapchain_initialized = true;
 	sk_info.display_width  = linux_swapchain.width;
 	sk_info.display_height = linux_swapchain.height;
@@ -443,8 +447,11 @@ bool linux_start_flat() {
 ///////////////////////////////////////////
 
 void linux_resize(int width, int height) {
+	width  = maxi(1, width);
+	height = maxi(1, height);
 	if (!linux_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
 		return;
+
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
 	device_data.display_width  = width;

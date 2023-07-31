@@ -160,10 +160,10 @@ void assets_releaseref(asset_header_t *asset) {
 	if (atomic_decrement(&asset->refs) == 0) {
 		assets_destroy(asset);
 	} else if (asset->refs < 0) {
-		if (asset->id_text != nullptr)
-			log_errf("Released too many references to asset[%d]: %s", asset->type, asset->id_text);
-		else
-			log_errf("Released too many references to asset[%d]!", asset->type);
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset->type, 
+			asset->id_text!=nullptr?": "          :"",
+			asset->id_text!=nullptr?asset->id_text:"");
 		abort();
 	}
 }
@@ -182,10 +182,10 @@ void assets_releaseref_threadsafe(void *asset) {
 		assets_multithread_destroy.add(asset_header);
 		mtx_unlock(&assets_multithread_destroy_lock);
 	} else if (asset_header->refs < 0) {
-		if (asset_header->id_text != nullptr)
-			log_errf("Released too many references to asset[%d]: %s", asset_header->type, asset_header->id_text);
-		else
-			log_errf("Released too many references to asset[%d]!", asset_header->type);
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset_header->type, 
+			asset_header->id_text!=nullptr?": "                 :"",
+			asset_header->id_text!=nullptr?asset_header->id_text:"");
 		abort();
 	}
 }

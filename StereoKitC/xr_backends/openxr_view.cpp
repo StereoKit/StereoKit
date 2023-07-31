@@ -232,6 +232,7 @@ bool32_t xr_set_blend(display_blend_ blend) {
 		case display_blend_additive: xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE; break;
 		case display_blend_blend:    xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND; break;
 		case display_blend_opaque:   xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_OPAQUE; break;
+		default: abort(); break; // Should not be reachable
 		}
 	}
 
@@ -623,6 +624,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      curr = display_blend_opaque;   break;
 		case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    curr = display_blend_additive; break;
 		case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: curr = display_blend_blend;    break;
+		default: break;
 		}
 		// Accumulate all valid blend modes
 		*out_valid |= curr;

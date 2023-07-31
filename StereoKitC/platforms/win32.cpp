@@ -50,8 +50,11 @@ const wchar_t* REG_VALUE_NAME = L"WindowLocation";
 ///////////////////////////////////////////
 
 void win32_resize(int width, int height) {
+	width  = maxi(1, width);
+	height = maxi(1, height);
 	if (win32_swapchain_initialized == false || (width == device_data.display_width && height == device_data.display_height))
 		return;
+
 	sk_info.display_width  = width;
 	sk_info.display_height = height;
 	device_data.display_width  = width;
@@ -67,7 +70,7 @@ void win32_resize(int width, int height) {
 
 void win32_physical_key_interact() {
 	// On desktop, we want to hide soft keyboards on physical presses
-	input_last_physical_keypress = time_totalf_unscaled();
+	input_set_last_physical_keypress_time(time_totalf_unscaled());
 	platform_keyboard_show(false, text_context_text);
 }
 
@@ -253,8 +256,8 @@ bool win32_start_flat() {
 
 	RECT bounds;
 	GetClientRect(win32_window, &bounds);
-	int32_t width  = bounds.right  - bounds.left;
-	int32_t height = bounds.bottom - bounds.top;
+	int32_t width  = maxi(1, bounds.right  - bounds.left);
+	int32_t height = maxi(1, bounds.bottom - bounds.top);
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();

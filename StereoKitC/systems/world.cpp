@@ -250,6 +250,7 @@ void world_set_origin_offset(pose_t offset) {
 	case backend_xr_type_openxr:    openxr_set_origin_offset   (offset); break;
 #endif
 	case backend_xr_type_simulator: simulator_set_origin_offset(offset); break;
+	default: abort(); break;
 	}
 	world_origin_offset = offset;
 }
