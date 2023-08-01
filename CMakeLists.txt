@@ -178,10 +178,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.0.28
-    VERSION 1.0.28
+    NAME openxr_loader # 1.0.28.2
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG "release-1.0.28"
+    GIT_TAG 8c966ae7da7fd50168b43ce8220f9df69063b341
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
