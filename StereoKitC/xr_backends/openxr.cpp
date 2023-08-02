@@ -213,7 +213,7 @@ bool openxr_create_system() {
 		(SK_VERSION_PATCH       & 0x00000FFF);
 
 	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_app_name);
+	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_get_settings_ref()->app_name);
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #if defined(SK_OS_ANDROID)
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
@@ -348,6 +348,8 @@ bool openxr_init() {
 		return false;
 	}
 
+	system_info_t* sys_info = sk_get_info_ref();
+
 	// The Session gets created before checking capabilities! In certain
 	// contexts, such as Holographic Remoting, the system won't know about its
 	// capabilities until the session is ready. Holographic Remoting knows to
@@ -406,10 +408,11 @@ bool openxr_init() {
 	session_info.next     = &gfx_binding;
 	session_info.systemId = xr_system_id;
 	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
-	if (xr_ext_available.EXTX_overlay && sk_settings.overlay_app) {
-		overlay_info.sessionLayersPlacement = sk_settings.overlay_priority;
+	const sk_settings_t *settings = sk_get_settings_ref();
+	if (xr_ext_available.EXTX_overlay && settings->overlay_app) {
+		overlay_info.sessionLayersPlacement = settings->overlay_priority;
 		gfx_binding.next = &overlay_info;
-		sk_info.overlay_app = true;
+		sys_info->overlay_app = true;
 	}
 	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
@@ -452,9 +455,9 @@ bool openxr_init() {
 	xr_has_single_pass                = true;
 	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
 	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
-	sk_info.eye_tracking_present      = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
-	sk_info.perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
-	sk_info.spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+	device_data.has_eye_gaze          = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
+	sys_info->perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
+	sys_info->spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
 
 	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
 	else                                                                log_diagf("Platform does not support single-pass rendering");
@@ -498,18 +501,17 @@ bool openxr_init() {
 	}
 #endif
 
-	device_data.has_eye_gaze      = sk_info.eye_tracking_present;
 	device_data.has_hand_tracking = xr_has_articulated_hands;
 	device_data.tracking          = device_tracking_none;
 	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
 	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
 
 
-	if (xr_has_articulated_hands)          log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_has_hand_meshes)                log_diag("OpenXR hand mesh ext enabled!");
-	if (sk_info.eye_tracking_present)      log_diag("OpenXR gaze ext enabled!");
-	if (sk_info.spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
-	if (sk_info.perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+	if (xr_has_articulated_hands)            log_diag("OpenXR articulated hands ext enabled!");
+	if (xr_has_hand_meshes)                  log_diag("OpenXR hand mesh ext enabled!");
+	if (device_data.has_eye_gaze)            log_diag("OpenXR gaze ext enabled!");
+	if (sys_info->spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
+	if (sys_info->perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
 
 	// Check scene understanding features, these may be dependant on Session
 	// creation in the context of Holographic Remoting.
@@ -519,13 +521,13 @@ bool openxr_init() {
 		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
 		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, count, &count, features);
 		for (uint32_t i = 0; i < count; i++) {
-			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sk_info.world_occlusion_present = true;
-			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sk_info.world_raycast_present   = true;
+			if      (features[i] == XR_SCENE_COMPUTE_FEATURE_VISUAL_MESH_MSFT  ) sys_info->world_occlusion_present = true;
+			else if (features[i] == XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT) sys_info->world_raycast_present   = true;
 		}
 		sk_free(features);
 	}
-	if (sk_info.world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
-	if (sk_info.world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
+	if (sys_info->world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
+	if (sys_info->world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
 
 	if (!openxr_views_create()) {
 		openxr_cleanup();
@@ -570,7 +572,7 @@ bool openxr_init() {
 	// TODO: Loop here may be optional, but some platforms may need it? Waiting
 	// for some feedback here.
 	int32_t ref_space_tries = 10;
-	while (openxr_try_get_app_space(xr_session, sk_settings.origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
+	while (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
 		ref_space_tries--;
 		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
 		openxr_blank_frame();
@@ -588,9 +590,9 @@ bool openxr_init() {
 		return false;
 	}
 
-	if (sk_info.overlay_app) {
+	if (sys_info->overlay_app) {
 		log_diag("Starting as an overlay app, display blend mode switched to blend.");
-		sk_info.display_type = display_blend;
+		device_data.display_blend = display_blend_blend;
 	}
 
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
@@ -891,9 +893,9 @@ bool openxr_poll_events() {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
 			xr_session_state = changed->state;
 
-			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_focus = app_focus_active;
-			else if (xr_session_state == XR_SESSION_STATE_VISIBLE) sk_focus = app_focus_background;
-			else                                                   sk_focus = app_focus_hidden;
+			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_set_app_focus(app_focus_active);
+			else if (xr_session_state == XR_SESSION_STATE_VISIBLE) sk_set_app_focus(app_focus_background);
+			else                                                   sk_set_app_focus(app_focus_hidden);
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
@@ -928,8 +930,8 @@ bool openxr_poll_events() {
 			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; result = false; break;
 			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
 			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_running = false; result = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_running = false; result = false; break;
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(); result = false; break;
+			case XR_SESSION_STATE_EXITING:      sk_quit(); result = false; break;
 			default: break;
 			}
 		} break;
@@ -939,7 +941,7 @@ bool openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_running = false; result = false; break;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit(); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
@@ -1005,7 +1007,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
 		return pose_identity;
 	}
-	if (!sk_info.spatial_bridge_present) {
+	if (!sk_get_info_ref()->spatial_bridge_present) {
 		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
 		return pose_identity;
 	}
@@ -1046,7 +1048,7 @@ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_
 		*out_pose = pose_identity;
 		return false;
 	}
-	if (!sk_info.spatial_bridge_present) {
+	if (!sk_get_info_ref()->spatial_bridge_present) {
 		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
 		*out_pose = pose_identity;
 		return false;
@@ -1087,7 +1089,7 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 		log_warn("No OpenXR session available for converting perception anchors!");
 		return pose_identity;
 	}
-	if (!sk_info.perception_bridge_present) {
+	if (!sk_get_info_ref()->perception_bridge_present) {
 		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
 		return pose_identity;
 	}
@@ -1131,7 +1133,7 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 		*out_pose = pose_identity;
 		return false;
 	}
-	if (!sk_info.perception_bridge_present) {
+	if (!sk_get_info_ref()->perception_bridge_present) {
 		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
 		*out_pose = pose_identity;
 		return false;
@@ -1249,7 +1251,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -1260,7 +1262,7 @@ void backend_openxr_ext_request(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_ext_exclude(const char* extension_name) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -1271,7 +1273,7 @@ void backend_openxr_ext_exclude(const char* extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -1282,7 +1284,7 @@ void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 ///////////////////////////////////////////
 
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ pre_session must be called BEFORE StereoKit initialization!");
 		return;
 	}

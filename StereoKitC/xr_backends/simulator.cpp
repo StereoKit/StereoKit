@@ -40,7 +40,7 @@ bool simulator_init() {
 	sim_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 
 	quat initial_rot = quat_from_angles(0, sim_head_rot.y, 0);
-	switch (sk_settings.origin) {
+	switch (sk_get_settings_ref()->origin) {
 	case origin_mode_local: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos,                  initial_rot }; sim_bounds_pose = { 0,-1.5f,0, quat_inverse(initial_rot) }; break;
 	case origin_mode_floor: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
 	case origin_mode_stage: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
@@ -106,7 +106,7 @@ void simulator_step_begin() {
 		sim_mouse_look = false;
 	}
 
-	if (sk_settings.disable_flatscreen_mr_sim) {
+	if (sk_get_settings_ref()->disable_flatscreen_mr_sim) {
 		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, false);
 	} else {
 		bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;

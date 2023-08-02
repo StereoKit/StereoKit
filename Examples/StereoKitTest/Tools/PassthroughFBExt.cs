@@ -68,6 +68,7 @@ namespace StereoKit.Framework
 
 		public void Shutdown()
 		{
+			if (!Enabled) return;
 			Enabled = false;
 			DestroyPassthrough();
 		}

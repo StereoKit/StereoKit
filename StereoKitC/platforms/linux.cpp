@@ -202,7 +202,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonPress: {
-				if (sk_focus == app_focus_active) {
+				if (sk_app_focus() == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_key_inject_press(key_mouse_left);    break;
 					case (2): input_key_inject_press(key_mouse_center);  break;
@@ -215,7 +215,7 @@ void linux_events() {
 				}
 			} break;
 			case ButtonRelease: {
-				if (sk_focus == app_focus_active) {
+				if (sk_app_focus() == app_focus_active) {
 					switch (event.xbutton.button) {
 					case (1): input_key_inject_release(key_mouse_left);    break;
 					case (2): input_key_inject_release(key_mouse_center);  break;
@@ -260,6 +260,8 @@ void linux_events() {
 ///////////////////////////////////////////
 
 bool setup_x_window() {
+	const sk_settings_t *settings = sk_get_settings_ref();
+
 	x_dpy = XOpenDisplay(nullptr);
 	if (x_dpy == nullptr) {
 		log_fail_reason(90, log_error, "Cannot connect to X server");
@@ -329,7 +331,7 @@ bool setup_x_window() {
 
 	x_swa.colormap   = x_cmap;
 	x_swa.event_mask = ExposureMask | KeyPressMask;
-	x_win = XCreateWindow(x_dpy, x_root, 0, 0, sk_settings.flatscreen_width, sk_settings.flatscreen_height, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
+	x_win = XCreateWindow(x_dpy, x_root, 0, 0, settings->flatscreen_width, settings->flatscreen_height, 0, x_vi->depth, InputOutput, x_vi->visual, CWColormap | CWEventMask, &x_swa);
 
 	XSizeHints *hints = XAllocSizeHints();
 	if (hints == nullptr) {
@@ -344,8 +346,8 @@ bool setup_x_window() {
 
 	XMapWindow(x_dpy, x_win);
 	XChangeProperty(x_dpy, x_win, XInternAtom(x_dpy, "_NET_WM_NAME", False),
-								XInternAtom(x_dpy, "UTF8_STRING", False), 8, PropModeReplace,
-								(unsigned char *)sk_app_name, strlen(sk_app_name));
+	                              XInternAtom(x_dpy, "UTF8_STRING", False), 8, PropModeReplace,
+	                              (unsigned char *)settings->app_name, strlen(settings->app_name));
 
 	// loads the XMODIFIERS environment variable to see what input method to use
 	XSetLocaleModifiers("");
@@ -371,17 +373,15 @@ bool setup_x_window() {
 	Atom wm_delete = XInternAtom(x_dpy, "WM_DELETE_WINDOW", true);
 	XSetWMProtocols(x_dpy, x_win, &wm_delete, 1);
 
-	int32_t width  = maxi(1, sk_settings.flatscreen_width);
-	int32_t height = maxi(1, sk_settings.flatscreen_height);
+	int32_t width  = maxi(1, settings->flatscreen_width);
+	int32_t height = maxi(1, settings->flatscreen_height);
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	linux_swapchain = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, width, height);
+	linux_swapchain             = skg_swapchain_create((void *) x_win, color_fmt, depth_fmt, width, height);
 	linux_swapchain_initialized = true;
-	sk_info.display_width  = linux_swapchain.width;
-	sk_info.display_height = linux_swapchain.height;
-	device_data.display_width  = linux_swapchain.width;
-	device_data.display_height = linux_swapchain.height;
+	device_data.display_width   = linux_swapchain.width;
+	device_data.display_height  = linux_swapchain.height;
 
 	XWindowAttributes wa;
 	XGetWindowAttributes(x_dpy,x_win,&wa);
@@ -422,7 +422,7 @@ bool linux_start_pre_xr() {
 
 bool linux_start_post_xr() {
 #if defined(SKG_LINUX_EGL)
-	if (sk_settings.disable_desktop_input_window)
+	if (sk_get_settings_ref()->disable_desktop_input_window)
 		return true;
 	setup_x_window();
 #endif
@@ -433,7 +433,6 @@ bool linux_start_post_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_flat() {
-	sk_info.display_type      = display_opaque;
 	device_data.display_blend = display_blend_opaque;
 
 	#if defined(SKG_LINUX_EGL)
@@ -449,16 +448,14 @@ bool linux_start_flat() {
 void linux_resize(int width, int height) {
 	width  = maxi(1, width);
 	height = maxi(1, height);
-	if (!linux_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!linux_swapchain_initialized || (width == device_data.display_width && height == device_data.display_height))
 		return;
 
-	sk_info.display_width  = width;
-	sk_info.display_height = height;
 	device_data.display_width  = width;
 	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 
-	skg_swapchain_resize(&linux_swapchain, sk_info.display_width, sk_info.display_height);
+	skg_swapchain_resize(&linux_swapchain, device_data.display_width, device_data.display_height);
 	render_update_projection();
 }
 
@@ -515,7 +512,7 @@ void linux_shutdown() {
 
 void linux_step_begin_xr() {
 #if defined(SKG_LINUX_EGL)
-	if(!sk_settings.disable_desktop_input_window) {
+	if(!sk_get_settings_ref()->disable_desktop_input_window) {
 		linux_events();
 	}
 #else

@@ -67,7 +67,7 @@ bool oxri_init() {
 	xrc_offset_rot[0] = quat_identity;
 	xrc_offset_rot[1] = quat_identity;
 
-	xr_eyes_pointer = input_add_pointer(input_source_gaze | (sk_info.eye_tracking_present ? input_source_gaze_eyes : input_source_gaze_head));
+	xr_eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
@@ -185,7 +185,7 @@ bool oxri_init() {
 	}
 
 	// Eye tracking
-	if (sk_info.eye_tracking_present) {
+	if (device_has_eye_gaze()) {
 		action_info = { XR_TYPE_ACTION_CREATE_INFO };
 		action_info.actionType = XR_ACTION_TYPE_POSE_INPUT;
 		snprintf(action_info.actionName,          sizeof(action_info.actionName),          "eye_gaze");
@@ -317,7 +317,7 @@ bool oxri_init() {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
 			info.name    = "microsoft/motion_controller";
-			if (sk_info.display_type == display_opaque) {
+			if (device_display_get_blend() == display_blend_opaque) {
 				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
 				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
 				info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
@@ -362,7 +362,7 @@ bool oxri_init() {
 			xrc_profile_info_t info;
 			info.profile = profile_path;
 			info.name    = "hp/mixed_reality_controller";
-			if (sk_info.display_type == display_opaque) {
+			if (device_display_get_blend() == display_blend_opaque) {
 				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
 				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
 				info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
@@ -788,7 +788,7 @@ void oxri_update_poses() {
 	}
 
 	// eye input
-	if (sk_info.eye_tracking_present) {
+	if (device_has_eye_gaze()) {
 		pointer_t           *pointer     = input_get_pointer(xr_eyes_pointer);
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};
@@ -873,7 +873,7 @@ void oxri_update_frame() {
 	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
 	// eye input
-	if (sk_info.eye_tracking_present) {
+	if (device_has_eye_gaze()) {
 		pointer_t           *pointer     = input_get_pointer(xr_eyes_pointer);
 		XrActionStatePose    action_pose = {XR_TYPE_ACTION_STATE_POSE};
 		XrActionStateGetInfo action_info = {XR_TYPE_ACTION_STATE_GET_INFO};

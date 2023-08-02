@@ -30,7 +30,7 @@ struct input_keyboard_state_t {
 	bool                      key_suspended;
 	float                     last_physical_keypress;
 };
-input_keyboard_state_t local = {};
+static input_keyboard_state_t local = {};
 
 ///////////////////////////////////////////
 

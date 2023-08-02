@@ -231,7 +231,14 @@ namespace StereoKit
 		{
 			_stepCallback = onStep;
 			_shutdownCallback = onShutdown;
-			NativeAPI.sk_run(_stepAction, _shutdownCallback);
+			try { NativeAPI.sk_run(_stepAction, _shutdownCallback); }
+			catch (Exception e)
+			{
+				// Clean up as much as we can, and toss the exception back up
+				onShutdown?.Invoke();
+				NativeAPI.sk_shutdown_unsafe();
+				throw e;
+			}
 		}
 
 		/// <summary>This registers an instance of the `IStepper` type
