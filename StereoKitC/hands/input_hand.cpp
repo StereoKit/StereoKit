@@ -342,8 +342,8 @@ void input_hand_update_poses(bool update_visuals) {
 		for (int32_t i = 0; i < handed_max; i++) {
 			// Update hand meshes, and draw 'em
 			bool tracked = hand_state[i].info.tracked_state & button_state_active;
-			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
-				render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{3, 3, 3, 1} : color128{1,1,1,1});
+			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active) {
+				render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
 			}
 
 			// Update hand physics
@@ -741,9 +741,20 @@ void input_hand_update_mesh(handed_ hand) {
 			const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
 			quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
+
+			// Find a scaling offset to preserve the volume of the joint while
+			// bending
+			float skew_scale = 1.0f;
+			if (j < SK_FINGERJOINTS-1 && j > 0 && (f != 0 || j > 1)) {
+				vec3  fwd_a = pose_prev.orientation * vec3_forward;
+				vec3  fwd_b = pose.orientation      * vec3_forward;
+				float angle = fminf(MATH_PI/2.5f, acosf(vec3_dot(fwd_a, fwd_b)) / 2.0f);
+				skew_scale = 1.0f / cosf(angle);
+			}
+
 			// Make local right and up axis vectors
-			vec3  right = orientation * vec3_right;
-			vec3  up    = orientation * vec3_up;
+			vec3 right = orientation * vec3_right;
+			vec3 up    = orientation * vec3{ 0, skew_scale, 0 };
 
 			// Find the scale for this joint
 			float scale = pose.radius;

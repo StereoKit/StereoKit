@@ -157,7 +157,7 @@ public:
 		currentDisplayInformation.OrientationChanged  ({ this, &ViewProvider::OnOrientationChanged });
 
 
-		window   .Closed ([this](auto &&, auto &&) { m_exit = true; sk_running = false; log_info("OnClosed!"); });
+		window.Closed([this](auto&&, auto&&) { m_exit = true; sk_quit(); log_info("OnClosed!"); });
 
 		// UWP on Xbox One triggers a back request whenever the B button is pressed
 		// which can result in the app being suspended if unhandled
@@ -169,14 +169,14 @@ public:
 		m_logicalHeight      = window.Bounds().Height;
 		m_nativeOrientation  = currentDisplayInformation.NativeOrientation ();
 		m_currentOrientation = currentDisplayInformation.CurrentOrientation();
-		sk_info.display_width  = (int32_t)dips_to_pixels(m_logicalWidth,  m_DPI);
-		sk_info.display_height = (int32_t)dips_to_pixels(m_logicalHeight, m_DPI);
+		device_data.display_width  = (int32_t)dips_to_pixels(m_logicalWidth,  m_DPI);
+		device_data.display_height = (int32_t)dips_to_pixels(m_logicalHeight, m_DPI);
 
 		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
 		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			int32_t swap_tmp = sk_info.display_width;
-			sk_info.display_width  = sk_info.display_height;
-			sk_info.display_height = swap_tmp;
+			int32_t swap_tmp = device_data.display_width;
+			device_data.display_width  = device_data.display_height;
+			device_data.display_height = swap_tmp;
 		}
 
 		// Get the HWND of the UWP window
@@ -286,7 +286,7 @@ protected:
 	}
 
 	void OnMouseButtonDown(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (sk_focus != app_focus_active) return;
+		if (sk_app_focus() != app_focus_active) return;
 		if (args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_inactive) input_key_inject_press(key_mouse_left);
 		if (args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_inactive) input_key_inject_press(key_mouse_right);
 		if (args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_inactive) input_key_inject_press(key_mouse_center);
@@ -294,7 +294,7 @@ protected:
 		if (args.CurrentPoint().Properties().IsXButton2Pressed    () && input_key(key_mouse_forward) == button_state_inactive) input_key_inject_press(key_mouse_forward);
 	}
 	void OnMouseButtonUp(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (sk_focus != app_focus_active) return;
+		if (sk_app_focus() != app_focus_active) return;
 		if (!args.CurrentPoint().Properties().IsLeftButtonPressed  () && input_key(key_mouse_left)    == button_state_active) input_key_inject_release(key_mouse_left);
 		if (!args.CurrentPoint().Properties().IsRightButtonPressed () && input_key(key_mouse_right)   == button_state_active) input_key_inject_release(key_mouse_right);
 		if (!args.CurrentPoint().Properties().IsMiddleButtonPressed() && input_key(key_mouse_center)  == button_state_active) input_key_inject_release(key_mouse_center);
@@ -303,18 +303,18 @@ protected:
 	}
 
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
-		if (sk_focus == app_focus_active) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
+		if (sk_app_focus() == app_focus_active) mouse_scroll += args.CurrentPoint().Properties().MouseWheelDelta();
 	}
 
 	void OnVisibilityChanged(CoreWindow const & /*sender*/, VisibilityChangedEventArgs const & args) {
 		m_visible = args.Visible();
-		sk_focus = m_visible? app_focus_active : app_focus_background;
+		sk_set_app_focus(m_visible? app_focus_active : app_focus_background);
 	}
 
 	void OnActivation(CoreWindow const & /*sender*/, WindowActivatedEventArgs const & args) {
-		sk_focus = args.WindowActivationState() != CoreWindowActivationState::Deactivated 
+		sk_set_app_focus(args.WindowActivationState() != CoreWindowActivationState::Deactivated 
 			? app_focus_active
-			: app_focus_background;
+			: app_focus_background);
 	}
 
 	void OnAcceleratorKeyActivated(CoreDispatcher const &, AcceleratorKeyEventArgs const & args)
@@ -396,7 +396,7 @@ private:
 			output_height = swap_tmp;
 		}
 
-		if (output_width == sk_info.display_width && output_height == sk_info.display_height)
+		if (output_width == device_data.display_width && output_height == device_data.display_height)
 			return;
 
 		uwp_resize_pending = true;
@@ -508,7 +508,6 @@ void uwp_shutdown() {
 ///////////////////////////////////////////
 
 bool uwp_start_flat() {
-	sk_info.display_type      = display_opaque;
 	device_data.display_blend = display_blend_opaque;
 
 	_beginthread(window_thread, 0, nullptr);
@@ -517,19 +516,18 @@ bool uwp_start_flat() {
 		Sleep(1);
 	}
 
-	int32_t width  = maxi(1, sk_settings.flatscreen_width);
-	int32_t height = maxi(1, sk_settings.flatscreen_height);
+	const sk_settings_t *settings = sk_get_settings_ref();
+	int32_t width  = maxi(1, settings->flatscreen_width);
+	int32_t height = maxi(1, settings->flatscreen_height);
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 	uwp_swapchain = skg_swapchain_create(uwp_window, color_fmt, skg_tex_fmt_none, width, height);
-	sk_info.display_width  = uwp_swapchain.width;
-	sk_info.display_height = uwp_swapchain.height;
 	device_data.display_width  = uwp_swapchain.width;
 	device_data.display_height = uwp_swapchain.height;
 	uwp_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 	tex_set_id       (uwp_target, "sk/platform/swapchain");
-	tex_set_color_arr(uwp_target, sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+	tex_set_color_arr(uwp_target, uwp_swapchain.width, uwp_swapchain.height, nullptr, 1, nullptr, 8);
 	tex_t zbuffer = tex_add_zbuffer  (uwp_target, (tex_format_)depth_fmt);
 	tex_set_id       (zbuffer, "sk/platform/swapchain_zbuffer");
 
@@ -549,14 +547,12 @@ void uwp_step_begin_flat() {
 	if (uwp_resize_pending) {
 		uwp_resize_pending = false;
 
-		sk_info.display_width  = uwp_resize_width;
-		sk_info.display_height = uwp_resize_height;
 		device_data.display_width  = uwp_resize_width;
 		device_data.display_height = uwp_resize_height;
 		log_infof("Resized to: %d<~BLK>x<~clr>%d", uwp_resize_width, uwp_resize_height);
 
-		skg_swapchain_resize(&uwp_swapchain, sk_info.display_width, sk_info.display_height);
-		tex_set_color_arr   (uwp_target,     sk_info.display_width, sk_info.display_height, nullptr, 1, nullptr, 8);
+		skg_swapchain_resize(&uwp_swapchain, uwp_resize_width, uwp_resize_height);
+		tex_set_color_arr   (uwp_target,     uwp_resize_width, uwp_resize_height, nullptr, 1, nullptr, 8);
 		render_update_projection();
 	}
 

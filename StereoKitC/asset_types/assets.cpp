@@ -160,10 +160,10 @@ void assets_releaseref(asset_header_t *asset) {
 	if (atomic_decrement(&asset->refs) == 0) {
 		assets_destroy(asset);
 	} else if (asset->refs < 0) {
-		if (asset->id_text != nullptr)
-			log_errf("Released too many references to asset[%d]: %s", asset->type, asset->id_text);
-		else
-			log_errf("Released too many references to asset[%d]!", asset->type);
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset->type, 
+			asset->id_text!=nullptr?": "          :"",
+			asset->id_text!=nullptr?asset->id_text:"");
 		abort();
 	}
 }
@@ -182,10 +182,10 @@ void assets_releaseref_threadsafe(void *asset) {
 		assets_multithread_destroy.add(asset_header);
 		mtx_unlock(&assets_multithread_destroy_lock);
 	} else if (asset_header->refs < 0) {
-		if (asset_header->id_text != nullptr)
-			log_errf("Released too many references to asset[%d]: %s", asset_header->type, asset_header->id_text);
-		else
-			log_errf("Released too many references to asset[%d]!", asset_header->type);
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset_header->type, 
+			asset_header->id_text!=nullptr?": "                 :"",
+			asset_header->id_text!=nullptr?asset_header->id_text:"");
 		abort();
 	}
 }
@@ -300,7 +300,9 @@ void  assets_shutdown_check() {
 ///////////////////////////////////////////
 
 char *assets_file(const char *file_name) {
-	if (file_name == nullptr || sk_settings.assets_folder == nullptr || sk_settings.assets_folder[0] == '\0')
+	const sk_settings_t* settings = sk_get_settings_ref();
+
+	if (file_name == nullptr || settings->assets_folder == nullptr || settings->assets_folder[0] == '\0')
 		return string_copy(file_name);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
@@ -318,9 +320,9 @@ char *assets_file(const char *file_name) {
 		return string_copy(file_name);
 #endif
 
-	int   count  = snprintf(nullptr, 0, "%s/%s", sk_settings.assets_folder, file_name);
+	int   count  = snprintf(nullptr, 0, "%s/%s", settings->assets_folder, file_name);
 	char *result = sk_malloc_t(char, count + 1);
-	snprintf(result, count+1, "%s/%s", sk_settings.assets_folder, file_name);
+	snprintf(result, count+1, "%s/%s", settings->assets_folder, file_name);
 	return result;
 }
 
@@ -462,7 +464,7 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 
 			// if the app hasn't started stepping yet and this takes too long,
 			// the application may be off the gpu thread unintentionally.
-			if (sk_first_step == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
+			if (sk_has_stepped() == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
 				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
 				has_warned = true;
 			}

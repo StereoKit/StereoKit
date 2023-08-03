@@ -56,12 +56,16 @@ class Program
 		}
 	}
 
-	static void Main(string[] args) 
+	static void Main(string[] args)
 	{
 		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
 		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
 		if (Array.IndexOf(args, "-screenfolder") != -1)
 			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
+		if (Array.IndexOf(args, "-gltf") != -1)
+			Tests.GltfFolders = args[Array.IndexOf(args, "-gltf") + 1];
+		if (Array.IndexOf(args, "-gltfscreenfolder") != -1)
+			Tests.GltfScreenshotRoot = args[Array.IndexOf(args, "-gltfscreenfolder") + 1];
 		if (Array.IndexOf(args, "-start") != -1)
 		{
 			startTest = args[Array.IndexOf(args, "-start") + 1];
@@ -77,7 +81,6 @@ class Program
 		// Preload the StereoKit library for access to Time.Scale before
 		// initialization occurs.
 		SK.PreLoadLibrary();
-		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		SK.AddStepper<PassthroughFBExt>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
@@ -87,6 +90,8 @@ class Program
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
+
+		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		Init();
 

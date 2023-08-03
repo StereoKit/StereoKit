@@ -41,10 +41,12 @@ bool platform_init() {
 		return false;
 	}
 
+	const sk_settings_t *settings = sk_get_settings_ref();
+
 	// Initialize graphics
 #if defined(SK_XR_OPENXR)
-	void *luid = sk_get_settings().display_preference == display_mode_mixedreality
-		? openxr_get_luid() 
+	void *luid = settings->display_preference == display_mode_mixedreality
+		? openxr_get_luid()
 		: nullptr;
 #else
 	void *luid = nullptr;
@@ -56,7 +58,7 @@ bool platform_init() {
 		case skg_log_critical: log_errf ("[<~mag>sk_gpu<~clr>] %s", text); break;
 		}
 	});
-	if (skg_init(sk_app_name, luid) <= 0) {
+	if (skg_init(settings->app_name, luid) <= 0) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
 		return false;
 	}
@@ -64,7 +66,7 @@ bool platform_init() {
 
 	// Convert from the legacy display_mode_ type
 	display_type_ display_type = display_type_none;
-	switch (sk_get_settings().display_preference) {
+	switch (settings->display_preference) {
 	case display_mode_flatscreen:   display_type = display_type_flatscreen; break;
 	case display_mode_mixedreality: display_type = display_type_stereo;     break;
 	case display_mode_none:         display_type = display_type_none;       break;
@@ -72,7 +74,7 @@ bool platform_init() {
 
 	// Start up the current mode!
 	if (!platform_set_mode(display_type)) {
-		if (!sk_settings.no_flatscreen_fallback && display_type != display_type_flatscreen) {
+		if (!settings->no_flatscreen_fallback && display_type != display_type_flatscreen) {
 			log_clear_any_fail_reason();
 			log_infof("Couldn't create a stereo display, falling back to flatscreen");
 			if (!platform_set_mode(display_type_flatscreen))
@@ -193,8 +195,8 @@ bool platform_set_mode(display_type_ mode) {
 #elif defined(SK_OS_WEB)
 		result = web_start_flat    ();
 #endif
-		if (sk_settings.disable_flatscreen_mr_sim) none_init();
-		else                                       simulator_init();
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_init();
+		else                                                  simulator_init();
 	}
 
 	return result;
@@ -237,8 +239,8 @@ void platform_step_begin() {
 		web_step_begin_flat    ();
 #endif
 		input_step();
-		if (sk_settings.disable_flatscreen_mr_sim) none_step_begin();
-		else                                       simulator_step_begin();
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_step_begin();
+		else                                                  simulator_step_begin();
 	} break;
 	}
 	platform_utils_update();
@@ -256,8 +258,8 @@ void platform_step_end() {
 #endif
 		break;
 	case display_type_flatscreen: {
-		if (sk_settings.disable_flatscreen_mr_sim) none_step_end();
-		else                                       simulator_step_end();
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_step_end();
+		else                                                  simulator_step_end();
 #if   defined(SK_OS_ANDROID)
 		android_step_end_flat();
 #elif defined(SK_OS_LINUX)
@@ -285,8 +287,8 @@ void platform_stop_mode() {
 #endif
 		break;
 	case display_type_flatscreen: {
-		if (sk_settings.disable_flatscreen_mr_sim) none_shutdown();
-		else                                       simulator_shutdown();
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_shutdown();
+		else                                                  simulator_shutdown();
 #if   defined(SK_OS_ANDROID)
 		android_stop_flat();
 #elif defined(SK_OS_LINUX)

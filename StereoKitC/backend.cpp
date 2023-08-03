@@ -19,8 +19,8 @@ backend_xr_type_ backend_xr_get_type() {
 		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
 #endif
 	} else {
-		if (sk_settings.disable_flatscreen_mr_sim) return backend_xr_type_none;
-		else                                       return backend_xr_type_simulator;
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) return backend_xr_type_none;
+		else                                                  return backend_xr_type_simulator;
 	}
 }
 

@@ -142,10 +142,8 @@ web_key_map_t web_keymap[] = {
 ///////////////////////////////////////////
 
 WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
-	if (!web_swapchain_initialized || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!web_swapchain_initialized || (width == device_data.display_width && height == device_data.display_height))
 		return;
-	sk_info.display_width  = width;
-	sk_info.display_height = height;
 	device_data.display_width  = width;
 	device_data.display_height = height;
 	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
@@ -181,16 +179,15 @@ void web_shutdown() {
 ///////////////////////////////////////////
 
 bool web_start_flat() {
-	sk_info.display_type      = display_opaque;
 	device_data.display_blend = display_blend_opaque;
 
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
 
-	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, sk_settings.flatscreen_width, sk_settings.flatscreen_height);
+	const sk_settings_t *settings = sk_get_settings_ref();
+
+	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, settings->flatscreen_width, settings->flatscreen_height);
 	web_swapchain_initialized = true;
-	sk_info.display_width  = web_swapchain.width;
-	sk_info.display_height = web_swapchain.height;
 	device_data.display_width  = web_swapchain.width;
 	device_data.display_height = web_swapchain.height;
 	

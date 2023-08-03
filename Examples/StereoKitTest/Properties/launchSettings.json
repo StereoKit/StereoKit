@@ -8,6 +8,11 @@
       "commandName": "Project",
       "commandLineArgs": "-test -screenfolder ../../../tools/Screenshots/",
       "nativeDebugging": true
+    },
+    "StereoKitTest GLTF": {
+      "commandName": "Project",
+      "commandLineArgs": "-test -start TestGltf -gltf C:\\Tools\\glTF-Sample-Models-master\\2.0 -gltfscreenfolder ../../../tools/screenshots_gltf",
+      "nativeDebugging": true
     }
   }
 }
