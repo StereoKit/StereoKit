@@ -127,7 +127,7 @@ void android_create_swapchain() {
 	android_swapchain_created = true;
 	device_data.display_width  = android_swapchain.width;
 	device_data.display_height = android_swapchain.height;
-	render_update_projection();
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 }
 

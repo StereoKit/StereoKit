@@ -46,7 +46,7 @@ bool platform_init() {
 	// Initialize graphics
 #if defined(SK_XR_OPENXR)
 	void *luid = settings->display_preference == display_mode_mixedreality
-		? openxr_get_luid() 
+		? openxr_get_luid()
 		: nullptr;
 #else
 	void *luid = nullptr;

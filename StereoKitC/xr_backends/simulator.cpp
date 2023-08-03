@@ -46,9 +46,6 @@ bool simulator_init() {
 	case origin_mode_stage: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
 	}
 
-	render_set_sim_origin(world_origin_offset);
-	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
-
 	return true;
 }
 
@@ -98,7 +95,6 @@ void simulator_step_begin() {
 		}
 		// Apply movement to the camera
 		sim_head_pos += orientation * movement * time_stepf_unscaled() * sim_move_speed;
-		render_set_sim_head({ sim_head_pos, orientation });
 	} else {
 		sim_mouse_look = false;
 	}
@@ -124,6 +120,9 @@ void simulator_step_begin() {
 	pointer_head->tracked = button_state_active;
 	pointer_head->ray.pos = input_eyes_pose_world.position;
 	pointer_head->ray.dir = input_eyes_pose_world.orientation * vec3_forward;
+
+	render_set_sim_origin(world_origin_offset);
+	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
 }
 
 ///////////////////////////////////////////

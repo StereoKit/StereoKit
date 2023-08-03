@@ -73,8 +73,8 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 	// Get the heirarchy based transform
 	XMMATRIX tr;
-	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.last().transform, at, tr);
+	if (hierarchy_use_top()) {
+		matrix_mul(hierarchy_top(), at, tr);
 	} else {
 		math_matrix_to_fast(at, &tr);
 	}

@@ -11,54 +11,61 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-mesh_t          line_mesh;
-material_t      line_material;
-array_t<vert_t> line_verts = {};
-array_t<vind_t> line_inds  = {};
+struct line_drawer_state_t {
+
+	mesh_t          line_mesh;
+	material_t      line_material;
+	array_t<vert_t> line_verts;
+	array_t<vind_t> line_inds;
+};
+static line_drawer_state_t local = {};
 
 ///////////////////////////////////////////
 
 bool line_drawer_init() {
+	local = {};
+
 	shader_t line_shader = shader_find(default_id_shader_lines);
-	line_material = material_create(line_shader);
+	local.line_material = material_create(line_shader);
 	shader_release(line_shader);
 
-	material_set_id          (line_material, "render/line_material");
-	material_set_transparency(line_material, transparency_blend);
-	material_set_cull        (line_material, cull_none);
+	material_set_id          (local.line_material, "render/line_material");
+	material_set_transparency(local.line_material, transparency_blend);
+	material_set_cull        (local.line_material, cull_none);
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void line_drawer_step() {
-	if (line_inds.count <= 0)
-		return;
+void line_drawer_shutdown() {
+	mesh_release    (local.line_mesh);
+	material_release(local.line_material);
 
-	if (line_mesh) {
-		mesh_set_data(line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
-	} else {
-		line_mesh = mesh_create();
-		mesh_set_keep_data(line_mesh, false);
-		mesh_set_id       (line_mesh, "render/line_mesh");
-		mesh_set_data     (line_mesh, line_verts.data, line_verts.count, line_inds.data, line_inds.count, false);
-	}
-
-	mesh_set_draw_inds(line_mesh, line_inds.count);
-	render_add_mesh   (line_mesh, line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
-
-	line_verts.clear();
-	line_inds .clear();
+	local.line_verts.free();
+	local.line_inds .free();
+	local = {};
 }
 
 ///////////////////////////////////////////
 
-void line_drawer_shutdown() {
-	mesh_release    (line_mesh);
-	material_release(line_material);
+void line_drawer_step() {
+	if (local.line_inds.count <= 0)
+		return;
 
-	line_verts.free();
-	line_inds .free();
+	if (local.line_mesh) {
+		mesh_set_data(local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
+	} else {
+		local.line_mesh = mesh_create();
+		mesh_set_keep_data(local.line_mesh, false);
+		mesh_set_id       (local.line_mesh, "render/line_mesh");
+		mesh_set_data     (local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
+	}
+
+	mesh_set_draw_inds(local.line_mesh, local.line_inds.count);
+	render_add_mesh   (local.line_mesh, local.line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
+
+	local.line_verts.clear();
+	local.line_inds .clear();
 }
 
 ///////////////////////////////////////////
@@ -73,13 +80,13 @@ void line_addv(line_point_t start, line_point_t end) {
 	start.thickness *= 0.5f;
 	end  .thickness *= 0.5f;
 
-	if (hierarchy_enabled) {
-		matrix &transform = hierarchy_stack.last().transform;
+	if (hierarchy_use_top()) {
+		matrix transform = hierarchy_top();
 		start.pt = matrix_transform_pt(transform, start.pt);
 		end  .pt = matrix_transform_pt(transform, end.pt);
 	}
 
-	vind_t start_vert = line_verts.count;
+	vind_t start_vert = local.line_verts.count;
 	vec3   dir        = end.pt-start.pt;
 
 	vert_t verts[4] = {
@@ -87,7 +94,7 @@ void line_addv(line_point_t start, line_point_t end) {
 		vert_t{ start.pt, end.pt,     {-start.thickness,1}, start.color },
 		vert_t{ end  .pt, end.pt+dir, { end  .thickness,0}, end  .color },
 		vert_t{ end  .pt, end.pt+dir, {-end  .thickness,1}, end  .color }, };
-	line_verts.add_range(verts, 4);
+	local.line_verts.add_range(verts, 4);
 
 	vind_t inds[6] = {
 		start_vert + 0,
@@ -96,7 +103,7 @@ void line_addv(line_point_t start, line_point_t end) {
 		start_vert + 0,
 		start_vert + 3,
 		start_vert + 1, };
-	line_inds.add_range(inds, 6);
+	local.line_inds.add_range(inds, 6);
 }
 
 ///////////////////////////////////////////
@@ -125,20 +132,20 @@ void line_add_list(const vec3 *points, int32_t count, color32 color, float thick
 			curr_dir = vec3_normalize(next - curr);
 
 			vind_t inds[6] = {
-				(vind_t)line_verts.count + 0,
-				(vind_t)line_verts.count + 2,
-				(vind_t)line_verts.count + 3,
-				(vind_t)line_verts.count + 0,
-				(vind_t)line_verts.count + 3,
-				(vind_t)line_verts.count + 1, };
-			line_inds.add_range(inds, 6);
+				(vind_t)local.line_verts.count + 0,
+				(vind_t)local.line_verts.count + 2,
+				(vind_t)local.line_verts.count + 3,
+				(vind_t)local.line_verts.count + 0,
+				(vind_t)local.line_verts.count + 3,
+				(vind_t)local.line_verts.count + 1, };
+			local.line_inds.add_range(inds, 6);
 		} else {
 			next = curr + (curr - prev);
 		}
 		vert_t verts[2] = {
 			vert_t{ curr, next, { thickness,0}, color },
 			vert_t{ curr, next, {-thickness,1}, color }, };
-		line_verts.add_range(verts, 2);
+		local.line_verts.add_range(verts, 2);
 
 		prev     = curr;
 		curr     = next;
@@ -162,20 +169,20 @@ void line_add_listv(const line_point_t *points, int32_t count) {
 			curr_dir = vec3_normalize(next - curr);
 
 			vind_t inds[6] = {
-				(vind_t)line_verts.count + 0,
-				(vind_t)line_verts.count + 2,
-				(vind_t)line_verts.count + 3,
-				(vind_t)line_verts.count + 0,
-				(vind_t)line_verts.count + 3,
-				(vind_t)line_verts.count + 1, };
-			line_inds.add_range(inds, 6);
+				(vind_t)local.line_verts.count + 0,
+				(vind_t)local.line_verts.count + 2,
+				(vind_t)local.line_verts.count + 3,
+				(vind_t)local.line_verts.count + 0,
+				(vind_t)local.line_verts.count + 3,
+				(vind_t)local.line_verts.count + 1, };
+			local.line_inds.add_range(inds, 6);
 		} else {
 			next = curr + (curr - prev);
 		}
 		vert_t verts[2] = {
 			vert_t{ curr, next, { points[i].thickness * 0.5f,0}, points[i].color },
 			vert_t{ curr, next, {-points[i].thickness * 0.5f,1}, points[i].color }, };
-		line_verts.add_range(verts, 2);
+		local.line_verts.add_range(verts, 2);
 
 		prev     = curr;
 		curr     = next;

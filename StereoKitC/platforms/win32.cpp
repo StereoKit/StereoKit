@@ -276,7 +276,6 @@ bool win32_start_flat() {
 	tex_release(zbuffer);
 
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-	render_update_projection();
 
 	return true;
 }

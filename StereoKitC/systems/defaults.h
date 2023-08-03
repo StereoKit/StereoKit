@@ -36,4 +36,6 @@ extern text_style_t sk_default_text_style;
 extern sound_t      sk_default_click;
 extern sound_t      sk_default_unclick;
 
+extern const spherical_harmonics_t sk_default_lighting;
+
 } // namespace sk

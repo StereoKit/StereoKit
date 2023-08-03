@@ -53,6 +53,18 @@ sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
 
+const spherical_harmonics_t sk_default_lighting = { {
+	{ 0.74f,  0.74f,  0.73f},
+	{ 0.24f,  0.25f,  0.26f},
+	{ 0.09f,  0.09f,  0.09f},
+	{ 0.05f,  0.05f,  0.06f},
+	{-0.01f, -0.01f, -0.01f},
+	{-0.03f, -0.03f, -0.03f},
+	{ 0.00f,  0.00f,  0.00f},
+	{-0.02f, -0.02f, -0.02f},
+	{ 0.04f,  0.04f,  0.04f},
+} };
+
 ///////////////////////////////////////////
 
 tex_t defaults_texture(const char *id, color128 color) {
@@ -128,23 +140,10 @@ bool defaults_init() {
 	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
-	spherical_harmonics_t lighting = { {
-		{ 0.74f,  0.74f,  0.73f}, 
-		{ 0.24f,  0.25f,  0.26f}, 
-		{ 0.09f,  0.09f,  0.09f}, 
-		{ 0.05f,  0.05f,  0.06f}, 
-		{-0.01f, -0.01f, -0.01f}, 
-		{-0.03f, -0.03f, -0.03f}, 
-		{ 0.00f,  0.00f,  0.00f}, 
-		{-0.02f, -0.02f, -0.02f}, 
-		{ 0.04f,  0.04f,  0.04f}, 
-	} };
-	render_set_skylight(lighting);
+	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
-	render_set_skytex(sk_default_cubemap);
-	render_enable_skytex(true);
 
 	// Default quad mesh
 	sk_default_quad = mesh_create();
