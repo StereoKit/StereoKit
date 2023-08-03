@@ -278,9 +278,9 @@ bool openxr_views_create() {
 
 	// Register dispay type with the system
 	switch (xr_displays[0].blend) {
-	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      sk_info.display_type = display_opaque;      break;
-	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
-	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
+	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      device_data.display_blend = display_blend_opaque;   break;
+	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    device_data.display_blend = display_blend_additive; break;
+	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: device_data.display_blend = display_blend_blend;    break;
 	// Just max_enum
 	default: break;
 	}
@@ -308,7 +308,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 
 	// Get the surface format information before we create surfaces!
 	openxr_preferred_format(out_view.color_format, out_view.depth_format);
-	if (!openxr_preferred_blend(view_type, sk_settings.blend_preference, &xr_valid_blends, &out_view.blend)) return false;
+	if (!openxr_preferred_blend(view_type, sk_get_settings_ref()->blend_preference, &xr_valid_blends, &out_view.blend)) return false;
 
 	// Tell OpenXR what sort of color space we're rendering in
 	if (xr_ext_available.FB_color_space) {
@@ -487,8 +487,6 @@ bool openxr_update_swapchains(device_display_t &display) {
 	}
 
 	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
-		sk_info.display_width  = w;
-		sk_info.display_height = h;
 		device_data.display_width  = w;
 		device_data.display_height = h;
 	}
@@ -845,7 +843,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 
 		// Call the rendering callback with our view and swapchain info
 		tex_t    target = layer.swapchain_color.textures[index];
-		color128 col    = sk_info.display_type == display_opaque
+		color128 col    = device_display_get_blend() == display_blend_opaque
 			? render_get_clear_color_ln()
 			: color128{ 0,0,0,0 };
 		skg_tex_target_bind(&target->tex);

@@ -1,5 +1,4 @@
 ﻿using StereoKit.Framework;
-using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
 using System.Reflection;
@@ -172,10 +171,15 @@ namespace StereoKit
 
 			if (IsInitialized)
 			{
-				_steppers.Shutdown();
-				Default.Shutdown();
+				Cleanup();
 				NativeAPI.sk_shutdown();
 			}
+		}
+
+		static void Cleanup()
+		{
+			_steppers.Shutdown();
+			Default.Shutdown();
 		}
 
 		/// <summary>Lets StereoKit know it should quit! It'll finish the
@@ -229,9 +233,20 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			_stepCallback = onStep;
-			_shutdownCallback = onShutdown;
-			NativeAPI.sk_run(_stepAction, _shutdownCallback);
+			_stepCallback     = onStep;
+			_shutdownCallback = ()=> {
+				onShutdown?.Invoke();
+				Cleanup();
+			};
+
+			try { NativeAPI.sk_run(_stepAction, _shutdownCallback); }
+			catch (Exception e)
+			{
+				// Clean up as much as we can, and toss the exception back up
+				_shutdownCallback();
+				NativeAPI.sk_shutdown_unsafe();
+				throw e;
+			}
 		}
 
 		/// <summary>This registers an instance of the `IStepper` type

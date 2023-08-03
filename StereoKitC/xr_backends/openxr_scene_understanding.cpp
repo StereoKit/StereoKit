@@ -387,7 +387,7 @@ bool32_t oxr_su_raycast(ray_t ray, ray_t *out_intersection) {
 ///////////////////////////////////////////
 
 void oxr_su_set_occlusion_enabled(bool32_t enabled) {
-	enabled = sk_info.world_occlusion_present && enabled;
+	enabled = sk_get_info_ref()->world_occlusion_present > 0 && enabled > 0;
 	if (xr_scene_next_req.occlusion == enabled) return;
 
 	xr_scene_next_req.occlusion = enabled;
@@ -404,7 +404,7 @@ bool32_t oxr_su_get_occlusion_enabled() {
 ///////////////////////////////////////////
 
 void oxr_su_set_raycast_enabled(bool32_t enabled) {
-	enabled = sk_info.world_raycast_present && enabled;
+	enabled = sk_get_info_ref()->world_raycast_present > 0 && enabled > 0;
 	if (xr_scene_next_req.raycast == enabled) return;
 
 	xr_scene_next_req.raycast = enabled;

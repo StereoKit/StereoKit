@@ -81,7 +81,6 @@ class Program
 		// Preload the StereoKit library for access to Time.Scale before
 		// initialization occurs.
 		SK.PreLoadLibrary();
-		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		SK.AddStepper<PassthroughFBExt>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
@@ -91,6 +90,8 @@ class Program
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
+
+		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		Init();
 
