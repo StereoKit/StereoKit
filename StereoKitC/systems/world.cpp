@@ -19,7 +19,6 @@ namespace sk {
 origin_mode_ world_origin_mode;
 pose_t       world_origin_offset;
 
-
 material_t   world_occlusion_material = {};
 
 ///////////////////////////////////////////
@@ -28,6 +27,17 @@ bool world_init() {
 	world_occlusion_material = material_copy_id(default_id_material_unlit);
 	material_set_id   (world_occlusion_material, "default/world_mat");
 	material_set_color(world_occlusion_material, "color", { 0,0,0,0 });
+
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr: {
+
+		xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
+		xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+	}break;
+#endif
+	default: break;
+	}
 
 	return oxr_su_init();
 }
