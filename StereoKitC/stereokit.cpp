@@ -240,7 +240,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_lines);
 
 	system_t sys_world = { "World" };
-	const char *world_deps     [] = {"Platform", "Defaults"};
+	const char *world_deps     [] = {"Platform", "Defaults", "Renderer"};
 	const char *world_step_deps[] = {"Platform", "App"};
 	sys_world.init_dependencies     = world_deps;
 	sys_world.init_dependency_count = _countof(world_deps);
