@@ -460,6 +460,9 @@ typedef struct skg_tex_t {
 	uint32_t      _target;
 	uint32_t      _access;
 	uint32_t      _format;
+	skg_tex_address_ _address;
+	skg_tex_sample_  _sample;
+	int32_t          _anisotropy;
 } skg_tex_t;
 
 typedef struct skg_swapchain_t {
@@ -906,7 +909,7 @@ int32_t skg_init(const char *, void *adapter_id) {
 	}
 
 #if defined(_DEBUG)
-	immediateContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void **)&annot);
+	d3d_context->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void **)&d3d_annotate);
 #endif
 
 	D3D11_RASTERIZER_DESC desc_rasterizer = {};
@@ -2843,6 +2846,8 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE_2D_ARRAY 0x8C1A
+#define GL_TEXTURE_2D_MULTISAMPLE 0x9100
+#define GL_TEXTURE_2D_MULTISAMPLE_ARRAY 0x9102
 #define GL_TEXTURE_CUBE_MAP 0x8513
 #define GL_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
 #define GL_TEXTURE_CUBE_MAP_ARRAY 0x9009
@@ -3035,6 +3040,8 @@ GLE(void,     glGetInternalformativ,     uint32_t target, uint32_t internalforma
 GLE(void,     glGetTexLevelParameteriv,  uint32_t target, int32_t level, uint32_t pname, int32_t *params) \
 GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float param) \
 GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
+GLE(void,     glTexStorage2DMultisample, uint32_t target, uint32_t samples, int32_t internalformat, uint32_t width, uint32_t height, uint8_t fixedsamplelocations) \
+GLE(void,     glTexStorage3DMultisample, uint32_t target, uint32_t samples, int32_t internalformat, uint32_t width, uint32_t height, uint32_t depth, uint8_t fixedsamplelocations) \
 GLE(void,     glCopyTexSubImage2D,       uint32_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height) \
 GLE(void,     glGetTexImage,             uint32_t target, int32_t level, uint32_t format, uint32_t type, void *img) \
 GLE(void,     glReadPixels,              int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t format, uint32_t type, void *data) \
@@ -3140,8 +3147,8 @@ int32_t gl_init_wgl() {
 	format_desc.cColorBits   = 32;
 	format_desc.cAlphaBits   = 8;
 	format_desc.iLayerType   = PFD_MAIN_PLANE;
-	format_desc.cDepthBits   = 24;
-	format_desc.cStencilBits = 8;
+	format_desc.cDepthBits   = 0;
+	format_desc.cStencilBits = 0;
 
 	int pixel_format = ChoosePixelFormat(dummy_dc, &format_desc);
 	if (!pixel_format) {
@@ -3200,10 +3207,10 @@ int32_t gl_init_wgl() {
 		WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB,
 		WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
 		WGL_COLOR_BITS_ARB,     32,
-		WGL_DEPTH_BITS_ARB,     24,
-		WGL_STENCIL_BITS_ARB,   8,
-		WGL_SAMPLE_BUFFERS_ARB, 1,
-		WGL_SAMPLES_ARB,        4,
+		WGL_DEPTH_BITS_ARB,     0,
+		WGL_STENCIL_BITS_ARB,   0,
+		WGL_SAMPLE_BUFFERS_ARB, 0,
+		WGL_SAMPLES_ARB,        0,
 		0 };
 
 	pixel_format = 0;
@@ -3272,7 +3279,7 @@ int32_t gl_init_egl() {
 		EGL_GREEN_SIZE, 8,
 		EGL_RED_SIZE,   8,
 		EGL_ALPHA_SIZE, 8,
-		EGL_DEPTH_SIZE, 16,
+		EGL_DEPTH_SIZE, 0,
 		EGL_NONE
 	};
 	EGLint context_attribs[] = { 
@@ -4197,10 +4204,10 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB,
 		WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
 		WGL_COLOR_BITS_ARB,     32,
-		WGL_DEPTH_BITS_ARB,     24,
-		WGL_STENCIL_BITS_ARB,   8,
-		WGL_SAMPLE_BUFFERS_ARB, 1,
-		WGL_SAMPLES_ARB,        4,
+		WGL_DEPTH_BITS_ARB,     0,
+		WGL_STENCIL_BITS_ARB,   0,
+		WGL_SAMPLE_BUFFERS_ARB, 0,
+		WGL_SAMPLES_ARB,        0,
 		0 };
 
 	int  pixel_format = 0;
@@ -4454,9 +4461,6 @@ skg_tex_t skg_tex_create(skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, 
 	result.format  = format;
 	result.mips    = mip_maps;
 	result._format = (uint32_t)skg_tex_fmt_to_native(result.format);
-	result._target = type == skg_tex_type_cubemap 
-		? GL_TEXTURE_CUBE_MAP 
-		: GL_TEXTURE_2D;
 
 	if      (use & skg_use_compute_read && use & skg_use_compute_write) result._access = GL_READ_WRITE;
 	else if (use & skg_use_compute_read)                                result._access = GL_READ_ONLY;
@@ -4492,7 +4496,7 @@ void skg_tex_name(skg_tex_t *tex, const char* name) {
 ///////////////////////////////////////////
 
 bool skg_tex_is_valid(const skg_tex_t *tex) {
-	return tex->_texture != 0;
+	return tex->_target != 0;
 }
 
 ///////////////////////////////////////////
@@ -4510,6 +4514,7 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 ///////////////////////////////////////////
 
 void skg_tex_copy_to_swapchain(const skg_tex_t *tex, skg_swapchain_t *destination) {
+	skg_swapchain_bind(destination);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0,0,tex->width,tex->height,0,0,tex->width,tex->height,  GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT, GL_NEAREST);
@@ -4536,7 +4541,6 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, attach, tex->_target, depth->_texture, 0);
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	} else {
 		skg_log(skg_log_warning, "Can't bind a depth texture to a non-rendertarget");
 	}
@@ -4545,9 +4549,9 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 ///////////////////////////////////////////
 
 void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy) {
-	if (!skg_tex_is_valid(tex)) return;
-
-	glBindTexture(tex->_target, tex->_texture);
+	tex->_address    = address;
+	tex->_sample     = sample;
+	tex->_anisotropy = anisotropy;
 
 	uint32_t mode;
 	switch (address) {
@@ -4564,6 +4568,12 @@ void skg_tex_settings(skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ 
 	case skg_tex_sample_anisotropic:filter = GL_LINEAR;  min_filter = tex->mips == skg_mip_generate ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR; break;
 	default: filter = GL_LINEAR; min_filter = GL_LINEAR;
 	}
+
+	if (!skg_tex_is_valid(tex)) return;
+	// Multisample textures throw errors if you try to set sampler states.
+	if (tex->_target == GL_TEXTURE_2D_MULTISAMPLE || tex->_target == GL_TEXTURE_2D_MULTISAMPLE_ARRAY) return;
+
+	glBindTexture(tex->_target, tex->_texture);
 
 	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_S, mode);
 	glTexParameteri(tex->_target, GL_TEXTURE_WRAP_T, mode);
@@ -4591,8 +4601,15 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 	tex->height      = height;
 	tex->multisample = multisample;
 	tex->array_count = data_frame_count;
-	if (tex->type != skg_tex_type_cubemap && tex->array_count > 1)
-		tex->_target = GL_TEXTURE_2D_ARRAY;
+	if (multisample > 1) {
+		tex->_target = tex->array_count == 1
+			? GL_TEXTURE_2D_MULTISAMPLE
+			: GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
+	} else {
+		tex->_target = tex->array_count > 1
+			? (tex->type == skg_tex_type_cubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D_ARRAY)
+			: GL_TEXTURE_2D;
+	}
 
 	glBindTexture(tex->_target, tex->_texture);
 
@@ -4607,8 +4624,11 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		for (int32_t f = 0; f < 6; f++)
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X+f , 0, tex->_format, width, height, 0, layout, type, data_frames[f]);
 	} else {
-		glTexImage2D(GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
+		if      (tex->_target == GL_TEXTURE_2D_MULTISAMPLE)       { glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,       multisample, tex->_format, width, height, true); }
+		else if (tex->_target == GL_TEXTURE_2D_MULTISAMPLE_ARRAY) { glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, multisample, tex->_format, width, height, data_frame_count, true); }
+		else                                                      { glTexImage2D             (GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]); }
 	}
+
 	if (tex->mips == skg_mip_generate)
 		glGenerateMipmap(tex->_target);
 
@@ -4625,6 +4645,8 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
+
+	skg_tex_settings(tex, tex->_address, tex->_sample, tex->_anisotropy);
 }
 
 ///////////////////////////////////////////

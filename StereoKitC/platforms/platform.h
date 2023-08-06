@@ -1,5 +1,6 @@
 #pragma once
 #include "../stereokit.h"
+#include "../libraries/sk_gpu.h"
 
 namespace sk {
 
@@ -40,5 +41,58 @@ bool platform_set_mode      (display_type_ mode);
 void platform_step_begin    ();
 void platform_step_end      ();
 void platform_stop_mode     ();
+
+///////////////////////////////////////////
+
+enum platform_win_type_ {
+	platform_win_type_none,
+	platform_win_type_creatable,
+	platform_win_type_existing,
+};
+
+enum platform_evt_ {
+	platform_evt_none,
+	platform_evt_app_focus,
+	platform_evt_key_press,
+	platform_evt_key_release,
+	platform_evt_mouse_press,
+	platform_evt_mouse_release,
+	platform_evt_character,
+	platform_evt_scroll,
+	platform_evt_close,
+	platform_evt_resize,
+};
+
+enum platform_surface_ {
+	platform_surface_none,
+	platform_surface_swapchain
+};
+
+union platform_evt_data_t {
+	app_focus_ app_focus;
+	key_       press_release;
+	char32_t   character;
+	float      scroll;
+	struct { int32_t width, height; } resize;
+};
+
+typedef struct recti_t {
+	int32_t x;
+	int32_t y;
+	int32_t w;
+	int32_t h;
+} recti_t;
+
+typedef int32_t platform_win_t;
+
+///////////////////////////////////////////
+
+platform_win_type_ platform_win_type          ();
+platform_win_t     platform_win_get_existing  ();
+platform_win_t     platform_win_make          (const char *title, recti_t win_rect, platform_surface_ surface_type);
+skg_swapchain_t*   platform_win_get_swapchain (platform_win_t window);
+void               platform_win_destroy       (platform_win_t window);
+bool               platform_win_next_event    (platform_win_t window, platform_evt_* out_event, platform_evt_data_t* out_event_data);
+recti_t            platform_win_rect          (platform_win_t window);
 
 } // namespace sk
