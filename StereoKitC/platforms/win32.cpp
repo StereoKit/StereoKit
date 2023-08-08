@@ -26,40 +26,35 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct window_event_t {
-	platform_evt_       type;
-	platform_evt_data_t data;
+	platform_evt_           type;
+	platform_evt_data_t     data;
 };
+
 struct window_t {
-	wchar_t* title;
-	HWND     handle;
+	wchar_t*                title;
+	HWND                    handle;
 	array_t<window_event_t> events;
 
-	skg_swapchain_t swapchain;
-	bool            has_swapchain;
+	skg_swapchain_t         swapchain;
+	bool                    has_swapchain;
 
-	bool    check_resize;
-	int32_t resize_x, resize_y;
-	RECT    save_rect;
+	bool                    check_resize;
+	int32_t                 resize_x, resize_y;
+	RECT                    save_rect;
 };
 
 ///////////////////////////////////////////
 
-array_t<window_t> win32_windows = {};
+array_t<window_t> win32_windows      = {};
 
-HINSTANCE       win32_hinst               = nullptr;
-HICON           win32_icon                = nullptr;
-tex_t           win32_target              = {};
-float           win32_scroll              = 0;
-system_t       *win32_render_sys          = nullptr;
-platform_win_t  win32_platform_win        = -1;
+HINSTANCE         win32_hinst        = nullptr;
+HICON             win32_icon         = nullptr;
+tex_t             win32_target       = {};
+float             win32_scroll       = 0;
+system_t         *win32_render_sys   = nullptr;
+platform_win_t    win32_platform_win = -1;
 
 ///////////////////////////////////////////
-
-#if defined(SKG_OPENGL)
-const int32_t win32_multisample = 8;
-#else
-const int32_t win32_multisample = 8;
-#endif
 
 // Constants for the registry key and value names
 const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
@@ -67,40 +62,9 @@ const wchar_t* REG_VALUE_NAME = L"WindowLocation";
 
 ///////////////////////////////////////////
 
-void win32_target_resize(int width, int height) {
-	if (win32_target == nullptr || (width == tex_get_width(win32_target) && height == tex_get_height(win32_target)))
-		return;
-
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(win32_target, width, height, nullptr, 1, nullptr, win32_multisample);
-	render_update_projection();
-}
-
-///////////////////////////////////////////
-
-void win32_physical_key_interact() {
-	// On desktop, we want to hide soft keyboards on physical presses
-	input_set_last_physical_keypress_time(time_totalf_unscaled());
-	platform_keyboard_show(false, text_context_text);
-}
-
-///////////////////////////////////////////
-
-bool win32_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool win32_start_post_xr() {
-	const sk_settings_t *settings = sk_get_settings_ref();
-
-	win32_platform_win = platform_win_make(settings->app_name, recti_t{}, platform_surface_none);
-	return win32_platform_win != -1;
-}
+void    win32_physical_key_interact();
+void    win32_target_resize(int32_t width, int32_t height);
+LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 ///////////////////////////////////////////
 
@@ -122,7 +86,52 @@ void win32_shutdown() {
 	for (int32_t i = 0; i < win32_windows.count; i++) {
 		platform_win_destroy(i);
 	}
-	win32_windows.clear();
+	win32_windows.free();
+
+	win32_hinst        = nullptr;
+	win32_icon         = nullptr;
+	win32_target       = {};
+	win32_scroll       = 0;
+	win32_render_sys   = nullptr;
+	win32_platform_win = -1;
+}
+
+///////////////////////////////////////////
+
+bool win32_start_pre_xr() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool win32_start_post_xr() {
+	const sk_settings_t *settings = sk_get_settings_ref();
+
+	win32_platform_win = platform_win_make(settings->app_name, recti_t{}, platform_surface_none);
+	return win32_platform_win != -1;
+}
+
+///////////////////////////////////////////
+
+void win32_step_begin_xr() {
+	MSG msg = {0};
+	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage (&msg);
+	}
+
+	platform_evt_       evt;
+	platform_evt_data_t data;
+	while (platform_win_next_event(win32_platform_win, &evt, &data)) {
+		switch (evt) {
+		case platform_evt_key_press:   input_key_inject_press  (data.press_release); win32_physical_key_interact(); break;
+		case platform_evt_key_release: input_key_inject_release(data.press_release); win32_physical_key_interact(); break;
+		case platform_evt_character:   input_text_inject_char  (data.character);     break;
+		case platform_evt_close:       sk_quit(); break;
+		case platform_evt_none: break;
+		default: break;
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -157,13 +166,13 @@ bool win32_start_flat() {
 
 	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 	tex_set_id       (win32_target, "sk/platform/swapchain");
-	tex_set_color_arr(win32_target, swapchain->width, swapchain->height, nullptr, 1, nullptr, win32_multisample);
+	tex_set_color_arr(win32_target, swapchain->width, swapchain->height, nullptr, 1, nullptr, 8);
 
-	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+	tex_format_ depth_fmt = render_preferred_depth_fmt();
 #if defined(SKG_OPENGL)
-	depth_fmt = skg_tex_fmt_depthstencil;
+	depth_fmt = tex_format_depthstencil;
 #endif
-	tex_t zbuffer = tex_add_zbuffer(win32_target, (tex_format_)depth_fmt);
+	tex_t zbuffer = tex_add_zbuffer(win32_target, depth_fmt);
 	tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
 	tex_release(zbuffer);
 
@@ -191,29 +200,6 @@ void win32_stop_flat() {
 
 ///////////////////////////////////////////
 
-void win32_step_begin_xr() {
-	MSG msg = {0};
-	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage (&msg);
-	}
-
-	platform_evt_       evt;
-	platform_evt_data_t data;
-	while (platform_win_next_event(win32_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_key_press:   input_key_inject_press  (data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_key_release: input_key_inject_release(data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_character:   input_text_inject_char  (data.character);     break;
-		case platform_evt_close:       sk_quit(); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
-}
-
-///////////////////////////////////////////
-
 void win32_step_begin_flat() {
 	MSG msg = {0};
 	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
@@ -221,8 +207,8 @@ void win32_step_begin_flat() {
 		DispatchMessage (&msg);
 	}
 
-	platform_evt_       evt;
-	platform_evt_data_t data;
+	platform_evt_       evt  = {};
+	platform_evt_data_t data = {};
 	while (platform_win_next_event(win32_platform_win, &evt, &data)) {
 		switch (evt) {
 		case platform_evt_app_focus:    sk_set_app_focus (data.app_focus); break;
@@ -276,12 +262,120 @@ void win32_step_end_flat() {
 
 ///////////////////////////////////////////
 
+void win32_target_resize(int32_t width, int32_t height) {
+	if (win32_target == nullptr || (width == tex_get_width(win32_target) && height == tex_get_height(win32_target)))
+		return;
+
+	device_data.display_width  = width;
+	device_data.display_height = height;
+	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
+
+	tex_set_color_arr(win32_target, width, height, nullptr, 1, nullptr, 8);
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+void win32_physical_key_interact() {
+	// On desktop, we want to hide soft keyboards on physical presses
+	input_set_last_physical_keypress_time(time_totalf_unscaled());
+	platform_keyboard_show(false, text_context_text);
+}
+
+///////////////////////////////////////////
+
 void *win32_hwnd() {
 	return win32_windows[win32_platform_win].handle;
 }
 
 ///////////////////////////////////////////
 // Window code                           //
+///////////////////////////////////////////
+
+platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
+	window_t win = {};
+	win.title = platform_to_wchar(title);
+
+	WNDCLASSW wc = {};
+	wc.lpszClassName = win.title;
+	wc.hInstance     = win32_hinst;
+	wc.hIcon         = win32_icon;
+	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
+	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	wc.lpfnWndProc   = platform_message_callback;
+	if (!RegisterClassW(&wc)) { sk_free(win.title); return -1; }
+
+	RECT rect = {};
+	rect.left   = win_rect.x;
+	rect.right  = win_rect.x + win_rect.w;
+	rect.top    = win_rect.y;
+	rect.bottom = win_rect.y + win_rect.h;
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	if (rect.right == rect.left)   rect.right  = rect.left + win_rect.w;
+	if (rect.top   == rect.bottom) rect.bottom = rect.top  + win_rect.h;
+
+	win.handle = CreateWindowW(
+		win.title,
+		win.title,
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		maxi(0, rect.left),
+		maxi(0, rect.top),
+		rect.right - rect.left,
+		rect.bottom - rect.top,
+		0, 0,
+		wc.hInstance,
+		nullptr);
+
+	if (!win.handle) { sk_free(win.title); return -1; }
+
+	// Save the initial size, let's not trust the numbers we asked for.
+	RECT r = {};
+	if (GetWindowRect(win.handle, &r))
+		win.save_rect = r;
+
+	// The final window size can often vary from what we expect, so this just
+	// ensures we're working with the correct size.
+	GetClientRect(win.handle, &rect);
+	int32_t final_width  = maxi(1, rect.right  - rect.left);
+	int32_t final_height = maxi(1, rect.bottom - rect.top);
+	win.resize_x = final_width;
+	win.resize_y = final_height;
+
+	// Not all windows need a swapchain, but here's where we make 'em for those
+	// that do.
+	if (surface_type == platform_surface_swapchain) {
+		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+#if defined(SKG_OPENGL)
+		depth_fmt = skg_tex_fmt_depthstencil;
+#endif
+		win.swapchain     = skg_swapchain_create(win.handle, color_fmt, skg_tex_fmt_none, final_width, final_height);
+		win.has_swapchain = true;
+
+		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	}
+
+	win32_windows.add(win);
+	return win32_windows.count - 1;
+}
+
+///////////////////////////////////////////
+
+void platform_win_destroy(platform_win_t window) {
+	window_t* win = &win32_windows[window];
+
+	if (win->has_swapchain) {
+		skg_swapchain_destroy(&win->swapchain);
+	}
+
+	if (win->handle) DestroyWindow   (win->handle);
+	if (win->title)  UnregisterClassW(win->title, win32_hinst);
+
+	win->events.free();
+	sk_free(win->title);
+	*win = {};
+}
+
 ///////////////////////////////////////////
 
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
@@ -382,92 +476,6 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	default: break;
 	}
 	return DefWindowProcW(hwnd, message, wParam, lParam);
-}
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
-	window_t win = {};
-	win.title = platform_to_wchar(title);
-
-	WNDCLASSW wc = {};
-	wc.lpszClassName = win.title;
-	wc.hInstance     = win32_hinst;
-	wc.hIcon         = win32_icon;
-	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	wc.lpfnWndProc   = platform_message_callback;
-	if (!RegisterClassW(&wc)) { sk_free(win.title); return -1; }
-
-	RECT rect = {};
-	rect.left   = win_rect.x;
-	rect.right  = win_rect.x + win_rect.w;
-	rect.top    = win_rect.y;
-	rect.bottom = win_rect.y + win_rect.h;
-	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
-	if (rect.right == rect.left)   rect.right  = rect.left + win_rect.w;
-	if (rect.top   == rect.bottom) rect.bottom = rect.top  + win_rect.h;
-
-	win.handle = CreateWindowW(
-		win.title,
-		win.title,
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		maxi(0, rect.left),
-		maxi(0, rect.top),
-		rect.right - rect.left,
-		rect.bottom - rect.top,
-		0, 0,
-		wc.hInstance,
-		nullptr);
-
-	if (!win.handle) { sk_free(win.title); return -1; }
-
-	// Save the initial size, let's not trust the numbers we asked for.
-	RECT r = {};
-	if (GetWindowRect(win.handle, &r))
-		win.save_rect = r;
-
-	// The final window size can often vary from what we expect, so this just
-	// ensures we're working with the correct size.
-	GetClientRect(win.handle, &rect);
-	int32_t final_width  = maxi(1, rect.right  - rect.left);
-	int32_t final_height = maxi(1, rect.bottom - rect.top);
-	win.resize_x = final_width;
-	win.resize_y = final_height;
-
-	// Not all windows need a swapchain, but here's where we make 'em for those
-	// that do.
-	if (surface_type == platform_surface_swapchain) {
-		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-#if defined(SKG_OPENGL)
-		depth_fmt = skg_tex_fmt_depthstencil;
-#endif
-		win.swapchain     = skg_swapchain_create(win.handle, color_fmt, skg_tex_fmt_none, final_width, final_height);
-		win.has_swapchain = true;
-
-		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-	}
-
-	win32_windows.add(win);
-	return win32_windows.count - 1;
-}
-
-///////////////////////////////////////////
-
-void platform_win_destroy(platform_win_t window) {
-	window_t* win = &win32_windows[window];
-
-	if (win->has_swapchain) {
-		skg_swapchain_destroy(&win->swapchain);
-	}
-
-	if (win->handle) DestroyWindow   (win->handle);
-	if (win->title)  UnregisterClassW(win->title, win32_hinst);
-
-	win->events.free();
-	sk_free(win->title);
-	*win = {};
 }
 
 ///////////////////////////////////////////
