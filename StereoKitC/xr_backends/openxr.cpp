@@ -247,6 +247,10 @@ bool openxr_create_system() {
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
 		XR_VERSION_PATCH(inst_properties.runtimeVersion));
 
+	if (strstr(inst_properties.runtimeName, "Snapdragon") != nullptr) {
+		xr_ext_available.MSFT_hand_tracking_mesh = false; // Hand mesh doesn't currently show up, needs investigation
+	}
+
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
 
