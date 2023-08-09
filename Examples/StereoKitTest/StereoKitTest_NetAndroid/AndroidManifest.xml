@@ -26,10 +26,6 @@
 		<provider android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
 		<intent> <action android:name="org.khronos.openxr.OpenXRRuntimeService" /> </intent>
 		<intent> <action android:name="org.khronos.openxr.OpenXRApiLayerService" /> </intent>
-
-		<package android:name="com.qualcomm.qti.spaces.services" />
-		<package android:name="com.qualcomm.qti.openxrruntime" />
-		<intent> <action android:name="com.qualcomm.qti.openxr.spaces.intent.action.BIND" /> </intent>
 	</queries>
 
 	<!-- Vive specific items  -->
@@ -38,6 +34,11 @@
 
 	<!-- Snapdragon specific items -->
 	<uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" android:required="false"/>
+	<queries>
+		<package android:name="com.qualcomm.qti.spaces.services" />
+		<package android:name="com.qualcomm.qti.openxrruntime" />
+		<intent> <action android:name="com.qualcomm.qti.openxr.spaces.intent.action.BIND" /> </intent>
+	</queries>
 
 	<!-- Oculus specific items -->
 	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" android:required="false"/>
