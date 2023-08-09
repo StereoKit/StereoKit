@@ -188,11 +188,16 @@ bool openxr_create_system() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("available: %s", ext);});
-	extensions.each([](const char *&ext) { 
-		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
+	log_diag("Runtime OpenXR Extensions:");
+	log_diag("<~BLK>___________________________________<~clr>");
+	log_diag("<~BLK>|     <~YLW>Usage <~BLK>| <~YLW>Extension<~clr>");
+	log_diag("<~BLK>|-----------|----------------------<~clr>");
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("<~BLK>|   present | <~clr>%s", ext);});
+	extensions.each([](const char *&ext) {
+		log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", ext); 
 		xr_exts_loaded.add(hash_fnv64_string(ext));
 	});
+	log_diag("<~BLK>|___________|______________________<~clr>");
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);

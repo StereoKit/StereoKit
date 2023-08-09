@@ -302,11 +302,12 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 		FOR_EACH_EXT_ANDROID(ADD_NAME)
 		FOR_EACH_EXT_LINUX  (ADD_NAME)
 		FOR_EACH_EXT_DEBUG  (ADD_NAME)
+		else {
+			// We got to the end, and no-one loves this extension. We'll let
+			// 'em know it's at least available!
+			if (on_available != nullptr) { on_available(exts[i].extensionName); }
+		}
 #undef ADD_NAME
-
-		// We got to the end, and no-one loves this extension. We'll let 'em
-		// know it's at least available!
-		if (on_available != nullptr) { on_available(exts[i].extensionName); }
 	}
 
 	// Mark each extension that made it to this point as available in the
