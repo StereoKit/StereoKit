@@ -87,12 +87,12 @@ typedef int32_t platform_win_t;
 
 ///////////////////////////////////////////
 
-platform_win_type_ platform_win_type          ();
-platform_win_t     platform_win_get_existing  ();
-platform_win_t     platform_win_make          (const char *title, recti_t win_rect, platform_surface_ surface_type);
-skg_swapchain_t*   platform_win_get_swapchain (platform_win_t window);
-void               platform_win_destroy       (platform_win_t window);
-bool               platform_win_next_event    (platform_win_t window, platform_evt_* out_event, platform_evt_data_t* out_event_data);
-recti_t            platform_win_rect          (platform_win_t window);
+platform_win_type_ platform_win_type         ();
+platform_win_t     platform_win_get_existing ();
+platform_win_t     platform_win_make         (const char *title, recti_t win_rect, platform_surface_ surface_type);
+skg_swapchain_t*   platform_win_get_swapchain(platform_win_t window);
+void               platform_win_destroy      (platform_win_t window);
+bool               platform_win_next_event   (platform_win_t window, platform_evt_* out_event, platform_evt_data_t* out_event_data);
+recti_t            platform_win_rect         (platform_win_t window);
 
 } // namespace sk

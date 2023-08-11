@@ -19,6 +19,9 @@ sk_gpu.h
 //
 //#define SKG_FORCE_DIRECT3D11
 //#define SKG_FORCE_OPENGL
+#ifndef SKG_LINUX_EGL
+#define SKG_LINUX_EGL
+#endif
 
 // You can disable use of D3DCompile to make building this easier sometimes,
 // since D3DCompile is primarily used to catch .sks shader files built from
@@ -4514,10 +4517,16 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 ///////////////////////////////////////////
 
 void skg_tex_copy_to_swapchain(const skg_tex_t *tex, skg_swapchain_t *destination) {
-	skg_swapchain_bind(destination);
+	uint32_t result = glGetError();
+	while (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain pre error: %d", result); result = glGetError(); }
+	//skg_swapchain_bind(destination);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
+	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain tex error: %d", result); }
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain def error: %d", result); }
 	glBlitFramebuffer(0,0,tex->width,tex->height,0,0,tex->width,tex->height,  GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	result = glGetError();
+	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain post error: %d", result); }
 }
 
 ///////////////////////////////////////////

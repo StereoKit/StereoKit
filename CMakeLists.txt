@@ -103,24 +103,26 @@ if (ANDROID)
 elseif (UNIX)
   set(LINUX_LIBS
     Threads::Threads
-    GLX
+    EGL
+    gbm
     X11
     Xfixes
     fontconfig )
 
+  add_definitions("-DSKG_LINUX_EGL")
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 
   # Add OpenGL, and account for the SK_LINUX_EGL option
-  if(SK_LINUX_EGL)
-    add_definitions("-DSKG_LINUX_EGL")
-    list(APPEND LINUX_LIBS EGL gbm)
-  else()
-    add_definitions("-DSKG_LINUX_GLX")
-    find_package(X11 REQUIRED)
-    list(APPEND LINUX_LIBS GL dl)
-  endif()
+  #if(SK_LINUX_EGL)
+  #  add_definitions("-DSKG_LINUX_EGL")
+  #  list(APPEND LINUX_LIBS EGL gbm)
+  #else()
+  #  add_definitions("-DSKG_LINUX_GLX")
+  #  find_package(X11 REQUIRED)
+  #  list(APPEND LINUX_LIBS GL dl)
+  #endif()
 elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
@@ -216,7 +218,7 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   elseif(ANDROID)
     set(SK_SHADER_TARGETS "e")
   elseif(UNIX)
-    set(SK_SHADER_TARGETS "g")
+    set(SK_SHADER_TARGETS "e")
   elseif(EMSCRIPTEN)
     set(SK_SHADER_TARGETS "w")
   endif()

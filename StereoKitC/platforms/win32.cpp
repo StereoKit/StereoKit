@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "win32.h"
 
 #if defined(SK_OS_WINDOWS)
@@ -63,8 +69,9 @@ const wchar_t* REG_VALUE_NAME = L"WindowLocation";
 ///////////////////////////////////////////
 
 void    win32_physical_key_interact();
-void    win32_target_resize(int32_t width, int32_t height);
-LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+void    win32_target_resize        (tex_t *target, int32_t width, int32_t height);
+void    platform_check_events      ();
+LRESULT platform_message_callback  (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 ///////////////////////////////////////////
 
@@ -114,11 +121,7 @@ bool win32_start_post_xr() {
 ///////////////////////////////////////////
 
 void win32_step_begin_xr() {
-	MSG msg = {0};
-	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage (&msg);
-	}
+	platform_check_events();
 
 	platform_evt_       evt;
 	platform_evt_data_t data;
@@ -160,23 +163,35 @@ bool win32_start_flat() {
 	if (win32_platform_win == -1)
 		return false;
 
-	skg_swapchain_t *swapchain = platform_win_get_swapchain(win32_platform_win);
-	device_data.display_width  = swapchain->width;
-	device_data.display_height = swapchain->height;
-
-	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_id       (win32_target, "sk/platform/swapchain");
-	tex_set_color_arr(win32_target, swapchain->width, swapchain->height, nullptr, 1, nullptr, 8);
-
-	tex_format_ depth_fmt = render_preferred_depth_fmt();
-#if defined(SKG_OPENGL)
-	depth_fmt = tex_format_depthstencil;
-#endif
-	tex_t zbuffer = tex_add_zbuffer(win32_target, depth_fmt);
-	tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-	tex_release(zbuffer);
+	skg_swapchain_t* swapchain = platform_win_get_swapchain(win32_platform_win);
+	win32_target_resize(&win32_target, swapchain->width, swapchain->height);
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void win32_target_resize(tex_t *target, int32_t width, int32_t height) {
+	if (*target == nullptr) {
+		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+		tex_set_id       (*target, "sk/platform/swapchain");
+		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
+
+		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
+		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
+		tex_release(zbuffer);
+	}
+	
+	device_data.display_width  = width;
+	device_data.display_height = height;
+
+	if (width == tex_get_width(*target) && height == tex_get_height(*target))
+		return;
+
+	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
+
+	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
+	render_update_projection();
 }
 
 ///////////////////////////////////////////
@@ -201,11 +216,7 @@ void win32_stop_flat() {
 ///////////////////////////////////////////
 
 void win32_step_begin_flat() {
-	MSG msg = {0};
-	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage (&msg);
-	}
+	platform_check_events();
 
 	platform_evt_       evt  = {};
 	platform_evt_data_t data = {};
@@ -219,7 +230,7 @@ void win32_step_begin_flat() {
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
 		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       win32_target_resize(data.resize.width, data.resize.height); break;
+		case platform_evt_resize:       win32_target_resize(&win32_target, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;
 		}
@@ -258,20 +269,6 @@ void win32_step_end_flat() {
 	skg_swapchain_present(swapchain);
 
 	skg_event_end();
-}
-
-///////////////////////////////////////////
-
-void win32_target_resize(int32_t width, int32_t height) {
-	if (win32_target == nullptr || (width == tex_get_width(win32_target) && height == tex_get_height(win32_target)))
-		return;
-
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(win32_target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
 }
 
 ///////////////////////////////////////////
@@ -393,6 +390,16 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 		win->save_rect = r;
 
 	skg_swapchain_resize(&win->swapchain, width, height);
+}
+
+///////////////////////////////////////////
+
+void platform_check_events() {
+	MSG msg = { 0 };
+	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage (&msg);
+	}
 }
 
 ///////////////////////////////////////////
