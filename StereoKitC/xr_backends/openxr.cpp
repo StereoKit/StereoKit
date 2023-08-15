@@ -77,7 +77,6 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
-display_blend_ xr_valid_blends   = display_blend_none;
 bool           xr_system_created = false;
 bool           xr_system_success = false;
 
@@ -914,7 +913,7 @@ bool openxr_poll_events() {
 			case XR_SESSION_STATE_READY: {
 				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
-				begin_info.primaryViewConfigurationType = xr_display_types[0];
+				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				if (xr_display_types.count > 1) {
