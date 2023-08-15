@@ -4234,6 +4234,9 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		EGL_NONE };
 	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, attribs);
 	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
+	
+	if (eglMakeCurrent(egl_display, result._egl_surface, result._egl_surface, egl_context) == EGL_FALSE)
+		skg_log(skg_log_critical, "Unable to eglMakeCurrent for swapchain");
 
 	eglQuerySurface(egl_display, result._egl_surface, EGL_WIDTH,  &result.width );
 	eglQuerySurface(egl_display, result._egl_surface, EGL_HEIGHT, &result.height);
@@ -4364,7 +4367,8 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_EGL)
-	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
+	if (eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context) == EGL_FALSE)
+		skg_log(skg_log_critical, "Unable to eglMakeCurrent for swapchain bind");
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, (Drawable)swapchain->_x_window, glxContext);
