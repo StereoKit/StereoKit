@@ -174,15 +174,6 @@ void input_hand_refresh_system() {
 
 ///////////////////////////////////////////
 
-void modify(pose_t *pose, vec3 offset) {
-	quat rot = quat_from_angles(0, 180, 0);
-	for (int32_t i = 0; i < 25; i++) {
-		pose[i].position   += offset;
-		pose[i].position   *= 1.15f;
-		pose[i].orientation = rot * pose[i].orientation;
-	}
-}
-
 void input_hand_init() {
 	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
@@ -194,18 +185,17 @@ void input_hand_init() {
 			break;
 		}
 	}
-	vec3 from_pt = vec3_lerp(input_pose_neutral[0][4].position, input_pose_neutral[1][4].position, blend);
-	vec3 grab_pt = vec3_lerp(input_pose_pinch  [0][4].position, input_pose_pinch  [1][4].position, blend);
+	vec3 from_pt = vec3_lerp(input_pose_neutral[4].position, input_pose_neutral[5+4].position, blend);
+	vec3 grab_pt = vec3_lerp(input_pose_pinch  [4].position, input_pose_pinch  [5+4].position, blend);
+	vec3 offset  = from_pt - grab_pt;
+	for (int32_t i = 0; i < 25; i++) {
+		input_pose_pinch[i].position += offset;
+	}
 
-	modify(&input_pose_fist   [0][0], {});
-	modify(&input_pose_neutral[0][0], {});
-	modify(&input_pose_point  [0][0], {});
-	modify(&input_pose_pinch  [0][0], from_pt - grab_pt);
-
-	input_hand_sim_pose_add(&input_pose_neutral[0][0], controller_key_none);
-	input_hand_sim_pose_add(&input_pose_pinch  [0][0], controller_key_trigger, controller_key_none, key_mouse_left);
-	input_hand_sim_pose_add(&input_pose_point  [0][0], controller_key_grip,    controller_key_none, key_mouse_right);
-	input_hand_sim_pose_add(&input_pose_fist   [0][0], controller_key_trigger, controller_key_grip, key_mouse_left, key_mouse_right);
+	input_hand_sim_pose_add(input_pose_neutral, controller_key_none);
+	input_hand_sim_pose_add(input_pose_pinch,   controller_key_trigger, controller_key_none, key_mouse_left);
+	input_hand_sim_pose_add(input_pose_point,   controller_key_grip,    controller_key_none, key_mouse_right);
+	input_hand_sim_pose_add(input_pose_fist,    controller_key_trigger, controller_key_grip, key_mouse_left, key_mouse_right);
 
 	material_t hand_mat = material_copy_id(default_id_material);
 	material_set_id          (hand_mat, default_id_material_hand);
@@ -253,8 +243,8 @@ void input_hand_init() {
 		hand_t &hand = hand_state[i].info;
 		for (int32_t f = 0; f < 5; f++) {
 		for (int32_t j = 0; j < 5; j++) {
-			vec3 pos = input_pose_neutral[f][j].position;
-			quat rot = input_pose_neutral[f][j].orientation;
+			vec3 pos = input_pose_neutral[f*5+j].position;
+			quat rot = input_pose_neutral[f*5+j].orientation;
 			if (i == handed_right) {
 				// mirror along x axis, our pose data is for left hand
 				pos.x = -pos.x;
@@ -440,6 +430,16 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	if (!(hand.tracked_state & button_state_active))
 		return;
 
+	// Calculate the orientation of the palm joint, we need this right away
+	// because our simulated hand poses are relative to this joint. OpenXR's
+	// facing direction for the palm joint seems... somewhat less practical, so
+	// here we are alsso arranging them so that "forward" faces out from the
+	// palm.
+	quat palm_rot = quat_from_angles(
+		0,
+		handedness == handed_right ? 90.f : -90.f,
+		handedness == handed_right ? -90.f : 90.f) * orientation;
+
 	// For mice based hands, we change the hand's location to center the
 	// pointer finger on the mouse
 	vec3 finger_off = mouse_adjustments
@@ -453,14 +453,14 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	for (int32_t j = 0; j < 5; j++) {
 		vec3 pos = finger[j].position - finger_off;
 		quat rot = finger[j].orientation;
-		if (handedness == handed_right) {
+		if (handedness == handed_left) {
 			// mirror along x axis, our pose data is for left hand
 			pos.x = -pos.x;
 			rot.y = -rot.y;
 			rot.z = -rot.z;
 		}
-		hand.fingers[f][j].position    = orientation * pos + hand_pos;
-		hand.fingers[f][j].orientation = rot * orientation;
+		hand.fingers[f][j].position    = palm_rot * pos + hand_pos;
+		hand.fingers[f][j].orientation = rot * palm_rot;
 		hand.fingers[f][j].radius      = hand_joint_size[f*5+j];
 	} }
 
@@ -471,12 +471,7 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	hand.palm.position =
 		(hand.fingers[2][0].position +
 		 hand.fingers[2][1].position) * 0.5f;
-	// However, OpenXR's facing direction seems... less practical, so here we
-	// arrange them so that "forward" faces out from the palm.
-	hand.palm.orientation = quat_from_angles(
-		0,
-		handedness == handed_right ?  90.f : -90.f,
-		handedness == handed_right ? -90.f :  90.f) * orientation;
+	hand.palm.orientation  = palm_rot;
 	hand.wrist.orientation = hand.fingers[2][0].orientation;
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
 }
@@ -571,7 +566,7 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 
 ///////////////////////////////////////////
 
-hand_sim_id_t input_hand_sim_pose_add(const pose_t* in_arr_hand_joints, controller_key_ button1, controller_key_ and_button2, key_ or_hotkey1, key_ and_hotkey2) {
+hand_sim_id_t input_hand_sim_pose_add(const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2, key_ or_hotkey1, key_ and_hotkey2) {
 	hand_sim_id_t result = hand_sim_next_id;
 	hand_sim_next_id += 1;
 
@@ -581,7 +576,7 @@ hand_sim_id_t input_hand_sim_pose_add(const pose_t* in_arr_hand_joints, controll
 	hand_sim.button2         = and_button2;
 	hand_sim.hotkey1         = or_hotkey1;
 	hand_sim.hotkey2         = and_hotkey2;
-	memcpy(hand_sim.hand_joints, in_arr_hand_joints, sizeof(pose_t) * 25);
+	memcpy(hand_sim.hand_joints, in_arr_palm_relative_hand_joints_25, sizeof(pose_t) * 25);
 	hand_sim_poses.add(hand_sim);
 
 	return result;
