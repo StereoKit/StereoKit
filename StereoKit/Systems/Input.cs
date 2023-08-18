@@ -451,8 +451,9 @@ namespace StereoKit
 		/// <summary>StereoKit will use controller inputs to simulate an
 		/// articulated hand. This function allows you to add new simulated
 		/// poses to different controller or keyboard buttons!</summary>
-		/// <param name="handJoints25">25 joint poses, thumb to pinky, and root
-		/// to tip with two duplicate poses for the thumb root joint.</param>
+		/// <param name="handJointsPalmRelative25">25 joint poses, thumb to pinky, and root
+		/// to tip with two duplicate poses for the thumb root joint. These
+		/// should be right handed, and relative to the palm joint.</param>
 		/// <param name="button1">Controller button to activate this pose, can
 		/// be None if this is a keyboard only pose.</param>
 		/// <param name="andButton2">Second controller button required to
@@ -465,8 +466,8 @@ namespace StereoKit
 		/// single key pose.</param>
 		/// <returns>Returns the id of the hand sim pose, so it can be removed
 		/// later.</returns>
-		public static HandSimId HandSimPoseAdd(Pose[] handJoints25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
-			=> NativeAPI.input_hand_sim_pose_add(handJoints25, button1, andButton2, orHotkey1, andHotkey2);
+		public static HandSimId HandSimPoseAdd(Pose[] handJointsPalmRelative25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
+			=> NativeAPI.input_hand_sim_pose_add(handJointsPalmRelative25, button1, andButton2, orHotkey1, andHotkey2);
 		/// <summary>Lets you remove an existing hand pose.</summary>
 		/// <param name="id">Any valid or invalid hand sim pose id.</param>
 		public static void HandSimPoseRemove(HandSimId id)
