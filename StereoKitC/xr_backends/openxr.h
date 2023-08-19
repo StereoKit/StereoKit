@@ -68,6 +68,7 @@ bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
 bool32_t    openxr_get_gaze_space(pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);
 const char* openxr_string   (XrResult result);
 void        openxr_set_origin_offset(pose_t offset);
+bool        openxr_get_stage_bounds(vec2* out_size, pose_t* out_pose, XrTime time);
 
 extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;
@@ -83,10 +84,11 @@ extern bool       xr_has_bounds;
 extern bool       xr_has_single_pass;
 extern XrTime     xr_time;
 extern XrTime     xr_eyes_sample_time;
-extern display_blend_ xr_valid_blends;
 extern vec2       xr_bounds_size;
 extern pose_t     xr_bounds_pose;
 extern pose_t     xr_bounds_pose_local;
+
+#define XR_PRIMARY_CONFIG XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO
 
 } // namespace sk
 #endif

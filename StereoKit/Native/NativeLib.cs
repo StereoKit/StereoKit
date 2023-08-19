@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -72,28 +73,28 @@ namespace StereoKit
 				}
 				if (SK.AndroidActivity == null)
 				{
-					System.Diagnostics.Debug.WriteLine("[SK error] SK.AndroidActivity must be set before this point!");
-					Console.WriteLine                 ("[SK error] SK.AndroidActivity must be set before this point!");
+					Debug  .WriteLine("[SK error] SK.AndroidActivity must be set before this point!");
+					Console.WriteLine("[SK error] SK.AndroidActivity must be set before this point!");
 					return false;
 				}
 
 				// We're likely not on the main/UI thread, so lets get a way to
 				// insert our code onto the main/UI thread.
-				MethodInfo runOnUiThread = activity.GetMethod  ("RunOnUiThread", new Type[] { typeof(Action) });
-				if (runOnUiThread == null) return false;
+				MethodInfo runOnUiThread = activity.GetMethod("RunOnUiThread", new Type[] { typeof(Action) });
+				if (runOnUiThread == null) { Debug.WriteLine("[SK error] Could not find Android.App.Activity.RunOnUiThread"); return false; }
 
 				// Ask the UI thread to load the libraries, then sleep this
 				// thread until it has succeeded or failed.
 				int loaded = 0;
 				Action loadLibs = () => {
 					try   { loadLibrary.Invoke(null, new object[] { "StereoKitC" }); loaded = 1; }
-					catch { loaded = -1; }
+					catch (Exception e) { loaded = -1; Debug.WriteLine("[SK error] Exception loading StereoKitC:\n"+e.ToString()); }
 				};
 				try   { runOnUiThread.Invoke(SK.AndroidActivity, new object[] { loadLibs }); }
 				catch { loaded = -1; }
 
 				while (loaded == 0)
-					Thread.Sleep(10);
+					Thread.Sleep(1);
 				return loaded == 1;
 			}
 		}

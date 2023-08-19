@@ -126,20 +126,20 @@ namespace sk {
 	_(KHR_composition_layer_depth,       true) \
 	_(EXT_hand_tracking,                 true) \
 	_(EXT_hand_tracking_data_source,     true) \
+	_(EXT_hand_interaction,              true) \
 	_(EXT_palm_pose,                     true) \
 	_(EXT_eye_gaze_interaction,          true) \
 	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
-	_(MSFT_hand_interaction,             true) \
 	_(MSFT_hand_tracking_mesh,           true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
 	_(MSFT_scene_understanding,          true) \
-	_(PICO_controller_interaction,       true) \
+	_(BD_controller_interaction,         true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
 	_(EXTX_overlay,                      true)
 
@@ -256,15 +256,17 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 	for (uint32_t i = 0; i < ext_count; i++) exts[i] = { XR_TYPE_EXTENSION_PROPERTIES };
 	xrEnumerateInstanceExtensionProperties(nullptr, ext_count, &ext_count, exts);
 
+	qsort(exts, ext_count, sizeof(XrExtensionProperties), [](const void* a, const void* b) { 
+		return strcmp(((XrExtensionProperties*)a)->extensionName, ((XrExtensionProperties*)b)->extensionName); });
+
 	// See which of the available extensions we want to use
 	for (uint32_t i = 0; i < ext_count; i++) {
 		// These extensions are required for StereoKit to function
 		if (strcmp(exts[i].extensionName, XR_GFX_EXTENSION)  == 0) { result.add(XR_GFX_EXTENSION);  continue; }
 		if (strcmp(exts[i].extensionName, XR_TIME_EXTENSION) == 0) { result.add(XR_TIME_EXTENSION); continue; }
-
-		// We're only interested required extensions if we're using minimum
-		// extension mode
-		if (minimum_exts) { if (on_available != nullptr) { on_available(exts[i].extensionName); } continue; }
+#if defined(SK_OS_ANDROID)
+		if (strcmp(exts[i].extensionName, "XR_KHR_android_create_instance") == 0) { result.add("XR_KHR_android_create_instance"); continue; }
+#endif
 
 		// Skip this extension if it's a specifically excluded one
 		bool skip = false;
@@ -276,6 +278,22 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 		}
 		if (skip) { if (on_available != nullptr) { on_available(exts[i].extensionName); } continue; }
 
+		// Check if the current extension is a user requested extra, and if
+		// so, add it
+		bool found = false;
+		for (int32_t e = 0; e < extra_exts.count; e++) {
+			if (strcmp(exts[i].extensionName, extra_exts[e]) == 0) {
+				result.add(extra_exts[e]);
+				found = true;
+				break;
+			}
+		}
+		if (found) continue;
+
+		// We're only interested required extensions if we're using minimum
+		// extension mode
+		if (minimum_exts) { if (on_available != nullptr) { on_available(exts[i].extensionName); } continue; }
+
 		// Check if this extension matches any extensions that StereoKit wants
 #define ADD_NAME(name, available) else if (available && strcmp("XR_"#name, exts[i].extensionName) == 0) {result.add("XR_"#name);}
 		if (false) {}
@@ -285,17 +303,9 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 		FOR_EACH_EXT_LINUX  (ADD_NAME)
 		FOR_EACH_EXT_DEBUG  (ADD_NAME)
 		else {
-			// Check if the current extension is a user requested extra, and if
-			// so, add it
-			bool found = false;
-			for (int32_t e = 0; e < extra_exts.count; e++) {
-				if (strcmp(exts[i].extensionName, extra_exts[e]) == 0) {
-					result.add(extra_exts[e]);
-					found = true;
-					break;
-				}
-			}
-			if (!found && on_available != nullptr) { on_available(exts[i].extensionName); }
+			// We got to the end, and no-one loves this extension. We'll let
+			// 'em know it's at least available!
+			if (on_available != nullptr) { on_available(exts[i].extensionName); }
 		}
 #undef ADD_NAME
 	}

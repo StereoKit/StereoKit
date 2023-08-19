@@ -52,13 +52,12 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 ///////////////////////////////////////////
 
 bool android_init() {
-	// don't allow flatscreen fallback on Android
-	sk_settings.no_flatscreen_fallback = true;
+	const sk_settings_t* settings = sk_get_settings_ref();
 
 	android_render_sys = systems_find("FrameRender");
-	android_activity   = (jobject)sk_settings.android_activity;
+	android_activity   = (jobject)settings->android_activity;
 	if (android_vm == nullptr)
-		android_vm = (JavaVM*)sk_settings.android_java_vm;
+		android_vm = (JavaVM*)settings->android_java_vm;
 
 	if (android_vm == nullptr || android_activity == nullptr) {
 		log_fail_reason(95, log_error, "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
@@ -110,7 +109,7 @@ bool android_init() {
 	// Android has no universally supported openxr_loader yet, so on this
 	// platform we don't static link it, and instead provide devs a way to ship
 	// other loaders.
-	if (sk_settings.display_preference == display_mode_mixedreality && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
+	if (settings->display_preference == display_mode_mixedreality && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
 		log_fail_reason(95, log_error, "openxr_loader failed to load!");
 		return false;
 	}
@@ -124,13 +123,11 @@ bool android_init() {
 void android_create_swapchain() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, device_data.display_width, device_data.display_height);
 	android_swapchain_created = true;
-	sk_info.display_width  = android_swapchain.width;
-	sk_info.display_height = android_swapchain.height;
 	device_data.display_width  = android_swapchain.width;
 	device_data.display_height = android_swapchain.height;
-	render_update_projection();
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 }
 
@@ -140,13 +137,11 @@ void android_resize_swapchain() {
 	int32_t height = maxi(1,ANativeWindow_getWidth (android_window));
 	int32_t width  = maxi(1,ANativeWindow_getHeight(android_window));
 
-	if (!android_swapchain_created || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!android_swapchain_created || (width == device_data.display_width && height == device_data.display_height))
 		return;
 
 	log_diagf("Resized swapchain: %dx%d", width, height);
 	skg_swapchain_resize(&android_swapchain, width, height);
-	sk_info.display_width  = width;
-	sk_info.display_height = height;
 	device_data.display_width  = width;
 	device_data.display_height = height;
 	render_update_projection();
@@ -181,7 +176,6 @@ bool android_start_post_xr() {
 ///////////////////////////////////////////
 
 bool android_start_flat() {
-	sk_info.display_type      = display_opaque;
 	device_data.display_blend = display_blend_opaque;
 	if (android_window) {
 		android_create_swapchain();

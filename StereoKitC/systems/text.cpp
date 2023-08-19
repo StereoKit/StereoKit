@@ -507,8 +507,8 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	if (size.x <= 0) return 0; // Zero width text isn't visible, and causes issues when trying to determine text height.
 
 	XMMATRIX tr;
-	if (hierarchy_enabled) {
-		matrix_mul(transform, hierarchy_stack.last().transform, tr);
+	if (hierarchy_use_top()) {
+		matrix_mul(transform, hierarchy_top(), tr);
 	} else {
 		math_matrix_to_fast(transform, &tr);
 	}
