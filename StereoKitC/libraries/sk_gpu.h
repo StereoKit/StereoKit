@@ -3830,7 +3830,7 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 
 	// Convert the prefix if it doesn't match the GL version we're using
 #if   defined(_SKG_GL_ES)
-	const char   *prefix_gl      = "#version 320 es";
+	const char   *prefix_gl      = "#version 310 es";
 #elif defined(_SKG_GL_DESKTOP)
 	const char   *prefix_gl      = "#version 450";
 #elif defined(_SKG_GL_WEB)
@@ -3881,7 +3881,11 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 		log = (char*)malloc(length);
 		glGetShaderInfoLog(result._shader, length, &err, log);
 
-		skg_logf(skg_log_warning, "Unable to compile shader: ", log);
+		// Trim trailing newlines, we've already got that covered
+		size_t len = strlen(log);
+		while(len > 0 && log[len-1] == '\n') { log[len-1] = '\0'; len -= 1; }
+
+		skg_logf(skg_log_warning, "Unable to compile shader (%d):\n%s", err, log);
 		free(log);
 
 		glDeleteShader(result._shader);
@@ -3904,7 +3908,14 @@ void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 
 skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader) {
 	if (v_shader._shader == 0 && p_shader._shader == 0 && c_shader._shader == 0) {
-		skg_logf(skg_log_warning, "Shader '%s' has no valid stages!", meta->name);
+#if   defined(_SKG_GL_ES)
+		const char   *gl_name      = "GLES";
+#elif defined(_SKG_GL_DESKTOP)
+		const char   *gl_name      = "OpenGL";
+#elif defined(_SKG_GL_WEB)
+		const char   *gl_name      = "WebGL";
+#endif
+		skg_logf(skg_log_warning, "Shader '%s' has no valid stages for %s!", meta->name, gl_name);
 		return {};
 	}
 
