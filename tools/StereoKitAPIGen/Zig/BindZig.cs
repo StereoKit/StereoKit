@@ -49,6 +49,8 @@ class BindZig
 
 		text.Append(File.ReadAllText("Zig/ZigPostfix.zig"));
 
+		if (!Directory.Exists(outputFolder))
+			Directory.CreateDirectory(outputFolder);
 		File.WriteAllText(Path.Combine(outputFolder, "StereoKit.zig"), text.ToString());
 		Console.WriteLine(text.ToString());
 	}
