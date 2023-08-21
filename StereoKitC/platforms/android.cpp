@@ -1,3 +1,4 @@
+#include "platform.h"
 #include "android.h"
 #if defined(SK_OS_ANDROID)
 
@@ -20,17 +21,28 @@
 
 namespace sk {
 
-JavaVM           *android_vm              = nullptr;
-jobject           android_activity        = nullptr;
-JNIEnv           *android_env             = nullptr;
-AAssetManager    *android_asset_manager   = nullptr;
-ANativeWindow    *android_window          = nullptr;
-ANativeWindow    *android_next_window     = nullptr;
-jobject           android_next_window_xam = nullptr;
-bool              android_next_win_ready  = false;
-skg_swapchain_t   android_swapchain       = {};
-bool              android_swapchain_created = false;
-system_t         *android_render_sys = nullptr;
+struct window_event_t {
+	platform_evt_           type;
+	platform_evt_data_t     data;
+};
+
+struct window_t {
+	array_t<window_event_t> events;
+	ANativeWindow*          window;
+	skg_swapchain_t         swapchain;
+	bool                    has_swapchain;
+};
+
+JavaVM           *android_vm                = nullptr;
+jobject           android_activity          = nullptr;
+JNIEnv           *android_env               = nullptr;
+AAssetManager    *android_asset_manager     = nullptr;
+ANativeWindow    *android_next_window       = nullptr;
+jobject           android_next_window_xam   = nullptr;
+bool              android_next_win_ready    = false;
+system_t         *android_render_sys        = nullptr;
+window_t          android_window            = {};
+tex_t             android_target            = {};
 
 ///////////////////////////////////////////
 
@@ -259,6 +271,33 @@ void android_step_end_flat() {
 
 ///////////////////////////////////////////
 
+void android_target_resize(tex_t *target, int32_t width, int32_t height) {
+	if (*target == nullptr) {
+		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
+		tex_set_id       (*target, "sk/platform/swapchain");
+		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
+
+		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
+		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
+		tex_release(zbuffer);
+	}
+	
+	device_data.display_width  = width;
+	device_data.display_height = height;
+
+	if (width == tex_get_width(*target) && height == tex_get_height(*target))
+		return;
+
+	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
+
+	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
+	render_update_projection();
+}
+
+///////////////////////////////////////////
+// Permissions                           //
+///////////////////////////////////////////
+
 const int32_t PERMISSION_DENIED  = -1;
 const int32_t PERMISSION_GRANTED = 0;
 
@@ -341,10 +380,108 @@ void android_request_permission(const char* permission) {
 }
 
 ///////////////////////////////////////////
+// Backend                               //
+///////////////////////////////////////////
 
 void *backend_android_get_java_vm () { return android_vm; }
 void *backend_android_get_activity() { return android_activity; }
 void *backend_android_get_jni_env () { return android_env; }
+
+///////////////////////////////////////////
+// Window code                           //
+///////////////////////////////////////////
+
+platform_win_type_ platform_win_type() { return platform_win_type_existing; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) { return -1; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
+	window_t* win = &android_window;
+
+	// Not all windows need a swapchain, but here's where we make 'em for those
+	// that do.
+	if (surface_type == platform_surface_swapchain) {
+		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+		win->swapchain     = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, final_width, final_height);
+		win->has_swapchain = true;
+
+		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	}
+	return 1;
+}
+
+///////////////////////////////////////////
+
+void platform_win_destroy(platform_win_t window) {
+	if (window != 1) return;
+	window_t* win = &android_window;
+
+	if (win->has_swapchain) {
+		skg_swapchain_destroy(&win->swapchain);
+	}
+
+	win->events.free();
+	*win = {};
+}
+
+///////////////////////////////////////////
+
+void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
+	if (window != 1) return
+	window_t* win = &android_window;
+
+	width  = maxi(1, width);
+	height = maxi(1, height);
+
+	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
+		return;
+
+	skg_swapchain_resize(&win->swapchain, width, height);
+}
+
+///////////////////////////////////////////
+
+void platform_check_events() {
+}
+
+///////////////////////////////////////////
+
+bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
+		if (window != 1) return;
+	window_t* win = &android_window;
+
+	if (win->events.count > 0) {
+		*out_event      = win->events[0].type;
+		*out_event_data = win->events[0].data;
+		win->events.remove(0);
+		return true;
+	} return false;
+}
+
+///////////////////////////////////////////
+
+skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
+	if (window != 1) return nullptr;
+	window_t* win = &android_window;
+
+	return win->has_swapchain ? &win->swapchain : nullptr;
+}
+
+///////////////////////////////////////////
+
+recti_t platform_win_rect(platform_win_t window_id) {
+	if (window != 1) return;
+	window_t* win = &android_window;
+
+	return recti_t{ 0, 0,
+		win->swapchain.width,
+		win->swapchain.height };
+}
 
 } // namespace sk
 
