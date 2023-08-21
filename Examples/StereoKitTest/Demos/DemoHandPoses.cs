@@ -14,8 +14,12 @@ internal class DemoHandPoses : ITest
 	Pose windowPose = Demo.contentPose.Pose;
 
 	bool   captured   = false;
-	Vec3   offRot     = Vec3.Zero;
-	Vec3   offPos     = Vec3.Zero;
+	float  offRotX    = 0;
+	float  offRotY    = 0;
+	float  offRotZ    = 0;
+	float  offPosX    = 0;
+	float  offPosY    = 0;
+	float  offPosZ    = 0;
 	Mode   offMode    = Mode.Rotate;
 	Pose[] handPose   = new Pose[] { new Pose(-0.020f, -0.026f, -0.039f, new Quat(0.247f, -0.374f, -0.725f, -0.523f)), new Pose(-0.020f, -0.026f, -0.039f, new Quat(0.247f, -0.374f, -0.725f, -0.523f)), new Pose(-0.021f, -0.053f, -0.059f, new Quat(0.373f, -0.123f, -0.764f, -0.512f)), new Pose(-0.006f, -0.072f, -0.083f, new Quat(0.466f, -0.071f, -0.792f, -0.388f)), new Pose(0.011f, -0.085f, -0.098f, new Quat(0.466f, -0.071f, -0.792f, -0.388f)), new Pose(-0.015f, -0.015f, -0.039f, new Quat(0.000f, -0.000f, 0.000f, -1.000f)), new Pose(-0.024f, -0.007f, -0.098f, new Quat(0.070f, -0.046f, -0.032f, -0.996f)), new Pose(-0.027f, -0.013f, -0.136f, new Quat(0.104f, -0.037f, -0.008f, -0.994f)), new Pose(-0.029f, -0.018f, -0.160f, new Quat(0.037f, -0.009f, 0.008f, -0.999f)), new Pose(-0.029f, -0.019f, -0.183f, new Quat(0.037f, -0.009f, 0.008f, -0.999f)), new Pose(0.002f, -0.010f, -0.037f, new Quat(0.000f, -0.000f, 0.000f, -1.000f)), new Pose(-0.002f, -0.003f, -0.098f, new Quat(0.491f, 0.062f, 0.039f, -0.868f)), new Pose(0.001f, -0.040f, -0.120f, new Quat(0.924f, 0.027f, 0.082f, -0.372f)), new Pose(-0.002f, -0.060f, -0.100f, new Quat(0.989f, 0.062f, 0.125f, -0.050f)), new Pose(-0.008f, -0.064f, -0.075f, new Quat(0.989f, 0.062f, 0.125f, -0.050f)), new Pose(0.015f, -0.006f, -0.035f, new Quat(0.000f, -0.000f, 0.000f, -1.000f)), new Pose(0.018f, -0.007f, -0.090f, new Quat(0.485f, 0.108f, 0.109f, -0.861f)), new Pose(0.021f, -0.041f, -0.111f, new Quat(0.847f, 0.046f, 0.192f, -0.494f)), new Pose(0.013f, -0.064f, -0.099f, new Quat(0.946f, -0.010f, 0.230f, -0.229f)), new Pose(0.003f, -0.076f, -0.080f, new Quat(0.946f, -0.010f, 0.230f, -0.229f)), new Pose(0.023f, -0.010f, -0.035f, new Quat(0.018f, 0.140f, 0.207f, -0.968f)), new Pose(0.036f, -0.014f, -0.079f, new Quat(0.102f, 0.241f, 0.128f, -0.957f)), new Pose(0.049f, -0.022f, -0.107f, new Quat(0.085f, 0.287f, 0.156f, -0.941f)), new Pose(0.060f, -0.027f, -0.124f, new Quat(0.055f, 0.244f, 0.153f, -0.956f)), new Pose(0.070f, -0.030f, -0.143f, new Quat(0.055f, 0.244f, 0.153f, -0.956f)) };
 	HandSimId x1      = HandSimId.None;
@@ -52,7 +56,7 @@ internal class DemoHandPoses : ITest
 			UI.LayoutAt.x - (UI.LayoutRemaining.x + 0.1f),
 			UI.LayoutAt.y - 0.1f,
 			0);
-		DrawHandPose(handPreviewRoot, offPos, offRot, handPose, captured);
+		DrawHandPose(handPreviewRoot, V.XYZ(offPosX, offPosY, offPosZ), V.XYZ(offRotX, offRotY, offRotZ), handPose, captured);
 
 		// UI for assigning the hand pose to inputs
 		UI.LayoutPushCut(UICut.Right, 0.15f);
@@ -83,20 +87,20 @@ internal class DemoHandPoses : ITest
 		if (UI.Radio("Translate", offMode == Mode.Translate, V.XY(0.07f, 0))) offMode = Mode.Translate;
 		if (offMode == Mode.Rotate)
 		{
-			UI.Label("X", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("X", ref offRot.v.X,  180, -180, 15, 0.1f, UIConfirm.Pinch);
-			UI.Label("Y", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Y", ref offRot.v.Y, -180,  180, 15, 0.1f, UIConfirm.Pinch);
-			UI.Label("Z", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Z", ref offRot.v.Z, -180,  180, 15, 0.1f, UIConfirm.Pinch);
+			UI.Label("X", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("X", ref offRotX,  180, -180, 15, 0.1f, UIConfirm.Pinch);
+			UI.Label("Y", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Y", ref offRotY, -180,  180, 15, 0.1f, UIConfirm.Pinch);
+			UI.Label("Z", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Z", ref offRotZ, -180,  180, 15, 0.1f, UIConfirm.Pinch);
 		}
 		else
 		{
-			UI.Label("X", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("X", ref offPos.v.X,  0.04f, -0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
-			UI.Label("Y", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Y", ref offPos.v.Y, -0.04f,  0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
-			UI.Label("Z", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Z", ref offPos.v.Z,  0.04f, -0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
+			UI.Label("X", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("X", ref offPosX,  0.04f, -0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
+			UI.Label("Y", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Y", ref offPosY, -0.04f,  0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
+			UI.Label("Z", V.XY(0.02f, UI.LineHeight), false); UI.SameLine(); UI.HSlider("Z", ref offPosZ,  0.04f, -0.04f, 0.005f, 0.1f, UIConfirm.Pinch);
 		}
 
 		// And saving results!
 		UI.HSeparator();
-		if (UI.Button("Save to Log")) Log.Info(HandToString(TransformPose(handPose, offPos, Quat.FromAngles(offRot))));
+		if (UI.Button("Save to Log")) Log.Info(HandToString(TransformPose(handPose, V.XYZ(offPosX, offPosY, offPosZ), Quat.FromAngles(offRotX, offRotY, offRotZ))));
 
 		UI.WindowEnd();
 
@@ -112,7 +116,7 @@ internal class DemoHandPoses : ITest
 	void AssignButtonLine(string name, ref HandSimId id, ControllerKey ckey, Key key, Pose[] handPose)
 	{
 		UI.PushId(name);
-		if (UI.Button(name, V.XY(0.07f,0))) id = Input.HandSimPoseAdd(TransformPose(handPose, offPos, Quat.FromAngles(offRot)), ckey, ControllerKey.None, key);
+		if (UI.Button(name, V.XY(0.07f,0))) id = Input.HandSimPoseAdd(TransformPose(handPose, V.XYZ(offPosX, offPosY, offPosZ), Quat.FromAngles(offRotX, offRotY, offRotZ)), ckey, ControllerKey.None, key);
 		UI.PushEnabled(id != HandSimId.None);
 		UI.SameLine();
 		if (UI.Button("Clear", V.XY(0.07f, 0)))
