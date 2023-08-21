@@ -12,22 +12,13 @@
 #include <windows.h>
 #include <shellapi.h>
 
-
 #include "platform.h"
 #include "../stereokit.h"
 #include "../_stereokit.h"
-#include "../device.h"
 #include "../sk_math.h"
-#include "../asset_types/texture.h"
-#include "../libraries/sokol_time.h"
-#include "../libraries/stref.h"
-#include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input_keyboard.h"
-#include "../hands/input_hand.h"
 
 namespace sk {
-
 
 ///////////////////////////////////////////
 
@@ -51,33 +42,25 @@ struct window_t {
 
 ///////////////////////////////////////////
 
-array_t<window_t> win32_windows      = {};
-
-HINSTANCE         win32_hinst        = nullptr;
-HICON             win32_icon         = nullptr;
-tex_t             win32_target       = {};
-float             win32_scroll       = 0;
-system_t         *win32_render_sys   = nullptr;
-platform_win_t    win32_platform_win = -1;
+array_t<window_t> win32_windows = {};
+HINSTANCE         win32_hinst   = nullptr;
+HICON             win32_icon    = nullptr;
+float             win32_scroll  = 0;
 
 ///////////////////////////////////////////
 
 // Constants for the registry key and value names
-const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
-const wchar_t* REG_VALUE_NAME = L"WindowLocation";
+const wchar_t* REG_KEY_NAME = L"Software\\StereoKit Simulator";
 
 ///////////////////////////////////////////
 
-void    win32_physical_key_interact();
-void    win32_target_resize        (tex_t *target, int32_t width, int32_t height);
 void    platform_check_events      ();
 LRESULT platform_message_callback  (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 ///////////////////////////////////////////
 
 bool win32_init() {
-	win32_render_sys = systems_find("FrameRender");
-	win32_hinst      = GetModuleHandle(NULL);
+	win32_hinst = GetModuleHandle(NULL);
 
 	// Find the icon from the exe itself
 	wchar_t path[MAX_PATH];
@@ -94,13 +77,9 @@ void win32_shutdown() {
 		platform_win_destroy(i);
 	}
 	win32_windows.free();
-
-	win32_hinst        = nullptr;
-	win32_icon         = nullptr;
-	win32_target       = {};
-	win32_scroll       = 0;
-	win32_render_sys   = nullptr;
-	win32_platform_win = -1;
+	win32_hinst  = nullptr;
+	win32_icon   = nullptr;
+	win32_scroll = 0;
 }
 
 ///////////////////////////////////////////
@@ -112,103 +91,24 @@ bool win32_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool win32_start_post_xr() {
-	const sk_settings_t *settings = sk_get_settings_ref();
-
-	win32_platform_win = platform_win_make(settings->app_name, recti_t{}, platform_surface_none);
-	return win32_platform_win != -1;
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void win32_step_begin_xr() {
 	platform_check_events();
-
-	platform_evt_       evt;
-	platform_evt_data_t data;
-	while (platform_win_next_event(win32_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_key_press:   input_key_inject_press  (data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_key_release: input_key_inject_release(data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_character:   input_text_inject_char  (data.character);     break;
-		case platform_evt_close:       sk_quit(); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
 }
 
 ///////////////////////////////////////////
 
 bool win32_start_flat() {
-	const sk_settings_t* settings = sk_get_settings_ref();
-
-	device_data.display_blend = display_blend_opaque;
-
-	// Get the window size
-	RECT rect = {};
-	HKEY reg_key;
-	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
-		DWORD data_size = sizeof(RECT);
-		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
-		RegCloseKey     (reg_key);
-	} else {
-		rect.left   = settings->flatscreen_pos_x;
-		rect.right  = settings->flatscreen_pos_x + settings->flatscreen_width;
-		rect.top    = settings->flatscreen_pos_y;
-		rect.bottom = settings->flatscreen_pos_y + settings->flatscreen_height;
-		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
-	}
-
-	win32_platform_win = platform_win_make(settings->app_name, {rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top}, platform_surface_swapchain);
-	if (win32_platform_win == -1)
-		return false;
-
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(win32_platform_win);
-	win32_target_resize(&win32_target, swapchain->width, swapchain->height);
-
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void win32_target_resize(tex_t *target, int32_t width, int32_t height) {
-	if (*target == nullptr) {
-		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id       (*target, "sk/platform/swapchain");
-		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-
-		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
-		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-		tex_release(zbuffer);
-	}
-	
-	device_data.display_width  = width;
-	device_data.display_height = height;
-
-	if (width == tex_get_width(*target) && height == tex_get_height(*target))
-		return;
-
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
-}
-
-///////////////////////////////////////////
-
 void win32_stop_flat() {
-	if (backend_xr_get_type() == backend_xr_type_simulator) {
-		recti_t r       = platform_win_rect(win32_platform_win);
-		RECT    rect    = {r.x, r.y, r.x+r.w, r.y+r.h};
-		HKEY    reg_key = {};
-		if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) == ERROR_SUCCESS) {
-			RegSetValueExW(reg_key, REG_VALUE_NAME, 0, REG_BINARY, (const BYTE*)&rect, sizeof(RECT));
-			RegCloseKey   (reg_key);
-		}
-	}
-
-	tex_release(win32_target);
-
 	win32_icon  = nullptr;
 	win32_hinst = nullptr;
 }
@@ -217,76 +117,31 @@ void win32_stop_flat() {
 
 void win32_step_begin_flat() {
 	platform_check_events();
-
-	platform_evt_       evt  = {};
-	platform_evt_data_t data = {};
-	while (platform_win_next_event(win32_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_app_focus:    sk_set_app_focus (data.app_focus); break;
-		case platform_evt_key_press:    input_key_inject_press  (data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_key_release:  input_key_inject_release(data.press_release); win32_physical_key_interact(); break;
-		case platform_evt_character:    input_text_inject_char  (data.character);                                    break;
-		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
-		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
-		case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
-		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       win32_target_resize(&win32_target, data.resize.width, data.resize.height); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
 }
 
 ///////////////////////////////////////////
 
 void win32_step_end_flat() {
-	skg_event_begin("Setup");
-
-	skg_draw_begin();
-
-	color128 col = render_get_clear_color_ln();
-	skg_tex_target_bind(&win32_target->tex);
-	skg_target_clear(true, &col.r);
-
-	skg_event_end();
-	skg_event_begin("Draw");
-
-	matrix view = render_get_cam_final        ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
-
-	skg_event_end();
-	skg_event_begin("Present");
-
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(win32_platform_win);
-	skg_tex_copy_to_swapchain(&win32_target->tex, swapchain);
-
-	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
-	skg_swapchain_present(swapchain);
-
-	skg_event_end();
-}
-
-///////////////////////////////////////////
-
-void win32_physical_key_interact() {
-	// On desktop, we want to hide soft keyboards on physical presses
-	input_set_last_physical_keypress_time(time_totalf_unscaled());
-	platform_keyboard_show(false, text_context_text);
 }
 
 ///////////////////////////////////////////
 
 void *win32_hwnd() {
-	return win32_windows[win32_platform_win].handle;
+	return win32_windows.count > 0
+		? win32_windows[0].handle
+		: nullptr;
 }
 
 ///////////////////////////////////////////
 // Window code                           //
+///////////////////////////////////////////
+
+platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_get_existing() { return -1; }
+
 ///////////////////////////////////////////
 
 platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
@@ -436,10 +291,10 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	case WM_SYSKEYDOWN:  e.type = platform_evt_key_press;     e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_SYSKEYUP:    e.type = platform_evt_key_release;   e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_CHAR:        e.type = platform_evt_character;     e.data.character     = (char32_t)wParam;     win->events.add(e); return true;
-	case WM_MOUSEWHEEL:  e.type = platform_evt_scroll;        e.data.scroll        = (short)HIWORD(wParam);win->events.add(e); return true;
 	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); PostQuitMessage(0); break;
 	case WM_SETFOCUS:    e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_active;     win->events.add(e); break;
 	case WM_KILLFOCUS:   e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_background; win->events.add(e); break;
+	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
 	case WM_SYSCOMMAND: {
 		// Has the user pressed the restore/'un-maximize' button? WM_SIZE
 		// happens -after- this event, and contains the new size.
@@ -499,14 +354,6 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_get_existing() { return -1; }
-
-///////////////////////////////////////////
-
 skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return win32_windows[window].has_swapchain ? &win32_windows[window].swapchain : nullptr; }
 
 ///////////////////////////////////////////
@@ -524,6 +371,37 @@ recti_t platform_win_rect(platform_win_t window_id) {
 		win->save_rect.top,
 		win->save_rect.right  - win->save_rect.left,
 		win->save_rect.bottom - win->save_rect.top };
+}
+
+///////////////////////////////////////////
+
+bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
+	HKEY reg_key = {};
+	if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) != ERROR_SUCCESS)
+		return false;
+
+	wchar_t w_key[64];
+	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
+
+	RegSetValueExW(reg_key, w_key, 0, REG_BINARY, (const BYTE*)data, data_size);
+	RegCloseKey   (reg_key);
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
+	HKEY reg_key = {};
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) != ERROR_SUCCESS)
+		return false;
+
+	wchar_t w_key[64];
+	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
+
+	DWORD data_size = buffer_size;
+	RegQueryValueExW(reg_key, w_key, 0, nullptr, (BYTE*)ref_buffer, &data_size);
+	RegCloseKey     (reg_key);
+	return true;
 }
 
 } // namespace sk

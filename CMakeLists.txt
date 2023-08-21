@@ -5,9 +5,6 @@
 # SPDX-License-Identifier: MIT
 
 # This build file has the following options
-# - SK_LINUX_EGL
-#     This tells the Linux build to use EGL as the OpenGL loader, 
-#     instead of the default GLX.
 # - SK_MULTITHREAD_BUILD_BY_DEFAULT
 #     MSVC only, on by default. This forces projects here to
 #     build with multi-threading (/MP)
@@ -35,8 +32,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
 ## Options                               ##
 ###########################################
 
-set(SK_BUILD_OPENXR_LOADER          ON  CACHE BOOL  "Build the openxr_loader target from StereoKit")
-set(SK_LINUX_EGL                    OFF CACHE BOOL "Force using EGL graphics backend on Linux")
+set(SK_BUILD_OPENXR_LOADER          ON  CACHE BOOL "Build the openxr_loader target from StereoKit")
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
@@ -114,15 +110,6 @@ elseif (UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 
-  # Add OpenGL, and account for the SK_LINUX_EGL option
-  #if(SK_LINUX_EGL)
-  #  add_definitions("-DSKG_LINUX_EGL")
-  #  list(APPEND LINUX_LIBS EGL gbm)
-  #else()
-  #  add_definitions("-DSKG_LINUX_GLX")
-  #  find_package(X11 REQUIRED)
-  #  list(APPEND LINUX_LIBS GL dl)
-  #endif()
 elseif(WIN32)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS

@@ -44,24 +44,16 @@ struct window_t {
 	char*                   title;
 	array_t<window_event_t> events;
 
-	Window      x_window;
+	Window                  x_window;
 
 	skg_swapchain_t         swapchain;
 	bool                    has_swapchain;
-
-	bool                    check_resize;
-	int32_t                 resize_x, resize_y;
 };
 
 ///////////////////////////////////////////
 
-array_t<window_t> linux_windows      = {};
-platform_win_t    linux_platform_win = -1;
-tex_t             linux_target       = {};
-
-system_t         *linux_render_sys   = nullptr;
-
-Display*          linux_display      = nullptr;
+array_t<window_t> linux_windows = {};
+Display*          linux_display = nullptr;
 
 // GLX/Xlib
 
@@ -80,15 +72,12 @@ bool  linux_mouse_in_window = false;
 
 ///////////////////////////////////////////
 
-void linux_init_key_lookups     ();
-void linux_physical_key_interact();
-void linux_target_resize        (tex_t* target, int32_t width, int32_t height);
-void platform_check_events      ();
+void linux_init_key_lookups();
+void platform_check_events ();
 
 ///////////////////////////////////////////
 
 bool linux_init() {
-	linux_render_sys = systems_find("FrameRender");
 	linux_init_key_lookups();
 
 	xwayland = getenv("WAYLAND_DISPLAY") != nullptr;
@@ -104,7 +93,8 @@ void linux_shutdown() {
 	}
 	linux_windows.free();
 
-	if (linux_display) XCloseDisplay(linux_display);
+	// We aren't closing the display here, because EGL seems to close it for us
+	// in skg_shutdown
 	linux_display = nullptr;
 }
 
@@ -117,49 +107,18 @@ bool linux_start_pre_xr() {
 ///////////////////////////////////////////
 
 bool linux_start_post_xr() {
-	const sk_settings_t* settings = sk_get_settings_ref();
-	if (settings->disable_desktop_input_window)
-		return true;
-
-	linux_platform_win = platform_win_make(settings->app_name, recti_t{}, platform_surface_none);
-	return linux_platform_win != -1;
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void linux_step_begin_xr() {
 	platform_check_events();
-
-	platform_evt_       evt;
-	platform_evt_data_t data;
-	while (platform_win_next_event(linux_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_key_press:   input_key_inject_press  (data.press_release); linux_physical_key_interact(); break;
-		case platform_evt_key_release: input_key_inject_release(data.press_release); linux_physical_key_interact(); break;
-		case platform_evt_character:   input_text_inject_char  (data.character);     break;
-		case platform_evt_close:       sk_quit(); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
 }
 
 ///////////////////////////////////////////
 
 bool linux_start_flat() {
-	const sk_settings_t* settings = sk_get_settings_ref();
-	device_data.display_blend = display_blend_opaque;
-
-	linux_platform_win = platform_win_make( settings->app_name,
-		{ settings->flatscreen_pos_x, settings->flatscreen_pos_y, settings->flatscreen_width, settings->flatscreen_height },
-		platform_surface_swapchain);
-
-	if (linux_platform_win == -1)
-		return false;
-
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(linux_platform_win);
-	linux_target_resize(&linux_target, swapchain->width, swapchain->height);
-
 	return true;
 }
 
@@ -172,98 +131,23 @@ void linux_stop_flat() {
 
 void linux_step_begin_flat() {
 	platform_check_events();
-
-	platform_evt_       evt  = {};
-	platform_evt_data_t data = {};
-	while (platform_win_next_event(linux_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_app_focus:    sk_set_app_focus (data.app_focus); break;
-		case platform_evt_key_press:    input_key_inject_press  (data.press_release); linux_physical_key_interact(); break;
-		case platform_evt_key_release:  input_key_inject_release(data.press_release); linux_physical_key_interact(); break;
-		case platform_evt_character:    input_text_inject_char  (data.character);                                    break;
-		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
-		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
-		case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) linux_scroll += data.scroll;                  break;
-		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       linux_target_resize(&linux_target, data.resize.width, data.resize.height); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
 }
 
 ///////////////////////////////////////////
 
 void linux_step_end_flat() {
-	skg_event_begin("Setup");
-
-	skg_draw_begin();
-
-	color128 col = render_get_clear_color_ln();
-	skg_tex_target_bind(&linux_target->tex);
-	skg_target_clear(true, &col.r);
-
-	skg_event_end();
-	skg_event_begin("Draw");
-
-	linux_render_sys->profile_frame_start = stm_now();
-
-	matrix view = render_get_cam_final        ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
-
-	skg_event_end();
-	skg_event_begin("Present");
-
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(linux_platform_win);
-	skg_tex_copy_to_swapchain(&linux_target->tex, swapchain);
-
-	linux_render_sys->profile_frame_duration = stm_since(linux_render_sys->profile_frame_start);
-	skg_swapchain_present(swapchain);
-
-	skg_event_end();
-}
-
-///////////////////////////////////////////
-
-void linux_target_resize(tex_t *target, int32_t width, int32_t height) {
-	if (*target == nullptr) {
-		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id       (*target, "sk/platform/swapchain");
-		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-
-		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
-		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-		tex_release(zbuffer);
-		render_update_projection();
-	}
-	
-	device_data.display_width  = width;
-	device_data.display_height = height;
-
-	if (width == tex_get_width(*target) && height == tex_get_height(*target))
-		return;
-
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
-}
-
-///////////////////////////////////////////
-
-void linux_physical_key_interact() {
-	// On desktop, we want to hide soft keyboards on physical presses
-	input_set_last_physical_keypress_time(time_totalf_unscaled());
-	platform_keyboard_show(false, text_context_text);
 }
 
 ///////////////////////////////////////////
 // Window code                           //
+///////////////////////////////////////////
+
+platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_get_existing() { return -1; }
+
 ///////////////////////////////////////////
 
 platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
@@ -355,7 +239,6 @@ void platform_win_destroy(platform_win_t window_id) {
 
 	*win = {};
 }
-
 
 ///////////////////////////////////////////
 
@@ -542,8 +425,8 @@ void platform_check_events() {
 				case (3): e.type = platform_evt_mouse_press; e.data.press_release = key_mouse_right;   win->events.add(e); break;
 				case (9): e.type = platform_evt_mouse_press; e.data.press_release = key_mouse_forward; win->events.add(e); break;
 				case (8): e.type = platform_evt_mouse_press; e.data.press_release = key_mouse_back;    win->events.add(e); break;
-				case (4): e.type = platform_evt_scroll;      e.data.scroll = +120;                     win->events.add(e); break; // scroll up
-				case (5): e.type = platform_evt_scroll;      e.data.scroll = -120;                     win->events.add(e); break; // scroll down
+				case (4): e.type = platform_evt_scroll;      e.data.scroll = +120;                     win->events.add(e); linux_scroll += 120; break; // scroll up
+				case (5): e.type = platform_evt_scroll;      e.data.scroll = -120;                     win->events.add(e); linux_scroll -= 120; break; // scroll down
 				}
 			} break;
 			case ButtonRelease: {
@@ -598,14 +481,6 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_get_existing() { return -1; }
-
-///////////////////////////////////////////
-
 skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return linux_windows[window].has_swapchain ? &linux_windows[window].swapchain : nullptr; }
 
 ///////////////////////////////////////////
@@ -630,8 +505,8 @@ void linux_set_cursor(vec2 window_pos) {
 	// and https://github.com/blender/blender/blob/a8f7d41d3898a8d3ae8afb4f95ea9f4f44db2a69/intern/ghost/intern/GHOST_SystemX11.cpp#L1680 .
 	// I don't know why this works, but it definitely does - the pointer correctly warps to the right spot as of July 2022.
 
-	if (linux_platform_win == -1) return;
-	window_t *win = &linux_windows[linux_platform_win];
+	if (linux_windows.count == 0) return;
+	window_t *win = &linux_windows[0];
 
 	if (xwayland){
 		XFixesHideCursor(linux_display, win->x_window);
@@ -643,6 +518,29 @@ void linux_set_cursor(vec2 window_pos) {
 		XFixesShowCursor(linux_display, win->x_window);
 	}
 	XFlush(linux_display);
+}
+
+///////////////////////////////////////////
+
+recti_t platform_win_rect(platform_win_t window_id) {
+	window_t* win = &linux_windows[window_id];
+	return win->has_swapchain
+		? recti_t{ 0,0, win->swapchain.width, win->swapchain.height }
+		: recti_t{ 0, 0, 0, 0 };
+}
+
+///////////////////////////////////////////
+
+bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
+	// TODO: find an alternative to the registry for Linux
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
+	// TODO: find an alternative to the registry for Linux
+	return false;
 }
 
 } // namespace sk

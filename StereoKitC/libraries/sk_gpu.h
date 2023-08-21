@@ -19,9 +19,6 @@ sk_gpu.h
 //
 //#define SKG_FORCE_DIRECT3D11
 //#define SKG_FORCE_OPENGL
-#ifndef SKG_LINUX_EGL
-#define SKG_LINUX_EGL
-#endif
 
 // You can disable use of D3DCompile to make building this easier sometimes,
 // since D3DCompile is primarily used to catch .sks shader files built from

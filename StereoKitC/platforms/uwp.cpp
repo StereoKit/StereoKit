@@ -13,7 +13,6 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
-#include "../device.h"
 #include "../sk_math.h"
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
@@ -61,6 +60,7 @@ struct window_t {
 	wchar_t*                title;
 	HWND                    handle;
 	bool                    run_thread;
+	bool                    thread_running;
 	bool                    initialized;
 	bool                    valid;
 	array_t<window_event_t> events;
@@ -78,13 +78,8 @@ struct window_t {
 ///////////////////////////////////////////
 
 array_t<window_t> uwp_windows            = {};
-platform_win_t    uwp_platform_win       = -1;
-
-tex_t             uwp_target             = {};
-system_t         *uwp_render_sys         = nullptr;
 bool              uwp_keyboard_showing   = false;
 bool              uwp_keyboard_show_evts = false;
-
 bool              uwp_mouse_set;
 vec2              uwp_mouse_set_delta;
 vec2              uwp_mouse_frame_get;
@@ -92,8 +87,11 @@ float             uwp_mouse_scroll = 0;
 
 ///////////////////////////////////////////
 
-void uwp_target_resize          (int32_t width, int32_t height);
-void uwp_physical_key_interact  ();
+// Constants for the registry key and value names
+const wchar_t* REG_KEY_NAME = L"Software\\StereoKit Simulator";
+
+///////////////////////////////////////////
+
 void uwp_on_corewindow_character(CoreWindow     const&, CharacterReceivedEventArgs const& args);
 void uwp_on_corewindow_keypress (CoreDispatcher const&, AcceleratorKeyEventArgs    const& args);
 
@@ -103,13 +101,16 @@ void platform_win_add_event     (platform_win_t win_id, window_event_t evt);
 ///////////////////////////////////////////
 
 bool uwp_init() {
-	uwp_render_sys = systems_find("FrameRender");
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void uwp_shutdown() {
+	for (int32_t i = 0; i < uwp_windows.count; i++) {
+		platform_win_destroy(i);
+	}
+	uwp_windows.free();
 }
 
 ///////////////////////////////////////////
@@ -138,32 +139,9 @@ bool uwp_start_post_xr() {
 void uwp_step_begin_xr() {
 }
 
-
 ///////////////////////////////////////////
 
 bool uwp_start_flat() {
-	const sk_settings_t* settings = sk_get_settings_ref();
-	device_data.display_blend = display_blend_opaque;
-
-	uwp_platform_win = platform_win_make(settings->app_name, { settings->flatscreen_pos_x, settings->flatscreen_pos_y, settings->flatscreen_width, settings->flatscreen_height }, platform_surface_swapchain);
-	if (uwp_platform_win == -1)
-		return false;
-
-	skg_swapchain_t *swapchain = platform_win_get_swapchain(uwp_platform_win);
-	device_data.display_width  = swapchain->width;
-	device_data.display_height = swapchain->height;
-
-	tex_format_ color_fmt = tex_format_rgba32;
-	tex_format_ depth_fmt = render_preferred_depth_fmt();
-
-	uwp_target = tex_create(tex_type_rendertarget, color_fmt);
-	tex_set_id       (uwp_target, "sk/platform/swapchain");
-	tex_set_color_arr(uwp_target, swapchain->width, swapchain->height, nullptr, 1, nullptr, 8);
-
-	tex_t zbuffer = tex_add_zbuffer(uwp_target, depth_fmt);
-	tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-	tex_release(zbuffer);
-
 	return true;
 }
 
@@ -179,78 +157,19 @@ void uwp_step_begin_flat() {
 			platform_win_add_event((platform_win_t)i, e);
 		}
 	}
-
-	platform_evt_       evt  = {};
-	platform_evt_data_t data = {};
-	while (platform_win_next_event(uwp_platform_win, &evt, &data)) {
-		switch (evt) {
-		case platform_evt_app_focus:    sk_set_app_focus (data.app_focus); break;
-		case platform_evt_key_press:    input_key_inject_press  (data.press_release); uwp_physical_key_interact(); break;
-		case platform_evt_key_release:  input_key_inject_release(data.press_release); uwp_physical_key_interact(); break;
-		case platform_evt_character:    input_text_inject_char  (data.character);                                  break;
-		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
-		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
-		case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) uwp_mouse_scroll += data.scroll;              break;
-		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       uwp_target_resize(data.resize.width, data.resize.height); break;
-		case platform_evt_none: break;
-		default: break;
-		}
-	}
-
-	uwp_mouse_frame_get = uwp_windows[uwp_platform_win].mouse_point;
+	if (uwp_windows.count > 0)
+		uwp_mouse_frame_get = uwp_windows[0].mouse_point;
 }
 
 ///////////////////////////////////////////
 
 void uwp_step_end_flat() {
-	skg_event_begin("Setup");
-
-	skg_draw_begin();
-
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	color128 color = render_get_clear_color_ln();
-	skg_tex_target_bind(&uwp_target->tex);
-	skg_target_clear(true, &color.r);
-
-	input_update_poses(true);
-
-	skg_event_end();
-	skg_event_begin("Draw");
-
-	matrix view = render_get_cam_final        ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
-
-	skg_event_end();
-	skg_event_begin("Present");
-
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(uwp_platform_win);
-	skg_tex_copy_to_swapchain(&uwp_target->tex, swapchain);
-
-	uwp_render_sys->profile_frame_duration = stm_since(uwp_render_sys->profile_frame_start);
-	skg_swapchain_present(swapchain);
-
-	skg_event_end();
 }
 
 ///////////////////////////////////////////
 
 void uwp_stop_flat() {
 	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
-	tex_release(uwp_target);
-}
-
-///////////////////////////////////////////
-
-void uwp_physical_key_interact() {
-	// On desktop, we want to hide soft keyboards on physical presses
-	input_set_last_physical_keypress_time(time_totalf_unscaled());
-	platform_keyboard_show(false, text_context_text);
 }
 
 ///////////////////////////////////////////
@@ -345,21 +264,15 @@ bool uwp_keyboard_visible() {
 }
 
 ///////////////////////////////////////////
+// Window code                           //
+///////////////////////////////////////////
 
-void uwp_target_resize(int32_t width, int32_t height) {
-	if (uwp_target == nullptr || (width == tex_get_width(uwp_target) && height == tex_get_height(uwp_target)))
-		return;
-
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(uwp_target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
-}
+platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
 
 ///////////////////////////////////////////
-// Window code                           //
+
+platform_win_t platform_win_get_existing() { return -1; }
+
 ///////////////////////////////////////////
 
 class UWPWindow : public winrt::implements<UWPWindow, IFrameworkView> {
@@ -426,15 +339,6 @@ public:
 		m_logicalHeight      = window.Bounds().Height;
 		m_nativeOrientation  = currentDisplayInformation.NativeOrientation ();
 		m_currentOrientation = currentDisplayInformation.CurrentOrientation();
-		/*device_data.display_width = (int32_t)dips_to_pixels(m_logicalWidth, m_DPI);
-		device_data.display_height = (int32_t)dips_to_pixels(m_logicalHeight, m_DPI);
-
-		DXGI_MODE_ROTATION rotation = ComputeDisplayRotation();
-		if (rotation == DXGI_MODE_ROTATION_ROTATE90 || rotation == DXGI_MODE_ROTATION_ROTATE270) {
-			int32_t swap_tmp = device_data.display_width;
-			device_data.display_width  = device_data.display_height;
-			device_data.display_height = swap_tmp;
-		}*/
 		HandleWindowSizeChanged();
 
 		// Get the HWND of the UWP window
@@ -458,7 +362,8 @@ public:
 	///////////////////////////////////////////
 
 	void Run() {
-		uwp_windows[win_id].run_thread = true;
+		uwp_windows[win_id].run_thread     = true;
+		uwp_windows[win_id].thread_running = true;
 		while (uwp_windows[win_id].run_thread == true) {
 			auto core_window = CoreWindow::GetForCurrentThread();
 			core_window.Dispatcher().ProcessEvents(m_visible
@@ -489,6 +394,7 @@ public:
 
 			Sleep(1);
 		}
+		uwp_windows[win_id].thread_running = false;
 	}
 
 protected:
@@ -576,6 +482,7 @@ protected:
 	void OnWheelChanged(CoreWindow const & /*sender*/, PointerEventArgs const &args) {
 		window_event_t e = { platform_evt_scroll };
 		e.data.scroll = (float)args.CurrentPoint().Properties().MouseWheelDelta();
+		uwp_mouse_scroll += e.data.scroll;
 		platform_win_add_event(win_id, e);
 	}
 
@@ -760,6 +667,12 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 void platform_win_destroy(platform_win_t window) {
 	window_t* win = &uwp_windows[window];
 
+	// Message the window thread to stop, and then wait for it.
+	win->run_thread = false;
+	while (win->thread_running == true) {
+		Sleep(1);
+	}
+
 	if (win->has_swapchain) {
 		skg_swapchain_destroy(&win->swapchain);
 	}
@@ -802,14 +715,6 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_get_existing() { return -1; }
-
-///////////////////////////////////////////
-
 skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return uwp_windows[window].has_swapchain ? &uwp_windows[window].swapchain : nullptr; }
 
 ///////////////////////////////////////////
@@ -835,6 +740,37 @@ void platform_win_add_event(platform_win_t win_id, window_event_t evt) {
 	mtx_lock(&uwp_windows[win_id].event_mtx);
 	uwp_windows[win_id].events.add(evt);
 	mtx_unlock(&uwp_windows[win_id].event_mtx);
+}
+
+///////////////////////////////////////////
+
+bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
+	HKEY reg_key = {};
+	if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) != ERROR_SUCCESS)
+		return false;
+
+	wchar_t w_key[64];
+	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
+
+	RegSetValueExW(reg_key, w_key, 0, REG_BINARY, (const BYTE*)data, data_size);
+	RegCloseKey   (reg_key);
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
+	HKEY reg_key = {};
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) != ERROR_SUCCESS)
+		return false;
+
+	wchar_t w_key[64];
+	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
+
+	DWORD data_size = buffer_size;
+	RegQueryValueExW(reg_key, w_key, 0, nullptr, (BYTE*)ref_buffer, &data_size);
+	RegCloseKey     (reg_key);
+	return true;
 }
 
 }
