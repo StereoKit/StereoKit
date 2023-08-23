@@ -57,7 +57,7 @@ jobs:
       uses: nttld/setup-ndk@v1
       id: setup-ndk
       with:
-        ndk-version: r21e
+        ndk-version: r25c
         local-cache: true
 
     - name: Build Native Android ARM64
