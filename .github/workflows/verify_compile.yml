@@ -30,7 +30,7 @@ jobs:
       run: cmake --workflow --preset Uwpx64Fast
 
   native-linux-android-dotnet:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CPM_SOURCE_CACHE: .deps_cache
 
