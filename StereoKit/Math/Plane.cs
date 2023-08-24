@@ -24,10 +24,12 @@ namespace StereoKit
 
 		/// <summary>Implicit conversion from the System.Numerics backing type.</summary>
 		/// <param name="p">A System.Numerics plane.</param>
+		/// <returns>Returns a copy of the given Plane.</returns>
 		public static implicit operator Plane(System.Numerics.Plane p) => new Plane(p.Normal, p.D);
 		/// <summary>Implicit conversion to the System.Numerics backing Plane
 		/// type.</summary>
 		/// <param name="p">The StereoKit Plane.</param>
+		/// <returns>Returns a reference of the internal, wrapped Systems.Numerics type.</returns>
 		public static implicit operator System.Numerics.Plane(Plane p) => p.p;
 
 		/// <summary>Creates a Plane directly from the ax + by + cz + d = 0
