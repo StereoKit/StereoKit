@@ -429,6 +429,9 @@ namespace StereoKit
 		/// Note that this may change during a session, the user may put down
 		/// their controllers, automatically switching to hands, or visa versa.
 		/// </summary>
+		/// <param name="hand">Do  you want the left or right hand? 0 is left,
+		/// and 1 is right.</param>
+		/// <returns>Returns information about hand tracking data source.</returns>
 		public static HandSource HandSource(Handed hand) => NativeAPI.input_hand_source(hand);
 
 		/// <summary>This allows you to completely override the hand's pose 
