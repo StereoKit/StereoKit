@@ -45,6 +45,8 @@
 		<!-- Win32 DLLs -->
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll" PackagePath="runtimes/win-x64/native/" Condition="Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll')"/>
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Win32/x64/Release/StereoKitC.pdb" PackagePath="runtimes/win-x64/native/" Condition="Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.pdb')"/>
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.dll" PackagePath="runtimes/win-arm64/native/" Condition="Exists('../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.dll')"/>
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.pdb" PackagePath="runtimes/win-arm64/native/" Condition="Exists('../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.pdb')"/>
 
 		<!-- Android Libraries -->
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so"             PackagePath="runtimes/android-arm64/native/"         Condition="Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so')" />
@@ -86,16 +88,18 @@
 	<!-- Error if we're missing binaries for release builds! -->
 	<Target Name="SKErrPlatformFiles" AfterTargets="BeforeBuild" BeforeTargets="CoreBuild" Condition="'$(GeneratePackageOnBuild)'=='true' and '$(SKIgnoreMissingBinaries)' != 'true'">
 		<Error Condition="!Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
+		<Error Condition="!Exists('../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.dll')"         Text="[SK NuGet] Missing Win32 ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so')"    Text="[SK NuGet] Missing Android x64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
-		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"     Text="[SK NuGet] Missing Linux ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/x64/Release/StereoKitC.dll')"             Text="[SK NuGet] Missing UWP x64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/ARM64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing UWP ARM64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll')"             Text="[SK NuGet] Missing UWP ARM binaries." />
 	</Target>
 	<Target Name="SKWarnPlatformFiles" AfterTargets="BeforeBuild" BeforeTargets="CoreBuild" Condition="'$(GeneratePackageOnBuild)'=='true'">
 		<Warning Condition="!Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/Win32/ARM64/Release/StereoKitC.dll')"         Text="[SK NuGet] Missing Win32 ARM64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Android/arm64-v8a/Release/libStereoKitC.so')" Text="[SK NuGet] Missing Android ARM64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so')"    Text="[SK NuGet] Missing Android x64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
