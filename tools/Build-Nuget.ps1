@@ -29,8 +29,13 @@ function Build-Preset {
     param($preset, $presetName, [switch]$wsl = $false)
 
     Write-Host "--- Beginning build: $presetName ---" -ForegroundColor green
-    if ($wsl -eq $true) { & wsl cmake --workflow --preset $preset }
-    else                { & cmake --workflow --preset $preset }
+    if ($wsl -eq $true) { 
+        & wsl cmake --preset $preset
+        & wsl cmake --build --preset $preset
+    } else {
+        & cmake --preset $preset
+        & cmake --build --preset $preset
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host '--- $presetName build failed! Stopping build! ---' -ForegroundColor red
         Pop-Location
@@ -95,11 +100,12 @@ __      __          _
 
 "@ -ForegroundColor White
 
-    Build-Preset -preset Win32x64Release -presetName 'Win32 x64'
+    Build-Preset -preset Win32_x64_Release -presetName 'Win32 x64'
+    Build-Preset -preset Win32_Arm64_Release -presetName 'Win32 Arm64'
     if ($buildWindowsUWP) {
-        Build-Preset -preset Uwpx64Release   -presetName 'UWP x64'
-        Build-Preset -preset UwpArm32Release -presetName 'UWP ARM32'
-        Build-Preset -preset UwpArm64Release -presetName 'UWP ARM64'
+        Build-Preset -preset Uwp_x64_Release   -presetName 'UWP x64'
+        Build-Preset -preset Uwp_Arm32_Release -presetName 'UWP ARM32'
+        Build-Preset -preset Uwp_Arm64_Release -presetName 'UWP ARM64'
     }
 }
 
@@ -114,7 +120,7 @@ if ($buildLinux) {
 "@ -ForegroundColor White
 
     # Build-Preset -preset LinuxArm64Release -presetName 'Linux ARM64' -wsl
-    Build-Preset -preset Linuxx64Release -presetName 'Linux x64' -wsl
+    Build-Preset -preset Linux_x64_Release -presetName 'Linux x64' -wsl
 }
 
 #### Build Android ########################
@@ -128,8 +134,8 @@ if ($buildAndroid) {
                       
 "@ -ForegroundColor White
 
-    Build-Preset -preset Androidx64Release -presetName 'Android x64'
-    Build-Preset -preset AndroidArm64Release -presetName 'Android arm64-v8a'
+    Build-Preset -preset Android_x64_Release -presetName 'Android x64'
+    Build-Preset -preset Android_Arm64_Release -presetName 'Android arm64-v8a'
 }
 
 #### Run tests ########################
