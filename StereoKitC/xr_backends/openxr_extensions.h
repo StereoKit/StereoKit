@@ -139,7 +139,7 @@ namespace sk {
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
 	_(MSFT_scene_understanding,          true) \
-	_(PICO_controller_interaction,       true) \
+	_(BD_controller_interaction,         true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
 	_(EXTX_overlay,                      true)
 

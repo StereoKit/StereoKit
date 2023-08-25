@@ -419,6 +419,7 @@ bool oxri_init() {
 
 	// Bytedance PICO Neo3
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+	if (xr_ext_available.BD_controller_interaction)
 	{
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
@@ -459,6 +460,7 @@ bool oxri_init() {
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 	// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 	// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
+	if (xr_ext_available.BD_controller_interaction)
 	{
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },

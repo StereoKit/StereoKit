@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
+	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="32" />
 	
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:label="@string/app_name" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
 		<!-- Oculus -->
 		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
+		<uses-native-library android:name="libopenxr_forwardloader.oculus.so" android:required="false"/>
 		<!-- Pico -->
 		<meta-data android:name="pvr.app.type" android:value="vr" />
 		<meta-data android:name="handtracking" android:value="1" />
@@ -41,14 +42,13 @@
 	</queries>
 
 	<!-- Oculus specific items -->
-	<uses-permission android:name="com.oculus.permission.HAND_TRACKING" android:required="false"/>
-	<uses-feature    android:name="oculus.software.handtracking"        android:required="false"/>
-	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH"      android:required="false"/>
-	<uses-feature    android:name="com.oculus.software.body_tracking"   android:required="false"/>
-	<uses-permission android:name="com.oculus.permission.BODY_TRACKING" android:required="false"/>
-	<uses-feature    android:name="oculus.software.face_tracking"       android:required="false"/>
-	<uses-permission android:name="com.oculus.permission.FACE_TRACKING" android:required="false"/>
-	<uses-feature    android:name="oculus.software.eye_tracking"        android:required="false"/>
-	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"  android:required="false"/>
-	<uses-feature    android:name="com.oculus.experimental.enabled"     android:required="false"/>
+	<uses-permission android:name="com.oculus.permission.HAND_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.BODY_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.FACE_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"/>
+	<uses-feature    android:name="oculus.software.handtracking"      android:required="false"/>
+	<uses-feature    android:name="com.oculus.software.body_tracking" android:required="false"/>
+	<uses-feature    android:name="oculus.software.face_tracking"     android:required="false"/>
+	<uses-feature    android:name="oculus.software.eye_tracking"      android:required="false"/>
+	<uses-feature    android:name="com.oculus.experimental.enabled"   android:required="false"/>
 </manifest>

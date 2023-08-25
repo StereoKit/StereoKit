@@ -2103,7 +2103,7 @@ SK_API void                  input_hand_visible      (handed_ hand, bool32_t vis
 SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
-SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
+SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove(hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear (void);
 

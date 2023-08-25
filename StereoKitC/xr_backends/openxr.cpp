@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 
@@ -77,7 +83,6 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
-display_blend_ xr_valid_blends   = display_blend_none;
 bool           xr_system_created = false;
 bool           xr_system_success = false;
 
@@ -580,7 +585,8 @@ bool openxr_init() {
 	// valid data, so we'll wait for that here.
 	// TODO: Loop here may be optional, but some platforms may need it? Waiting
 	// for some feedback here.
-	int32_t ref_space_tries = 10;
+	// - HTC Vive XR Elite requires around 50 frames
+	int32_t ref_space_tries = 1000;
 	while (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
 		ref_space_tries--;
 		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
@@ -914,7 +920,7 @@ bool openxr_poll_events() {
 			case XR_SESSION_STATE_READY: {
 				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
-				begin_info.primaryViewConfigurationType = xr_display_types[0];
+				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				if (xr_display_types.count > 1) {

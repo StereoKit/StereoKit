@@ -24,13 +24,17 @@ jobs:
           .deps_cache
 
     - name: Build Native Win32 x64
-      run: cmake --workflow --preset Win32x64Fast
+      run: |
+        cmake --preset Win32_x64_Release_Fast
+        cmake --build --preset Win32_x64_Release_Fast
 
     - name: Build Native UWP x64
-      run: cmake --workflow --preset Uwpx64Fast
+      run: |
+        cmake --preset Uwp_x64_Release_Fast
+        cmake --build --preset Uwp_x64_Release_Fast
 
   native-linux-android-dotnet:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CPM_SOURCE_CACHE: .deps_cache
 
@@ -48,20 +52,24 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+        sudo apt-get install clang-12 lld-12 libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
 
     - name: Build Native Linux x64
-      run: cmake --workflow --preset Linuxx64Fast
+      run: |
+        cmake --preset Linux_x64_Release_Fast
+        cmake --build --preset Linux_x64_Release_Fast
 
     - name: Set up Android NDK
       uses: nttld/setup-ndk@v1
       id: setup-ndk
       with:
-        ndk-version: r21e
+        ndk-version: r25c
         local-cache: true
 
     - name: Build Native Android ARM64
-      run: cmake --workflow --preset AndroidArm64Fast
+      run: |
+        cmake --preset Android_Arm64_Release_Fast
+        cmake --build --preset Android_Arm64_Release_Fast
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
