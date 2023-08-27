@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "simulator.h"
 
 #include "../_stereokit.h"
@@ -28,8 +33,8 @@ platform_win_t sim_window;
 tex_t          sim_target;
 system_t*      sim_render_sys;
 
-const float sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
-const vec2  sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement to rotation;
+const float    sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
+const vec2     sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement to rotation;
 
 ///////////////////////////////////////////
 
@@ -45,6 +50,7 @@ bool simulator_init() {
 	device_data.has_eye_gaze      = true;
 	device_data.tracking          = device_tracking_6dof;
 	device_data.display_blend     = display_blend_opaque;
+	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Simulator");
 
 	sim_head_rot     = { -21, 0.0001f, 0 };
@@ -138,6 +144,8 @@ void simulator_step_begin() {
 		}
 	}
 
+	input_step();
+
 	if (simulator_is_simulating_movement()) {
 		// Get key based movement
 		vec3 movement = {};
@@ -182,18 +190,14 @@ void simulator_step_begin() {
 		sim_mouse_look = false;
 	}
 
-	if (sk_get_settings_ref()->disable_flatscreen_mr_sim) {
-		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, false);
-	} else {
-		bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
-		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
-		ray_t ray = {};
-		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
-			input_eyes_pose_world.position    = ray.pos;
-			input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
-			input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
-			input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
-		}
+	bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
+	input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
+	ray_t ray = {};
+	if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
+		input_eyes_pose_world.position    = ray.pos;
+		input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
+		input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
+		input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
 	}
 
 	pointer_t *pointer_head = input_get_pointer(sim_gaze_pointer);

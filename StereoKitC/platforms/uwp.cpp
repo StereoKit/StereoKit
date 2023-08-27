@@ -100,13 +100,25 @@ void platform_win_add_event     (platform_win_t win_id, window_event_t evt);
 
 ///////////////////////////////////////////
 
-bool uwp_init() {
+bool platform_impl_init() {
+	// This only works with WMR, and will crash elsewhere
+	/*try {
+		CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
+		CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+			CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
+			});
+	}
+	catch (...) {
+		log_warn("Keyboard input not available through this runtime.");
+	}*/
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void uwp_shutdown() {
+void platform_impl_shutdown() {
+	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
+
 	for (int32_t i = 0; i < uwp_windows.count; i++) {
 		platform_win_destroy(i);
 	}
@@ -115,39 +127,7 @@ void uwp_shutdown() {
 
 ///////////////////////////////////////////
 
-bool uwp_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool uwp_start_post_xr() {
-	// This only works with WMR, and will crash elsewhere
-	try {
-		CoreApplication::MainView().CoreWindow().Dispatcher().AcceleratorKeyActivated(uwp_on_corewindow_keypress);
-		CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
-			CoreApplication::MainView().CoreWindow().CharacterReceived(uwp_on_corewindow_character);
-		});
-	} catch (...) {
-		log_warn("Keyboard input not available through this runtime.");
-	}
-	return true;
-}
-
-///////////////////////////////////////////
-
-void uwp_step_begin_xr() {
-}
-
-///////////////////////////////////////////
-
-bool uwp_start_flat() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void uwp_step_begin_flat() {
+void platform_impl_step() {
 	for (int32_t i = 0; i < uwp_windows.count; i++) {
 		if (!uwp_windows[i].resize_pending) continue;
 		uwp_windows[i].resize_pending = false;
@@ -159,17 +139,6 @@ void uwp_step_begin_flat() {
 	}
 	if (uwp_windows.count > 0)
 		uwp_mouse_frame_get = uwp_windows[0].mouse_point;
-}
-
-///////////////////////////////////////////
-
-void uwp_step_end_flat() {
-}
-
-///////////////////////////////////////////
-
-void uwp_stop_flat() {
-	winrt::Windows::ApplicationModel::Core::CoreApplication::Exit();
 }
 
 ///////////////////////////////////////////
@@ -737,6 +706,7 @@ recti_t platform_win_rect(platform_win_t window_id) {
 ///////////////////////////////////////////
 
 void platform_win_add_event(platform_win_t win_id, window_event_t evt) {
+	if (uwp_windows[win_id].run_thread == false) return;
 	mtx_lock(&uwp_windows[win_id].event_mtx);
 	uwp_windows[win_id].events.add(evt);
 	mtx_unlock(&uwp_windows[win_id].event_mtx);

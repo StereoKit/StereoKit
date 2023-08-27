@@ -77,7 +77,7 @@ void platform_check_events ();
 
 ///////////////////////////////////////////
 
-bool linux_init() {
+bool platform_impl_init() {
 	linux_init_key_lookups();
 
 	xwayland = getenv("WAYLAND_DISPLAY") != nullptr;
@@ -87,7 +87,7 @@ bool linux_init() {
 
 ///////////////////////////////////////////
 
-void linux_shutdown() {
+void platform_impl_shutdown() {
 	for (int32_t i = 0; i < linux_windows.count; i++) {
 		platform_win_destroy(i);
 	}
@@ -100,43 +100,10 @@ void linux_shutdown() {
 
 ///////////////////////////////////////////
 
-bool linux_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool linux_start_post_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void linux_step_begin_xr() {
+void platform_impl_step() {
 	platform_check_events();
 }
 
-///////////////////////////////////////////
-
-bool linux_start_flat() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void linux_stop_flat() {
-}
-
-///////////////////////////////////////////
-
-void linux_step_begin_flat() {
-	platform_check_events();
-}
-
-///////////////////////////////////////////
-
-void linux_step_end_flat() {
-}
 
 ///////////////////////////////////////////
 // Window code                           //

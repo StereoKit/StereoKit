@@ -31,6 +31,7 @@ struct window_t {
 	ANativeWindow*          window;
 	skg_swapchain_t         swapchain;
 	bool                    has_swapchain;
+	bool                    uses_swapchain;
 };
 
 JavaVM           *android_vm                = nullptr;
@@ -40,9 +41,7 @@ AAssetManager    *android_asset_manager     = nullptr;
 ANativeWindow    *android_next_window       = nullptr;
 jobject           android_next_window_xam   = nullptr;
 bool              android_next_win_ready    = false;
-system_t         *android_render_sys        = nullptr;
 window_t          android_window            = {};
-tex_t             android_target            = {};
 
 ///////////////////////////////////////////
 
@@ -66,7 +65,6 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 bool android_init() {
 	const sk_settings_t* settings = sk_get_settings_ref();
 
-	android_render_sys = systems_find("FrameRender");
 	android_activity   = (jobject)settings->android_activity;
 	if (android_vm == nullptr)
 		android_vm = (JavaVM*)settings->android_java_vm;
@@ -107,7 +105,7 @@ bool android_init() {
 
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
-	jclass    activity_class = android_env->GetObjectClass(android_activity);
+	jclass    activity_class           = android_env->GetObjectClass(android_activity);
 	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
 	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
@@ -121,7 +119,7 @@ bool android_init() {
 	// Android has no universally supported openxr_loader yet, so on this
 	// platform we don't static link it, and instead provide devs a way to ship
 	// other loaders.
-	if (settings->display_preference == display_mode_mixedreality && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
+	if (settings->mode == app_mode_xr && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
 		log_fail_reason(95, log_error, "openxr_loader failed to load!");
 		return false;
 	}
@@ -132,31 +130,30 @@ bool android_init() {
 
 ///////////////////////////////////////////
 
-void android_create_swapchain() {
-	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, device_data.display_width, device_data.display_height);
-	android_swapchain_created = true;
-	device_data.display_width  = android_swapchain.width;
-	device_data.display_height = android_swapchain.height;
+void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
+	if (window_id != 1) return;
+	window_t * win = &android_window;
 
-	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-}
+	width  = maxi(1, width);
+	height = maxi(1, height);
 
-///////////////////////////////////////////
+	window_event_t e = { platform_evt_resize };
+	e.data.resize = { width, height };
+	win->events.add(e);
 
-void android_resize_swapchain() {
-	int32_t height = maxi(1,ANativeWindow_getWidth (android_window));
-	int32_t width  = maxi(1,ANativeWindow_getHeight(android_window));
+	if (win->uses_swapchain == false) return;
 
-	if (!android_swapchain_created || (width == device_data.display_width && height == device_data.display_height))
-		return;
+	if (win->has_swapchain == false) {
+		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+		win->swapchain = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, width, height);
+		win->has_swapchain = true;
 
-	log_diagf("Resized swapchain: %dx%d", width, height);
-	skg_swapchain_resize(&android_swapchain, width, height);
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	render_update_projection();
+		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	}
+	else if (width == win->swapchain.width && height == win->swapchain.height) {
+		skg_swapchain_resize(&win->swapchain, width, height);
+	}
 }
 
 ///////////////////////////////////////////
@@ -188,21 +185,12 @@ bool android_start_post_xr() {
 ///////////////////////////////////////////
 
 bool android_start_flat() {
-	device_data.display_blend = display_blend_opaque;
-	if (android_window) {
-		android_create_swapchain();
-	}
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void android_stop_flat() {
-	if (android_window) {
-		android_swapchain_created = false;
-		skg_swapchain_destroy(&android_swapchain);
-		android_window = nullptr;
-	}
 }
 
 ///////////////////////////////////////////
@@ -220,78 +208,42 @@ void android_step_begin_xr() {
 ///////////////////////////////////////////
 
 void android_step_begin_flat() {
-	if (android_next_win_ready) {
-		// If we got our window from xamarin, it's a jobject, and needs
-		// converted into an ANativeWindow first!
-		if (android_next_window_xam != nullptr) {
-			android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
-			android_next_window_xam = nullptr;
-		}
+	if (!android_next_win_ready) return;
 
-		if (android_window != nullptr && android_window == android_next_window) {
-			// It's the same window, lets just resize it
-			android_resize_swapchain();
-		} else {
-			// Completely new window! Destroy the old swapchain, and make a 
-			// new one.
-			if (android_window != nullptr && android_next_window != nullptr)
-				skg_swapchain_destroy(&android_swapchain);
-
-			if (android_next_window) {
-				android_window = (ANativeWindow*)android_next_window;
-				if (device_data.display_type == display_type_flatscreen)
-					android_create_swapchain();
-			}
-		}
-		android_next_win_ready = false;
-		android_next_window    = nullptr;
+	// If we got our window from xamarin, it's a jobject, and needs
+	// converted into an ANativeWindow first!
+	if (android_next_window_xam != nullptr) {
+		android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
+		android_next_window_xam = nullptr;
 	}
+
+	if (android_window.window && android_window.window == android_next_window) {
+		// It's the same window, lets just resize it
+		int32_t width  = ANativeWindow_getWidth (android_window.window);
+		int32_t height = ANativeWindow_getHeight(android_window.window);
+		platform_win_resize(1, width, height);
+	} else {
+		// Completely new window! Destroy the old swapchain, and make a
+		// new one.
+		if (android_window.has_swapchain) {
+			android_window.has_swapchain = false;
+			skg_swapchain_destroy(&android_window.swapchain);
+		}
+		android_window.window = (ANativeWindow*)android_next_window;
+
+		if (android_window.window) {
+			int32_t width  = ANativeWindow_getWidth (android_window.window);
+			int32_t height = ANativeWindow_getHeight(android_window.window);
+			platform_win_resize(1, width, height);
+		}
+	}
+	android_next_win_ready = false;
+	android_next_window    = nullptr;
 }
 
 ///////////////////////////////////////////
 
 void android_step_end_flat() {
-	if (!android_window)
-		return;
-
-	skg_draw_begin();
-	color128 color = render_get_clear_color_ln();
-	skg_swapchain_bind(&android_swapchain);
-	skg_target_clear(true, &color.r);
-
-	matrix view = render_get_cam_final        ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
-	
-	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
-	skg_swapchain_present(&android_swapchain);
-}
-
-///////////////////////////////////////////
-
-void android_target_resize(tex_t *target, int32_t width, int32_t height) {
-	if (*target == nullptr) {
-		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id       (*target, "sk/platform/swapchain");
-		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-
-		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
-		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-		tex_release(zbuffer);
-	}
-	
-	device_data.display_width  = width;
-	device_data.display_height = height;
-
-	if (width == tex_get_width(*target) && height == tex_get_height(*target))
-		return;
-
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
 }
 
 ///////////////////////////////////////////
@@ -405,12 +357,12 @@ platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
 	// Not all windows need a swapchain, but here's where we make 'em for those
 	// that do.
 	if (surface_type == platform_surface_swapchain) {
-		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-		win->swapchain     = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, final_width, final_height);
-		win->has_swapchain = true;
-
-		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+		win->uses_swapchain = true;
+		if (win->window) {
+			int32_t width  = ANativeWindow_getWidth (win->window);
+			int32_t height = ANativeWindow_getHeight(win->window);
+			platform_win_resize(1, width, height);
+		}
 	}
 	return 1;
 }
@@ -431,28 +383,13 @@ void platform_win_destroy(platform_win_t window) {
 
 ///////////////////////////////////////////
 
-void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
-	if (window != 1) return
-	window_t* win = &android_window;
-
-	width  = maxi(1, width);
-	height = maxi(1, height);
-
-	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
-		return;
-
-	skg_swapchain_resize(&win->swapchain, width, height);
-}
-
-///////////////////////////////////////////
-
 void platform_check_events() {
 }
 
 ///////////////////////////////////////////
 
 bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
-		if (window != 1) return;
+	if (window_id != 1) return false;
 	window_t* win = &android_window;
 
 	if (win->events.count > 0) {
@@ -475,12 +412,26 @@ skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
 ///////////////////////////////////////////
 
 recti_t platform_win_rect(platform_win_t window_id) {
-	if (window != 1) return;
+	if (window_id != 1) return {};
 	window_t* win = &android_window;
 
 	return recti_t{ 0, 0,
 		win->swapchain.width,
 		win->swapchain.height };
+}
+
+///////////////////////////////////////////
+
+bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
+	// TODO: find an alternative to the registry for Android
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
+	// TODO: find an alternative to the registry for Android
+	return false;
 }
 
 } // namespace sk

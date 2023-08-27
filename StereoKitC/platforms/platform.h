@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #pragma once
 #include "../stereokit.h"
 #include "../libraries/sk_gpu.h"
@@ -7,40 +12,30 @@ namespace sk {
 // Platform lifecycle:
 //
 //// Initialization
-// platform_init()
-// Mixed Reality:
-//    platform_start_pre_xr()
-//    openxr_init()
-//    platform_start_post_xr()
-// Flatscreen:
-//    platform_start_flat()
-//    simulator_init();
+// platform_impl_init()
+// [backend]_init()
 //
 //// Main loop
-// Mixed Reality:
-//    platform_step_begin_xr()
-// Flatscreen:
-//    platform_step_begin_flat()
-//    simulator_step_begin();
-//    simulator_step_end();
-//    platform_step_end_flat()
+// platform_impl_step()
+// [backend]_step_begin();
+// [backend]_step_end();
 //
 //// Shutdown
-// Mixed Reality:
-//    openxr_shutdown()
-// Flatscreen:
-//    simulator_shutdown();
-//    platform_stop_flat()
+// [backend]_shutdown()
 // platform_shutdown()
 
 bool platform_init          ();
 void platform_shutdown      ();
 void platform_set_window    (void *window);
 void platform_set_window_xam(void *window);
-bool platform_set_mode      (display_type_ mode);
+bool platform_set_mode      (app_mode_ mode);
 void platform_step_begin    ();
 void platform_step_end      ();
 void platform_stop_mode     ();
+
+bool platform_impl_init();
+void platform_impl_shutdown();
+void platform_impl_step();
 
 ///////////////////////////////////////////
 

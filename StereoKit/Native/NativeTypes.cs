@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -14,7 +13,12 @@ namespace StereoKit
 
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
+		[Obsolete("displayPreference will be removed in v0.4, use SKSettings.mode instead.")]
 		public DisplayMode  displayPreference;
+		/// <summary>Which operation mode should we use for this app? Default
+		/// is XR, and by default the app will fall back to Simulator if XR
+		/// fails or is unavailable.</summary>
+		public AppMode      mode;
 		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 

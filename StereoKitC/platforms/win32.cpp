@@ -59,7 +59,7 @@ LRESULT platform_message_callback  (HWND hwnd, UINT message, WPARAM wParam, LPAR
 
 ///////////////////////////////////////////
 
-bool win32_init() {
+bool platform_impl_init() {
 	win32_hinst = GetModuleHandle(NULL);
 
 	// Find the icon from the exe itself
@@ -72,7 +72,7 @@ bool win32_init() {
 
 ///////////////////////////////////////////
 
-void win32_shutdown() {
+void platform_impl_shutdown() {
 	for (int32_t i = 0; i < win32_windows.count; i++) {
 		platform_win_destroy(i);
 	}
@@ -84,44 +84,8 @@ void win32_shutdown() {
 
 ///////////////////////////////////////////
 
-bool win32_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool win32_start_post_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void win32_step_begin_xr() {
+void platform_impl_step() {
 	platform_check_events();
-}
-
-///////////////////////////////////////////
-
-bool win32_start_flat() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void win32_stop_flat() {
-	win32_icon  = nullptr;
-	win32_hinst = nullptr;
-}
-
-///////////////////////////////////////////
-
-void win32_step_begin_flat() {
-	platform_check_events();
-}
-
-///////////////////////////////////////////
-
-void win32_step_end_flat() {
 }
 
 ///////////////////////////////////////////

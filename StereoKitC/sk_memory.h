@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #pragma once
 
 #include <stdint.h>
@@ -16,7 +21,7 @@ void  _sk_free      (void *memory);
 #define sk_free(memory) { _sk_free(memory); memory = nullptr; };
 
 #define sk_malloc_t(T, count) ((T*)sk_malloc ((count) * sizeof(T)))
-#define sk_calloc_t(T, count) ((T*)sk_calloc((count) * sizeof(T)))
+#define sk_malloc_zero_t(T, count) ((T*)sk_calloc((count) * sizeof(T)))
 #define sk_realloc_t(T, memory, count) ((T*)sk_realloc(memory, (count) * sizeof(T)))
 
 #else

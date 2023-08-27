@@ -67,11 +67,11 @@ To build with cmake:
 cmake --preset Linux_x64_Release
 cmake --build --preset Linux_x64_Release
 
-# Run the test app
+# Run the native test app
 ./bin/intermediate/cmake/Linux_x64_Release/StereoKitCTest
 
-# On WSL, run the test app with the software renderer
-LIBGL_ALWAYS_SOFTWARE=1 ./bin/intermediate/cmake/Linux_x64_Release/StereoKitCTest
+# To run the C# test app, you will need the .NET SDK installed
+dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTest.csproj
 
 # check /bin/distribute for final binary files
 ```

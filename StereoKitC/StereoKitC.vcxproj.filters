@@ -214,10 +214,16 @@
     <ClCompile Include="xr_backends\simulator.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\none.cpp">
+    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
+    <ClCompile Include="xr_backends\xr.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\offscreen.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\window.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
   </ItemGroup>
@@ -499,10 +505,16 @@
     <ClInclude Include="xr_backends\simulator.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\none.h">
+    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
+    <ClInclude Include="xr_backends\xr.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\window.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\offscreen.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>

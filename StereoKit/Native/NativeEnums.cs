@@ -23,6 +23,29 @@ namespace StereoKit
 		None         = 2,
 	}
 
+	/// <summary>Specifies a type of display mode StereoKit uses, like
+	/// Mixed Reality headset display vs. a PC display, or even just
+	/// rendering to an offscreen surface, or not rendering at all!</summary>
+	public enum AppMode {
+		/// <summary>No mode has been specified, default behavior will be used. StereoKit will
+		/// pick XR in this case.</summary>
+		None         = 0,
+		/// <summary>Creates an OpenXR or WebXR instance, and drives display/input through
+		/// that.</summary>
+		XR,
+		/// <summary>Creates a flat window, and simulates some XR functionality. Great for
+		/// development and debugging.</summary>
+		Simulator,
+		/// <summary>Creates a flat window and displays to that, but doesn't simulate XR at
+		/// all. You will need to control your own camera here. This can be useful
+		/// if using StereoKit for non-XR 3D applications.</summary>
+		Window,
+		/// <summary>No display at all! StereoKit won't even render to a texture unless
+		/// requested to. This may be good for running tests on a server, or doing
+		/// graphics related tool or CLI work.</summary>
+		Offscreen,
+	}
+
 	/// <summary>This is used to determine what kind of depth buffer
 	/// StereoKit uses!</summary>
 	public enum DepthMode {

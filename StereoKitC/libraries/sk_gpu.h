@@ -2708,6 +2708,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	EGLDisplay egl_display = EGL_NO_DISPLAY;
 	EGLContext egl_context;
 	EGLConfig  egl_config;
+	EGLSurface egl_temp_surface;
 #elif defined(_SKG_GL_LOAD_GLX)
 	#include <X11/Xutil.h>
 	#include <X11/Xlib.h>
@@ -3335,7 +3336,23 @@ int32_t gl_init_egl() {
 	egl_context = eglCreateContext      (egl_display, egl_config, nullptr, context_attribs);
 	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglCreateContext"  ); return 0; }
 
-	if (eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context) == EGL_FALSE) {
+	const char* egl_extensions       = eglQueryString(egl_display, EGL_EXTENSIONS);
+	bool        supports_surfaceless = egl_extensions != nullptr && strstr(egl_extensions, "EGL_KHR_surfaceless_context") != nullptr;
+
+	egl_temp_surface = nullptr;
+	if (supports_surfaceless == false) {
+		EGLint temp_buffer_attr[] = {
+			EGL_WIDTH,  1,
+			EGL_HEIGHT, 1,
+			EGL_NONE };
+		egl_temp_surface = eglCreatePbufferSurface(egl_display, egl_config, temp_buffer_attr);
+		if (egl_temp_surface == EGL_NO_SURFACE) {
+			skg_log(skg_log_critical, "Unable to create temporary EGL surface");
+			return -1;
+		}
+	}
+
+	if (eglMakeCurrent(egl_display, egl_temp_surface, egl_temp_surface, egl_context) == EGL_FALSE) {
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent");
 		return -1;
 	}
@@ -3491,6 +3508,12 @@ void skg_shutdown() {
 	ReleaseDC(gl_hwnd, gl_hdc);
 	wglDeleteContext(gl_hrc);
 #elif defined(_SKG_GL_LOAD_EGL)
+
+	if (egl_temp_surface) {
+		eglDestroySurface(egl_display, egl_temp_surface);
+		egl_temp_surface = nullptr;
+	}
+
 	if (egl_display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (egl_context != EGL_NO_CONTEXT) eglDestroyContext(egl_display, egl_context);
@@ -4375,8 +4398,7 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_EGL)
-	if (eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context) == EGL_FALSE)
-		skg_log(skg_log_critical, "Unable to eglMakeCurrent for swapchain bind");
+	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
 	skg_tex_target_bind(nullptr);
 #elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, (Drawable)swapchain->_x_window, glxContext);
@@ -4529,16 +4551,10 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 ///////////////////////////////////////////
 
 void skg_tex_copy_to_swapchain(const skg_tex_t *tex, skg_swapchain_t *destination) {
-	uint32_t result = glGetError();
-	while (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain pre error: %d", result); result = glGetError(); }
-	//skg_swapchain_bind(destination);
+	skg_swapchain_bind(destination);
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
-	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain tex error: %d", result); }
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain def error: %d", result); }
 	glBlitFramebuffer(0,0,tex->width,tex->height,0,0,tex->width,tex->height,  GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-	result = glGetError();
-	if (result != 0) { skg_logf(skg_log_critical, "skg_tex_copy_to_swapchain post error: %d", result); }
 }
 
 ///////////////////////////////////////////

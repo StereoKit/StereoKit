@@ -157,9 +157,9 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	log_set_filter(log_diagnostic);
 
 	sk_settings_t settings = {};
-	settings.app_name           = "StereoKit C";
-	settings.assets_folder      = "Assets";
-	settings.display_preference = display_mode_flatscreen;
+	settings.app_name      = "StereoKit C";
+	settings.assets_folder = "Assets";
+	settings.mode          = app_mode_xr;
 	if (!sk_init(settings))
 		return 1;
 

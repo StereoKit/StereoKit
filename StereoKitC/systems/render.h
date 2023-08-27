@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #pragma once
 
 #include "../stereokit.h"
@@ -38,6 +43,8 @@ tex_format_   render_preferred_depth_fmt  ();
 void          render_blit_to_bound        (material_t material);
 void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
+void          render_check_viewpoints     ();
+void          render_check_screenshots    ();
 
 bool          render_init                 ();
 void          render_step                 ();

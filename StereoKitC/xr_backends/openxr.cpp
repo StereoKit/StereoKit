@@ -350,6 +350,8 @@ bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
+	device_data.display_type = display_type_stereo;
+
 	// A number of other items also use the xr_time, so lets get this ready
 	// right away.
 	xr_time = openxr_acquire_time();
@@ -884,6 +886,7 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
+	input_step();
 }
 
 ///////////////////////////////////////////

@@ -380,10 +380,14 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/xr.h
+  StereoKitC/xr_backends/xr.cpp
   StereoKitC/xr_backends/simulator.h
   StereoKitC/xr_backends/simulator.cpp
-  StereoKitC/xr_backends/none.h
-  StereoKitC/xr_backends/none.cpp )
+  StereoKitC/xr_backends/window.h
+  StereoKitC/xr_backends/window.cpp
+  StereoKitC/xr_backends/offscreen.h
+  StereoKitC/xr_backends/offscreen.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h

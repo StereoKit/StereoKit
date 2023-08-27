@@ -130,6 +130,29 @@ typedef enum display_mode_ {
 	display_mode_none             = 2,
 } display_mode_;
 
+/*Specifies a type of display mode StereoKit uses, like
+  Mixed Reality headset display vs. a PC display, or even just
+  rendering to an offscreen surface, or not rendering at all!*/
+typedef enum app_mode_ {
+	/*No mode has been specified, default behavior will be used. StereoKit will
+	  pick XR in this case.*/
+	app_mode_none = 0,
+	/*Creates an OpenXR or WebXR instance, and drives display/input through
+	  that.*/
+	app_mode_xr,
+	/*Creates a flat window, and simulates some XR functionality. Great for
+	  development and debugging.*/
+	app_mode_simulator,
+	/*Creates a flat window and displays to that, but doesn't simulate XR at
+	  all. You will need to control your own camera here. This can be useful
+	  if using StereoKit for non-XR 3D applications.*/
+	app_mode_window,
+	/*No display at all! StereoKit won't even render to a texture unless
+	  requested to. This may be good for running tests on a server, or doing
+	  graphics related tool or CLI work.*/
+	app_mode_offscreen,
+} app_mode_;
+
 /*This is used to determine what kind of depth buffer
   StereoKit uses!*/
 typedef enum depth_mode_ {
@@ -381,6 +404,7 @@ typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
 	display_mode_  display_preference;
+	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
