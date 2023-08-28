@@ -155,7 +155,7 @@ if(SK_PHYSICS)
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
     GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1
     EXCLUDE_FROM_ALL YES
-    PATCH_COMMAND ${reactphysics_patch}
+    #PATCH_COMMAND ${reactphysics_patch}
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -651,22 +651,22 @@ endif()
 # For installing on Linux
 # find_package(PkgConfig)
 
-install(
-  TARGETS StereoKitC 
-  EXPORT  StereoKitC-targets
-)
-
-install(
-  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "tools/include/stereokit.hlsli"
-  DESTINATION include)
-
-install(
-  FILES       "tools/skshaderc" 
-  DESTINATION bin)
-
-install(
-  EXPORT      StereoKitC-targets
-  FILE        StereoKitCConfig.cmake
-  NAMESPACE   StereoKitC::
-  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/StereoKitC"
-)
+#install(
+#  TARGETS StereoKitC 
+#  EXPORT  StereoKitC-targets
+#)
+#
+#install(
+#  FILES       "StereoKitC/stereokit.h" "StereoKitC/stereokit_ui.h" "tools/include/stereokit.hlsli"
+#  DESTINATION include)
+#
+#install(
+#  FILES       "tools/skshaderc" 
+#  DESTINATION bin)
+#
+#install(
+#  EXPORT      StereoKitC-targets
+#  FILE        StereoKitCConfig.cmake
+#  NAMESPACE   StereoKitC::
+#  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/StereoKitC"
+#)

@@ -10,6 +10,7 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
+#include "../platforms/platform.h"
 #include "../systems/physics.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -42,7 +43,6 @@ struct asset_thread_t {
 array_t<asset_header_t *>      assets = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 mtx_t                          assets_multithread_destroy_lock = {};
-thrd_id_t                      assets_gpu_thread = {};
 mtx_t                          assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
 mtx_t                          assets_load_event_lock = {};
@@ -329,7 +329,6 @@ char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
-	assets_gpu_thread = thrd_id_current();
 	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
 	mtx_init(&assets_job_lock,                 mtx_plain);
 	mtx_init(&asset_thread_task_mtx,           mtx_plain);
@@ -444,7 +443,7 @@ void assets_shutdown() {
 ///////////////////////////////////////////
 
 bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (thrd_id_equal(thrd_id_current(), assets_gpu_thread)) {
+	if (platform_is_gpu_thread()) {
 		return asset_job(data);
 	} else {
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);

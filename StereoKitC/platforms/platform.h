@@ -37,6 +37,8 @@ bool platform_impl_init();
 void platform_impl_shutdown();
 void platform_impl_step();
 
+bool platform_is_gpu_thread();
+
 ///////////////////////////////////////////
 
 enum platform_win_type_ {
