@@ -26,11 +26,6 @@
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
-#include "../hands/input_hand.h"
-#include "../platforms/android.h"
-#include "../platforms/linux.h"
-#include "../platforms/uwp.h"
-#include "../platforms/win32.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -185,8 +180,8 @@ bool openxr_create_system() {
 		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
 
 	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
-	init_android.applicationVM      = android_vm;
-	init_android.applicationContext = android_activity;
+	init_android.applicationVM      = backend_android_get_java_vm ();
+	init_android.applicationContext = backend_android_get_activity();
 	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
 		log_fail_reasonf(90, log_warning, "Failed to initialize OpenXR loader");
 		return false;
@@ -227,8 +222,8 @@ bool openxr_create_system() {
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #if defined(SK_OS_ANDROID)
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
-	create_android.applicationVM       = android_vm;
-	create_android.applicationActivity = android_activity;
+	create_android.applicationVM       = backend_android_get_java_vm ();
+	create_android.applicationActivity = backend_android_get_activity();
 	create_info.next = (void*)&create_android;
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);

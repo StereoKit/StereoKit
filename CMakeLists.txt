@@ -172,6 +172,7 @@ if (SK_BUILD_OPENXR_LOADER)
     GIT_TAG 8c966ae7da7fd50168b43ce8220f9df69063b341
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
+    "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
 endif()
@@ -364,9 +365,9 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/platform_utils.h
   StereoKitC/platforms/platform_utils.cpp
   StereoKitC/platforms/web.h
-  StereoKitC/platforms/web.cpp  
+  StereoKitC/platforms/web.cpp
   StereoKitC/platforms/uwp.h
-  StereoKitC/platforms/uwp.cpp  
+  StereoKitC/platforms/uwp.cpp
   StereoKitC/platforms/win32.h
   StereoKitC/platforms/win32.cpp )
 

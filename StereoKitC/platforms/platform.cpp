@@ -5,21 +5,20 @@
 
 #include "platform.h"
 #include "platform_utils.h"
-#include "../device.h"
 
+#include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../log.h"
 #include "../libraries/stref.h"
+#include "../libraries/sk_gpu.h"
 #include "../libraries/tinycthread.h"
-#include "../systems/input.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/window.h"
 #include "../xr_backends/offscreen.h"
 #include "../xr_backends/xr.h"
-
-#include "../libraries/sk_gpu.h"
+#include "../platforms/android.h"
 
 ///////////////////////////////////////////
 
@@ -120,6 +119,7 @@ bool platform_set_mode(app_mode_ mode) {
 	case app_mode_simulator: return simulator_init(); break;
 	case app_mode_window:    return window_init   (); break;
 	case app_mode_xr:        return xr_init       (); break;
+	case app_mode_none:      return false;
 	}
 
 	return false;
@@ -134,6 +134,7 @@ void platform_step_begin() {
 	case app_mode_simulator: simulator_step_begin(); break;
 	case app_mode_window:    window_step_begin   (); break;
 	case app_mode_xr:        xr_step_begin       (); break;
+	case app_mode_none:      break;
 	}
 	platform_utils_update();
 }
@@ -146,6 +147,7 @@ void platform_step_end() {
 	case app_mode_simulator: simulator_step_end(); break;
 	case app_mode_window:    window_step_end   (); break;
 	case app_mode_xr:        xr_step_end       (); break;
+	case app_mode_none:      break;
 	}
 }
 
@@ -157,6 +159,7 @@ void platform_stop_mode() {
 	case app_mode_simulator: simulator_shutdown(); break;
 	case app_mode_window:    window_shutdown   (); break;
 	case app_mode_xr:        xr_shutdown       (); break;
+	case app_mode_none:      break;
 	}
 }
 

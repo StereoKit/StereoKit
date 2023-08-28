@@ -3,15 +3,15 @@
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
-#include "xr.h"
+#include "offscreen.h"
 
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../device.h"
-#include "../platforms/platform.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
 #include "../libraries/stref.h"
+#include "../libraries/sk_gpu.h"
 
 ///////////////////////////////////////////
 

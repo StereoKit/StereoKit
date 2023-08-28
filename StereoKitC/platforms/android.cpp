@@ -45,6 +45,10 @@ window_t          android_window            = {};
 
 ///////////////////////////////////////////
 
+void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height);
+
+///////////////////////////////////////////
+
 // When consumed as a static library, the user's app will need to provide its
 // own JNI_OnLoad function, which will then conflict with this one. So we only
 // provide this for shared libraries.
@@ -62,7 +66,7 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 
 ///////////////////////////////////////////
 
-bool android_init() {
+bool platform_impl_init() {
 	const sk_settings_t* settings = sk_get_settings_ref();
 
 	android_activity   = (jobject)settings->android_activity;
@@ -130,6 +134,49 @@ bool android_init() {
 
 ///////////////////////////////////////////
 
+void platform_impl_shutdown() {
+	if (android_vm)
+		android_vm->DetachCurrentThread();
+}
+
+///////////////////////////////////////////
+
+void platform_impl_step() {
+	if (!android_next_win_ready) return;
+
+	// If we got our window from xamarin, it's a jobject, and needs
+	// converted into an ANativeWindow first!
+	if (android_next_window_xam != nullptr) {
+		android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
+		android_next_window_xam = nullptr;
+	}
+
+	if (android_window.window && android_window.window == android_next_window) {
+		// It's the same window, lets just resize it
+		int32_t width  = ANativeWindow_getWidth (android_window.window);
+		int32_t height = ANativeWindow_getHeight(android_window.window);
+		platform_win_resize(1, width, height);
+	} else {
+		// Completely new window! Destroy the old swapchain, and make a
+		// new one.
+		if (android_window.has_swapchain) {
+			android_window.has_swapchain = false;
+			skg_swapchain_destroy(&android_window.swapchain);
+		}
+		android_window.window = (ANativeWindow*)android_next_window;
+
+		if (android_window.window) {
+			int32_t width  = ANativeWindow_getWidth (android_window.window);
+			int32_t height = ANativeWindow_getHeight(android_window.window);
+			platform_win_resize(1, width, height);
+		}
+	}
+	android_next_win_ready = false;
+	android_next_window    = nullptr;
+}
+
+///////////////////////////////////////////
+
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
 	if (window_id != 1) return;
 	window_t * win = &android_window;
@@ -168,82 +215,6 @@ void android_set_window(void *window) {
 void android_set_window_xam(void *window) {
 	android_next_window_xam = (jobject)window;
 	android_next_win_ready  = true;
-}
-
-///////////////////////////////////////////
-
-bool android_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool android_start_post_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool android_start_flat() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-void android_stop_flat() {
-}
-
-///////////////////////////////////////////
-
-void android_shutdown() {
-	if (android_vm)
-		android_vm->DetachCurrentThread();
-}
-
-///////////////////////////////////////////
-
-void android_step_begin_xr() {
-}
-
-///////////////////////////////////////////
-
-void android_step_begin_flat() {
-	if (!android_next_win_ready) return;
-
-	// If we got our window from xamarin, it's a jobject, and needs
-	// converted into an ANativeWindow first!
-	if (android_next_window_xam != nullptr) {
-		android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
-		android_next_window_xam = nullptr;
-	}
-
-	if (android_window.window && android_window.window == android_next_window) {
-		// It's the same window, lets just resize it
-		int32_t width  = ANativeWindow_getWidth (android_window.window);
-		int32_t height = ANativeWindow_getHeight(android_window.window);
-		platform_win_resize(1, width, height);
-	} else {
-		// Completely new window! Destroy the old swapchain, and make a
-		// new one.
-		if (android_window.has_swapchain) {
-			android_window.has_swapchain = false;
-			skg_swapchain_destroy(&android_window.swapchain);
-		}
-		android_window.window = (ANativeWindow*)android_next_window;
-
-		if (android_window.window) {
-			int32_t width  = ANativeWindow_getWidth (android_window.window);
-			int32_t height = ANativeWindow_getHeight(android_window.window);
-			platform_win_resize(1, width, height);
-		}
-	}
-	android_next_win_ready = false;
-	android_next_window    = nullptr;
-}
-
-///////////////////////////////////////////
-
-void android_step_end_flat() {
 }
 
 ///////////////////////////////////////////

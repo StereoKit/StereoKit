@@ -22,13 +22,8 @@
 #include "systems/world.h"
 #include "systems/defaults.h"
 #include "asset_types/animation.h"
-#include "platforms/win32.h"
-#include "platforms/uwp.h"
-#include "platforms/android.h"
-#include "platforms/web.h"
 #include "platforms/platform.h"
 #include "platforms/platform_utils.h"
-#include "xr_backends/openxr.h"
 
 ///////////////////////////////////////////
 

@@ -14,7 +14,6 @@
 
 #include "platform.h"
 #include "../stereokit.h"
-#include "../_stereokit.h"
 #include "../sk_math.h"
 #include "../systems/render.h"
 

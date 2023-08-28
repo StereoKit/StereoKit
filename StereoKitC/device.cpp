@@ -7,8 +7,6 @@
 #include "stereokit.h"
 #include "sk_memory.h"
 #include "xr_backends/openxr_view.h"
-#include "xr_backends/openxr.h"
-#include "xr_backends/simulator.h"
 
 namespace sk {
 
