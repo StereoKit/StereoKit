@@ -196,7 +196,7 @@ bool render_init() {
 	local.ortho_near_clip       = 0.0f;
 	local.ortho_far_clip        = 50.0f;
 	local.ortho_viewport_height = 1.0f;
-	local.clear_col             = {0,0,0,1};
+	local.clear_col             = color128{0,0,0,0};
 	local.list_primary          = -1;
 	local.scale                 = 1;
 	local.multisample           = 1;

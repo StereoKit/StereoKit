@@ -842,9 +842,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 
 		// Call the rendering callback with our view and swapchain info
 		tex_t    target = layer.swapchain_color.textures[index];
-		color128 col    = device_display_get_blend() == display_blend_opaque
-			? render_get_clear_color_ln()
-			: color128{ 0,0,0,0 };
+		color128 col    = render_get_clear_color_ln();
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);
 
