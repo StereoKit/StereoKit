@@ -151,11 +151,10 @@ include("cmake/CPM.cmake")
 if(SK_PHYSICS)
   set(reactphysics_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME reactphysics3d # 0.9.0
+    NAME reactphysics3d # 0.9.1
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0
     EXCLUDE_FROM_ALL YES
-    #PATCH_COMMAND ${reactphysics_patch}
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -170,6 +169,7 @@ if (SK_BUILD_OPENXR_LOADER)
     NAME openxr_loader # 1.0.28.2
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
     GIT_TAG 8c966ae7da7fd50168b43ce8220f9df69063b341
+    CMAKE_ARGS -Wno-dev
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
@@ -361,9 +361,11 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/linux.h
   StereoKitC/platforms/linux.cpp
   StereoKitC/platforms/platform.h
+  StereoKitC/platforms/_platform.h
   StereoKitC/platforms/platform.cpp
-  StereoKitC/platforms/platform_utils.h
-  StereoKitC/platforms/platform_utils.cpp
+  StereoKitC/platforms/platform_common.cpp
+  StereoKitC/platforms/platform_common_win.cpp
+  StereoKitC/platforms/platform_common_unix.cpp
   StereoKitC/platforms/web.h
   StereoKitC/platforms/web.cpp
   StereoKitC/platforms/uwp.h
@@ -395,7 +397,9 @@ set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard.h
   StereoKitC/tools/virtual_keyboard.cpp
   StereoKitC/tools/file_picker.h
-  StereoKitC/tools/file_picker.cpp )
+  StereoKitC/tools/file_picker.cpp
+  StereoKitC/tools/tools.h
+  StereoKitC/tools/tools.cpp )
 
 set(SK_SRC_UI
   StereoKitC/stereokit_ui.h

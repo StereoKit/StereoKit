@@ -8,7 +8,7 @@
 #include "../systems/defaults.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../libraries/cgltf.h"
 
 #include <stdio.h>
@@ -844,8 +844,8 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
 		sk_free(data);
 	};
-	options.memory.alloc_func = [](void *user, cgltf_size size) { return sk_malloc(size); };
-	options.memory.free_func  = [](void *user, void* data) { sk_free(data); };
+	options.memory.alloc_func = [](void *, cgltf_size size) { return sk_malloc(size); };
+	options.memory.free_func  = [](void *, void*      data) { sk_free(data); };
 
 	cgltf_data*  data   = nullptr;
 	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);

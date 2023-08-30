@@ -6,7 +6,7 @@
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #if defined(SK_OS_WINDOWS)
 

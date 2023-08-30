@@ -3,7 +3,7 @@
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 #include <string.h>
 #include <stdlib.h>

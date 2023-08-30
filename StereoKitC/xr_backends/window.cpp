@@ -8,7 +8,7 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../sk_memory.h"
-#include "../platforms/platform.h"
+#include "../platforms/_platform.h"
 #include "../asset_types/texture.h"
 #include "../systems/world.h"
 #include "../systems/input.h"

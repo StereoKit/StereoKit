@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
-#include "platform_utils.h"
+#include "_platform.h"
 
 #if defined(SK_OS_WEB)
-
 namespace sk {
 
 bool web_init           ();
@@ -22,5 +27,4 @@ void  web_set_cursor(vec2 window_pos);
 float web_get_scroll();
 
 } // namespace sk
-
 #endif // defined(SK_OS_WEB)

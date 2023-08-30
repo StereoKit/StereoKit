@@ -17,7 +17,7 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include <limits.h>
 

@@ -1,4 +1,9 @@
-#include "platform.h"
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "android.h"
 #if defined(SK_OS_ANDROID)
 
@@ -16,7 +21,11 @@
 #include <android/native_window_jni.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
+#include <android/font_matcher.h>
+#include <android/font.h>
+#include <android/log.h>
 
+#include <unistd.h>
 #include <dlfcn.h>
 
 namespace sk {
@@ -218,6 +227,24 @@ void android_set_window_xam(void *window) {
 }
 
 ///////////////////////////////////////////
+
+bool android_read_asset(const char* asset_name, void** out_data, size_t* out_size) {
+	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
+
+	AAsset *asset = AAssetManager_open(android_asset_manager, asset_name, AASSET_MODE_BUFFER);
+	if (asset) {
+		*out_size = AAsset_getLength(asset);
+		*out_data = sk_malloc(*out_size + 1);
+		AAsset_read (asset, *out_data, *out_size);
+		AAsset_close(asset);
+
+		((uint8_t *)*out_data)[*out_size] = 0;
+		return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
 // Permissions                           //
 ///////////////////////////////////////////
 
@@ -393,16 +420,135 @@ recti_t platform_win_rect(platform_win_t window_id) {
 
 ///////////////////////////////////////////
 
-bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
-	// TODO: find an alternative to the registry for Android
-	return false;
+// TODO: find an alternative to the registry for Android
+bool platform_key_save_bytes(const char* key, void* data,       int32_t data_size)   { return false; }
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) { return false; }
+
+///////////////////////////////////////////
+
+void platform_msgbox_err(const char* text, const char* header) {
+	log_warn("No messagebox capability for this platform!");
 }
 
 ///////////////////////////////////////////
 
-bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
-	// TODO: find an alternative to the registry for Android
-	return false;
+bool  platform_get_cursor(vec2 *out_pos)   { *out_pos = { 0,0 }; return false; }
+void  platform_set_cursor(vec2 window_pos) { }
+float platform_get_scroll()                { return 0; }
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show   (bool show) { }
+bool platform_xr_keyboard_present()          { return false; }
+bool platform_xr_keyboard_visible()          { return false; }
+
+///////////////////////////////////////////
+
+font_t platform_default_font() {
+	// If we're using Android API 29+, we can just look up the system font!
+	array_t<const char *> fonts         = array_t<const char *>::make(2);
+	font_t                result        = nullptr;
+	const char           *file_latin    = nullptr;
+	const char           *file_japanese = nullptr;
+
+#if __ANDROID_API__ >= 29
+	AFontMatcher *matcher = AFontMatcher_create();
+	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"A", 1, nullptr);
+	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"\u3042", 1, nullptr);
+	if (font_latin   ) file_latin    = AFont_getFontFilePath(font_latin);
+	if (font_japanese) file_japanese = AFont_getFontFilePath(font_japanese);
+#endif
+	if      (file_latin != nullptr)                                      fonts.add(file_latin);
+	else if (platform_file_exists("/system/fonts/NotoSans-Regular.ttf")) fonts.add("/system/fonts/NotoSans-Regular.ttf");
+	else if (platform_file_exists("/system/fonts/Roboto-Regular.ttf"  )) fonts.add("/system/fonts/Roboto-Regular.ttf");
+	else if (platform_file_exists("/system/fonts/DroidSans.ttf"       )) fonts.add("/system/fonts/DroidSans.ttf");
+
+	if      (file_japanese != nullptr)                                      fonts.add(file_japanese);
+	else if (platform_file_exists("/system/fonts/NotoSansCJK-Regular.ttc")) fonts.add("/system/fonts/NotoSansCJK-Regular.ttc");
+	else if (platform_file_exists("/system/fonts/DroidSansJapanese.ttf"  )) fonts.add("/system/fonts/DroidSansJapanese.ttf");
+
+	if (fonts.count > 0)
+		result = font_create_files(fonts.data, fonts.count);
+
+#if __ANDROID_API__ >= 29
+	if (font_latin   ) AFont_close(font_latin);
+	if (font_japanese) AFont_close(font_japanese);
+	AFontMatcher_destroy(matcher);
+#endif
+	fonts.free();
+	return result;
+}
+
+///////////////////////////////////////////
+
+void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, bool file)) {}
+
+///////////////////////////////////////////
+
+#include <unwind.h>
+#include <dlfcn.h>
+#include <cxxabi.h>
+
+struct android_backtrace_state {
+	void **current;
+	void **end;
+};
+
+void platform_print_callstack() {
+	const int max = 100;
+	void* buffer[max];
+
+	android_backtrace_state state;
+	state.current = buffer;
+	state.end = buffer + max;
+
+	_Unwind_Backtrace([](struct _Unwind_Context* context, void* arg) {
+		android_backtrace_state* state = (android_backtrace_state *)arg;
+		uintptr_t pc = _Unwind_GetIP(context);
+		if (pc) {
+			if (state->current == state->end)
+				return (_Unwind_Reason_Code)_URC_END_OF_STACK;
+			else
+				*state->current++ = reinterpret_cast<void*>(pc);
+		}
+		return (_Unwind_Reason_Code)_URC_NO_REASON;
+	}, &state);
+
+	int count = (int)(state.current - buffer);
+
+	for (int idx = 0; idx < count; idx++)  {
+		const void* addr   = buffer[idx];
+		const char* symbol = "";
+
+		Dl_info info;
+		if (dladdr(addr, &info) && info.dli_sname)
+			symbol = info.dli_sname;
+		int   status    = 0; 
+		char *demangled = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status); 
+
+		sk::log_diagf("%03d: 0x%p %s", idx, addr,
+			(nullptr != demangled && 0 == status) ?
+			demangled : symbol);
+
+		sk_free(demangled);
+	}
+}
+
+///////////////////////////////////////////
+
+void platform_debug_output(log_ level, const char *text) {
+	int32_t priority = ANDROID_LOG_INFO;
+	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
+	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
+	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
+	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
+	__android_log_write(priority, "StereoKit", text);
+}
+
+///////////////////////////////////////////
+
+void platform_sleep(int ms) {
+	usleep(ms * 1000);
 }
 
 } // namespace sk

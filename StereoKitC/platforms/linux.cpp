@@ -5,10 +5,7 @@
  */
 
 #include "linux.h"
-
 #if defined(SK_OS_LINUX)
-
-#include "platform.h"
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -16,6 +13,11 @@
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/extensions/Xfixes.h>
+
+#include <unistd.h>
+#include <dirent.h>
+#include <libgen.h>
+#include <fontconfig/fontconfig.h>
 
 #include "../xr_backends/openxr.h"
 #include "../systems/render.h"
@@ -452,21 +454,15 @@ skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return linu
 
 ///////////////////////////////////////////
 
-bool linux_get_cursor(vec2 &out_pos) {
-	out_pos.x = (float)linux_mouse_x;
-	out_pos.y = (float)linux_mouse_y;
+bool platform_get_cursor(vec2 *out_pos) {
+	out_pos->x = (float)linux_mouse_x;
+	out_pos->y = (float)linux_mouse_y;
 	return linux_mouse_in_window;
 }
 
 ///////////////////////////////////////////
 
-float linux_get_scroll() {
-	return linux_scroll;
-}
-
-///////////////////////////////////////////
-
-void linux_set_cursor(vec2 window_pos) {
+void platform_set_cursor(vec2 window_pos) {
 	// This XFixesHideCursor/ShowCursor fix is really bizarre.
 	// I tracked this down through https://developer.blender.org/T53004#467383
 	// and https://github.com/blender/blender/blob/a8f7d41d3898a8d3ae8afb4f95ea9f4f44db2a69/intern/ghost/intern/GHOST_SystemX11.cpp#L1680 .
@@ -489,6 +485,12 @@ void linux_set_cursor(vec2 window_pos) {
 
 ///////////////////////////////////////////
 
+float platform_get_scroll() {
+	return linux_scroll;
+}
+
+///////////////////////////////////////////
+
 recti_t platform_win_rect(platform_win_t window_id) {
 	window_t* win = &linux_windows[window_id];
 	return win->has_swapchain
@@ -498,17 +500,85 @@ recti_t platform_win_rect(platform_win_t window_id) {
 
 ///////////////////////////////////////////
 
-bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
-	// TODO: find an alternative to the registry for Linux
-	return false;
+font_t platform_default_font() {
+	array_t<char*> fonts = array_t<char*>::make(2);
+	font_t         result = nullptr;
+
+	FcConfig* config = FcInitLoadConfigAndFonts();
+	FcPattern* pattern = FcNameParse((const FcChar8*)("sans-serif"));
+	FcConfigSubstitute(config, pattern, FcMatchPattern);
+	FcDefaultSubstitute(pattern);
+
+	FcResult   fc_result;
+	FcPattern* font = FcFontMatch(config, pattern, &fc_result);
+	if (font) {
+		FcChar8* file = nullptr;
+		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
+			// Put the font file path in the proper string
+			fonts.add(string_copy((char*)file));
+		}
+		FcPatternDestroy(font);
+	}
+	FcPatternDestroy(pattern);
+	FcConfigDestroy(config);
+
+	result = font_create_files((const char**)fonts.data, fonts.count);
+	fonts.each(free);
+	fonts.free();
+	return result;
 }
 
 ///////////////////////////////////////////
 
-bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
-	// TODO: find an alternative to the registry for Linux
-	return false;
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+	if (string_eq(directory_path, "")) {
+		directory_path = platform_path_separator;
+	}
+
+	DIR           *dir;
+	struct dirent *dir_info;
+	dir = opendir(directory_path);
+	if (!dir) return;
+
+	while ((dir_info = readdir(dir)) != nullptr) {
+		if (string_eq(dir_info->d_name, ".") || string_eq(dir_info->d_name, "..")) continue;
+
+		if (dir_info->d_type == DT_DIR)
+			on_item(callback_data, dir_info->d_name, false);
+		else if (dir_info->d_type == DT_REG)
+			on_item(callback_data, dir_info->d_name, true);
+	}
+	closedir(dir);
 }
+
+///////////////////////////////////////////
+
+void platform_sleep(int ms) {
+	sleep(ms / 1000);
+}
+
+///////////////////////////////////////////
+
+// TODO: find an alternative to the registry for Linux
+bool platform_key_save_bytes(const char* key, void* data,       int32_t data_size)   { return false; }
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) { return false; }
+
+///////////////////////////////////////////
+
+void platform_msgbox_err(const char *text, const char *header) {
+	log_warn("No messagebox capability for this platform!");
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show   (bool show) { }
+bool platform_xr_keyboard_present()          { return false; }
+bool platform_xr_keyboard_visible()          { return false; }
+
+///////////////////////////////////////////
+
+void platform_debug_output   (log_, const char*) { }
+void platform_print_callstack() { }
 
 } // namespace sk
 

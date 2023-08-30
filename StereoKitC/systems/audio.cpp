@@ -3,7 +3,7 @@
 
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include "../libraries/stref.h"
 #include "../libraries/isac_spatial_sound.h"

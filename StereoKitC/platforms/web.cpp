@@ -1,5 +1,10 @@
-#include "web.h"
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
 
+#include "web.h"
 #if defined(SK_OS_WEB)
 
 #include <emscripten.h>
@@ -234,21 +239,38 @@ void web_step_end_flat() {
 
 ///////////////////////////////////////////
 
-bool web_get_cursor(vec2 &out_pos) {
-	out_pos = web_mouse_pos;
+bool platform_get_cursor(vec2 *out_pos) {
+	*out_pos = web_mouse_pos;
 	return web_mouse_tracked;
 }
 
 ///////////////////////////////////////////
 
-void web_set_cursor(vec2 window_pos) {
+void platform_set_cursor(vec2 window_pos) {
 	web_mouse_pos = window_pos;
 }
 
 ///////////////////////////////////////////
 
-float web_get_scroll() {
+float platform_get_scroll() {
 	return web_mouse_scroll;
+}
+
+///////////////////////////////////////////
+
+bool platform_xr_keyboard_present() {
+	return false;
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show(bool show) {
+}
+
+///////////////////////////////////////////
+
+bool platform_xr_keyboard_visible() {
+	return false;
 }
 
 ///////////////////////////////////////////
@@ -368,6 +390,55 @@ void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
 	emscripten_set_mouseenter_callback("canvas", nullptr, false, web_on_mouse_enter);
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, web_on_mouse_enter);
 	emscripten_set_pointerlockchange_callback("canvas", nullptr, false, web_on_pointerlock);
+}
+
+///////////////////////////////////////////
+
+// TODO: find an alternative to the registry for Web
+bool platform_key_save_bytes(const char* key, void* data,       int32_t data_size)   { return false; }
+bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) { return false; }
+
+///////////////////////////////////////////
+
+void platform_msgbox_err(const char* text, const char* header) {
+	log_warn("No messagebox capability for this platform!");
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show   (bool show) { }
+bool platform_xr_keyboard_present()          { return false; }
+bool platform_xr_keyboard_visible()          { return false; }
+
+///////////////////////////////////////////
+
+font_t platform_default_font() {
+	return font_create_default();
+}
+
+///////////////////////////////////////////
+
+void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, bool file)) {}
+
+///////////////////////////////////////////
+
+char* platform_working_dir() {
+	return string_copy("/");
+}
+
+///////////////////////////////////////////
+
+void platform_debug_output(log_ level, const char *text) {
+	if      (level == log_diagnostic) emscripten_console_log(text);
+	else if (level == log_inform    ) emscripten_console_log(text);
+	else if (level == log_warning   ) emscripten_console_warn(text);
+	else if (level == log_error     ) emscripten_console_error(text);
+}
+
+///////////////////////////////////////////
+
+void platform_sleep(int ms) {
+	emscripten_sleep(ms);
 }
 
 } // namespace sk

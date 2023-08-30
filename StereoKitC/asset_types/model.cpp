@@ -6,7 +6,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 using namespace DirectX;
 

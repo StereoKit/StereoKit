@@ -28,14 +28,12 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool offscreen_init() {
-	const sk_settings_t* settings = sk_get_settings_ref();
-
 	device_data.has_hand_tracking = false;
 	device_data.has_eye_gaze      = false;
 	device_data.tracking          = device_tracking_none;
 	device_data.display_blend     = display_blend_opaque;
 	device_data.display_type      = display_type_flatscreen;
-	device_data.name              = string_copy("Window");
+	device_data.name              = string_copy("Offscreen");
 
 	local = sk_malloc_zero_t(offscreen_backend_state_t, 1);
 

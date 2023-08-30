@@ -1,7 +1,7 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "libraries/sk_gpu.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 namespace sk {
 

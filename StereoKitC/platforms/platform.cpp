@@ -3,15 +3,13 @@
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
-#include "platform.h"
-#include "platform_utils.h"
+#include "_platform.h"
 
 #include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../log.h"
 #include "../libraries/stref.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/tinycthread.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
@@ -36,7 +34,9 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-const char* app_mode_str(app_mode_ mode);
+const char* app_mode_str      (app_mode_ mode);
+bool        platform_set_mode (app_mode_ mode);
+void        platform_stop_mode();
 
 ///////////////////////////////////////////
 
@@ -87,13 +87,12 @@ bool platform_init() {
 			return false;
 		}
 	}
-	return platform_utils_init();
+	return true;
 }
 
 ///////////////////////////////////////////
 
 void platform_shutdown() {
-	platform_utils_shutdown();
 	platform_stop_mode();
 	skg_shutdown();
 
@@ -136,7 +135,6 @@ void platform_step_begin() {
 	case app_mode_xr:        xr_step_begin       (); break;
 	case app_mode_none:      break;
 	}
-	platform_utils_update();
 }
 
 ///////////////////////////////////////////
@@ -201,5 +199,6 @@ void platform_set_window_xam(void *window) {
 bool platform_is_gpu_thread() {
 	return thrd_id_equal(local->gpu_thread, thrd_id_current());
 }
+
 
 } // namespace sk

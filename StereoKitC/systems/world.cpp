@@ -1,5 +1,5 @@
 #include "world.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"

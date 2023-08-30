@@ -7,7 +7,7 @@
 #include "../sk_memory.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../hands/input_hand.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
@@ -234,7 +234,6 @@ void ui_image(sprite_t image, vec2 size) {
 template<typename C>
 void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
 	float pad2       = skui_settings.padding * 2;
-	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
 	vec3  image_at   = {};
 	float image_size;

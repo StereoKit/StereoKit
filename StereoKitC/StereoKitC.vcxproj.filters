@@ -157,7 +157,7 @@
     <ClCompile Include="platforms\platform.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
-    <ClCompile Include="platforms\platform_utils.cpp">
+    <ClCompile Include="platforms\platform_common.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
     <ClCompile Include="platforms\uwp.cpp">
@@ -225,6 +225,15 @@
     </ClCompile>
     <ClCompile Include="xr_backends\window.cpp">
       <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\tools.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="platforms\platform_common_win.cpp">
+      <Filter>platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="platforms\platform_common_unix.cpp">
+      <Filter>platforms</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -403,9 +412,6 @@
     <ClInclude Include="platforms\platform.h">
       <Filter>platforms</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\platform_utils.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
     <ClInclude Include="platforms\uwp.h">
       <Filter>platforms</Filter>
     </ClInclude>
@@ -477,6 +483,12 @@
     </ClInclude>
     <ClInclude Include="xr_backends\offscreen.h">
       <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="platforms\_platform.h">
+      <Filter>platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\tools.h">
+      <Filter>tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

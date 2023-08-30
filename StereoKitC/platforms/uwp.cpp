@@ -4,8 +4,7 @@
  * Copyright (c) 2023 Qualcomm Technologies, Inc.
  */
 
-#include "platform_utils.h"
-#include "platform.h"
+#include "uwp.h"
 #if defined(SK_OS_WINDOWS_UWP)
 
 #include <dxgi1_2.h>
@@ -28,15 +27,17 @@
 
 #include <wrl/client.h>
 
-#include "winrt/Windows.ApplicationModel.h" 
-#include "winrt/Windows.ApplicationModel.Core.h"
-#include "winrt/Windows.ApplicationModel.Activation.h"
-#include "winrt/Windows.Foundation.h"
-#include "winrt/Windows.Graphics.Display.h"
-#include "winrt/Windows.System.h"
-#include "winrt/Windows.UI.Core.h"
-#include "winrt/Windows.UI.Input.h"
-#include "winrt/Windows.UI.ViewManagement.h"
+#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.ApplicationModel.Core.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Graphics.Display.h>
+#include <winrt/Windows.System.h>
+#include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Input.h>
+#include <winrt/Windows.UI.ViewManagement.h>
+#include <winrt/Windows.UI.Popups.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::Core;
@@ -84,11 +85,6 @@ bool              uwp_mouse_set;
 vec2              uwp_mouse_set_delta;
 vec2              uwp_mouse_frame_get;
 float             uwp_mouse_scroll = 0;
-
-///////////////////////////////////////////
-
-// Constants for the registry key and value names
-const wchar_t* REG_KEY_NAME = L"Software\\StereoKit Simulator";
 
 ///////////////////////////////////////////
 
@@ -181,14 +177,14 @@ inline float pixels_to_dips(float pixels, float DPI) {
 
 ///////////////////////////////////////////
 
-bool uwp_get_mouse(vec2 &out_pos) {
-	out_pos = uwp_mouse_frame_get;
+bool platform_get_cursor(vec2 *out_pos) {
+	*out_pos = uwp_mouse_frame_get;
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void uwp_set_mouse(vec2 window_pos) {
+void platform_set_cursor(vec2 window_pos) {
 	uwp_mouse_set_delta = window_pos - uwp_mouse_frame_get;
 	uwp_mouse_frame_get = window_pos;
 	uwp_mouse_set       = true;
@@ -196,13 +192,19 @@ void uwp_set_mouse(vec2 window_pos) {
 
 ///////////////////////////////////////////
 
-float uwp_get_scroll() {
+float platform_get_scroll() {
 	return uwp_mouse_scroll;
 }
 
 ///////////////////////////////////////////
 
-void uwp_show_keyboard(bool show) {
+bool platform_xr_keyboard_present() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show(bool show) {
 	// For future improvements, see here:
 	// https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/CustomEditControl/cs/CustomEditControl.xaml.cs
 	CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [show]() {
@@ -228,7 +230,7 @@ void uwp_show_keyboard(bool show) {
 
 ///////////////////////////////////////////
 
-bool uwp_keyboard_visible() {
+bool platform_xr_keyboard_visible() {
 	return uwp_keyboard_showing;
 }
 
@@ -714,33 +716,38 @@ void platform_win_add_event(platform_win_t win_id, window_event_t evt) {
 
 ///////////////////////////////////////////
 
-bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
-	HKEY reg_key = {};
-	if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) != ERROR_SUCCESS)
-		return false;
+bool in_messagebox = false;
+void platform_msgbox_err(const char *text, const char *header) {
+	wchar_t* text_w   = platform_to_wchar(text);
+	wchar_t* header_w = platform_to_wchar(header);
+	in_messagebox = true;
+	winrt::Windows::ApplicationModel::Core::CoreApplication::MainView().CoreWindow().Dispatcher().RunAsync(
+		winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [text_w, header_w]() {
 
-	wchar_t w_key[64];
-	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
-
-	RegSetValueExW(reg_key, w_key, 0, REG_BINARY, (const BYTE*)data, data_size);
-	RegCloseKey   (reg_key);
-	return true;
+		winrt::Windows::UI::Popups::MessageDialog dialog  = winrt::Windows::UI::Popups::MessageDialog(text_w, header_w);
+		winrt::Windows::UI::Popups::UICommand     command = winrt::Windows::UI::Popups::UICommand{
+			L"OK",
+			winrt::Windows::UI::Popups::UICommandInvokedHandler{
+				[](winrt::Windows::UI::Popups::IUICommand const &) {
+					in_messagebox = false;
+					return;
+				}
+			}
+		};
+		dialog.Commands().Append(command);
+		dialog.ShowAsync();
+	});
+	while (in_messagebox) {
+		platform_sleep(100);
+	}
+	sk_free(text_w);
+	sk_free(header_w);
 }
+
 
 ///////////////////////////////////////////
 
-bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
-	HKEY reg_key = {};
-	if (RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) != ERROR_SUCCESS)
-		return false;
-
-	wchar_t w_key[64];
-	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
-
-	DWORD data_size = buffer_size;
-	RegQueryValueExW(reg_key, w_key, 0, nullptr, (BYTE*)ref_buffer, &data_size);
-	RegCloseKey     (reg_key);
-	return true;
+void platform_iterate_dir(const char*, void*, void (*)(void* callback_data, const char* name, bool file)) {
 }
 
 }

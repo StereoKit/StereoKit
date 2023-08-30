@@ -5,17 +5,16 @@
  */
 
 #include "win32.h"
-
 #if defined(SK_OS_WINDOWS)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
 
-#include "platform.h"
 #include "../stereokit.h"
 #include "../sk_math.h"
 #include "../systems/render.h"
+#include "../libraries/stref.h"
 
 namespace sk {
 
@@ -45,11 +44,6 @@ array_t<window_t> win32_windows = {};
 HINSTANCE         win32_hinst   = nullptr;
 HICON             win32_icon    = nullptr;
 float             win32_scroll  = 0;
-
-///////////////////////////////////////////
-
-// Constants for the registry key and value names
-const wchar_t* REG_KEY_NAME = L"Software\\StereoKit Simulator";
 
 ///////////////////////////////////////////
 
@@ -338,34 +332,95 @@ recti_t platform_win_rect(platform_win_t window_id) {
 
 ///////////////////////////////////////////
 
-bool platform_key_save_bytes(const char* key, void* data, int32_t data_size) {
-	HKEY reg_key = {};
-	if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) != ERROR_SUCCESS)
-		return false;
-
-	wchar_t w_key[64];
-	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
-
-	RegSetValueExW(reg_key, w_key, 0, REG_BINARY, (const BYTE*)data, data_size);
-	RegCloseKey   (reg_key);
-	return true;
+void platform_msgbox_err(const char* text, const char* header) {
+	wchar_t* text_w   = platform_to_wchar(text);
+	wchar_t* header_w = platform_to_wchar(header);
+	MessageBoxW(nullptr, text_w, header_w, MB_OK | MB_ICONERROR);
+	sk_free(text_w);
+	sk_free(header_w);
 }
 
 ///////////////////////////////////////////
 
-bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) {
-	HKEY reg_key = {};
-	if (RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) != ERROR_SUCCESS)
-		return false;
-
-	wchar_t w_key[64];
-	MultiByteToWideChar(CP_UTF8, 0, key, -1, w_key, _countof(w_key));
-
-	DWORD data_size = buffer_size;
-	RegQueryValueExW(reg_key, w_key, 0, nullptr, (BYTE*)ref_buffer, &data_size);
-	RegCloseKey     (reg_key);
-	return true;
+bool platform_get_cursor(vec2 *out_pos) {
+	POINT cursor_pos;
+	bool  result = GetCursorPos  (&cursor_pos)
+	            && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
+	out_pos->x = (float)cursor_pos.x;
+	out_pos->y = (float)cursor_pos.y;
+	return result;
 }
+
+///////////////////////////////////////////
+
+void platform_set_cursor(vec2 window_pos) {
+	POINT pt = { (LONG)window_pos.x, (LONG)window_pos.y };
+	ClientToScreen((HWND)win32_hwnd(), &pt);
+	SetCursorPos  (pt.x, pt.y);
+}
+
+///////////////////////////////////////////
+
+float platform_get_scroll() {
+	return win32_scroll;
+}
+
+///////////////////////////////////////////
+
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+	if (string_eq(directory_path, "")) {
+		DWORD size = ::GetLogicalDriveStringsW(0, nullptr);
+		wchar_t *drive_names = sk_malloc_t(wchar_t, size);
+		::GetLogicalDriveStringsW(size, drive_names);
+
+		wchar_t *curr = drive_names;
+		while (*curr != '\0') {
+			char *drive_u8 = platform_from_wchar(curr);
+			on_item(callback_data, drive_u8, false);
+			curr = curr + wcslen(curr)+1;
+			sk_free(drive_u8);
+		}
+
+		sk_free(drive_names);
+		return;
+	}
+
+	WIN32_FIND_DATAW info;
+	HANDLE           handle = nullptr;
+
+	char *filter = string_copy(directory_path);
+	if (string_endswith(filter, "\\"))
+		filter = string_append(filter, 1, "*.*");
+	else filter = string_append(filter, 1, "\\*.*");
+	wchar_t *filter_w = platform_to_wchar(filter);
+
+	handle = FindFirstFileW(filter_w, &info);
+	if (handle == INVALID_HANDLE_VALUE) return;
+
+	while (handle) {
+		char *filename_u8 = platform_from_wchar(info.cFileName);
+		if (!string_eq(filename_u8, ".") && !string_eq(filename_u8, "..")) {
+			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				on_item(callback_data, filename_u8, false);
+			else
+				on_item(callback_data, filename_u8, true);
+		}
+		free(filename_u8);
+
+		if (!FindNextFileW(handle, &info)) {
+			FindClose(handle);
+			handle = nullptr;
+		}
+	}
+	sk_free(filter);
+	sk_free(filter_w);
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show   (bool show) { }
+bool platform_xr_keyboard_present()          { return false; }
+bool platform_xr_keyboard_visible()          { return false; }
 
 } // namespace sk
 

@@ -22,8 +22,8 @@
 #include "systems/world.h"
 #include "systems/defaults.h"
 #include "asset_types/animation.h"
-#include "platforms/platform.h"
-#include "platforms/platform_utils.h"
+#include "platforms/_platform.h"
+#include "tools/tools.h"
 
 ///////////////////////////////////////////
 
@@ -115,10 +115,10 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	system_set_step_deps(sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
 
-	sys_platform        .func_initialize       = platform_init;
-	sys_platform        .func_shutdown         = platform_shutdown;
-	sys_platform_begin  .func_step             = platform_step_begin;
-	sys_platform_render .func_step             = platform_step_end;
+	sys_platform       .func_initialize = platform_init;
+	sys_platform       .func_shutdown   = platform_shutdown;
+	sys_platform_begin .func_step       = platform_step_begin;
+	sys_platform_render.func_step       = platform_step_end;
 
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);
@@ -140,7 +140,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_ui);
 
 	system_t sys_ui_late = { "UILate" };
-	system_set_step_deps(sys_ui_late, "App");
+	system_set_step_deps(sys_ui_late, "App", "Tools");
 	sys_ui_late.func_step = ui_step_late;
 	systems_add(&sys_ui_late);
 
@@ -193,7 +193,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	system_t sys_sprite = { "Sprites" };
 	system_set_initialize_deps(sys_sprite, "Defaults");
-	system_set_step_deps      (sys_sprite, "App");
+	system_set_step_deps      (sys_sprite, "App", "Tools");
 	sys_sprite.func_initialize = sprite_drawer_init;
 	sys_sprite.func_step       = sprite_drawer_step;
 	sys_sprite.func_shutdown   = sprite_drawer_shutdown;
@@ -214,6 +214,14 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_world.func_step       = world_step;
 	sys_world.func_shutdown   = world_shutdown;
 	systems_add(&sys_world);
+
+	system_t sys_tools = { "Tools" };
+	system_set_initialize_deps(sys_tools, "Platform", "Defaults", "UI");
+	system_set_step_deps      (sys_tools, "App");
+	sys_tools.func_initialize = tools_init;
+	sys_tools.func_step       = tools_step;
+	sys_tools.func_shutdown   = tools_shutdown;
+	systems_add(&sys_tools);
 
 	system_t sys_anim = { "Animation" };
 	system_set_step_deps(sys_anim, "App");

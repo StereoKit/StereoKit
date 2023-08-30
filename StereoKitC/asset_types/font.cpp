@@ -12,7 +12,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../rect_atlas.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../sk_memory.h"
 
 #include <stdio.h>
@@ -330,8 +330,8 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		to_u     = 1.0f / font->atlas.w;
 		to_v     = 1.0f / font->atlas.h;
 	}
-	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { 
+	rect_area_t rect       = font->atlas.packed[rect_idx];
+	rect_area_t rect_unpad = { 
 		rect.x+pad_empty+pad_content,
 		rect.y+pad_empty+pad_content,
 		rect.w - (pad_empty*2 + pad_content*2),
@@ -440,7 +440,7 @@ void font_upsize_texture(font_t font) {
 		font->glyph_map.items[i].value = new_ch;
 
 		// Copy memory
-		recti_t src = {
+		rect_area_t src = {
 			(int32_t)(ch.u0 * font->atlas.w),
 			(int32_t)(ch.v0 * font->atlas.h),
 			(int32_t)((ch.u1-ch.u0) * font->atlas.w),
