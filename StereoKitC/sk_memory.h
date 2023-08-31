@@ -1,22 +1,26 @@
-// SPDX-License-Identifier: MIT
-// The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
 
 #pragma once
 
 #include <stdint.h>
 #include <stddef.h>
+#if defined(_WIN32) || defined(WINDOWS_UWP)
+#include <malloc.h> // alloca doesn't exist in stdlib on windows?
+#endif
 
 namespace sk {
 
 #if !defined(SK_DEBUG_MEM)
 
 // Safer memory allocation functions, will kill the app on failure.
-void *sk_malloc     (              size_t bytes);
-void *sk_calloc     (              size_t bytes);
-void *sk_realloc    (void *memory, size_t bytes);
-void  _sk_free      (void *memory);
+void *sk_malloc (              size_t bytes);
+void *sk_calloc (              size_t bytes);
+void *sk_realloc(void *memory, size_t bytes);
+void  _sk_free  (void *memory);
 
 #define sk_free(memory) { _sk_free(memory); memory = nullptr; };
 
@@ -46,5 +50,9 @@ void  _sk_free_d      (void *memory, const char* filename, int32_t line);
 #endif
 
 void sk_mem_log_allocations();
+
+#pragma warning(disable : 6255) // _alloca` indicates failure by raising a stack overflow exception. Consider using _malloca instead.
+#define sk_stack_alloc(bytes) (alloca(bytes))
+#define sk_stack_alloc_t(T, count) ((T*)sk_stack_alloc ((count) * sizeof(T)))
 
 } // namespace sk

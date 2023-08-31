@@ -38,7 +38,7 @@ void platform_debug_output(log_ level, const char *text) {
 	}
 
 	size_t expand_size = strlen(text) + _countof("[SK diagnostic] \n");
-	char*  expanded    = (char*)alloca(sizeof(char) * expand_size);
+	char*  expanded    = sk_stack_alloc_t(char, expand_size);
 	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
 
 	OutputDebugStringA(expanded);

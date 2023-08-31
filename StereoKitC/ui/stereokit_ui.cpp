@@ -1,20 +1,19 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_layout.h"
 #include "ui_theming.h"
 #include "ui_core.h"
 #include "../stereokit_ui.h"
-#include "../_stereokit_ui.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
-#include "../systems/input.h"
-#include "../systems/input_keyboard.h"
-#include "../platforms/platform.h"
-#include "../hands/input_hand.h"
-#include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
 #include <math.h>
-#include <float.h>
 
 ///////////////////////////////////////////
 
@@ -641,7 +640,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	const C* draw_text = buffer;
 	if (type == text_context_password) {
 		size_t len          = utf_charlen(buffer);
-		C*     password_txt = (C*)alloca(sizeof(C) * (len + 1));
+		C*     password_txt = sk_stack_alloc_t(C, len + 1);
 		for (size_t i = 0; i < len; i++)
 			password_txt[i] = '*';
 		password_txt[len] = '\0';

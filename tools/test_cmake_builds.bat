@@ -1,3 +1,5 @@
+cls
+
 cd ..
 cmake --preset Win32_x64_Release
 cmake --build --preset Win32_x64_Release

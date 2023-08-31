@@ -363,7 +363,6 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/platform.h
   StereoKitC/platforms/_platform.h
   StereoKitC/platforms/platform.cpp
-  StereoKitC/platforms/platform_common.cpp
   StereoKitC/platforms/platform_common_win.cpp
   StereoKitC/platforms/platform_common_unix.cpp
   StereoKitC/platforms/web.h

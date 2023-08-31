@@ -157,9 +157,6 @@
     <ClCompile Include="platforms\platform.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
-    <ClCompile Include="platforms\platform_common.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
     <ClCompile Include="platforms\uwp.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
