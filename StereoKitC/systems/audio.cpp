@@ -405,6 +405,14 @@ bool audio_init() {
 
 	au_mic_name = nullptr;
 
+	// We can give this thread a name on Windows
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	if (au_device.thread)
+		SetThreadDescription(au_device.thread, L"StereoKit Audio");
+	if (au_context.backend == ma_backend_wasapi && au_context.wasapi.commandThread)
+		SetThreadDescription(au_context.wasapi.commandThread, L"StereoKit Audio Context");
+#endif
+
 	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));
 	return true;
 }

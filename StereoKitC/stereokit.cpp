@@ -77,6 +77,11 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
 
+	// We can give this thread a name on Windows
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	SetThreadDescription(GetCurrentThread(), L"StereoKit Main");
+#endif
+
 	// Set some default values
 	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
