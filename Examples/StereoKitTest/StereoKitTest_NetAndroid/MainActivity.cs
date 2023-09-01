@@ -7,7 +7,7 @@ using Android.Views;
 using StereoKit;
 using System;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Threading;
 
 [Activity(Label = "@string/app_name", MainLauncher = true, Exported = true)]
 [IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
@@ -46,23 +46,35 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		surface = new View(this);
 		SetContentView(surface);
 		surface.RequestFocus();
+
+		// Task.Run will eat exceptions, but Thread.Start doesn't seem to.
+		new Thread(InvokeStereoKit).Start();
+	}
+
+	static void InvokeStereoKit()
+	{
+		Type       entryClass = typeof(Program);
+		MethodInfo entryPoint = entryClass?.GetMethod("Main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 		
-		Task.Run(() => {
-			Type       entryClass = typeof(Program);
-			MethodInfo entryPoint = entryClass?.GetMethod("Main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+		// There are a number of potential method signatures for Main, so
+		// we need to check each one, and give it the correct values.
+		//
+		// Converting MethodInfo into an Action instead of calling Invoke on
+		// it allows for exceptions to properly bubble up to the IDE.
+		ParameterInfo[] entryParams = entryPoint?.GetParameters();
+		if (entryParams == null || entryParams.Length == 0)
+		{
+			Action Program_Main = (Action)Delegate.CreateDelegate(typeof(Action), entryPoint);
+			Program_Main();
+		}
+		else if (entryParams?.Length == 1 && entryParams[0].ParameterType == typeof(string[]))
+		{
+			Action<string[]> Program_Main = (Action<string[]>)Delegate.CreateDelegate(typeof(Action<string[]>), entryPoint);
+			Program_Main(new string[] { });
+		}
+		else throw new Exception("Couldn't invoke Program.Main!");
 
-			// There are a number of potential method signatures for Main, so
-			// we need to check each one, and give it the correct values.
-			ParameterInfo[] entryParams = entryPoint?.GetParameters();
-			if (entryParams == null || entryParams.Length == 0)
-				entryPoint.Invoke(null, null);
-			else if (entryParams?.Length == 1 && entryParams[0].ParameterType == typeof(string[]))
-				entryPoint.Invoke(null, new object[] { new string[0] });
-			else
-				throw new Exception("Couldn't invoke Program.Main!");
-
-			Process.KillProcess(Process.MyPid());
-		});
+		Process.KillProcess(Process.MyPid());
 	}
 
 	// Events related to surface state changes
