@@ -591,7 +591,7 @@ float  time_elapsedf_unscaled(){ return time_stepf_unscaled (); };
 double time_elapsed_unscaled (){ return time_step_unscaled  (); };
 float  time_elapsedf         (){ return time_stepf          (); };
 double time_elapsed          (){ return time_step           (); };
-double time_total_raw        (){ return stm_sec(stm_now()); }
+double time_total_raw        (){ return stm_sec(stm_now());    }
 float  time_totalf_unscaled  (){ return local.timevf_us;       };
 double time_total_unscaled   (){ return local.timev_us;        };
 float  time_totalf           (){ return local.timevf;          };
