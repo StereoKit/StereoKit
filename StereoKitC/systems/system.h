@@ -4,6 +4,11 @@
 
 namespace sk {
 
+enum system_run_ {
+	system_run_before,
+	system_run_from,
+};
+
 struct system_t {
 	const char  *name;
 	const char **init_dependencies;
@@ -24,10 +29,12 @@ struct system_t {
 	void (*func_shutdown  )(void);
 };
 
-void systems_add       (const system_t *system);
-bool systems_initialize();
-void systems_step      ();
-void systems_shutdown  ();
-system_t *systems_find (const char *name);
+void      systems_add         (const system_t *system);
+bool      systems_initialize  ();
+void      systems_step        ();
+void      systems_step_partial(system_run_ run_section, int32_t system_idx);
+void      systems_shutdown    ();
+system_t* systems_find        (const char *name);
+int32_t   systems_find_idx    (const char *name);
 
 } // namespace sk
