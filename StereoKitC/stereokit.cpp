@@ -535,9 +535,9 @@ system_info_t sk_system_info() {
 	//
 	// All references to the following system_info_t valuables have been
 	// scrubbed out of the core code and should not be used!
-	result.display_width        = device_display_get_width();
+	result.display_width        = device_display_get_width ();
 	result.display_height       = device_display_get_height();
-	result.eye_tracking_present = device_has_eye_gaze();
+	result.eye_tracking_present = device_has_eye_gaze      ();
 	switch (device_display_get_blend()) {
 		case display_blend_none:            result.display_type = display_none;            break;
 		case display_blend_opaque:          result.display_type = display_opaque;          break;
