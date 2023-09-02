@@ -25,9 +25,9 @@
 #include "platforms/platform_utils.h"
 #include "xr_backends/openxr.h"
 
-namespace sk {
-
 ///////////////////////////////////////////
+
+using namespace sk;
 
 struct sk_state_t {
 	void        (*app_step_func)(void);
@@ -35,9 +35,10 @@ struct sk_state_t {
 	system_info_t info ;
 	app_focus_    focus;
 	bool32_t      running;
-	bool32_t      stepping;
+	bool32_t      in_step;
+	bool32_t      has_stepped;
 	bool32_t      initialized;
-	bool32_t      first_step ;
+	bool32_t      disallow_user_shutdown;
 	thrd_id_t     init_thread;
 
 	double   timev_scale;
@@ -54,13 +55,20 @@ struct sk_state_t {
 
 	uint64_t  app_init_time;
 	system_t *app_system;
+	int32_t   app_system_idx;
 };
 static sk_state_t local;
 
 ///////////////////////////////////////////
 
-void sk_step_timer();
-void sk_app_step();
+namespace sk {
+
+///////////////////////////////////////////
+
+void     sk_step_timer();
+void     sk_app_step  ();
+void     sk_step_begin();
+bool32_t sk_step_end  ();
 
 ///////////////////////////////////////////
 
@@ -270,18 +278,24 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (!local.initialized) log_show_any_fail_reason();
 	else                 log_clear_any_fail_reason();
 
-	local.app_system    = systems_find("App");
-	local.app_init_time = stm_now();
-	local.running       = local.initialized;
+	local.app_system     = systems_find    ("App");
+	local.app_system_idx = systems_find_idx("App");
+	local.app_init_time  = stm_now();
+	local.running        = local.initialized;
 	return local.initialized;
 }
 
 ///////////////////////////////////////////
 
 void sk_shutdown() {
+	if (local.initialized == false) return;
+	if (local.disallow_user_shutdown) {
+		log_err("Calling SK.Shutdown is unnecessary when using SK.Run. You may be looking for SK.Quit instead?");
+		return;
+	}
+
 	if (sk_is_stepping()) {
-		log_err("sk_shutdown should only be called for cleanup, please use sk_quit to exit the app!");
-		abort();
+		sk_step_end();
 	}
 
 	sk_shutdown_unsafe();
@@ -296,6 +310,7 @@ void sk_shutdown_unsafe(void) {
 	sk_mem_log_allocations();
 
 	local = {};
+	local.disallow_user_shutdown = true;
 }
 
 ///////////////////////////////////////////
@@ -313,39 +328,68 @@ void sk_quit() {
 
 ///////////////////////////////////////////
 
-bool32_t sk_step(void (*app_step)(void)) {
-	if (local.app_system->profile_start_duration == 0)
-		local.app_system->profile_start_duration = stm_since(local.app_init_time);
+void sk_first_step() {
+	local.app_system->profile_start_duration = stm_since(local.app_init_time);
 
-	// TODO: remove this in v0.4 when sk_step is formally replaced by sk_run
 	sk_assert_thread_valid();
-	local.first_step = true;
-	local.stepping   = true;
-	
-	local.app_step_func = app_step;
-	sk_step_timer();
+	local.has_stepped = true;
+}
 
-	systems_step();
+///////////////////////////////////////////
+
+void sk_step_begin() {
+	local.in_step = true;
+	sk_step_timer();
+	systems_step_partial(system_run_before, local.app_system_idx);
+	local.app_system->profile_frame_start = stm_now();
+}
+
+///////////////////////////////////////////
+
+bool32_t sk_step_end() {
+	local.app_system->profile_step_duration += stm_since(local.app_system->profile_frame_start);
+	local.app_system->profile_step_count += 1;
+
+	systems_step_partial(system_run_from, local.app_system_idx+1);
 
 	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && !local.settings.disable_unfocused_sleep)
 		platform_sleep(100);
-	local.stepping = false;
+	local.in_step = false;
 	return local.running;
 }
 
 ///////////////////////////////////////////
 
+bool32_t sk_step(void (*app_step)(void)) {
+	if (local.has_stepped == false) {
+		sk_first_step();
+	} else {
+		bool run = sk_step_end();
+		if (run == false) return false;
+	}
+
+	sk_step_begin();
+	if (app_step)
+		app_step();
+
+	return true;
+}
+
+///////////////////////////////////////////
+
 void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
-	sk_assert_thread_valid();
-	local.first_step = true;
-	
+	local.disallow_user_shutdown = true;
+
 #if defined(SK_OS_WEB)
+	sk_first_step();
 	web_start_main_loop(app_update, app_shutdown);
 #else
 	while (sk_step(app_update));
 
 	if (app_shutdown != nullptr)
 		app_shutdown();
+
+	local.disallow_user_shutdown = false;
 	sk_shutdown();
 #endif
 }
@@ -362,10 +406,10 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 	_sk_run_data_app_shutdown  = app_shutdown;
 	_sk_run_data_shutdown_data = shutdown_data;
 
-	sk_assert_thread_valid();
-	local.first_step = true;
+	local.disallow_user_shutdown = true;
 
 #if defined(SK_OS_WEB)
+	sk_first_step();
 	web_start_main_loop(
 		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); },
 		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
@@ -376,6 +420,7 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 	if (_sk_run_data_app_shutdown)
 		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);
 
+	local.disallow_user_shutdown = false;
 	sk_shutdown();
 #endif
 }
@@ -408,9 +453,7 @@ void sk_assert_thread_valid() {
 	// asset code and cause a blocking loop as the asset waits for the main
 	// thread to step. This function is used to detect and warn of such a
 	// situation.
-	if (local.initialized && local.first_step)
-		return;
-	
+
 	if (thrd_id_equal(local.init_thread, thrd_id_current()) == false) {
 		const char* err = "SK.Run and pre-Run GPU asset creation currently must be called on the same thread as SK.Initialize! Has async code accidentally bumped you to another thread?";
 		log_err(err);
@@ -516,11 +559,11 @@ system_info_t* sk_get_info_ref() { return &local.info; }
 
 ///////////////////////////////////////////
 
-bool32_t sk_has_stepped() { return local.first_step; }
+bool32_t sk_is_stepping() { return local.in_step; }
 
 ///////////////////////////////////////////
 
-bool32_t sk_is_stepping() { return local.stepping; }
+bool32_t sk_has_stepped() { return local.has_stepped; }
 
 ///////////////////////////////////////////
 

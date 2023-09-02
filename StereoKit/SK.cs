@@ -166,14 +166,10 @@ namespace StereoKit
 		/// using SK.Run, as it is called automatically there.</summary>
 		public static void Shutdown()
 		{
-			if (NativeAPI.sk_is_stepping())
-				throw new Exception("SK.Shutdown is for cleanup and should not be used within SK.Step/Run, please use SK.Quit to exit your app!");
-
-			if (IsInitialized)
-			{
-				Cleanup();
-				NativeAPI.sk_shutdown();
-			}
+			if (IsInitialized == false) return;
+			
+			Cleanup();
+			NativeAPI.sk_shutdown();
 		}
 
 		static void Cleanup()
@@ -199,19 +195,14 @@ namespace StereoKit
 		/// `SK.Quit()` is called, this function will return false.</returns>
 		public static bool Step(Action onStep = null)
 		{
-			_stepCallback = onStep;
-			return NativeAPI.sk_step(_stepAction);
-		}
-		// This pattern is a little weird, but it avoids continuous Action
-		// allocations, and saves our GC a surprising amount of work.
-		private static Action _stepAction   = _Step;
-		private static Action _stepCallback = null;
-		private static void _Step() {
-			_steppers.Step();
-			_stepCallback?.Invoke();
+			if (NativeAPI.sk_step(null) == false) return false;
 
-			while (_mainThreadInvoke.TryDequeue(out Action a))
-				a.Invoke();
+			_steppers.Step();
+			while (_mainThreadInvoke.TryDequeue(out Action a)) a();
+
+			if (onStep != null) onStep();
+
+			return true;
 		}
 
 		private static Action _shutdownCallback = null;
@@ -233,20 +224,16 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			_stepCallback     = onStep;
-			_shutdownCallback = ()=> {
-				onShutdown?.Invoke();
-				Cleanup();
-			};
-
-			try { NativeAPI.sk_run(_stepAction, _shutdownCallback); }
-			catch (Exception e)
-			{
-				// Clean up as much as we can, and toss the exception back up
-				_shutdownCallback();
-				NativeAPI.sk_shutdown_unsafe();
-				throw e;
+			try {
+				while (Step())
+					if (onStep != null) onStep();
+			} catch {
+				if (onShutdown != null) onShutdown();
+				Shutdown();
+				throw;
 			}
+			if (onShutdown != null) onShutdown();
+			Shutdown();
 		}
 
 		/// <summary>This registers an instance of the `IStepper` type
