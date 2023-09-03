@@ -154,7 +154,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\linux.cpp" />
     <ClCompile Include="platforms\platform.cpp" />
-    <ClCompile Include="platforms\platform_common.cpp" />
     <ClCompile Include="platforms\platform_common_unix.cpp" />
     <ClCompile Include="platforms\platform_common_win.cpp" />
     <ClCompile Include="platforms\uwp.cpp" />

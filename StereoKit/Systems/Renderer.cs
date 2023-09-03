@@ -84,8 +84,7 @@ namespace StereoKit
 		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
 
 		/// <summary>This is the gamma space color the renderer will clear
-		/// the screen to when beginning to draw a new frame. This is ignored
-		/// on displays with transparent screens</summary>
+		/// the screen to when beginning to draw a new frame.</summary>
 		public static Color ClearColor
 		{
 			get => NativeAPI.render_get_clear_color();
