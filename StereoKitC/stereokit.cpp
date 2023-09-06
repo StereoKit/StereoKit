@@ -84,6 +84,8 @@ bool32_t sk_init(sk_settings_t settings) {
 	// We can give this thread a name on Windows
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	SetThreadDescription(GetCurrentThread(), L"StereoKit Main");
+#else
+	pthread_setname_np(pthread_self(), "StereoKit Main");
 #endif
 
 	// Set some default values

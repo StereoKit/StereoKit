@@ -736,6 +736,8 @@ int32_t asset_thread(void *thread_inst_obj) {
 	// We can give this thread a name on Windows
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	SetThreadDescription(GetCurrentThread(), L"StereoKit Assets");
+#else
+	pthread_setname_np(pthread_self(), "StereoKit Assets");
 #endif
 	 
 	mtx_t wait_mtx;

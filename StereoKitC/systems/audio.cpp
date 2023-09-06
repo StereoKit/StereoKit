@@ -411,6 +411,9 @@ bool audio_init() {
 		SetThreadDescription(au_device.thread, L"StereoKit Audio");
 	if (au_context.backend == ma_backend_wasapi && au_context.wasapi.commandThread)
 		SetThreadDescription(au_context.wasapi.commandThread, L"StereoKit Audio Context");
+#else
+	if (au_device.thread)
+		pthread_setname_np(pthread_self(), "StereoKit Audio");
 #endif
 
 	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));
