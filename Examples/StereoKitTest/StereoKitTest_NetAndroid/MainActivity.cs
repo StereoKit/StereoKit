@@ -18,13 +18,25 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 	protected override void OnCreate(Bundle savedInstanceState)
 	{
 		base.OnCreate(savedInstanceState);
+
+		// Set up a surface for StereoKit to draw on, this is only really
+		// important for flatscreen experiences.
+		Window.TakeSurface(this);
+		Window.SetFormat  (Format.Unknown);
+		surface = new View(this);
+		SetContentView(surface);
+		surface.RequestFocus();
+
 		Run();
 		SetContentView(StereoKitTest.Resource.Layout.activity_main);
 	}
 
 	protected override void OnDestroy()
 	{
-		SK.Quit();
+		// Quit, but not if Destroy is just a rotation or resize
+		if (IsChangingConfigurations == false)
+			SK.Quit();
+
 		base.OnDestroy();
 	}
 
@@ -38,14 +50,6 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		// be set before any other SK calls, otherwise native library
 		// loading may fail.
 		SK.AndroidActivity = this;
-
-		// Set up a surface for StereoKit to draw on, this is only really
-		// important for flatscreen experiences.
-		Window.TakeSurface(this);
-		Window.SetFormat(Format.Unknown);
-		surface = new View(this);
-		SetContentView(surface);
-		surface.RequestFocus();
 
 		// Task.Run will eat exceptions, but Thread.Start doesn't seem to.
 		new Thread(InvokeStereoKit).Start();
