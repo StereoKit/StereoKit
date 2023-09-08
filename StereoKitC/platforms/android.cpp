@@ -202,7 +202,7 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 	if (win->has_swapchain == false) {
 		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-		win->swapchain = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, width, height);
+		win->swapchain     = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, width, height);
 		win->has_swapchain = true;
 
 		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));

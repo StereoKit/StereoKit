@@ -242,7 +242,7 @@ platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
 
 ///////////////////////////////////////////
 
-platform_win_t platform_win_get_existing() { return -1; }
+platform_win_t platform_win_get_existing(platform_surface_ surface_type) { return -1; }
 
 ///////////////////////////////////////////
 

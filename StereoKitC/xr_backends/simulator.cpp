@@ -8,6 +8,7 @@
 #include "../_stereokit.h"
 #include "../stereokit_ui.h" // for ui_has_keyboard_focus
 #include "../device.h"
+#include "../log.h"
 #include "../libraries/stref.h"
 #include "../libraries/sokol_time.h"
 #include "../platforms/platform.h"
@@ -76,12 +77,22 @@ bool simulator_init() {
 		win_size.h = settings->flatscreen_height;
 	}
 
-	sim_window = platform_win_make(settings->app_name, win_size, platform_surface_swapchain);
-	if (sim_window == -1)
-		return false;
+	switch (platform_win_type()) {
+	case platform_win_type_creatable: {
+		sim_window = platform_win_make(settings->app_name, win_size, platform_surface_swapchain);
+		if (sim_window == -1) {
+			log_fail_reason(90, log_error, "Failed to create platform window.");
+			return false;
+		}
+	} break;
+	case platform_win_type_existing: {
+		sim_window = platform_win_get_existing(platform_surface_swapchain);
+	} break;
+	}
 
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
-	sim_target_resize(&sim_target, swapchain->width, swapchain->height);
+	if (swapchain)
+		sim_target_resize(&sim_target, swapchain->width, swapchain->height);
 
 	return true;
 }
@@ -89,7 +100,12 @@ bool simulator_init() {
 ///////////////////////////////////////////
 
 void sim_target_resize(tex_t *target, int32_t width, int32_t height) {
+	device_data.display_width  = width;
+	device_data.display_height = height;
+
 	if (*target == nullptr) {
+		log_diagf("Creating target: %d<~BLK>x<~clr>%d", width, height);
+
 		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
 		tex_set_id       (*target, "sk/platform/swapchain");
 		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
@@ -97,15 +113,13 @@ void sim_target_resize(tex_t *target, int32_t width, int32_t height) {
 		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
 		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
 		tex_release(zbuffer);
+		render_update_projection();
 	}
-	
-	device_data.display_width  = width;
-	device_data.display_height = height;
 
 	if (width == tex_get_width(*target) && height == tex_get_height(*target))
 		return;
 
-	log_diagf("Resizing to: %d<~BLK>x<~clr>%d", width, height);
+	log_diagf("Resizing target to: %d<~BLK>x<~clr>%d", width, height);
 
 	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
 	render_update_projection();
@@ -214,10 +228,23 @@ void simulator_step_begin() {
 void simulator_step_end() {
 	input_update_poses(true);
 
+	skg_draw_begin();
+	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
+
+	// If we have no swapchain (yet, it may arrive later), we won't want to do
+	// normal rendering, so just check for screenshots and offscreen surfaces,
+	// and call it a day.
+	if (swapchain == nullptr) {
+		skg_event_begin("Draw");
+		render_check_viewpoints();
+		render_check_screenshots();
+		render_clear();
+		skg_event_end();
+		return;
+	}
+
 	skg_event_begin("Setup");
 	{
-		skg_draw_begin();
-
 		color128 col = render_get_clear_color_ln();
 		skg_tex_target_bind(&sim_target->tex);
 		skg_target_clear(true, &col.r);
@@ -235,7 +262,6 @@ void simulator_step_end() {
 	{
 		// This copies the color data over to the swapchain, and resolves any
 		// multisampling on the primary target texture.
-		skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 		skg_tex_copy_to_swapchain(&sim_target->tex, swapchain);
 
 		sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
