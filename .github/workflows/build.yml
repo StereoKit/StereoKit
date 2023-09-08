@@ -194,7 +194,7 @@ jobs:
 
     - name: Install Arm64 Prerequisites
       run: |
-        sudo cp ./docker/arm-cross-compile-sources-focal.list /etc/apt/sources.list.d/
+        sudo cp ./Tools/docker/arm-cross-compile-sources-focal.list /etc/apt/sources.list.d/
         sudo sed -i "s/deb mirror/deb [arch=amd64] mirror/g" /etc/apt/sources.list
         sudo dpkg --add-architecture arm64
         sudo apt-get update
