@@ -4,6 +4,7 @@
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
 #include "xr.h"
+#include "openxr.h"
 
 namespace sk {
 
