@@ -236,9 +236,9 @@ void simulator_step_end() {
 	// and call it a day.
 	if (swapchain == nullptr) {
 		skg_event_begin("Draw");
-		render_check_viewpoints();
+		render_check_viewpoints ();
 		render_check_screenshots();
-		render_clear();
+		render_clear            ();
 		skg_event_end();
 		return;
 	}
