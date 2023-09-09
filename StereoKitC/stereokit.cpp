@@ -23,6 +23,7 @@
 #include "systems/defaults.h"
 #include "asset_types/animation.h"
 #include "platforms/_platform.h"
+#include "platforms/web.h"
 #include "tools/tools.h"
 
 ///////////////////////////////////////////
@@ -539,6 +540,10 @@ bool32_t sk_has_stepped() { return local.has_stepped; }
 ///////////////////////////////////////////
 
 bool32_t sk_is_initialized() { return local.initialized; }
+
+///////////////////////////////////////////
+
+bool32_t sk_is_running() { return local.running; }
 
 ///////////////////////////////////////////
 

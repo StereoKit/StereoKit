@@ -80,7 +80,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -89,7 +89,7 @@ void backend_openxr_ext_request(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_use_minimum_exts must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -98,7 +98,7 @@ void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 ///////////////////////////////////////////
 
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
 		return;
 	}

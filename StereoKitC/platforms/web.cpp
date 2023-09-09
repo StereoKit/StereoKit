@@ -12,7 +12,9 @@
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../sk_math.h"
 #include "../asset_types/texture.h"
+#include "../asset_types/font.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
@@ -25,18 +27,27 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-typedef struct web_key_map_t {
+struct window_event_t {
+	platform_evt_           type;
+	platform_evt_data_t     data;
+};
+
+struct window_t {
+	array_t<window_event_t> events;
+	skg_swapchain_t         swapchain;
+	bool                    has_swapchain;
+};
+
+struct web_key_map_t {
 	const char* name;
 	key_        key;
-} web_key_map_t;
+};
 
-skg_swapchain_t web_swapchain  = {};
-bool            web_swapchain_initialized = false;
-system_t       *web_render_sys = nullptr;
-vec2            web_mouse_pos  = { 0,0 };
-bool            web_mouse_tracked = false;
-float           web_mouse_scroll  = 0;
-bool            web_mouse_locked  = false;
+window_t web_window        = {};
+vec2     web_mouse_pos     = { 0,0 };
+bool     web_mouse_tracked = false;
+float    web_mouse_scroll  = 0;
+bool     web_mouse_locked  = false;
 
 web_key_map_t web_keymap[] = {
 	{ "Backspace",      key_backspace },
@@ -144,133 +155,40 @@ web_key_map_t web_keymap[] = {
 	{ 0, key_none },
 };
 
+
+///////////////////////////////////////////
+
+bool platform_impl_init() {
+	return true;
+}
+
+///////////////////////////////////////////
+
+void platform_impl_shutdown() {
+}
+
+///////////////////////////////////////////
+
+void platform_impl_step() {
+}
+
 ///////////////////////////////////////////
 
 WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
-	if (!web_swapchain_initialized || (width == device_data.display_width && height == device_data.display_height))
+	window_t* win = &web_window;
+
+	width  = maxi(1, width);
+	height = maxi(1, height);
+
+	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
 		return;
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
+	//log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
 	
-	skg_swapchain_resize(&web_swapchain, width, height);
-	render_update_projection();
-}
+	skg_swapchain_resize(&win->swapchain, width, height);
 
-///////////////////////////////////////////
-
-bool web_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool web_start_post_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool web_init() {
-	web_render_sys = systems_find("FrameRender");
-	return true;
-}
-
-///////////////////////////////////////////
-
-void web_shutdown() {
-}
-
-///////////////////////////////////////////
-
-bool web_start_flat() {
-	device_data.display_blend = display_blend_opaque;
-
-	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt(); // skg_tex_fmt_depthstencil
-
-	const sk_settings_t *settings = sk_get_settings_ref();
-
-	web_swapchain = skg_swapchain_create(nullptr, color_fmt, depth_fmt, settings->flatscreen_width, settings->flatscreen_height);
-	web_swapchain_initialized = true;
-	device_data.display_width  = web_swapchain.width;
-	device_data.display_height = web_swapchain.height;
-	
-	log_diagf("Created swapchain: %dx%d color:%s depth:%s", web_swapchain.width, web_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-
-	return true;
-}
-
-///////////////////////////////////////////
-
-void web_stop_flat() {
-	skg_swapchain_destroy(&web_swapchain);
-	web_swapchain_initialized = false;
-}
-
-///////////////////////////////////////////
-
-void web_step_begin_xr() {
-}
-
-///////////////////////////////////////////
-
-void web_step_begin_flat() {
-}
-
-///////////////////////////////////////////
-
-void web_step_end_flat() {
-	skg_draw_begin();
-
-	color128 col = render_get_clear_color_ln();
-	skg_swapchain_bind(&web_swapchain);
-	skg_target_clear(true, &col.r);
-
-	matrix view = render_get_cam_final ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
-
-	web_render_sys->profile_frame_duration = stm_since(web_render_sys->profile_frame_start);
-	skg_swapchain_present(&web_swapchain);
-}
-
-///////////////////////////////////////////
-
-bool platform_get_cursor(vec2 *out_pos) {
-	*out_pos = web_mouse_pos;
-	return web_mouse_tracked;
-}
-
-///////////////////////////////////////////
-
-void platform_set_cursor(vec2 window_pos) {
-	web_mouse_pos = window_pos;
-}
-
-///////////////////////////////////////////
-
-float platform_get_scroll() {
-	return web_mouse_scroll;
-}
-
-///////////////////////////////////////////
-
-bool platform_xr_keyboard_present() {
-	return false;
-}
-
-///////////////////////////////////////////
-
-void platform_xr_keyboard_show(bool show) {
-}
-
-///////////////////////////////////////////
-
-bool platform_xr_keyboard_visible() {
-	return false;
+	window_event_t e = { platform_evt_resize };
+	e.data.resize = { width, height };
+	win->events.add(e);
 }
 
 ///////////////////////////////////////////
@@ -280,7 +198,7 @@ void (*web_app_shutdown)(void);
 bool32_t web_anim_callback(double t, void *) {
 	sk_step(web_app_update);
 	
-	return sk_running ? true : false;
+	return sk_is_running() ? true : false;
 }
 
 ///////////////////////////////////////////
@@ -302,10 +220,12 @@ EM_BOOL web_on_scroll(int event_type, const EmscriptenWheelEvent *wheel_event, v
 ///////////////////////////////////////////
 
 EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, void *user_data) {
+	window_t* win = &web_window;
 	if (event_type == EMSCRIPTEN_EVENT_KEYPRESS) {
 		const char *next;
-		char32_t    ch = utf8_decode_fast(key_event->charValue, &next);
-		input_text_inject_char(ch);
+		window_event_t e = { platform_evt_character };
+		e.data.character = utf8_decode_fast(key_event->charValue, &next);
+		win->events.add(e);
 		return 1;
 	}
 
@@ -316,15 +236,16 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 			break;
 		}
 	}
-	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) input_key_inject_press  (keycode);
-	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   input_key_inject_release(keycode);
+	window_event_t e = {};
+	e.data.press_release = keycode;
+	if      (event_type == EMSCRIPTEN_EVENT_KEYDOWN) { e.type = platform_evt_key_press;   win->events.add(e); }
+	else if (event_type == EMSCRIPTEN_EVENT_KEYUP)   { e.type = platform_evt_key_release; win->events.add(e); }
 
 	// Disable/enable pointer lock if shift is released/pressed
-	if (web_mouse_locked                                    &&
-		sk_active_display_mode() == display_mode_flatscreen && 
-		!sk_settings.disable_flatscreen_mr_sim              &&
-		event_type               == EMSCRIPTEN_EVENT_KEYUP  &&
-		keycode                  == key_shift)
+	if (web_mouse_locked                                      &&
+		sk_get_settings_ref()->mode == app_mode_simulator     &&
+		event_type                  == EMSCRIPTEN_EVENT_KEYUP &&
+		keycode                     == key_shift)
 	{
 		emscripten_exit_pointerlock();
 		web_mouse_locked = false;
@@ -336,18 +257,22 @@ EM_BOOL web_on_key(int event_type, const EmscriptenKeyboardEvent *key_event, voi
 ///////////////////////////////////////////
 
 EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_event, void *user_data) {
-	key_ key = key_none;
+	window_t* win = &web_window;
+	key_      key = key_none;
 	switch (mouse_event->button) {
 	case 0: key = key_mouse_left;   break;
 	case 1: key = key_mouse_center; break;
 	case 2: key = key_mouse_right;  break;
 	}
+
 	if (key != key_none) {
-		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) input_key_inject_press  (key);
-		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) input_key_inject_release(key);
+		window_event_t e = {};
+		e.data.press_release = key;
+		if      (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) { e.type = platform_evt_mouse_press;   win->events.add(e); }
+		else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP  ) { e.type = platform_evt_mouse_release; win->events.add(e); }
 	}
 
-	if (sk_active_display_mode() == display_mode_flatscreen && !sk_settings.disable_flatscreen_mr_sim && key == key_mouse_right) {
+	if (sk_get_settings_ref()->mode == app_mode_simulator && key == key_mouse_right) {
 		if (web_mouse_locked == false && event_type == EMSCRIPTEN_EVENT_MOUSEDOWN && input_key(key_shift) & button_state_active) {
 			web_mouse_locked = emscripten_request_pointerlock("canvas", false) == EMSCRIPTEN_RESULT_SUCCESS;
 		}
@@ -363,6 +288,7 @@ EM_BOOL web_on_mouse_press(int event_type, const EmscriptenMouseEvent *mouse_eve
 
 EM_BOOL web_on_pointerlock(int event_type, const EmscriptenPointerlockChangeEvent *pointerlock_change_event, void *user_data) {
 	web_mouse_locked = pointerlock_change_event->isActive;
+	return 1;
 }
 
 ///////////////////////////////////////////
@@ -391,6 +317,94 @@ void web_start_main_loop(void (*app_update)(void), void (*app_shutdown)(void)) {
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, web_on_mouse_enter);
 	emscripten_set_pointerlockchange_callback("canvas", nullptr, false, web_on_pointerlock);
 }
+
+///////////////////////////////////////////
+// Window code                           //
+///////////////////////////////////////////
+
+platform_win_type_ platform_win_type() { return platform_win_type_existing; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) { return -1; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
+	const sk_settings_t* settings = sk_get_settings_ref();
+	window_t*            win      = &web_window;
+
+	// Not all windows need a swapchain, but here's where we make 'em for those
+	// that do.
+	if (surface_type == platform_surface_swapchain) {
+		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+
+		win->swapchain     = skg_swapchain_create(nullptr, color_fmt, depth_fmt, settings->flatscreen_width, settings->flatscreen_height);
+		win->has_swapchain = true;
+
+		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	}
+	return 1;
+}
+
+///////////////////////////////////////////
+
+void platform_win_destroy(platform_win_t window) {
+	window_t* win = &web_window;
+
+	if (win->has_swapchain) {
+		skg_swapchain_destroy(&win->swapchain);
+	}
+
+	win->events.free();
+	*win = {};
+}
+
+///////////////////////////////////////////
+
+void platform_check_events() {
+}
+
+///////////////////////////////////////////
+
+bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
+	if (window_id != 1) return false;
+	window_t* win = &web_window;
+
+	if (win->events.count > 0) {
+		*out_event      = win->events[0].type;
+		*out_event_data = win->events[0].data;
+		win->events.remove(0);
+		return true;
+	} return false;
+}
+
+///////////////////////////////////////////
+
+skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
+	if (window != 1) return nullptr;
+	window_t* win = &web_window;
+
+	return win->has_swapchain ? &win->swapchain : nullptr;
+}
+
+///////////////////////////////////////////
+
+recti_t platform_win_rect(platform_win_t window_id) {
+	if (window_id != 1) return {};
+	window_t* win = &web_window;
+
+	return recti_t{ 0, 0,
+		win->swapchain.width,
+		win->swapchain.height };
+}
+
+///////////////////////////////////////////
+
+bool  platform_get_cursor(vec2 *out_pos   ) { *out_pos = web_mouse_pos; return web_mouse_tracked; }
+void  platform_set_cursor(vec2  window_pos) { web_mouse_pos = window_pos; }
+float platform_get_scroll(                ) { return web_mouse_scroll; }
 
 ///////////////////////////////////////////
 

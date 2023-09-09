@@ -7,6 +7,7 @@ namespace sk {
 void     sk_assert_thread_valid();
 bool32_t sk_has_stepped        ();
 bool32_t sk_is_initialized     ();
+bool32_t sk_is_running         ();
 void     sk_set_app_focus      (app_focus_ focus_state);
 
 const sk_settings_t* sk_get_settings_ref();

@@ -3433,7 +3433,7 @@ int32_t skg_init(const char *app_name, void *adapter_id) {
 	gl_load_extensions();
 #endif
 
-	const char* name     = glGetString(GL_RENDERER);
+	const char* name     = (const char *)glGetString(GL_RENDERER);
 	size_t      name_len = strlen(name);
 	gl_adapter_name = (char*)malloc(name_len+1);
 	memcpy(gl_adapter_name, name, name_len);
