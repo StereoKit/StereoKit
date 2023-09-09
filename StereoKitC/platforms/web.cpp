@@ -451,6 +451,10 @@ void platform_debug_output(log_ level, const char *text) {
 
 ///////////////////////////////////////////
 
+void platform_print_callstack() { }
+
+///////////////////////////////////////////
+
 void platform_sleep(int ms) {
 	emscripten_sleep(ms);
 }

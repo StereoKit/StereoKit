@@ -96,6 +96,20 @@ if (ANDROID)
   if (SK_DYNAMIC_OPENXR)
     add_definitions("-DSK_DYNAMIC_OPENXR")
   endif()
+elseif(EMSCRIPTEN)
+  #set(EMSCRIPTEN_LIBS)
+  set(SK_BUILD_OPENXR_LOADER OFF)
+  set(SK_PHYSICS OFF)
+  set(SK_BUILD_SHARED_LIBS OFF)
+  add_definitions("-D_XM_NO_INTRINSICS_")
+  set(SK_LINKER_FLAGS 
+    -sFULL_ES3
+    -sMIN_WEBGL_VERSION=2
+    -sMAX_WEBGL_VERSION=2
+    -sFORCE_FILESYSTEM=1
+    -sALLOW_MEMORY_GROWTH=1
+    -g
+    -gsource-map )
 elseif (UNIX)
   set(LINUX_LIBS
     Threads::Threads
@@ -119,12 +133,6 @@ elseif(WIN32)
     if (MSVC)
       list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
     endif()
-endif()
-
-if(EMSCRIPTEN)
-  set(SK_BUILD_OPENXR_LOADER OFF)
-  set(SK_PHYSICS OFF)
-  add_definitions("-D_XM_NO_INTRINSICS_")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
@@ -165,8 +173,7 @@ if(SK_PHYSICS)
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-  set(PHYSICS_LIB
-    reactphysics3d)
+  set(PHYSICS_LIB reactphysics3d)
 endif()
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
@@ -180,6 +187,8 @@ if (SK_BUILD_OPENXR_LOADER)
     "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
+  
+  set(OPENXR_LIB openxr_loader)
 endif()
 
 ###########################################
@@ -210,10 +219,10 @@ foreach(SHADER ${SK_SRC_SHADERS_HLSL})
     set(SK_SHADER_TARGETS "x")
   elseif(ANDROID)
     set(SK_SHADER_TARGETS "e")
-  elseif(UNIX)
-    set(SK_SHADER_TARGETS "e")
   elseif(EMSCRIPTEN)
     set(SK_SHADER_TARGETS "w")
+  elseif(UNIX)
+    set(SK_SHADER_TARGETS "e")
   endif()
 
   # Hide shader compile metadata unless we're in verbose mode
@@ -456,11 +465,14 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
   set(SK_BIN_DEBUG_EXT ".so.dbg")
 
-  add_custom_command(TARGET StereoKitC POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
-    COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
-    COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
-  )
+  if (NOT EMSCRIPTEN)
+    set(SK_SEPARATE_DBG ON)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
+      COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
+      COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
+    )
+  endif()
   if (SK_DYNAMIC_OPENXR)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
@@ -468,6 +480,7 @@ if (NOT MSVC)
   endif()
 else()
   set(SK_BIN_DEBUG_EXT ".pdb")
+  set(SK_SEPARATE_DBG ON)
 endif()
 
 target_include_directories(StereoKitC
@@ -482,8 +495,8 @@ target_include_directories(StereoKitC
 
 target_link_libraries( StereoKitC
   PRIVATE
+    ${OPENXR_LIB}
     ${PHYSICS_LIB}
-    openxr_loader
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
@@ -514,6 +527,7 @@ if (SK_PHYSICS)
 endif()
 target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
 target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
+target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
 
 ###########################################
 ## Copy binaries to the distribute folder##
@@ -563,9 +577,12 @@ set(SK_DISTRIBUTE_FOLDER "bin/distribute")
 add_custom_command(TARGET StereoKitC POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>"
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>"
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
+if (SK_SEPARATE_DBG)
+  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
+endif()
 if (SK_DYNAMIC_OPENXR)
   add_custom_command(TARGET StereoKitC POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
@@ -626,6 +643,8 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 
   set (source      ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets)
   set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)

@@ -11,6 +11,10 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(SK_OS_WEB)
+#include <emscripten/threading.h>
+#endif
+
 namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
@@ -411,9 +415,12 @@ bool audio_init() {
 		SetThreadDescription(au_device.thread, L"StereoKit Audio");
 	if (au_context.backend == ma_backend_wasapi && au_context.wasapi.commandThread)
 		SetThreadDescription(au_context.wasapi.commandThread, L"StereoKit Audio Context");
+#elif defined(SK_OS_WEB)
+	if (au_device.thread)
+		emscripten_set_thread_name(au_device.thread, "StereoKit Audio");
 #else
 	if (au_device.thread)
-		pthread_setname_np(pthread_self(), "StereoKit Audio");
+		pthread_setname_np(au_device.thread, "StereoKit Audio");
 #endif
 
 	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));

@@ -4643,6 +4643,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		if (multisample > max_samples)
 			multisample = max_samples;
 	}
+#ifdef _SKG_GL_WEB
+	multisample = 1;
+#endif
 
 	tex->width       = width;
 	tex->height      = height;
@@ -4671,9 +4674,14 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		for (int32_t f = 0; f < 6; f++)
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X+f , 0, tex->_format, width, height, 0, layout, type, data_frames[f]);
 	} else {
+
+		#ifndef _SKG_GL_WEB
 		if      (tex->_target == GL_TEXTURE_2D_MULTISAMPLE)       { glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,       multisample, tex->_format, width, height, true); }
 		else if (tex->_target == GL_TEXTURE_2D_MULTISAMPLE_ARRAY) { glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, multisample, tex->_format, width, height, data_frame_count, true); }
 		else                                                      { glTexImage2D             (GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]); }
+		#else
+		glTexImage2D(GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
+		#endif
 	}
 
 	if (tex->mips == skg_mip_generate)

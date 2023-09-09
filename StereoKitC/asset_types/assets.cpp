@@ -23,6 +23,10 @@
 #include <assert.h>
 #include <limits.h>
 
+#if defined(SK_OS_WEB)
+#include <emscripten/threading.h>
+#endif
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -736,6 +740,8 @@ int32_t asset_thread(void *thread_inst_obj) {
 	// We can give this thread a name on Windows
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	SetThreadDescription(GetCurrentThread(), L"StereoKit Assets");
+#elif defined(SK_OS_WEB)
+	emscripten_set_thread_name(pthread_self(), "StereoKit Assets");
 #else
 	pthread_setname_np(pthread_self(), "StereoKit Assets");
 #endif

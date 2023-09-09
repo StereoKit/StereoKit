@@ -313,10 +313,11 @@
     {
       "name":        "Web_Release",
       "description": "Build for Web",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Webx_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Web_Release",
       "generator":   "Ninja",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_BUILD_TYPE":              "Release",
+        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }
     }
@@ -344,6 +345,6 @@
       { "name":"Linux_x64_Release_Fast",     "configuration":"Release", "configurePreset":"Linux_x64_Release_Fast",     "jobs":24 },
       { "name":"Linux_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"Linux_Arm64_Debug",          "jobs":24 },
       { "name":"Linux_Arm64_Release",        "configuration":"Release", "configurePreset":"Linux_Arm64_Release",        "jobs":24 },
-      { "name":"Web_Release",                "configuration":"Release", "configurePreset":"Web_Release",                "jobs":24 }
+      { "name":"Web_Release",                "configuration":"Release", "configurePreset":"Web_Release",                "jobs":16 }
   ]
 }
