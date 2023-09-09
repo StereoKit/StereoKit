@@ -172,10 +172,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.0.28.2
+    NAME openxr_loader # 1.0.29
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG 8c966ae7da7fd50168b43ce8220f9df69063b341
-    CMAKE_ARGS -Wno-dev
+    GIT_TAG 90734c5b713bfde15eeb95a767e22a29dcbbd312
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
@@ -590,8 +589,6 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_aliasing.h
     Examples/StereoKitCTest/demo_aliasing.cpp
-    Examples/StereoKitCTest/demo_basics.h
-    Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_bvh.h
     Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_desktop.h

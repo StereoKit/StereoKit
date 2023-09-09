@@ -192,6 +192,19 @@ jobs:
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
+    - name: Install Arm64 Prerequisites
+      run: |
+        sudo cp ./tools/docker/arm-cross-compile-sources-focal.list /etc/apt/sources.list.d/
+        sudo sed -i "s/deb mirror/deb [arch=amd64] mirror/g" /etc/apt/sources.list
+        sudo dpkg --add-architecture arm64
+        sudo apt-get update
+        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libfontconfig1-dev:arm64 libgl1-mesa-dev:arm64 libx11-xcb-dev:arm64 libxfixes-dev:arm64 libxcb-dri2-0-dev:arm64 libxcb-glx0-dev:arm64 libxcb-icccm4-dev:arm64 libxcb-keysyms1-dev:arm64 libxcb-randr0-dev:arm64 libxrandr-dev:arm64 libxxf86vm-dev:arm64 mesa-common-dev:arm64
+
+    - name: Build Linux Arm64
+      run: |
+        cmake --preset Linux_Arm64_Release
+        cmake --build --preset Linux_Arm64_Release
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:

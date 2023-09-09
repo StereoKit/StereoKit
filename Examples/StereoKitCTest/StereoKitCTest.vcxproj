@@ -100,7 +100,6 @@
     <ClCompile Include="demo_ui_layout.cpp" />
     <ClCompile Include="demo_world.cpp" />
     <ClCompile Include="scene.cpp" />
-    <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="skt_lighting.cpp" />
     <ClInclude Include="demo_aliasing.h" />
@@ -118,7 +117,6 @@
     <ClInclude Include="demo_ui_layout.h" />
     <ClInclude Include="demo_world.h" />
     <ClInclude Include="scene.h" />
-    <ClInclude Include="demo_basics.h" />
     <ClInclude Include="Shaders\blit.hlsl.h" />
     <ClInclude Include="Shaders\skt_default_lighting.hlsl.h" />
     <ClInclude Include="Shaders\skt_light_only.hlsl.h" />
