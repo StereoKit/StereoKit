@@ -121,6 +121,12 @@ elseif(WIN32)
     endif()
 endif()
 
+if(EMSCRIPTEN)
+  set(SK_BUILD_OPENXR_LOADER OFF)
+  set(SK_PHYSICS OFF)
+  add_definitions("-D_XM_NO_INTRINSICS_")
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
   add_definitions("-DWINDOWS_UWP")
 endif()
