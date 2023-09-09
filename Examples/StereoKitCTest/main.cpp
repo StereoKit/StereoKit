@@ -4,7 +4,6 @@
 using namespace sk;
 
 #include "scene.h"
-#include "demo_basics.h"
 #include "demo_ui.h"
 #include "demo_ui_layout.h"
 #include "demo_mic.h"
@@ -32,11 +31,6 @@ model_t     floor_model;
 
 scene_t demos[] = {
 	{
-		"Basics",
-		demo_basics_init,
-		demo_basics_update,
-		demo_basics_shutdown,
-	}, {
 		"UI",
 		demo_ui_init,
 		demo_ui_update,

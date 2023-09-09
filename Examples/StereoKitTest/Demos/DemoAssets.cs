@@ -66,8 +66,6 @@ class DemoAssets : ITest
 		UI.SameLine();
 		if (UI.Radio("Shader",   filterType == typeof(Shader  ), size)) UpdateFilter(typeof(Shader));
 		UI.SameLine();
-		if (UI.Radio("Solid",    filterType == typeof(Solid   ), size)) UpdateFilter(typeof(Solid));
-		UI.SameLine();
 		if (UI.Radio("Tex",      filterType == typeof(Tex     ), size)) UpdateFilter(typeof(Tex));
 		UI.SameLine();
 		if (UI.Radio("All",      filterType == typeof(IAsset  ), size)) UpdateFilter(typeof(IAsset));
