@@ -98,4 +98,3 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.
 - [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.
 - [sokol_time](https://github.com/floooh/sokol) - Cross platform high performance time.
-- [TinyCThread](https://github.com/tinycthread/tinycthread) - For portable threading.

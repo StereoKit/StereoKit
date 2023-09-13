@@ -109,9 +109,6 @@
     <ClCompile Include="systems\input_keyboard.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\tinycthread.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="systems\audio.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -219,6 +216,9 @@
     </ClCompile>
     <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
       <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\ferr_thread.cpp">
+      <Filter>libraries</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -364,9 +364,6 @@
     <ClInclude Include="systems\input_keyboard.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\tinycthread.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h">
       <Filter>shaders_builtin</Filter>
     </ClInclude>
@@ -504,6 +501,9 @@
     </ClInclude>
     <ClInclude Include="xr_backends\openxr_scene_understanding.h">
       <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\ferr_thread.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

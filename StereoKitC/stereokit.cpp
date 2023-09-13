@@ -4,7 +4,7 @@
 #include "log.h"
 
 #include "libraries/sokol_time.h"
-#include "libraries/tinycthread.h"
+#include "libraries/ferr_thread.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -39,7 +39,7 @@ struct sk_state_t {
 	bool32_t      has_stepped;
 	bool32_t      initialized;
 	bool32_t      disallow_user_shutdown;
-	thrd_id_t     init_thread;
+	ft_id_t       init_thread;
 
 	double   timev_scale;
 	float    timevf;
@@ -77,7 +77,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	local.timev_scale = 1;
 
 	local.settings    = settings;
-	local.init_thread = thrd_id_current();
+	local.init_thread = ft_id_current();
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
 
@@ -454,7 +454,7 @@ void sk_assert_thread_valid() {
 	// thread to step. This function is used to detect and warn of such a
 	// situation.
 
-	if (thrd_id_equal(local.init_thread, thrd_id_current()) == false) {
+	if (ft_id_matches(local.init_thread) == false) {
 		const char* err = "SK.Run and pre-Run GPU asset creation currently must be called on the same thread as SK.Initialize! Has async code accidentally bumped you to another thread?";
 		log_err(err);
 		platform_msgbox_err(err, "Fatal Error");

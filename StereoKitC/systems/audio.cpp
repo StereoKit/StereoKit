@@ -30,6 +30,12 @@ bool              au_recording      = false;
 ///////////////////////////////////////////
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
 ma_device_id au_default_device_out_id = {};
 ma_device_id au_default_device_in_id  = {};
 void audio_set_default_device_out(const wchar_t *device_id) {
