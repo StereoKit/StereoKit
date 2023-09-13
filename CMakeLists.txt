@@ -316,8 +316,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stref.cpp
   StereoKitC/libraries/unicode.h
   StereoKitC/libraries/unicode.cpp
-  StereoKitC/libraries/tinycthread.h
-  StereoKitC/libraries/tinycthread.cpp )
+  StereoKitC/libraries/ferr_thread.h
+  StereoKitC/libraries/ferr_thread.cpp )
 
 set(SK_SRC_UTILS
   StereoKitC/utils/sdf.h
