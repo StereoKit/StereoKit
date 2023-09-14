@@ -319,33 +319,6 @@
     <ClInclude Include="libraries\sk_gpu.h">
       <Filter>libraries</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_equirect.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_font.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_lines.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_skybox.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="sk_math.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -364,9 +337,6 @@
     <ClInclude Include="systems\input_keyboard.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="systems\audio.h">
       <Filter>systems</Filter>
     </ClInclude>
@@ -376,9 +346,6 @@
     <ClInclude Include="systems\world.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="libraries\unicode.h">
       <Filter>libraries</Filter>
     </ClInclude>
@@ -387,9 +354,6 @@
     </ClInclude>
     <ClInclude Include="asset_types\animation.h">
       <Filter>asset_types</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h">
-      <Filter>shaders_builtin</Filter>
     </ClInclude>
     <ClInclude Include="libraries\aileron_font_data.h">
       <Filter>libraries</Filter>
@@ -405,9 +369,6 @@
     </ClInclude>
     <ClInclude Include="stereokit_ui.h">
       <Filter>ui</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h">
-      <Filter>shaders_builtin</Filter>
     </ClInclude>
     <ClInclude Include="sk_math_dx.h">
       <Filter>src</Filter>
@@ -570,9 +531,6 @@
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\tools\include\stereokit.hlsli">
-      <Filter>shaders_builtin</Filter>
-    </None>
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
@@ -586,9 +544,8 @@
     <None Include="shaders_builtin\shader_builtin_blit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\tools\include\stereokit_pbr.hlsli">
-      <Filter>shaders_builtin</Filter>
-    </None>
+    <None Include="$(ProjectDir)..\tools\include\stereokit.hlsli" />
+    <None Include="$(ProjectDir)..\tools\include\stereokit_pbr.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
