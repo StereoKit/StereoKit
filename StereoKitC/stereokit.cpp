@@ -39,6 +39,7 @@ struct sk_state_t {
 	bool32_t      has_stepped;
 	bool32_t      initialized;
 	bool32_t      disallow_user_shutdown;
+	bool32_t      use_manual_pos;
 	ft_id_t       init_thread;
 
 	double   timev_scale;
@@ -80,6 +81,14 @@ bool32_t sk_init(sk_settings_t settings) {
 	local.init_thread = ft_id_current();
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
+
+	// Manual positioning happens when _any_ of the flascreen positioning
+	// settings are set.
+	local.use_manual_pos =
+		local.settings.flatscreen_height != 0 ||
+		local.settings.flatscreen_width  != 0 ||
+		local.settings.flatscreen_pos_x  != 0 ||
+		local.settings.flatscreen_pos_y  != 0;
 
 	// Set some default values
 	if (local.settings.app_name == nullptr)
@@ -568,6 +577,10 @@ bool32_t sk_has_stepped() { return local.has_stepped; }
 ///////////////////////////////////////////
 
 bool32_t sk_is_initialized() { return local.initialized; }
+
+///////////////////////////////////////////
+
+bool32_t sk_use_manual_pos() { return local.use_manual_pos; }
 
 ///////////////////////////////////////////
 
