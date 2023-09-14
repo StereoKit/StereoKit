@@ -223,7 +223,7 @@ bool win32_start_flat() {
 
 	RECT rect = {};
 	HKEY reg_key;
-	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
+	if (sk_use_manual_pos() == false && backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
 		DWORD data_size = sizeof(RECT);
 		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
 		RegCloseKey     (reg_key);
@@ -282,8 +282,8 @@ bool win32_start_flat() {
 
 ///////////////////////////////////////////
 
-void win32_stop_flat() { 
-	if (backend_xr_get_type() == backend_xr_type_simulator) {
+void win32_stop_flat() {
+	if (sk_use_manual_pos() == false && backend_xr_get_type() == backend_xr_type_simulator) {
 		RECT rect;
 		HKEY reg_key;
 		GetWindowRect(win32_window, &rect);
