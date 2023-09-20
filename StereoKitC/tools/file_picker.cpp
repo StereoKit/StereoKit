@@ -49,12 +49,15 @@ namespace sk {
 struct fp_item_t {
 	char *name;
 	bool  file;
+	long size;
 };
 
 struct fp_path_t {
 	char          *folder;
 	array_t<char*> fragments;
 };
+
+enum FpSortBy { Name, Mtime, Size };
 
 #if defined(SK_OS_WINDOWS_UWP)
 struct fp_file_cache_t {
@@ -71,6 +74,9 @@ char                         fp_buffer[1023];
 bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
+bool                         fp_files_sorted_asc = true;
+FpSortBy                     fp_sortby = Name;
+bool                         fp_list_mode = false;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
 
 bool                         fp_show          = false;
@@ -297,7 +303,7 @@ void file_picker_open_folder(const char *folder) {
 
 	fp_items.each([](fp_item_t &item) { sk_free(item.name); });
 	fp_items.clear();
-	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file) {
+	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file, const long size) {
 		bool valid = fp_filter_count == 0;
 		// If the extension matches our filter, add it
 		if (file) {
@@ -313,6 +319,7 @@ void file_picker_open_folder(const char *folder) {
 			fp_item_t item;
 			item.file = file;
 			item.name = string_copy(name);
+			item.size = size;
 			fp_items.add(item);
 		}
 	});
@@ -423,6 +430,10 @@ void file_picker_update() {
 				fp_call_status = true;
 			}
 			ui_sameline();
+			if (ui_button("ListMode")) {
+				fp_list_mode = !fp_list_mode;
+			}
+			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
@@ -431,6 +442,12 @@ void file_picker_update() {
 			if (fp_active == nullptr) ui_push_enabled(false);
 			if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 			ui_sameline();
+			ui_push_enabled(true);
+			if (ui_button("ListMode")) {
+				fp_list_mode = !fp_list_mode;
+			}
+			ui_sameline();
+			if (fp_active == nullptr) ui_push_enabled(false);
 			ui_label(fp_active?fp_active:"None selected...");
 			if (fp_active == nullptr) ui_pop_enabled();
 		} break;
@@ -438,23 +455,75 @@ void file_picker_update() {
 
 		ui_hseparator();
 
+		bool sort_order_changed = false;
 		// List the files
 		vec2 size = { .12f, line_height * 1.5f };
+		if (fp_list_mode) {
+			if (ui_button_sz("Name", size)) {
+				fp_sortby = Name;
+				sort_order_changed = true;
+			}
+			ui_sameline();
+			if (ui_button_sz("Mtime", size)) {
+				fp_sortby = Mtime;
+				sort_order_changed = true;
+			}
+			ui_sameline();
+			if (ui_button_sz("Size", size)) {
+				fp_sortby = Size;
+				sort_order_changed = true;
+			}
+			ui_hseparator();
+			if (sort_order_changed) {
+				switch (fp_sortby) {
+				case Name:
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file != b.file ? a.file - b.file : strcmp(a.name, b.name); });
+					break;
+				case Mtime:
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (a.size == b.size) ? strcmp(a.name, b.name) : (a.size - b.size > 0); });
+					break;
+				case Size:
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (a.size == b.size) ? strcmp(a.name, b.name) : (a.size - b.size > 0); });
+					break;
+				}
+			}
+		}
 		const int32_t scroll_cols = 3;
 		const int32_t scroll_rows = 5;
-		const int32_t scroll_step = scroll_cols*scroll_rows;
+		const int32_t scroll_step = fp_list_mode ? scroll_rows : scroll_cols*scroll_rows;
 		vec3 file_grid_start = ui_layout_at();
 		ui_panel_begin();
 		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
 			if (i >= fp_items.count) {
 				ui_layout_reserve(size);
-			} else if (ui_button_sz(fp_items[i].name, size)) {
-				if (fp_items[i].file)
-					fp_active = fp_items[i].name;
-				else {
-					char *path = platform_push_path_new(fp_path.folder, fp_items[i].name);
-					file_picker_open_folder(path);
-					sk_free(path);
+			}
+			else if (fp_list_mode) {
+				if (ui_button_sz(fp_items[i].name, size)) {
+					if (fp_items[i].file)
+						fp_active = fp_items[i].name;
+					else {
+						char* path = platform_push_path_new(fp_path.folder, fp_items[i].name);
+						file_picker_open_folder(path);
+						free(path);
+					}
+				}
+				ui_sameline();
+				char buffer[128];
+				int ret = snprintf(buffer, sizeof(buffer), "%ld", fp_items[i].size);
+				char* num_string = buffer;
+				ui_text_sz("9/19/2023", text_align_x_center, text_fit_clip, size);
+				ui_sameline();
+				ui_text_sz(num_string, text_align_x_center, text_fit_clip, size);
+			}
+			else {
+				if (ui_button_sz(fp_items[i].name, size)) {
+					if (fp_items[i].file)
+						fp_active = fp_items[i].name;
+					else {
+						char* path = platform_push_path_new(fp_path.folder, fp_items[i].name);
+						file_picker_open_folder(path);
+						free(path);
+					}
 				}
 			}
 			ui_sameline();
