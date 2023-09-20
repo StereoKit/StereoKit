@@ -60,6 +60,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_step();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_scale(double scale);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_set_time(double total_seconds, double frame_elapsed_seconds=0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       time_frame();
 
 		///////////////////////////////////////////
 
