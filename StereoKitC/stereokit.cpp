@@ -53,6 +53,7 @@ struct sk_state_t {
 	double   timev_step_us;
 	float    timev_stepf_us;
 	uint64_t timev_raw;
+	uint64_t frame;
 
 	uint64_t  app_init_time;
 	system_t *app_system;
@@ -114,6 +115,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	stm_setup();
 	sk_step_timer();
+	local.frame = 0;
 
 	// Platform related systems
 	system_t sys_platform         = { "Platform"    };
@@ -437,6 +439,7 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 ///////////////////////////////////////////
 
 void sk_step_timer() {
+	local.frame    += 1;
 	local.timev_raw = stm_now();
 	double time_curr = stm_sec(local.timev_raw);
 
@@ -614,6 +617,7 @@ double time_step_unscaled    (){ return local.timev_step_us;   };
 float  time_stepf            (){ return local.timev_stepf;     };
 double time_step             (){ return local.timev_step;      };
 void   time_scale(double scale) { local.timev_scale = scale; }
+uint64_t time_frame() { return local.frame; }
 
 ///////////////////////////////////////////
 
