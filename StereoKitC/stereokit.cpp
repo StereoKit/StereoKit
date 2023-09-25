@@ -287,7 +287,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	local.initialized = systems_initialize();
 	if (!local.initialized) log_show_any_fail_reason();
-	else                 log_clear_any_fail_reason();
+	else                    log_clear_any_fail_reason();
 
 	local.app_system     = systems_find    ("App");
 	local.app_system_idx = systems_find_idx("App");

@@ -87,12 +87,36 @@ namespace StereoKit
 		/// addition to increasing the dimensions, so that the bounds still
 		/// remain sitting on the surface of the UI.
 		/// 
-		/// This depth value will not be reflected in the bounds provided by 
+		/// This depth value will not be reflected in the bounds provided by
 		/// LayouLast.</param>
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding, depth);
+
+		/// <summary>Reserves a box of space for an item in the current UI
+		/// layout! If either size axis is zero, it will be auto-sized to fill
+		/// the current surface horizontally, and fill a single LineHeight
+		/// vertically. Returns the Hierarchy local bounds of the space that
+		/// was reserved, with a Z axis dimension of 0.</summary>
+		/// <param name="width">Width of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="height">Height of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="addPadding">If true, this will add the current padding
+		/// value to the total final dimensions of the space that is reserved.
+		/// </param>
+		/// <param name="depth">This allows you to quickly insert a depth into
+		/// the Bounds you're receiving. This will offset on the Z axis in
+		/// addition to increasing the dimensions, so that the bounds still
+		/// remain sitting on the surface of the UI.
+		/// 
+		/// This depth value will not be reflected in the bounds provided by
+		/// LayouLast.</param>
+		/// <returns>Returns the Hierarchy local bounds of the space that was
+		/// reserved, with a Z axis dimension of 0.</returns>
+		public static Bounds LayoutReserve(float width, float height, bool addPadding = false, float depth = 0)
+			=> NativeAPI.ui_layout_reserve(new Vec2(width, height), addPadding, depth);
 
 		/// <summary>This pushes a layout rect onto the layout stack. All UI
 		/// elements using the layout system will now exist inside this layout
