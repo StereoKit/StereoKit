@@ -80,8 +80,6 @@ float _ui_get_bottom_y(const ui_layout_t* layout) {
 }
 
 vec2 ui_layout_remaining() {
-	// TODO: This needs to look to the parent layout, or the parent's window
-	// for the remaining space, the window may not be available for child layouts
 	ui_layout_t* layout = &skui_layouts.last();
 	vec2 max = {
 		_ui_get_right_x (layout),
