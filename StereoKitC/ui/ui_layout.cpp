@@ -48,13 +48,15 @@ void ui_layout_area(vec3 start, vec2 dimensions, bool32_t add_margin) {
 	layout->margin           = add_margin ? skui_settings.margin : 0;
 	layout->offset_initial   = start;
 	layout->offset           = start;
-	layout->furthest         = { start.x, start.y };
-	layout->size             = dimensions;
-	layout->size_used        = {};
-	layout->line             = {};
 	layout->offset_prev      = layout->offset;
+	layout->furthest         = { start.x, start.y };
+	layout->child_min = layout->child_max = layout->furthest;
+	layout->size             = dimensions;
+	layout->line             = {};
 	layout->line_prev        = {};
 	layout->line_pad         = 0;
+	layout->parent           = -1;
+	layout->window           = -1;
 }
 
 ///////////////////////////////////////////
@@ -148,10 +150,6 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 	layout->line.x += final_size.x;
 	if (layout->line.y < final_size.y)
 		layout->line.y = final_size.y;
-	if (layout->size_used.x < layout->line.x)
-		layout->size_used.x = layout->line.x;
-	if (layout->size_used.y < (layout->offset_initial.y-layout->offset.y)+layout->line.y)
-		layout->size_used.y = (layout->offset_initial.y-layout->offset.y)+layout->line.y;
 	if (layout->furthest.x > final_pos.x - final_size.x)
 		layout->furthest.x = final_pos.x - final_size.x;
 	if (layout->furthest.y > final_pos.y - final_size.y)
@@ -203,7 +201,6 @@ void ui_layout_push(vec3 start, vec2 dimensions, bool32_t add_margin) {
 	layout.furthest         = { margin_start.x, margin_start.y };
 	layout.child_min = layout.child_max = layout.furthest;
 	layout.size             = dimensions;
-	layout.size_used        = {};
 	layout.line             = {};
 	layout.line_prev        = {};
 	layout.parent           = -1;
@@ -289,62 +286,60 @@ void _ui_visualize_layout(ui_layout_t* layout) {
 		{ 0,  255,255,255 },
 	};
 
-	if (layout->size_used.x != 0 || layout->size_used.y != 0) {
-		float z_offset = 0.001f;
-		float weight   = 0.001f;
-		color32 col = colors[(int32_t)(layout->offset_initial.x * 100 + layout->offset_initial.y * 1000) % _countof(colors)];
+	float z_offset = 0.001f;
+	float weight   = 0.001f;
+	color32 col = colors[(int32_t)(layout->offset_initial.x * 100 + layout->offset_initial.y * 1000) % _countof(colors)];
 
-		vec3 start = layout->offset_initial;
-		vec2 size  = layout->size_used;
-		col.a = 32;
+	vec3 start = layout->offset_initial;
+	vec2 size  = vec2{ start.x, start.y } - layout->furthest;
+	col.a = 32;
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
+	line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+	line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+
+	start = layout->offset_initial;
+	size  = vec2{ 
+		layout->size.x == 0 ? start.x - layout->furthest.x : layout->size.x,
+		layout->size.y == 0 ? start.y - layout->furthest.y : layout->size.y };
+	col.a = 128;
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
+	line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+	line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+
+	start = layout->offset_initial + vec3{ skui_settings.margin, skui_settings.margin };
+	size  = size + vec2_one * skui_settings.margin * 2;
+	col.a = 255;
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
+	line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
+	line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+	line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
+
+	char text[256];
+	snprintf(text, 256, "layout\n%.2gx%.2g", size.x * 100, size.y * 100);
+	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
+
+	snprintf(text, 256, "%.2g,%.2g", start.x * 100, start.y * 100);
+	text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
+
+	snprintf(text, 256, "%.2g,%.2g", (start.x - size.x) * 100, start.y * 100);
+	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_right, text_align_top_left, 0, 0, 0, color32_to_128(col));
+
+	if (layout->window != -1) {
+		ui_window_t *win = &skui_windows[layout->window];
+		start = win->layout_start;
+		size  = skui_windows[layout->window].curr_size;
+		col   = { 255,255,255,255 };
+		z_offset = 0.002f;
+
 		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
 		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
 		line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
 		line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
 
-		start = layout->offset_initial;
-		size  = vec2{ 
-			layout->size.x == 0 ? layout->size_used.x : layout->size.x,
-			layout->size.y == 0 ? layout->size_used.y : layout->size.y };
-		col.a = 128;
-		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
-		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
-		line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-		line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-
-		start = layout->offset_initial + vec3{ skui_settings.margin, skui_settings.margin };
-		size  = size + vec2_one * skui_settings.margin * 2;// vec2{ layout->size_used.x + skui_settings.margin * 2, layout->size_used.y + skui_settings.margin * 2 };
-		col.a = 255;
-		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
-		line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
-		line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-		line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-
-		char text[256];
-		snprintf(text, 256, "layout\n%.2gx%.2g", size.x * 100, size.y * 100);
-		text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
-
-		snprintf(text, 256, "%.2g,%.2g", start.x * 100, start.y * 100);
-		text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
-
-		snprintf(text, 256, "%.2g,%.2g", (start.x - size.x) * 100, start.y * 100);
-		text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_right, text_align_top_left, 0, 0, 0, color32_to_128(col));
-
-		if (layout->window != -1) {
-			ui_window_t *win = &skui_windows[layout->window];
-			start = win->layout_start;
-			size  = skui_windows[layout->window].curr_size;
-			col   = { 255,255,255,255 };
-			z_offset = 0.002f;
-
-			line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ size.x, 0, z_offset },      col, col, weight);
-			line_add(start - vec3{ 0, 0, z_offset },      start - vec3{ 0, size.y, z_offset },      col, col, weight);
-			line_add(start - vec3{ size.x, 0, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-			line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
-
-			snprintf(text, 256, "win %.2gx%.2g", size.x * 100, size.y * 100);
-			text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_bottom_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
-		}
+		snprintf(text, 256, "win %.2gx%.2g", size.x * 100, size.y * 100);
+		text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_bottom_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
 	}
 }
 
@@ -353,7 +348,8 @@ void _ui_visualize_layout(ui_layout_t* layout) {
 void ui_layout_pop() {
 	ui_layout_t* layout = &skui_layouts.last();
 
-	static int32_t  idx = 0;
+	// Some tools for debugging layouts
+	/*static int32_t  idx = 0;
 	static int32_t  idx_show = 0;
 	static uint64_t last_frame = 0;
 	if (last_frame != time_frame()) {
@@ -367,7 +363,7 @@ void ui_layout_pop() {
 		idx++;
 	}
 	if (idx == idx_show)
-		idx = idx_show;
+		idx = idx_show;*/
 
 
 	// Move to next line if we're still on a previous line
@@ -389,8 +385,8 @@ void ui_layout_pop() {
 	if (layout->window != -1) {
 		ui_window_t* win        = &skui_windows[layout->window];
 		vec2         final_size = {
-			layout->size.x == 0 ? layout->size_used.x : layout->size.x,
-			layout->size.y == 0 ? layout->size_used.y : layout->size.y };
+			layout->size.x == 0 ? layout->offset_initial.x - layout->furthest.x : layout->size.x,
+			layout->size.y == 0 ? layout->offset_initial.y - layout->furthest.y : layout->size.y };
 		if (win->layout_size.x == 0) {
 			win->curr_size.x = fmaxf(win->curr_size.x, (max_x - min_x));
 		}
@@ -399,6 +395,7 @@ void ui_layout_pop() {
 		}
 	}
 
+	// Other part of the tools for viewing layouts
 	//if (idx == idx_show)
 	//	_ui_visualize_layout(layout);
 
@@ -494,7 +491,9 @@ void ui_panel_end() {
 	
 	ui_layout_t* panel_layout = &skui_layouts.last();
 	float        pad          = padding == ui_pad_inside ? skui_settings.margin : 0;
-	vec2         panel_size   = panel_layout->size_used + vec2{pad * 2, pad * 2};
+	vec2         panel_size   = {
+		panel_layout->offset_initial.x - panel_layout->furthest.x + pad * 2,
+		panel_layout->offset_initial.y - panel_layout->furthest.y + pad * 2};
 	ui_layout_pop();
 	bounds_t bounds = ui_layout_reserve(panel_size, false);
 

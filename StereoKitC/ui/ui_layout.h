@@ -22,7 +22,6 @@ struct ui_layout_t {
 	vec3         offset;
 	vec3         offset_prev;
 	vec2         size;
-	vec2         size_used;
 	vec2         furthest;
 	vec2         line;
 	vec2         line_prev;
