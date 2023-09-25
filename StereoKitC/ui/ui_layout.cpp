@@ -286,7 +286,7 @@ void _ui_visualize_layout(ui_layout_t* layout) {
 
 	float z_offset = 0.001f;
 	float weight   = 0.001f;
-	color32 col = colors[(int32_t)(layout->offset_initial.x * 100 + layout->offset_initial.y * 1000) % _countof(colors)];
+	color32 col = colors[(int32_t)(layout->offset_initial.x * 100 + layout->offset_initial.y * 1000) % (sizeof(colors)/sizeof(colors[0]))];
 
 	vec3 start = layout->offset_initial;
 	vec2 size  = vec2{ start.x, start.y } - layout->furthest;
