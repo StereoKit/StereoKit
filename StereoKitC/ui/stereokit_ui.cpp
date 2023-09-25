@@ -28,8 +28,6 @@ int32_t  skui_input_carat;
 int32_t  skui_input_carat_end;
 float    skui_input_blink;
 
-array_t<ui_window_t> skui_sl_windows;
-
 // Button activation animations all use the same values
 const float    skui_anim_duration  = 0.2f;
 const float    skui_anim_overshoot = 10;
@@ -45,7 +43,6 @@ bool ui_init() {
 	skui_input_blink         = 0;
 	skui_system_move_type    = ui_move_face_user;
 	skui_enable_far_interact = true;
-	skui_sl_windows          = {};
 
 	ui_layout_init();
 	ui_theming_init();
@@ -63,8 +60,6 @@ void ui_shutdown() {
 	ui_core_shutdown();
 	ui_theming_shutdown();
 	ui_layout_shutdown();
-
-	skui_sl_windows.free();
 }
 
 ///////////////////////////////////////////
@@ -1023,40 +1018,33 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 
 template<typename C>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	uint64_t id = ui_push_id(text);
-	int32_t index = skui_sl_windows.binary_search(&ui_window_t::hash, id);
-	if (index < 0) {
-		index = ~index;
-		ui_window_t new_window = {};
-		new_window.hash = id;
-		new_window.prev_size = window_size;
-		new_window.curr_size = window_size;
-		skui_sl_windows.insert(index, new_window);
-	}
-	ui_window_t &window = skui_sl_windows[index];
-	window.type = window_type;
+	uint64_t     hash   = ui_push_id(text);
+	ui_window_id win_id = ui_window_find_or_add(hash, window_size);
+	ui_window_t* win    = ui_window_get(win_id);
+	win->age  = 0;
+	win->type = window_type;
 	
 	// figure out the size of it, based on its window type
 	vec3 box_start = {}, box_size = {};
-	if (window.type & ui_win_head) {
+	if (win->type & ui_win_head) {
 		float line = ui_line_height();
 		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
-		box_size  = vec3{ window.prev_size.x, line, skui_settings.depth*2 };
+		box_size  = vec3{ win->prev_size.x, line, skui_settings.depth*2 };
 	} 
-	if (window.type & ui_win_body || window.type & ui_win_empty) {
+	if (win->type & ui_win_body || win->type & ui_win_empty) {
 		box_start.z  = skui_settings.depth/2;
-		box_start.y -= window.prev_size.y / 2;
-		box_size.x   = window.prev_size.x;
-		box_size.y  += window.prev_size.y;
+		box_start.y -= win->prev_size.y / 2;
+		box_size.x   = win->prev_size.x;
+		box_size.y  += win->prev_size.y;
 		box_size.z   = skui_settings.depth * 2;
 	}
 
 	// Set up window handle and layout area
-	_ui_handle_begin(id, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
-	ui_layout_push_win(&window, { window.prev_size.x / 2,0,0 }, window_size, true);
+	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
+	ui_layout_push_win(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label
-	if (window.type & ui_win_head) {
+	if (win->type & ui_win_head) {
 		ui_layout_t* layout = ui_layout_curr();
 
 		vec2 txt_size = text_size(text, ui_get_text_style());
@@ -1065,10 +1053,11 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 
 		ui_text_at(text, text_align_center_left, text_fit_squeeze, at, size);
 
-		if (layout->size_used.x < (size.x + skui_settings.padding*2))
-			layout->size_used.x = (size.x + skui_settings.padding*2);
+		float header_width = window_size.x == 0 ? size.x + skui_settings.padding * 2 + skui_settings.margin * 2 : size.x;
+		if (win->curr_size.x < header_width)
+			win->curr_size.x = header_width;
 	}
-	window.pose = pose;
+	win->pose = pose;
 }
 void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	ui_window_begin_g<char>(text, pose, window_size, window_type, move_type);
@@ -1080,12 +1069,14 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_window_t* win = ui_layout_curr_window();
+	ui_window_id win_id = ui_layout_curr_window();
+	ui_window_t* win    = ui_window_get(win_id);
 	ui_layout_pop();
-	win->prev_size = win->curr_size;
+	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
+	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
 
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
-	vec3 size  = { win->curr_size.x, win->curr_size.y, skui_settings.depth };
+	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
 	float line_height = ui_line_height();
 	if (win->type & ui_win_head) {
