@@ -7,7 +7,7 @@ namespace StereoKitTest
 		private Model _model  = Model.FromMesh(Mesh.GenerateCylinder(.10f, 1, Vec3.Up), Default.Material.Copy());
 		private bool  _doOnce = false;
 
-		public void Update()
+		public void Step()
 		{
 			if (!_doOnce)
 			{

@@ -26,8 +26,8 @@ class DocDebug : ITest
 		/// :End:
 
 		/// :CodeSample: Log.Err
-		if (Time.Elapsedf > 0.017f)
-			Log.Err("Oh no! Frame time (<~red>{0}<~clr>) has exceeded 17ms! There's no way we'll hit even 60 frames per second!", Time.Elapsedf);
+		if (Time.Stepf > 0.017f)
+			Log.Err("Oh no! Frame time (<~red>{0}<~clr>) has exceeded 17ms! There's no way we'll hit even 60 frames per second!", Time.Stepf);
 		/// :End:
 
 		/// :CodeSample: Log.Unsubscribe
@@ -41,5 +41,5 @@ class DocDebug : ITest
 	}
 
 	public void Shutdown(){}
-	public void Update  (){}
+	public void Step  (){}
 }

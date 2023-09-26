@@ -1,16 +1,12 @@
 #include "sprite_drawer.h"
 
 #include "../asset_types/sprite.h"
-#include "../asset_types/material.h"
-#include "../asset_types/mesh.h"
-#include "../asset_types/assets.h"
 
 #include "../libraries/array.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 
-#include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
 namespace sk {
@@ -54,7 +50,7 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 		inds[c+5] = q;
 	}
 	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	free(inds);
+	sk_free(inds);
 }
 
 ///////////////////////////////////////////
@@ -77,15 +73,15 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 	// Get the heirarchy based transform
 	XMMATRIX tr;
-	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.last().transform, at, tr);
+	if (hierarchy_use_top()) {
+		matrix_mul(hierarchy_top(), at, tr);
 	} else {
 		math_matrix_to_fast(at, &tr);
 	}
 	
 	// Add a sprite quad
-	size_t offset = buffer.vert_count;
-	vec3   normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
+	int32_t offset = buffer.vert_count;
+	vec3    normal = vec3_normalize( matrix_transform_dir(at, vec3_forward) );
 	buffer.verts[offset + 0] = { matrix_mul_point(tr, vec3{0,     0,      0}), normal, sprite->uvs[0],                           color };
 	buffer.verts[offset + 1] = { matrix_mul_point(tr, vec3{width, 0,      0}), normal, vec2{sprite->uvs[1].x, sprite->uvs[0].y}, color };
 	buffer.verts[offset + 2] = { matrix_mul_point(tr, vec3{width, height, 0}), normal, sprite->uvs[1],                           color };
@@ -136,8 +132,8 @@ bool sprite_drawer_init() {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_update() {
-	for (size_t i = 0; i < sprite_buffers.count; i++) {
+void sprite_drawer_step() {
+	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;
@@ -155,11 +151,11 @@ void sprite_drawer_update() {
 void sprite_drawer_shutdown() {
 	mesh_release(sprite_quad);
 	mesh_release(sprite_quad_old);
-	for (size_t i = 0; i < sprite_buffers.count; i++) {
+	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);
-		free(buffer.verts);
+		sk_free(buffer.verts);
 	}
 	sprite_buffers.clear();
 }

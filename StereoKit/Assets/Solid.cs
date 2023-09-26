@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -17,9 +18,19 @@ namespace StereoKit
 	/// velocity for a single frame to travel through space to get to its
 	/// destination, while teleport will simply appear at its destination 
 	/// without touching anything between.</summary>
-	public class Solid
+	[Obsolete("Physics will be removed in v0.4, consider a 3rd party physics library like Bepu.")]
+	public class Solid : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.solid_get_id(_inst));
+			set => NativeAPI.solid_set_id(_inst, value);
+		}
 
 		/// <summary>Creates a Solid physics object and adds it to the 
 		/// physics system.</summary>
@@ -29,21 +40,21 @@ namespace StereoKit
 		/// object exhibit?</param>
 		public Solid(Vec3 position, Quat rotation, SolidType type = SolidType.Normal)
 		{
-			_inst = NativeAPI.solid_create(ref position, ref rotation, type);
+			_inst = NativeAPI.solid_create(in position, in rotation, type);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create solid!");
 		}
-		private Solid(IntPtr solid)
+		internal Solid(IntPtr solid)
 		{
 			_inst = solid;
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty solid!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Solid()
 		{
-			// TODO: Figure out how to shut this down properly
-			//if (_inst != IntPtr.Zero)
-			//    NativeAPI.solid_release(_inst);
+			if (_inst != IntPtr.Zero)
+				NativeAPI.solid_release(_inst);
 		}
 
 		/// <summary>Is the Solid enabled in the physics simulation? Set this 
@@ -101,7 +112,7 @@ namespace StereoKit
 		/// <param name="enabled">False to disable physics on this object, 
 		/// true to enable it.</param>
 		public void SetEnabled(bool enabled)
-			=> NativeAPI.solid_set_enabled(_inst, enabled?1:0);
+			=> NativeAPI.solid_set_enabled(_inst, enabled);
 
 		/// <summary>This moves the Solid from its current location through 
 		/// space to the new location provided, colliding with things along

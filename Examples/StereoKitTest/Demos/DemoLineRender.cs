@@ -1,12 +1,17 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 class DemoLineRender : ITest
 {
+	string title       = "Line Render";
+	string description = "";
+
 	struct Body
 	{
 		public Vec3    position;
@@ -18,7 +23,7 @@ class DemoLineRender : ITest
 	}
 
 	int    trailId = 0;
-	Vec3   center = new Vec3(0.4f,0,-0.4f);
+	Vec3   center  = Demo.contentPose.Transform(V.XYZ(0,0,0.5f));
 	Body[] bodies;
 
 	public void Initialize()
@@ -39,7 +44,7 @@ class DemoLineRender : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Default.MeshSphere.Draw(Default.MaterialUnlit, Matrix.TS(center, 0.06f), Color.HSV(0.16f, 0.4f, 0.9f));
 		for (int i = 0; i < bodies.Length; i++) { 
@@ -69,10 +74,10 @@ class DemoLineRender : ITest
 		}
 		for (int i = 0; i < bodies.Length; i++)
 		{
-			bodies[i].velocity += bodies[i].force * (Time.Elapsedf/bodies[i].mass);
+			bodies[i].velocity += bodies[i].force * (Time.Stepf/bodies[i].mass);
 			if (bodies[i].velocity.MagnitudeSq > 1)
 				bodies[i].velocity.Normalize();
-			bodies[i].position += bodies[i].velocity * Time.Elapsedf;
+			bodies[i].position += bodies[i].velocity * Time.Stepf;
 
 			Color col = bodies[i].color * Math.Min(0.5f, (bodies[i].position-center).MagnitudeSq/0.5f);
 			col.a = 1;
@@ -88,5 +93,7 @@ class DemoLineRender : ITest
 			Lines.Add(bodies[i].trail.ToArray());
 		}
 		trailId = (trailId + 1) % bodies.Length;
+
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0,0,0.5f), V.XYZ(.8f, .8f, 0.8f)));
 	}
 }

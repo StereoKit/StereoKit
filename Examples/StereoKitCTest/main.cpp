@@ -4,7 +4,6 @@
 using namespace sk;
 
 #include "scene.h"
-#include "demo_basics.h"
 #include "demo_ui.h"
 #include "demo_ui_layout.h"
 #include "demo_mic.h"
@@ -17,6 +16,8 @@ using namespace sk;
 #include "demo_envmap.h"
 #include "demo_windows.h"
 #include "demo_desktop.h"
+#include "demo_bvh.h"
+#include "demo_aliasing.h"
 
 #include <stdio.h>
 
@@ -30,11 +31,6 @@ model_t     floor_model;
 
 scene_t demos[] = {
 	{
-		"Basics",
-		demo_basics_init,
-		demo_basics_update,
-		demo_basics_shutdown,
-	}, {
 		"UI",
 		demo_ui_init,
 		demo_ui_update,
@@ -84,6 +80,16 @@ scene_t demos[] = {
 		demo_envmap_init,
 		demo_envmap_update,
 		demo_envmap_shutdown,
+	}, {
+		"BVH",
+		demo_bvh_init,
+		demo_bvh_update,
+		demo_bvh_shutdown,
+	}, {
+		"Aliasing",
+		demo_aliasing_init,
+		demo_aliasing_update,
+		demo_aliasing_shutdown,
 	},
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
 	{
@@ -114,6 +120,9 @@ pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forwa
 std::list<std::string> log_list;
 
 void on_log(log_ log_level, const char* log_c_str) {
+	if (log_level == log_error) {
+		log_level = log_level;
+	}
 	if (log_list.size() > 10) {
 		log_list.pop_front();
 	}
@@ -188,6 +197,31 @@ void common_init() {
 }
 
 void common_update() {
+	static app_focus_ prev_focus = app_focus_hidden;
+	app_focus_        curr_focus = sk_app_focus();
+	if (curr_focus == app_focus_active && prev_focus != app_focus_active) {
+		// Log some system info
+		const char* text = "";
+		log_infof("Device:   %s", device_get_name());
+		log_infof("GPU:      %s", device_get_gpu());
+		switch (device_get_tracking()) { case device_tracking_none: text = "none"; break; case device_tracking_3dof: text = "3dof"; break; case device_tracking_6dof: text = "6dof"; break; }
+		log_infof("Tracking: %s", text);
+		log_infof("Hands:    %s", device_has_hand_tracking()?"true":"false");
+		log_infof("Eyes:     %s", device_has_eye_gaze()?"true":"false");
+		switch (device_display_get_type()) { case display_type_none: text = "none"; break; case display_type_flatscreen: text = "flatscreen"; break; case display_type_stereo: text = "stereo"; break; }
+		log_infof("Display Type:  %s", text);
+		switch (device_display_get_blend()) { case display_blend_additive: text = "additive"; break; case display_blend_blend: text = "blend"; break; case display_blend_opaque: text = "opaque"; break; case display_blend_none: text = "none"; break; default: text = "unknown";  break; }
+		log_infof("Display Blend: %s", text);
+		log_infof("Display FoV:   %.0f, %.0f, %.0f, %.0f",
+			device_display_get_fov().right,
+			device_display_get_fov().left,
+			device_display_get_fov().top,
+			device_display_get_fov().bottom);
+		log_infof("Display Hz:    %.1f", device_display_get_refresh_rate());
+		log_infof("Display Size:  %d<~BLK>x<~clr>%d", device_display_get_width(), device_display_get_height());
+	}
+	prev_focus = curr_focus;
+
 	scene_update();
 
 	// Render floor
@@ -205,8 +239,10 @@ void common_update() {
 			scene_set_active(demos[i]);
 		}
 	}
+#if !defined(__EMSCRIPTEN__)
 	ui_hseparator();
 	if (ui_button("Exit")) sk_quit();
+#endif
 	ui_window_end();
 
 	ruler_window();

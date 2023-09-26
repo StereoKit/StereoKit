@@ -41,7 +41,7 @@ class DocFeatureImage : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		
 		helmet.Draw(helmetPose.ToMatrix(.1f));

@@ -40,5 +40,10 @@
 		internal const string shaderUIBox    = "default/shader_ui_box";
 		internal const string soundClick     = "default/sound_click";
 		internal const string soundUnclick   = "default/sound_unclick";
+
+		internal const string spriteRadioOn   = "sk/ui/radio_on_spr";
+		internal const string spriteRadioOff  = "sk/ui/radio_off_spr";
+		internal const string spriteToggleOn  = "sk/ui/toggle_on_spr";
+		internal const string spriteToggleOff = "sk/ui/toggle_off_spr";
 	}
 }

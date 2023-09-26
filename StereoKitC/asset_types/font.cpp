@@ -3,6 +3,8 @@
 #pragma warning(push)
 #pragma warning(disable : 26451 26819 6387 6011 6385 )
 #define STB_TRUETYPE_IMPLEMENTATION
+#define STBTT_malloc(x,y) sk::sk_malloc(x)
+#define STBTT_free(x,y) sk::_sk_free(x)
 #include "../libraries/stb_truetype.h"
 #pragma warning(pop)
 
@@ -10,7 +12,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../rect_atlas.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../sk_memory.h"
 
 #include <stdio.h>
@@ -44,20 +46,20 @@ void         font_update_texture(font_t font);
 void         font_update_cache  (font_t font);
 
 int32_t      font_source_add     (const char *filename);
-int32_t      font_source_add_data(const char *name, void *data, size_t data_size);
+int32_t      font_source_add_data(const char *name, const void *data, size_t data_size);
 void         font_source_release (int32_t id);
 
 ///////////////////////////////////////////
 
 int32_t font_source_add(const char *filename) {
 	int64_t hash = hash_fnv64_string(filename);
-	int32_t id   = (int32_t)font_sources.index_where(&font_source_t::name_hash, hash);
+	int32_t id   = font_sources.index_where(&font_source_t::name_hash, hash);
 
 	if (id == -1) {
 		font_source_t new_file = {};
 		new_file.name_hash = hash;
 		new_file.name      = string_copy(filename);
-		id = (int32_t)font_sources.add(new_file);
+		id = font_sources.add(new_file);
 	}
 	font_sources[id].references += 1;
 
@@ -81,15 +83,15 @@ int32_t font_source_add(const char *filename) {
 
 ///////////////////////////////////////////
 
-int32_t font_source_add_data(const char *name, void *data, size_t data_size) {
+int32_t font_source_add_data(const char *name, const void *data, size_t data_size) {
 	int64_t hash = hash_fnv64_string(name);
-	int32_t id   = (int32_t)font_sources.index_where(&font_source_t::name_hash, hash);
+	int32_t id   = font_sources.index_where(&font_source_t::name_hash, hash);
 
 	if (id == -1) {
 		font_source_t new_file = {};
 		new_file.name_hash = hash;
 		new_file.name      = string_copy(name);
-		id = (int32_t)font_sources.add(new_file);
+		id = font_sources.add(new_file);
 	}
 	font_sources[id].references += 1;
 
@@ -116,7 +118,8 @@ void font_source_release(int32_t id) {
 
 	font_sources[id].references -= 1;
 	if (font_sources[id].references == 0) {
-		free(font_sources[id].file);
+		sk_free(font_sources[id].file);
+		sk_free(font_sources[id].name);
 		font_sources[id].file = nullptr;
 		font_sources[id].info = {};
 	}
@@ -181,7 +184,7 @@ font_t font_create_default() {
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, "sk_font::default");
+	assets_set_id(&result->header, "sk_font::default");
 
 	int32_t id = font_source_add_data("sk_font::default", aileron_font_ttf, aileron_font_ttf_len);
 	if (id >= 0)
@@ -216,7 +219,7 @@ font_t font_create_files(const char **files, int32_t file_count) {
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(result->header, file_id);
+	assets_set_id(&result->header, file_id);
 
 	// Load relevant fonts
 	result->font_ids.resize(file_count);
@@ -238,13 +241,19 @@ font_t font_create_files(const char **files, int32_t file_count) {
 ///////////////////////////////////////////
 
 void font_set_id(font_t font, const char* id) {
-	assets_set_id(font->header, id);
+	assets_set_id(&font->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* font_get_id(const font_t font) {
+	return font->header.id_text;
 }
 
 ///////////////////////////////////////////
 
 void font_addref(font_t font) {
-	assets_addref(font->header);
+	assets_addref(&font->header);
 }
 
 ///////////////////////////////////////////
@@ -252,24 +261,25 @@ void font_addref(font_t font) {
 void font_release(font_t font) {
 	if (font == nullptr)
 		return;
-	assets_releaseref(font->header);
+	assets_releaseref(&font->header);
 }
 
 ///////////////////////////////////////////
 
 void font_destroy(font_t font) {
-	int64_t idx = font_list.index_of(font);
+	int32_t idx = font_list.index_of(font);
 	if (idx >= 0)
-		font_list.remove((size_t)idx);
+		font_list.remove(idx);
 
-	for (size_t i = 0; i < font->font_ids.count; i++) {
+	for (int32_t i = 0; i < font->font_ids.count; i++) {
 		font_source_release(font->font_ids[i]);
 	}
 
 	tex_release       ( font->font_tex);
 	rect_atlas_destroy(&font->atlas);
-	free              ( font->atlas_data);
+	sk_free           ( font->atlas_data);
 	font->character_map.free();
+	font->glyph_map    .free();
 	font->update_queue .free();
 	font->font_ids     .free();
 
@@ -285,11 +295,19 @@ tex_t font_get_tex(font_t font) {
 
 ///////////////////////////////////////////
 
+//#define SK_USE_SDF
+#if defined(SK_USE_SDF)
+#define PAD_SIZE 4
+#else
+#define PAD_SIZE 0
+#endif
+
 font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	if (glyph.idx == 0) return {};
 	font_source_t *source = &font_sources[glyph.font];
 
-	const int32_t pad = 4;
+	const int32_t pad_empty   = 2;
+	const int32_t pad_content = PAD_SIZE;
 	float   to_u = 1.0f / font->atlas.w;
 	float   to_v = 1.0f / font->atlas.h;
 
@@ -303,17 +321,21 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 
 	if (x1-x0 <= 0) return char_info;
 
-	int32_t  sw         = (x1-x0) + pad;
-	int32_t  sh         = (y1-y0) + pad;
+	int32_t  sw         = (x1-x0) + pad_empty*2 + pad_content*2;
+	int32_t  sh         = (y1-y0) + pad_empty*2 + pad_content*2;
 	int32_t  rect_idx   = rect_atlas_add(&font->atlas, sw, sh);
 	if (rect_idx == -1) {
 		font_upsize_texture(font);
 		rect_idx = rect_atlas_add(&font->atlas, sw, sh);
-		to_u     = 1.0f / font->atlas.w; 
+		to_u     = 1.0f / font->atlas.w;
 		to_v     = 1.0f / font->atlas.h;
 	}
 	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { rect.x, rect.y, rect.w - pad, rect.h - pad};
+	recti_t  rect_unpad = { 
+		rect.x+pad_empty+pad_content,
+		rect.y+pad_empty+pad_content,
+		rect.w - (pad_empty*2 + pad_content*2),
+		rect.h - (pad_empty*2 + pad_content*2)};
 
 	char_info.x0 = ( x0-0.5f) / source->char_height;
 	char_info.y0 = (-y0-0.5f) / source->char_height;
@@ -329,35 +351,44 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 ///////////////////////////////////////////
 
 void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
-	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f);
-	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f);
+	const int32_t pad_content = PAD_SIZE;
+	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f)-pad_content;
+	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f)-pad_content;
 	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
 	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
 	font_source_t *source = &font_sources[glyph.font];
 
-	// This is a really simple low quality render, very fast
-	//stbtt_MakeGlyphBitmap(&font->font_info, &font->atlas_data[x + y * font->atlas.w], w, h, font->atlas.w, font->font_scale, font->font_scale, glyph);
-	//return;
+	stbtt__bitmap gbm;
 
+	// SDF based glyph generation
+#if defined (SK_USE_SDF)
+	int ix0, iy0;
+	const int32_t multisample = 1;
+	int width, height;
+	gbm.pixels = stbtt_GetGlyphSDF(&source->info, source->scale, glyph.idx, pad_content, 128, 10, &width, &height, &ix0, &iy0);
+	gbm.w      = width;
+	gbm.h      = height;
+	gbm.stride = gbm.w;
+#else
+	// Raster based glyph generation
 	// This is a multisampling high quality render, about 7x slower?
-	const int32_t multisample = 3;
 
 	// Following code based on stbtt_GetGlyphBitmap, but modified to always
 	// produce a bitmap that's a multiple of `multisample`
-	int ix0,iy0,ix1,iy1;
-	stbtt_vertex *vertices;
+	int ix0, iy0, ix1, iy1;
+	const int32_t multisample = 3;
+
+	stbtt_vertex* vertices;
 	int num_verts = stbtt_GetGlyphShape(&source->info, glyph.idx, &vertices);
-
-	stbtt_GetGlyphBitmapBoxSubpixel(&source->info, glyph.idx, source->scale*multisample, source->scale*multisample, 0, 0, &ix0,&iy0,&ix1,&iy1);
-
+	stbtt_GetGlyphBitmapBoxSubpixel(&source->info, glyph.idx, source->scale * multisample, source->scale * multisample, 0, 0, &ix0, &iy0, &ix1, &iy1);
 	// now we get the size
-	stbtt__bitmap gbm;
-	gbm.w = w*multisample;
-	gbm.h = h*multisample;
+	gbm.w      = w*multisample;
+	gbm.h      = h*multisample;
 	gbm.pixels = (unsigned char *)sk_malloc(gbm.w * gbm.h);
 	gbm.stride = gbm.w;
 	stbtt_Rasterize(&gbm, 0.35f, vertices, num_verts, source->scale*multisample, source->scale*multisample, 0, 0, ix0, iy0, 1, nullptr);
-	free(vertices);
+	sk_free(vertices);
+#endif
 
 	// Now average the multisamples to get a final value, and add it to the
 	// atlas data.
@@ -374,7 +405,7 @@ void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
 
 		font->atlas_data[(x + px/multisample) + yoff] = (uint8_t)total;
 	}}
-	free(gbm.pixels);
+	sk_free(gbm.pixels);
 }
 
 ///////////////////////////////////////////
@@ -400,11 +431,13 @@ void font_upsize_texture(font_t font) {
 	// size. We'll copy glyph by glyph to make sorting easier later on.
 	uint8_t *new_data = sk_malloc_t(uint8_t, new_w*new_h);
 	memset(new_data, 0, new_w * new_h);
-	for (size_t i = 0; i < font->glyph_map.items.count; i++) {
-		font_char_t ch     = font->glyph_map.items[i];
+	for (int32_t i = 0; i < font->glyph_map.capacity; i++) {
+		if (font->glyph_map.items[i].hash == 0) continue;
+		
+		font_char_t ch     = font->glyph_map.items[i].value;
 		font_char_t new_ch = ch;
 		font_char_reuv(&new_ch, scale_x, scale_y);
-		font->glyph_map.items[i] = new_ch;
+		font->glyph_map.items[i].value = new_ch;
 
 		// Copy memory
 		recti_t src = {
@@ -417,18 +450,18 @@ void font_upsize_texture(font_t font) {
 		}
 	}
 	// Update the rest of our rectangles
-	for (size_t i = 32; i < 128;                             i++) font_char_reuv(&font->characters         [i], scale_x, scale_y);
-	for (size_t i = 0;  i < font->character_map.items.count; i++) font_char_reuv(&font->character_map.items[i], scale_x, scale_y);
+	for (int32_t i = 32; i < 128;                          i++) font_char_reuv(&font->characters         [i],       scale_x, scale_y);
+	for (int32_t i = 0;  i < font->character_map.capacity; i++) font_char_reuv(&font->character_map.items[i].value, scale_x, scale_y);
 	
 	// This could be a faster copy, but may not make a big difference. Also
 	// doesn't allow for copying to new locations.
-	/*for (size_t i = 0;  i < font->glyph_map.items.count; i++) font_char_reuv(&font->glyph_map.items[i], scale_x, scale_y);
+	/*for (int32_t i = 0;  i < font->glyph_map.items.count; i++) font_char_reuv(&font->glyph_map.items[i], scale_x, scale_y);
 	for (int32_t y = 0; y < font->atlas.h; y++) {
 		memcpy(&new_data[y * new_w], &font->atlas_data[y * font->atlas.w], font->atlas.w * sizeof(uint8_t));
 	}*/
 
 	// Update the atlas to the new values
-	free(font->atlas_data);
+	sk_free(font->atlas_data);
 	font->atlas_data = new_data;
 	font->atlas.w = new_w;
 	font->atlas.h = new_h;
@@ -439,6 +472,9 @@ void font_upsize_texture(font_t font) {
 void font_update_texture(font_t font) {
 	if (font->font_tex == nullptr) {
 		font->font_tex = tex_create(tex_type_image, tex_format_r8);
+		char* tex_id = string_append(nullptr, 2, font_get_id(font), "/atlas_tex");
+		tex_set_id(font->font_tex, tex_id);
+		sk_free(tex_id);
 	}
 	tex_set_colors(font->font_tex, font->atlas.w, font->atlas.h, font->atlas_data);
 }
@@ -446,7 +482,7 @@ void font_update_texture(font_t font) {
 ///////////////////////////////////////////
 
 font_glyph_t font_find_glyph(font_t font, char32_t character) {
-	for (size_t i = 0; i < font->font_ids.count; i++) {
+	for (int32_t i = 0; i < font->font_ids.count; i++) {
 		int32_t glyph = stbtt_FindGlyphIndex(&font_sources[font->font_ids[i]].info, character);
 		if (glyph > 0) {
 			return { glyph, font->font_ids[i] };
@@ -460,21 +496,21 @@ font_glyph_t font_find_glyph(font_t font, char32_t character) {
 int32_t font_add_character(font_t font, char32_t character) {
 	int32_t      index   = -1;
 	font_glyph_t glyph   = font_find_glyph(font, character);
-	if (glyph.idx == 0) return (int32_t)font->character_map.add(character, font->characters['?']);
+	if (glyph.idx == 0) return font->character_map.set(character, font->characters['?']);
 
-	int32_t g_index = (int32_t)font->glyph_map.contains(glyph);
+	int32_t g_index = font->glyph_map.contains(glyph);
 	if (g_index >= 0) {
 		if (character < 128) {
-			font->characters[character] = font->glyph_map.items[g_index];
+			font->characters[character] = font->glyph_map.items[g_index].value;
 			index = -1;
-		} else index = (int32_t)font->character_map.add(character, font->glyph_map.items[g_index]);
+		} else index = font->character_map.set(character, font->glyph_map.items[g_index].value);
 	} else {
 		font_char_t ch = font_place_glyph(font, glyph);
 		if (character < 128) {
 			font->characters[character] = ch;
 			index = -1;
-		} else index = (int32_t)font->character_map.add(character, ch);
-		font->glyph_map   .add(glyph, ch);
+		} else index = font->character_map.set(character, ch);
+		font->glyph_map   .set(glyph, ch);
 		font->update_queue.add(glyph);
 	}
 	return index;
@@ -486,17 +522,17 @@ const font_char_t *font_get_glyph(font_t font, char32_t character) {
 	if (character < 128)
 		return &font->characters[character];
 
-	int32_t index = (int32_t)font->character_map.contains(character);
+	int32_t index = font->character_map.contains(character);
 	if (index < 0) {
 		index = font_add_character(font, character);
 	}
-	return &font->character_map.items[index];
+	return &font->character_map.items[index].value;
 }
 
 ///////////////////////////////////////////
 
 void font_update_cache(font_t font) {
-	for (size_t i = 0; i < font->update_queue.count; i++) {
+	for (int32_t i = 0; i < font->update_queue.count; i++) {
 		font_render_glyph(font, font->update_queue[i], font->glyph_map.get(font->update_queue[i]));
 	}
 	if (font->update_queue.count > 0) {
@@ -508,7 +544,7 @@ void font_update_cache(font_t font) {
 ///////////////////////////////////////////
 
 void font_update_fonts() {
-	for (size_t i = 0; i < font_list.count; i++) {
+	for (int32_t i = 0; i < font_list.count; i++) {
 		font_update_cache(font_list[i]);
 	}
 }

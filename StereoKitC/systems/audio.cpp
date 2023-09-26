@@ -3,9 +3,8 @@
 
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 
-#include "../libraries/miniaudio.h"
 #include "../libraries/stref.h"
 #include "../libraries/isac_spatial_sound.h"
 
@@ -15,8 +14,9 @@
 namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
-float             au_mix_temp[4096];
 matrix            au_head_transform;
+const int32_t     au_mix_temp_size = 4096;
+float*            au_mix_temp;
 
 ma_context        au_context        = {};
 ma_decoder_config au_decoder_config = {};
@@ -30,6 +30,12 @@ bool              au_recording      = false;
 ///////////////////////////////////////////
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
 ma_device_id au_default_device_out_id = {};
 ma_device_id au_default_device_in_id  = {};
 void audio_set_default_device_out(const wchar_t *device_id) {
@@ -50,7 +56,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// the output buffer by simply adding the samples together.
 	vec3      head_pos          = input_head()->position;
 	vec3      head_right        = vec3_normalize(input_head()->orientation * vec3_right);
-	ma_uint64 frame_cap         = _countof(au_mix_temp) / channel_count;
+	ma_uint64 frame_cap         = au_mix_temp_size / channel_count;
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -69,9 +75,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
@@ -156,7 +160,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 	*position = matrix_transform_pt(au_head_transform, inst.position);
 	*volume   = inst.volume;
 
-	ma_uint64 frame_cap         = _countof(au_mix_temp);
+	ma_uint64 frame_cap         = au_mix_temp_size;
 	ma_uint64 total_frames_read = 0;
 
 	while (total_frames_read < frame_count) {
@@ -174,9 +178,7 @@ ma_uint64 read_data_for_isac(_sound_inst_t& inst, float* output, ma_uint64 frame
 			}
 		} break;
 		case sound_type_stream: {
-			mtx_lock(&inst.sound->data_lock);
-			frames_read = ring_buffer_read(&inst.sound->buffer, au_mix_temp, frames_to_read);
-			mtx_unlock(&inst.sound->data_lock);
+			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
 		} break;
 		case sound_type_buffer: {
 			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
@@ -316,7 +318,7 @@ bool32_t mic_start(const char *device_name) {
 void mic_stop() {
 	if (!au_recording) return;
 
-	free(au_mic_name);
+	sk_free(au_mic_name);
 	au_mic_name = nullptr;
 	ma_device_stop  (&au_mic_device);
 	ma_device_uninit(&au_mic_device);
@@ -345,11 +347,14 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
+	au_mix_temp = sk_malloc_t(float, au_mix_temp_size);
+	memset(au_mix_temp, 0, sizeof(float) * au_mix_temp_size);
+
 	if (ma_context_init(nullptr, 0, nullptr, &au_context) != MA_SUCCESS) {
 		return false;
 	}
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(_MSC_VER)
 	if (au_default_device_out_id.wasapi[0] == '\0') {
 		HRESULT hr = isac_activate(_countof(au_active_sounds), isac_data_callback);
 
@@ -412,7 +417,7 @@ bool audio_init() {
 
 ///////////////////////////////////////////
 
-void audio_update() {
+void audio_step() {
 	matrix head = pose_matrix(*input_head());
 	matrix_inverse(head, au_head_transform);
 }
@@ -420,8 +425,18 @@ void audio_update() {
 ///////////////////////////////////////////
 
 void audio_shutdown() {
+	// Stop any sounds that are still playing
+	for (int32_t i = 0; i < _countof(au_active_sounds); i++) {
+		if (au_active_sounds[i].sound != nullptr) {
+			sound_inst_t inst;
+			inst._id   = au_active_sounds[i].id;
+			inst._slot = (int16_t)i;
+			sound_inst_stop(inst);
+		}
+	}
+
 	mic_stop();
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(_MSC_VER)
 	isac_destroy();
 #endif
 	ma_device_uninit (&au_device);
@@ -429,6 +444,7 @@ void audio_shutdown() {
 
 	sound_release(au_mic_sound);
 	au_mic_sound = nullptr;
+	sk_free(au_mix_temp);
 }
 
 }

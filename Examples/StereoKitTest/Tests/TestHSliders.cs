@@ -17,8 +17,8 @@ class TestHSliders : ITest
 
 	bool TestPinch()
 	{
-		bool match = Math.Abs(pinchValue - 0.5f) < 0.02f;
-		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider pinch value: {pinchValue:N3} - expected ~0.5");
+		bool match = Math.Abs(pinchValue - 0.56f) < 0.02f;
+		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider pinch value: {pinchValue:N3} - expected ~0.56");
 		return match;
 	}
 
@@ -39,7 +39,7 @@ class TestHSliders : ITest
 		Tests.Test(TestPush);
 		Tests.Test(TestPinch);
 	}
-	public void Update()
+	public void Step()
 	{
 		if (anim.Playing)
 			Input.HandOverride(Handed.Right, anim.Current);

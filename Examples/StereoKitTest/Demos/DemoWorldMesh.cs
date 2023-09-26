@@ -1,8 +1,16 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoWorldMesh : ITest
 {
-	Pose     windowPose        = new Pose(Vec3.Forward, Quat.LookDir(-Vec3.Forward));
+	string title       = "World Mesh";
+	string description = "";
+
+	Pose     windowPose        = Demo.contentPose.Pose;
 	Material occlusionMaterial;
 	Material oldMaterial;
 	bool     settingsWireframe = true;
@@ -27,29 +35,35 @@ class DemoWorldMesh : ITest
 	public void Shutdown()
 		=> World.OcclusionMaterial = oldMaterial;
 
-	public void Update() {
+	public void Step() {
 		UI.WindowBegin("Settings", ref windowPose, Vec2.Zero);
-		if (SK.System.worldOcclusionPresent)
-		{ 
-			bool occlusion = World.OcclusionEnabled;
-			if (UI.Toggle("Enable Occlusion", ref occlusion))
-				World.OcclusionEnabled = occlusion;
-			if (UI.Toggle("Wireframe", ref settingsWireframe))
-				occlusionMaterial.Wireframe = settingsWireframe;
-			if (UI.Radio("Red",   settingsColor == 0)) { settingsColor = 0; occlusionMaterial.SetColor("color", Color.HSV(0,1,1)); } UI.SameLine();
-			if (UI.Radio("White", settingsColor == 1)) { settingsColor = 1; occlusionMaterial.SetColor("color", Color.White);      } UI.SameLine();
-			if (UI.Radio("Black", settingsColor == 2)) { settingsColor = 2; occlusionMaterial.SetColor("color", Color.BlackTransparent); }
-		}
-		else UI.Label("World occlusion isn't available on this system");
+
+		if (!SK.System.worldOcclusionPresent)
+			UI.Label("World occlusion isn't available on this system");
+		UI.PushEnabled(SK.System.worldOcclusionPresent);
+
+		bool occlusion = World.OcclusionEnabled;
+		if (UI.Toggle("Enable Occlusion", ref occlusion))
+			World.OcclusionEnabled = occlusion;
+		if (UI.Toggle("Wireframe", ref settingsWireframe))
+			occlusionMaterial.Wireframe = settingsWireframe;
+		if (UI.Radio("Red",   settingsColor == 0)) { settingsColor = 0; occlusionMaterial.SetColor("color", Color.HSV(0,1,1)); } UI.SameLine();
+		if (UI.Radio("White", settingsColor == 1)) { settingsColor = 1; occlusionMaterial.SetColor("color", Color.White);      } UI.SameLine();
+		if (UI.Radio("Black", settingsColor == 2)) { settingsColor = 2; occlusionMaterial.SetColor("color", Color.BlackTransparent); }
+
+		UI.PopEnabled();
 
 		UI.HSeparator();
-		if (SK.System.worldRaycastPresent)
-		{
-			bool raycast = World.RaycastEnabled;
-			if (UI.Toggle("Enable Raycast", ref raycast))
-				World.RaycastEnabled = raycast;
-		}
-		else UI.Label("World raycasting isn't available on this system");
+
+		if (!SK.System.worldRaycastPresent)
+			UI.Label("World raycasting isn't available on this system");
+		UI.PushEnabled(SK.System.worldRaycastPresent);
+
+		bool raycast = World.RaycastEnabled;
+		if (UI.Toggle("Enable Raycast", ref raycast))
+			World.RaycastEnabled = raycast;
+
+		UI.PopEnabled();
 
 		UI.WindowEnd();
 
@@ -62,5 +76,25 @@ class DemoWorldMesh : ITest
 			if (World.Raycast(fingerRay, out Ray at))
 				Mesh.Sphere.Draw(Material.Default, Matrix.TS(at.position, 0.03f), new Color(1, 0, 0));
 		}
+
+		/// :CodeSample: World.HasBounds World.BoundsSize World.BoundsPose
+		// Here's some quick and dirty lines for the play boundary rectangle!
+		if (World.HasBounds)
+		{
+			Vec2   s    = World.BoundsSize/2;
+			Matrix pose = World.BoundsPose.ToMatrix();
+			Vec3   tl   = pose.Transform( new Vec3( s.x, 0,  s.y) );
+			Vec3   br   = pose.Transform( new Vec3(-s.x, 0, -s.y) );
+			Vec3   tr   = pose.Transform( new Vec3(-s.x, 0,  s.y) );
+			Vec3   bl   = pose.Transform( new Vec3( s.x, 0, -s.y) );
+
+			Lines.Add(tl, tr, Color.White, 1.5f*U.cm);
+			Lines.Add(bl, br, Color.White, 1.5f*U.cm);
+			Lines.Add(tl, bl, Color.White, 1.5f*U.cm);
+			Lines.Add(tr, br, Color.White, 1.5f*U.cm);
+		}
+		/// :End:
+
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.12f), V.XYZ(.38f, .34f, 0.1f)));
 	}
 }

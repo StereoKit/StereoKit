@@ -56,7 +56,6 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
-**/Properties/launchSettings.json
 
 # StyleCop
 StyleCopReport.xml
@@ -334,13 +333,14 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-!StereoKitC/lib/bin/**
 !**/Assets/**
 
 # Ignore dependency build related stuff
-Tools/oxr_current.txt
-StereoKitC/lib/bin/**/openxr_loader.lib
-StereoKitC/lib/bin/**/*reactphysics3d.*
+tools/deps_current.txt
+StereoKitC/lib/include/**
+StereoKitC/lib/bin/**
+# An exception for the Android loader
+!StereoKitC/lib/bin/arm64-v8a/**
 
 # Ignore cached shader blobs
 */Assets/cache
@@ -359,3 +359,7 @@ build_*/
 
 # Clangd cache
 .clangd/
+
+.deps_cache/
+
+**.DS_Store**

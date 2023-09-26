@@ -1,14 +1,14 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "model.h"
-#include "mesh.h"
-#include "texture.h"
+#include "mesh_.h"
+#include "texture_.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../systems/defaults.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../libraries/cgltf.h"
 
 #include <stdio.h>
@@ -28,10 +28,13 @@ matrix gltf_build_node_matrix (cgltf_node *curr);
 matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
 void   gltf_add_warning       (array_t<const char *> *warnings, const char *text);
 
+// This needs to be in cgltf.cpp due to the location of the json parser
+void gltf_parse_extras(model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+
 ///////////////////////////////////////////
 
 void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
-	for (size_t i = 0; i < warnings->count; i++) {
+	for (int32_t i = 0; i < warnings->count; i++) {
 		if (warnings->data[i] == text)
 			return;
 	}
@@ -40,16 +43,12 @@ void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
 
 ///////////////////////////////////////////
 
-bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
+bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const char *filename) {
 	if (node->skin == nullptr)
 		return false;
-	if (node->mesh->primitives_count > 1) {
-		log_warnf("[%s] multimaterial skinned meshes not supported yet", filename);
-		return false;
-	}
 	
 	cgltf_mesh      *m = node->mesh;
-	cgltf_primitive *p = &m->primitives[0];
+	cgltf_primitive *p = &m->primitives[primitive_id];
 
 	uint16_t *bone_ids   = nullptr;
 	int32_t   bone_id_ct = 0;
@@ -126,7 +125,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 				}
 			} else {
 				log_errf("[%s] joint format (%d) not implemented", filename, attr->data->component_type);
-				free(bone_ids);
+				sk_free(bone_ids);
 				bone_ids = nullptr;
 			}
 		} else if (attr->type == cgltf_attribute_type_weights && attr->index == 0) {
@@ -180,7 +179,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 						w->w = w->w * sum;
 					}
 				} else {
-					free(floats);
+					sk_free(floats);
 				}
 			} else {
 				log_errf("[%s] weights format (%d) not implemented", filename, attr->data->component_type);
@@ -190,8 +189,8 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 
 	if (!bone_ids || !weights) {
 		log_errf("[%s] mesh skin incomplete", filename);
-		free(bone_ids);
-		free(weights);
+		sk_free(bone_ids);
+		sk_free(weights);
 		return false;
 	}
 
@@ -216,6 +215,10 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, const char *filename) {
 	// And assign the skin!
 	mesh_set_skin(sk_mesh, bone_ids, bone_id_ct, weights, weight_ct, bone_trs, bone_tr_ct);
 
+	sk_free(bone_ids);
+	sk_free(weights);
+	sk_free(bone_trs);
+
 	return true;
 }
 
@@ -230,7 +233,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		return nullptr;
 	}
 	if (p->has_draco_mesh_compression) {
-		log_errf("[%s] GLTF Draco Mesh Compression not currently supported", filename);
+		gltf_add_warning(warnings, "GLTF Draco Mesh Compression not currently supported");
 		return nullptr;
 	}
 
@@ -246,9 +249,8 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 
 	bool has_normals = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
-		cgltf_attribute   *attr   = &p->attributes[a];
-		cgltf_buffer_view *buff   = attr->data->buffer_view;
-		size_t             offset = buff->offset + attr->data->offset;
+		cgltf_attribute* attr = &p->attributes[a];
+		const uint8_t*   buff = cgltf_buffer_view_data(attr->data->buffer_view) + attr->data->offset;
 		
 		// Make sure we have memory for our verts
 		if (vert_count < (int32_t)attr->data->count) {
@@ -266,7 +268,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (cgltf_size v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec3 *pos = (vec3 *)(buff + (attr->data->stride * v));
 					verts[v].pos = *pos;
 				}
 			} else {
@@ -283,7 +285,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex position type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			has_normals = true;
@@ -292,7 +294,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
 				// Ideal case is vec3 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec3 *norm = (vec3 *)(buff + (attr->data->stride * v));
 					verts[v].norm = *norm;
 				}
 			} else {
@@ -309,7 +311,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex normal type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
 			if (attr->index != 0) {
@@ -317,7 +319,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
 				// Ideal case is vec2 floats
 				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					vec2 *uv = (vec2 *)(buff + (attr->data->stride * v));
 					verts[v].uv = *uv;
 				}
 			} else {
@@ -334,7 +336,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex uv type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		} else if (attr->type == cgltf_attribute_type_color) {
 			if (attr->index != 0) {
@@ -342,13 +344,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color32 *col = (color32 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					color32 *col = (color32 *)(buff + (attr->data->stride * v));
 					verts[v].col = *col;
 				}
 			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
 				// vec4 float colors are also pretty straightforward
 				for (size_t v = 0; v < attr->data->count; v++) {
-					color128 *col = (color128 *)(((uint8_t *)buff->buffer->data) + (attr->data->stride * v) + offset);
+					color128 *col = (color128 *)(buff + (attr->data->stride * v));
 					verts[v].col = color_to_32(*col);
 				}
 			} else {
@@ -371,41 +373,51 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 				} else {
 					log_errf("[%s] Unimplemented vertex color type (%d)", filename, attr->data->type);
 				}
-				free(floats);
+				sk_free(floats);
 			}
 		}
 	}
 
 	// Now grab the mesh indices
-	size_t  ind_count = p->indices->count;
-	vind_t *inds      = sk_malloc_t(vind_t, ind_count);
-	if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint8_t *ind = (uint8_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-			inds[v] = *ind;
-		}
-	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint16_t *ind = (uint16_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-			inds[v] = *ind;
-		}
-	} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
-		cgltf_buffer_view *buff   = p->indices->buffer_view;
-		size_t             offset = buff->offset + p->indices->offset;
-		for (size_t v = 0; v < ind_count; v++) {
-			uint32_t *ind = (uint32_t *)(((uint8_t *)buff->buffer->data) + (p->indices->stride * v) + offset);
-#ifdef SK_32BIT_INDICES
-			inds[v] = *ind;
-#else
-			inds[v] = *ind > 0x0000FFFF ? 0 : (uint16_t)*ind;
-#endif
+	
+	size_t  ind_count = 0;
+	vind_t *inds      = nullptr;
+	if (p->indices == nullptr) {
+		// No indices listed, create indices that map to one index per vertex
+		ind_count = vert_count;
+		inds      = sk_malloc_t(vind_t, ind_count);
+		for (size_t i = 0; i < ind_count; i++) {
+			inds[i] = (vind_t)i;
 		}
 	} else {
-		gltf_add_warning(warnings, "Unimplemented vertex index format");
+		// Extract indices from the index buffer
+		ind_count = p->indices->count;
+		inds      = sk_malloc_t(vind_t, ind_count);
+
+		const uint8_t* buff = cgltf_buffer_view_data(p->indices->buffer_view) + p->indices->offset;
+		if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
+			for (size_t v = 0; v < ind_count; v++) {
+				uint8_t *ind = (uint8_t *)(buff + (p->indices->stride * v));
+				inds[v] = *ind;
+			}
+		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
+			for (size_t v = 0; v < ind_count; v++) {
+				uint16_t *ind = (uint16_t *)(buff + (p->indices->stride * v));
+				inds[v] = *ind;
+			}
+		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
+			if (p->indices->stride == sizeof(uint32_t)) {
+				// Fast path!
+				memcpy(inds, buff, ind_count * sizeof(uint32_t));
+			} else {
+				for (size_t v = 0; v < ind_count; v++) {
+					uint32_t *ind = (uint32_t *)(buff + (p->indices->stride * v));
+					inds[v] = *ind;
+				}
+			}
+		} else {
+			gltf_add_warning(warnings, "Unimplemented vertex index format");
+		}
 	}
 
 	if (!has_normals) {
@@ -413,10 +425,10 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	result = mesh_create();
-	mesh_set_id  (result, id);
 	mesh_set_data(result, verts, vert_count, inds, (int32_t)ind_count);
-	free(verts);
-	free(inds );
+	mesh_set_id  (result, id);
+	sk_free(verts);
+	sk_free(inds );
 
 	return result;
 }
@@ -495,18 +507,28 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strncmp(image->uri, "data:", 5) == 0) {
 		// If it's an image file encoded in a base64 string
-		void         *buffer = nullptr;
-		cgltf_options options = {};
+		char* start = strchr(image->uri, ',');
+		if (start != nullptr && start - image->uri >= 7 && strncmp(start - 7, ";base64", 7) == 0) {
+			void*         buffer  = nullptr;
+			cgltf_options options = {};
 
-		char*  start = strchr(image->uri, ',') + 1; // start of base64 data
-		char*  end   = strchr(image->uri, '=');     // end of base64 data
-		size_t size = ((end-start) * 6) / 8;        // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
-		cgltf_load_buffer_base64(&options, size, start, &buffer);
+			char*  base64_start = start + 1;
+			size_t base64_len   = strlen(base64_start);
 
-		if (buffer != nullptr) {
-			result = tex_create_mem(buffer, size, srgb_data, priority);
-			tex_set_id(result, id);
-			free(buffer);
+			// A base64 string may end with 0, 1 or 2 '=' padding characters,
+			// padding is present to ensure data is a multiple of 3.
+			size_t base64_size = 3 * (base64_len / 4);
+			if (base64_len >= 1 && base64_start[base64_len-1] == '=') { base64_size -= 1; }
+			if (base64_len >= 2 && base64_start[base64_len-2] == '=') { base64_size -= 1; }
+
+			 // find the size of the data in bytes, there's 6 bits of data encoded in 8 bits of base64
+			cgltf_load_buffer_base64(&options, base64_size, base64_start, &buffer);
+
+			if (buffer != nullptr) {
+				result = tex_create_mem(buffer, base64_size, srgb_data, priority);
+				tex_set_id(result, id);
+				sk_free(buffer);
+			}
 		}
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
@@ -717,7 +739,7 @@ anim_t gltf_parseanim(const cgltf_animation *anim, hashmap_t<cgltf_node*, model_
 				quat *rot = (quat*)curve.keyframe_values + offset;
 				quat r = matrix_extract_rotation(gltf_orientation_correction);
 				for (int32_t k = 0; k < curve.keyframe_count; k++)
-					rot[k*skip] = r * rot[k*skip];
+					rot[k*skip] = rot[k*skip] * r;
 			} break;
 			case anim_element_weights: {
 				log_warnf("Animated weights unsupported");
@@ -786,6 +808,8 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader, warnings);
 		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, node_transform, mesh, material);
+		if (node->skin) 
+			gltf_parseskin(model_node_get_mesh(model, new_node), node, (int)p, filename);
 		if (node_id == -1)
 			node_id = new_node;
 
@@ -793,13 +817,15 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		material_release(material);
 	}
 
-	if (node->skin && node_id != -1)
-		gltf_parseskin(model_node_get_mesh(model, node_id), node, filename);
-
 	if (node_id == -1) {
 		node_id = model_node_add_child(model, parent, node->name, transform, nullptr, nullptr);
 	}
-	node_map->add(node, node_id);
+	node_map->set(node, node_id);
+
+	// Copy the GLTF's extras into a dictionary
+	if (node->extras.data) {
+		gltf_parse_extras(model, node_id, node->extras.data, strlen(node->extras.data));
+	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);
@@ -816,12 +842,12 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 			: cgltf_result_file_not_found;
 	};
 	options.file.release = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, void* data) {
-		free(data);
+		sk_free(data);
 	};
+	options.memory.alloc_func = [](void *user, cgltf_size size) { return sk_malloc(size); };
+	options.memory.free_func  = [](void *user, void* data) { sk_free(data); };
 
-	cgltf_data *data       = nullptr;
-	const char *model_file = assets_file(filename);
-
+	cgltf_data*  data   = nullptr;
 	cgltf_result result = cgltf_parse(&options, file_data, file_size, &data);
 	if (result != cgltf_result_success) {
 		log_diagf("[%s] gltf parse err %d", filename, result);
@@ -829,7 +855,9 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 		return false;
 	}
 
+	char* model_file = assets_file(filename);
 	result = cgltf_load_buffers(&options, data, model_file);
+	sk_free(model_file);
 	if (result != cgltf_result_success) {
 		log_diagf("[%s] gltf buffer load err %d", filename, result);
 		cgltf_free(data);
@@ -855,18 +883,22 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	for (size_t i = 0; i < data->nodes_count; i++) {
 		if (data->nodes[i].skin == nullptr) continue;
 		cgltf_skin *skin = data->nodes[i].skin;
+		cgltf_node *node = &data->nodes[i];
 
-		anim_skeleton_t skel = {};
-		skel.bone_count       = (int32_t)skin->joints_count;
-		skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
-		skel.skin_node        = *node_map.get(&data->nodes[i]);
-		for (int32_t b = 0; b < skel.bone_count; b++) {
-			skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+		// Each GLTF skin node has an sk_mesh node for each of its primitives.
+		for (cgltf_size p = 0; node->mesh && p < node->mesh->primitives_count; p++) {
+			anim_skeleton_t skel = {};
+			skel.bone_count       = (int32_t)skin->joints_count;
+			skel.bone_to_node_map = sk_malloc_t(int32_t, skel.bone_count);
+			skel.skin_node        = *node_map.get(&data->nodes[i]) + (int)p;
+			for (int32_t b = 0; b < skel.bone_count; b++) {
+				skel.bone_to_node_map[b] = *node_map.get(skin->joints[b]);
+			}
+			model->anim_data.skeletons.add(skel);
 		}
-		model->anim_data.skeletons.add(skel);
 	}
 
-	for (size_t i = 0; i < warnings.count; i++) {
+	for (int32_t i = 0; i < warnings.count; i++) {
 		log_warnf("[%s] %s", filename, warnings[i]);
 	}
 

@@ -24,7 +24,7 @@
 /// - Left + Right - Hand animates to a closed fist.
 /// - Scroll Wheel - Moves the hand toward or away from the user.
 /// - Shift + Right - Mouse-look / rotate the head.
-/// - Left Alt - [Eye tracking](({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Left Alt - [Eye tracking]({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
 /// - Ctrl + Shift - Switch between controlling left hand, right hand, or no hand.
 /// 
 /// To move around in space, you'll find controls that should be familiar to
@@ -107,7 +107,7 @@ class GuideUsingTheSimulator : ITest
 		Input.HandClearOverride(Handed.Right);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("HandOverride.jpg", 1, 600, 600, 45, new Vec3(0.055f, -0.047f, 0.047f), new Vec3(0.155f, -0.500f, -0.838f));
 	}

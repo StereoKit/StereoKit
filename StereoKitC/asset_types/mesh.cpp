@@ -1,6 +1,7 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "mesh.h"
 #include "assets.h"
 
@@ -15,6 +16,8 @@ using namespace DirectX;
 
 namespace sk {
 
+void mesh_update_label(mesh_t mesh);
+
 ///////////////////////////////////////////
 
 void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
@@ -25,8 +28,8 @@ void mesh_set_keep_data(mesh_t mesh, bool32_t keep_data) {
 
 	mesh->discard_data = !keep_data;
 	if (mesh->discard_data) {
-		free(mesh->verts); mesh->verts = nullptr;
-		free(mesh->inds ); mesh->inds  = nullptr;
+		sk_free(mesh->verts);
+		sk_free(mesh->inds );
 	}
 }
 
@@ -54,6 +57,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
 		// If they call this a second time, or they need more verts than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -64,6 +68,7 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 		if (!skg_buffer_is_valid(&mesh->vert_buffer))
 			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
 		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their verts fit in the same
 		// buffer, just copy things over!
@@ -72,20 +77,8 @@ void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count,
 
 	mesh->vert_count = vertex_count;
 
-	// Calculate the bounds for this mesh by searching it for min and max values!
 	if (calculate_bounds && vertex_count > 0) {
-		vec3 min = vertices[0].pos;
-		vec3 max = vertices[0].pos;
-		for (uint32_t i = 1; i < vertex_count; i++) {
-			min.x = fminf(vertices[i].pos.x, min.x);
-			min.y = fminf(vertices[i].pos.y, min.y);
-			min.z = fminf(vertices[i].pos.z, min.z);
-
-			max.x = fmaxf(vertices[i].pos.x, max.x);
-			max.y = fmaxf(vertices[i].pos.y, max.y);
-			max.z = fmaxf(vertices[i].pos.z, max.z);
-		}
-		mesh->bounds = bounds_t{ min / 2 + max / 2, max - min };
+		mesh->bounds = mesh_calculate_bounds(vertices, vertex_count);
 	}
 }
 ///////////////////////////////////////////
@@ -150,6 +143,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
 		// If they call this a second time, or they need more inds than will
 		// fit in this buffer, lets make a new dynamic buffer!
@@ -160,6 +154,7 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
 			log_err("mesh_set_inds: Failed to create dynamic index buffer");
 		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+		mesh_update_label(mesh);
 	} else {
 		// And if they call this a third time, or their inds fit in the same
 		// buffer, just copy things over!
@@ -251,6 +246,60 @@ void mesh_calculate_normals(vert_t *verts, int32_t vert_count, const vind_t *ind
 
 ///////////////////////////////////////////
 
+bounds_t mesh_calculate_bounds(const vert_t* verts, int32_t vert_count) {
+	// Calculate the bounds for this mesh by searching it for min and max
+	// values! This uses DirectXMath's SIMD capabilities, and uses multiple
+	// separate accumulators to reduce operation dependencies.
+	XMVECTOR min_a = XMLoadFloat3((XMFLOAT3*)&verts[0].pos);
+	XMVECTOR min_b = min_a;
+	XMVECTOR min_c = min_a;
+	XMVECTOR min_d = min_a;
+	XMVECTOR max_a = min_a;
+	XMVECTOR max_b = min_a;
+	XMVECTOR max_c = min_a;
+	XMVECTOR max_d = min_a;
+
+	const vert_t* curr = verts;
+	for (int32_t i = 0; i < vert_count/4; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		XMVECTOR pt_b = XMLoadFloat3((XMFLOAT3*)&curr[1].pos);
+		min_b = XMVectorMin(min_b, pt_b);
+		max_b = XMVectorMax(max_b, pt_b);
+		XMVECTOR pt_c = XMLoadFloat3((XMFLOAT3*)&curr[2].pos);
+		min_c = XMVectorMin(min_c, pt_c);
+		max_c = XMVectorMax(max_c, pt_c);
+		XMVECTOR pt_d = XMLoadFloat3((XMFLOAT3*)&curr[3].pos);
+		min_d = XMVectorMin(min_d, pt_d);
+		max_d = XMVectorMax(max_d, pt_d);
+		curr += 4;
+	}
+	for (int32_t i = (vert_count / 4) * 4; i < vert_count; i++) {
+		XMVECTOR pt_a = XMLoadFloat3((XMFLOAT3*)&curr[0].pos);
+		min_a = XMVectorMin(min_a, pt_a);
+		max_a = XMVectorMax(max_a, pt_a);
+		curr += 1;
+	}
+
+	XMVECTOR min = XMVectorMin(min_a, min_b);
+	min = XMVectorMin(min, min_c);
+	min = XMVectorMin(min, min_d);
+	XMVECTOR max = XMVectorMax(max_a, max_b);
+	max = XMVectorMax(max, max_c);
+	max = XMVectorMax(max, max_d);
+
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	bounds_t bounds     = {};
+	XMStoreFloat3((XMFLOAT3*)&bounds.center,     center);
+	XMStoreFloat3((XMFLOAT3*)&bounds.dimensions, dimensions);
+
+	return bounds;
+}
+
+///////////////////////////////////////////
+
 void mesh_set_draw_inds(mesh_t mesh, int32_t index_count) {
 	uint32_t u_count = index_count;
 	if (u_count > mesh->ind_count) {
@@ -295,10 +344,10 @@ bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_
 	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_weight_count);
 	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
 
-	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix,   bone_count);
-	mesh->skin_data.bone_transforms         = sk_malloc_t(XMMATRIX, bone_count);
-	memset(mesh->skin_data.bone_inverse_transforms, 0, sizeof(matrix  ) * bone_count);
-	memset(mesh->skin_data.bone_transforms,         0, sizeof(XMMATRIX) * bone_count);
+	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix, bone_count);
+	mesh->skin_data.bone_transforms         = sk_malloc_t(matrix, bone_count);
+	memset(mesh->skin_data.bone_inverse_transforms, 0, sizeof(matrix) * bone_count);
+	memset(mesh->skin_data.bone_transforms,         0, sizeof(matrix) * bone_count);
 
 	mesh->skin_data.bone_count = bone_count;
 
@@ -327,9 +376,11 @@ void mesh_set_skin_inv(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_
 
 void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_count) {
 	for (int32_t i = 0; i < bone_count; i++) {
-		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
+		mesh->skin_data.bone_transforms[i] = mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i];
 	}
 
+	XMVECTOR max = g_XMFltMin;
+	XMVECTOR min = g_XMFltMax;
 	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
@@ -337,24 +388,35 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		const uint16_t *bones   = &mesh->skin_data.bone_ids[i*4];
 		const vec4      weights =  mesh->skin_data.weights [i];
 
-		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[0]]), weights.x);
-		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[0]]), weights.x);
+		XMMATRIX xm0      = XMLoadFloat4x4((XMFLOAT4X4 *)&mesh->skin_data.bone_transforms[bones[0]]);
+		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  xm0), weights.x);
+		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, xm0), weights.x);
 		if (weights.y != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_norm);
+			XMMATRIX xm1 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[1]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm1), weights.y), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm1), weights.y), new_norm);
 		}
 		if (weights.z != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_norm);
+			XMMATRIX xm2 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[2]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm2), weights.z), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm2), weights.z), new_norm);
 		}
 		if (weights.w != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_norm);
+			XMMATRIX xm3 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[3]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm3), weights.w), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm3), weights.w), new_norm);
 		}
-		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
-		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
+		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+		min = XMVectorMin(min, new_pos);
+		max = XMVectorMax(max, new_pos);
 	}
 	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
+	
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract(max, min);
+	mesh->bounds.center     = math_fast_to_vec3(center);
+	mesh->bounds.dimensions = math_fast_to_vec3(dimensions);
 }
 
 ///////////////////////////////////////////
@@ -371,13 +433,31 @@ mesh_t mesh_find(const char *id) {
 ///////////////////////////////////////////
 
 void mesh_set_id(mesh_t mesh, const char *id) {
-	assets_set_id(mesh->header, id);
+	assets_set_id(&mesh->header, id);
+	mesh_update_label(mesh);
+}
+
+///////////////////////////////////////////
+
+const char* mesh_get_id(const mesh_t mesh) {
+	return mesh->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void mesh_update_label(mesh_t mesh) {
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+	if (mesh->header.id_text != nullptr)
+		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
+#else
+	(void)mesh;
+#endif
 }
 
 ///////////////////////////////////////////
 
 void mesh_addref(mesh_t mesh) {
-	assets_addref(mesh->header);
+	assets_addref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -440,10 +520,23 @@ const mesh_collision_t *mesh_get_collision_data(mesh_t mesh) {
 
 ///////////////////////////////////////////
 
+const mesh_bvh_t *mesh_get_bvh_data(mesh_t mesh) {
+	if (mesh->bvh_data != nullptr)
+		return mesh->bvh_data;
+	if (mesh->discard_data)
+		return nullptr;
+
+	mesh->bvh_data = mesh_bvh_create(mesh, 16);
+
+	return mesh->bvh_data;
+}
+
+///////////////////////////////////////////
+
 void mesh_release(mesh_t mesh) {
 	if (mesh == nullptr)
 		return;
-	assets_releaseref(mesh->header);
+	assets_releaseref(&mesh->header);
 }
 
 ///////////////////////////////////////////
@@ -452,10 +545,19 @@ void mesh_destroy(mesh_t mesh) {
 	skg_mesh_destroy  (&mesh->gpu_mesh);
 	skg_buffer_destroy(&mesh->vert_buffer);
 	skg_buffer_destroy(&mesh->ind_buffer);
-	free(mesh->verts);
-	free(mesh->inds);
-	free(mesh->collision_data.pts   );
-	free(mesh->collision_data.planes);
+	sk_free(mesh->verts);
+	sk_free(mesh->inds);
+	sk_free(mesh->collision_data.pts   );	// XXX doesn't this fail when no colldata has been created?
+	sk_free(mesh->collision_data.planes);
+	if (mesh->bvh_data)
+		mesh_bvh_destroy(mesh->bvh_data);
+
+	sk_free(mesh->skin_data.bone_ids);
+	sk_free(mesh->skin_data.bone_inverse_transforms);
+	sk_free(mesh->skin_data.bone_transforms);
+	sk_free(mesh->skin_data.deformed_verts);
+	sk_free(mesh->skin_data.weights);
+
 	*mesh = {};
 }
 
@@ -468,7 +570,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -480,8 +582,33 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 	vec3  pt = {};
 	float nearest_dist = FLT_MAX;
 	for (uint32_t i = 0; i < mesh->ind_count; i+=3) {
-		if (!plane_ray_intersect(data->planes[i / 3], model_space_ray, &pt))
+
+		const plane_t& plane = data->planes[i / 3];
+
+		float denom = vec3_dot(model_space_ray.dir, plane.normal);
+
+		if (fabsf(denom) < 1e-6f)
+		{
+			// Ray direction (almost) perpendicular to plane, no intersection
 			continue;
+		}
+
+		if ((cull_mode == cull_front && denom < 0) || (cull_mode == cull_back && denom > 0))
+		{
+			// Front/back-face culling
+			// XXX is there a smaller test?
+			continue;
+		}
+
+		float t_hit = -(vec3_dot(model_space_ray.pos, plane.normal) + plane.d) / denom;
+
+		if (t_hit < 0)
+		{
+			// Hit behind ray origin
+			continue;
+		}
+
+		pt = model_space_ray.pos + model_space_ray.dir * t_hit;
 
 		// point in triangle, implementation based on:
 		// https://blackpawn.com/texts/pointinpoly/default.html
@@ -518,6 +645,21 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 	return nearest_dist != FLT_MAX;
 }
+
+///////////////////////////////////////////
+
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+	vec3 result = {};
+
+	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);
+	if (bvh == nullptr)
+		return false;
+	if (!bounds_ray_intersect(mesh->bounds, model_space_ray, &result))
+		return false;
+
+	return mesh_bvh_intersect(bvh, model_space_ray, out_pt, out_start_inds, cull_mode);
+}
+
 ///////////////////////////////////////////
 
 bool32_t mesh_get_triangle(mesh_t mesh, uint32_t triangle_index, vert_t* a, vert_t* b, vert_t* c) {
@@ -556,7 +698,7 @@ void mesh_gen_cube_vert(int i, const vec3 &size, vec3 &pos, vec3 &norm, vec2 &uv
 
 ///////////////////////////////////////////
 
-mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions) {
+mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions, bool32_t double_sided) {
 	vind_t subd   = (vind_t)subdivisions;
 	mesh_t result = mesh_create();
 
@@ -564,6 +706,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 
 	int vert_count = subd*subd;
 	int ind_count  = 6*(subd-1)*(subd-1);
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
 	vert_t *verts = sk_malloc_t(vert_t, vert_count);
 	vind_t *inds  = sk_malloc_t(vind_t, ind_count );
 
@@ -580,6 +728,12 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			right * ((xp - 0.5f) * dimensions.x) +
 			up    * ((yp - 0.5f) * dimensions.y), 
 			plane_normal, {xp,yp}, {255,255,255,255} };
+
+		// The flip side of the plane has the same position and UV but a flipped normal
+		if (double_sided) {
+			verts[x + y*subd + vert_count/2]      = verts[x + y*subd];
+			verts[x + y*subd + vert_count/2].norm = -plane_normal;
+		}
 	} }
 
 	// make indices
@@ -595,10 +749,114 @@ mesh_t mesh_gen_plane(vec2 dimensions, vec3 plane_normal, vec3 plane_top_directi
 			inds[ind++] =  x    +  y    * subd;
 	} }
 
+	if (double_sided) {
+		for (vind_t y = 0; y < subd-1; y++) {
+		for (vind_t x = 0; x < subd-1; x++) {
+				// We flip the winding for the flip side
+				inds[ind++] = (x+1) +  y    * subd + vert_count/2;
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+
+				inds[ind++] = (x+1) + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    + (y+1) * subd + vert_count/2;
+				inds[ind++] =  x    +  y    * subd + vert_count/2;
+		} }
+	}
+
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t mesh_gen_circle(float diameter, vec3 plane_normal, vec3 plane_top_direction, int32_t spokes, bool32_t double_sided) {
+	vind_t spoke_count = maxi(3, (int32_t)spokes);
+	mesh_t result = mesh_create();
+
+	int vert_count = spoke_count;
+	int ind_count  = (spoke_count - 2) * 3;
+
+	if (double_sided) {
+		vert_count *= 2;
+		ind_count  *= 2;
+	}
+
+	vert_t* verts = sk_malloc_t(vert_t, vert_count);
+	vind_t* inds  = sk_malloc_t(vind_t, ind_count);
+
+	vec3 right = vec3_cross(plane_top_direction, plane_normal);
+	vec3 up    = vec3_cross(right, plane_normal);
+
+	// Make a circle of vertices
+	for (vind_t i = 0; i < spoke_count; i++) {
+		float angle = i * ((float)M_PI*2.0f / spoke_count);
+
+		vert_t *pt   = &verts[i];
+		float radius = diameter / 2;
+		float xp     = cosf(angle);
+		float yp     = sinf(angle);
+
+		pt->norm = plane_normal;
+		pt->pos  = radius * ((right * xp) + (up * yp));
+		pt->uv   = {((xp+1)/2),((yp+1)/2)};
+		pt->col  = {255,255,255,255};
+
+		// The flip side of the circle has the same position and UV but a flipped normal
+		if (double_sided) {
+			vert_t* flip_pt = &verts[i + vert_count/2];
+
+			flip_pt->norm = -plane_normal;
+			flip_pt->pos  = pt->pos;
+			flip_pt->uv   = pt->uv;
+			flip_pt->col  = pt->col;
+		}
+	}
+
+	// No vertex in the center, so we're adding a strip of triangles
+	// across the circle instead
+	for (vind_t i = 0; i < spoke_count - 2; i++) {
+		uint32_t half = i / 2;
+		if (i%2 == 0) { // even
+			vind_t ind1 = (spoke_count - half) % spoke_count;
+			vind_t ind2 = half + 1;
+			vind_t ind3 = (spoke_count - 1) - half;
+
+			inds[i*3+2] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3  ] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind3;
+			}
+		}
+		else { // odd
+			vind_t ind1 = half + 1;
+			vind_t ind2 = spoke_count - (half + 1);
+			vind_t ind3 = half + 2;
+
+			inds[i * 3] = ind1;
+			inds[i*3+1] = ind2;
+			inds[i*3+2] = ind3;
+
+			if (double_sided) {
+				// We flip the winding for the flip side
+				inds[ind_count/2 + i*3  ] = vert_count/2 + ind1;
+				inds[ind_count/2 + i*3+1] = vert_count/2 + ind3;
+				inds[ind_count/2 + i*3+2] = vert_count/2 + ind2;
+			}
+		}
+	}
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -667,8 +925,8 @@ mesh_t mesh_gen_cube(vec3 dimensions, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -736,8 +994,8 @@ mesh_t mesh_gen_sphere(float diameter, int32_t subdivisions) {
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -805,8 +1063,78 @@ mesh_t mesh_gen_cylinder(float diameter, float depth, vec3 dir, int32_t subdivis
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
+	return result;
+}
+
+///////////////////////////////////////////
+
+// Bottom always at origin, top at dir*depth
+mesh_t mesh_gen_cone(float diameter, float depth, vec3 dir, int32_t subdivisions) {
+	mesh_t result = mesh_create();
+	dir = vec3_normalize(dir);
+	float radius = diameter / 2;
+
+	vind_t subd = (vind_t)subdivisions;
+	int vert_count = (subdivisions+1) * 4 + 2;
+	int ind_count  = subdivisions * 12;
+	vert_t *verts = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds  = sk_malloc_t(vind_t, ind_count);
+
+	// Calculate any perpendicular vector
+	vec3 perp = vec3{dir.z, dir.z, -dir.x-dir.y};
+	if (vec3_magnitude_sq(perp) == 0)
+		perp = vec3{-dir.y-dir.z, dir.x, dir.x};
+
+	vec3 axis_x = vec3_normalize(vec3_cross(dir, perp));
+	vec3 axis_y = vec3_normalize(vec3_cross(dir, axis_x));
+	vec3 z_off  = dir * (depth / 2.f);
+	vec3 top_pos = dir * depth;
+	vind_t ind = 0;
+
+	for (vind_t i = 0; i <= subd; i++) {
+		float u   = ((float)i / subd);
+		float ang = u * (float)M_PI * 2;
+		float x   = cosf(ang);
+		float y   = sinf(ang);
+		vec3 normal  = axis_x * x + axis_y * y;
+		vec3 bot_pos = normal*radius;
+
+		// strip first
+		verts[i * 4  ] = { top_pos,  normal, {u,0}, {255,255,255,255} };
+		verts[i * 4+1] = { bot_pos,  normal, {u,1}, {255,255,255,255} };
+		// now circular faces
+		verts[i * 4+2] = { top_pos,  dir,    {u,0}, {255,255,255,255} };
+		verts[i * 4+3] = { bot_pos, -dir,    {u,1}, {255,255,255,255} };
+
+		if (i == subd) continue;
+
+		vind_t in = (i + 1) % (subd+1);
+		// Top slice
+		inds[ind++] = i  * 4 + 2;
+		inds[ind++] = in * 4 + 2;
+		inds[ind++] = (subd+1) * 4;
+		// Bottom slice
+		inds[ind++] = (subd+1) * 4+1;
+		inds[ind++] = in * 4 + 3;
+		inds[ind++] = i  * 4 + 3;
+		// Now edge strip quad
+		inds[ind++] = in * 4+1;
+		inds[ind++] = in * 4;
+		inds[ind++] = i  * 4;
+		inds[ind++] = i  * 4+1;
+		inds[ind++] = in * 4+1;
+		inds[ind++] = i  * 4;
+	}
+	// center points for the circle
+	verts[(subdivisions+1)*4]   = {  z_off,  dir, {0.5f,0.01f}, {255,255,255,255} };
+	verts[(subdivisions+1)*4+1] = { vec3{}, -dir, {0.5f,0.99f}, {255,255,255,255} };
+
+	mesh_set_data(result, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 
@@ -895,8 +1223,8 @@ mesh_t mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivi
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 

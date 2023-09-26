@@ -1,7 +1,15 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoRayMesh : ITest
 {
+	string title       = "Ray to Mesh";
+	string description = "";
+
 	/// :CodeSample: Ray.Intersect Mesh.Intersect
 	/// ### Ray Mesh Intersection
 	/// Here's an example of casting a Ray at a mesh someplace in world space,
@@ -12,10 +20,10 @@ class DemoRayMesh : ITest
 	///
 	Mesh sphereMesh = Default.MeshSphere;
 	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
-	Pose boxPose    = new Pose(0,     0,     -0.5f,  Quat.Identity);
-	Pose castPose   = new Pose(0.25f, 0.21f, -0.36f, Quat.Identity);
+	Pose boxPose    = (Demo.contentPose * Matrix.T(0, -0.1f, 0)).Pose;
+	Pose castPose   = (Demo.contentPose * Matrix.T(0.25f, 0.11f, 0.2f)).Pose;
 
-	public void Update()
+	public void StepRayMesh()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
 		UI.Handle("Box",  ref boxPose,  boxMesh.Bounds);
@@ -45,11 +53,20 @@ class DemoRayMesh : ITest
 				Lines.Add(cPt, aPt, new Color32(0,255,0,255), 0.005f);
 			}
 		}
+
 	}
 	/// :End:
 
 	public void Initialize() {
-		Tests.Screenshot("RayMeshIntersect.jpg", 600, 600, 90, new Vec3(0.2f, 0.16f, -0.192f), new Vec3(-0.036f, -0.021f, -1.163f));
+		Tests.Screenshot("RayMeshIntersect.jpg", 0, 600, 600, 78,
+			Demo.contentPose * new Vec3(-0.198f, 0.107f, -0.361f),
+			Demo.contentPose * new Vec3(-0.046f, -0.200f, 0.578f));
+	}
+
+	public void Step()
+	{
+		StepRayMesh();
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(-0.08f,-0.04f,-0.06f), V.XYZ(.44f, .36f, .36f)));
 	}
 
 	public void Shutdown  () { }

@@ -71,10 +71,12 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```
+		/// border_affect_radius - meters
+		/// ```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
 		/// <summary>The material used by the UI for Quadrant Sized UI
@@ -180,10 +182,13 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```</summary>
+		/// border_affect_radius - meters
+		/// ```
+		/// </summary>
 		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a
@@ -194,6 +199,29 @@
 		/// procedurally generated sound based on a mouse release, with extra
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
+
+		/// <summary>This is a 64x64 image of a filled hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
+		public static Sprite SpriteRadioOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
+		public static Sprite SpriteRadioOff { get; private set; }
+		/// <summary>This is a 64x64 image of a filled rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
+		public static Sprite SpriteToggleOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
+		public static Sprite SpriteToggleOff { get; private set; }
 
 		/// <summary>The default font used by StereoKit's text. This varies
 		/// from platform to platform, but is typically a sans-serif general
@@ -242,6 +270,11 @@
 
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
+
+			SpriteRadioOn   = Sprite.Find(DefaultIds.spriteRadioOn);
+			SpriteRadioOff  = Sprite.Find(DefaultIds.spriteRadioOff);
+			SpriteToggleOn  = Sprite.Find(DefaultIds.spriteToggleOn);
+			SpriteToggleOff = Sprite.Find(DefaultIds.spriteToggleOff);
 		}
 
 		internal static void Shutdown()
@@ -283,6 +316,11 @@
 
 			SoundClick   = null;
 			SoundUnclick = null;
+
+			SpriteRadioOn   = null;
+			SpriteRadioOff  = null;
+			SpriteToggleOn  = null;
+			SpriteToggleOff = null;
 		}
 	}
 }

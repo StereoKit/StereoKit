@@ -102,27 +102,53 @@ namespace StereoKit
 		AnyTransparent = Additive | Blend,
 	}
 
+	/// <summary>This describes where the origin of the application should be. While these
+	/// origins map closely to OpenXR features, not all runtimes support each
+	/// feature. StereoKit will provide reasonable fallback behavior in the event the
+	/// origin mode isn't directly supported.</summary>
+	public enum OriginMode {
+		/// <summary>The origin will be at the location of the user's head when the
+		/// application starts, facing the same direction as the user. This mode
+		/// is available on all runtimes, and will never fall back to another mode!
+		/// However, due to variances in underlying behavior, StereoKit may introduce
+		/// an origin offset to ensure consistent behavior.</summary>
+		Local,
+		/// <summary>The origin will be at the floor beneath where the user starts, facing the
+		/// direction of the user. If this mode is not natively supported, StereoKit
+		/// will use the stage mode with an offset. If stage mode is unavailable, it
+		/// will fall back to local mode with a -1.5 Y axis offset.</summary>
+		Floor,
+		/// <summary>The origin will be at the center of a safe play area or stage that the
+		/// user or OS has defined, and will face one of the edges of the play
+		/// area. If this mode is not natively supported, StereoKit will use the 
+		/// floor origin mode. If floor mode is unavailable, it will fall back to
+		/// local mode with a -1.5 Y axis offset.</summary>
+		Stage,
+	}
+
 	/// <summary>Severity of a log item.</summary>
 	public enum LogLevel {
+		/// <summary>A default log level that indicates it has not yet been
+		/// set.</summary>
 		None         = 0,
 		/// <summary>This is for diagnostic information, where you need to know
 		/// details about what -exactly- is going on in the system. This
 		/// info doesn't surface by default.</summary>
 		Diagnostic,
-		/// <summary>This is non-critical information, just to let you know what's
-		/// going on.</summary>
+		/// <summary>This is non-critical information, just to let you know
+		/// what's going on.</summary>
 		Info,
-		/// <summary>Something bad has happened, but it's still within the realm of
-		/// what's expected.</summary>
+		/// <summary>Something bad has happened, but it's still within the
+		/// realm of what's expected.</summary>
 		Warning,
-		/// <summary>Danger Will Robinson! Something really bad just happened and
-		/// needs fixing!</summary>
+		/// <summary>Danger Will Robinson! Something really bad just happened
+		/// and needs fixing!</summary>
 		Error,
 	}
 
-	/// <summary>When rendering content, you can filter what you're rendering by the
-	/// RenderLayer that they're on. This allows you to draw items that are
-	/// visible in one render, but not another. For example, you may wish
+	/// <summary>When rendering content, you can filter what you're rendering
+	/// by the RenderLayer that they're on. This allows you to draw items that
+	/// are visible in one render, but not another. For example, you may wish
 	/// to draw a player's avatar in a 'mirror' rendertarget, but not in
 	/// the primary display. See `Renderer.LayerFilter` for configuring what
 	/// the primary display renders.</summary>
@@ -152,26 +178,40 @@ namespace StereoKit
 		/// <summary>The default VFX layer, StereoKit draws some non-standard
 		/// mesh content using this flag, such as lines.</summary>
 		Vfx          = 1 << 10,
+		/// <summary>For items that should only be drawn from the first person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 1st person viewpoint.</summary>
+		FirstPerson  = 1 << 11,
+		/// <summary>For items that should only be drawn from the third person
+		/// perspective. By default, this is enabled for renders that
+		/// are from a 3rd person viewpoint.</summary>
+		ThirdPerson  = 1 << 12,
 		/// <summary>This is a flag that specifies all possible layers. If you
 		/// want to render all layers, then this is the layer filter
 		/// you would use. This is the default for render filtering.</summary>
 		All          = 0xFFFF,
-		/// <summary>This is a combination of all layers that are not the VFX layer.</summary>
+		/// <summary>This is a combination of all layers that are not the VFX
+		/// layer.</summary>
 		AllRegular   = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9,
+		/// <summary>All layers except for the third person layer.</summary>
+		AllFirstPerson = All & ~ThirdPerson,
+		/// <summary>All layers except for the first person layer.</summary>
+		AllThirdPerson = All & ~FirstPerson,
 	}
 
-	/// <summary>This tells about the app's current focus state, whether it's active and
-	/// receiving input, or if it's backgrounded or hidden. This can be
-	/// important since apps may still run and render when unfocused, as the app
-	/// may still be visible behind the app that _does_ have focus.</summary>
+	/// <summary>This tells about the app's current focus state, whether it's
+	/// active and receiving input, or if it's backgrounded or hidden. This can
+	/// be important since apps may still run and render when unfocused, as the
+	/// app may still be visible behind the app that _does_ have focus.</summary>
 	public enum AppFocus {
-		/// <summary>This StereoKit app is active, focused, and receiving input from the
-		/// user. Application should behave as normal.</summary>
+		/// <summary>This StereoKit app is active, focused, and receiving input
+		/// from the user. Application should behave as normal.</summary>
 		Active,
-		/// <summary>This StereoKit app has been unfocused, something may be compositing
-		/// on top of the app such as an OS dashboard. The app is still visible,
-		/// but some other thing has focus and is receiving input. You may wish
-		/// to pause, disable input tracking, or other such things.</summary>
+		/// <summary>This StereoKit app has been unfocused, something may be
+		/// compositing on top of the app such as an OS dashboard. The app is
+		/// still visible, but some other thing has focus and is receiving
+		/// input. You may wish to pause, disable input tracking, or other such
+		/// things.</summary>
 		Background,
 		/// <summary>This app is not rendering currently.</summary>
 		Hidden,
@@ -225,6 +265,57 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>What type of user motion is the device capable of tracking? For the normal
+	/// fully capable XR headset, this should be 6dof (rotation and translation), but
+	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
+	/// computers with the simulator off would be none. </summary>
+	public enum DeviceTracking {
+		/// <summary>No tracking is available! This is likely a flatscreen application, not an
+		/// XR applicaion.</summary>
+		None         = 0,
+		/// <summary>This tracks rotation only, this may be a limited device without tracking
+		/// cameras, or could be a more capable headset in a 3dof mode. DoF stands
+		/// for Degrees of Freedom.</summary>
+		DoF3,
+		/// <summary>This is capable of tracking both the position and rotation of the device,
+		/// most fully featured XR headsets (such as a HoloLens 2) will have this.
+		/// DoF stands for Degrees of Freedom.</summary>
+		DoF6,
+	}
+
+	/// <summary>This describes a type of display hardware!</summary>
+	public enum DisplayType {
+		/// <summary>Not a display at all, or the variable hasn't been initialized properly
+		/// yet.</summary>
+		None,
+		/// <summary>This is a stereo display! It has 2 screens, or two sections that display
+		/// content in stereo, one for each eye. This could be a VR headset, or like
+		/// a 3D tv.</summary>
+		Stereo,
+		/// <summary>This is a single flat screen, with no stereo depth. This could be
+		/// something like either a computer monitor, or a phone with passthrough AR.</summary>
+		Flatscreen,
+	}
+
+	/// <summary>Culling is discarding an object from the render pipeline!
+	/// This enum describes how mesh faces get discarded on the graphics
+	/// card. With culling set to none, you can double the number of pixels
+	/// the GPU ends up drawing, which can have a big impact on performance.
+	/// None can be appropriate in cases where the mesh is designed to be
+	/// 'double sided'. Front can also be helpful when you want to flip a
+	/// mesh 'inside-out'!</summary>
+	public enum Cull {
+		/// <summary>Discard if the back of the triangle face is pointing
+		/// towards the camera. This is the default behavior.</summary>
+		Back         = 0,
+		/// <summary>Discard if the front of the triangle face is pointing
+		/// towards the camera. This is opposite the default behavior.</summary>
+		Front,
+		/// <summary>No culling at all! Draw the triangle regardless of which
+		/// way it's pointing.</summary>
+		None,
+	}
+
 	/// <summary>Textures come in various types and flavors! These are bit-flags
 	/// that tell StereoKit what type of texture we want, and how the application
 	/// might use it!</summary>
@@ -274,29 +365,46 @@ namespace StereoKit
 		/// of the time you're dealing with color data! Matches well with the
 		/// Color32 struct.</summary>
 		Rgba32Linear = 2,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in sRGB color space. This is a common swapchain format
+		/// on Windows.</summary>
 		Bgra32       = 3,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in linear color space. This is a common swapchain
+		/// format on Windows.</summary>
 		Bgra32Linear = 4,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Red/Green/Blue data channels, with 11 bits for R and G,
+		/// and 10 bits for blue. This is a great presentation format for high
+		/// bit depth displays that still fits in 32 bits! This format has no
+		/// alpha channel.</summary>
 		Rg11b10      = 5,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
+		/// <summary>Red/Green/Blue/Transparency data channels, with 10 
+		/// bits for R, G, and B, and 2 for alpha. This is a great presentation
+		/// format for high bit depth displays that still fits in 32 bits, and
+		/// also includes at least a bit of transparency!</summary>
 		Rgb10a2      = 6,
-		/// <summary>TODO: remove during major version update</summary>
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. TODO: remove during major version
+		/// update, prefer s, f, or u postfixed versions of this format.</summary>
 		Rgba64       = 7,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The u postfix indicates that the raw
+		/// color data is stored as an unsigned 16 bit integer, which is then
+		/// normalized into the 0, 1 floating point range on the GPU.</summary>
+		Rgba64u      = Rgba64,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The s postfix indicates that the raw
+		/// color data is stored as a signed 16 bit integer, which is then
+		/// normalized into the -1, +1 floating point range on the GPU.</summary>
 		Rgba64s      = 8,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The f postfix indicates that the raw
+		/// color data is stored as 16 bit floats, which may be tricky to work
+		/// with in most languages.</summary>
 		Rgba64f      = 9,
 		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
 		/// per-channel! Basically 4 floats per color, which is bonkers
@@ -328,17 +436,15 @@ namespace StereoKit
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
 		Depth16      = 16,
-		/// <summary>16 bits of depth is not a lot, but it can be enough if
-		/// your far clipping plane is pretty close. If you're seeing lots of
-		/// flickering where two objects overlap, you either need to bring
-		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Rgba64u      = Rgba64,
+		/// <summary>A double channel of data that supports 8 bits for the red
+		/// channel and 8 bits for the green channel.</summary>
+		R8g8         = 17,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more
 	/// specifically, how does the shader grab colors between the provided
 	/// pixels? If you'd like an in-depth explanation of these topics, check
-	/// out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+	/// out [this exploration of texture filtering](https://bgolus.medium.com/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
 	/// by graphics wizard Ben Golus.</summary>
 	public enum TexSample {
 		/// <summary>Use a linear blend between adjacent pixels, this creates
@@ -392,25 +498,6 @@ namespace StereoKit
 		/// buffer! This usually looks -really- glowy, so it makes for good
 		/// particles or lighting effects.</summary>
 		Add,
-	}
-
-	/// <summary>Culling is discarding an object from the render pipeline!
-	/// This enum describes how mesh faces get discarded on the graphics
-	/// card. With culling set to none, you can double the number of pixels
-	/// the GPU ends up drawing, which can have a big impact on performance.
-	/// None can be appropriate in cases where the mesh is designed to be
-	/// 'double sided'. Front can also be helpful when you want to flip a
-	/// mesh 'inside-out'!</summary>
-	public enum Cull {
-		/// <summary>Discard if the back of the triangle face is pointing
-		/// towards the camera. This is the default behavior.</summary>
-		Back         = 0,
-		/// <summary>Discard if the front of the triangle face is pointing
-		/// towards the camera. This is opposite the default behavior.</summary>
-		Front,
-		/// <summary>No culling at all! Draw the triangle regardless of which
-		/// way it's pointing.</summary>
-		None,
 	}
 
 	/// <summary>Depth test describes how this material looks at and responds
@@ -754,6 +841,29 @@ namespace StereoKit
 		Known        = 2,
 	}
 
+	/// <summary>This enum provides information about StereoKit's hand tracking data source.
+	/// It allows you to distinguish between true hand data such as that provided by
+	/// a Leap Motion Controller, and simulated data that StereoKit provides when
+	/// true hand data is not present.</summary>
+	public enum HandSource {
+		/// <summary>There is currently no source of hand data! This means there are no
+		/// tracked controllers, or active hand tracking systems. This may happen if
+		/// the user has hand tracking disabled, and no active controllers.</summary>
+		None         = 0,
+		/// <summary>The current hand data is a simulation of hand data rather than true hand
+		/// data. It is backed by either a controller, or a mouse, and may have a
+		/// more limited range of motion. </summary>
+		Simulated,
+		/// <summary>This is true hand data which exhibits the full range of motion of a
+		/// normal hand. It is backed by something like a Leap Motion Controller, or
+		/// some other optical (or maybe glove?) hand tracking system.</summary>
+		Articulated,
+		/// <summary>This hand data is provided by your use of SK's override functionality.
+		/// What properties it exhibits depends on what override data you're sending
+		/// to StereoKit!</summary>
+		Overridden,
+	}
+
 	/// <summary>A collection of system key codes, representing keyboard
 	/// characters and mouse buttons. Based on VK codes.</summary>
 	public enum Key {
@@ -967,6 +1077,30 @@ namespace StereoKit
 		MAX          = 0xFF,
 	}
 
+	/// <summary>Represents an input from an XR headset's controller!</summary>
+	public enum ControllerKey {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
+		None         = 0,
+		/// <summary>The trigger button on the controller, where the user's index finger
+		/// typically sits.</summary>
+		Trigger,
+		/// <summary>The grip button on the controller, usually where the fingers that are not
+		/// the index finger sit.</summary>
+		Grip,
+		/// <summary>This is the lower of the two primary thumb buttons, sometimes labelled X,
+		/// and sometimes A. </summary>
+		X1,
+		/// <summary>This is the upper of the two primary thumb buttons, sometimes labelled Y,
+		/// and sometimes B. </summary>
+		X2,
+		/// <summary>This is when the thumbstick on the controller is actually pressed. This
+		/// has nothing to do with the horizontal or vertical movement of the stick.</summary>
+		Stick,
+		/// <summary>This is the menu, or settings button of the controller.</summary>
+		Menu,
+	}
+
 	/// <summary>A settings flag that lets you describe the behavior of how
 	/// StereoKit will refresh data about the world mesh, if applicable. This
 	/// is used with `World.RefreshType`.</summary>
@@ -1015,13 +1149,25 @@ namespace StereoKit
 		Web,
 	}
 
-	/// <summary>This describes the graphics API thatStereoKit is using for rendering.</summary>
+	/// <summary>This describes the graphics API that StereoKit is using for rendering.</summary>
 	public enum BackendGraphics {
-		/// <summary>An invalid default value. Right now, this may likely indicate a variety
-		/// of OpenGL.</summary>
+		/// <summary>An invalid default value.</summary>
 		None,
-		/// <summary>DirectX's Direct3D11 is used for rendering!</summary>
+		/// <summary>DirectX's Direct3D11 is used for rendering! This is used by default on
+		/// Windows.</summary>
 		D3D11,
+		/// <summary>OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
+		/// System) for loading. This is used by default on Linux.</summary>
+		OpenGL_GLX,
+		/// <summary>OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
+		/// for loading. Native developers can configure SK to use this on Windows.</summary>
+		OpenGL_WGL,
+		/// <summary>OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
+		/// Interface) for loading. This is used by default on Android, and native
+		/// developers can configure SK to use this on Linux.</summary>
+		OpenGLES_EGL,
+		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
+		WebGL,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console
@@ -1033,6 +1179,30 @@ namespace StereoKit
 		/// <summary>Scrape out any color annotations, so logs are all completely
 		/// plain text.</summary>
 		None,
+	}
+
+	/// <summary>A flag for what 'type' an Asset may store.</summary>
+	public enum AssetType {
+		/// <summary>No type, this may come from some kind of invalid Asset id.</summary>
+		None         = 0,
+		/// <summary>A Mesh.</summary>
+		Mesh,
+		/// <summary>A Tex.</summary>
+		Tex,
+		/// <summary>A Shader.</summary>
+		Shader,
+		/// <summary>A Material.</summary>
+		Material,
+		/// <summary>A Model.</summary>
+		Model,
+		/// <summary>A Font.</summary>
+		Font,
+		/// <summary>A Sprite.</summary>
+		Sprite,
+		/// <summary>A Sound.</summary>
+		Sound,
+		/// <summary>A Solid.</summary>
+		Solid,
 	}
 
 }

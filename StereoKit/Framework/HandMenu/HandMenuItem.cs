@@ -49,5 +49,29 @@ namespace StereoKit.Framework
 			this.action   = action;
 			this.callback = callback;
 		}
+
+		/// <summary>This draws the menu item on the radial menu!</summary>
+		/// <param name="at">Center of the radial slice</param>
+		/// <param name="arcLength">Length of the arc at the midpoint of the
+		/// radial slice.</param>
+		/// <param name="angle">Angle of the centerpoint of the slice this is
+		/// rendered on.</param>
+		/// <param name="focused">If the current menu slice has focus.</param>
+		public virtual void Draw(Vec3 at, float arcLength, float angle, bool focused)
+		{
+			if (image != null)
+			{
+				float height = TextStyle.Default.CharHeight;
+				Vec3  offset = new Vec3(0, height * 0.75f, 0);
+				Hierarchy.Push(Matrix.TS(at, focused ? 1.2f : 1));
+					image.Draw(Matrix.TS(offset, height), TextAlign.Center);
+					Text.Add(name, Matrix.TS(-offset, .5f), TextAlign.BottomCenter);
+				Hierarchy.Pop();
+			}
+			else
+			{
+				Text.Add(name, Matrix.TS(at, focused ? 0.6f : 0.5f), TextAlign.BottomCenter);
+			}
+		}
 	}
 }

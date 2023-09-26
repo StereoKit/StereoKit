@@ -18,7 +18,7 @@ class DocWorldRaycast : ITest
 
 	public void Stop() => World.RaycastEnabled = false;
 
-	public void Step()
+	public void StepRaycast()
 	{
 		// Raycast out the index finger of each hand, and draw a red sphere
 		// at the intersection point.
@@ -36,5 +36,5 @@ class DocWorldRaycast : ITest
 
 	public void Initialize() => Start();
 	public void Shutdown() => Stop();
-	public void Update() => Step();
+	public void Step() => StepRaycast();
 }

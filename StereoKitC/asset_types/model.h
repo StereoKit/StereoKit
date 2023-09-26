@@ -24,6 +24,7 @@ struct model_node_t {
 	int32_t  child;
 	int32_t  sibling;
 	bool32_t solid;
+	dictionary_t<char*> info;
 };
 
 struct _model_t {
@@ -35,6 +36,7 @@ struct _model_t {
 	anim_data_t             anim_data;
 	anim_inst_t             anim_inst;
 	bounds_t                bounds;
+	bool32_t                bounds_dirty;
 };
 
 bool modelfmt_obj (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);

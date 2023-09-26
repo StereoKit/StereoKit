@@ -1,4 +1,9 @@
-﻿/// :CodeDoc: Guides 3 Using Hands
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+/// :CodeDoc: Guides 3 Using Hands
 /// # Using Hands
 /// 
 /// StereoKit uses a hands first approach to user input! Even when hand-sensors
@@ -14,23 +19,26 @@ using StereoKit.Framework;
 
 class DemoHands : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Hand Input";
+	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
-	static Pose optionsPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	static Pose optionsPose = Demo.contentPose.Pose;
 	bool showHands     = true;
 	bool showJoints    = false;
 	bool showAxes      = true;
 	bool showPointers  = true;
 	bool showHandMenus = true;
 	bool showHandSize  = true;
+	bool showPinchPt   = true;
 
-	Mesh jointMesh = Mesh.GenerateSphere(1);
 	HandMenuRadial handMenu;
+	HandMenuRadial prevHandMenu;
 
 	public void Initialize() {
+		prevHandMenu = SK.GetStepper<HandMenuRadial>();
+		if (prevHandMenu != null)
+			SK.RemoveStepper(prevHandMenu);
+
 		/// :CodeDoc: Guides Using Hands
 		/// ## Accessing Joints
 		/// 
@@ -79,18 +87,18 @@ class DemoHands : ITest
 		handMenu = SK.AddStepper(new HandMenuRadial(
 			new HandRadialLayer("Root",
 				new HandMenuItem("File",   null, null, "File"),
-				new HandMenuItem("Edit",   null, null, "Edit"),
-				new HandMenuItem("About",  null, () => Log.Info(SK.VersionName)),
+				new HandMenuItem("Search", null, null, "Edit"),
+				new HandMenuItem("About",  Sprite.FromFile("search.png"), () => Log.Info(SK.VersionName)),
 				new HandMenuItem("Cancel", null, null)),
 			new HandRadialLayer("File", 
-				new HandMenuItem("New",   null, () => Log.Info("New")),
-				new HandMenuItem("Open",  null, () => Log.Info("Open")),
-				new HandMenuItem("Close", null, () => Log.Info("Close")),
-				new HandMenuItem("Back",  null, null, HandMenuAction.Back)),
+				new HandMenuItem("New",    null, () => Log.Info("New")),
+				new HandMenuItem("Open",   null, () => Log.Info("Open")),
+				new HandMenuItem("Close",  null, () => Log.Info("Close")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back)),
 			new HandRadialLayer("Edit",
-				new HandMenuItem("Copy",  null, () => Log.Info("Copy")),
-				new HandMenuItem("Paste", null, () => Log.Info("Paste")),
-				new HandMenuItem("Back", null, null, HandMenuAction.Back))));
+				new HandMenuItem("Copy",   null, () => Log.Info("Copy")),
+				new HandMenuItem("Paste",  null, () => Log.Info("Paste")),
+				new HandMenuItem("Back",   null, null, HandMenuAction.Back))));
 		/// :End:
 
 		Tests.RunForFrames(2);
@@ -100,29 +108,45 @@ class DemoHands : ITest
 	public void Shutdown()
 	{
 		/// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
-		SK.RemoveStepper(handMenu); 
+		SK.RemoveStepper(handMenu);
 		/// :End:
+
+		if (prevHandMenu != null)
+			SK.AddStepper(prevHandMenu);
 	}
 
-	public void Update()
+	public void Step()
 	{
-		UI.WindowBegin("Options", ref optionsPose, new Vec2(24, 0)*U.cm);
+		Vec2 size = V.XY(8, 0) * U.cm;
+
+		UI.WindowBegin("Options", ref optionsPose, new Vec2(0, 0)*U.cm);
+
+		UI.Label($"Hand source: {Input.HandSource(Handed.Right)}");
+
+		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Show");
-		if (UI.Toggle("Hands", ref showHands))
+		if (UI.Toggle("Hands", ref showHands,     size))
 			Input.HandVisible(Handed.Max, showHands);
 		UI.SameLine();
-		UI.Toggle("Joints", ref showJoints);
+		UI.Toggle("Joints",    ref showJoints,    size);
 		UI.SameLine();
-		UI.Toggle("Axes", ref showAxes);
+		UI.Toggle("Axes",      ref showAxes,      size);
+
+		UI.Toggle("Hand Size", ref showHandSize,  size);
 		UI.SameLine();
-		UI.Toggle("Hand Size", ref showHandSize);
+		UI.Toggle("Pointers",  ref showPointers,  size);
 		UI.SameLine();
-		UI.Toggle("Pointers", ref showPointers);
-		UI.SameLine();
-		UI.Toggle("Menu", ref showHandMenus);
+		UI.Toggle("Menu",      ref showHandMenus, size);
+
+		UI.Toggle("Pinch Pt" , ref showPinchPt,   size);
+		UI.PanelEnd();
+
+		UI.HSeparator();
+
+		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Color");
-		if (UI.Button("Rainbow"))
-			ColorizeFingers(16, 
+		if (UI.Button("Rainbow", size))
+			ColorizeFingers(16, true,
 				new Gradient(
 					new GradientKey(Color.HSV(0.0f,1,1), 0.1f),
 					new GradientKey(Color.HSV(0.2f,1,1), 0.3f),
@@ -134,34 +158,43 @@ class DemoHands : ITest
 					new GradientKey(new Color(1,1,1,0), 0.4f),
 					new GradientKey(new Color(1,1,1,1), 0.9f)));
 		UI.SameLine();
-		if (UI.Button("Black"))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1,1,1,0), 0),
-					new GradientKey(new Color(1,1,1,0), 0.4f),
-					new GradientKey(new Color(1,1,1,1), 0.6f),
-					new GradientKey(new Color(1,1,1,1), 0.9f)));
-		UI.SameLine();
-		if (UI.Button("Full Black"))
-			ColorizeFingers(16,
-				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
-				new Gradient(
-					new GradientKey(new Color(1, 1, 1, 0), 0),
-					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
-					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
-		UI.SameLine();
-		if (UI.Button("Normal"))
-			ColorizeFingers(16,
+		if (UI.Button("Normal", size))
+			ColorizeFingers(16, true,
 				new Gradient(new GradientKey(new Color(1, 1, 1, 1), 1)),
 				new Gradient(
 					new GradientKey(new Color(.4f,.4f,.4f,0), 0),
 					new GradientKey(new Color(.6f,.6f,.6f,0), 0.4f),
 					new GradientKey(new Color(.8f,.8f,.8f,1), 0.55f),
 					new GradientKey(new Color(1,1,1,1),       1)));
+
+		if (UI.Button("Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0,0,0,1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1,1,1,0), 0),
+					new GradientKey(new Color(1,1,1,0), 0.4f),
+					new GradientKey(new Color(1,1,1,1), 0.6f),
+					new GradientKey(new Color(1,1,1,1), 0.9f)));
+
+		UI.SameLine();
+		if (UI.Button("Full Black", size))
+			ColorizeFingers(16, true,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 1), 1)),
+				new Gradient(
+					new GradientKey(new Color(1, 1, 1, 0), 0),
+					new GradientKey(new Color(1, 1, 1, 1), 0.05f),
+					new GradientKey(new Color(1, 1, 1, 1), 1.0f)));
+
+		UI.SameLine();
+		if (UI.Button("Cutout Black", size))
+			ColorizeFingers(16, false,
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)),
+				new Gradient(new GradientKey(new Color(0, 0, 0, 0), 1)));
+
+		UI.PanelEnd();
 		UI.WindowEnd();
 
-		if (showJoints)   DrawJoints(jointMesh, Default.Material);
+		if (showJoints)   DrawJoints(Mesh.Sphere, Default.Material);
 		if (showAxes)     DrawAxes();
 		if (showPointers) DrawPointers();
 		if (showHandSize) DrawHandSize();
@@ -170,16 +203,20 @@ class DemoHands : ITest
 			DrawHandMenu(Handed.Right);
 			DrawHandMenu(Handed.Left);
 		}
+		if (showPinchPt)
+		{
+			Hand l = Input.Hand(Handed.Left);
+			Hand r = Input.Hand(Handed.Right);
+			if (l.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(l.pinchPt, 0.005f));
+			if (r.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(r.pinchPt, 0.005f));
+		}
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
-		if (!Tests.IsTesting) { 
-			Text.Add(title, titlePose);
-			Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
-		}
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.34f, .4f, 0)));
 	}
 
-	private void ColorizeFingers(int size, Gradient horizontal, Gradient vertical)
+	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)
 	{
 		Tex tex = new Tex(TexType.Image, TexFormat.Rgba32Linear);
 		tex.AddressMode = TexAddress.Clamp;
@@ -197,6 +234,9 @@ class DemoHands : ITest
 		tex.SetColors(size, size, pixels);
 
 		Default.MaterialHand[MatParamName.DiffuseTex] = tex;
+		Default.MaterialHand.Transparency = transparent
+			? Transparency.Blend
+			: Transparency.None;
 	}
 
 	/// :CodeDoc: Guides Using Hands
@@ -263,6 +303,7 @@ class DemoHands : ITest
 				Lines.AddAxis(hand[finger, joint].Pose);
 			}}
 			Lines.AddAxis(hand.palm);
+			Lines.AddAxis(hand.wrist);
 		}
 	}
 

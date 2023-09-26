@@ -1,8 +1,9 @@
 #include "defaults.h"
-#include "platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
+#include "../asset_types/texture_.h"
 
 #include <string.h>
 
@@ -52,6 +53,18 @@ sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
 
+const spherical_harmonics_t sk_default_lighting = { {
+	{ 0.74f,  0.74f,  0.73f},
+	{ 0.24f,  0.25f,  0.26f},
+	{ 0.09f,  0.09f,  0.09f},
+	{ 0.05f,  0.05f,  0.06f},
+	{-0.01f, -0.01f, -0.01f},
+	{-0.03f, -0.03f, -0.03f},
+	{ 0.00f,  0.00f,  0.00f},
+	{-0.02f, -0.02f, -0.02f},
+	{ 0.04f,  0.04f,  0.04f},
+} };
+
 ///////////////////////////////////////////
 
 tex_t defaults_texture(const char *id, color128 color) {
@@ -79,7 +92,7 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	color32 line_color  = color_to_32(color_lab(lab.x * powf(0.8f,  contrast_boost), lab.y, lab.z, 1));
 	color32 line2_color = color_to_32(color_lab(lab.x * powf(0.75f, contrast_boost), lab.y, lab.z, 1));
 
-	color32 *data   = sk_malloc_t(color32, size * size);
+	color32 *data = sk_malloc_t(color32, size * size);
 	for (int32_t y = 0; y < size; y++) {
 		int ydist  = abs(slice_half    - ((y + slice_half   ) % slice_size));
 		int ydist2 = abs(slice_quarter - ((y + slice_quarter) % slice_half));
@@ -96,6 +109,8 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	}
 
 	tex_set_colors(result, size, size, data);
+	sk_free(data);
+
 	return result;
 }
 
@@ -125,23 +140,10 @@ bool defaults_init() {
 	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
-	spherical_harmonics_t lighting = { {
-		{ 0.74f,  0.74f,  0.73f}, 
-		{ 0.24f,  0.25f,  0.26f}, 
-		{ 0.09f,  0.09f,  0.09f}, 
-		{ 0.05f,  0.05f,  0.06f}, 
-		{-0.01f, -0.01f, -0.01f}, 
-		{-0.03f, -0.03f, -0.03f}, 
-		{ 0.00f,  0.00f,  0.00f}, 
-		{-0.02f, -0.02f, -0.02f}, 
-		{ 0.04f,  0.04f,  0.04f}, 
-	} };
-	render_set_skylight(lighting);
+	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
-	render_set_skytex(sk_default_cubemap);
-	render_enable_skytex(true);
 
 	// Default quad mesh
 	sk_default_quad = mesh_create();
@@ -172,26 +174,35 @@ bool defaults_init() {
 	mesh_set_id(sk_default_sphere,      default_id_mesh_sphere);
 
 	// Shaders
-	sk_default_shader             = shader_create_mem((void*)sks_shader_builtin_default_hlsl,     sizeof(sks_shader_builtin_default_hlsl));
-	sk_default_shader_blit        = shader_create_mem((void*)sks_shader_builtin_blit_hlsl,        sizeof(sks_shader_builtin_blit_hlsl));
-	sk_default_shader_unlit       = shader_create_mem((void*)sks_shader_builtin_unlit_hlsl,       sizeof(sks_shader_builtin_unlit_hlsl));
-	sk_default_shader_unlit_clip  = shader_create_mem((void*)sks_shader_builtin_unlit_clip_hlsl,  sizeof(sks_shader_builtin_unlit_clip_hlsl));
-	sk_default_shader_font        = shader_create_mem((void*)sks_shader_builtin_font_hlsl,        sizeof(sks_shader_builtin_font_hlsl));
-	sk_default_shader_equirect    = shader_create_mem((void*)sks_shader_builtin_equirect_hlsl,    sizeof(sks_shader_builtin_equirect_hlsl));
-	sk_default_shader_ui          = shader_create_mem((void*)sks_shader_builtin_ui_hlsl,          sizeof(sks_shader_builtin_ui_hlsl));
-	sk_default_shader_ui_box      = shader_create_mem((void*)sks_shader_builtin_ui_box_hlsl,      sizeof(sks_shader_builtin_ui_box_hlsl));
-	sk_default_shader_ui_quadrant = shader_create_mem((void*)sks_shader_builtin_ui_quadrant_hlsl, sizeof(sks_shader_builtin_ui_quadrant_hlsl));
-	sk_default_shader_sky         = shader_create_mem((void*)sks_shader_builtin_skybox_hlsl,      sizeof(sks_shader_builtin_skybox_hlsl));
-	sk_default_shader_lines       = shader_create_mem((void*)sks_shader_builtin_lines_hlsl,       sizeof(sks_shader_builtin_lines_hlsl));
-	sk_default_shader_pbr         = shader_create_mem((void*)sks_shader_builtin_pbr_hlsl,         sizeof(sks_shader_builtin_pbr_hlsl));
-	sk_default_shader_pbr_clip    = shader_create_mem((void*)sks_shader_builtin_pbr_clip_hlsl,    sizeof(sks_shader_builtin_pbr_clip_hlsl));
-
+	int32_t size = 0;
+	void*   data = nullptr;
+#define SHADER_DECODE(shader_mem) { sk_free(data); data = unzip_malloc(shader_mem, sizeof(shader_mem), &size); }
+	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_unlit_clip_hlsl_zip ); sk_default_shader_unlit_clip  = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_font_hlsl_zip       ); sk_default_shader_font        = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_equirect_hlsl_zip   ); sk_default_shader_equirect    = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_hlsl_zip         ); sk_default_shader_ui          = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_box_hlsl_zip     ); sk_default_shader_ui_box      = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_quadrant_hlsl_zip); sk_default_shader_ui_quadrant = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_skybox_hlsl_zip     ); sk_default_shader_sky         = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_pbr_clip_hlsl_zip   ); sk_default_shader_pbr_clip    = shader_create_mem(data, size);
+	sk_free(data);
+#undef SHADER_DECODE
+	
 	// Android seems to give us a hard time about this one, so let's fall
 	// back at least somewhat gently.
-	if (!sk_default_shader_pbr)
-		sk_default_shader_pbr = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
-	if (!sk_default_shader_pbr_clip)
-		sk_default_shader_pbr_clip = shader_create_mem((void*)sks_shader_builtin_default_hlsl, sizeof(sks_shader_builtin_default_hlsl));
+	if (sk_default_shader && !sk_default_shader_pbr) {
+		sk_default_shader_pbr = sk_default_shader;
+		shader_addref(sk_default_shader);
+	}
+	if (sk_default_shader && !sk_default_shader_pbr_clip) {
+		sk_default_shader_pbr_clip = sk_default_shader;
+		shader_addref(sk_default_shader);
+	}
 
 	if (sk_default_shader             == nullptr ||
 		sk_default_shader_blit        == nullptr ||

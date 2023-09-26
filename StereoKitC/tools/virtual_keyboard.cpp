@@ -1,7 +1,6 @@
 ﻿#include "virtual_keyboard.h"
 #include "virtual_keyboard_layouts.h"
 #include "../stereokit_ui.h"
-#include "../systems/input_keyboard.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
@@ -28,11 +27,11 @@ const keylayout_t* virtualkeyboard_get_system_keyboard_layout() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_reset_modifiers() {
-	if (keyboard_alt  ) { input_keyboard_inject_release(key_alt  ); keyboard_alt   = false; }
-	if (keyboard_altgr) { input_keyboard_inject_release(key_alt  ); keyboard_altgr = false; }
-	if (keyboard_ctrl ) { input_keyboard_inject_release(key_ctrl ); keyboard_ctrl  = false; }
-	if (keyboard_shift) { input_keyboard_inject_release(key_shift); keyboard_shift = false; }
-	if (keyboard_fn   ) {                                           keyboard_fn    = false; }
+	if (keyboard_alt  ) { input_key_inject_release(key_alt  ); keyboard_alt   = false; }
+	if (keyboard_altgr) { input_key_inject_release(key_alt  ); keyboard_altgr = false; }
+	if (keyboard_ctrl ) { input_key_inject_release(key_ctrl ); keyboard_ctrl  = false; }
+	if (keyboard_shift) { input_key_inject_release(key_shift); keyboard_shift = false; }
+	if (keyboard_fn   ) {                                      keyboard_fn    = false; }
 }
 
 ///////////////////////////////////////////
@@ -42,10 +41,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !keyboard_open) {
-		matrix to_local   = matrix_invert(render_get_cam_root());
-		pose_t local_head = matrix_transform_pose(to_local, *input_head());
-		keyboard_pose.position    = local_head.position + local_head.orientation * vec3_forward * 0.5f + vec3{0, -.2f, 0};
-		keyboard_pose.orientation = quat_lookat(keyboard_pose.position, local_head.position);
+		keyboard_pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	}
 
 	// Reset the keyboard to its default state
@@ -71,7 +67,7 @@ void virtualkeyboard_initialize() {
 
 void send_key_data(const char16_t* charkey,key_ key) {
 	keyboard_pressed_keys.add(key);
-	input_keyboard_inject_press(key);
+	input_key_inject_press(key);
 	char32_t c = 0;
 	while (utf16_decode_fast_b(charkey, &charkey, &c)) {
 		input_text_inject_char(c);
@@ -81,8 +77,8 @@ void send_key_data(const char16_t* charkey,key_ key) {
 ///////////////////////////////////////////
 
 void remove_last_clicked_keys() {
-	for (size_t i = 0; i < keyboard_pressed_keys.count; i++) {
-		input_keyboard_inject_release(keyboard_pressed_keys[0]);
+	for (int32_t i = 0; i < keyboard_pressed_keys.count; i++) {
+		input_key_inject_release(keyboard_pressed_keys[0]);
 		keyboard_pressed_keys.remove(0);
 	}
 }
@@ -106,7 +102,7 @@ void virtualkeyboard_update() {
 	remove_last_clicked_keys();
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body);
+	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body, ui_system_get_move_type());
 
 	// Check layer keys for switching between keyboard layout layers
 	int layer_index = 0;
@@ -147,26 +143,26 @@ void virtualkeyboard_update() {
 		case special_key_fn:       ui_toggle_sz_16(curr->display_text, keyboard_fn, size); break;
 		case special_key_alt: {
 			if (ui_toggle_sz_16(curr->display_text, keyboard_alt, size)) {
-				if (keyboard_alt) input_keyboard_inject_press  (key_alt);
-				else              input_keyboard_inject_release(key_alt);
+				if (keyboard_alt) input_key_inject_press  (key_alt);
+				else              input_key_inject_release(key_alt);
 			}
 		} break;
 		case special_key_ctrl: {
 			if (ui_toggle_sz_16(curr->display_text, keyboard_ctrl, size)) {
-				if (keyboard_ctrl) input_keyboard_inject_press  (key_ctrl);
-				else               input_keyboard_inject_release(key_ctrl);
+				if (keyboard_ctrl) input_key_inject_press  (key_ctrl);
+				else               input_key_inject_release(key_ctrl);
 			}
 		} break;
 		case special_key_shift: {
 			if (ui_toggle_sz_16(curr->display_text, keyboard_shift, size)) {
-				if (keyboard_shift) input_keyboard_inject_press  (key_shift);
-				else                input_keyboard_inject_release(key_shift);
+				if (keyboard_shift) input_key_inject_press  (key_shift);
+				else                input_key_inject_release(key_shift);
 			}
 		} break;
 		case special_key_alt_gr: {
 			if (ui_toggle_sz_16(curr->display_text, keyboard_altgr, size)) {
-				if (keyboard_altgr) input_keyboard_inject_press  (key_alt);
-				else                input_keyboard_inject_release(key_alt);
+				if (keyboard_altgr) input_key_inject_press  (key_alt);
+				else                input_key_inject_release(key_alt);
 			}
 		} break;
 		default: {

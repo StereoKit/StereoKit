@@ -1,11 +1,20 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoPBR : ITest
 {
+	string title       = "PBR Shaders";
+	string description = "Shaders!";
+
 	const int  materialGrid = 6;
 	Material[] pbrMaterials;
 	Model      pbrModel;
 	Mesh       sphereMesh;
+	Material   selectionMat;
 
 	Tex oldSkyTex;
 	SphericalHarmonics oldSkyLight;
@@ -19,6 +28,9 @@ class DemoPBR : ITest
 		sphereMesh  = Mesh.GenerateSphere(1, 7);
 		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
+		selectionMat = new Material("interactable.hlsl");
+		selectionMat.Transparency = Transparency.Add;
+		selectionMat.DepthTest = DepthTest.Equal;
 
 		pbrModel = Model.FromFile("DamagedHelmet.gltf");
 		pbrMaterials = new Material[materialGrid*materialGrid];
@@ -55,15 +67,16 @@ class DemoPBR : ITest
 		Renderer.SkyLight = oldSkyLight;
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("PBRBalls.jpg", 1024, 1024, new Vec3(0, 0, -0.1f), new Vec3(0, 0, -1));
 
 		Hierarchy.Push(Matrix.T(0,0,-1));
 
-		if (!Tests.IsTesting) { 
-			UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f);
+		if (!Tests.IsTesting) {
+			UI.HandleBegin("Model", ref modelPose, pbrModel.Bounds * .2f, allowedGestures: UIGesture.PinchGrip);
 			pbrModel.Draw(Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f));
+			pbrModel.Draw(selectionMat, Matrix.TRS(Vec3.Zero, Quat.FromAngles(0, 180, 0), 0.2f), new Color(1,1,1,1));
 			UI.HandleEnd();
 		}
 
@@ -74,5 +87,7 @@ class DemoPBR : ITest
 		Text.Add("Metallic -->",  Matrix.TRS(new Vec3(0, materialGrid/8.0f+0.2f,  -0.25f), Quat.FromAngles(0,180, 0 ), 4));
 		Text.Add("Roughness -->", Matrix.TRS(new Vec3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
 		Hierarchy.Pop();
+
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0, 0, 0.5f), V.XYZ(2.2f, 2.2f, .5f)));
 	}
 }

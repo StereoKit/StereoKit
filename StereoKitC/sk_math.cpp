@@ -87,14 +87,13 @@ quat quat_inverse(const quat &a) {
 
 ///////////////////////////////////////////
 
-vec4 quat_to_axis_angle(quat a) {
+void quat_to_axis_angle(quat a, vec3* out_axis, float* out_rotation_deg) {
 	float    angle;
-	XMVECTOR xaxis;
-	XMQuaternionToAxisAngle(&xaxis, &angle, math_quat_to_fast(a));
+	XMVECTOR axis;
+	XMQuaternionToAxisAngle(&axis, &angle, math_quat_to_fast(a));
 
-	vec4 result = math_fast_to_vec4(xaxis);
-	result.w = angle * rad2deg;
-	return result;
+	if (out_axis)         *out_axis         = math_fast_to_vec3(axis);
+	if (out_rotation_deg) *out_rotation_deg = angle * rad2deg;
 }
 
 ///////////////////////////////////////////
@@ -191,7 +190,7 @@ void matrix_mul(const matrix &a, const matrix &b, matrix &out_matrix) {
 
 ///////////////////////////////////////////
 
-void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix) {
+void matrix_mul(matrix a, matrix b, DirectX::XMMATRIX &out_matrix) {
 	XMMATRIX mat_a, mat_b;
 	math_matrix_to_fast(a, &mat_a);
 	math_matrix_to_fast(b, &mat_b);
@@ -317,6 +316,16 @@ pose_t matrix_transform_pose(matrix transform, pose_t pose) {
 	return pose_t{
 		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
 		math_fast_to_quat(XMQuaternionMultiply(orient, rot)) };
+}
+
+///////////////////////////////////////////
+
+matrix matrix_transpose(matrix transform) {
+	return matrix{
+		vec4{transform.row[0].x, transform.row[1].x, transform.row[2].x, transform.row[3].x},
+		vec4{transform.row[0].y, transform.row[1].y, transform.row[2].y, transform.row[3].y},
+		vec4{transform.row[0].z, transform.row[1].z, transform.row[2].z, transform.row[3].z},
+		vec4{transform.row[0].w, transform.row[1].w, transform.row[2].w, transform.row[3].w} };
 }
 
 ///////////////////////////////////////////

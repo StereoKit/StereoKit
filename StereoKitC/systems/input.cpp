@@ -1,10 +1,10 @@
 #include "../stereokit.h"
 #include "input.h"
 #include "input_keyboard.h"
-#include "hand/input_hand.h"
+#include "../hands/input_hand.h"
 #include "../libraries/array.h"
-#include "platform/openxr.h"
-#include "platform/openxr_input.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_input.h"
 
 namespace sk {
 
@@ -30,8 +30,12 @@ button_state_         input_eyes_track_state = button_state_inactive;
 
 ///////////////////////////////////////////
 
-int input_add_pointer(input_source_ source) {
-	return (int)input_pointers.add({ source, button_state_inactive });
+void input_mouse_update();
+
+///////////////////////////////////////////
+
+int32_t input_add_pointer(input_source_ source) {
+	return input_pointers.add({ source, button_state_inactive });
 }
 
 ///////////////////////////////////////////
@@ -42,9 +46,9 @@ pointer_t *input_get_pointer(int32_t id) {
 
 ///////////////////////////////////////////
 
-int input_pointer_count(input_source_ filter) {
-	int result = 0;
-	for (size_t i = 0; i < input_pointers.count; i++) {
+int32_t input_pointer_count(input_source_ filter) {
+	int32_t result = 0;
+	for (int32_t i = 0; i < input_pointers.count; i++) {
 		if (input_pointers[i].source & filter)
 			result += 1;
 	}
@@ -54,8 +58,8 @@ int input_pointer_count(input_source_ filter) {
 ///////////////////////////////////////////
 
 pointer_t input_pointer(int32_t index, input_source_ filter) {
-	int curr = 0;
-	for (size_t i = 0; i < input_pointers.count; i++) {
+	int32_t curr = 0;
+	for (int32_t i = 0; i < input_pointers.count; i++) {
 		if (input_pointers[i].source & filter) {
 			if (curr == index)
 				return input_pointers[i];
@@ -74,11 +78,11 @@ void input_subscribe(input_source_ source, button_state_ event, void (*event_cal
 ///////////////////////////////////////////
 
 void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
-	for (int64_t i = (int64_t)input_listeners.count-1; i >= 0; i--) {
-		if (input_listeners[(size_t)i].source         == source && 
-			input_listeners[(size_t)i].event          == event  && 
-			input_listeners[(size_t)i].event_callback == event_callback) {
-			input_listeners.remove((size_t)i);
+	for (int32_t i = input_listeners.count-1; i >= 0; i--) {
+		if (input_listeners[i].source         == source && 
+			input_listeners[i].event          == event  && 
+			input_listeners[i].event_callback == event_callback) {
+			input_listeners.remove(i);
 		}
 	}
 }
@@ -86,7 +90,7 @@ void input_unsubscribe(input_source_ source, button_state_ event, void (*event_c
 ///////////////////////////////////////////
 
 void input_fire_event(input_source_ source, button_state_ event, const pointer_t &pointer) {
-	for (size_t i = 0; i < input_listeners.count; i++) {
+	for (int32_t i = 0; i < input_listeners.count; i++) {
 		if (input_listeners[i].source & source && input_listeners[i].event & event) {
 			input_listeners[i].event_callback(source, event, pointer);
 		}
@@ -98,6 +102,7 @@ void input_fire_event(input_source_ source, button_state_ event, const pointer_t
 bool input_init() {
 	input_keyboard_initialize();
 	input_hand_init();
+	input_mouse_update();
 	return true;
 }
 
@@ -112,8 +117,8 @@ void input_shutdown() {
 
 ///////////////////////////////////////////
 
-void input_update() {
-	
+void input_step() {
+	input_mouse_update();
 	input_keyboard_update();
 	input_hand_update();
 }
@@ -156,6 +161,26 @@ const pose_t *input_eyes() {
 
 button_state_ input_eyes_tracked() {
 	return input_eyes_track_state;
+}
+
+///////////////////////////////////////////
+
+void input_mouse_update() {
+	vec2  mouse_pos    = {};
+	float mouse_scroll = platform_get_scroll();
+	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_app_focus() == app_focus_active;
+
+	// Mouse scroll
+	if (sk_app_focus() == app_focus_active) {
+		input_mouse_data.scroll_change = mouse_scroll - input_mouse_data.scroll;
+		input_mouse_data.scroll        = mouse_scroll;
+	}
+
+	// Mouse position and on-screen
+	if (input_mouse_data.available) {
+		input_mouse_data.pos_change = mouse_pos - input_mouse_data.pos;
+		input_mouse_data.pos        = mouse_pos;
+	}
 }
 
 } // namespace sk {

@@ -1,14 +1,17 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoTextures : ITest
 {
+	string title       = "Procedural Textures";
+	string description = "Here's a quick sample of procedurally assembling a texture!";
+
 	Material exampleMaterial = Material.Default.Copy();
 	Mesh     quad            = Mesh.GeneratePlane(new Vec2(.4f,.4f), -Vec3.Forward, Vec3.Up);
-
-	Matrix   descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string   description = "Here's a quick sample of procedurally assembling a texture!";
-	Matrix   titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
-	string   title       = "Procedural Textures";
 
 	public void Initialize()
 	{
@@ -79,13 +82,12 @@ class DemoTextures : ITest
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
-		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, new Vec3(0.32f, 0, -0.32f), new Vec3(0.5f, 0, -0.5f));
+		Tests.Screenshot("ProceduralTexture.jpg", 600, 600, Demo.contentPose.Translation + new Vec3(0, 0, 0.24f), Demo.contentPose.Translation );
 
-		quad.Draw(exampleMaterial, Matrix.TR(0.5f, 0, -0.5f, Quat.LookDir(1, 0, -1)));
+		quad.Draw(exampleMaterial,  Matrix.R(0,180,0) * Demo.contentPose);
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description, new Bounds(.44f, .44f, 0.1f));
 	}
 }

@@ -29,5 +29,5 @@ class DocWorldSettings : ITest
 	}
 
 	public void Shutdown() => World.OcclusionEnabled = false;
-	public void Update() { }
+	public void Step() { }
 }

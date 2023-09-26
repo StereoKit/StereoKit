@@ -1,5 +1,7 @@
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "demo_desktop.h"
 
@@ -190,8 +192,8 @@ void demo_desktop_update() {
 
 	// Smooth out the motion extra for nicer placement
 	desktop_pose_smooth = {
-		vec3_lerp (desktop_pose_smooth.position,    desktop_pose.position,    4 * time_elapsedf()),
-		quat_slerp(desktop_pose_smooth.orientation, desktop_pose.orientation, 4 * time_elapsedf()) };
+		vec3_lerp (desktop_pose_smooth.position,    desktop_pose.position,    4 * time_stepf()),
+		quat_slerp(desktop_pose_smooth.orientation, desktop_pose.orientation, 4 * time_stepf()) };
 	desktop_pose = desktop_pose_smooth;
 	render_add_mesh(desktop_mesh, desktop_material, pose_matrix(desktop_pose, vec3_one * size));
 }

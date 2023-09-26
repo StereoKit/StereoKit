@@ -1,10 +1,14 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "model.h"
+#include "mesh.h"
 #include "../libraries/stref.h"
-#include "../systems/platform/platform_utils.h"
+#include "../platforms/platform_utils.h"
+
+using namespace DirectX;
 
 #include <stdio.h>
 #include <string.h>
@@ -23,7 +27,13 @@ model_t model_create() {
 ///////////////////////////////////////////
 
 void model_set_id(model_t model, const char *id) {
-	assets_set_id(model->header, id);
+	assets_set_id(&model->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* model_get_id(const model_t model) {
+	return model->header.id_text;
 }
 
 ///////////////////////////////////////////
@@ -51,11 +61,11 @@ model_t model_copy(model_t model) {
 	result->bounds       = model->bounds;
 	result->nodes_used   = model->nodes_used;
 	result->anim_inst.anim_id = -1;
-	for (size_t i = 0; i < result->visuals.count; i++) {
+	for (int32_t i = 0; i < result->visuals.count; i++) {
 		material_addref(result->visuals[i].material);
 		mesh_addref    (result->visuals[i].mesh);
 	}
-	for (size_t i = 0; i < result->nodes.count; i++) {
+	for (int32_t i = 0; i < result->nodes.count; i++) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
 	}
 
@@ -118,9 +128,12 @@ model_t model_create_file(const char *filename, shader_t shader) {
 	if (result != nullptr)
 		return result;
 
-	void  *data;
-	size_t length;
-	if (!platform_read_file(assets_file(filename), &data, &length)) {
+	void*    data;
+	size_t   length;
+	char*    asset_filename = assets_file(filename);
+	bool32_t loaded         = platform_read_file(asset_filename, &data, &length);
+	sk_free(asset_filename);
+	if (!loaded) {
 		log_warnf("Model file failed to load: %s", filename);
 		return nullptr;
 	}
@@ -130,13 +143,14 @@ model_t model_create_file(const char *filename, shader_t shader) {
 		model_set_id(result, filename);
 	}
 	
-	free(data);
+	sk_free(data);
 	return result;
 }
 
 ///////////////////////////////////////////
 
 void model_recalculate_bounds(model_t model) {
+	model->bounds_dirty = false;
 	if (model->visuals.count <= 0) {
 		model->bounds = {};
 		return;
@@ -148,9 +162,10 @@ void model_recalculate_bounds(model_t model) {
 	min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
 	
 	// Find the corners for each bounding cube, and factor them in!
-	for (size_t m = 0; m < model->visuals.count; m += 1) {
+	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+		bounds_t bounds = mesh_get_bounds(model->visuals[m].mesh);
 		for (int32_t i = 0; i < 8; i += 1) {
-			vec3 corner = bounds_corner      (mesh_get_bounds(model->visuals[m].mesh), i);
+			vec3 corner = bounds_corner      (bounds, i);
 			vec3 pt     = matrix_transform_pt(model->visuals[m].transform_model, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
@@ -168,15 +183,53 @@ void model_recalculate_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
+void model_recalculate_bounds_exact(model_t model) {
+	model->bounds_dirty = false;
+	if (model->visuals.count <= 0) {
+		model->bounds = {};
+		return;
+	}
+
+	// Get an initial size
+	vec3     first_corner = model->visuals[0].mesh->verts[0].pos;
+	vec3     minf         = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+	XMVECTOR min          = XMLoadFloat3((XMFLOAT3*)&minf);
+	XMVECTOR max          = XMLoadFloat3((XMFLOAT3*)&minf);
+
+	// Use all the transformed vertices, and factor them in!
+	for (int32_t m = 0; m < model->visuals.count; m += 1) {
+		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&model->visuals[m].transform_model.row);
+		const mesh_t  mesh            = model->visuals[m].mesh;
+		const vert_t* verts           = mesh->verts;
+
+		for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
+			XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
+
+			min = XMVectorMin(min, pt);
+			max = XMVectorMax(max, pt);
+		}
+	}
+
+	// Final bounds value
+
+	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+	XMVECTOR dimensions = XMVectorSubtract   (max, min);
+
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
+	XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
+}
+
+///////////////////////////////////////////
+
 const char *model_get_name(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	return model_node_get_name(model, model->visuals[subset].node);
 }
 
 ///////////////////////////////////////////
 
 material_t model_get_material(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	material_addref(model->visuals[subset].material);
 	return model->visuals[subset].material;
 }
@@ -184,7 +237,7 @@ material_t model_get_material(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 mesh_t model_get_mesh(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	mesh_addref(model->visuals[subset].mesh);
 	return model->visuals[subset].mesh;
 }
@@ -192,14 +245,14 @@ mesh_t model_get_mesh(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 matrix model_get_transform(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	return model->visuals[subset].transform_model;
 }
 
 ///////////////////////////////////////////
 
 void model_set_material(model_t model, int32_t subset, material_t material) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	assert(material != nullptr);
 
 	assets_safeswap_ref(
@@ -210,27 +263,27 @@ void model_set_material(model_t model, int32_t subset, material_t material) {
 ///////////////////////////////////////////
 
 void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	assert(mesh != nullptr);
 
 	assets_safeswap_ref(
 		(asset_header_t**)&model->visuals[subset].mesh,
 		(asset_header_t* )mesh);
 
-	model_recalculate_bounds(model);
+	model->bounds_dirty = true;
 }
 
 ///////////////////////////////////////////
 
 void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 	model_node_set_transform_model(model, model->visuals[subset].node, transform);
 }
 
 ///////////////////////////////////////////
 
 int32_t model_subset_count(model_t model) {
-	return (int32_t)model->visuals.count;
+	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -254,14 +307,14 @@ int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const 
 ///////////////////////////////////////////
 
 void model_remove_subset(model_t model, int32_t subset) {
-	assert(subset < (int32_t)model->visuals.count);
+	assert(subset < model->visuals.count);
 
 	model->nodes[model->visuals[subset].node].visual = -1;
 	mesh_release    (model->visuals[subset].mesh);
 	material_release(model->visuals[subset].material);
 	model->visuals.remove(subset);
 
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		if (model->nodes[i].visual > subset)
 			model->nodes[i].visual--;
 	}
@@ -270,7 +323,7 @@ void model_remove_subset(model_t model, int32_t subset) {
 ///////////////////////////////////////////
 
 void model_addref(model_t model) {
-	assets_addref(model->header);
+	assets_addref(&model->header);
 }
 
 ///////////////////////////////////////////
@@ -279,13 +332,19 @@ void model_release(model_t model) {
 	if (model == nullptr)
 		return;
 
-	assets_releaseref(model->header);
+	assets_releaseref(&model->header);
 }
 
 ///////////////////////////////////////////
 
 void model_draw(model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
-	render_add_model(model, transform, color_linear, layer);
+	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void model_draw_mat(model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_add_model_mat(model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -297,19 +356,22 @@ void model_set_bounds(model_t model, const bounds_t &bounds) {
 ///////////////////////////////////////////
 
 bounds_t model_get_bounds(model_t model) {
+	if (model->bounds_dirty) {
+		model_recalculate_bounds(model);
+	}
 	return model->bounds;
 }
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt) {
+bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
 
 	float closest = FLT_MAX;
 	*out_pt = {};
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		model_node_t *n = &model->nodes[i];
 		if (!n->solid || n->visual == -1)
 			continue;
@@ -317,7 +379,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at)) {
+		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;
@@ -330,13 +392,77 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 
 ///////////////////////////////////////////
 
+bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
+	vec3 bounds_at;
+	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
+		return false;
+
+	float closest = FLT_MAX;
+	*out_pt = {};
+	for (int32_t i = 0; i < model->nodes.count; i++) {
+		model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1)
+			continue;
+
+		matrix inverse   = matrix_invert(n->transform_model);
+		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
+		ray_t  at;
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
+			float d = vec3_distance_sq(local_ray.pos, at.pos);
+			if (d < closest) {
+				closest = d;
+				*out_pt = matrix_transform_ray(n->transform_model, at);
+			}
+		}
+	}
+	return closest != FLT_MAX;
+}
+
+///////////////////////////////////////////
+
+// Same as model_ray_intersect_bvh, but returns mesh, mesh transform and start index if intersection found
+bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds, cull_ cull_mode) {
+	vec3 bounds_at;
+	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
+		return false;
+
+	float closest = FLT_MAX;
+	*out_pt = {};
+	for (int32_t i = 0; i < model->nodes.count; i++) {
+		model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1)
+			continue;
+
+		matrix inverse   = matrix_invert(n->transform_model);
+		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
+		ray_t  at;
+		uint32_t local_start_inds;
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds, cull_mode)) {
+			float d = vec3_distance_sq(local_ray.pos, at.pos);
+			if (d < closest) {
+				closest = d;
+				if (out_mesh != nullptr && out_start_inds != nullptr) {
+					*out_mesh = model->visuals[n->visual].mesh;
+					*out_matrix = n->transform_model;
+					*out_start_inds = local_start_inds;
+				}
+				*out_pt = matrix_transform_ray(n->transform_model, at);
+			}
+		}
+	}
+	return closest != FLT_MAX;
+}
+
+///////////////////////////////////////////
+
 void model_destroy(model_t model) {
 	anim_inst_destroy(&model->anim_inst);
 	anim_data_destroy(&model->anim_data);
-	for (size_t i = 0; i < model->nodes.count; i++) {
-		free(model->nodes[i].name);
+	for (int32_t i = 0; i < model->nodes.count; i++) {
+		sk_free(model->nodes[i].name);
+		model_node_info_clear(model, i);
 	}
-	for (size_t i = 0; i < model->visuals.count; i++) {
+	for (int32_t i = 0; i < model->visuals.count; i++) {
 		mesh_release    (model->visuals[i].mesh);
 		material_release(model->visuals[i].material);
 	}
@@ -407,8 +533,10 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.transform_model = node.transform_model;
 		visual.node            = node_id;
 		visual.visible         = true;
-		node.visual = (int32_t)model->visuals.add(visual);
-		model_recalculate_bounds(model);
+		node.visual = model->visuals.add(visual);
+		model->bounds = model->visuals.count == 1
+			? bounds_transform(mesh_get_bounds(mesh), node.transform_model)
+			: bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
 	}
 
 	model->nodes.add(node);
@@ -418,7 +546,7 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 ///////////////////////////////////////////
 
 model_node_id model_node_find(model_t model, const char *name) {
-	for (size_t i = 0; i < model->nodes.count; i++) {
+	for (int32_t i = 0; i < model->nodes.count; i++) {
 		if (string_eq(model->nodes[i].name, name))
 			return (model_node_id)i;
 	}
@@ -448,7 +576,7 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 int32_t model_node_count(model_t model) {
-	return (int32_t)model->nodes.count;
+	return model->nodes.count;
 }
 
 ///////////////////////////////////////////
@@ -460,7 +588,7 @@ model_node_id model_node_index(model_t, int32_t index) {
 ///////////////////////////////////////////
 
 int32_t model_node_visual_count(model_t model){
-	return (int32_t)model->visuals.count;
+	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
@@ -558,7 +686,7 @@ matrix model_node_get_transform_local(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 void model_node_set_name(model_t model, model_node_id node, const char* name) {
-	free(model->nodes[node].name);
+	sk_free(model->nodes[node].name);
 	char tmp_name[32];
 	if (name == nullptr) {
 		snprintf(tmp_name, sizeof(tmp_name), "node%d", node);
@@ -586,7 +714,7 @@ void model_node_set_visible(model_t model, model_node_id node, bool32_t visible)
 void model_node_set_material(model_t model, model_node_id node, material_t material) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = (int32_t)model->visuals.add({});
+		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	assets_safeswap_ref(
@@ -599,15 +727,14 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
-		vis = (int32_t)model->visuals.add({});
+		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
 	model->visuals[vis].mesh = mesh;
+	model->bounds_dirty = true;
 	mesh_addref (model->visuals[vis].mesh);
 	mesh_release(prev_mesh);
-
-	model_recalculate_bounds(model);
 }
 
 ///////////////////////////////////////////
@@ -648,6 +775,7 @@ void model_node_set_transform_model(model_t model, model_node_id node, matrix tr
 		curr = model->nodes[curr].sibling;
 	}
 	model->transforms_changed = true;
+	model->bounds_dirty       = true;
 }
 
 ///////////////////////////////////////////
@@ -656,6 +784,63 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 	model->nodes[node].transform_local = transform_local_space;
 	_model_node_update_transforms(model, node);
 	model->transforms_changed = true;
+	model->bounds_dirty       = true;
+}
+
+///////////////////////////////////////////
+
+const char* model_node_info_get(model_t model, model_node_id node, const char* info_key_u8) {
+	return *model->nodes[node].info.get(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_set(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	dictionary_t<char*>* info = &model->nodes[node].info;
+	int32_t              at   = info->contains(info_key_u8);
+	if (at != -1) {
+		sk_free(info->items[at].value);
+		info->items[at].value = string_copy(info_value_u8);
+	} else {
+		info->set(info_key_u8, string_copy(info_value_u8));
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_remove(model_t model, model_node_id node, const char* info_key_u8) {
+	return model->nodes[node].info.remove(info_key_u8);
+}
+
+///////////////////////////////////////////
+
+void model_node_info_clear(model_t model, model_node_id node) {
+	model->nodes[node].info.each([](char*& val) { sk_free(val); });
+	model->nodes[node].info.free();
+}
+
+///////////////////////////////////////////
+
+int32_t model_node_info_count(model_t model, model_node_id node) {
+	return model->nodes[node].info.count;
+}
+
+///////////////////////////////////////////
+
+bool32_t model_node_info_iterate(model_t model, model_node_id node, int32_t* ref_iterator, const char** out_key_utf8, const char** out_value_utf8) {
+	dictionary_t<char*> *info = &model->nodes[node].info;
+
+	if (*ref_iterator >= info->capacity) return false;
+	while (info->items[*ref_iterator].hash == 0) {
+		*ref_iterator = *ref_iterator + 1;
+		if (*ref_iterator >= info->capacity) return false;
+	}
+
+	if (out_key_utf8   != nullptr) *out_key_utf8   = info->items[*ref_iterator].key;
+	if (out_value_utf8 != nullptr) *out_value_utf8 = info->items[*ref_iterator].value;
+	*ref_iterator = *ref_iterator + 1;
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -689,7 +874,7 @@ void model_set_anim_time(model_t model, float time) {
 		float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 		model->anim_inst.start_time = fmaxf(0, fminf(time, max_time));
 	} else {
-		model->anim_inst.start_time = time_getf() - time;
+		model->anim_inst.start_time = time_totalf() - time;
 	}
 }
 
@@ -704,16 +889,16 @@ void model_set_anim_completion(model_t model, float percent) {
 ///////////////////////////////////////////
 
 int32_t model_anim_find(model_t model, const char *animation_name) {
-	for (size_t i = 0; i < model->anim_data.anims.count; i++)
+	for (int32_t i = 0; i < model->anim_data.anims.count; i++)
 		if (string_eq(model->anim_data.anims[i].name, animation_name))
-			return (int32_t)i;
-	return false;
+			return i;
+	return -1;
 }
 
 ///////////////////////////////////////////
 
 int32_t model_anim_count(model_t model) {
-	return (int32_t)model->anim_data.anims.count;
+	return model->anim_data.anims.count;
 }
 
 ///////////////////////////////////////////
@@ -736,9 +921,9 @@ float model_anim_active_time(model_t model) {
 
 	float max_time = model->anim_data.anims[model->anim_inst.anim_id].duration;
 	switch (model->anim_inst.mode) {
-	case anim_mode_manual: return fminf(              model->anim_inst.start_time, max_time);
-	case anim_mode_once:   return fminf(time_getf() - model->anim_inst.start_time, max_time);
-	case anim_mode_loop:   return fmodf(time_getf() - model->anim_inst.start_time, max_time);
+	case anim_mode_manual: return fminf(                model->anim_inst.start_time, max_time);
+	case anim_mode_once:   return fminf(time_totalf() - model->anim_inst.start_time, max_time);
+	case anim_mode_loop:   return fmodf(time_totalf() - model->anim_inst.start_time, max_time);
 	default:               return 0;
 	}
 }
@@ -754,14 +939,14 @@ float model_anim_active_completion(model_t model) {
 ///////////////////////////////////////////
 
 const char *model_anim_get_name(model_t model, int32_t index) {
-	assert(index < (int32_t)model->anim_data.anims.count);
+	assert(index < model->anim_data.anims.count);
 	return model->anim_data.anims[index].name;
 }
 
 ///////////////////////////////////////////
 
 float model_anim_get_duration(model_t model, int32_t index) {
-	assert(index < (int32_t)model->anim_data.anims.count);
+	assert(index < model->anim_data.anims.count);
 	return model->anim_data.anims[index].duration;
 }
 

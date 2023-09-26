@@ -154,7 +154,7 @@ class TestNodes : ITest
 	/// :End:
 
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		UI.PushSurface(_modelPose);
 		_model.Draw(Matrix.Identity, new Color(0.5f, 0.5f, 0.5f));

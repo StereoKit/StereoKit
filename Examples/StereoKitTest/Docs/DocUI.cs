@@ -11,7 +11,7 @@ class DocUI : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		ShowWindowButton   ();
 		ShowWindowToggle   ();
