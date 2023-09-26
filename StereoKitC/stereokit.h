@@ -8,7 +8,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 7
+#define SK_VERSION_PATCH 8
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
