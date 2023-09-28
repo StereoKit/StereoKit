@@ -9,7 +9,7 @@
 #include "log.h"
 
 #include "libraries/sokol_time.h"
-#include "libraries/tinycthread.h"
+#include "libraries/ferr_thread.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -44,7 +44,8 @@ struct sk_state_t {
 	bool32_t      has_stepped;
 	bool32_t      initialized;
 	bool32_t      disallow_user_shutdown;
-	thrd_id_t     init_thread;
+	bool32_t      use_manual_pos;
+	ft_id_t       init_thread;
 
 	double   timev_scale;
 	float    timevf;
@@ -57,6 +58,7 @@ struct sk_state_t {
 	double   timev_step_us;
 	float    timev_stepf_us;
 	uint64_t timev_raw;
+	uint64_t frame;
 
 	uint64_t  app_init_time;
 	system_t *app_system;
@@ -82,18 +84,18 @@ bool32_t sk_init(sk_settings_t settings) {
 	local.timev_scale = 1;
 
 	local.settings    = settings;
-	local.init_thread = thrd_id_current();
+	local.init_thread = ft_id_current();
+	ft_thread_name(ft_thread_current(), "StereoKit Main");
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
 
-	// We can give this thread a name on Windows
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	SetThreadDescription(GetCurrentThread(), L"StereoKit Main");
-#elif defined(SK_OS_WEB)
-	emscripten_set_thread_name(pthread_self(), "StereoKit Main");
-#else
-	pthread_setname_np(pthread_self(), "StereoKit Main");
-#endif
+	// Manual positioning happens when _any_ of the flascreen positioning
+	// settings are set.
+	local.use_manual_pos =
+		local.settings.flatscreen_height != 0 ||
+		local.settings.flatscreen_width  != 0 ||
+		local.settings.flatscreen_pos_x  != 0 ||
+		local.settings.flatscreen_pos_y  != 0;
 
 	// Set some default values
 	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
@@ -125,6 +127,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	stm_setup();
 	sk_step_timer();
+	local.frame = 0;
 
 	// Platform related systems
 	system_t sys_platform         = { "Platform"    };
@@ -406,6 +409,7 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 ///////////////////////////////////////////
 
 void sk_step_timer() {
+	local.frame    += 1;
 	local.timev_raw = stm_now();
 	double time_curr = stm_sec(local.timev_raw);
 
@@ -432,7 +436,7 @@ void sk_assert_thread_valid() {
 	// thread to step. This function is used to detect and warn of such a
 	// situation.
 
-	if (thrd_id_equal(local.init_thread, thrd_id_current()) == false) {
+	if (ft_id_matches(local.init_thread) == false) {
 		const char* err = "SK.Run and pre-Run GPU asset creation currently must be called on the same thread as SK.Initialize! Has async code accidentally bumped you to another thread?";
 		log_err(err);
 		platform_msgbox_err(err, "Fatal Error");
@@ -553,6 +557,10 @@ bool32_t sk_is_running() { return local.running; }
 
 ///////////////////////////////////////////
 
+bool32_t sk_use_manual_pos() { return local.use_manual_pos; }
+
+///////////////////////////////////////////
+
 display_mode_ sk_active_display_mode() {
 	switch (device_display_get_type()) {
 	case display_type_flatscreen: return display_mode_flatscreen;
@@ -583,6 +591,7 @@ double time_step_unscaled    (){ return local.timev_step_us;   };
 float  time_stepf            (){ return local.timev_stepf;     };
 double time_step             (){ return local.timev_step;      };
 void   time_scale(double scale) { local.timev_scale = scale; }
+uint64_t time_frame() { return local.frame; }
 
 ///////////////////////////////////////////
 

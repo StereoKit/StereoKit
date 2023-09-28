@@ -129,7 +129,6 @@ void   platform_debug_output      (log_ level, const char *text);
 void   platform_print_callstack   ();
 void   platform_sleep             (int ms);
 font_t platform_default_font      ();
-bool   platform_is_gpu_thread     ();
 
 bool   platform_xr_keyboard_present();
 void   platform_xr_keyboard_show   (bool show);

@@ -11,10 +11,6 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined(SK_OS_WEB)
-#include <emscripten/threading.h>
-#endif
-
 namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
@@ -34,6 +30,12 @@ bool              au_recording      = false;
 ///////////////////////////////////////////
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
 ma_device_id au_default_device_out_id = {};
 ma_device_id au_default_device_in_id  = {};
 void audio_set_default_device_out(const wchar_t *device_id) {
@@ -409,18 +411,11 @@ bool audio_init() {
 
 	au_mic_name = nullptr;
 
-	// We can give this thread a name on Windows
+	if (au_device.thread)
+		ft_thread_name(au_device.thread, "StereoKit Audio");
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	if (au_device.thread)
-		SetThreadDescription(au_device.thread, L"StereoKit Audio");
 	if (au_context.backend == ma_backend_wasapi && au_context.wasapi.commandThread)
-		SetThreadDescription(au_context.wasapi.commandThread, L"StereoKit Audio Context");
-#elif defined(SK_OS_WEB)
-	if (au_device.thread)
-		emscripten_set_thread_name(au_device.thread, "StereoKit Audio");
-#else
-	if (au_device.thread)
-		pthread_setname_np(au_device.thread, "StereoKit Audio");
+		ft_thread_name(au_context.wasapi.commandThread, "StereoKit Audio Context");
 #endif
 
 	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));

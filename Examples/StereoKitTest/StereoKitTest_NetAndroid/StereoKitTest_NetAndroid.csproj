@@ -5,7 +5,7 @@
 		<OutputType>Exe</OutputType>
 		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>0.3.9</ApplicationDisplayVersion>
 		<RootNamespace>StereoKitTest</RootNamespace>
 		<ReadOnlyProject>true</ReadOnlyProject>
 

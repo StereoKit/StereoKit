@@ -70,7 +70,7 @@ bool simulator_init() {
 	}
 
 	recti_t win_size = {};
-	if (!platform_key_load_bytes("WindowLocation", &win_size, sizeof(win_size))) {
+	if (sk_use_manual_pos() || !platform_key_load_bytes("WindowLocation", &win_size, sizeof(win_size))) {
 		win_size.x = settings->flatscreen_pos_x;
 		win_size.y = settings->flatscreen_pos_y;
 		win_size.w = settings->flatscreen_width;

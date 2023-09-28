@@ -12,7 +12,7 @@
 #include "../sk_math.h"
 #include "../log.h"
 #include "../libraries/stref.h"
-#include "../libraries/tinycthread.h"
+#include "../libraries/ferr_thread.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/window.h"
@@ -52,7 +52,6 @@ using namespace sk;
 
 struct platform_state_t {
 	app_mode_ mode;
-	thrd_id_t gpu_thread;
 	bool32_t  force_fallback_keyboard;
 };
 static platform_state_t* local = {};
@@ -98,8 +97,7 @@ bool platform_init() {
 		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
 		return false;
 	}
-	local->gpu_thread = thrd_id_current();
-	device_data.gpu   = string_copy(skg_adapter_name());
+	device_data.gpu = string_copy(skg_adapter_name());
 
 	// Start up the current mode!
 	bool result = platform_set_mode(settings->mode);
@@ -215,12 +213,6 @@ void platform_set_window_xam(void *window) {
 #else
 	(void)window;
 #endif
-}
-
-///////////////////////////////////////////
-
-bool platform_is_gpu_thread() {
-	return thrd_id_equal(local->gpu_thread, thrd_id_current());
 }
 
 ///////////////////////////////////////////

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
-  <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
+  <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
   <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -98,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
-      <PostBuildEvent>
+    <PostBuildEvent>
       <Command>xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
@@ -142,13 +142,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\cgltf.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
+    <ClCompile Include="libraries\ferr_thread.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniaudio.cpp" />
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
-    <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
@@ -220,6 +220,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\atomic_util.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
+    <ClInclude Include="libraries\ferr_thread.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
@@ -230,7 +231,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\stb_image_write.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
-    <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="platforms\android.h" />
@@ -306,7 +306,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
-    <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
+    <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
   </ImportGroup>
   <Target Name="SKCleanShaders" AfterTargets="Clean">

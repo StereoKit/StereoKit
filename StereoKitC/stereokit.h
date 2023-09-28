@@ -8,7 +8,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 7
+#define SK_VERSION_PATCH 9
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -535,6 +535,7 @@ SK_API float         time_stepf            (void);
 SK_API double        time_step             (void);
 SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
+SK_API uint64_t      time_frame            (void);
 
 ///////////////////////////////////////////
 
