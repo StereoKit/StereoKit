@@ -248,7 +248,6 @@ set(SK_SRC_CODE
   StereoKitC/device.h
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
-  StereoKitC/intersect.cpp
   StereoKitC/log.h
   StereoKitC/log.cpp
   StereoKitC/rect_atlas.h

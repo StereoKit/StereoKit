@@ -139,7 +139,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="hands\hand_oxr_controller.cpp" />
     <ClCompile Include="hands\input_hand.cpp" />
     <ClCompile Include="hierarchy.cpp" />
-    <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\cgltf.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\ferr_thread.cpp" />
