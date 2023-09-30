@@ -92,9 +92,7 @@ endif()
 ###########################################
 
 if (ANDROID)
-  set(ANDROID_LOG_LIBRARY log)
   set(ANDROID_LIBS
-    log
     android
     EGL)
   if (SK_DYNAMIC_OPENXR)

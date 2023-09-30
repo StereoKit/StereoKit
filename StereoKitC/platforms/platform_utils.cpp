@@ -46,17 +46,17 @@
 #include "android.h"
 
 #include <unistd.h>
-#include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/font_matcher.h>
 #include <android/font.h>
 #include <errno.h>
+#include <syslog.h>
 #endif
 
 #ifdef SK_OS_LINUX
 #include <unistd.h>
-#include <dirent.h> 
-#include <libgen.h> 
+#include <dirent.h>
+#include <libgen.h>
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
 #endif
@@ -428,12 +428,17 @@ void platform_debug_output(log_ level, const char *text) {
 	OutputDebugStringA(expanded);
 
 #elif defined(SK_OS_ANDROID)
-	int32_t priority = ANDROID_LOG_INFO;
-	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
-	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
-	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
-	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
-	__android_log_write(priority, "StereoKit", text);
+	static bool opened = false;
+	if (!opened) {
+		opened = true;
+		openlog("StereoKit", LOG_CONS | LOG_NOWAIT, LOG_USER);
+	}
+	int32_t priority = LOG_INFO;
+	if      (level == log_diagnostic) priority = LOG_DEBUG;
+	else if (level == log_inform    ) priority = LOG_INFO;
+	else if (level == log_warning   ) priority = LOG_WARNING;
+	else if (level == log_error     ) priority = LOG_ERR;
+	syslog(priority, "%s", text);
 #elif defined(SK_OS_WEB)
 	if      (level == log_diagnostic) emscripten_console_log(text);
 	else if (level == log_inform    ) emscripten_console_log(text);
