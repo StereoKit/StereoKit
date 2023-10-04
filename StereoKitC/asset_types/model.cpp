@@ -790,12 +790,20 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 ///////////////////////////////////////////
 
 const char* model_node_info_get(model_t model, model_node_id node, const char* info_key_u8) {
-	return *model->nodes[node].info.get(info_key_u8);
+	char** result = model->nodes[node].info.get(info_key_u8);
+	return result == nullptr
+		? nullptr
+		: *result;
 }
 
 ///////////////////////////////////////////
 
 void model_node_info_set(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	if (info_value_u8 == nullptr) {
+		model_node_info_remove(model, node, info_key_u8);
+		return;
+	}
+
 	dictionary_t<char*>* info = &model->nodes[node].info;
 	int32_t              at   = info->contains(info_key_u8);
 	if (at != -1) {
@@ -809,7 +817,13 @@ void model_node_info_set(model_t model, model_node_id node, const char* info_key
 ///////////////////////////////////////////
 
 bool32_t model_node_info_remove(model_t model, model_node_id node, const char* info_key_u8) {
-	return model->nodes[node].info.remove(info_key_u8);
+	int32_t idx = model->nodes[node].info.contains(info_key_u8);
+	if (idx < 0) return false;
+
+	sk_free(model->nodes[node].info.items[idx].value);
+	model->nodes[node].info.remove_at(idx);
+
+	return true;
 }
 
 ///////////////////////////////////////////
