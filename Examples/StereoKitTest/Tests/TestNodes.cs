@@ -94,6 +94,7 @@ class TestNodes : ITest
 		_surfaceNode = surfaceNode;
 
 		Tests.Test(TestEmptyVisuals);
+		Tests.Test(TestEmptyModel);
 		Tests.Test(TestNodeInfo);
 	}
 
@@ -102,6 +103,15 @@ class TestNodes : ITest
 		Model     model = new Model();
 		ModelNode node  = model.AddNode(null, Matrix.Identity);
 		return node.Mesh == null && node.Material == null;
+	}
+
+	bool TestEmptyModel()
+	{
+		Model model = new Model();
+		return
+			model.Nodes  .FirstOrDefault() == null &&
+			model.Visuals.FirstOrDefault() == null &&
+			model.RootNode                 == null;
 	}
 
 	bool TestNodeInfo()
