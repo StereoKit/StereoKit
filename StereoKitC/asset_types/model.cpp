@@ -569,7 +569,7 @@ model_node_id model_node_parent(model_t model, model_node_id node) {
 
 model_node_id model_node_child(model_t model, model_node_id node) {
 	if (node < 0)
-		return model->nodes.count > 0 ? 0 : -1;
+		return model_node_get_root(model);
 	return model->nodes[node].child;
 }
 
@@ -600,7 +600,7 @@ model_node_id model_node_visual_index(model_t model, int32_t index) {
 ///////////////////////////////////////////
 
 model_node_id model_node_iterate(model_t model, model_node_id node) {
-	if (node == -1) return 0;
+	if (node == -1) return model_node_get_root(model);
 
 	// walk down
 	if (model->nodes[node].child != -1)
@@ -622,8 +622,10 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_get_root(model_t) {
-	return 0;
+model_node_id model_node_get_root(model_t model) {
+	return model->nodes.count > 0
+		? 0
+		: -1;
 }
 
 ///////////////////////////////////////////
