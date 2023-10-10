@@ -9,12 +9,12 @@ class DemoAnchors : ITest
 	List<Anchor> anchors   = new List<Anchor>();
 	Anchor       selected  = null;
 	Model        wandModel = Model.FromFile("Wand.glb", Shader.UI);
-	Pose         wandPose  = new Pose(.6f, 0, -0.3f, Quat.LookDir(1, 0, 0));
+	Pose         wandPose  = new Pose(Demo.contentPose.Translation + V.XY0(0.2f,0), Quat.Identity);
 
 	public bool Enabled => true;
 
 	public void Initialize() => anchors.AddRange(Anchor.Anchors);
-	public void Shutdown() => anchors.Clear();
+	public void Shutdown  () => anchors.Clear();
 
 	Pose pose = Demo.contentPose.Pose;
 	public void Step()
@@ -65,11 +65,10 @@ class DemoAnchors : ITest
 			Mesh.Cube.Draw(Material.UIBox, selected.Pose.ToMatrix(0.1f));
 
 		foreach (Anchor a in Anchor.NewAnchors)
-		{
 			Log.Info($"New anchor: {a.Id}");
-		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description,
+			new Bounds(V.XY0(-0.1f, 0.02f), V.XYZ(.4f, .36f, 0.1f)));
 	}
 
 
