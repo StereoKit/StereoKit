@@ -3,6 +3,7 @@
 
 #include "../log.h"
 #include "../device.h"
+#include "../sk_math.h"
 #include "../xr_backends/openxr.h"
 #include "../systems/render.h"
 #include "../systems/system.h"
@@ -14,6 +15,8 @@
 #include <android/native_window_jni.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
+
+#include <dlfcn.h>
 
 namespace sk {
 
@@ -31,6 +34,11 @@ system_t         *android_render_sys = nullptr;
 
 ///////////////////////////////////////////
 
+// When consumed as a static library, the user's app will need to provide its
+// own JNI_OnLoad function, which will then conflict with this one. So we only
+// provide this for shared libraries.
+#if defined(SK_BUILD_SHARED)
+
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	android_vm = vm;
 	return JNI_VERSION_1_6;
@@ -39,13 +47,17 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 	return JNI_OnLoad(vm, reserved);
 }
 
+#endif
+
 ///////////////////////////////////////////
 
 bool android_init() {
+	const sk_settings_t* settings = sk_get_settings_ref();
+
 	android_render_sys = systems_find("FrameRender");
-	android_activity = (jobject)sk_settings.android_activity;
+	android_activity   = (jobject)settings->android_activity;
 	if (android_vm == nullptr)
-		android_vm = (JavaVM*)sk_settings.android_java_vm;
+		android_vm = (JavaVM*)settings->android_java_vm;
 
 	if (android_vm == nullptr || android_activity == nullptr) {
 		log_fail_reason(95, log_error, "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
@@ -83,7 +95,7 @@ bool android_init() {
 
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
-	jclass    activity_class           = android_env->GetObjectClass(android_activity);
+	jclass    activity_class = android_env->GetObjectClass(android_activity);
 	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
 	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
 	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
@@ -93,6 +105,16 @@ bool android_init() {
 		return false;
 	}
 
+#if defined(SK_DYNAMIC_OPENXR)
+	// Android has no universally supported openxr_loader yet, so on this
+	// platform we don't static link it, and instead provide devs a way to ship
+	// other loaders.
+	if (settings->display_preference == display_mode_mixedreality && dlopen("libopenxr_loader.so", RTLD_NOW) == nullptr) {
+		log_fail_reason(95, log_error, "openxr_loader failed to load!");
+		return false;
+	}
+#endif
+
 	return true;
 }
 
@@ -101,29 +123,25 @@ bool android_init() {
 void android_create_swapchain() {
 	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
 	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, sk_info.display_width, sk_info.display_height);
+	android_swapchain = skg_swapchain_create(android_window, color_fmt, depth_fmt, device_data.display_width, device_data.display_height);
 	android_swapchain_created = true;
-	sk_info.display_width  = android_swapchain.width;
-	sk_info.display_height = android_swapchain.height;
 	device_data.display_width  = android_swapchain.width;
 	device_data.display_height = android_swapchain.height;
-	render_update_projection();
+
 	log_diagf("Created swapchain: %dx%d color:%s depth:%s", android_swapchain.width, android_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 }
 
 ///////////////////////////////////////////
 
 void android_resize_swapchain() {
-	int32_t height = ANativeWindow_getWidth (android_window);
-	int32_t width  = ANativeWindow_getHeight(android_window);
+	int32_t height = maxi(1,ANativeWindow_getWidth (android_window));
+	int32_t width  = maxi(1,ANativeWindow_getHeight(android_window));
 
-	if (!android_swapchain_created || (width == sk_info.display_width && height == sk_info.display_height))
+	if (!android_swapchain_created || (width == device_data.display_width && height == device_data.display_height))
 		return;
 
 	log_diagf("Resized swapchain: %dx%d", width, height);
 	skg_swapchain_resize(&android_swapchain, width, height);
-	sk_info.display_width  = width;
-	sk_info.display_height = height;
 	device_data.display_width  = width;
 	device_data.display_height = height;
 	render_update_projection();
@@ -158,7 +176,6 @@ bool android_start_post_xr() {
 ///////////////////////////////////////////
 
 bool android_start_flat() {
-	sk_info.display_type      = display_opaque;
 	device_data.display_blend = display_blend_opaque;
 	if (android_window) {
 		android_create_swapchain();
@@ -238,6 +255,89 @@ void android_step_end_flat() {
 	
 	android_render_sys->profile_frame_duration = stm_since(android_render_sys->profile_frame_start);
 	skg_swapchain_present(&android_swapchain);
+}
+
+///////////////////////////////////////////
+
+const int32_t PERMISSION_DENIED  = -1;
+const int32_t PERMISSION_GRANTED = 0;
+
+///////////////////////////////////////////
+
+bool android_check_app_permission(const char* permission) {
+	jclass    class_activity               = android_env->GetObjectClass(android_activity);
+	jmethodID activity_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+
+	jstring jobj_permission = android_env->NewStringUTF(permission);
+	jint    result          = android_env->CallIntMethod(android_activity, activity_checkSelfPermission, jobj_permission);
+
+	android_env->DeleteLocalRef(jobj_permission);
+
+	return result == PERMISSION_GRANTED;
+}
+
+///////////////////////////////////////////
+
+bool android_check_manifest_permission(const char* permission)
+{
+	jclass       class_activity                =          android_env->GetObjectClass  (android_activity);
+	jmethodID    activity_getPackageManager    =          android_env->GetMethodID     (class_activity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+	jmethodID    activity_getPackageName       =          android_env->GetMethodID     (class_activity, "getPackageName", "()Ljava/lang/String;");
+	jobject      jobj_packageManager           =          android_env->CallObjectMethod(android_activity, activity_getPackageManager);
+	jclass       class_packageManager          =          android_env->GetObjectClass  (jobj_packageManager);
+	jmethodID    packageManager_getPackageInfo =          android_env->GetMethodID     (class_packageManager, "getPackageInfo", "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+	jstring      jobj_packageName              = (jstring)android_env->CallObjectMethod(android_activity, activity_getPackageName);
+
+	jint         flags = 4096; // PackageManager.GET_PERMISSIONS
+	jobject      jobj_packageInfo  = android_env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
+	jclass       class_packageInfo = android_env->GetObjectClass(jobj_packageInfo);
+
+	jfieldID     packageInfo_requestedPermissions = android_env->GetFieldID(class_packageInfo, "requestedPermissions", "[Ljava/lang/String;");
+	jobjectArray jobj_requestedPermissions        = (jobjectArray)android_env->GetObjectField(jobj_packageInfo, packageInfo_requestedPermissions);
+
+	jstring      jobj_permission = android_env->NewStringUTF(permission);
+	jclass       class_string    = android_env->GetObjectClass(jobj_permission);
+	jmethodID    string_equals   = android_env->GetMethodID(class_string, "equals", "(Ljava/lang/Object;)Z");
+
+	// Iterate over the array
+	jsize length = android_env->GetArrayLength(jobj_requestedPermissions);
+	bool  result = false;
+	for (jsize i = 0; i < length; i++) {
+		jstring jobj_currPermission = (jstring)android_env->GetObjectArrayElement(jobj_requestedPermissions, i);
+		bool match = android_env->CallBooleanMethod(jobj_permission, string_equals, jobj_currPermission);
+		android_env->DeleteLocalRef(jobj_currPermission);
+
+		if (match) {
+			result = true;
+			break;
+		}
+	}
+
+	android_env->DeleteLocalRef(jobj_packageManager);
+	android_env->DeleteLocalRef(jobj_packageName);
+	android_env->DeleteLocalRef(jobj_packageInfo);
+	android_env->DeleteLocalRef(jobj_requestedPermissions);
+	android_env->DeleteLocalRef(jobj_permission);
+
+	return result;
+
+}
+
+///////////////////////////////////////////
+
+void android_request_permission(const char* permission) {
+	jclass    class_activity                    = android_env->GetObjectClass(android_activity);
+	jmethodID contextCompat_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jmethodID activity_requestPermissions       = android_env->GetMethodID   (class_activity, "requestPermissions",  "([Ljava/lang/String;I)V");
+
+	jstring      jobj_permission      = android_env->NewStringUTF  (permission);
+	jobjectArray jobj_permission_list = android_env->NewObjectArray(1, android_env->FindClass("java/lang/String"), NULL);
+
+	android_env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
+	android_env->CallVoidMethod       (android_activity, activity_requestPermissions, jobj_permission_list, 0);
+
+	android_env->DeleteLocalRef(jobj_permission);
+	android_env->DeleteLocalRef(jobj_permission_list);
 }
 
 ///////////////////////////////////////////

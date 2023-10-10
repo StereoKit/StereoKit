@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,9 +29,9 @@ class DemoSky : ITest
 	static bool        cubelightDirty = false;
 	static string      cubemapFile    = "";
 
-	Pose       windowPose    = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
-	Pose       previewPose   = new Pose(0.9f, -0.1f, -0.1f, Quat.LookDir(-1,0,1));
-	Pose       lightToolPose = new Pose(0.7f, -0.1f, -0.3f, Quat.Identity);
+	Pose       windowPose    = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
+	Pose       previewPose   = (Demo.contentPose * Matrix.T(0.2f, -0.1f, 0)).Pose;
+	Pose       lightToolPose = (Demo.contentPose * Matrix.T(0.0f, -0.1f, 0)).Pose;
 	LightMode  mode          = LightMode.Lights;
 	Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 	Mesh       lightMesh     = Mesh.GenerateSphere(1);
@@ -66,7 +71,7 @@ class DemoSky : ITest
 		if (mode == LightMode.Image)
 		{
 			if (!Platform.FilePickerVisible && UI.Button("Browse"))
-				ShowPicker();
+				Platform.FilePicker(PickerMode.Open, LoadSkyImage, null, Assets.TextureFormats);
 			UI.Label(cubemapFile);
 		}
 
@@ -106,7 +111,7 @@ class DemoSky : ITest
 			cubelightDirty = false;
 		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.08f), V.XYZ(.7f, .3f, 0.1f)));
 	}
 
 	bool LightHandle(int i)
@@ -137,12 +142,6 @@ class DemoSky : ITest
 		return dirty;
 	}
 
-	void ShowPicker()
-	{
-		Platform.FilePicker(PickerMode.Open, LoadSkyImage, null,
-			".hdr", ".jpg", ".png");
-	}
-
 	void LoadSkyImage(string file)
 	{
 		cubemapFile = Path.GetFileName(file);
@@ -165,7 +164,5 @@ class DemoSky : ITest
 	}
 
 	float LightIntensity(Vec3 pos)
-	{
-		return Math.Max(0, 2 - pos.Magnitude * 4);
-	}
+		=> Math.Max(0, 2 - pos.Magnitude * 4);
 }

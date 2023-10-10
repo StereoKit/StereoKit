@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoMaterialChain : ITest
 {
@@ -35,13 +40,12 @@ class DemoMaterialChain : ITest
 	public void Shutdown() { }
 	public void Step()
 	{
-		Vec3 at = new Vec3(0.5f, -0.1f, -0.5f);
-		Hierarchy.Push(Matrix.T(at));
+		Hierarchy.Push(Demo.contentPose);
 		DrawOutlineObject();
 		Hierarchy.Pop();
 
-		Tests.Screenshot("InvertedShell.jpg", 400, 400, 90, at + V.XYZ(-0.2f, -0.04f, 0.2f), at);
+		Tests.Screenshot("InvertedShell.jpg", 400, 400, 90, Demo.contentPose.Translation + V.XYZ(-0.2f, -0.04f, 0.2f), Demo.contentPose.Translation);
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.4f, .4f, .4f)); 
 	}
 }

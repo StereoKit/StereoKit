@@ -1,6 +1,7 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "mesh.h"
 #include "assets.h"
 
@@ -343,10 +344,10 @@ bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_
 	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_weight_count);
 	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
 
-	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix,   bone_count);
-	mesh->skin_data.bone_transforms         = sk_malloc_t(XMMATRIX, bone_count);
-	memset(mesh->skin_data.bone_inverse_transforms, 0, sizeof(matrix  ) * bone_count);
-	memset(mesh->skin_data.bone_transforms,         0, sizeof(XMMATRIX) * bone_count);
+	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix, bone_count);
+	mesh->skin_data.bone_transforms         = sk_malloc_t(matrix, bone_count);
+	memset(mesh->skin_data.bone_inverse_transforms, 0, sizeof(matrix) * bone_count);
+	memset(mesh->skin_data.bone_transforms,         0, sizeof(matrix) * bone_count);
 
 	mesh->skin_data.bone_count = bone_count;
 
@@ -375,7 +376,7 @@ void mesh_set_skin_inv(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_
 
 void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_count) {
 	for (int32_t i = 0; i < bone_count; i++) {
-		math_matrix_to_fast(mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i], &mesh->skin_data.bone_transforms[i]);
+		mesh->skin_data.bone_transforms[i] = mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i];
 	}
 
 	XMVECTOR max = g_XMFltMin;
@@ -387,22 +388,26 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		const uint16_t *bones   = &mesh->skin_data.bone_ids[i*4];
 		const vec4      weights =  mesh->skin_data.weights [i];
 
-		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[0]]), weights.x);
-		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[0]]), weights.x);
+		XMMATRIX xm0      = XMLoadFloat4x4((XMFLOAT4X4 *)&mesh->skin_data.bone_transforms[bones[0]]);
+		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  xm0), weights.x);
+		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, xm0), weights.x);
 		if (weights.y != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[1]]), weights.y), new_norm);
+			XMMATRIX xm1 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[1]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm1), weights.y), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm1), weights.y), new_norm);
 		}
 		if (weights.z != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[2]]), weights.z), new_norm);
+			XMMATRIX xm2 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[2]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm2), weights.z), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm2), weights.z), new_norm);
 		}
 		if (weights.w != 0) {
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, mesh->skin_data.bone_transforms[bones[3]]), weights.w), new_norm);
+			XMMATRIX xm3 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[3]]);
+			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm3), weights.w), new_pos);
+			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm3), weights.w), new_norm);
 		}
-		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
-		XMStoreFloat3((DirectX::XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
+		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
+		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
 		min = XMVectorMin(min, new_pos);
 		max = XMVectorMax(max, new_pos);
 	}
@@ -1128,8 +1133,8 @@ mesh_t mesh_gen_cone(float diameter, float depth, vec3 dir, int32_t subdivisions
 
 	mesh_set_data(result, verts, vert_count, inds, ind_count);
 
-	free(verts);
-	free(inds);
+	sk_free(verts);
+	sk_free(inds);
 	return result;
 }
 

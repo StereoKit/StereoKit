@@ -134,8 +134,8 @@ skt_light_id_t skt_lighting_add_light(sk::vec3 at, sk::color128 color, float rad
 	light.color     = color;
 	light.intensity = intensity;
 	skt_lights   .push_back(light);
-	skt_light_ids.push_back(skt_light_ids.size());
-	return skt_light_ids.size()-1;
+	skt_light_ids.push_back((skt_light_id_t)skt_light_ids.size());
+	return (skt_light_id_t)(skt_light_ids.size()-1);
 }
 
 ///////////////////////////////////////////

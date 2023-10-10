@@ -77,10 +77,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(ProjectDir)..\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)..\..\bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>$(ProjectDir)..\lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <TargetName>StereoKitC</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -93,7 +93,7 @@
       <!--Temporarily disable cppwinrt heap enforcement to work around xaml compiler generated std::shared_ptr use -->
       <AdditionalOptions Condition="'$(CppWinRTHeapEnforcement)'==''">/DWINRT_NO_MAKE_DETECTION %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINRT_DLL;_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;SK_BUILD_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
@@ -103,7 +103,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
@@ -112,7 +112,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINDOWS_UWP;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">true</CompileAsWinRT>
       <CompileAsWinRT Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</CompileAsWinRT>
     </ClCompile>
@@ -129,8 +129,9 @@ xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\..\bin\distribute\bin\UWP\$(Platform)
       <Message>Copying final binaries to the bin/distribute folder!</Message>
     </PostBuildEvent>
     <PreBuildEvent>
+      <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP
-"$(ProjectDir)..\..\tools\skshaderc.exe" -O3 -h -z -t xge -i "$(ProjectDir)..\..\tools\include" "$(ProjectDir)..\..\StereoKitC\shaders_builtin\*.hlsl"</Command>
+"$(ProjectDir)..\..\tools\skshaderc.exe" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$(ProjectDir)..\..\tools\include" -o "$(IntermediateOutputPath)shaders" "$(ProjectDir)..\..\StereoKitC\shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -165,5 +166,8 @@ xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\..\bin\distribute\bin\UWP\$(Platform)
     <Error Condition="!Exists('$(ProjectDir)..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')"             Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)..\..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets'))" />
     <Error Condition="!Exists('$(ProjectDir)..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')"               Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props'))" />
     <Error Condition="!Exists('$(ProjectDir)..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')"             Text="$([System.String]::Format('$(ErrorText)', '$(ProjectDir)..\..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets'))" />
+  </Target>
+  <Target Name="SKCleanShaders" AfterTargets="Clean">
+    <RemoveDir Directories="$(IntermediateOutputPath)shaders" />
   </Target>
 </Project>

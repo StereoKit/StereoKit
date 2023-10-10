@@ -144,11 +144,11 @@ namespace StereoKit
 			=> (int)NativeAPI.sound_read_samples(_inst, sampleBuffer, (ulong)sampleCount);
 
 		/// <summary>Looks for a Sound asset that's already loaded, matching the given id!</summary>
-		/// <param name="modelId">Which Sound are you looking for?</param>
+		/// <param name="soundId">Which Sound are you looking for?</param>
 		/// <returns>A link to the sound matching 'soundId', null if none is found.</returns>
-		public static Sound Find(string modelId)
+		public static Sound Find(string soundId)
 		{
-			IntPtr sound = NativeAPI.sound_find(modelId);
+			IntPtr sound = NativeAPI.sound_find(soundId);
 			return sound == IntPtr.Zero ? null : new Sound(sound);
 		}
 

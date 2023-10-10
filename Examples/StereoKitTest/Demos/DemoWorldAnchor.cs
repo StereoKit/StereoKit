@@ -114,7 +114,7 @@ class DemoWorldAnchor : ITest
 			Mesh.Cube.Draw(Material.UIBox, p.ToMatrix(0.1f));
 		}
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
 	}
 
 	public void Shutdown()

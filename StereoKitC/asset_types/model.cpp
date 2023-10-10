@@ -1,12 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "../sk_math.h"
+#include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform_utils.h"
-#include <DirectXMath.h>
+
 using namespace DirectX;
 
 #include <stdio.h>
@@ -568,7 +569,7 @@ model_node_id model_node_parent(model_t model, model_node_id node) {
 
 model_node_id model_node_child(model_t model, model_node_id node) {
 	if (node < 0)
-		return model->nodes.count > 0 ? 0 : -1;
+		return model_node_get_root(model);
 	return model->nodes[node].child;
 }
 
@@ -599,7 +600,7 @@ model_node_id model_node_visual_index(model_t model, int32_t index) {
 ///////////////////////////////////////////
 
 model_node_id model_node_iterate(model_t model, model_node_id node) {
-	if (node == -1) return 0;
+	if (node == -1) return model_node_get_root(model);
 
 	// walk down
 	if (model->nodes[node].child != -1)
@@ -621,8 +622,10 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 
 ///////////////////////////////////////////
 
-model_node_id model_node_get_root(model_t) {
-	return 0;
+model_node_id model_node_get_root(model_t model) {
+	return model->nodes.count > 0
+		? 0
+		: -1;
 }
 
 ///////////////////////////////////////////
@@ -789,12 +792,20 @@ void model_node_set_transform_local(model_t model, model_node_id node, matrix tr
 ///////////////////////////////////////////
 
 const char* model_node_info_get(model_t model, model_node_id node, const char* info_key_u8) {
-	return *model->nodes[node].info.get(info_key_u8);
+	char** result = model->nodes[node].info.get(info_key_u8);
+	return result == nullptr
+		? nullptr
+		: *result;
 }
 
 ///////////////////////////////////////////
 
 void model_node_info_set(model_t model, model_node_id node, const char* info_key_u8, const char* info_value_u8) {
+	if (info_value_u8 == nullptr) {
+		model_node_info_remove(model, node, info_key_u8);
+		return;
+	}
+
 	dictionary_t<char*>* info = &model->nodes[node].info;
 	int32_t              at   = info->contains(info_key_u8);
 	if (at != -1) {
@@ -808,7 +819,13 @@ void model_node_info_set(model_t model, model_node_id node, const char* info_key
 ///////////////////////////////////////////
 
 bool32_t model_node_info_remove(model_t model, model_node_id node, const char* info_key_u8) {
-	return model->nodes[node].info.remove(info_key_u8);
+	int32_t idx = model->nodes[node].info.contains(info_key_u8);
+	if (idx < 0) return false;
+
+	sk_free(model->nodes[node].info.items[idx].value);
+	model->nodes[node].info.remove_at(idx);
+
+	return true;
 }
 
 ///////////////////////////////////////////

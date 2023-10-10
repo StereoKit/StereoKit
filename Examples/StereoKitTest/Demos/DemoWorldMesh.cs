@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoWorldMesh : ITest
 {
@@ -72,6 +77,24 @@ class DemoWorldMesh : ITest
 				Mesh.Sphere.Draw(Material.Default, Matrix.TS(at.position, 0.03f), new Color(1, 0, 0));
 		}
 
-		Demo.ShowSummary(title, description);
+		/// :CodeSample: World.HasBounds World.BoundsSize World.BoundsPose
+		// Here's some quick and dirty lines for the play boundary rectangle!
+		if (World.HasBounds)
+		{
+			Vec2   s    = World.BoundsSize/2;
+			Matrix pose = World.BoundsPose.ToMatrix();
+			Vec3   tl   = pose.Transform( new Vec3( s.x, 0,  s.y) );
+			Vec3   br   = pose.Transform( new Vec3(-s.x, 0, -s.y) );
+			Vec3   tr   = pose.Transform( new Vec3(-s.x, 0,  s.y) );
+			Vec3   bl   = pose.Transform( new Vec3( s.x, 0, -s.y) );
+
+			Lines.Add(tl, tr, Color.White, 1.5f*U.cm);
+			Lines.Add(bl, br, Color.White, 1.5f*U.cm);
+			Lines.Add(tl, bl, Color.White, 1.5f*U.cm);
+			Lines.Add(tr, br, Color.White, 1.5f*U.cm);
+		}
+		/// :End:
+
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.12f), V.XYZ(.38f, .34f, 0.1f)));
 	}
 }

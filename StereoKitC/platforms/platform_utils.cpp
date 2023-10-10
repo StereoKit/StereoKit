@@ -46,17 +46,17 @@
 #include "android.h"
 
 #include <unistd.h>
-#include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/font_matcher.h>
 #include <android/font.h>
 #include <errno.h>
+#include <syslog.h>
 #endif
 
 #ifdef SK_OS_LINUX
 #include <unistd.h>
-#include <dirent.h> 
-#include <libgen.h> 
+#include <dirent.h>
+#include <libgen.h>
 #include "linux.h"
 #include <fontconfig/fontconfig.h>
 #endif
@@ -412,15 +412,33 @@ float platform_get_scroll() {
 
 void platform_debug_output(log_ level, const char *text) {
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	OutputDebugStringA(text);
-	(void)level;
+	const char* tag = "";
+	switch (level) {
+	case log_diagnostic: tag = "diagnostic"; break;
+	case log_inform:     tag = "info";       break;
+	case log_warning:    tag = "warning";    break;
+	case log_error:      tag = "error";      break;
+	default: break;
+	}
+
+	size_t expand_size = strlen(text) + _countof("[SK diagnostic] \n");
+	char*  expanded    = (char*)alloca(sizeof(char) * expand_size);
+	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
+
+	OutputDebugStringA(expanded);
+
 #elif defined(SK_OS_ANDROID)
-	int32_t priority = ANDROID_LOG_INFO;
-	if      (level == log_diagnostic) priority = ANDROID_LOG_VERBOSE;
-	else if (level == log_inform    ) priority = ANDROID_LOG_INFO;
-	else if (level == log_warning   ) priority = ANDROID_LOG_WARN;
-	else if (level == log_error     ) priority = ANDROID_LOG_ERROR;
-	__android_log_write(priority, "StereoKit", text);
+	static bool opened = false;
+	if (!opened) {
+		opened = true;
+		openlog("StereoKit", LOG_CONS | LOG_NOWAIT, LOG_USER);
+	}
+	int32_t priority = LOG_INFO;
+	if      (level == log_diagnostic) priority = LOG_DEBUG;
+	else if (level == log_inform    ) priority = LOG_INFO;
+	else if (level == log_warning   ) priority = LOG_WARNING;
+	else if (level == log_error     ) priority = LOG_ERR;
+	syslog(priority, "%s", text);
 #elif defined(SK_OS_WEB)
 	if      (level == log_diagnostic) emscripten_console_log(text);
 	else if (level == log_inform    ) emscripten_console_log(text);
@@ -548,7 +566,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	const float physical_interact_timeout = 60 * 5; // 5 minutes
 	if (visible == false) virtualkeyboard_open(false, type);
 	else if (device_display_get_type() != display_type_flatscreen &&
-	         (input_last_physical_keypress < 0 || (time_totalf_unscaled()-input_last_physical_keypress) > physical_interact_timeout) ) {
+	         (input_get_last_physical_keypress_time() < 0 || (time_totalf_unscaled()-input_get_last_physical_keypress_time()) > physical_interact_timeout) ) {
 
 		virtualkeyboard_open(visible, type);
 	}
@@ -584,8 +602,8 @@ font_t platform_default_font() {
 
 #if __ANDROID_API__ >= 29
 	AFontMatcher *matcher = AFontMatcher_create();
-	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", u"A", 1, nullptr);
-	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", u"あ", 1, nullptr);
+	AFont *font_latin    = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"A", 1, nullptr);
+	AFont *font_japanese = AFontMatcher_match(matcher, "sans-serif", (uint16_t*)u"あ", 1, nullptr);
 	if (font_latin   ) file_latin    = AFont_getFontFilePath(font_latin);
 	if (font_japanese) file_japanese = AFont_getFontFilePath(font_japanese);
 #endif

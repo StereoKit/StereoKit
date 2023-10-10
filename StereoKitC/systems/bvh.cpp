@@ -27,11 +27,12 @@ June, 2022
 Paul Melis, SURF (paul.melis@surf.nl)
 */
 #define NOMINMAX
-#include <cstdlib>
-#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#include <cassert>
+#include <assert.h>
 #include <math.h>
+#include <float.h>
 #include "bvh.h"
 #include "bbox.h"
 #include "../stereokit.h"

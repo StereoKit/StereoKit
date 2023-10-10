@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 
 class DemoMicrophone : ITest
@@ -70,7 +75,7 @@ class DemoMicrophone : ITest
 	/// recording with a device other than the default. NOTE: this example
 	/// is designed with the assumption that Microphone.Start() has been
 	/// called already.
-	Pose     micSelectPose   = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose     micSelectPose   = new Pose(Demo.contentPose.Translation + V.XYZ(0,-0.12f,0), Demo.contentPose.Rotation);
 	string[] micDevices      = null;
 	string   micDeviceActive = null;
 	void ShowMicDeviceWindow()
@@ -108,8 +113,9 @@ class DemoMicrophone : ITest
 	public void Step()
 	{
 		ShowMicDeviceWindow();
-		Tests.Screenshot("MicrophoneSelector.jpg", 1, 400, 400, 90, micSelectPose.position+V.XYZ(-0.15f, -0.02f, 0.15f), micSelectPose.position-V.XYZ(0,0.12f,0));
+		Tests.Screenshot("MicrophoneSelector.jpg", 1, 400, 400, 90, micSelectPose.position+V.XYZ(0, -0.1f, 0.18f), micSelectPose.position+V.XYZ(0,-0.1f,0));
 
+		Hierarchy.Push(Demo.contentPose);
 		if (Microphone.IsRecording)
 		{
 			// Squaring a 0-1 value gives an extra slow initial response, but
@@ -122,16 +128,17 @@ class DemoMicrophone : ITest
 
 			float scale = 0.1f + 0.06f * intensity;
 			Color color = new Color(1,1,1, Math.Max(0.1f, intensity));
-			Default.MeshSphere.Draw(micMaterial, Matrix.TS(0,0,-0.5f, scale), color);
-			micSprite.Draw(Matrix.TS(0,0,-0.5f, 0.06f), TextAlign.Center);
+			Default.MeshSphere.Draw(micMaterial, Matrix.S(scale), color);
+			micSprite.Draw(Matrix.S(0.06f), TextAlign.Center);
 		}
 		else
 		{
 			// Draw it in red if we're not recording
-			Default.MeshSphere.Draw(micMaterial, Matrix.TS(0, 0, -0.5f, 0.1f), new Color(1,0,0,0.1f));
-			micSprite.Draw(Matrix.TS(0,0,-0.5f,0.06f), TextAlign.Center);
+			Default.MeshSphere.Draw(micMaterial, Matrix.S(0.1f), new Color(1,0,0,0.1f));
+			micSprite.Draw(Matrix.S(0.06f), TextAlign.Center);
 		}
+		Hierarchy.Pop();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.13f), V.XYZ(.32f, .5f, .1f)));
 	}
 }

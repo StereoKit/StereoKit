@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +23,7 @@ class DemoLineRender : ITest
 	}
 
 	int    trailId = 0;
-	Vec3   center  = Demo.contentPose.Translation;
+	Vec3   center  = Demo.contentPose.Transform(V.XYZ(0,0,0.5f));
 	Body[] bodies;
 
 	public void Initialize()
@@ -89,6 +94,6 @@ class DemoLineRender : ITest
 		}
 		trailId = (trailId + 1) % bodies.Length;
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0,0,0.5f), V.XYZ(.8f, .8f, 0.8f)));
 	}
 }

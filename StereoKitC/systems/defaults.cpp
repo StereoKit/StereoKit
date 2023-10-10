@@ -3,7 +3,7 @@
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
-#include "../libraries/stb_image.h"
+#include "../asset_types/texture_.h"
 
 #include <string.h>
 
@@ -52,6 +52,18 @@ sound_t      sk_default_click;
 sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
+
+const spherical_harmonics_t sk_default_lighting = { {
+	{ 0.74f,  0.74f,  0.73f},
+	{ 0.24f,  0.25f,  0.26f},
+	{ 0.09f,  0.09f,  0.09f},
+	{ 0.05f,  0.05f,  0.06f},
+	{-0.01f, -0.01f, -0.01f},
+	{-0.03f, -0.03f, -0.03f},
+	{ 0.00f,  0.00f,  0.00f},
+	{-0.02f, -0.02f, -0.02f},
+	{ 0.04f,  0.04f,  0.04f},
+} };
 
 ///////////////////////////////////////////
 
@@ -128,23 +140,10 @@ bool defaults_init() {
 	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
-	spherical_harmonics_t lighting = { {
-		{ 0.74f,  0.74f,  0.73f}, 
-		{ 0.24f,  0.25f,  0.26f}, 
-		{ 0.09f,  0.09f,  0.09f}, 
-		{ 0.05f,  0.05f,  0.06f}, 
-		{-0.01f, -0.01f, -0.01f}, 
-		{-0.03f, -0.03f, -0.03f}, 
-		{ 0.00f,  0.00f,  0.00f}, 
-		{-0.02f, -0.02f, -0.02f}, 
-		{ 0.04f,  0.04f,  0.04f}, 
-	} };
-	render_set_skylight(lighting);
+	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
-	render_set_skytex(sk_default_cubemap);
-	render_enable_skytex(true);
 
 	// Default quad mesh
 	sk_default_quad = mesh_create();
@@ -177,7 +176,7 @@ bool defaults_init() {
 	// Shaders
 	int32_t size = 0;
 	void*   data = nullptr;
-#define SHADER_DECODE(shader_mem) { sk_free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
+#define SHADER_DECODE(shader_mem) { sk_free(data); data = unzip_malloc(shader_mem, sizeof(shader_mem), &size); }
 	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);

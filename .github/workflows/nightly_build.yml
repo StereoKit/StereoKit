@@ -1,0 +1,139 @@
+name: Nightly Build
+on:
+  workflow_dispatch:
+    inputs:
+      skip_time_check:
+        description: 'Skip check for builds in the last day'
+        type: boolean
+        required: false
+        default: true
+  schedule:
+  - cron: '0 9 * * *'
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      major: ${{ steps.version.outputs.major }}
+      minor: ${{ steps.version.outputs.minor }}
+      patch: ${{ steps.version.outputs.patch }}
+      pre: ${{ steps.version.outputs.pre }}
+      shouldBuild: ${{ steps.check.outputs.shouldBuild }}
+    steps:
+    - name: Check for changes
+      id: check
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO_NAME: ${{ github.repository }}
+        WORKFLOW_RUN_ID: ${{ github.run_id }}
+        SKIP_TIME_CHECK: ${{ inputs.skip_time_check }}
+        BRANCH: ${{ vars.NIGHTLY_BRANCH }}
+      run: |
+        $urlBase = "https://api.github.com/repos/$env:REPO_NAME"
+        $header  = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+        }
+
+        $now = [DateTime]::UtcNow
+        Write-Output "Current time is $now"
+
+        # Get the list of workflow runs
+        $workflowRuns     = Invoke-RestMethod -Uri "$urlBase/actions/workflows/nightly_build.yml/runs" -Headers $header
+        $lastRunTimestamp = [DateTime]::Parse('2023-01-01').ToUniversalTime()
+        # The current run may be the first item here, we need to make sure we skip it
+        for ($i = 0; $i -lt $workflowRuns.workflow_runs.Count; $i++) {
+            if (-not ($workflowRuns.workflow_runs[$i].id -eq $env:WORKFLOW_RUN_ID)) {
+                $lastRunTimestamp = [DateTime]::Parse($workflowRuns.workflow_runs[$i].created_at).ToUniversalTime()
+                break
+            }
+        }
+        Write-Output "Last run was at $lastRunTimestamp, $([math]::Round(($now - $lastRunTimestamp).TotalHours,1)) hours ago."
+
+        # Get the list of commits
+        $commits             = Invoke-RestMethod -Uri "$urlBase/commits?sha=$env:BRANCH" -Headers $header
+        $lastCommitTimestamp = [DateTime]::Parse($commits[0].commit.committer.date).ToUniversalTime()
+        Write-Output "Last commit was $lastCommitTimestamp, $([math]::Round(($now - $lastCommitTimestamp).TotalHours,1)) hours ago."
+
+        if ($lastRunTimestamp -lt $lastCommitTimestamp -and $env:SKIP_TIME_CHECK -eq 'true') {
+            Write-Output "Requesting a new build! (ignoring last build attempt)"
+            Write-Output "shouldBuild=true" >> $env:GITHUB_OUTPUT
+        } elseif ($lastRunTimestamp -lt $lastCommitTimestamp -and ($now - $lastRunTimestamp).TotalDays -gt 0.95) {
+            Write-Output "Requesting a new build!"
+            Write-Output "shouldBuild=true" >> $env:GITHUB_OUTPUT
+        } else {
+            Write-Output "Skipping this build."
+            Write-Output "shouldBuild=false" >> $env:GITHUB_OUTPUT
+        }
+
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ vars.NIGHTLY_BRANCH }}
+      if: steps.check.outputs.shouldBuild == 'true'
+
+    - name: Get the version
+      id: version
+      if: steps.check.outputs.shouldBuild == 'true'
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO_NAME: ${{ github.repository }}
+      run: |
+        $urlBase = "https://api.github.com/repos/$env:REPO_NAME"
+        $header  = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = "application/vnd.github+json"
+            "X-GitHub-Api-Version" = "2022-11-28"
+        }
+
+        # Get the previous version we'll base our nightly version off of.
+        $currVersion = & tools/Get-Version.ps1
+        $prevVersion = $currVersion.PsObject.Copy();
+        if     ($prevVersion.patch -ne 0) { $prevVersion.patch = $prevVersion.patch - 1 }
+        elseif ($prevVersion.minor -ne 0) { $prevVersion.minor = $prevVersion.minor - 1 }
+        elseif ($prevVersion.major -ne 0) { $prevVersion.major = $prevVersion.major - 1 }
+        $tagName = "v$($prevVersion.major).$($prevVersion.minor).$($prevVersion.patch)"
+        Write-Output "Previous version is $tagName"
+        
+        # Use the GitHub rest API to get the date of the previous version, since the
+        # git repository is likely just shallow cloned.
+        $prevDate = [DateTime]::Parse('2023-01-01').ToUniversalTime()
+        $ref      = Invoke-RestMethod -Uri "$urlBase/git/refs/tags/$tagName" -Headers $header
+        $tag      = $null
+        if ($ref) {
+            $tag = Invoke-RestMethod -Uri "$urlBase/git/tags/$($ref.object.sha)" -Headers $header
+        }
+        if ($tag) {
+            $commit   = Invoke-RestMethod -Uri "$urlBase/git/commits/$($tag.object.sha)" -Headers $header
+            $prevDate = [DateTime]::Parse($commit.author.date).ToUniversalTime()
+        }
+        $currVersion.pre = [Math]::Max(1,[int](([DateTime]::UtcNow - $prevDate).TotalDays * 4))
+        $nightlyName = "v$($currVersion.major).$($currVersion.minor).$($currVersion.patch)-preview.$($currVersion.pre)"
+        Write-Output "Nightly is $nightlyName"
+        
+        Write-Output "major=$($currVersion.major)" >> $env:GITHUB_OUTPUT
+        Write-Output "minor=$($currVersion.minor)" >> $env:GITHUB_OUTPUT
+        Write-Output "patch=$($currVersion.patch)" >> $env:GITHUB_OUTPUT
+        Write-Output "pre=$($currVersion.pre)" >> $env:GITHUB_OUTPUT
+
+        exit 0
+
+  build:
+    needs: check
+    if: needs.check.outputs.shouldBuild == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      major: ${{ needs.check.outputs.major }}
+      minor: ${{ needs.check.outputs.minor }}
+      patch: ${{ needs.check.outputs.patch }}
+      pre: ${{ needs.check.outputs.pre }}
+      branch: ${{ vars.NIGHTLY_BRANCH }}
+      upload: true
+      commitChanges: false
+    secrets: inherit

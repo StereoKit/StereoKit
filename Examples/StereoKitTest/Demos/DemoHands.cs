@@ -1,4 +1,9 @@
-﻿/// :CodeDoc: Guides 3 Using Hands
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+/// :CodeDoc: Guides 3 Using Hands
 /// # Using Hands
 /// 
 /// StereoKit uses a hands first approach to user input! Even when hand-sensors
@@ -17,17 +22,23 @@ class DemoHands : ITest
 	string title       = "Hand Input";
 	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
-	static Pose optionsPose = new Pose(0.5f,0,-0.5f, Quat.LookDir(-1,0,1));
+	static Pose optionsPose = Demo.contentPose.Pose;
 	bool showHands     = true;
 	bool showJoints    = false;
 	bool showAxes      = true;
 	bool showPointers  = true;
 	bool showHandMenus = true;
 	bool showHandSize  = true;
+	bool showPinchPt   = true;
 
 	HandMenuRadial handMenu;
+	HandMenuRadial prevHandMenu;
 
 	public void Initialize() {
+		prevHandMenu = SK.GetStepper<HandMenuRadial>();
+		if (prevHandMenu != null)
+			SK.RemoveStepper(prevHandMenu);
+
 		/// :CodeDoc: Guides Using Hands
 		/// ## Accessing Joints
 		/// 
@@ -97,8 +108,11 @@ class DemoHands : ITest
 	public void Shutdown()
 	{
 		/// :CodeSample: HandMenuRadial HandRadialLayer HandMenuItem
-		SK.RemoveStepper(handMenu); 
+		SK.RemoveStepper(handMenu);
 		/// :End:
+
+		if (prevHandMenu != null)
+			SK.AddStepper(prevHandMenu);
 	}
 
 	public void Step()
@@ -106,6 +120,8 @@ class DemoHands : ITest
 		Vec2 size = V.XY(8, 0) * U.cm;
 
 		UI.WindowBegin("Options", ref optionsPose, new Vec2(0, 0)*U.cm);
+
+		UI.Label($"Hand source: {Input.HandSource(Handed.Right)}");
 
 		UI.PanelBegin(UIPad.Inside);
 		UI.Label("Show");
@@ -121,6 +137,8 @@ class DemoHands : ITest
 		UI.Toggle("Pointers",  ref showPointers,  size);
 		UI.SameLine();
 		UI.Toggle("Menu",      ref showHandMenus, size);
+
+		UI.Toggle("Pinch Pt" , ref showPinchPt,   size);
 		UI.PanelEnd();
 
 		UI.HSeparator();
@@ -185,10 +203,17 @@ class DemoHands : ITest
 			DrawHandMenu(Handed.Right);
 			DrawHandMenu(Handed.Left);
 		}
+		if (showPinchPt)
+		{
+			Hand l = Input.Hand(Handed.Left);
+			Hand r = Input.Hand(Handed.Right);
+			if (l.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(l.pinchPt, 0.005f));
+			if (r.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(r.pinchPt, 0.005f));
+		}
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.34f, .4f, 0)));
 	}
 
 	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)

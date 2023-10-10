@@ -16,6 +16,8 @@ extern tex_t        sk_default_tex_devtex;
 extern tex_t        sk_default_tex_error;
 extern tex_t        sk_default_cubemap;
 extern mesh_t       sk_default_quad;
+extern mesh_t       sk_default_sphere;
+extern mesh_t       sk_default_cube;
 extern shader_t     sk_default_shader;
 extern shader_t     sk_default_shader_blit;
 extern shader_t     sk_default_shader_pbr;
@@ -33,5 +35,7 @@ extern font_t       sk_default_font;
 extern text_style_t sk_default_text_style;
 extern sound_t      sk_default_click;
 extern sound_t      sk_default_unclick;
+
+extern const spherical_harmonics_t sk_default_lighting;
 
 } // namespace sk

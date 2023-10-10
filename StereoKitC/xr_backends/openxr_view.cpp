@@ -46,21 +46,22 @@ void swapchain_delete(swapchain_t &swapchain) {
 	sk_free(swapchain.images  ); swapchain.images   = nullptr;
 	sk_free(swapchain.textures); swapchain.textures = nullptr;
 
-	swapchain.surface_count = 0;
+	swapchain.surface_count  = 0;
 	swapchain.surface_layers = 0;
 }
 
 ///////////////////////////////////////////
 
 struct device_display_t {
-	XrViewConfigurationType      type;
-	XrEnvironmentBlendMode       blend;
-	XrCompositionLayerProjection*projection_layer;
-	bool32_t                     active;
-	int64_t color_format;
-	int64_t depth_format;
-	float   render_scale;
-	int32_t multisample;
+	XrViewConfigurationType       type;
+	XrEnvironmentBlendMode        blend;
+	XrCompositionLayerProjection *projection_layer;
+	bool32_t                      active;
+	display_blend_                valid_blends;
+	int64_t                       color_format;
+	int64_t                       depth_format;
+	float                         render_scale;
+	int32_t                       multisample;
 
 	swapchain_t swapchain_color;
 	swapchain_t swapchain_depth;
@@ -162,8 +163,8 @@ XrViewConfigurationType xr_request_displays[] = {
 	XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
 	XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT,
 };
-XrViewConfigurationType xr_display_primary = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-system_t               *xr_render_sys      = nullptr;
+int32_t   xr_display_primary_idx  = -1;
+system_t *xr_render_sys           = nullptr;
 
 array_t<device_display_t>                          xr_displays           = {};
 array_t<XrViewConfigurationType>                   xr_display_types      = {};
@@ -194,45 +195,42 @@ const char *openxr_view_name(XrViewConfigurationType type) {
 ///////////////////////////////////////////
 
 bool32_t xr_blend_valid(display_blend_ blend) {
+	if (xr_display_primary_idx == -1) return false;
+	display_blend_ valid = xr_displays[xr_display_primary_idx].valid_blends;
+
 	if (blend == display_blend_any_transparent) {
-		if (xr_valid_blends & display_blend_additive) {
-			blend = display_blend_additive;
-		} else if (xr_valid_blends & display_blend_blend) {
-			blend = display_blend_additive;
-		} else {
-			blend = display_blend_none;
-		}
+		if      (valid & display_blend_additive) { blend = display_blend_additive; }
+		else if (valid & display_blend_blend   ) { blend = display_blend_blend;    }
+		else                                     { blend = display_blend_none;     }
 	}
 
-	return (blend & xr_valid_blends) != 0;
+	return (blend & valid) != 0;
 }
 
 ///////////////////////////////////////////
 
 bool32_t xr_set_blend(display_blend_ blend) {
+	if (xr_display_primary_idx == -1) return false;
+	device_display_t* display = &xr_displays[xr_display_primary_idx];
+	display_blend_    valid   = display->valid_blends;
+
 	if (blend == display_blend_any_transparent) {
-		if (xr_valid_blends & display_blend_additive) {
-			blend = display_blend_additive;
-		} else if (xr_valid_blends & display_blend_blend) {
-			blend = display_blend_additive;
-		} else {
-			blend = display_blend_none;
-		}
+		if      (valid & display_blend_additive) { blend = display_blend_additive; }
+		else if (valid & display_blend_blend   ) { blend = display_blend_blend;    }
+		else                                     { blend = display_blend_none;     }
 	}
 
-	if ((blend & xr_valid_blends) == 0) {
+	if ((blend & valid) == 0) {
 		log_err("Set display blend to an invalid mode!");
 		return false;
 	}
 	device_data.display_blend = blend;
 
-	for (int32_t i = 0; i < xr_displays.count; i++) {
-		if (xr_displays[i].type != xr_display_primary) continue;
-		switch (blend) {
-		case display_blend_additive: xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE; break;
-		case display_blend_blend:    xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND; break;
-		case display_blend_opaque:   xr_displays[i].blend = XR_ENVIRONMENT_BLEND_MODE_OPAQUE; break;
-		}
+	switch (blend) {
+	case display_blend_additive: display->blend = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;    break;
+	case display_blend_blend:    display->blend = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND; break;
+	case display_blend_opaque:   display->blend = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;      break;
+	default: abort(); break; // Should not be reachable
 	}
 
 	return true;
@@ -241,7 +239,8 @@ bool32_t xr_set_blend(display_blend_ blend) {
 ///////////////////////////////////////////
 
 bool openxr_views_create() {
-	xr_render_sys = systems_find("FrameRender");
+	xr_render_sys          = systems_find("FrameRender");
+	xr_display_primary_idx = -1;
 
 	// Find all the valid view configurations
 	uint32_t count = 0;
@@ -255,11 +254,14 @@ bool openxr_views_create() {
 	for (uint32_t t = 0; t < count; t++) {
 		for (uint32_t r = 0; r < _countof(xr_request_displays); r++) {
 			if (types[t] == xr_request_displays[r]) {
-				if (types[t] != xr_display_primary) {
+				if (types[t] == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
 					XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
 					state.active                = false;
 					state.viewConfigurationType = types[t];
 					xr_display_2nd_states.add(state);
+				}
+				if (types[t] == XR_PRIMARY_CONFIG && xr_display_primary_idx == -1) {
+					xr_display_primary_idx = xr_displays.count;
 				}
 				xr_display_types.add(types[t]);
 				xr_displays     .add(device_display_t{});
@@ -276,12 +278,23 @@ bool openxr_views_create() {
 	}
 
 	// Register dispay type with the system
-	switch (xr_displays[0].blend) {
-	case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      sk_info.display_type = display_opaque;      break;
-	case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    sk_info.display_type = display_additive;    break;
-	case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: sk_info.display_type = display_passthrough; break;
-	// Just max_enum
-	default: break;
+	if (xr_display_primary_idx == -1) {
+		device_data.display_blend  = display_blend_none;
+		device_data.display_width  = 0;
+		device_data.display_height = 0;
+	} else {
+		// Update the display info right away, some of this gets updated each draw,
+		// but most users will want this info as soon as the session begins. If we
+		// skip doing this here, then there will be a single frame delay where the
+		// information isn't present.
+		switch (xr_displays[xr_display_primary_idx].blend) {
+		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      device_data.display_blend = display_blend_opaque;   break;
+		case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    device_data.display_blend = display_blend_additive; break;
+		case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: device_data.display_blend = display_blend_blend;    break;
+		default:                                    device_data.display_blend = display_blend_none;     break;
+		}
+		device_data.display_width  = xr_displays[xr_display_primary_idx].swapchain_color.width;
+		device_data.display_height = xr_displays[xr_display_primary_idx].swapchain_color.height;
 	}
 
 	return true;
@@ -293,6 +306,8 @@ void openxr_views_destroy() {
 	for (int32_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(xr_displays[i]);
 	}
+	xr_display_primary_idx = -1;
+
 	xr_displays          .free();
 	xr_display_types     .free();
 	xr_display_2nd_states.free();
@@ -307,7 +322,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 
 	// Get the surface format information before we create surfaces!
 	openxr_preferred_format(out_view.color_format, out_view.depth_format);
-	if (!openxr_preferred_blend(view_type, sk_settings.blend_preference, &xr_valid_blends, &out_view.blend)) return false;
+	if (!openxr_preferred_blend(view_type, sk_get_settings_ref()->blend_preference, &out_view.valid_blends, &out_view.blend)) return false;
 
 	// Tell OpenXR what sort of color space we're rendering in
 	if (xr_ext_available.FB_color_space) {
@@ -363,7 +378,7 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		out_view.view_layers[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		out_view.view_depths[i] = { XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR };
 	}
-	if (view_type == xr_display_primary) {
+	if (view_type == XR_PRIMARY_CONFIG) {
 		out_view.multisample  = render_get_multisample();
 		out_view.render_scale = render_get_scaling();
 	} else {
@@ -377,20 +392,6 @@ bool openxr_create_view(XrViewConfigurationType view_type, device_display_t &out
 		return false;
 	}
 
-	// Update the display info right away, some of this gets updated each draw,
-	// but most users will want this info as soon as the session begins. If we
-	// skip doing this here, then there will be a single frame delay where the
-	// information isn't present.
-	if (view_type == xr_display_primary) {
-		switch (out_view.blend) {
-		case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    device_data.display_blend = display_blend_additive; break;
-		case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: device_data.display_blend = display_blend_blend;    break;
-		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      device_data.display_blend = display_blend_opaque;   break;
-		default:                                    device_data.display_blend = display_blend_none;     break;
-		}
-		device_data.display_width  = out_view.swapchain_color.width;
-		device_data.display_height = out_view.swapchain_color.height;
-	}
 	return true;
 }
 
@@ -486,8 +487,6 @@ bool openxr_update_swapchains(device_display_t &display) {
 	}
 
 	if (display.type == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO) {
-		sk_info.display_width  = w;
-		sk_info.display_height = h;
 		device_data.display_width  = w;
 		device_data.display_height = h;
 	}
@@ -519,7 +518,7 @@ bool openxr_create_swapchain(swapchain_t &out_swapchain, XrViewConfigurationType
 
 	// If it's a secondary view, let OpenXR know
 	XrSecondaryViewConfigurationSwapchainCreateInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SWAPCHAIN_CREATE_INFO_MSFT };
-	if (type != xr_display_primary) {
+	if (type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
 		secondary.viewConfigurationType = type;
 		swapchain_info.next = &secondary;
 	}
@@ -623,6 +622,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 		case XR_ENVIRONMENT_BLEND_MODE_OPAQUE:      curr = display_blend_opaque;   break;
 		case XR_ENVIRONMENT_BLEND_MODE_ADDITIVE:    curr = display_blend_additive; break;
 		case XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND: curr = display_blend_blend;    break;
+		default: break;
 		}
 		// Accumulate all valid blend modes
 		*out_valid |= curr;
@@ -706,20 +706,27 @@ bool openxr_render_frame() {
 
 	skg_draw_begin();
 	for (int32_t i = 0; i < xr_displays.count; i++) {
-		if (!xr_displays[i].active) continue;
+		device_display_t* display = &xr_displays[i];
+		if (!display->active) continue;
 
-		render_layer_ filter = xr_displays[i].type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT
+		render_layer_ filter = display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT
 			? render_get_capture_filter()
 			: render_get_filter();
-		openxr_render_layer(xr_time, xr_displays[i], filter);
+		openxr_render_layer(xr_time, *display, filter);
+		if (i == xr_display_primary_idx) {
+			device_data.display_fov.right  = display->views[0].fov.angleRight * rad2deg;
+			device_data.display_fov.left   = display->views[0].fov.angleLeft  * rad2deg;
+			device_data.display_fov.top    = display->views[0].fov.angleUp    * rad2deg;
+			device_data.display_fov.bottom = display->views[0].fov.angleDown  * rad2deg;
+		}
 
-		if (xr_displays[i].type == xr_display_primary) {
-			backend_openxr_composition_layer(xr_displays[i].projection_layer, sizeof(XrCompositionLayerProjection), 0);
-		} else if (xr_displays[i].type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
-			layer2nd.viewConfigurationType = xr_displays[i].type;
-			layer2nd.environmentBlendMode  = xr_displays[i].blend;
+		if (display->type == XR_PRIMARY_CONFIG) { // maybe this should be some other check at some point?
+			backend_openxr_composition_layer(display->projection_layer, sizeof(XrCompositionLayerProjection), 0);
+		} else if (display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
+			layer2nd.viewConfigurationType = display->type;
+			layer2nd.environmentBlendMode  = display->blend;
 			layer2nd.layerCount            = 1;
-			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_layer;
+			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&display->projection_layer;
 
 			XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
 			end_second.viewConfigurationCount      = 1;
@@ -778,15 +785,8 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.viewConfigurationType = layer.type;
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views);
-
-	// Copy over the FoV so it's available to the users
-	if (layer.view_count > 0 && layer.type != xr_display_primary) {
-		device_data.display_fov.right  = layer.views[0].fov.angleRight * rad2deg;
-		device_data.display_fov.left   = layer.views[0].fov.angleLeft  * rad2deg;
-		device_data.display_fov.top    = layer.views[0].fov.angleUp    * rad2deg;
-		device_data.display_fov.bottom = layer.views[0].fov.angleDown  * rad2deg;
-	}
+	xr_check(xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views),
+		"xrLocateViews [%s]")
 
 	// We need to ask which swapchain image to use for rendering! Which one
 	// will we get? Who knows! It's up to the runtime to decide.
@@ -842,9 +842,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 
 		// Call the rendering callback with our view and swapchain info
 		tex_t    target = layer.swapchain_color.textures[index];
-		color128 col    = sk_info.display_type == display_opaque
-			? render_get_clear_color_ln()
-			: color128{ 0,0,0,0 };
+		color128 col    = render_get_clear_color_ln();
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);
 
@@ -867,21 +865,17 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 ///////////////////////////////////////////
 
 void openxr_views_update_fov() {
-	device_display_t* disp = &xr_displays[0];
-	for (int32_t i = 0; i < xr_displays.count; i++) {
-		if (xr_displays[i].type == xr_display_primary) {
-			disp = &xr_displays[i];
-			break;
-		}
-	}
+	if (xr_display_primary_idx == -1) return;
+	device_display_t* disp = &xr_displays[xr_display_primary_idx];
 
 	// Find the state and location of each viewpoint at the predicted time
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
 	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
 	locate_info.viewConfigurationType = disp->type;
 	locate_info.displayTime           = xr_time;
-	locate_info.space                 = xr_app_space;
-	xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views);
+	locate_info.space                 = xr_head_space; // We don't need app space here, and app space may not be valid yet
+	if (XR_FAILED(xrLocateViews(xr_session, &locate_info, &view_state, disp->view_cap, &disp->view_count, disp->views)))
+		return;
 
 	// Copy over the FoV so it's available to the users
 	if (disp->view_count > 0) {

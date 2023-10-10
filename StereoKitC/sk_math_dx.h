@@ -13,7 +13,7 @@
 
 namespace sk {
 	
-void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
+void matrix_mul(matrix a, matrix b, DirectX::XMMATRIX &out_matrix);
 void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &out_matrix);
 vec3 matrix_mul_direction(const DirectX::XMMATRIX &transform, const vec3 &direction);
 

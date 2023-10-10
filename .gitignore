@@ -361,3 +361,5 @@ build_*/
 .clangd/
 
 .deps_cache/
+
+**.DS_Store**

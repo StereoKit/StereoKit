@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using System.Collections.Generic;
 using System;
 using System.Diagnostics.Contracts;
@@ -39,10 +44,15 @@ namespace StereoKit
 		/// end to the other. This is the width, height, and depth of the
 		/// Bounds.</param>
 		public Bounds(Vec3 totalDimensions)
-		{
-			this.center = Vec3.Zero;
-			dimensions = totalDimensions;
-		}
+			: this(Vec3.Zero, totalDimensions) { }
+
+		/// <summary>Creates a bounding box object centered around zero!
+		/// </summary>
+		/// <param name="totalDimensionX">Total size on the X axis.</param>
+		/// <param name="totalDimensionY">Total size on the Y axis.</param>
+		/// <param name="totalDimensionZ">Total size on the Z axis.</param>
+		public Bounds(float totalDimensionX, float totalDimensionY, float totalDimensionZ)
+			: this(Vec3.Zero, new Vec3(totalDimensionX, totalDimensionY, totalDimensionZ)) { }
 
 		/// <summary>Create a bounding box from a corner, plus box dimensions.
 		/// </summary>
@@ -67,7 +77,7 @@ namespace StereoKit
 		/// same space as the bounds.</param>
 		/// <returns>The bounds that also encapsulate the provided point.
 		/// </returns>
-		Bounds Grown (Vec3 pt)
+		public Bounds Grown (Vec3 pt)
 			=> NativeAPI.bounds_grow_to_fit_pt(this, pt);
 		/// <summary>Grow the Bounds to encapsulate the provided box after it
 		/// has been transformed by the provided matrix transform. This will
@@ -80,13 +90,13 @@ namespace StereoKit
 		/// </param>
 		/// <returns>The bounds that also encapsulate the provided transformed
 		/// box.</returns>
-		Bounds Grown (Bounds box, Matrix boxTransform)
+		public Bounds Grown (Bounds box, Matrix boxTransform)
 			=> NativeAPI.bounds_grow_to_fit_box(this, box, boxTransform);
 		/// <summary>Grow the Bounds to encapsulate the provided box.</summary>
 		/// <param name="box">The box to encapsulate!</param>
 		/// <returns>The bounds that also encapsulate the provided box.
 		/// </returns>
-		Bounds Grown (Bounds box)
+		public Bounds Grown (Bounds box)
 			=> NativeAPI.bounds_grow_to_fit_box(this, box, IntPtr.Zero);
 		/// <summary>This returns a Bounds that encapsulates the transformed
 		/// points of the current Bounds's corners. Note that this will likely
@@ -96,7 +106,7 @@ namespace StereoKit
 		/// corners.</param>
 		/// <returns>A Bounds that encapsulates the transformed points of the
 		/// current Bounds's corners</returns>
-		Bounds Transformed(Matrix transform)
+		public Bounds Transformed(Matrix transform)
 			=> NativeAPI.bounds_transform(this, transform);
 
 		/// <summary>Calculate the intersection between a Ray, and these

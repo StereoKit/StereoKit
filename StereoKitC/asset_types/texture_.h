@@ -12,4 +12,6 @@ tex_format_ tex_get_tex_format   (int64_t native_fmt);
 void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, tex_format_ format);
 uint64_t    tex_meta_hash        (tex_t texture);
 
+uint8_t* unzip_malloc(const uint8_t* buffer, int32_t len, int32_t* out_len);
+
 } // namespace sk

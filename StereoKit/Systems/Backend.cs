@@ -109,6 +109,15 @@ namespace StereoKit
 				return Marshal.GetDelegateForFunctionPointer<TDelegate>(fn);
 			}
 
+			/// <summary>This sets a scaling value for joints provided by the
+			/// articulated hand extension. Some systems just don't seem to get
+			/// their joint sizes right!</summary>
+			/// <param name="scaleFactor">1 being the default value, 2 being
+			/// twice as large as normal, and 0.5 being half as big as normal.
+			/// </param>
+			public static void SetHandJointScale(float scaleFactor)
+				=> NativeAPI.backend_openxr_set_hand_joint_scale(scaleFactor);
+
 			/// <summary>Requests that OpenXR load a particular extension. This
 			/// MUST be called before SK.Initialize. Note that it's entirely
 			/// possible that your extension will not load on certain runtimes,
@@ -118,6 +127,16 @@ namespace StereoKit
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			public  static void RequestExt (string extensionName) { NativeLib.Load(); _RequestExt(extensionName); }
 			private static void _RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
+
+			/// <summary>This ensures that StereoKit does not load a particular
+			/// extension! StereoKit will behave as if the extension is not
+			/// available on the device. It will also be excluded even if you
+			/// explicitly requested it with `RequestExt` earlier, or
+			/// afterwards. This MUST be called before SK.Initialize.</summary>
+			/// <param name="extensionName">The extension name as listed in the
+			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
+			public  static void ExcludeExt (string extensionName) { NativeLib.Load(); _ExcludeExt(extensionName); }
+			private static void _ExcludeExt(string extensionName) => NativeAPI.backend_openxr_ext_exclude(extensionName);
 
 			/// <summary>This allows you to add XrCompositionLayers to the list
 			/// that StereoKit submits to xrEndFrame. You must call this every

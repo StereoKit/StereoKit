@@ -453,12 +453,15 @@ namespace StereoKit
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
 		Depth16      = 16,
+		/// <summary>A double channel of data that supports 8 bits for the red
+		/// channel and 8 bits for the green channel.</summary>
+		R8g8         = 17,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more
 	/// specifically, how does the shader grab colors between the provided
 	/// pixels? If you'd like an in-depth explanation of these topics, check
-	/// out [this exploration of texture filtering](https://medium.com/@bgolus/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
+	/// out [this exploration of texture filtering](https://bgolus.medium.com/sharper-mipmapping-using-shader-based-supersampling-ed7aadb47bec)
 	/// by graphics wizard Ben Golus.</summary>
 	public enum TexSample {
 		/// <summary>Use a linear blend between adjacent pixels, this creates
@@ -856,6 +859,29 @@ namespace StereoKit
 		Known        = 2,
 	}
 
+	/// <summary>This enum provides information about StereoKit's hand tracking data source.
+	/// It allows you to distinguish between true hand data such as that provided by
+	/// a Leap Motion Controller, and simulated data that StereoKit provides when
+	/// true hand data is not present.</summary>
+	public enum HandSource {
+		/// <summary>There is currently no source of hand data! This means there are no
+		/// tracked controllers, or active hand tracking systems. This may happen if
+		/// the user has hand tracking disabled, and no active controllers.</summary>
+		None         = 0,
+		/// <summary>The current hand data is a simulation of hand data rather than true hand
+		/// data. It is backed by either a controller, or a mouse, and may have a
+		/// more limited range of motion. </summary>
+		Simulated,
+		/// <summary>This is true hand data which exhibits the full range of motion of a
+		/// normal hand. It is backed by something like a Leap Motion Controller, or
+		/// some other optical (or maybe glove?) hand tracking system.</summary>
+		Articulated,
+		/// <summary>This hand data is provided by your use of SK's override functionality.
+		/// What properties it exhibits depends on what override data you're sending
+		/// to StereoKit!</summary>
+		Overridden,
+	}
+
 	/// <summary>A collection of system key codes, representing keyboard
 	/// characters and mouse buttons. Based on VK codes.</summary>
 	public enum Key {
@@ -1067,6 +1093,30 @@ namespace StereoKit
 		Divide       = 0x6F,
 		/// <summary>Maximum value for key codes.</summary>
 		MAX          = 0xFF,
+	}
+
+	/// <summary>Represents an input from an XR headset's controller!</summary>
+	public enum ControllerKey {
+		/// <summary>Doesn't represent a key, generally means this item has not been set to
+		/// any particular value!</summary>
+		None         = 0,
+		/// <summary>The trigger button on the controller, where the user's index finger
+		/// typically sits.</summary>
+		Trigger,
+		/// <summary>The grip button on the controller, usually where the fingers that are not
+		/// the index finger sit.</summary>
+		Grip,
+		/// <summary>This is the lower of the two primary thumb buttons, sometimes labelled X,
+		/// and sometimes A. </summary>
+		X1,
+		/// <summary>This is the upper of the two primary thumb buttons, sometimes labelled Y,
+		/// and sometimes B. </summary>
+		X2,
+		/// <summary>This is when the thumbstick on the controller is actually pressed. This
+		/// has nothing to do with the horizontal or vertical movement of the stick.</summary>
+		Stick,
+		/// <summary>This is the menu, or settings button of the controller.</summary>
+		Menu,
 	}
 
 	/// <summary>////////////////////////////////////////</summary>

@@ -15,6 +15,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window_xam(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown_unsafe();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_quit();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool        sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);
@@ -59,6 +60,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern double      time_step();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_scale(double scale);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        time_set_time(double total_seconds, double frame_elapsed_seconds=0);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       time_frame();
 
 		///////////////////////////////////////////
 
@@ -554,18 +556,23 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int      input_pointer_count(InputSource filter = InputSource.Any);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer  input_pointer      (int index, InputSource filter = InputSource.Any);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_hand         (Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_controller   (Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_controller_menu();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_override(Handed hand, [In] HandJoint[] hand_joints);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_override(Handed hand, IntPtr hand_joints);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_mouse        ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_head         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr   input_eyes         ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_eyes_tracked ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState input_key          (Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        input_pointer_count  (InputSource filter = InputSource.Any);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer    input_pointer        (int index, InputSource filter = InputSource.Any);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_hand           (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSource input_hand_source    (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_controller     (Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_controller_menu();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, [In] HandJoint[] hand_joints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, IntPtr hand_joints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_mouse          ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_head           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_eyes           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_eyes_tracked   ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_key            (Key key);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSimId input_hand_sim_pose_add   ([In] Pose[] in_arr_hand_joints_25, ControllerKey button1, ControllerKey and_button2, Key or_hotkey1, Key and_hotkey2);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      input_hand_sim_pose_remove(HandSimId id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      input_hand_sim_pose_clear ();
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_press  (Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_key_inject_release(Key key);
@@ -651,12 +658,14 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool          backend_openxr_ext_enabled (string extension_name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_ext_request (string extension_name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_ext_exclude (string extension_name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_use_minimum_exts([MarshalAs(UnmanagedType.Bool)] bool use_minimum_exts);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_composition_layer(IntPtr XrCompositionLayerBaseHeader, int data_size, int sort_order);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_end_frame_chain  (IntPtr XrBaseHeader, int data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_add_callback_pre_session_create([MarshalAs(UnmanagedType.FunctionPtr)] XRPreSessionCreateCallback on_pre_session_create, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_add_callback_poll_event        ([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback on_poll_event, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_remove_callback_poll_event     ([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback on_poll_event);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          backend_openxr_set_hand_joint_scale           (float joint_scale_factor);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendPlatform backend_platform_get        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_java_vm ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr          backend_android_get_activity();

@@ -56,6 +56,7 @@ namespace StereoKit.Framework
 		Mesh background;
 		Mesh backgroundEdge;
 		Mesh activationButton;
+		Mesh activationHamburger;
 		Mesh activationRing;
 		Mesh childIndicator;
 		#endregion
@@ -93,6 +94,7 @@ namespace StereoKit.Framework
 
 			float activationBtnRadius = 1 * U.cm;
 			activationButton = GenerateActivationButton(activationBtnRadius);
+			activationHamburger = GenerateActivationHamburger(activationBtnRadius);
 			GenerateSliceMesh(360, activationBtnRadius, activationBtnRadius + 0.005f, 0, ref activationRing);
 			childIndicator = GenerateChildIndicator(maxDist - 0.008f, 0.004f);
 		}
@@ -193,10 +195,12 @@ namespace StereoKit.Framework
 			// Draw the menu button!
 			Color colorPrimary = UI.GetThemeColor(UIColor.Primary   ).ToLinear();
 			Color colorCommon  = UI.GetThemeColor(UIColor.Background).ToLinear();
+			Color colorText    = UI.GetThemeColor(UIColor.Text      ).ToLinear();
 			menuPose = hand.palm;
 			activationRing.Draw(Material.UI, menuPose.ToMatrix(), colorPrimary);
 			menuPose.position += (1- hand.gripActivation) * menuPose.Forward*U.cm*2;
-			activationButton.Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-(activationAngle-0.01f))/0.01f))));
+			activationButton   .Draw(Material.UI, menuPose.ToMatrix(), Color.Lerp(colorCommon, colorPrimary, Math.Max(0,Math.Min(1,(facing-(activationAngle-0.01f))/0.01f))));
+			activationHamburger.Draw(Material.UI, menuPose.ToMatrix(), colorText);
 
 			if (facing < activationAngle) return;
 
@@ -360,8 +364,8 @@ namespace StereoKit.Framework
 		static Mesh GenerateActivationButton(float radius)
 		{
 			int      spokes = 36;
-			Vertex[] verts  = new Vertex[spokes + 12];
-			uint  [] inds   = new uint[(spokes-2)*3 + 6*3];
+			Vertex[] verts  = new Vertex[spokes];
+			uint  [] inds   = new uint[(spokes-2)*3];
 
 			// A circle of vertices
 			for (uint i = 0; i < spokes; i++)
@@ -386,23 +390,34 @@ namespace StereoKit.Framework
 				}
 			}
 
+			Mesh m = new Mesh();
+			m.SetInds (inds);
+			m.SetVerts(verts);
+			return m;
+		}
+
+		static Mesh GenerateActivationHamburger(float radius)
+		{
+			Vertex[] verts  = new Vertex[12];
+			uint  [] inds   = new uint[6*3];
+
 			// Add white bars to indicate a hamburger menu
 			float w = radius / 3;
 			float h = radius / 16;
 			float z = -0.003f;
-			int curr = (spokes - 2) * 3;
+			int   curr = 0;
 			for (int i = 0; i < 3; i++)
 			{
 				float y = -radius / 3 + i * radius / 3;
 
-				uint a = (uint)(spokes + i * 4);
-				uint b = (uint)(spokes + i * 4 + 1);
-				uint c = (uint)(spokes + i * 4 + 2);
-				uint d = (uint)(spokes + i * 4 + 3);
-				verts[a] = new Vertex(new Vec3(-w, y - h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
-				verts[b] = new Vertex(new Vec3( w, y - h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
-				verts[c] = new Vertex(new Vec3( w, y + h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
-				verts[d] = new Vertex(new Vec3(-w, y + h, z), Vec3.Forward, Vec2.Zero, new Color32(255,255,255,0));
+				uint a = (uint)(i * 4);
+				uint b = (uint)(i * 4 + 1);
+				uint c = (uint)(i * 4 + 2);
+				uint d = (uint)(i * 4 + 3);
+				verts[a] = new Vertex(new Vec3(-w, y - h, z), Vec3.Forward);
+				verts[b] = new Vertex(new Vec3( w, y - h, z), Vec3.Forward);
+				verts[c] = new Vertex(new Vec3( w, y + h, z), Vec3.Forward);
+				verts[d] = new Vertex(new Vec3(-w, y + h, z), Vec3.Forward);
 
 				inds[curr++] = c;
 				inds[curr++] = b;

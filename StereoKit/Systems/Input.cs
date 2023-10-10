@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -418,6 +423,17 @@ namespace StereoKit
 			return hands[handed];
 		}
 
+		/// <summary>This gets the _current_ source of the hand joints! This
+		/// allows you to distinguish between fully articulated joints, and
+		/// simulated hand joints that may not have the same range of mobility.
+		/// Note that this may change during a session, the user may put down
+		/// their controllers, automatically switching to hands, or visa versa.
+		/// </summary>
+		/// <param name="hand">Do  you want the left or right hand? 0 is left,
+		/// and 1 is right.</param>
+		/// <returns>Returns information about hand tracking data source.</returns>
+		public static HandSource HandSource(Handed hand) => NativeAPI.input_hand_source(hand);
+
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is
 		/// great for simulating input for testing purposes. It will remain
@@ -434,6 +450,36 @@ namespace StereoKit
 		/// </param>
 		public static void HandClearOverride(Handed hand)
 			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+
+		/// <summary>StereoKit will use controller inputs to simulate an
+		/// articulated hand. This function allows you to add new simulated
+		/// poses to different controller or keyboard buttons!</summary>
+		/// <param name="handJointsPalmRelative25">25 joint poses, thumb to pinky, and root
+		/// to tip with two duplicate poses for the thumb root joint. These
+		/// should be right handed, and relative to the palm joint.</param>
+		/// <param name="button1">Controller button to activate this pose, can
+		/// be None if this is a keyboard only pose.</param>
+		/// <param name="andButton2">Second controller button required to
+		/// activate this pose. First must also be pressed. Can be None if it's
+		/// only a single button pose.</param>
+		/// <param name="orHotkey1">Keyboard key to activate this pose, can be
+		/// None if this is a controller only pose.</param>
+		/// <param name="andHotkey2">Second keyboard key required to activate
+		/// this pose. First must also be pressed. Can be None if it's only a
+		/// single key pose.</param>
+		/// <returns>Returns the id of the hand sim pose, so it can be removed
+		/// later.</returns>
+		public static HandSimId HandSimPoseAdd(Pose[] handJointsPalmRelative25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
+			=> NativeAPI.input_hand_sim_pose_add(handJointsPalmRelative25, button1, andButton2, orHotkey1, andHotkey2);
+		/// <summary>Lets you remove an existing hand pose.</summary>
+		/// <param name="id">Any valid or invalid hand sim pose id.</param>
+		public static void HandSimPoseRemove(HandSimId id)
+			=> NativeAPI.input_hand_sim_pose_remove(id);
+		/// <summary>This clears all registered hand simulation poses,
+		/// including the ones that StereoKit registers by default!</summary>
+		public static void HandSimPoseClear()
+			=> NativeAPI.input_hand_sim_pose_clear();
+
 		/// <summary>Sets whether or not StereoKit should render the hand for
 		/// you. Turn this to false if you're going to render your own, or 
 		/// don't need the hand itself to be visible.</summary>

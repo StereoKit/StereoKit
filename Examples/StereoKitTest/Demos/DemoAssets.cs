@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
 
@@ -16,7 +21,7 @@ class DemoAssets : ITest
 	/// ![An overly simple asset browser window]({{site.screen_url}}/TinyAssetBrowser.jpg)
 	List<IAsset> filteredAssets = new List<IAsset>();
 	Type         filterType     = typeof(IAsset);
-	Pose         filterWindow   = new Pose(0.5f, 0, -0.4f, Quat.LookDir(-1, 0, 1));
+	Pose         filterWindow   = Demo.contentPose.Pose;
 	float        filterScroll   = 0;
 	const int    filterScrollCt = 12;
 
@@ -60,8 +65,6 @@ class DemoAssets : ITest
 		if (UI.Radio("Font",     filterType == typeof(Font    ), size)) UpdateFilter(typeof(Font));
 		UI.SameLine();
 		if (UI.Radio("Shader",   filterType == typeof(Shader  ), size)) UpdateFilter(typeof(Shader));
-		UI.SameLine();
-		if (UI.Radio("Solid",    filterType == typeof(Solid   ), size)) UpdateFilter(typeof(Solid));
 		UI.SameLine();
 		if (UI.Radio("Tex",      filterType == typeof(Tex     ), size)) UpdateFilter(typeof(Tex));
 		UI.SameLine();
@@ -162,8 +165,9 @@ class DemoAssets : ITest
 	{
 		AssetWindow();
 
-		Tests.Screenshot("TinyAssetBrowser.jpg", 1, 400, 400, 90, filterWindow.position + V.XYZ(-0.2f, -0.23f, 0.2f), filterWindow.position - V.XYZ(0, 0.23f, 0));
+		Tests.Screenshot("TinyAssetBrowser.jpg", 1, 400, 400, 45, filterWindow.position + V.XYZ(0, -0.235f, 0.65f), filterWindow.position - V.XYZ(0, 0.235f, 0));
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, 
+			new Bounds(V.XY0(0,-0.24f), V.XYZ(.6f, .6f, 0.1f)));
 	}
 }

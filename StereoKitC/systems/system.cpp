@@ -48,12 +48,21 @@ int32_t systems_find_id(const char *name) {
 
 ///////////////////////////////////////////
 
-system_t *systems_find(const char *name) {
+int32_t systems_find_idx(const char* name) {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
-			return &systems[i];
+			return i;
 	}
-	return nullptr;
+	return -1;
+}
+
+///////////////////////////////////////////
+
+system_t *systems_find(const char *name) {
+	int32_t idx = systems_find_idx(name);
+	return idx == -1
+		? nullptr
+		: &systems[idx];
 }
 
 ///////////////////////////////////////////
@@ -151,38 +160,57 @@ bool systems_initialize() {
 
 ///////////////////////////////////////////
 
+void system_execute(system_t *sys) {
+	if (sys == nullptr || sys->func_step == nullptr) return;
+
+	// start timing
+	sys->profile_frame_start = stm_now();
+
+	sys->func_step();
+
+	// end timing
+	if (sys->profile_frame_duration == 0)
+		sys->profile_frame_duration = stm_since(sys->profile_frame_start);
+	sys->profile_step_duration += sys->profile_frame_duration;
+	sys->profile_step_count    += 1;
+	sys->profile_frame_duration = 0;
+}
+
+///////////////////////////////////////////
+
 void systems_step() {
-	for (int32_t i = 0; i < systems.count; i++) {
-		if (systems[i].func_step != nullptr) {
-			// start timing
-			systems[i].profile_frame_start = stm_now();
+	for (int32_t i = 0; i < systems.count; i++)
+		system_execute(&systems[i]);
+}
 
-			systems[i].func_step();
+///////////////////////////////////////////
 
-			// end timing
-			if (systems[i].profile_frame_duration == 0)
-				systems[i].profile_frame_duration = stm_since(systems[i].profile_frame_start);
-			systems[i].profile_step_duration += systems[i].profile_frame_duration;
-			systems[i].profile_step_count    += 1;
-			systems[i].profile_frame_duration   = 0;
-		}
+void systems_step_partial(system_run_ run_section, int32_t system_idx) {
+	int32_t start, end;
+	switch (run_section) {
+	case system_run_before: { start = 0;          end = system_idx;    } break;
+	case system_run_from:   { start = system_idx; end = systems.count; } break;
+	default:                { start = 0;          end = systems.count; } break;
 	}
+
+	for (int32_t i=start; i<end; i++)
+		system_execute(&systems[i]);
 }
 
 ///////////////////////////////////////////
 
 void systems_shutdown() {
 	for (int32_t i = systems.count-1; i >= 0; i--) {
-		int32_t index = system_init_order[i];
-		if (systems[index].func_shutdown != nullptr) {
-			// start timing
-			uint64_t start = stm_now();
+		system_t* sys = &systems[system_init_order[i]];
+		if (sys->func_shutdown == nullptr) continue;
 
-			systems[index].func_shutdown();
+		// start timing
+		uint64_t start = stm_now();
 
-			// end timing
-			systems[index].profile_shutdown_duration = stm_since(start);
-		}
+		sys->func_shutdown();
+
+		// end timing
+		sys->profile_shutdown_duration = stm_since(start);
 	}
 
 	log_info("Session Performance Report:");

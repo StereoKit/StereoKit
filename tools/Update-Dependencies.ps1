@@ -65,17 +65,17 @@ class FolderCopy {
 class Dependency {
     [string]$Name
     [string]$Repository
-    [string]$ReleasePrefix
+    [string]$Tag
     [string]$Version
     [string]$Patch
     [System.Collections.ArrayList]$Copies = @()
     [System.Collections.ArrayList]$CmakeOptions = @()
     [bool]$NeedsBuilt
 
-    Dependency([string]$n, [string]$repo, [string]$prefix, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
+    Dependency([string]$n, [string]$repo, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
         $this.Name = $n
         $this.Repository = $repo
-        $this.ReleasePrefix = $prefix
+        $this.Tag = ""
         $this.Copies = $copies
         $this.Patch = $patch
         $this.CmakeOptions = $options
@@ -96,8 +96,7 @@ class Dependency {
 $dependencies = @(
     [Dependency]::new(
         'openxr_loader', 
-        'https://github.com/KhronosGroup/OpenXR-SDK.git', 
-        'release-', 
+        'https://github.com/KhronosGroup/OpenXR-SDK.git',
         $null, 
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
         @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
@@ -106,8 +105,7 @@ $dependencies = @(
     [Dependency]::new(
         'reactphysics3d',
         'https://github.com/DanielChappuis/reactphysics3d.git',
-        'v',
-        'reactphysics.patch',
+        $null,
         $null,
         @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) )
@@ -121,7 +119,7 @@ $dependencies = @(
 Push-Location -Path $PSScriptRoot
 
 # Get the files that contain data about the current dependencies
-$sourceFile = Get-Content -Path '..\xmake.lua'
+$sourceFile = Get-Content -Path '..\CMakeLists.txt' -Raw
 $depsFile   = ''
 if (Test-Path -Path 'deps_current.txt' -PathType Leaf) {
     $depsFile = Get-Content -Path 'deps_current.txt' -Raw
@@ -131,8 +129,9 @@ $dependencyVersions = ConvertFrom-StringData -String $depsFile
 
 # Check each dependency to see if it needs to be built
 $dependenciesDirty = $false
-foreach($dep in $dependencies) {
-    $desiredVersion = $sourceFile | Select-String -Pattern "add_requires\(`"$($dep.Name) (.*?)`"" | %{$_.Matches.Groups[1].Value}
+foreach($dep in $dependencies) { # NAME\s*$($dep.Name)\s*#\s*([\d.]*)
+    $tag            = $sourceFile | Select-String -Pattern "(?s)NAME\s*$($dep.Name).*?GIT_TAG\s*(\w*)" | %{$_.Matches.Groups[1].Value}
+    $desiredVersion = $sourceFile | Select-String -Pattern "NAME\s*$($dep.Name)\s*#\s*([\d.]*)" | %{$_.Matches.Groups[1].Value}
     $currentVersion = $dependencyVersions[$dep.Key()]
 
     if ($desiredVersion -ne $currentVersion) {
@@ -150,6 +149,7 @@ foreach($dep in $dependencies) {
     }
 
     $dep.Version = $desiredVersion
+    $dep.Tag     = $tag;
 }
 
 # Exit early if the dependencies are all good!
@@ -227,7 +227,9 @@ foreach($dep in $dependencies) {
     & git fetch
     & git clean -fd
     & git reset --hard
-    & git checkout "$($dep.ReleasePrefix)$($dep.Version)"
+    & git checkout "$($dep.Tag)"
+
+    Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
 
     if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
         Write-Host "Applying patch: $($dep.Patch)"

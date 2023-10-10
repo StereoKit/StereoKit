@@ -25,10 +25,17 @@ bool             oxra_hand_active = true;
 bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
 XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
+float            oxra_hand_joint_scale = 1;
 
 ///////////////////////////////////////////
 
 void hand_oxra_update_system_meshes();
+
+///////////////////////////////////////////
+
+void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
+	oxra_hand_joint_scale = joint_scale_factor;
+}
 
 ///////////////////////////////////////////
 
@@ -80,6 +87,17 @@ void hand_oxra_init() {
 		XrHandTrackerCreateInfoEXT info = { XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT };
 		info.hand         = h == handed_left ? XR_HAND_LEFT_EXT : XR_HAND_RIGHT_EXT;
 		info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+
+		// Tell OpenXR we _only_ want real articulated hands, nothing simulated
+		// from controllers. Only works when EXT_hand_tracking_data_source is
+		// present.
+		XrHandTrackingDataSourceEXT     unobstructed = XR_HAND_TRACKING_DATA_SOURCE_UNOBSTRUCTED_EXT;
+		XrHandTrackingDataSourceInfoEXT data_source  = { XR_TYPE_HAND_TRACKING_DATA_SOURCE_INFO_EXT };
+		data_source.requestedDataSourceCount = 1;
+		data_source.requestedDataSources     = &unobstructed;
+		if (xr_ext_available.EXT_hand_tracking_data_source)
+			info.next = &data_source;
+
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
@@ -142,10 +160,12 @@ void hand_oxra_shutdown() {
 	
 	for (int32_t h = 0; h < handed_max; h++) {
 		xr_extensions.xrDestroyHandTrackerEXT(oxra_hand_tracker[h]);
-		xrDestroySpace(oxra_hand_space[h]);
+		if (oxra_hand_space[h] != XR_NULL_HANDLE) xrDestroySpace(oxra_hand_space[h]);
 		sk_free(oxra_mesh_src[h].indexBuffer.indices);
 		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
 	}
+
+	oxra_hand_joint_scale = 1;
 }
 
 ///////////////////////////////////////////
@@ -217,7 +237,7 @@ void hand_oxra_update_joints() {
 		for (uint32_t j = 0; j < locations.jointCount; j++) {
 			memcpy(&oxra_hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
 			memcpy(&oxra_hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
-			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius;
+			oxra_hand_joints[h][j].radius      = locations.jointLocations[j].radius * oxra_hand_joint_scale;
 			oxra_hand_joints[h][j].position    = matrix_transform_pt(root, oxra_hand_joints[h][j].position);
 			oxra_hand_joints[h][j].orientation = oxra_hand_joints[h][j].orientation * root_q;
 		}

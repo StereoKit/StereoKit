@@ -1,12 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<PropertyGroup>
-		<SKAssetFolder      Condition="'$(SKAssetFolder)'      == ''">Assets</SKAssetFolder>
-		<SKAssetDestination Condition="'$(SKAssetDestination)' == ''">$(SKAssetFolder)</SKAssetDestination>
-		<SKCopyAssets       Condition="'$(SKCopyAssets)'       == ''">True</SKCopyAssets>
-		<SKOpenXRLoader     Condition="'$(SKOpenXRLoader)'     == ''">Oculus</SKOpenXRLoader>
-		<SKShowDebugVars    Condition="'$(SKShowDebugVars)'    == ''">false</SKShowDebugVars>
-		<SKAutoFindShaders  Condition="'$(SKAutoFindShaders)'  == ''">True</SKAutoFindShaders>
+		<SKAssetFolder           Condition="'$(SKAssetFolder)'           == ''">Assets</SKAssetFolder>
+		<SKAssetDestination      Condition="'$(SKAssetDestination)'      == ''">$(SKAssetFolder)</SKAssetDestination>
+		<SKCopyAssets            Condition="'$(SKCopyAssets)'            == ''">True</SKCopyAssets>
+		<SKOpenXRLoader          Condition="'$(SKOpenXRLoader)'          == ''">Standard</SKOpenXRLoader>
+		<SKShowDebugVars         Condition="'$(SKShowDebugVars)'         == ''">false</SKShowDebugVars>
+		<SKAutoFindShaders       Condition="'$(SKAutoFindShaders)'       == ''">True</SKAutoFindShaders>
+		<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'    == ''">$(ProjectDir)openxr_loader/</SKOpenXRLoaderFolder>
+		<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)' == ''">$(MSBuildThisFileDirectory)../tools/include/</SKShaderStandardInclude>
 	</PropertyGroup>
 	
 	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">
@@ -21,6 +23,12 @@
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"  >Mono</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
+
+			<SKOpenXRLoaderFolder>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
+			<SKShaderStandardInclude>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
+			
+			<!--Quest no longer uses a custom loader-->
+			<SKOpenXRLoader Condition="'$(SKOpenXRLoader.ToLower())' == 'oculus'">Standard</SKOpenXRLoader>
 		</PropertyGroup>
 
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>
@@ -28,7 +36,9 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderStandardInclude    : $(SKShaderStandardInclude)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoaderFolder       : $(SKOpenXRLoaderFolder)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFramework            : $(TargetFramework)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] TargetFrameworkIdentifier  : $(TargetFrameworkIdentifier)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] GetTargetPlatformIdentifier: $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))"/>

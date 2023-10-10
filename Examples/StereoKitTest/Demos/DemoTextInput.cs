@@ -1,11 +1,16 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoTextInput : ITest
 {
 	string title       = "Text Input";
 	string description = "";
 
-	Pose windowPose = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose windowPose = Demo.contentPose.Pose;
 	string text    = "Edit me";
 	string textUri = "https://stereokit.net";
 	string number  = "1";
@@ -48,6 +53,6 @@ class DemoTextInput : ITest
 
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.19f), V.XYZ(.4f, .5f, 0)));
 	}
 }

@@ -1,0 +1,82 @@
+name: Verify Compile
+on: 
+  workflow_dispatch:
+  pull_request:
+    branches:
+    - master
+    - develop
+
+jobs:
+  native-win32-uwp:
+    runs-on: windows-latest
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: lukka/get-cmake@v3.26.3
+
+    - name: Get Cache
+      uses: actions/cache@v3
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+
+    - name: Build Native Win32 x64
+      run: |
+        cmake --preset Win32_x64_Release_Fast
+        cmake --build --preset Win32_x64_Release_Fast
+
+    - name: Build Native UWP x64
+      run: |
+        cmake --preset Uwp_x64_Release_Fast
+        cmake --build --preset Uwp_x64_Release_Fast
+
+  native-linux-android-dotnet:
+    runs-on: ubuntu-20.04
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: lukka/get-cmake@v3.26.3
+
+    - name: Get Cache
+      uses: actions/cache@v3
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+    
+    - name: Install Prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install clang-12 lld-12 libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+
+    - name: Build Native Linux x64
+      run: |
+        cmake --preset Linux_x64_Release_Fast
+        cmake --build --preset Linux_x64_Release_Fast
+
+    - name: Set up Android NDK
+      uses: nttld/setup-ndk@v1
+      id: setup-ndk
+      with:
+        ndk-version: r25c
+        local-cache: true
+
+    - name: Build Native Android ARM64
+      run: |
+        cmake --preset Android_Arm64_Release_Fast
+        cmake --build --preset Android_Arm64_Release_Fast
+      env:
+        NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with: 
+        dotnet-version: 7.0.x
+
+    - name: Build Sample Project
+      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release

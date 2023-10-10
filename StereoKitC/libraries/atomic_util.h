@@ -1,6 +1,8 @@
 #pragma once
 
 #if defined(_MSC_VER)
+
+	#include <wtypes.h>
 	#include <winnt.h>
 	#define atomic_increment(int_val_ref) InterlockedIncrement((LONG*)int_val_ref)
 	#define atomic_decrement(int_val_ref) InterlockedDecrement((LONG*)int_val_ref)

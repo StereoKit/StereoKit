@@ -11,6 +11,17 @@
 
 #pragma warning(push)
 #pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_STDIO
+#define STBI_MALLOC sk::sk_malloc
+#define STBI_REALLOC sk::sk_realloc
+#define STBI_FREE sk::_sk_free
+#if defined (_M_ARM)
+#define STBI_NEON
+#endif
+// Use of STB_IMAGE_STATIC seems to cause issues if stb_image is ever included
+// additional times, so this should be the only place it's ever included!
+#define STB_IMAGE_STATIC
 #include "../libraries/stb_image.h"
 #pragma warning(pop)
 
@@ -18,6 +29,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <limits.h>
+#include <stdio.h>
 
 namespace sk {
 
@@ -1430,6 +1442,12 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 	}
 
 	return result;
+}
+
+///////////////////////////////////////////
+
+uint8_t* unzip_malloc(const uint8_t* buffer, int32_t len, int32_t* out_len) {
+	return (uint8_t*)stbi_zlib_decode_malloc((const char*)buffer, len, out_len);
 }
 
 } // namespace sk

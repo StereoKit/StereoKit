@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="demo_basics.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="demo_ui.cpp" />
     <ClCompile Include="demo_sprites.cpp" />
@@ -22,7 +21,6 @@
     <ClCompile Include="demo_anchors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="demo_basics.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="demo_ui.h" />
     <ClInclude Include="demo_sprites.h" />

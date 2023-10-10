@@ -4,16 +4,13 @@
 
 namespace sk {
 
-extern const char   *sk_app_name;
-extern sk_settings_t sk_settings;
-extern system_info_t sk_info;
-extern bool          sk_no_flatscreen_fallback;
+void     sk_assert_thread_valid();
+bool32_t sk_has_stepped        ();
+bool32_t sk_is_initialized     ();
+bool32_t sk_use_manual_pos     ();
+void     sk_set_app_focus      (app_focus_ focus_state);
 
-extern app_focus_ sk_focus;
-extern bool32_t   sk_running;
-extern bool32_t   sk_initialized;
-extern bool32_t   sk_first_step;
-
-void sk_assert_thread_valid();
+const sk_settings_t* sk_get_settings_ref();
+system_info_t*       sk_get_info_ref();
 
 } // namespace sk

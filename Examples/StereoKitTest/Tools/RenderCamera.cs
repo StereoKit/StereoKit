@@ -11,6 +11,10 @@ namespace StereoKit.Framework
 		public int Height    { get; private set; }
 		public int FrameRate { get; private set; }
 
+		public float Fov => 10 + Math.Max(0, Math.Min(1, (Vec3.Distance(from.position, at.position) - 0.1f) / 0.2f)) * 110;
+		public Vec3  CamAt  => at.position + (at.position - from.position).Normalized * 0.06f;
+		public Vec3  CamDir => (at.position - from.position).Normalized;
+
 		public string folder  = "Video";
 		public Pose   from;
 		public Pose   at;
@@ -31,7 +35,7 @@ namespace StereoKit.Framework
 			FrameRate = framerate;
 
 			at   = startAt;
-			from = new Pose(at.position+V.XYZ(0, 0, 0.1f)*at.orientation, at.orientation);
+			from = new Pose(at.position+V.XYZ(0, 0, 0.3f)*at.orientation, at.orientation);
 			_renderFrom = at;
 		}
 
@@ -63,9 +67,9 @@ namespace StereoKit.Framework
 			UI.HandleEnd();
 			UI.PopId();
 
-			float fov        = 10 + Math.Max(0, Math.Min(1, (Vec3.Distance(from.position, at.position) - 0.1f) / 0.2f)) * 110;
+			float fov        = Fov;
 			Vec3  previewAt  = at.position + at.orientation * Vec3.Up * 0.06f;
-			Vec3  renderFrom = at.position + (at.position - from.position).Normalized * 0.06f;
+			Vec3  renderFrom = CamAt;
 			_renderFrom = Pose.Lerp(_renderFrom, new Pose(renderFrom, Quat.LookDir(at.position - from.position)), Time.Stepf * damping);
 
 			Lines.Add(from.position, at.position, Color.White, 0.005f);

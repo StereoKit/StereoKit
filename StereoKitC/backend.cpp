@@ -19,8 +19,8 @@ backend_xr_type_ backend_xr_get_type() {
 		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
 #endif
 	} else {
-		if (sk_settings.disable_flatscreen_mr_sim) return backend_xr_type_none;
-		else                                       return backend_xr_type_simulator;
+		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) return backend_xr_type_none;
+		else                                                  return backend_xr_type_simulator;
 	}
 }
 
@@ -124,6 +124,11 @@ void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_
 
 ///////////////////////////////////////////
 
+void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
+}
+
+///////////////////////////////////////////
+
 #endif
 
 ///////////////////////////////////////////
@@ -193,6 +198,42 @@ void *backend_d3d11_get_d3d_context() {
 	void *d3d_context;
 	render_get_device((void **)&d3d_device, (void **)&d3d_context);
 	return d3d_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_d3d11_get_deferred_d3d_context() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d11_deferred_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_d3d11_get_deferred_mtx() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_deferred_mtx;
+#endif
+}
+
+///////////////////////////////////////////
+
+uint32_t backend_d3d11_get_main_thread_id() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return 0;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_main_thread_id;
 #endif
 }
 

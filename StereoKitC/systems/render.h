@@ -47,8 +47,8 @@ render_list_t render_list_create          ();
 void          render_list_release         (render_list_t list);
 void          render_list_push            (render_list_t list);
 void          render_list_pop             ();
-void          render_list_execute         (render_list_t list, render_layer_ filter, uint32_t view_count);
-void          render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, material_t override_material);
+void          render_list_execute         (render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end);
+void          render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material);
 void          render_list_clear           (render_list_t list);
 
 } // namespace sk

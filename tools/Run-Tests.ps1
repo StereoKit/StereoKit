@@ -1,15 +1,32 @@
-$linux_folder = ''+$PSScriptRoot
-$linux_folder = $linux_folder.replace('\', '/')
-$linux_folder = $linux_folder.replace(':', '')
-$linux_folder = '/mnt/'+$linux_folder
-$linux_folder = $linux_folder.replace('/C/', '/c/')
+param(
+    [switch]$noWindows = $false,
+    [switch]$noLinux = $false
+)
 
-cmd /c "wsl cd '${linux_folder}/../' ; xmake f -p linux -a x64 -m release -y ; xmake ;"
-cmd /c "wsl cd '${linux_folder}/../Examples/StereoKitTest/' ; dotnet restore StereoKitTest.csproj ; dotnet clean -p:SKTest=True StereoKitTest.csproj ; dotnet build -p:SKTest=True StereoKitTest.csproj ; cd bin ; LIBGL_ALWAYS_SOFTWARE=1 dotnet run -p:SKTest=True --project ../StereoKitTest.csproj -test -screenfolder '${linux_folder}/Screenshots/Linux'"
+Write-Host "`nRunning Tests!"
+# build a non-nuget version of C#'s StereoKit.dll for testing
+& dotnet build "$PSScriptRoot\..\StereoKit\StereoKit.csproj" -c Release -p:SKIgnoreMissingBinaries=true
+if ($LASTEXITCODE -ne 0 ) {
+    exit 1
+}
 
-& 'cd' '../Examples/StereoKitTest/'
-& 'dotnet' 'restore' 'StereoKitTest.csproj'
-& 'dotnet' 'clean' '-p:SKTest=True' 'StereoKitTest.csproj'
-& 'dotnet' 'build' '-p:SKTest=True' 'StereoKitTest.csproj'
-& 'dotnet' 'run' '-p:SKTest=True' '--project' 'StereoKitTest.csproj' '-test' '-screenfolder' "${PSScriptRoot}\Screenshots\Windows"
-& 'cd' '../../Tools/'
+# And run tests for a few platforms
+if ($noWindows -ne $true) {
+    & dotnet run -c Release --project "$PSScriptRoot\..\Examples\StereoKitTest\StereoKitTest.csproj" -- -test -screenfolder "$PSScriptRoot/Screenshots/"
+    if ($LASTEXITCODE -ne 0 ) {
+        exit 1
+    }
+}
+
+if ($noLinux -ne $true) {
+    $linux_folder = ''+$PSScriptRoot
+    $linux_folder = $linux_folder.replace('\', '/')
+    $linux_folder = $linux_folder.replace(':', '')
+    $linux_folder = '/mnt/'+$linux_folder
+    $linux_folder = $linux_folder.replace('/C/', '/c/')
+
+    & wsl LIBGL_ALWAYS_SOFTWARE=1 dotnet run -c Release --project "$linux_folder/../Examples/StereoKitTest/StereoKitTest.csproj" -- -test -noscreens
+    if ($LASTEXITCODE -ne 0 ) {
+        exit 1
+    }
+}

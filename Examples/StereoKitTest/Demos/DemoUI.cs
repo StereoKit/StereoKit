@@ -1,4 +1,9 @@
-﻿/// :CodeDoc: Guides 3 User Interface
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+/// :CodeDoc: Guides 3 User Interface
 /// # Building UI in StereoKit
 /// 
 /// StereoKit uses an immediate mode UI system. Basically, you define the UI 
@@ -19,6 +24,10 @@ using StereoKit;
 
 class DemoUI : ITest
 {
+	string title       = "UI";
+	string description = "...";
+
+
 	/// :CodeDoc: Guides User Interface
 	/// ## Making a Window
 	/// 
@@ -30,7 +39,7 @@ class DemoUI : ITest
 	/// Pose for the window, off to the left and facing to the right, as well
 	/// as a boolean for a toggle, and a float that we'll use as a slider!
 	/// We'll add this code to our initialization section.
-	Pose  windowPose = new Pose(-.4f, 0, 0, Quat.LookDir(1,0,1));
+	Pose  windowPose = new Pose(-.2f, 0, -0.6f, Quat.LookDir(0,0,1));
 
 	bool  showHeader = true;
 	float slider     = 0.5f;
@@ -40,15 +49,15 @@ class DemoUI : ITest
 
 	Model  clipboard     = Model.FromFile("Clipboard.glb", Default.ShaderUI);
 	Sprite logoSprite    = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
-	Pose   clipboardPose = new Pose(.4f,0,0, Quat.LookDir(-1,0,1));
+	Pose   clipboardPose = new Pose(0.2f, 0, -0.6f, Quat.LookDir(0,0,1));
 	bool   clipToggle;
 	float  clipSlider;
 	int    clipOption = 1;
 
 	public void Step()
 	{
-		Tests.Screenshot("GuideUserInterface.jpg", 600, 400, new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
-		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 600, new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
+		Tests.Screenshot("GuideUserInterface.jpg",       600, 400, windowPose   .position + V.XYZ(0.02f,0.01f,0.1f), windowPose   .position + V.XYZ(0,-0.03f,0));
+		Tests.Screenshot("GuideUserInterfaceCustom.jpg", 400, 550, clipboardPose.position + V.XYZ(0,0.005f,0.21f),    clipboardPose.position + V.XYZ(0,0.005f,0));
 
 		/// :CodeDoc: Guides User Interface
 		/// Then we'll move over to the application step where we'll do the
@@ -140,24 +149,24 @@ class DemoUI : ITest
 		/// model, so you'll need to plan this around the size of your
 		/// object!
 		/// 
-		UI.LayoutArea(new Vec3(12, 15, 0) * U.cm, new Vec2(24, 30) * U.cm);
+		UI.LayoutArea(new Vec3(13, 15, 0) * U.cm, new Vec2(26, 30) * U.cm);
 		///
 		/// Then after that? We can just add UI elements like normal!
 		/// 
 		UI.Image(logoSprite, new Vec2(22,0) * U.cm);
 
 		UI.Toggle("Toggle", ref clipToggle);
-		UI.HSlider("Slide", ref clipSlider, 0, 1, 0, 22 * U.cm);
+		UI.HSlider("Slide", ref clipSlider, 0, 1, 0);
 		///
 		/// And while we're at it, here's a quick example of doing a radio
 		/// button group! Not much 'radio' actually happening, but it's still
 		/// pretty simple. Pair it with an enum, or an integer, and have fun!
 		///
-		if (UI.Radio("Radio1", clipOption == 1)) clipOption = 1;
+		if (UI.Radio("Opt1", clipOption == 1)) clipOption = 1;
 		UI.SameLine();
-		if (UI.Radio("Radio2", clipOption == 2)) clipOption = 2;
+		if (UI.Radio("Opt2", clipOption == 2)) clipOption = 2;
 		UI.SameLine();
-		if (UI.Radio("Radio3", clipOption == 3)) clipOption = 3;
+		if (UI.Radio("Opt3", clipOption == 3)) clipOption = 3;
 		///
 		/// As with windows, Handles need an End call.
 		/// 
@@ -218,35 +227,11 @@ class DemoUI : ITest
 		/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
 		/// :End:
 
-
-		/// :CodeSample: UI.VolumeAt
-		/// This code will draw an axis at the index finger's location when
-		/// the user pinches while inside a VolumeAt.
-		/// 
-		/// ![UI.InteractVolume]({{site.screen_url}}/InteractVolume.jpg)
-		/// 
-		// Draw a transparent volume so the user can see this space
-		Vec3  volumeAt   = new Vec3(0,0.2f,-0.4f);
-		float volumeSize = 0.2f;
-		Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(volumeAt, volumeSize));
-
-		BtnState volumeState = UI.VolumeAt("Volume", new Bounds(volumeAt, Vec3.One*volumeSize), UIConfirm.Pinch, out Handed hand);
-		if (volumeState != BtnState.Inactive)
-		{
-			// If it just changed interaction state, make it jump in size
-			float scale = volumeState.IsChanged()
-				? 0.1f
-				: 0.05f;
-			Lines.AddAxis(Input.Hand(hand)[FingerId.Index, JointId.Tip].Pose, scale);
-		}
-		/// :End:
-		
-		Tests.Screenshot("InteractVolume.jpg", 1, 600, 600, 90, new Vec3(-0.102f, 0.306f, -0.240f), new Vec3(0.410f, -0.248f, -0.897f));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.16f), V.XYZ(.8f, .8f, 0.1f)));
 	}
 
 	public void Initialize() {
 		Tests.RunForFrames(2);
-		Tests.Hand(new HandJoint[] { new HandJoint(new Vec3(0.026f, 0.177f, -0.363f), new Quat(-0.524f, -0.209f, -0.417f, -0.713f), 0.006f), new HandJoint(new Vec3(0.026f, 0.177f, -0.363f), new Quat(-0.271f, -0.272f, -0.553f, -0.739f), 0.015f), new HandJoint(new Vec3(-0.006f, 0.181f, -0.395f), new Quat(-0.210f, -0.221f, -0.573f, -0.761f), 0.013f), new HandJoint(new Vec3(-0.024f, 0.184f, -0.420f), new Quat(-0.092f, -0.122f, -0.599f, -0.786f), 0.011f), new HandJoint(new Vec3(-0.029f, 0.184f, -0.436f), new Quat(-0.092f, -0.122f, -0.599f, -0.786f), 0.008f), new HandJoint(new Vec3(0.038f, 0.197f, -0.360f), new Quat(-0.264f, -0.336f, 0.043f, -0.903f), 0.005f), new HandJoint(new Vec3(-0.004f, 0.233f, -0.405f), new Quat(0.114f, -0.347f, -0.100f, -0.926f), 0.013f), new HandJoint(new Vec3(-0.028f, 0.222f, -0.434f), new Quat(0.546f, -0.228f, -0.259f, -0.763f), 0.011f), new HandJoint(new Vec3(-0.029f, 0.201f, -0.440f), new Quat(0.711f, -0.147f, -0.315f, -0.612f), 0.010f), new HandJoint(new Vec3(-0.026f, 0.189f, -0.440f), new Quat(0.711f, -0.147f, -0.315f, -0.612f), 0.007f), new HandJoint(new Vec3(0.047f, 0.201f, -0.367f), new Quat(-0.235f, -0.295f, 0.139f, -0.916f), 0.005f), new HandJoint(new Vec3(0.015f, 0.236f, -0.416f), new Quat(-0.109f, -0.357f, 0.084f, -0.924f), 0.013f), new HandJoint(new Vec3(-0.013f, 0.247f, -0.447f), new Quat(0.128f, -0.358f, -0.007f, -0.925f), 0.011f), new HandJoint(new Vec3(-0.030f, 0.241f, -0.466f), new Quat(0.280f, -0.346f, -0.067f, -0.893f), 0.010f), new HandJoint(new Vec3(-0.038f, 0.234f, -0.473f), new Quat(0.280f, -0.346f, -0.067f, -0.893f), 0.007f), new HandJoint(new Vec3(0.055f, 0.199f, -0.376f), new Quat(-0.225f, -0.233f, 0.194f, -0.926f), 0.004f), new HandJoint(new Vec3(0.034f, 0.230f, -0.424f), new Quat(-0.187f, -0.291f, 0.170f, -0.923f), 0.011f), new HandJoint(new Vec3(0.015f, 0.249f, -0.455f), new Quat(-0.028f, -0.320f, 0.117f, -0.940f), 0.010f), new HandJoint(new Vec3(0.000f, 0.252f, -0.476f), new Quat(0.093f, -0.336f, 0.074f, -0.934f), 0.008f), new HandJoint(new Vec3(-0.009f, 0.250f, -0.486f), new Quat(0.093f, -0.336f, 0.074f, -0.934f), 0.006f), new HandJoint(new Vec3(0.063f, 0.192f, -0.385f), new Quat(-0.230f, -0.185f, 0.291f, -0.910f), 0.004f), new HandJoint(new Vec3(0.052f, 0.221f, -0.431f), new Quat(-0.195f, -0.220f, 0.276f, -0.915f), 0.010f), new HandJoint(new Vec3(0.042f, 0.237f, -0.458f), new Quat(-0.061f, -0.275f, 0.237f, -0.930f), 0.008f), new HandJoint(new Vec3(0.033f, 0.241f, -0.473f), new Quat(0.042f, -0.312f, 0.203f, -0.927f), 0.007f), new HandJoint(new Vec3(0.026f, 0.242f, -0.483f), new Quat(0.042f, -0.312f, 0.203f, -0.927f), 0.006f), new HandJoint(new Vec3(-0.026f, 0.189f, -0.440f), new Quat(-0.412f, 0.249f, 0.114f, 0.869f), 0.000f), new HandJoint(new Vec3(0.000f, 0.000f, 0.000f), new Quat(0.000f, 0.000f, 0.000f, 0.000f), 0.000f) });
 	}
 	public void Shutdown() { }
 }

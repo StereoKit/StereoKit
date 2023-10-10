@@ -24,6 +24,10 @@ void android_step_end_flat  ();
 void android_stop_flat      ();
 void android_shutdown       ();
 
+bool android_check_manifest_permission(const char* permission);
+bool android_check_app_permission     (const char* permission);
+void android_request_permission       (const char* permission);
+
 } // namespace sk
 
 #endif
