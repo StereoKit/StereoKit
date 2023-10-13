@@ -13,7 +13,7 @@ struct _anchor_t {
 	pose_t         pose;
 	bool32_t       changed;
 	bool32_t       persisted;
-	inp_state_     tracked;
+	button_state_  tracked;
 	char*          name;
 	void*          data;
 };

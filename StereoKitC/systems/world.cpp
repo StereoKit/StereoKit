@@ -240,13 +240,13 @@ pose_t world_get_bounds_pose() {
 	}
 }
 
-inp_state_ world_get_tracked() {
+button_state_ world_get_tracked() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
 	case backend_xr_type_openxr:    return openxr_space_tracked();
 #endif
-	case backend_xr_type_simulator: return inp_state_active;
-	default:                        return inp_state_active;
+	case backend_xr_type_simulator: return button_state_active;
+	default:                        return button_state_active;
 	}
 }
 

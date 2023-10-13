@@ -21,21 +21,12 @@ void input_shutdown    ();
 void input_step        ();
 void input_update_poses(bool update_visuals);
 
-inline button_state_ button_make_state(bool32_t was, bool32_t is) { 
+inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 	button_state_ result = is ? button_state_active : button_state_inactive;
 	if (was && !is)
 		result |= button_state_just_inactive;
 	if (is && !was)
 		result |= button_state_just_active;
-	return result;
-}
-
-inline inp_state_ input_make_state(bool32_t was, bool32_t is) {
-	inp_state_ result = is ? inp_state_active : inp_state_inactive;
-	if (was && !is)
-		result |= inp_state_just_inactive;
-	if (is && !was)
-		result |= inp_state_just_active;
 	return result;
 }
 

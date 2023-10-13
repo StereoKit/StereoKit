@@ -377,23 +377,6 @@ typedef enum memory_ {
 	memory_copy,
 } memory_;
 
-/*A bit-flag for the current state of an input.*/
-typedef enum inp_state_ {
-	/*Is the input currently inactive?*/
-	inp_state_inactive      = -(1 << 0),
-	/*Has the input just become inactive? Only true for a single frame.*/
-	inp_state_just_inactive = -(1 << 1) | inp_state_inactive,
-	/*Is the input currently active?*/
-	inp_state_active        =   1 << 2,
-	/*Has the input just become active? Only true for a single frame.*/
-	inp_state_just_active   =   1 << 3  | inp_state_active,
-	/*Has the input just changed state this frame?*/
-	inp_state_changed       = inp_state_just_inactive | inp_state_just_active,
-	/*Matches with all states!*/
-	inp_state_any           = 0x7FFFFFFF,
-} inp_state_;
-SK_MakeFlag(inp_state_);
-
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -2150,13 +2133,13 @@ SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
 SK_API const char*    anchor_get_name          (const anchor_t anchor);
-SK_API inp_state_     anchor_get_tracked       (const anchor_t anchor);
+SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
 
-SK_API void           anchor_clear_stored      ();
-SK_API anchor_caps_   anchor_get_capabilities  ();
-SK_API int32_t        anchor_get_count         ();
+SK_API void           anchor_clear_stored      (void);
+SK_API anchor_caps_   anchor_get_capabilities  (void);
+SK_API int32_t        anchor_get_count         (void);
 SK_API anchor_t       anchor_get_index         (int32_t index);
-SK_API int32_t        anchor_get_new_count     ();
+SK_API int32_t        anchor_get_new_count     (void);
 SK_API anchor_t       anchor_get_new_index     (int32_t index);
 
 ///////////////////////////////////////////
@@ -2196,7 +2179,7 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        (void);
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      (void);
-SK_API inp_state_     world_get_tracked               (void);
+SK_API button_state_  world_get_tracked               (void);
 SK_API origin_mode_   world_get_origin_mode           (void);
 SK_API pose_t         world_get_origin_offset         (void);
 SK_API void           world_set_origin_offset         (pose_t offset);

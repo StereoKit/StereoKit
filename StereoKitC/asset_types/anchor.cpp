@@ -237,7 +237,7 @@ const char *anchor_get_name(const anchor_t anchor) {
 
 ///////////////////////////////////////////
 
-inp_state_ anchor_get_tracked(const anchor_t anchor) {
+button_state_ anchor_get_tracked(const anchor_t anchor) {
 	return anchor->tracked;
 }
 

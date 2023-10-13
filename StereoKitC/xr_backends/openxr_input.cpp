@@ -43,7 +43,7 @@ XrSpace     xrc_space_palm         [2] = {};
 XrSpace     xr_gaze_space              = {};
 
 int32_t    xr_eyes_pointer;
-inp_state_ xr_tracked_state = inp_state_inactive;
+button_state_ xr_tracked_state = button_state_inactive;
 
 struct xrc_profile_info_t {
 	const char *name;
@@ -706,7 +706,7 @@ void oxri_shutdown() {
 
 ///////////////////////////////////////////
 
-inp_state_ openxr_space_tracked() {
+button_state_ openxr_space_tracked() {
 	return xr_tracked_state;
 }
 
@@ -745,8 +745,8 @@ void oxri_update_poses() {
 	// reported here. Rotational tracking is pretty much always available to
 	// devices containing an accelerometer/gyroscope, so positional is the best
 	// metric for tracking quality.
-	xr_tracked_state = input_make_state(
-		(xr_tracked_state            & inp_state_active)                       != 0,
+	xr_tracked_state = button_make_state(
+		(xr_tracked_state            & button_state_active)                    != 0,
 		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT) != 0);
 
 	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);

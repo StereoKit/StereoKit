@@ -2,7 +2,7 @@
 
 const int32_t _hash_prime1   = 198491317;
 const int32_t _hash_prime2   = 6542989;
-const float   _hash_uintmaxf = 4294967295;
+const float   _hash_uintmaxf = 4294967295.0f;
 
 typedef struct rand_state_t {
 	uint32_t seed;
