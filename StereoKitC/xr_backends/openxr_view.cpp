@@ -705,35 +705,42 @@ bool openxr_render_frame() {
 	xr_display_2nd_layers.clear();
 
 	skg_draw_begin();
-	for (int32_t i = 0; i < xr_displays.count; i++) {
-		device_display_t* display = &xr_displays[i];
-		if (!display->active) continue;
+	render_check_viewpoints ();
+	render_check_screenshots();
 
-		render_layer_ filter = display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT
-			? render_get_capture_filter()
-			: render_get_filter();
-		openxr_render_layer(xr_time, *display, filter);
-		if (i == xr_display_primary_idx) {
-			device_data.display_fov.right  = display->views[0].fov.angleRight * rad2deg;
-			device_data.display_fov.left   = display->views[0].fov.angleLeft  * rad2deg;
-			device_data.display_fov.top    = display->views[0].fov.angleUp    * rad2deg;
-			device_data.display_fov.bottom = display->views[0].fov.angleDown  * rad2deg;
-		}
+	// If there's nothing to render, we may want to totally skip all projection
+	// layers entirely.
+	if (sk_get_settings_ref()->omit_empty_frames == false || render_list_item_count(render_get_primary_list()) != 0) {
+		for (int32_t i = 0; i < xr_displays.count; i++) {
+			device_display_t* display = &xr_displays[i];
+			if (!display->active) continue;
 
-		if (display->type == XR_PRIMARY_CONFIG) { // maybe this should be some other check at some point?
-			backend_openxr_composition_layer(display->projection_layer, sizeof(XrCompositionLayerProjection), 0);
-		} else if (display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
-			layer2nd.viewConfigurationType = display->type;
-			layer2nd.environmentBlendMode  = display->blend;
-			layer2nd.layerCount            = 1;
-			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&display->projection_layer;
+			render_layer_ filter = display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT
+				? render_get_capture_filter()
+				: render_get_filter();
+			openxr_render_layer(xr_time, *display, filter);
+			if (i == xr_display_primary_idx) {
+				device_data.display_fov.right  = display->views[0].fov.angleRight * rad2deg;
+				device_data.display_fov.left   = display->views[0].fov.angleLeft  * rad2deg;
+				device_data.display_fov.top    = display->views[0].fov.angleUp    * rad2deg;
+				device_data.display_fov.bottom = display->views[0].fov.angleDown  * rad2deg;
+			}
 
-			XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
-			end_second.viewConfigurationCount      = 1;
-			end_second.viewConfigurationLayersInfo = &layer2nd;
+			if (display->type == XR_PRIMARY_CONFIG) { // maybe this should be some other check at some point?
+				backend_openxr_composition_layer(display->projection_layer, sizeof(XrCompositionLayerProjection), 0);
+			} else if (display->type == XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT) {
+				layer2nd.viewConfigurationType = display->type;
+				layer2nd.environmentBlendMode  = display->blend;
+				layer2nd.layerCount            = 1;
+				layer2nd.layers                = (XrCompositionLayerBaseHeader**)&display->projection_layer;
 
-			backend_openxr_end_frame_chain(&end_second, sizeof(end_second));
-		} else {
+				XrSecondaryViewConfigurationFrameEndInfoMSFT end_second = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_FRAME_END_INFO_MSFT };
+				end_second.viewConfigurationCount      = 1;
+				end_second.viewConfigurationLayersInfo = &layer2nd;
+
+				backend_openxr_end_frame_chain(&end_second, sizeof(end_second));
+			} else {
+			}
 		}
 	}
 
@@ -778,7 +785,6 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 ///////////////////////////////////////////
 
 bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_layer_ render_filter) {
-
 	// Find the state and location of each viewpoint at the predicted time
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
 	XrViewLocateInfo locate_info = { XR_TYPE_VIEW_LOCATE_INFO };
@@ -786,7 +792,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 	locate_info.displayTime           = predictedTime;
 	locate_info.space                 = xr_app_space;
 	xr_check(xrLocateViews(xr_session, &locate_info, &view_state, layer.view_cap, &layer.view_count, layer.views),
-		"xrLocateViews [%s]")
+		"xrLocateViews [%s]");
 
 	// We need to ask which swapchain image to use for rendering! Which one
 	// will we get? Who knows! It's up to the runtime to decide.
@@ -846,7 +852,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_l
 		skg_tex_target_bind(&target->tex);
 		skg_target_clear(true, &col.r);
 
-		render_draw_matrix(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers, render_filter);
+		render_draw_queue(&layer.view_transforms[s_layer], &layer.view_projections[s_layer], layer.view_count / layer.swapchain_color.surface_layers, render_filter);
 	}
 
 	// And tell OpenXR we're done with rendering to this one!
