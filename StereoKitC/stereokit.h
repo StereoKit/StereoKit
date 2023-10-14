@@ -1729,7 +1729,6 @@ typedef enum handed_ {
 	handed_max                 = 2,
 } handed_;
 
-// TODO: Remove this in v0.4 in favor of inp_state_
 /*A bit-flag for the current state of a button input.*/
 typedef enum button_state_ {
 	/*Is the button currently up, unpressed?*/

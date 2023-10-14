@@ -265,23 +265,6 @@ namespace StereoKit
 		Copy,
 	}
 
-	/// <summary>A bit-flag for the current state of an input.</summary>
-	[Flags]
-	public enum InpState {
-		/// <summary>Is the input currently inactive?</summary>
-		Inactive     = -(1 << 0),
-		/// <summary>Has the input just become inactive? Only true for a single frame.</summary>
-		JustInactive = -(1 << 1) | Inactive,
-		/// <summary>Is the input currently active?</summary>
-		Active       = 1 << 2,
-		/// <summary>Has the input just become active? Only true for a single frame.</summary>
-		JustActive   = 1 << 3 | Active,
-		/// <summary>Has the input just changed state this frame?</summary>
-		Changed      = JustInactive | JustActive,
-		/// <summary>Matches with all states!</summary>
-		Any          = 0x7FFFFFFF,
-	}
-
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
@@ -821,8 +804,7 @@ namespace StereoKit
 		Max          = 2,
 	}
 
-	/// <summary>TODO: Remove this in v0.4 in favor of inp_state_
-	/// A bit-flag for the current state of a button input.</summary>
+	/// <summary>A bit-flag for the current state of a button input.</summary>
 	[Flags]
 	public enum BtnState {
 		/// <summary>Is the button currently up, unpressed?</summary>
