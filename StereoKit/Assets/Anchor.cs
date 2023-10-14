@@ -32,9 +32,11 @@ namespace StereoKit {
 
 		public static Anchor FromPose(string uniqueName, Pose pose)
 		{
-			IntPtr anchor = NativeAPI.anchor_create(uniqueName==null?null:NativeHelper.ToUtf8(uniqueName), pose);
+			IntPtr anchor = NativeAPI.anchor_create(NativeHelper.ToUtf8(uniqueName), pose);
 			return anchor == IntPtr.Zero ? null : new Anchor(anchor);
 		}
+
+		public static Anchor FromPose(Pose pose) => FromPose(null, pose);
 
 		public static AnchorCaps Capabilities => NativeAPI.anchor_get_capabilities();
 		public static void ClearStored() => NativeAPI.anchor_clear_stored();

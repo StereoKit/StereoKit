@@ -30,13 +30,26 @@ class DemoAnchors : ITest
 		// Window for working with the anchors
 		UI.WindowBegin("Anchors", ref pose);
 
+		UI.LayoutPushCut(UICut.Left, 0.1f);
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+		UI.Label("Capabilities:");
+		UI.HSeparator();
+		bool storable  = (Anchor.Capabilities & AnchorCaps.Storable)  > 0;
+		bool stability = (Anchor.Capabilities & AnchorCaps.Stability) > 0;
+		if (storable ) UI.Label("Storable");
+		if (stability) UI.Label("Stability");
+		if (!storable && !stability) UI.Label("None");
+		UI.LayoutPop();
+
 		// Add a new anchor at the wand tip
+		UI.PushEnabled(storable || stability);
 		if (UI.Button("Create New"))
 		{
-			Anchor anchor = Anchor.FromPose(null, new Pose(wandTip, Quat.Identity));
+			Anchor anchor = Anchor.FromPose(new Pose(wandTip, Quat.Identity));
 			anchor.TrySetPersistent(true);
 			anchors.Add(anchor);
 		}
+		UI.PopEnabled();
 
 		// List options for the selected anchor
 		UI.PushEnabled(selected != null);

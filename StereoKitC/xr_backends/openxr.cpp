@@ -626,9 +626,8 @@ bool openxr_init() {
 	}
 #endif
 
-	anchors_init(xr_ext_available.MSFT_spatial_anchor
-		? anchor_system_openxr_msft
-		: anchor_system_stage);
+	if (xr_ext_available.MSFT_spatial_anchor)
+		anchors_init(anchor_system_openxr_msft);
 
 	return true;
 }
