@@ -397,6 +397,7 @@ typedef struct sk_settings_t {
 	float          render_scaling;
 	int32_t        render_multisample;
 	origin_mode_   origin;
+	bool32_t       omit_empty_frames;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
