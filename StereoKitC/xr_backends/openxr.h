@@ -63,12 +63,13 @@ bool openxr_poll_events   ();
 bool openxr_render_frame  ();
 void openxr_poll_actions  ();
 
-void       *openxr_get_luid ();
-bool32_t    openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time = 0);
-bool32_t    openxr_get_gaze_space(pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);
-const char* openxr_string   (XrResult result);
-void        openxr_set_origin_offset(pose_t offset);
-bool        openxr_get_stage_bounds(vec2* out_size, pose_t* out_pose, XrTime time);
+void*         openxr_get_luid         ();
+bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
+bool32_t      openxr_get_gaze_space   (pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);
+const char*   openxr_string           (XrResult result);
+void          openxr_set_origin_offset(pose_t offset);
+bool          openxr_get_stage_bounds (vec2* out_size, pose_t* out_pose, XrTime time);
+button_state_ openxr_space_tracked    ();
 
 extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;

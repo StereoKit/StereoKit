@@ -261,6 +261,8 @@ set(SK_SRC_CODE
   StereoKitC/stereokit.cpp )
 
 set(SK_SRC_ASSET_TYPES
+  StereoKitC/asset_types/anchor.h
+  StereoKitC/asset_types/anchor.cpp
   StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
   StereoKitC/asset_types/animation.h
@@ -319,7 +321,9 @@ set(SK_SRC_LIBRARIES
 
 set(SK_SRC_UTILS
   StereoKitC/utils/sdf.h
-  StereoKitC/utils/sdf.cpp)
+  StereoKitC/utils/sdf.cpp
+  StereoKitC/utils/random.h
+  StereoKitC/utils/random.cpp)
 
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
@@ -391,7 +395,11 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/simulator.h
   StereoKitC/xr_backends/simulator.cpp
   StereoKitC/xr_backends/none.h
-  StereoKitC/xr_backends/none.cpp )
+  StereoKitC/xr_backends/none.cpp
+  StereoKitC/xr_backends/anchor_openxr_msft.h
+  StereoKitC/xr_backends/anchor_openxr_msft.cpp
+  StereoKitC/xr_backends/anchor_stage.h
+  StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h
@@ -602,6 +610,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
+    Examples/StereoKitCTest/demo_anchors.h
+    Examples/StereoKitCTest/demo_anchors.cpp
     Examples/StereoKitCTest/demo_windows.h
     Examples/StereoKitCTest/demo_windows.cpp
     Examples/StereoKitCTest/demo_lines.h

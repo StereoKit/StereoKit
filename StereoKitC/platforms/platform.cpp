@@ -271,6 +271,7 @@ void platform_step_end() {
 #elif defined(SK_OS_WEB)
 		web_step_end_flat    ();
 #endif
+		openxr_step_end();
 	} break;
 	}
 }

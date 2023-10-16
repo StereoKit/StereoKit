@@ -18,6 +18,7 @@
     <ClCompile Include="demo_desktop.cpp" />
     <ClCompile Include="demo_bvh.cpp" />
     <ClCompile Include="demo_aliasing.cpp" />
+    <ClCompile Include="demo_anchors.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene.h" />
@@ -45,6 +46,7 @@
     </ClInclude>
     <ClInclude Include="demo_bvh.h" />
     <ClInclude Include="demo_aliasing.h" />
+    <ClInclude Include="demo_anchors.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

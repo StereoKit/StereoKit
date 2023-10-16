@@ -720,6 +720,7 @@ SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
+SK_DeclarePrivateType(anchor_t);
 
 ///////////////////////////////////////////
 
@@ -2115,6 +2116,34 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
+typedef enum anchor_caps_ {
+	anchor_caps_storable  = 1 << 0,
+	anchor_caps_stability = 1 << 1,
+} anchor_caps_;
+SK_MakeFlag(anchor_caps_);
+
+SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
+SK_API const char*    anchor_get_id            (const anchor_t anchor);
+SK_API void           anchor_addref            (      anchor_t anchor);
+SK_API void           anchor_release           (      anchor_t anchor);
+SK_API anchor_t       anchor_create            (const char *unique_name_utf8, pose_t pose);
+SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
+SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
+SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
+SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
+SK_API const char*    anchor_get_name          (const anchor_t anchor);
+SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+
+SK_API void           anchor_clear_stored      (void);
+SK_API anchor_caps_   anchor_get_capabilities  (void);
+SK_API int32_t        anchor_get_count         (void);
+SK_API anchor_t       anchor_get_index         (int32_t index);
+SK_API int32_t        anchor_get_new_count     (void);
+SK_API anchor_t       anchor_get_new_index     (int32_t index);
+
+///////////////////////////////////////////
+
 /*A settings flag that lets you describe the behavior of how
   StereoKit will refresh data about the world mesh, if applicable. This
   is used with `World.RefreshType`.*/
@@ -2150,6 +2179,7 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        (void);
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      (void);
+SK_API button_state_  world_get_tracked               (void);
 SK_API origin_mode_   world_get_origin_mode           (void);
 SK_API pose_t         world_get_origin_offset         (void);
 SK_API void           world_set_origin_offset         (pose_t offset);
@@ -2304,6 +2334,8 @@ typedef enum asset_type_ {
 	asset_type_sound,
 	/*A Solid.*/
 	asset_type_solid,
+	/*An Anchor.*/
+	asset_type_anchor,
 } asset_type_;
 
 typedef void* asset_t;

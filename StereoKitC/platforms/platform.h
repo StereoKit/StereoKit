@@ -9,7 +9,7 @@ namespace sk {
 // platform_init()
 // Mixed Reality:
 //    platform_start_pre_xr()
-//    openxr_init()
+//    xr_backend_oxr_init()
 //    platform_start_post_xr()
 // Flatscreen:
 //    platform_start_flat()
@@ -26,7 +26,7 @@ namespace sk {
 //
 //// Shutdown
 // Mixed Reality:
-//    openxr_shutdown()
+//    xr_backend_oxr_shutdown()
 // Flatscreen:
 //    simulator_shutdown();
 //    platform_stop_flat()

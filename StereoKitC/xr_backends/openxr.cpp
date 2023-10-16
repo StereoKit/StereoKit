@@ -31,6 +31,7 @@
 #include "../platforms/linux.h"
 #include "../platforms/uwp.h"
 #include "../platforms/win32.h"
+#include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -625,6 +626,9 @@ bool openxr_init() {
 	}
 #endif
 
+	if (xr_ext_available.MSFT_spatial_anchor)
+		anchors_init(anchor_system_openxr_msft);
+
 	return true;
 }
 
@@ -865,7 +869,11 @@ void openxr_cleanup() {
 	}
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
+	anchors_shutdown();
+
 	openxr_cleanup();
 
 	xr_minimum_exts   = false;
@@ -884,11 +892,15 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
+
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	anchors_step_end();
+
 	if (xr_running)
 		openxr_render_frame();
 

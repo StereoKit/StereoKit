@@ -86,6 +86,7 @@
   
   <ItemGroup>
     <ClCompile Include="demo_aliasing.cpp" />
+    <ClCompile Include="demo_anchors.cpp" />
     <ClCompile Include="demo_bvh.cpp" />
     <ClCompile Include="demo_draw.cpp" />
     <ClCompile Include="demo_envmap.cpp" />
@@ -103,6 +104,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="skt_lighting.cpp" />
     <ClInclude Include="demo_aliasing.h" />
+    <ClInclude Include="demo_anchors.h" />
     <ClInclude Include="demo_bvh.h" />
     <ClInclude Include="demo_draw.h" />
     <ClInclude Include="demo_envmap.h" />

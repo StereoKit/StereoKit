@@ -193,6 +193,15 @@
     <ClCompile Include="libraries\unicode.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="asset_types\anchor.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\anchor_openxr_msft.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\anchor_stage.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
     <ClCompile Include="ui\ui_layout.cpp">
       <Filter>ui</Filter>
     </ClCompile>
@@ -211,10 +220,13 @@
     <ClCompile Include="xr_backends\simulator.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\none.cpp">
+    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
+    <ClCompile Include="utils\random.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\none.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
     <ClCompile Include="libraries\ferr_thread.cpp">
@@ -436,6 +448,15 @@
     <ClInclude Include="xr_backends\openxr_view.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
+    <ClInclude Include="asset_types\anchor.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\anchor_openxr_msft.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\anchor_stage.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
     <ClInclude Include="libraries\atomic_util.h">
       <Filter>libraries</Filter>
     </ClInclude>
@@ -457,10 +478,13 @@
     <ClInclude Include="xr_backends\simulator.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\none.h">
+    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
+    <ClInclude Include="utils\random.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\none.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="libraries\ferr_thread.h">

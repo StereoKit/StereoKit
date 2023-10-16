@@ -10,6 +10,7 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
+#include "anchor.h"
 #include "../systems/physics.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -108,6 +109,7 @@ void *assets_allocate(asset_type_ type) {
 	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
 	case asset_type_sound:    size = sizeof(_sound_t);    break;
 	case asset_type_solid:    size = sizeof(_solid_t);    break;
+	case asset_type_anchor:   size = sizeof(_anchor_t);   break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -215,6 +217,7 @@ void assets_destroy(asset_header_t *asset) {
 	case asset_type_sprite:   sprite_destroy  ((sprite_t  )asset); break;
 	case asset_type_sound:    sound_destroy   ((sound_t   )asset); break;
 	case asset_type_solid:    solid_destroy   ((solid_t   )asset); break;
+	case asset_type_anchor:   anchor_destroy  ((anchor_t  )asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -287,6 +290,7 @@ void  assets_shutdown_check() {
 			case asset_type_sprite:   type_name = "sprite_t";   break;
 			case asset_type_sound:    type_name = "sound_t";    break;
 			case asset_type_solid:    type_name = "solid_t";    break;
+			case asset_type_anchor:   type_name = "anchor_t";   break;
 			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
