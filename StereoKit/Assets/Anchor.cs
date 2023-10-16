@@ -12,7 +12,7 @@ namespace StereoKit {
 			set => NativeAPI.anchor_set_id(_inst, NativeHelper.ToUtf8(value));
 		}
 		public Pose Pose => NativeAPI.anchor_get_pose(_inst);
-		public InpState Tracked => NativeAPI.anchor_get_tracked(_inst);
+		public BtnState Tracked => NativeAPI.anchor_get_tracked(_inst);
 		public bool Persistent => NativeAPI.anchor_get_persistent(_inst);
 
 		internal Anchor(IntPtr anchor)

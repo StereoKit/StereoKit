@@ -144,10 +144,9 @@ void anchor_destroy(anchor_t anchor) {
 	}
 
 	int32_t idx = anch_list.index_of(anchor);
-	anch_list.remove(idx);
+	if (idx >= 0) anch_list.remove(idx);
 	idx = anch_changed.index_of(anchor);
-	if (idx >= 0)
-		anch_changed.remove(idx);
+	if (idx >= 0) anch_changed.remove(idx);
 
 	sk_free(anchor->name);
 	*anchor = {};

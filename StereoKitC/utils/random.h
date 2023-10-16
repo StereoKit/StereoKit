@@ -22,4 +22,4 @@ inline uint32_t rand_hash_xyz (int32_t x, int32_t y, int32_t z, uint32_t seed) {
        uint32_t     rand_x        ();
 inline float        rand_xf       () { return rand_x() / _hash_uintmaxf; }
 inline int32_t      rand_range    (int32_t min, int32_t max) { return min + (rand_x ()%(max-min)); }
-inline int32_t      rand_rangef   (float   min, float   max) { return min + (rand_xf()*(max-min)); }
+inline float        rand_rangef   (float   min, float   max) { return min + (rand_xf()*(max-min)); }

@@ -599,7 +599,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_changed  (IntPtr anchor);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_name     (IntPtr anchor);
-		[DllImport(dll, CallingConvention = call                 )] public static extern InpState            anchor_get_tracked  (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern BtnState            anchor_get_tracked  (IntPtr anchor);
 
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_clear_stored ();
 		[DllImport(dll, CallingConvention = call                 )] public static extern AnchorCaps          anchor_get_capabilities();
