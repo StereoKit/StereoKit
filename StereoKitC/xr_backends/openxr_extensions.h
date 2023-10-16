@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
 
 #include "../platforms/platform_utils.h"
@@ -132,6 +138,9 @@ namespace sk {
 	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
 	_(FB_spatial_entity,                 true) \
+	_(FB_spatial_entity_storage,         true) \
+	_(FB_spatial_entity_query,           true) \
+	_(FB_spatial_entity_container,       true) \
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
@@ -198,6 +207,15 @@ namespace sk {
 	_(xrUpdateHandMeshMSFT)                      \
 	_(xrEnumerateColorSpacesFB)                  \
 	_(xrSetColorSpaceFB)                         \
+	_(xrCreateSpatialAnchorFB)                   \
+	_(xrGetSpaceUuidFB)                          \
+	_(xrEnumerateSpaceSupportedComponentsFB)     \
+	_(xrGetSpaceComponentStatusFB)               \
+	_(xrSetSpaceComponentStatusFB)               \
+	_(xrQuerySpacesFB)                           \
+	_(xrRetrieveSpaceQueryResultsFB)             \
+	_(xrSaveSpaceFB)                             \
+	_(xrEraseSpaceFB)                            \
 	_(xrCreateSpatialGraphNodeSpaceMSFT)         \
 	_(xrCreateDebugUtilsMessengerEXT)            \
 	_(xrDestroyDebugUtilsMessengerEXT)

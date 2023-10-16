@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2022-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
 
 #include "../stereokit.h"
@@ -22,6 +28,7 @@ typedef enum anchor_system_ {
 	anchor_system_none,
 	anchor_system_stage,
 	anchor_system_openxr_msft,
+	anchor_system_openxr_fb,
 } anchor_system_;
 
 void           anchor_destroy         (anchor_t anchor);
