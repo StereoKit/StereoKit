@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2022-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "anchor_stage.h"
 #include "../asset_types/anchor.h"
 #include "../libraries/stref.h"
@@ -54,7 +60,7 @@ bool32_t anchor_stage_init() {
 			rot.w = stref_to_f(word);
 
 			if (!stref_nextword(line, word, ' ')) break;
-			char* name = stref_copy(stref_substr(word.start, line.length - (uint32_t)maxi(0LL, word.start - line.start)));
+			char* name = stref_copy(stref_substr(word.start, line.length - (uint32_t)maxi(0LL, (int64_t)(word.start - line.start))));
 
 			// Create a StereoKit anchor
 			anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
