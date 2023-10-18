@@ -241,6 +241,8 @@ SK_API void     ui_progress_bar      (float percent, float width sk_default(0));
 SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
 SK_API void     ui_hseparator        (void);
 SK_API void     ui_space             (float space);
+SK_API void     ui_hspace            (float horizontal_space);
+SK_API void     ui_vspace            (float vertical_space);
 
 SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
 SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));

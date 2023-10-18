@@ -761,6 +761,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_sameline      ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  ui_line_height   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_space         (float space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_vspace        (float vertical_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_hspace        (float horizontal_space);
 
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting (Handed hand);
