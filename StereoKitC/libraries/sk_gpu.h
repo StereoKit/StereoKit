@@ -4602,6 +4602,13 @@ bool skg_tex_get_mip_contents(skg_tex_t *tex, int32_t mip_level, void *ref_data,
 ///////////////////////////////////////////
 
 bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size) {
+	uint32_t result = glGetError();
+	while (result != 0) {
+		char text[128];
+		snprintf(text, 128, "skg_tex_get_mip_contents_arr: eating a gl error from somewhere else: %d", result);
+		skg_log(skg_log_warning, text);
+	}
+	
 	// Double check on mips first
 	int32_t mip_levels = tex->mips == skg_mip_generate ? (int32_t)skg_mip_count(tex->width, tex->height) : 1;
 	if (mip_level != 0) {
@@ -4655,7 +4662,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	}
 #endif
 
-	uint32_t result = glGetError();
+	result = glGetError();
 	if (result != 0) {
 		char text[128];
 		snprintf(text, 128, "skg_tex_get_mip_contents_arr error: %d", result);
