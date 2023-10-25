@@ -19,6 +19,7 @@
 #include "../systems/input_keyboard.h"
 #include "../systems/render.h"
 #include "../systems/world.h"
+#include "../asset_types/anchor.h"
 
 namespace sk {
 
@@ -94,6 +95,7 @@ bool simulator_init() {
 	if (swapchain)
 		sim_target_resize(&sim_target, swapchain->width, swapchain->height);
 
+	anchors_init(anchor_system_stage);
 	return true;
 }
 
@@ -134,6 +136,7 @@ void simulator_shutdown() {
 	tex_release(sim_target);
 	platform_win_destroy(sim_window);
 	sim_window = -1;
+	anchors_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -221,11 +224,13 @@ void simulator_step_begin() {
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_end() {
+	anchors_step_end();
 	input_update_poses(true);
 
 	skg_draw_begin();

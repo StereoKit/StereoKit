@@ -26,6 +26,7 @@
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
+#include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -622,6 +623,9 @@ bool openxr_init() {
 	}
 #endif
 
+	if (xr_ext_available.MSFT_spatial_anchor)
+		anchors_init(anchor_system_openxr_msft);
+
 	return true;
 }
 
@@ -862,7 +866,11 @@ void openxr_cleanup() {
 	}
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
+	anchors_shutdown();
+
 	openxr_cleanup();
 
 	xr_minimum_exts   = false;
@@ -882,11 +890,15 @@ void openxr_step_begin() {
 	if (xr_running)
 		openxr_poll_actions();
 	input_step();
+	
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	anchors_step_end();
+
 	if (xr_running)
 		openxr_render_frame();
 

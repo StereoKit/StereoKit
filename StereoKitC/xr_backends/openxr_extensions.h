@@ -131,10 +131,12 @@ namespace sk {
 	_(EXT_eye_gaze_interaction,          true) \
 	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
+	_(FB_spatial_entity,                 true) \
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
 	_(MSFT_spatial_anchor,               true) \
+	_(MSFT_spatial_anchor_persistence,   true) \
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
@@ -167,6 +169,13 @@ namespace sk {
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSpatialAnchorStoreConnectionMSFT)  \
+	_(xrDestroySpatialAnchorStoreConnectionMSFT) \
+	_(xrPersistSpatialAnchorMSFT)                \
+	_(xrEnumeratePersistedSpatialAnchorNamesMSFT)\
+	_(xrCreateSpatialAnchorFromPersistedNameMSFT)\
+	_(xrUnpersistSpatialAnchorMSFT)              \
+	_(xrClearSpatialAnchorStoreMSFT)             \
 	_(xrCreateSceneObserverMSFT)                 \
 	_(xrDestroySceneObserverMSFT)                \
 	_(xrCreateSceneMSFT)                         \

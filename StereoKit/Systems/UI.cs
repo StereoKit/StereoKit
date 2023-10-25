@@ -302,8 +302,21 @@ namespace StereoKit
 		/// space is added vertically, otherwise, space is added
 		/// horizontally.</summary>
 		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space) 
+		public static void Space (float space)
 			=> NativeAPI.ui_space(space);
+
+		/// <summary>Adds some vertical space to the current line! All UI
+		/// following elements on this line will be offset.</summary>
+		/// <param name="verticalSpace">Space in meters to shift the layout by.
+		/// </param>
+		public static void VSpace(float verticalSpace)
+			=> NativeAPI.ui_vspace(verticalSpace);
+
+		/// <summary>Adds some horizontal space to the current line!</summary>
+		/// <param name="horizontalSpace">Space in meters to shift the layout
+		/// by.</param>
+		public static void HSpace(float horizontalSpace)
+			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <summary>This Method is obsolete and will be removed soon. Please
 		/// use any other overload of this method.</summary>

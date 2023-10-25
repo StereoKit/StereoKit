@@ -165,8 +165,8 @@ void ui_layout_reserve_sz(vec2 size, bool32_t add_padding, vec3 *out_position, v
 		{final_size.x, final_size.y, 0}
 	};
 
-	*out_position = skui_recent_layout.center + skui_recent_layout.dimensions/2;
-	*out_size     = final_size;
+	if (out_position) *out_position = skui_recent_layout.center + skui_recent_layout.dimensions/2;
+	if (out_size)     *out_size     = final_size;
 }
 
 ///////////////////////////////////////////
@@ -470,6 +470,18 @@ void ui_space(float space) {
 		layout->offset.y -= space;
 	else
 		layout->offset.x -= space;
+}
+
+///////////////////////////////////////////
+
+void ui_hspace(float horizontal_space) {
+	skui_layouts.last().offset.x -= horizontal_space;
+}
+
+///////////////////////////////////////////
+
+void ui_vspace(float vertical_space) {
+	skui_layouts.last().offset.y -= vertical_space;
 }
 
 ///////////////////////////////////////////

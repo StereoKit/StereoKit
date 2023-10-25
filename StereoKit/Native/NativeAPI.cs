@@ -585,6 +585,31 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_find         ([In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_set_id       (IntPtr anchor, [In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_id       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_addref       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_release      (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_create       ([In] byte[] unique_name_utf8, Pose pose);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_try_set_persistent(IntPtr anchor, [MarshalAs(UnmanagedType.Bool)] bool persistent);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_persistent(IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern Pose                anchor_get_pose     (IntPtr anchor);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_changed  (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_name     (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern BtnState            anchor_get_tracked  (IntPtr anchor);
+
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_clear_stored ();
+		[DllImport(dll, CallingConvention = call                 )] public static extern AnchorCaps          anchor_get_capabilities();
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 anchor_get_count    ();
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_index    (int index);
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 anchor_get_new_count();
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_new_index(int index);
+
+		///////////////////////////////////////////
+
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_has_bounds                ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         world_get_bounds_size           ();
@@ -736,6 +761,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_sameline      ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  ui_line_height   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_space         (float space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_vspace        (float vertical_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_hspace        (float horizontal_space);
 
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting (Handed hand);
