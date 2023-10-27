@@ -2,7 +2,7 @@
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../utils/random.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include "../xr_backends/anchor_openxr_msft.h"
 #include "../xr_backends/anchor_stage.h"

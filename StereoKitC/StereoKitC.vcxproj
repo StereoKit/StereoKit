@@ -174,6 +174,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\render.cpp" />
+    <ClCompile Include="systems\render_pipeline.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
@@ -262,6 +263,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\render.h" />
+    <ClInclude Include="systems\render_pipeline.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />

@@ -10,6 +10,7 @@
 #include "../device.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../libraries/stref.h"
 #include "../libraries/sk_gpu.h"
 
@@ -51,18 +52,7 @@ void offscreen_step_begin() {
 void offscreen_step_end() {
 	input_update_poses(true);
 
-	skg_event_begin("Setup");
-	{
-		skg_draw_begin();
-	}
-	skg_event_end();
-	skg_event_begin("Draw");
-	{
-		render_check_viewpoints();
-		render_check_screenshots();
-		render_clear();
-	}
-	skg_event_end();
+	render_pipeline_draw();
 }
 
 ///////////////////////////////////////////

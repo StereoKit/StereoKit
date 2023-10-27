@@ -223,9 +223,6 @@
     <ClCompile Include="utils\random.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\none.cpp">
-      <Filter>xr_backends</Filter>
-    </ClCompile>
     <ClCompile Include="libraries\ferr_thread.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
@@ -246,6 +243,9 @@
     </ClCompile>
     <ClCompile Include="platforms\platform_common_unix.cpp">
       <Filter>platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\render_pipeline.cpp">
+      <Filter>systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -496,9 +496,6 @@
     <ClInclude Include="utils\random.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\none.h">
-      <Filter>xr_backends</Filter>
-    </ClInclude>
     <ClInclude Include="libraries\ferr_thread.h">
       <Filter>libraries</Filter>
     </ClInclude>
@@ -516,6 +513,9 @@
     </ClInclude>
     <ClInclude Include="tools\tools.h">
       <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\render_pipeline.h">
+      <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

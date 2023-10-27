@@ -349,6 +349,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/physics.cpp
   StereoKitC/systems/render.h
   StereoKitC/systems/render.cpp
+  StereoKitC/systems/render_pipeline.h
+  StereoKitC/systems/render_pipeline.cpp
   StereoKitC/systems/sprite_drawer.h
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h

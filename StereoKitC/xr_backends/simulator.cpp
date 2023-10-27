@@ -13,11 +13,11 @@
 #include "../libraries/sokol_time.h"
 #include "../platforms/platform.h"
 #include "../platforms/_platform.h"
-#include "../asset_types/texture.h"
 #include "../systems/system.h"
 #include "../systems/input.h"
 #include "../systems/input_keyboard.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
 
@@ -31,9 +31,9 @@ vec3           sim_head_pos;
 pose_t         sim_bounds_pose;
 bool           sim_mouse_look;
 
-platform_win_t sim_window;
-tex_t          sim_target;
-system_t*      sim_render_sys;
+platform_win_t      sim_window;
+pipeline_surface_id sim_surface;
+system_t*           sim_render_sys;
 
 const float    sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
 const vec2     sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement to rotation;
@@ -41,7 +41,7 @@ const vec2     sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movemen
 ///////////////////////////////////////////
 
 void sim_physical_key_interact();
-void sim_target_resize        (tex_t* target, int32_t width, int32_t height);
+void sim_surface_resize        (pipeline_surface_id surface, int32_t width, int32_t height);
 
 ///////////////////////////////////////////
 
@@ -60,7 +60,6 @@ bool simulator_init() {
 	sim_mouse_look   = false;
 	sim_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 	sim_window       = -1;
-	sim_target       = {};
 	sim_render_sys   = systems_find("FrameRender");
 
 	quat initial_rot = quat_from_angles(0, sim_head_rot.y, 0);
@@ -91,9 +90,10 @@ bool simulator_init() {
 	} break;
 	}
 
+	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 	if (swapchain)
-		sim_target_resize(&sim_target, swapchain->width, swapchain->height);
+		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
 
 	anchors_init(anchor_system_stage);
 	return true;
@@ -101,30 +101,12 @@ bool simulator_init() {
 
 ///////////////////////////////////////////
 
-void sim_target_resize(tex_t *target, int32_t width, int32_t height) {
+void sim_surface_resize(pipeline_surface_id surface, int32_t width, int32_t height) {
 	device_data.display_width  = width;
 	device_data.display_height = height;
 
-	if (*target == nullptr) {
-		log_diagf("Creating target: %d<~BLK>x<~clr>%d", width, height);
-
-		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id       (*target, "sk/platform/swapchain");
-		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-
-		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
-		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-		tex_release(zbuffer);
+	if (render_pipeline_surface_resize(surface, width, height, 8))
 		render_update_projection();
-	}
-
-	if (width == tex_get_width(*target) && height == tex_get_height(*target))
-		return;
-
-	log_diagf("Resizing target to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
 }
 
 ///////////////////////////////////////////
@@ -133,7 +115,8 @@ void simulator_shutdown() {
 	recti_t r = platform_win_rect(sim_window);
 	platform_key_save_bytes("WindowLocation", &r, sizeof(r));
 
-	tex_release(sim_target);
+	render_pipeline_shutdown();
+	sim_surface = -1;
 	platform_win_destroy(sim_window);
 	sim_window = -1;
 	anchors_shutdown();
@@ -155,7 +138,7 @@ void simulator_step_begin() {
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		//case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
 		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       sim_target_resize(&sim_target, data.resize.width, data.resize.height); break;
+		case platform_evt_resize:       sim_surface_resize(sim_surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;
 		}
@@ -233,46 +216,17 @@ void simulator_step_end() {
 	anchors_step_end();
 	input_update_poses(true);
 
-	skg_draw_begin();
+	matrix view = matrix_invert(render_get_cam_final());
+	matrix proj = render_get_projection_matrix();
+	render_pipeline_surface_set_clear      (sim_surface, render_get_clear_color_ln());
+	render_pipeline_surface_set_layer      (sim_surface, render_get_filter());
+	render_pipeline_surface_set_perspective(sim_surface, &view, &proj, 1);
+
+	render_pipeline_draw();
+
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
-
-	// If we have no swapchain (yet, it may arrive later), we won't want to do
-	// normal rendering, so just check for screenshots and offscreen surfaces,
-	// and call it a day.
-	if (swapchain == nullptr) {
-		skg_event_begin("Draw");
-		render_check_viewpoints ();
-		render_check_screenshots();
-		render_clear            ();
-		skg_event_end();
-		return;
-	}
-
-	skg_event_begin("Setup");
-	{
-		color128 col = render_get_clear_color_ln();
-		skg_tex_target_bind(&sim_target->tex);
-		skg_target_clear(true, &col.r);
-	}
-	skg_event_end();
-	skg_event_begin("Draw");
-	{
-		matrix view = matrix_invert(render_get_cam_final());
-		matrix proj = render_get_projection_matrix();
-		render_draw_matrix(&view, &proj, 1, render_get_filter());
-		render_clear();
-	}
-	skg_event_end();
-	skg_event_begin("Present");
-	{
-		// This copies the color data over to the swapchain, and resolves any
-		// multisampling on the primary target texture.
-		skg_tex_copy_to_swapchain(&sim_target->tex, swapchain);
-
-		sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
-		skg_swapchain_present(swapchain);
-	}
-	skg_event_end();
+	sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
+	render_pipeline_surface_to_swapchain(sim_surface, swapchain);
 }
 
 ///////////////////////////////////////////

@@ -16,6 +16,7 @@
 #include "../systems/input_keyboard.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../libraries/stref.h"
 #include "../libraries/sokol_time.h"
 
@@ -24,9 +25,9 @@
 using namespace sk;
 
 struct window_backend_state_t {
-	system_t*      render_sys;
-	platform_win_t window;
-	tex_t          target;
+	system_t*           render_sys;
+	platform_win_t      window;
+	pipeline_surface_id surface;
 };
 static window_backend_state_t* local = {};
 
@@ -37,7 +38,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 void window_physical_key_interact();
-void window_target_resize        (tex_t* target, int32_t width, int32_t height);
+void window_surface_resize       (pipeline_surface_id surface, int32_t width, int32_t height);
 
 ///////////////////////////////////////////
 
@@ -78,9 +79,10 @@ bool window_init() {
 	} break;
 	}
 
+	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
 	if (swapchain)
-		window_target_resize(&local->target, swapchain->width, swapchain->height);
+		window_surface_resize(local->surface, swapchain->width, swapchain->height);
 
 	return true;
 }
@@ -94,30 +96,12 @@ void window_physical_key_interact() {
 
 ///////////////////////////////////////////
 
-void window_target_resize(tex_t *target, int32_t width, int32_t height) {
-	device_data.display_width = width;
+void window_surface_resize(pipeline_surface_id surface, int32_t width, int32_t height) {
+	device_data.display_width  = width;
 	device_data.display_height = height;
 
-	if (*target == nullptr) {
-		log_diagf("Creating target: %d<~BLK>x<~clr>%d", width, height);
-
-		*target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-		tex_set_id       (*target, "sk/platform/swapchain");
-		tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-
-		tex_t zbuffer = tex_add_zbuffer(*target, render_preferred_depth_fmt());
-		tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-		tex_release(zbuffer);
+	if (render_pipeline_surface_resize(surface, width, height, 8))
 		render_update_projection();
-	}
-
-	if (width == tex_get_width(*target) && height == tex_get_height(*target))
-		return;
-
-	log_diagf("Resizing target to: %d<~BLK>x<~clr>%d", width, height);
-
-	tex_set_color_arr(*target, width, height, nullptr, 1, nullptr, 8);
-	render_update_projection();
 }
 
 ///////////////////////////////////////////
@@ -126,7 +110,7 @@ void window_shutdown() {
 	recti_t r = platform_win_rect(local->window);
 	platform_key_save_bytes("WindowLocation", &r, sizeof(r));
 
-	tex_release         (local->target);
+	render_pipeline_shutdown();
 	platform_win_destroy(local->window);
 
 	local = {};
@@ -148,7 +132,7 @@ void window_step_begin() {
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		case platform_evt_close:        sk_quit(); break;
-		case platform_evt_resize:       window_target_resize(&local->target, data.resize.width, data.resize.height); break;
+		case platform_evt_resize:       window_surface_resize(local->surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;
 		}
@@ -161,48 +145,17 @@ void window_step_begin() {
 void window_step_end() {
 	input_update_poses(true);
 
-	skg_draw_begin();
+	matrix view = matrix_invert(render_get_cam_final());
+	matrix proj = render_get_projection_matrix();
+	render_pipeline_surface_set_clear      (local->surface, render_get_clear_color_ln());
+	render_pipeline_surface_set_layer      (local->surface, render_get_filter());
+	render_pipeline_surface_set_perspective(local->surface, &view, &proj, 1);
+
+	render_pipeline_draw();
+
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
-
-		// If we have no swapchain (yet, it may arrive later), we won't want to do
-	// normal rendering, so just check for screenshots and offscreen surfaces,
-	// and call it a day.
-	if (swapchain == nullptr) {
-		skg_event_begin("Draw");
-		render_check_viewpoints ();
-		render_check_screenshots();
-		render_clear            ();
-		skg_event_end();
-		return;
-	}
-
-	skg_event_begin("Setup");
-	{
-		skg_draw_begin();
-
-		color128 col = render_get_clear_color_ln();
-		skg_tex_target_bind(&local->target->tex);
-		skg_target_clear(true, &col.r);
-	}
-	skg_event_end();
-	skg_event_begin("Draw");
-	{
-		matrix view = matrix_invert(render_get_cam_final());
-		matrix proj = render_get_projection_matrix();
-		render_draw_matrix(&view, &proj, 1, render_get_filter());
-		render_clear();
-	}
-	skg_event_end();
-	skg_event_begin("Present");
-	{
-		// This copies the color data over to the swapchain, and resolves any
-		// multisampling on the primary target texture.
-		skg_tex_copy_to_swapchain(&local->target->tex, swapchain);
-
-		local->render_sys->profile_frame_duration = stm_since(local->render_sys->profile_frame_start);
-		skg_swapchain_present(swapchain);
-	}
-	skg_event_end();
+	local->render_sys->profile_frame_duration = stm_since(local->render_sys->profile_frame_start);
+	render_pipeline_surface_to_swapchain(local->surface, swapchain);
 }
 
 }
