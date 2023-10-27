@@ -932,15 +932,23 @@ bool openxr_poll_events() {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
-				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
-				if (xr_display_types.count > 1) {
-					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_types.count-1;
-					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
+				// If the XR_MSFT_first_person_observer extension is present,
+				// we may have a secondary display we need to enable. This is
+				// typically the HoloLens video recording or streaming feature.
+				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary      = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
+				XrViewConfigurationType                          secondary_type = XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
+				if (xr_ext_available.MSFT_first_person_observer && xr_view_type_valid(secondary_type)) {
+					secondary.viewConfigurationCount        = 1;
+					secondary.enabledViewConfigurationTypes = &secondary_type;
 					begin_info.next = &secondary;
 				}
 
-				xrBeginSession(xr_session, &begin_info);
+				XrResult xresult = xrBeginSession(xr_session, &begin_info);
+				if (XR_FAILED(xresult)) {
+					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
+					sk_quit();
+					result = false;
+				}
 
 				// FoV normally updates right before drawing, but we need it to
 				// be available as soon as the session begins, for apps that
