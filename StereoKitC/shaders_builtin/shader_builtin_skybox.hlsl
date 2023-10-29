@@ -10,10 +10,6 @@ struct psIn {
 	float3 norm : NORMAL0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
-struct psOut {
-	float4 color : SV_Target;
-	float  depth : SV_Depth;
-};
 
 psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
