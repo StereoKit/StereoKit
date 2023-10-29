@@ -22,6 +22,7 @@ struct pipeline_surface_t {
 
 struct render_pipeline_state_t {
 	array_t<pipeline_surface_t> surfaces;
+	bool32_t                    begin_called;
 };
 static render_pipeline_state_t local = {};
 
@@ -39,22 +40,14 @@ void render_pipeline_begin() {
 		render_check_screenshots();
 	}
 	skg_event_end();
+	local.begin_called = true;
 }
 
 ///////////////////////////////////////////
 
 void render_pipeline_draw() {
-	skg_event_begin("Setup");
-	{
-		skg_draw_begin();
-	}
-	skg_event_end();
-	skg_event_begin("Offscreen");
-	{
-		render_check_viewpoints();
-		render_check_screenshots();
-	}
-	skg_event_end();
+	if (!local.begin_called)
+		render_pipeline_begin();
 
 	for (size_t i = 0; i < local.surfaces.count; i++) {
 		pipeline_surface_t* s = &local.surfaces[i];
@@ -70,12 +63,7 @@ void render_pipeline_draw() {
 	}
 
 	render_clear();
-}
-
-///////////////////////////////////////////
-
-void render_pipeline_end() {
-	render_clear();
+	local.begin_called = false;
 }
 
 ///////////////////////////////////////////

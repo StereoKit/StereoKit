@@ -40,6 +40,7 @@ struct swapchain_t {
 	XrSwapchainImage    *backbuffers;
 	tex_t               *textures;
 	pipeline_surface_id *render_surfaces;
+	bool32_t             acquired;
 };
 void swapchain_delete(swapchain_t *swapchain) {
 	for (size_t s = 0; s < swapchain->backbuffer_count * swapchain->backbuffer_views; s++)
@@ -678,6 +679,10 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 ///////////////////////////////////////////
 
 bool openxr_render_frame() {
+	// We may have some stuff to render that doesn't require the swapchain to
+	// be available, so we can call 'begin' before then.
+	render_pipeline_begin();
+
 	// Block until the previous frame is finished displaying, and is ready for
 	// another one. Also returns a prediction of when the next frame will be
 	// displayed, for use with predicting locations of controllers, viewpoints,
@@ -726,24 +731,22 @@ bool openxr_render_frame() {
 	// updating the location of controller models.
 	input_update_poses(true);
 
-	skg_draw_begin();
-	render_check_viewpoints ();
-	render_check_screenshots();
-
 	// If there's nothing to render, we may want to totally skip all projection
 	// layers entirely.
-	if ((xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED) &&
-		(sk_get_settings_ref()->omit_empty_frames == false || render_list_item_count(render_get_primary_list()) != 0)) {
-
+	bool render_displays =
+		(xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED) &&
+		(sk_get_settings_ref()->omit_empty_frames == false || render_list_item_count(render_get_primary_list()) != 0);
+	if (render_displays) {
 		// Set up the primary displays
 		for (int32_t i = 0; i < xr_displays.count; i++) {
 			device_display_t* display = &xr_displays[i];
+			for (uint32_t s = 0; s < display->swapchain_color.backbuffer_views; s++)
+				render_pipeline_surface_set_enabled(display->swapchain_color.render_surfaces[s], display->active);
 			if (!display->active) continue;
 
 			if (!openxr_display_locate(display, xr_time))
 				continue;
 			openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_filter());
-			openxr_display_swapchain_release(display);
 
 			if (i == xr_display_primary_idx) {
 				device_data.display_fov.right  = display->view_xr[0].fov.angleRight * rad2deg;
@@ -751,7 +754,6 @@ bool openxr_render_frame() {
 				device_data.display_fov.top    = display->view_xr[0].fov.angleUp    * rad2deg;
 				device_data.display_fov.bottom = display->view_xr[0].fov.angleDown  * rad2deg;
 			}
-
 			backend_openxr_composition_layer(&display->projection_layer, sizeof(XrCompositionLayerProjection), 0);
 		}
 
@@ -759,12 +761,13 @@ bool openxr_render_frame() {
 		xr_display_2nd_layers.clear();
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 			device_display_t* display = &xr_displays_2nd[i];
+			for (uint32_t s = 0; s < display->swapchain_color.backbuffer_views; s++)
+				render_pipeline_surface_set_enabled(display->swapchain_color.render_surfaces[s], display->active);
 			if (!display->active) continue;
 
 			if (!openxr_display_locate(display, xr_time))
 				continue;
 			openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_capture_filter());
-			openxr_display_swapchain_release(display);
 
 			XrSecondaryViewConfigurationLayerInfoMSFT layer2nd = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
 			layer2nd.viewConfigurationType = display->type;
@@ -779,6 +782,14 @@ bool openxr_render_frame() {
 			end_second.viewConfigurationLayersInfo = xr_display_2nd_layers.data;
 			backend_openxr_end_frame_chain(&end_second, sizeof(end_second));
 		}
+	}
+
+	render_pipeline_draw();
+
+	// Release the swapchains for all active displays
+	if (render_displays) {
+		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
+		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
 
 	// We're finished with rendering our layer, so send it off for display!
@@ -888,8 +899,8 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	// will we get? Who knows! It's up to the runtime to decide.
 	uint32_t                    color_id, depth_id;
 	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-	xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id);
-	xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id);
+	if (XR_SUCCEEDED(xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id))) display->swapchain_color.acquired = true;
+	if (XR_SUCCEEDED(xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id))) display->swapchain_depth.acquired = true;
 
 	// Wait until the image is available to render to. The compositor could
 	// still be reading from it.
@@ -904,13 +915,6 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 		render_pipeline_surface_set_tex  (display->swapchain_color.render_surfaces[s_layer], display->swapchain_color.textures[index]);
 		render_pipeline_surface_set_clear(display->swapchain_color.render_surfaces[s_layer], color);
 		render_pipeline_surface_set_layer(display->swapchain_color.render_surfaces[s_layer], render_filter);
-
-		// Call the rendering callback with our view and swapchain info
-		tex_t    target = display->swapchain_color.textures[index];
-		skg_tex_target_bind(&target->tex);
-		skg_target_clear(true, &color.r);
-
-		render_draw_queue(&display->view_transforms[s_layer], &display->view_projections[s_layer], display->view_cap / display->swapchain_color.backbuffer_views, render_filter);
 	}
 }
 
@@ -919,8 +923,10 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 void openxr_display_swapchain_release(device_display_t *display) {
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
-	xrReleaseSwapchainImage(display->swapchain_color.handle, &release_info);
-	xrReleaseSwapchainImage(display->swapchain_depth.handle, &release_info);
+	if (display->swapchain_color.acquired) xrReleaseSwapchainImage(display->swapchain_color.handle, &release_info);
+	if (display->swapchain_depth.acquired) xrReleaseSwapchainImage(display->swapchain_depth.handle, &release_info);
+	display->swapchain_color.acquired = false;
+	display->swapchain_depth.acquired = false;
 }
 
 ///////////////////////////////////////////

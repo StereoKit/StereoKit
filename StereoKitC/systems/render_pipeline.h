@@ -34,6 +34,5 @@ void render_pipeline_shutdown();
 
 void render_pipeline_begin();
 void render_pipeline_draw ();
-void render_pipeline_end  ();
 
 } // namespace sk
