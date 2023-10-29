@@ -237,6 +237,7 @@ bool render_init() {
 
 	material_set_id          (local.sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(local.sky_mat, 100);
+	material_set_depth_write (local.sky_mat, false);
 
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);

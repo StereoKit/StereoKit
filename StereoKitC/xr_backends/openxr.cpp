@@ -603,8 +603,12 @@ bool openxr_init() {
 		return false;
 	}
 
-	if (sys_info->overlay_app) {
-		log_diag("Starting as an overlay app, display blend mode switched to blend.");
+	// If this is an overlay app, and the user has not explicitly requested a
+	// blend mode, then we'll auto-switch to 'blend', as that's likely the most
+	// appropriate mode for the app.
+	if (sys_info->overlay_app) log_diag("Starting as an overlay app.");
+	if (sys_info->overlay_app && sk_get_settings_ref()->blend_preference == display_blend_none) {
+		log_diag("Overlay app defaulting to 'blend' display_blend.");
 		device_data.display_blend = display_blend_blend;
 	}
 
