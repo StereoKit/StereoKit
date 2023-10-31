@@ -36,6 +36,12 @@ void anchors_init(anchor_system_ system) {
 	if (!result) system = anchor_system_none;
 	anch_sys         = system;
 	anch_initialized = true;
+
+	switch (system) {
+	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
+	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
+	default:                        log_diagf("NOT using spatial anchors."); break;
+	}
 }
 
 ///////////////////////////////////////////
@@ -43,10 +49,8 @@ void anchors_init(anchor_system_ system) {
 void anchors_shutdown() {
 	if (!anch_initialized) return;
 
-	for (int32_t i = 0; i < anch_list.count;    i++) anchor_release(anch_list[i]);
-	for (int32_t i = 0; i < anch_changed.count; i++) anchor_release(anch_changed[i]);
-	anch_list   .free();
-	anch_changed.free();
+	for (int32_t i = anch_list   .count-1; i>=0; i--) anchor_release(anch_list   [i]);
+	for (int32_t i = anch_changed.count-1; i>=0; i--) anchor_release(anch_changed[i]);
 
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
@@ -55,6 +59,9 @@ void anchors_shutdown() {
 	case anchor_system_stage:       anchor_stage_shutdown(); break;
 	default: break;
 	}
+
+	anch_list   .free();
+	anch_changed.free();
 
 	anch_initialized = false;
 }
@@ -119,6 +126,7 @@ anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, const char 
 	result->data          = data;
 	result->name          = string_copy(name_utf8);
 	anch_list.add(result);
+	anchor_addref(result);
 
 	anchor_mark_dirty(result);
 

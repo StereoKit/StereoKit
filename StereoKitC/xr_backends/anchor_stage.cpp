@@ -67,6 +67,7 @@ bool32_t anchor_stage_init() {
 			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
 			anchor->tracked = button_state_active;
 			anchor_stage_persist(anchor, true);
+			anchor_release(anchor);
 
 			sk_free(name);
 		}
@@ -142,8 +143,11 @@ bool32_t anchor_stage_persist(anchor_t anchor, bool32_t persist) {
 		anchor_addref(anchor);
 		persist_list->add(anchor);
 	} else {
-		persist_list->remove(persist_list->index_of(anchor));
-		anchor_release(anchor);
+		int32_t idx = persist_list->index_of(anchor);
+		if (idx >= 0) {
+			persist_list->remove(idx);
+			anchor_release(anchor);
+		}
 	}
 
 	return true;
