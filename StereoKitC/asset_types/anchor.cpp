@@ -83,8 +83,8 @@ void anchors_step_end() {
 
 ///////////////////////////////////////////
 
-char to_hex(uint32_t val, uint32_t nibble) {
-	uint32_t byte = (val >> (nibble * 4)) & 0xF;
+char to_hex(uint32_t val, uint32_t byte_idx) {
+	uint32_t byte = (val >> (byte_idx * 4)) & 0xF;
 	return byte < 10
 		? '0' + byte
 		: 'A' + byte - 10;
@@ -92,27 +92,20 @@ char to_hex(uint32_t val, uint32_t nibble) {
 
 ///////////////////////////////////////////
 
-anchor_t anchor_create(const char* unique_name_utf8, pose_t pose) {
-	char gen_name[20];
-	if (unique_name_utf8 == nullptr) {
-		uint32_t a = rand_x();
-		uint32_t b = rand_x();
-		char name[20]{
-			to_hex(a,0), to_hex(a,1), to_hex(a,2), to_hex(a,3), '-',
-			to_hex(a,4), to_hex(a,5), to_hex(a,6), to_hex(a,7), '-',
-			to_hex(b,0), to_hex(b,1), to_hex(b,2), to_hex(b,3), '-',
-			to_hex(b,4), to_hex(b,5), to_hex(b,6), to_hex(b,7), '\0' };
-		// Some juggling since C/C++ doesn't allow us to assign an array to an
-		// existing array.
-		strncpy(gen_name, name, sizeof(gen_name));
-		unique_name_utf8 = gen_name;
-	}
+anchor_t anchor_create(pose_t pose) {
+	uint32_t a = rand_x();
+	uint32_t b = rand_x();
+	char name[20]{
+		to_hex(a,0), to_hex(a,1), to_hex(a,2), to_hex(a,3), '-',
+		to_hex(a,4), to_hex(a,5), to_hex(a,6), to_hex(a,7), '-',
+		to_hex(b,0), to_hex(b,1), to_hex(b,2), to_hex(b,3), '-',
+		to_hex(b,4), to_hex(b,5), to_hex(b,6), to_hex(b,7), '\0' };
 
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, unique_name_utf8);
+	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, name);
 #endif
-	case anchor_system_stage:       return anchor_stage_create   (pose, unique_name_utf8);
+	case anchor_system_stage:       return anchor_stage_create   (pose, name);
 	default: return nullptr;
 	}
 }

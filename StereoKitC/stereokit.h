@@ -2123,11 +2123,11 @@ typedef enum anchor_caps_ {
 SK_MakeFlag(anchor_caps_);
 
 SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API anchor_t       anchor_create            (pose_t pose);
 SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
 SK_API const char*    anchor_get_id            (const anchor_t anchor);
 SK_API void           anchor_addref            (      anchor_t anchor);
 SK_API void           anchor_release           (      anchor_t anchor);
-SK_API anchor_t       anchor_create            (const char *unique_name_utf8, pose_t pose);
 SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
 SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose          (const anchor_t anchor);

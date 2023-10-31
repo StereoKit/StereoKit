@@ -14,6 +14,7 @@ namespace StereoKit {
 		public Pose Pose => NativeAPI.anchor_get_pose(_inst);
 		public BtnState Tracked => NativeAPI.anchor_get_tracked(_inst);
 		public bool Persistent => NativeAPI.anchor_get_persistent(_inst);
+		public string Name => NativeHelper.FromUtf8(NativeAPI.anchor_get_name(_inst));
 
 		internal Anchor(IntPtr anchor)
 		{
@@ -30,13 +31,12 @@ namespace StereoKit {
 
 		public bool TrySetPersistent(bool persistent) => NativeAPI.anchor_try_set_persistent(_inst, persistent);
 
-		public static Anchor FromPose(string uniqueName, Pose pose)
+		public static Anchor FromPose(Pose pose)
 		{
-			IntPtr anchor = NativeAPI.anchor_create(NativeHelper.ToUtf8(uniqueName), pose);
+			IntPtr anchor = NativeAPI.anchor_create(pose);
 			return anchor == IntPtr.Zero ? null : new Anchor(anchor);
 		}
 
-		public static Anchor FromPose(Pose pose) => FromPose(null, pose);
 
 		public static AnchorCaps Capabilities => NativeAPI.anchor_get_capabilities();
 		public static void ClearStored() => NativeAPI.anchor_clear_stored();
