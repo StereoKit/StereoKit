@@ -586,11 +586,11 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_find         ([In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_create       (Pose pose);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_set_id       (IntPtr anchor, [In] byte[] asset_id_utf8);
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_id       (IntPtr anchor);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_addref       (IntPtr anchor);
 		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_release      (IntPtr anchor);
-		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_create       ([In] byte[] unique_name_utf8, Pose pose);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_try_set_persistent(IntPtr anchor, [MarshalAs(UnmanagedType.Bool)] bool persistent);
 		[return: MarshalAs(UnmanagedType.Bool)]
