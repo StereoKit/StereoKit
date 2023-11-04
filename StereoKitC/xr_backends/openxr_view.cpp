@@ -505,8 +505,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		native_surface_col   = sc_color->backbuffers[back].texture;
 		native_surface_depth = sc_depth->backbuffers[back].texture;
 #elif defined(XR_USE_GRAPHICS_API_OPENGL) || defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-		native_surface_col   = (void*)(uint64_t)sc_color->images[surf].image;
-		native_surface_depth = (void*)(uint64_t)sc_depth->images[surf].image;
+		native_surface_col   = (void*)(uint64_t)sc_color->backbuffers[back].image;
+		native_surface_depth = (void*)(uint64_t)sc_depth->backbuffers[back].image;
 #endif
 		if (sc_color->backbuffer_views == 1) {
 			tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, display->view_cap);

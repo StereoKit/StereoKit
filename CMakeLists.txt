@@ -408,8 +408,6 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/window.cpp
   StereoKitC/xr_backends/offscreen.h
   StereoKitC/xr_backends/offscreen.cpp
-  StereoKitC/xr_backends/none.h
-  StereoKitC/xr_backends/none.cpp
   StereoKitC/xr_backends/anchor_openxr_msft.h
   StereoKitC/xr_backends/anchor_openxr_msft.cpp
   StereoKitC/xr_backends/anchor_stage.h
