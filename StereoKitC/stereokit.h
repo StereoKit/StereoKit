@@ -1038,6 +1038,7 @@ SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 // TODO: For v0.4, combine these two functions
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
@@ -2147,11 +2148,11 @@ typedef enum anchor_caps_ {
 SK_MakeFlag(anchor_caps_);
 
 SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API anchor_t       anchor_create            (pose_t pose);
 SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
 SK_API const char*    anchor_get_id            (const anchor_t anchor);
 SK_API void           anchor_addref            (      anchor_t anchor);
 SK_API void           anchor_release           (      anchor_t anchor);
-SK_API anchor_t       anchor_create            (const char *unique_name_utf8, pose_t pose);
 SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
 SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose          (const anchor_t anchor);

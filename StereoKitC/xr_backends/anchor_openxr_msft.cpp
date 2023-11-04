@@ -41,7 +41,7 @@ bool32_t anchor_oxr_msft_init() {
 
 	uint32_t count = 0;
 	xr_extensions.xrEnumeratePersistedSpatialAnchorNamesMSFT(oxr_msft_anchor_sys.store, 0, &count, nullptr);
-	if (count == 0) return false;
+	if (count == 0) return true;
 
 	XrSpatialAnchorPersistenceNameMSFT* names = sk_malloc_t(XrSpatialAnchorPersistenceNameMSFT, count);
 	xr_extensions.xrEnumeratePersistedSpatialAnchorNamesMSFT(oxr_msft_anchor_sys.store, count, &count, names);
@@ -89,6 +89,9 @@ bool32_t anchor_oxr_msft_init() {
 ///////////////////////////////////////////
 
 void anchor_oxr_msft_shutdown() {
+	for (int32_t i = oxr_msft_anchor_sys.anchors.count-1; i >= 0; i--)
+		anchor_release(oxr_msft_anchor_sys.anchors[i]);
+
 	if (oxr_msft_anchor_sys.store != XR_NULL_HANDLE)
 		xr_extensions.xrDestroySpatialAnchorStoreConnectionMSFT(oxr_msft_anchor_sys.store);
 	oxr_msft_anchor_sys.anchors.free();
@@ -155,6 +158,7 @@ anchor_t anchor_oxr_msft_create(pose_t pose, const char* name_utf8) {
 	anchor_data->space  = space;
 	anchor_t sk_anchor = anchor_create_manual(oxr_msft_anchor_sys.id, pose, name_utf8, (void*)anchor_data);
 	oxr_msft_anchor_sys.anchors.add(sk_anchor);
+	anchor_addref(sk_anchor);
 	return sk_anchor;
 }
 

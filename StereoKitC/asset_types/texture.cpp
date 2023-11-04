@@ -690,16 +690,17 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		log_err(tex_msg_requires_rendertarget);
 		return;
 	}
-	if (!(depth_texture->type & tex_type_depth)) {
+	if (depth_texture != nullptr && !(depth_texture->type & tex_type_depth)) {
 		log_err(tex_msg_requires_depth);
 		return;
 	}
-	tex_addref(depth_texture);
-	if (texture->depth_buffer != nullptr)
-		tex_release(texture->depth_buffer);
+	if (depth_texture != nullptr) tex_addref(depth_texture);
+
+	skg_tex_attach_depth(&texture->tex, depth_texture != nullptr ? &depth_texture->tex : nullptr);
+
+	if (texture->depth_buffer != nullptr) tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
 
-	skg_tex_attach_depth(&texture->tex, &depth_texture->tex);
 }
 
 ///////////////////////////////////////////

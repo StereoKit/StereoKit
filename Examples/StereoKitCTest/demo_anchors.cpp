@@ -49,10 +49,13 @@ void demo_anchors_update() {
 			pose.position = input_hand(handed_left)->pinch_pt;
 		pose.orientation = quat_lookat(pose.position, input_head()->position);
 
-		anchor_t anch = anchor_create(nullptr, pose);
-		if (anch && persist_anchors)
-			anchor_try_set_persistent(anch, true);
-		anchors.push_back(anch);
+		anchor_t anch = anchor_create(pose);
+		if (anch) {
+			anchors.push_back(anch);
+			if (persist_anchors) anchor_try_set_persistent(anch, true);
+		} else {
+			log_info("Failed to create anchor!");
+		}
 	}
 
 	for (int32_t i = 0; i < anchor_get_new_count(); i++) {

@@ -105,6 +105,43 @@ class TestBounds : ITest
 		return true;
 	}
 
+	bool TestMeshBounds()
+	{
+		Mesh mesh = Mesh.GenerateCube(Vec3.One*0.5f);
+		return (mesh.Bounds.dimensions - new Vec3(0.5f, 0.5f, 0.5f)).MagnitudeSq < 0.001f;
+	}
+
+	bool TestModelBounds()
+	{
+		Model model = new Model();
+
+		Mesh mesh1 = Mesh.GenerateCube(Vec3.One*0.5f);
+		mesh1.KeepData = false;
+		model.AddNode("root1", Matrix.T(0,0.25f,0), mesh1, Material.Default);
+
+		Mesh mesh2 = Mesh.GenerateCube(Vec3.One*0.5f);
+		model.AddNode("root2", Matrix.T(0,0.75f,0), mesh2, Material.Default);
+
+		Vec3 expectedSize = new Vec3(0.5f, 1f, 0.5f);
+
+		// Make sure bounds are correct when just adding nodes
+		if (Vec3.DistanceSq(model.Bounds.dimensions, expectedSize) > 0.001f)
+			return false;
+
+		// Check if a normal recalculating bounds works as expected as well
+		model.RecalculateBounds();
+		if (Vec3.DistanceSq(model.Bounds.dimensions, expectedSize) > 0.001f)
+				return false;
+
+		// This one also hits some different code paths, especially when
+		// KeepData is false on some meshes.
+		model.RecalculateBoundsExact();
+		if (Vec3.DistanceSq(model.Bounds.dimensions, expectedSize) > 0.001f)
+			return false;
+
+		return true;
+	}
+
 	public void Initialize()
 	{
 		Tests.Test(TestBoundsScaledScalar);
@@ -112,6 +149,8 @@ class TestBounds : ITest
 		Tests.Test(TestBoundsScaledScalarIsPure);
 		Tests.Test(TestBoundsScale);
 		Tests.Test(TestBoundsScaleByVec3);
+		Tests.Test(TestMeshBounds);
+		Tests.Test(TestModelBounds);
 	}
 
 	public void Shutdown() { }
