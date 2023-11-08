@@ -275,9 +275,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, 
 	}
 	
 	if (out_button_state & button_state_just_active)
-		sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
-	else if (out_button_state & button_state_just_inactive)
-		sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+		ui_play_sound_on_off(ui_vis_button, id, skui_hand[hand].finger_world);
 
 	if (out_opt_hand)
 		*out_opt_hand = hand;
@@ -376,7 +374,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 			if (skui_hand[i].focused_prev == id) {
 				color_blend = 1;
 				if (interact_state[i] & button_state_just_active) {
-					sound_play(skui_snd_grab, skui_hand[i].finger_world, 1);
+					ui_play_sound_on(ui_vis_handle, skui_hand[i].finger_world);
 
 					skui_hand[i].active = id;
 					start_handle_pos[i] = handle_pose.position;
@@ -470,7 +468,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 
 					if (interact_state[i] & button_state_just_inactive) {
 						skui_hand[i].active = 0;
-						sound_play(skui_snd_ungrab, skui_hand[i].finger_world, 1);
+						ui_play_sound_off(ui_vis_handle, skui_hand[i].finger_world);
 					}
 					ui_pop_surface();
 					ui_push_surface(handle_pose);

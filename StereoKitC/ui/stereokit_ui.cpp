@@ -66,6 +66,7 @@ void ui_shutdown() {
 
 void ui_step() {
 	ui_core_update();
+	ui_theming_update();
 
 	ui_push_surface(pose_identity);
 }
@@ -865,7 +866,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			
 			if (step != 0) {
 				// Play on every change if there's a user specified step value
-				sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+				ui_play_sound(ui_vis_slider_line, skui_hand[hand].finger_world);
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -876,7 +877,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 				if (old_quantize != new_quantize) {
-					sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+					ui_play_sound(ui_vis_slider_line, skui_hand[hand].finger_world);
 				}
 			}
 		}
@@ -962,9 +963,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	
 	if (hand >= 0 && hand < 2) {
 		if (button_state & button_state_just_active)
-			sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
-		else if (button_state & button_state_just_inactive)
-			sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_hand[hand].finger_world);
 	}
 
 	if      (notify_on == ui_notify_change)   return result;
