@@ -65,6 +65,11 @@ color128         skui_tint;
 array_t<text_style_t> skui_font_stack;
 array_t<color128>     skui_tint_stack;
 
+sound_t       skui_active_sound_off        = nullptr;
+sound_inst_t  skui_active_sound_inst       = {};
+vec3          skui_active_sound_pos        = vec3_zero;
+uint64_t      skui_active_sound_element_id = 0;
+
 ///////////////////////////////////////////
 
 void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
@@ -203,11 +208,12 @@ void ui_theming_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	sound_release   (skui_snd_interact);   skui_snd_interact   = nullptr;
-	sound_release   (skui_snd_uninteract); skui_snd_uninteract = nullptr;
-	sound_release   (skui_snd_grab);       skui_snd_grab       = nullptr;
-	sound_release   (skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
-	sound_release   (skui_snd_tick);       skui_snd_tick       = nullptr;
+	sound_release   (skui_active_sound_off); skui_active_sound_off = nullptr;
+	sound_release   (skui_snd_interact);     skui_snd_interact     = nullptr;
+	sound_release   (skui_snd_uninteract);   skui_snd_uninteract   = nullptr;
+	sound_release   (skui_snd_grab);         skui_snd_grab         = nullptr;
+	sound_release   (skui_snd_ungrab);       skui_snd_ungrab       = nullptr;
+	sound_release   (skui_snd_tick);         skui_snd_tick         = nullptr;
 
 	mesh_release    (skui_box);            skui_box            = nullptr;
 	mesh_release    (skui_box_top);        skui_box_top        = nullptr;
@@ -229,6 +235,33 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_radio_on);       skui_radio_on       = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
+}
+
+///////////////////////////////////////////
+
+void ui_theming_update() {
+	if (skui_active_sound_element_id == 0) return;
+
+	// See if our current sound on/off pair is still from a valid ui element
+	bool found_active = false;
+	for (int32_t i = 0; i < handed_max; i++) {
+		if (skui_hand[i].active_prev == skui_active_sound_element_id) {
+			return;
+		}
+	}
+	// If the "on" sound instance is still playing, we don't want to stomp on
+	// it with the off sound
+	if (sound_inst_is_playing(skui_active_sound_inst))
+		return;
+
+	// Play it, and clean everything up, we're done here!
+	if (skui_active_sound_off) {
+		sound_play(skui_active_sound_off, skui_active_sound_pos, 1);
+	}
+	sound_release(skui_active_sound_off);
+	skui_active_sound_off        = nullptr;
+	skui_active_sound_inst       = {};
+	skui_active_sound_element_id = 0;
 }
 
 ///////////////////////////////////////////
@@ -289,6 +322,80 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, 
 	final_color = final_color * skui_tint;
 
 	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
+	sound_t snd_on  = nullptr;
+	sound_t snd_off = nullptr;
+
+	// This pattern is until we add sounds to theming
+	if (element_visual == ui_vis_handle           ||
+		element_visual == ui_vis_window_body      ||
+		element_visual == ui_vis_window_body_only ||
+		element_visual == ui_vis_window_head      ||
+		element_visual == ui_vis_window_head_only) {
+		snd_on = skui_snd_grab;
+		snd_off= skui_snd_ungrab;
+	} else {
+		snd_on = skui_snd_interact;
+		snd_off= skui_snd_uninteract;
+	}
+
+	if (snd_off) sound_addref(snd_off);
+	sound_release(skui_active_sound_off);
+
+	skui_active_sound_off        = snd_off;
+	skui_active_sound_pos        = at;
+	skui_active_sound_element_id = element_id;
+
+	if (snd_on)
+		skui_active_sound_inst = sound_play(snd_on, at, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_on(ui_vis_ element_visual, vec3 at) {
+	sound_t snd = nullptr;
+	// This pattern is until we add sounds to theming
+	if (element_visual == ui_vis_handle           ||
+		element_visual == ui_vis_window_body      ||
+		element_visual == ui_vis_window_body_only ||
+		element_visual == ui_vis_window_head      ||
+		element_visual == ui_vis_window_head_only) {
+		snd = skui_snd_grab;
+	} else {
+		snd = skui_snd_interact;
+	}
+
+	if (snd) sound_play(snd, at, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_off(ui_vis_ element_visual, vec3 at) {
+	sound_t snd = nullptr;
+	// This pattern is until we add sounds to theming
+	if (element_visual == ui_vis_handle           ||
+		element_visual == ui_vis_window_body      ||
+		element_visual == ui_vis_window_body_only ||
+		element_visual == ui_vis_window_head      ||
+		element_visual == ui_vis_window_head_only) {
+		snd = skui_snd_ungrab;
+	} else {
+		snd = skui_snd_uninteract;
+	}
+
+	if (snd) sound_play(snd, at, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound(ui_vis_ element_visual, vec3 at) {
+	sound_t snd = skui_snd_tick;
+
+	if (snd) sound_play(snd, at, 1);
 }
 
 ///////////////////////////////////////////
