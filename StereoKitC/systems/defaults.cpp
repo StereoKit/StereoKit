@@ -289,9 +289,10 @@ bool defaults_init() {
 		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
 		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
 		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+		float silencer = fmaxf(0,fminf(1,(0.03f-t)*200));
 
-		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
-		}, .03f);
+		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f * silencer;
+		}, .08f);
 	sk_default_unclick = sound_generate([](float t){
 		float x = t / 0.03f;
 		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
