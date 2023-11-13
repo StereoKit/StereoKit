@@ -49,7 +49,7 @@ void render_pipeline_draw() {
 	if (!local.begin_called)
 		render_pipeline_begin();
 
-	for (size_t i = 0; i < local.surfaces.count; i++) {
+	for (int32_t i = 0; i < local.surfaces.count; i++) {
 		pipeline_surface_t* s = &local.surfaces[i];
 		if (s->enabled == false) continue;
 
@@ -108,14 +108,20 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 	// If this is the first time getting called, the texture will be null, and
 	// we'll need to create a fresh new one.
 	if (surface->tex == nullptr) {
-		log_diagf("Creating surface: %d<~BLK>x<~clr>%d", width, height);
+		log_diagf("Creating target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->surface_count, multisample);
 
-		surface->tex         = tex_create(tex_type_rendertarget, surface->color);
+		surface->tex         = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
 		surface->multisample = multisample;
 		surface->enabled     = true;
 		tex_set_color_arr(surface->tex, width, height, nullptr, surface->surface_count, nullptr, multisample);
 
+		char name[64];
+		snprintf(name, sizeof(name), "sk/pipeline_surface_%d", surface_id);
+		tex_set_id(surface->tex, name);
+
 		tex_t zbuffer = tex_add_zbuffer(surface->tex, surface->depth);
+		snprintf(name, sizeof(name), "sk/pipeline_surface_%d_depth", surface_id);
+		tex_set_id(zbuffer, name);
 		tex_release(zbuffer);
 		return true;
 	}
@@ -125,7 +131,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 	if (width == tex_get_width(surface->tex) && height == tex_get_height(surface->tex) && surface->multisample == multisample)
 		return false;
 
-	log_diagf("Resizing surface to: %d<~BLK>x<~clr>%d", width, height);
+	log_diagf("Resizing target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->surface_count, multisample);
 	surface->multisample = multisample;
 	tex_set_color_arr(surface->tex, width, height, nullptr, surface->surface_count, nullptr, multisample);
 

@@ -161,7 +161,7 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 		win.swapchain     = skg_swapchain_create(win.handle, color_fmt, skg_tex_fmt_none, final_width, final_height);
 		win.has_swapchain = true;
 
-		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+		log_diagf("Created swapchain: <~grn>%d<~clr>x<~grn>%d<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 	}
 
 	win32_windows.add(win);

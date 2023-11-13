@@ -448,6 +448,12 @@ void sk_assert_thread_valid() {
 
 ///////////////////////////////////////////
 
+ft_id_t  sk_main_thread() {
+	return local.init_thread;
+}
+
+///////////////////////////////////////////
+
 void sk_set_window(void* window) {
 	platform_set_window(window);
 }

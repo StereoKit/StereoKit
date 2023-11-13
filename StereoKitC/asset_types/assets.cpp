@@ -48,7 +48,6 @@ struct asset_thread_t {
 array_t<asset_header_t *>      assets = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
-ft_id_t                        assets_gpu_thread = {};
 ft_mutex_t                     assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
 ft_mutex_t                     assets_load_event_lock = {};
@@ -338,7 +337,6 @@ char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
-	assets_gpu_thread               = ft_id_current();
 	assets_multithread_destroy_lock = ft_mutex_create();
 	assets_job_lock                 = ft_mutex_create();
 	asset_thread_task_mtx           = ft_mutex_create();
@@ -452,9 +450,10 @@ void assets_shutdown() {
 ///////////////////////////////////////////
 
 bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (ft_id_matches(assets_gpu_thread)) {
+	if (ft_id_matches(sk_main_thread())) {
 		return asset_job(data);
 	} else {
+		log_errf("assets_execute_gpu not called on the right thread");
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
 		*job = {};
 		job->asset_job = asset_job;

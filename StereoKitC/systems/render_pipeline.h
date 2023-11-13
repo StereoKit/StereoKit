@@ -5,18 +5,6 @@
 
 namespace sk {
 
-enum render_pipeline_surface_type_ {
-	render_pipeline_surface_type_swapchain,
-	render_pipeline_surface_type_texture,
-};
-struct render_pipeline_surface_t {
-	render_pipeline_surface_type_ type;
-	union {
-		skg_tex_t*       target;
-		skg_swapchain_t* swapchain;
-	};
-};
-
 typedef int32_t pipeline_surface_id;
 
 pipeline_surface_id render_pipeline_surface_create         (tex_format_ color, tex_format_ depth, int32_t surface_count);
@@ -31,7 +19,6 @@ void                render_pipeline_surface_set_clear      (pipeline_surface_id 
 void                render_pipeline_surface_set_perspective(pipeline_surface_id surface, matrix* view_matrices, matrix* proj_matrices, int32_t count);
 
 void render_pipeline_shutdown();
-
 void render_pipeline_begin();
 void render_pipeline_draw ();
 
