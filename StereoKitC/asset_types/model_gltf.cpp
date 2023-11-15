@@ -11,6 +11,8 @@
 #include "../platforms/platform_utils.h"
 #include "../libraries/cgltf.h"
 
+#include <meshoptimizer/meshoptimizer.h>
+
 #include <stdio.h>
 
 namespace sk {
@@ -220,6 +222,56 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 	sk_free(bone_trs);
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+void gltf_meshopt_decode(cgltf_data* gltf_data) {
+	for (cgltf_size i = 0; i < gltf_data->buffer_views_count; i++) {
+		if (gltf_data->buffer_views[i].has_meshopt_compression == false) continue;
+		cgltf_meshopt_compression* comp = &gltf_data->buffer_views[i].meshopt_compression;
+
+		const uint8_t* meshopt_buff = (const uint8_t*)comp->buffer->data + comp->offset;
+		uint8_t*       data         = sk_malloc_t(uint8_t, comp->stride * comp->count);
+
+		int32_t result = 0;
+		switch (comp->mode) {
+		case cgltf_meshopt_compression_mode_attributes: result = meshopt_decodeVertexBuffer (data, comp->count, comp->stride, meshopt_buff, comp->size); break;
+		case cgltf_meshopt_compression_mode_triangles:  result = meshopt_decodeIndexBuffer  (data, comp->count, comp->stride, meshopt_buff, comp->size); break;
+		case cgltf_meshopt_compression_mode_indices:    result = meshopt_decodeIndexSequence(data, comp->count, comp->stride, meshopt_buff, comp->size); break;
+		default: result = -1; break;
+		}
+
+		if (result != 0) { log_warnf("Meshopt decode failed: %d", result); sk_free(data); continue; }
+
+		switch (comp->filter) {
+		case cgltf_meshopt_compression_filter_none: break;
+		case cgltf_meshopt_compression_filter_octahedral:  meshopt_decodeFilterOct (data, comp->count, comp->stride); break;
+		case cgltf_meshopt_compression_filter_quaternion:  meshopt_decodeFilterQuat(data, comp->count, comp->stride); break;
+		case cgltf_meshopt_compression_filter_exponential: meshopt_decodeFilterExp (data, comp->count, comp->stride); break;
+		default: sk_free(data); continue;
+		}
+
+		gltf_data->buffer_views[i].data = data;
+		//gltf_data->buffer_views[i].offset = 0;
+	}
+}
+
+///////////////////////////////////////////
+
+void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, size_t vert_component_size, cgltf_accessor *accessor) {
+	uint8_t* destination = ((uint8_t*)verts) + vert_offset;
+	const uint8_t* buffer = accessor->buffer_view->has_meshopt_compression
+		? (const uint8_t*)accessor->buffer_view->data
+		: cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+
+	if (accessor->is_sparse) {
+	} else if (accessor->component_type == cgltf_component_type_r_32f) {
+		for (cgltf_size i = 0; i < accessor->count; i++) {
+			memcpy(&destination[i * sizeof(vert_t)], &buffer[i*vert_component_size], vert_component_size);
+		}
+	} else if (accessor->component_type == cgltf_component_type_r_16) {
+	}
 }
 
 ///////////////////////////////////////////
@@ -594,6 +646,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
+			if (material->pbr_metallic_roughness.base_color_texture.has_transform) material_set_float(result, "tex_scale", material->pbr_metallic_roughness.base_color_texture.transform.scale[0]);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -626,6 +679,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
+			if (material->pbr_specular_glossiness.diffuse_texture.has_transform) material_set_float(result, "tex_scale", material->pbr_metallic_roughness.base_color_texture.transform.scale[0]);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -865,6 +919,9 @@ bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t 
 	}
 
 	array_t<const char *> warnings = {};
+
+	// Decompress any meshopt data
+	gltf_meshopt_decode(data);
 
 	// Load each root node
 	hashmap_t<cgltf_node*, model_node_id> node_map = {};

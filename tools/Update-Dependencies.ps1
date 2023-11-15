@@ -110,6 +110,14 @@ $dependencies = @(
         @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) )
     )
+    [Dependency]::new(
+        'meshoptimizer',
+        'https://github.com/zeux/meshoptimizer.git',
+        $null,
+        $null,
+        @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\src\*', "include\meshoptimizer\", $false, @('h')) )
+    )
 )
 
 #####################################################

@@ -184,6 +184,13 @@ if (SK_BUILD_OPENXR_LOADER)
   )
 endif()
 
+#### meshoptimizer - https://github.com/zeux/meshoptimizer ####
+CPMAddPackage(
+  NAME meshoptimizer # v0.20
+  GITHUB_REPOSITORY zeux/meshoptimizer
+  GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
+)
+
 ###########################################
 ## Shader Compiler                       ##
 ###########################################
@@ -487,6 +494,7 @@ target_link_libraries( StereoKitC
   PRIVATE
     ${PHYSICS_LIB}
     openxr_loader
+    meshoptimizer
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
