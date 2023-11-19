@@ -252,25 +252,74 @@ void gltf_meshopt_decode(cgltf_data* gltf_data) {
 		default: sk_free(data); continue;
 		}
 
-		gltf_data->buffer_views[i].data = data;
-		//gltf_data->buffer_views[i].offset = 0;
+		gltf_data->buffer_views[i].data   = data;
+		gltf_data->buffer_views[i].offset = 0;
 	}
 }
 
 ///////////////////////////////////////////
 
-void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, size_t vert_component_size, cgltf_accessor *accessor) {
-	uint8_t* destination = ((uint8_t*)verts) + vert_offset;
-	const uint8_t* buffer = accessor->buffer_view->has_meshopt_compression
+void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *accessor) {
+	uint8_t*       destination = ((uint8_t*)verts) + vert_offset;
+	const uint8_t* source_buff = accessor->buffer_view->has_meshopt_compression
 		? (const uint8_t*)accessor->buffer_view->data
 		: cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
 
-	if (accessor->is_sparse) {
-	} else if (accessor->component_type == cgltf_component_type_r_32f) {
+	int32_t component_num  = cgltf_num_components(accessor->type);
+	int32_t component_size = cgltf_component_size(accessor->component_type);
+	bool standard_path = accessor->is_sparse == true ||
+		(accessor->type == cgltf_type_mat3 && component_size == 2) ||
+		(accessor->type == cgltf_type_mat3 && component_size == 1) ||
+		(accessor->type == cgltf_type_mat2 && component_size == 1);
+
+	// Here we provide a number of fast paths that also avoid a memory allocation
+	if (standard_path == false && accessor->component_type == cgltf_component_type_r_32f) {
+		cgltf_size com_bytes = component_num * component_size;
+		for (cgltf_size i = 0; i < accessor->count; i++)
+			memcpy(&destination[i * sizeof(vert_t)], &source_buff[i * accessor->stride], com_bytes);
+
+	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_16) {
 		for (cgltf_size i = 0; i < accessor->count; i++) {
-			memcpy(&destination[i * sizeof(vert_t)], &buffer[i*vert_component_size], vert_component_size);
+			int16_t* source = (int16_t*)&source_buff[i * accessor->stride];
+			float*   dest   = (float  *)&destination[i * sizeof(vert_t)];
+
+			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)INT16_MAX;
+			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
 		}
-	} else if (accessor->component_type == cgltf_component_type_r_16) {
+	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_16u) {
+		for (cgltf_size i = 0; i < accessor->count; i++) {
+			uint16_t* source = (uint16_t*)&source_buff[i * accessor->stride];
+			float*    dest   = (float   *)&destination[i * sizeof(vert_t)];
+
+			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)UINT16_MAX;
+			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
+		}
+	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_8) {
+		for (cgltf_size i = 0; i < accessor->count; i++) {
+			int8_t* source = (int8_t*)&source_buff[i * accessor->stride];
+			float*  dest   = (float *)&destination[i * sizeof(vert_t)];
+
+			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)INT8_MAX;
+			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
+		}
+	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_8u) {
+		for (cgltf_size i = 0; i < accessor->count; i++) {
+			uint8_t* source = (uint8_t*)&source_buff[i * accessor->stride];
+			float*   dest   = (float  *)&destination[i * sizeof(vert_t)];
+
+			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)UINT8_MAX;
+			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
+		}
+	} else {
+		// For everything else, we'll use cgltf to convert to floats, and use that
+		size_t       count  = cgltf_accessor_unpack_floats(accessor, nullptr, 0);
+		cgltf_float *floats = sk_malloc_t(cgltf_float, count);
+		cgltf_accessor_unpack_floats(accessor, floats, count);
+
+		cgltf_size com_bytes = component_num * component_size;
+		for (cgltf_size i = 0; i < accessor->count; i++)
+			memcpy(&destination[i * sizeof(vert_t)], &floats[i * component_num], com_bytes);
+		sk_free(floats);
 	}
 }
 
@@ -317,79 +366,16 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		if (attr->type == cgltf_attribute_type_position) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex position channels! Only one supported, the rest will be ignored.");
-			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
-				// Ideal case is vec3 floats
-				for (cgltf_size v = 0; v < attr->data->count; v++) {
-					vec3 *pos = (vec3 *)(buff + (attr->data->stride * v));
-					verts[v].pos = *pos;
-				}
-			} else {
-				// For everything else, we'll convert to floats, and use that
-				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
-				cgltf_accessor_unpack_floats(attr->data, floats, count);
-
-				if (attr->data->type == cgltf_type_vec3) {
-					for (cgltf_size v = 0; v < attr->data->count; v++) {
-						vec3 *pos = (vec3*)&floats[v * 3];
-						verts[v].pos = *pos;
-					}
-				} else {
-					log_errf("[%s] Unimplemented vertex position type (%d)", filename, attr->data->type);
-				}
-				sk_free(floats);
-			}
+			} else gltf_view_to_vert_f(verts, offsetof(vert_t, pos), attr->data);
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			has_normals = true;
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex normal channels! Only one supported, the rest will be ignored.");
-			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec3) {
-				// Ideal case is vec3 floats
-				for (size_t v = 0; v < attr->data->count; v++) {
-					vec3 *norm = (vec3 *)(buff + (attr->data->stride * v));
-					verts[v].norm = *norm;
-				}
-			} else {
-				// For everything else, we'll convert to floats, and use that
-				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
-				cgltf_accessor_unpack_floats(attr->data, floats, count);
-
-				if (attr->data->type == cgltf_type_vec3) {
-					for (size_t v = 0; v < attr->data->count; v++) {
-						vec3 *norm = (vec3*)&floats[v * 3];
-						verts[v].norm = *norm;
-					}
-				} else {
-					log_errf("[%s] Unimplemented vertex normal type (%d)", filename, attr->data->type);
-				}
-				sk_free(floats);
-			}
+			} else gltf_view_to_vert_f(verts, offsetof(vert_t, norm), attr->data);
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many texture coordinate channels! Only one supported, the rest will be ignored.");
-			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec2) {
-				// Ideal case is vec2 floats
-				for (size_t v = 0; v < attr->data->count; v++) {
-					vec2 *uv = (vec2 *)(buff + (attr->data->stride * v));
-					verts[v].uv = *uv;
-				}
-			} else {
-				// For everything else, we'll convert to floats, and use that
-				size_t       count  = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
-				cgltf_accessor_unpack_floats(attr->data, floats, count);
-
-				if (attr->data->type == cgltf_type_vec2) {
-					for (size_t v = 0; v < attr->data->count; v++) {
-						vec2 *uv = (vec2*)&floats[v * 2];
-						verts[v].uv = *uv;
-					}
-				} else {
-					log_errf("[%s] Unimplemented vertex uv type (%d)", filename, attr->data->type);
-				}
-				sk_free(floats);
-			}
+			} else gltf_view_to_vert_f(verts, offsetof(vert_t, uv), attr->data);
 		} else if (attr->type == cgltf_attribute_type_color) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex color channels! Only one supported, the rest will be ignored.");
