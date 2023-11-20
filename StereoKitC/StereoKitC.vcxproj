@@ -300,7 +300,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
     <None Include="shaders_builtin\shader_builtin_blit.hlsl" />
-    <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl">
+    <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />

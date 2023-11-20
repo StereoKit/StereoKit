@@ -10,6 +10,7 @@ struct ui_window_t {
 	vec3         layout_start;
 	vec2         layout_size;
 	ui_win_      type;
+	ui_move_     move;
 	uint64_t     hash;
 	uint32_t     age;
 };

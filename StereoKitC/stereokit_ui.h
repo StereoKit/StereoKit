@@ -131,6 +131,9 @@ SK_API void     ui_set_element_visual   (ui_vis_ element_visual, mesh_t mesh, ma
 SK_API bool32_t ui_has_keyboard_focus   (void);
 SK_API pose_t   ui_popup_pose           (vec3 shift);
 
+SK_API void     ui_push_grab_aura        (bool32_t enabled);
+SK_API void     ui_pop_grab_aura         ();
+SK_API bool32_t ui_grab_aura_enabled     ();
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        (void);
 SK_API text_style_t ui_get_text_style    (void);

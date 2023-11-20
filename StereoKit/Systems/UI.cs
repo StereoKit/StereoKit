@@ -1248,6 +1248,28 @@ namespace StereoKit
 		public static void PopPreserveKeyboard()
 			=> NativeAPI.ui_pop_preserve_keyboard();
 
+		/// <summary>This pushes an enabled status for grab auras onto the
+		/// stack. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab. MUST be matched
+		/// by a PopGrabAura call.</summary>
+		/// <param name="enabled">Is the grab aura enabled or not?</param>
+		public static void PushGrabAura(bool enabled)
+			=> NativeAPI.ui_push_grab_aura(enabled);
+
+		/// <summary>This removes an enabled status for grab auras from the
+		/// stack, returning it to the state before the previous PushGrabAura
+		/// call. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab.</summary>
+		public static void PopGrabAura()
+			=> NativeAPI.ui_pop_grab_aura();
+
+		/// <summary>This retreives the top of the grab aura enablement stack,
+		/// in case you need to know if the current window will have an aura.
+		/// </summary>
+		/// <returns>The enabled value at the top of the stack.</returns>
+		public static bool GrabAuraEnabled()
+			=> NativeAPI.ui_grab_aura_enabled();
+
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
 		/// </summary>
@@ -1255,7 +1277,7 @@ namespace StereoKit
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
-		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// <summary>Removes a TextStyle from the stack, and whatever was
 		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
