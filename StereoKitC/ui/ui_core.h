@@ -7,6 +7,8 @@ struct ui_hand_t {
 	vec3     finger_prev;
 	vec3     finger_world;
 	vec3     finger_world_prev;
+	vec3     thumb;
+	vec3     thumb_world;
 	vec3     pinch_pt;
 	vec3     pinch_pt_prev;
 	vec3     pinch_pt_world;

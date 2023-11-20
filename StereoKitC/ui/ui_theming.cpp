@@ -171,9 +171,9 @@ void ui_theming_init() {
 	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
-	skui_mat_dbg  = material_copy_id(default_id_material_ui);
+	skui_mat_dbg  = material_copy_id(default_id_material);
 	material_set_transparency(skui_mat_dbg, transparency_add);
-	material_set_color       (skui_mat_dbg, "color", { .5f,.5f,.5f,1 });
+	material_set_color       (skui_mat_dbg, "color", { .3f,.3f,.3f,.3f });
 	material_set_depth_write (skui_mat_dbg, false);
 	material_set_depth_test  (skui_mat_dbg, depth_test_always);
 	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");

@@ -328,7 +328,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
@@ -403,7 +403,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
@@ -473,7 +473,7 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1-(finger_offset / skui_settings.depth);
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
 	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_color_common, fmaxf(activation, color_blend));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));

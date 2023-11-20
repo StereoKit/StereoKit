@@ -29,7 +29,8 @@ inline float math_ease_smooth   (float a, float b, float t) { t = 1-t; return a 
 // swing - rotation around axis that is perpendicular to "direction" vector
 void quat_decompose_swing_twist(quat rotation, vec3 direction, quat *out_swing, quat *out_twist);
 
-vec3 bounds_corner (const bounds_t &bounds, int32_t index8);
-vec3 math_cubemap_corner(int i);
+vec3  bounds_corner (const bounds_t &bounds, int32_t index8);
+float bounds_sdf    (bounds_t bounds, vec3 point);
+vec3  math_cubemap_corner(int i);
 
 } // namespace sk
