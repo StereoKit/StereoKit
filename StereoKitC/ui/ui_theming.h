@@ -25,8 +25,8 @@ void ui_play_sound_off   (ui_vis_ element_visual, vec3 at);
 void ui_play_sound       (ui_vis_ element_visual, vec3 at);
 void ui_draw_cube        (vec3 start, vec3 size, ui_color_ color, float focus);
 
-void  ui_anim_start  (uint64_t id);
-bool  ui_anim_has    (uint64_t id, float duration);
-float ui_anim_elapsed(uint64_t id, float duration = 1, float max = 1);
+void  ui_anim_start  (uint64_t id, int32_t channel);
+bool  ui_anim_has    (uint64_t id, int32_t channel, float duration);
+float ui_anim_elapsed(uint64_t id, int32_t channel, float duration = 1, float max = 1);
 
 }

@@ -319,10 +319,10 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -389,10 +389,10 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -464,10 +464,10 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -553,10 +553,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	if (state & button_state_just_active)
-		ui_anim_start(id_hash);
+		ui_anim_start(id_hash, 0);
 	float color_blend = skui_input_target == id_hash ? 1.0f : 0.0f;
-	if (ui_anim_has(id_hash, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id_hash, skui_anim_duration);
+	if (ui_anim_has(id_hash, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id_hash, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -887,10 +887,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	}
 
 	if (button_state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = focus_state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 

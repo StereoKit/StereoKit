@@ -56,8 +56,8 @@ sound_t         skui_snd_tick;
 
 mesh_t          skui_box_dbg;
 
-uint64_t        skui_anim_id;
-float           skui_anim_time;
+uint64_t        skui_anim_id[3];
+float           skui_anim_time[3];
 
 ui_theme_color_t skui_palette[ui_color_max];
 color128         skui_tint;
@@ -78,12 +78,12 @@ void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float 
 ///////////////////////////////////////////
 
 void ui_theming_init() {
-	skui_anim_id    = 0;
-	skui_anim_time  = 0;
 	skui_tint       = { 1,1,1,1 };
 	skui_font_stack = {};
 	skui_tint_stack = {};
-	memset(skui_visuals, 0, sizeof(skui_visuals));
+	memset(skui_visuals,   0, sizeof(skui_visuals));
+	memset(skui_anim_id,   0, sizeof(skui_anim_id));
+	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
@@ -550,28 +550,28 @@ void ui_pop_tint() {
 // Animation                             //
 ///////////////////////////////////////////
 
-void ui_anim_start(uint64_t id) {
-	if (skui_anim_id != id) {
-		skui_anim_id = id;
-		skui_anim_time = time_totalf_unscaled();
+void ui_anim_start(uint64_t id, int32_t channel) {
+	if (skui_anim_id[channel] != id) {
+		skui_anim_id[channel] = id;
+		skui_anim_time[channel] = time_totalf_unscaled();
 	}
 }
 
 ///////////////////////////////////////////
 
-bool ui_anim_has(uint64_t id, float duration) {
-	if (id == skui_anim_id) {
-		if ((time_totalf_unscaled() - skui_anim_time) < duration)
+bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
+	if (id == skui_anim_id[channel]) {
+		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
 			return true;
-		skui_anim_id = 0;
+		skui_anim_id[channel] = 0;
 	}
 	return false;
 }
 
 ///////////////////////////////////////////
 
-float ui_anim_elapsed(uint64_t id, float duration, float max) {
-	return skui_anim_id == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time) / duration) : 0;
+float ui_anim_elapsed(uint64_t id, int32_t channel, float duration, float max) {
+	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
 }
 
 ///////////////////////////////////////////
