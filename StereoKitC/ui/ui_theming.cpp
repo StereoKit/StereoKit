@@ -74,6 +74,7 @@ uint64_t      skui_active_sound_element_id = 0;
 
 void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
 void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start);
+void ui_default_aura_mesh(mesh_t* mesh,                   float diameter, float rounding, int32_t quadrant_slices, int32_t tube_corners);
 
 ///////////////////////////////////////////
 
@@ -193,7 +194,12 @@ void ui_theming_init() {
 	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min); 
+
+	mesh_t aura = nullptr;
+	material_t aura_mat = material_copy_id(default_id_material_ui_aura);
+	ui_default_aura_mesh(&aura, 0, skui_settings.rounding * 2, 7, 5);
+	ui_set_element_visual(ui_vis_aura, aura, aura_mat);
 }
 
 ///////////////////////////////////////////
@@ -320,6 +326,7 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, 
 		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
 		: skui_palette[color].disabled;
 	final_color = final_color * skui_tint;
+	final_color.a = focus;
 
 	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
 }
@@ -430,8 +437,8 @@ void ui_settings(ui_settings_t settings) {
 		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
 		bool    set_ids = skui_box == nullptr;
 		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
-		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2,       1.25f*mm2m, slices, 180 * deg2rad);
+		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2, 1.25f*mm2m, slices, 0);
+		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2, 1.25f*mm2m, slices, 180 * deg2rad);
 
 		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
 		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
@@ -812,6 +819,64 @@ void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float 
 	if (quadrantify)
 		ui_quadrant_size_verts(verts, vert_count, 0);
 
+	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
+}
+
+///////////////////////////////////////////
+
+void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, int32_t quadrant_slices, int32_t tube_corners) {
+	if (*mesh == nullptr) {
+		*mesh = mesh_create();
+	}
+
+	int32_t vert_count = quadrant_slices * tube_corners * 4;
+	int32_t ind_count  = quadrant_slices * tube_corners * 6 * 4;
+	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
+
+	vind_t ind    = 0;
+	vind_t steps  = quadrant_slices * 4;
+	float  radius = tube_diameter / 2;
+	for (vind_t i = 0; i < steps; i++) {
+		vind_t off  = i * tube_corners;
+		vind_t offn = ((i + 1) % steps) * tube_corners;
+
+		// Manual quadrantification, due to our perfect corners
+		int32_t quad = i / quadrant_slices;
+		float   quad_pct = (i - quad * quadrant_slices) / (float)(quadrant_slices - 1);
+
+		vec2 uv = {};
+		if      (quad == 0) uv = vec2{  1, 1 };
+		else if (quad == 1) uv = vec2{ -1, 1 };
+		else if (quad == 2) uv = vec2{ -1,-1 };
+		else if (quad == 3) uv = vec2{  1,-1 }; 
+		vec3 quad_off = vec3{ uv.x, uv.y,0 } * corner_radius * -1.5f;
+
+		float corner_ang  = (quad+quad_pct) * MATH_PI * 0.5f;
+		vec3  corner_norm = vec3{ cosf(corner_ang), sinf(corner_ang), 0 };
+		vec3  corner_pt   = quad_off + corner_norm * corner_radius;
+
+		for (vind_t c = 0; c < (vind_t)tube_corners; c++) {
+			float tube_ang  = ((float)c / tube_corners) * MATH_PI * 2;
+			float tube_x    = cosf(tube_ang);
+			float tube_y    = sinf(tube_ang);
+			vec3  tube_norm = vec3_normalize( vec3{ corner_norm.x * tube_x, corner_norm.y * tube_x, tube_y } );
+			vec3  tube_pt   = corner_pt + tube_norm*radius;
+
+			verts[off + c] = { tube_pt, tube_norm, uv, {255,255,255,255} };
+
+			vind_t cn   = (c + 1) % tube_corners;
+			inds[ind++] = offn + cn;
+			inds[ind++] = offn + c;
+			inds[ind++] = off  + c;
+			inds[ind++] = off  + cn;
+			inds[ind++] = offn + cn;
+			inds[ind++] = off  + c;
+		}
+	}
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
 	sk_free(verts);

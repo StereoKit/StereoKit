@@ -31,6 +31,7 @@ float    skui_input_blink;
 // Button activation animations all use the same values
 const float    skui_anim_duration  = 0.2f;
 const float    skui_anim_overshoot = 10;
+const float    skui_anim_focus_duration = 0.1f;
 const float    skui_pressed_depth  = 0.4f;
 const color128 skui_color_border   = { 1,1,1,1 };
 
@@ -1037,6 +1038,10 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_size.y  += win->prev_size.y;
 		box_size.z   = skui_settings.depth * 2;
 	}
+	box_size.x += 0.04f;
+	box_size.y += 0.04f;
+	box_start.z += 0.01f;
+	box_size.z += 0.02f;
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
@@ -1068,8 +1073,9 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_window_id win_id = ui_layout_curr_window();
-	ui_window_t* win    = ui_window_get(win_id);
+	ui_window_id win_id      = ui_layout_curr_window();
+	ui_window_t* win         = ui_window_get(win_id);
+	float        line_height = ui_line_height();
 	ui_layout_pop();
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
@@ -1077,11 +1083,29 @@ void ui_window_end() {
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
-	float line_height = ui_line_height();
+	if ((skui_hand[0].focused_prev == win->hash && skui_hand[0].focused_prev_prev != win->hash) ||
+		(skui_hand[1].focused_prev == win->hash && skui_hand[1].focused_prev_prev != win->hash))
+		ui_anim_start(win->hash, 0);
+	if ((skui_hand[0].focused_prev != win->hash && skui_hand[0].focused_prev_prev == win->hash) ||
+		(skui_hand[1].focused_prev != win->hash && skui_hand[1].focused_prev_prev == win->hash))
+		ui_anim_start(win->hash, 1);
+
+	float color_blend = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
+	if (ui_anim_has(win->hash, 0, skui_anim_focus_duration)) {
+		float t = ui_anim_elapsed(win->hash, 0, skui_anim_focus_duration);
+		color_blend = math_ease_smooth(0, 1, t);
+	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
+		float t = ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration);
+		color_blend = math_ease_smooth(1, 0, t);
+	}
+
+	const float aura_radius = 0.02f;
+	vec3 aura_start = vec3{ start.x+aura_radius,  start.y+aura_radius,  start.z };
+	vec3 aura_size  = vec3{ size .x+aura_radius*2,size .y+aura_radius*2,size .z };
+	if (win->type & ui_win_head) { aura_start.y += line_height; aura_size.y += line_height; }
+	ui_draw_el(ui_vis_aura, aura_start, aura_size, ui_color_text, color_blend); 
+
 	if (win->type & ui_win_head) {
-		float color_blend = 0;
-		if (ui_id_focused(win->hash))
-			color_blend = 1;
 		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, color_blend);
 	}
 	if (win->type & ui_win_body) {

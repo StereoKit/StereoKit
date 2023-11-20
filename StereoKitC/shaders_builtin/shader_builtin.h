@@ -14,3 +14,4 @@
 #include "shader_builtin_ui.hlsl.h"
 #include "shader_builtin_ui_box.hlsl.h"
 #include "shader_builtin_ui_quadrant.hlsl.h"
+#include "shader_builtin_ui_aura.hlsl.h"

@@ -60,6 +60,7 @@ typedef enum ui_vis_ {
 	ui_vis_button_round,
 	ui_vis_panel,
 	ui_vis_carat,
+	ui_vis_aura,
 	ui_vis_max,
 } ui_vis_;
 
