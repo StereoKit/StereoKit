@@ -24,6 +24,9 @@ namespace StereoKit
 		/// frame. This version is unaffected by the Time.Scale value!
 		/// </summary>
 		public static float  TotalUnscaledf => NativeAPI.time_totalf_unscaled();
+		/// <summary>The number of frames/steps since the app started.
+		/// </summary>
+		public static ulong  Frame => NativeAPI.time_frame();
 
 		/// <summary> (Deprecated, use Time.Step) How many seconds have elapsed
 		/// since the last frame? 64 bit time precision, calculated at

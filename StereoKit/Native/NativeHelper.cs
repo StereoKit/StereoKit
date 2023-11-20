@@ -24,6 +24,6 @@ namespace StereoKit
 			=> FromUtf8(str, Marshal.PtrToStringAnsi(str).Length);
 
 		public static byte[] ToUtf8(string str)
-			=> Encoding.UTF8.GetBytes(str + '\0');
+			=> str == null ? null : Encoding.UTF8.GetBytes(str + '\0');
 	}
 }

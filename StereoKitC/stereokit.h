@@ -8,7 +8,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 7
+#define SK_VERSION_PATCH 9
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -397,6 +397,7 @@ typedef struct sk_settings_t {
 	float          render_scaling;
 	int32_t        render_multisample;
 	origin_mode_   origin;
+	bool32_t       omit_empty_frames;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -511,6 +512,7 @@ SK_API float         time_stepf            (void);
 SK_API double        time_step             (void);
 SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
+SK_API uint64_t      time_frame            (void);
 
 ///////////////////////////////////////////
 
@@ -718,6 +720,7 @@ SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
+SK_DeclarePrivateType(anchor_t);
 
 ///////////////////////////////////////////
 
@@ -1011,6 +1014,7 @@ SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 // TODO: For v0.4, combine these two functions
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
@@ -2103,13 +2107,41 @@ SK_API void                  input_hand_visible      (handed_ hand, bool32_t vis
 SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
-SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
+SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove(hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear (void);
 
 SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API void                  input_fire_event     (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
+
+///////////////////////////////////////////
+
+typedef enum anchor_caps_ {
+	anchor_caps_storable  = 1 << 0,
+	anchor_caps_stability = 1 << 1,
+} anchor_caps_;
+SK_MakeFlag(anchor_caps_);
+
+SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API anchor_t       anchor_create            (pose_t pose);
+SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
+SK_API const char*    anchor_get_id            (const anchor_t anchor);
+SK_API void           anchor_addref            (      anchor_t anchor);
+SK_API void           anchor_release           (      anchor_t anchor);
+SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
+SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
+SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
+SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
+SK_API const char*    anchor_get_name          (const anchor_t anchor);
+SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+
+SK_API void           anchor_clear_stored      (void);
+SK_API anchor_caps_   anchor_get_capabilities  (void);
+SK_API int32_t        anchor_get_count         (void);
+SK_API anchor_t       anchor_get_index         (int32_t index);
+SK_API int32_t        anchor_get_new_count     (void);
+SK_API anchor_t       anchor_get_new_index     (int32_t index);
 
 ///////////////////////////////////////////
 
@@ -2148,6 +2180,7 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        (void);
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      (void);
+SK_API button_state_  world_get_tracked               (void);
 SK_API origin_mode_   world_get_origin_mode           (void);
 SK_API pose_t         world_get_origin_offset         (void);
 SK_API void           world_set_origin_offset         (pose_t offset);
@@ -2302,6 +2335,8 @@ typedef enum asset_type_ {
 	asset_type_sound,
 	/*A Solid.*/
 	asset_type_solid,
+	/*An Anchor.*/
+	asset_type_anchor,
 } asset_type_;
 
 typedef void* asset_t;
@@ -2334,6 +2369,7 @@ SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
 SK_CONST char *default_id_material_ui_box      = "default/material_ui_box";
 SK_CONST char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+SK_CONST char *default_id_material_ui_aura     = "default/material_ui_aura";
 SK_CONST char *default_id_tex                  = "default/tex";
 SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
@@ -2361,6 +2397,7 @@ SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";
 SK_CONST char *default_id_shader_ui_box        = "default/shader_ui_box";
 SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_sound_click          = "default/sound_click";

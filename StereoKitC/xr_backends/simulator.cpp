@@ -8,6 +8,7 @@
 #include "../systems/input.h"
 #include "../systems/render.h"
 #include "../systems/world.h"
+#include "../asset_types/anchor.h"
 
 namespace sk {
 
@@ -46,12 +47,17 @@ bool simulator_init() {
 	case origin_mode_stage: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
 	}
 
+	render_set_sim_origin(world_origin_offset);
+	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
+
+	anchors_init(anchor_system_stage);
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void simulator_shutdown() {
+	anchors_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -123,11 +129,13 @@ void simulator_step_begin() {
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_end() {
+	anchors_step_end();
 	input_update_poses(true);
 }
 

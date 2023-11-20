@@ -23,6 +23,7 @@ inline float math_saturate(float x)                   { return fmaxf(0, fminf(1,
 
 inline float math_ease_overshoot(float a, float b, float overshoot, float t) { t = 1 - t; return math_lerp(a,b, 1-(t*t * ((overshoot + 1) * t - overshoot))); }
 inline float math_ease_hop      (float a, float peak, float t) { return a+(peak-a)*sinf(t*MATH_PI); }
+inline float math_ease_smooth   (float a, float b, float t) { t = 1-t; return a + (b-a) * (1-t*t); }
 
 // twist - rotation around the "direction" vector
 // swing - rotation around axis that is perpendicular to "direction" vector

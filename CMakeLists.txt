@@ -92,9 +92,7 @@ endif()
 ###########################################
 
 if (ANDROID)
-  set(ANDROID_LOG_LIBRARY log)
   set(ANDROID_LIBS
-    log
     android
     EGL)
   if (SK_DYNAMIC_OPENXR)
@@ -162,11 +160,10 @@ include("cmake/CPM.cmake")
 if(SK_PHYSICS)
   set(reactphysics_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME reactphysics3d # 0.9.0
+    NAME reactphysics3d # 0.9.1
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 4bbbaa7c6e92942734eec696e23a2fad1f1cb8a1
+    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0
     EXCLUDE_FROM_ALL YES
-    PATCH_COMMAND ${reactphysics_patch}
   )
   # Something in reactphysics3d seems to require -fPIC
   set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -178,9 +175,9 @@ endif()
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.0.28.2
+    NAME openxr_loader # 1.0.30
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG 8c966ae7da7fd50168b43ce8220f9df69063b341
+    GIT_TAG 55224479ab13db8ebc8ab1e3d49197bce6201b0b
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
@@ -203,6 +200,7 @@ set(SK_SRC_SHADERS_HLSL
   StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_quadrant.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_aura.hlsl
   StereoKitC/shaders_builtin/shader_builtin_unlit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_unlit_clip.hlsl )
 
@@ -264,6 +262,8 @@ set(SK_SRC_CODE
   StereoKitC/stereokit.cpp )
 
 set(SK_SRC_ASSET_TYPES
+  StereoKitC/asset_types/anchor.h
+  StereoKitC/asset_types/anchor.cpp
   StereoKitC/asset_types/assets.h
   StereoKitC/asset_types/assets.cpp
   StereoKitC/asset_types/animation.h
@@ -317,12 +317,14 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stref.cpp
   StereoKitC/libraries/unicode.h
   StereoKitC/libraries/unicode.cpp
-  StereoKitC/libraries/tinycthread.h
-  StereoKitC/libraries/tinycthread.cpp )
+  StereoKitC/libraries/ferr_thread.h
+  StereoKitC/libraries/ferr_thread.cpp )
 
 set(SK_SRC_UTILS
   StereoKitC/utils/sdf.h
-  StereoKitC/utils/sdf.cpp)
+  StereoKitC/utils/sdf.cpp
+  StereoKitC/utils/random.h
+  StereoKitC/utils/random.cpp)
 
 set(SK_SRC_SYSTEMS
   StereoKitC/systems/audio.h
@@ -394,7 +396,11 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/simulator.h
   StereoKitC/xr_backends/simulator.cpp
   StereoKitC/xr_backends/none.h
-  StereoKitC/xr_backends/none.cpp )
+  StereoKitC/xr_backends/none.cpp
+  StereoKitC/xr_backends/anchor_openxr_msft.h
+  StereoKitC/xr_backends/anchor_openxr_msft.cpp
+  StereoKitC/xr_backends/anchor_stage.h
+  StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard_layouts.h
@@ -587,8 +593,6 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_aliasing.h
     Examples/StereoKitCTest/demo_aliasing.cpp
-    Examples/StereoKitCTest/demo_basics.h
-    Examples/StereoKitCTest/demo_basics.cpp
     Examples/StereoKitCTest/demo_bvh.h
     Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_desktop.h
@@ -607,6 +611,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_ui_layout.cpp
     Examples/StereoKitCTest/demo_world.h
     Examples/StereoKitCTest/demo_world.cpp
+    Examples/StereoKitCTest/demo_anchors.h
+    Examples/StereoKitCTest/demo_anchors.cpp
     Examples/StereoKitCTest/demo_windows.h
     Examples/StereoKitCTest/demo_windows.cpp
     Examples/StereoKitCTest/demo_lines.h

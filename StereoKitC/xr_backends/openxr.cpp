@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 
@@ -25,6 +31,7 @@
 #include "../platforms/linux.h"
 #include "../platforms/uwp.h"
 #include "../platforms/win32.h"
+#include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -77,7 +84,6 @@ XrSpace        xr_head_space    = {};
 XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
 XrTime         xr_time          = 0;
 XrTime         xr_eyes_sample_time = 0;
-display_blend_ xr_valid_blends   = display_blend_none;
 bool           xr_system_created = false;
 bool           xr_system_success = false;
 
@@ -188,11 +194,16 @@ bool openxr_create_system() {
 	}
 #endif
 
-	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("available: %s", ext);});
-	extensions.each([](const char *&ext) { 
-		log_diagf("REQUESTED: <~grn>%s<~clr>", ext);
+	log_diag("Runtime OpenXR Extensions:");
+	log_diag("<~BLK>___________________________________<~clr>");
+	log_diag("<~BLK>|     <~YLW>Usage <~BLK>| <~YLW>Extension<~clr>");
+	log_diag("<~BLK>|-----------|----------------------<~clr>");
+	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("<~BLK>|   present | <~clr>%s", ext);});
+	extensions.each([](const char *&ext) {
+		log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", ext); 
 		xr_exts_loaded.add(hash_fnv64_string(ext));
 	});
+	log_diag("<~BLK>|___________|______________________<~clr>");
 
 	uint32_t layer_count = 0;
 	openxr_preferred_layers(layer_count, nullptr);
@@ -246,6 +257,10 @@ bool openxr_create_system() {
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
 		XR_VERSION_PATCH(inst_properties.runtimeVersion));
+
+	if (strstr(inst_properties.runtimeName, "Snapdragon") != nullptr) {
+		xr_ext_available.MSFT_hand_tracking_mesh = false; // Hand mesh doesn't currently show up, needs investigation
+	}
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
@@ -465,7 +480,7 @@ bool openxr_init() {
 	// Exception for the articulated WMR hand simulation, and the Vive Index
 	// controller equivalent. These simulations are insufficient to treat them
 	// like true articulated hands.
-	// 
+	//
 	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
 	// tracking layer is present.
 	//
@@ -571,7 +586,8 @@ bool openxr_init() {
 	// valid data, so we'll wait for that here.
 	// TODO: Loop here may be optional, but some platforms may need it? Waiting
 	// for some feedback here.
-	int32_t ref_space_tries = 10;
+	// - HTC Vive XR Elite requires around 50 frames
+	int32_t ref_space_tries = 1000;
 	while (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
 		ref_space_tries--;
 		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
@@ -590,8 +606,12 @@ bool openxr_init() {
 		return false;
 	}
 
-	if (sys_info->overlay_app) {
-		log_diag("Starting as an overlay app, display blend mode switched to blend.");
+	// If this is an overlay app, and the user has not explicitly requested a
+	// blend mode, then we'll auto-switch to 'blend', as that's likely the most
+	// appropriate mode for the app.
+	if (sys_info->overlay_app) log_diag("Starting as an overlay app.");
+	if (sys_info->overlay_app && sk_get_settings_ref()->blend_preference == display_blend_none) {
+		log_diag("Overlay app defaulting to 'blend' display_blend.");
 		device_data.display_blend = display_blend_blend;
 	}
 
@@ -609,6 +629,9 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	if (xr_ext_available.MSFT_spatial_anchor)
+		anchors_init(anchor_system_openxr_msft);
 
 	return true;
 }
@@ -850,7 +873,11 @@ void openxr_cleanup() {
 	}
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
+	anchors_shutdown();
+
 	openxr_cleanup();
 
 	xr_minimum_exts   = false;
@@ -869,11 +896,15 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
+
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	anchors_step_end();
+
 	if (xr_running)
 		openxr_render_frame();
 
@@ -905,7 +936,7 @@ bool openxr_poll_events() {
 			case XR_SESSION_STATE_READY: {
 				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
-				begin_info.primaryViewConfigurationType = xr_display_types[0];
+				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				if (xr_display_types.count > 1) {
@@ -944,6 +975,15 @@ bool openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit(); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+
+			// Update the main app space. In particular, some fallback spaces
+			// may require recalculation.
+			XrSpace new_space = {};
+			if (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
+				if (xr_app_space) xrDestroySpace(xr_app_space);
+				xr_app_space = new_space;
+			}
+
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 		} break;

@@ -1101,6 +1101,13 @@ namespace StereoKit
 		Menu,
 	}
 
+	/// <summary>////////////////////////////////////////</summary>
+	[Flags]
+	public enum AnchorCaps {
+		Storable     = 1 << 0,
+		Stability    = 1 << 1,
+	}
+
 	/// <summary>A settings flag that lets you describe the behavior of how
 	/// StereoKit will refresh data about the world mesh, if applicable. This
 	/// is used with `World.RefreshType`.</summary>
@@ -1203,6 +1210,8 @@ namespace StereoKit
 		Sound,
 		/// <summary>A Solid.</summary>
 		Solid,
+		/// <summary>An Anchor.</summary>
+		Anchor,
 	}
 
 }

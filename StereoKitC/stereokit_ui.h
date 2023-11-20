@@ -60,6 +60,7 @@ typedef enum ui_vis_ {
 	ui_vis_button_round,
 	ui_vis_panel,
 	ui_vis_carat,
+	ui_vis_aura,
 	ui_vis_max,
 } ui_vis_;
 
@@ -130,6 +131,9 @@ SK_API void     ui_set_element_visual   (ui_vis_ element_visual, mesh_t mesh, ma
 SK_API bool32_t ui_has_keyboard_focus   (void);
 SK_API pose_t   ui_popup_pose           (vec3 shift);
 
+SK_API void     ui_push_grab_aura        (bool32_t enabled);
+SK_API void     ui_pop_grab_aura         ();
+SK_API bool32_t ui_grab_aura_enabled     ();
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        (void);
 SK_API text_style_t ui_get_text_style    (void);
@@ -241,6 +245,8 @@ SK_API void     ui_progress_bar      (float percent, float width sk_default(0));
 SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
 SK_API void     ui_hseparator        (void);
 SK_API void     ui_space             (float space);
+SK_API void     ui_hspace            (float horizontal_space);
+SK_API void     ui_vspace            (float vertical_space);
 
 SK_API bool32_t ui_handle_begin      (const char     *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
 SK_API bool32_t ui_handle_begin_16   (const char16_t *text, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));

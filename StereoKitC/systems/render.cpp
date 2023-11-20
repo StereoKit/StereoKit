@@ -170,8 +170,6 @@ const skg_bind_t render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pi
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
-void          render_check_screenshots();
-void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
 void          render_list_add         (const render_item_t *item);
@@ -196,7 +194,7 @@ bool render_init() {
 	local.ortho_near_clip       = 0.0f;
 	local.ortho_far_clip        = 50.0f;
 	local.ortho_viewport_height = 1.0f;
-	local.clear_col             = {0,0,0,1};
+	local.clear_col             = color128{0,0,0,0};
 	local.list_primary          = -1;
 	local.scale                 = 1;
 	local.multisample           = 1;
@@ -239,6 +237,7 @@ bool render_init() {
 
 	material_set_id          (local.sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(local.sky_mat, 100);
+	material_set_depth_write (local.sky_mat, false);
 
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);
@@ -472,6 +471,12 @@ matrix render_get_cam_final() {
 
 matrix render_get_cam_final_inv() {
 	return local.camera_root_final_inv;
+}
+
+///////////////////////////////////////////
+
+render_list_t render_get_primary_list() {
+	return local.list_primary;
 }
 
 ///////////////////////////////////////////
@@ -718,7 +723,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, render_layer_ filter, int32_t view_count) {
+void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count, render_layer_ filter) {
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -782,7 +787,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 
 void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, render_filter, count);
+	render_draw_queue(views, projections, count, render_filter);
 	render_check_screenshots();
 }
 
@@ -837,7 +842,7 @@ void render_check_screenshots() {
 		}
 
 		// Render!
-		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, local.screenshot_list[i].layer_filter, 1);
+		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
@@ -900,7 +905,7 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, local.viewpoint_list[i].layer_filter, 1);
+		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 1, local.viewpoint_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref
@@ -1330,6 +1335,12 @@ void render_list_clear(render_list_t list) {
 	local.lists[list].stats   = {};
 	local.lists[list].prepped = false;
 	local.lists[list].state   = render_list_state_empty;
+}
+
+///////////////////////////////////////////
+
+int32_t render_list_item_count(render_list_t list) {
+	return local.lists[list].queue.count;
 }
 
 ///////////////////////////////////////////

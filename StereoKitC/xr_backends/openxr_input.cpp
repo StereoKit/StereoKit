@@ -42,7 +42,8 @@ XrSpace     xrc_space_grip         [2] = {};
 XrSpace     xrc_space_palm         [2] = {};
 XrSpace     xr_gaze_space              = {};
 
-int32_t xr_eyes_pointer;
+int32_t    xr_eyes_pointer;
+button_state_ xr_tracked_state = button_state_inactive;
 
 struct xrc_profile_info_t {
 	const char *name;
@@ -235,6 +236,8 @@ bool oxri_init() {
 	XrPath path_system_click [2];
 	XrPath path_menu_click   [2];
 	XrPath path_back_click   [2];
+	XrPath path_pinch_val    [2];
+	XrPath path_grasp_val    [2];
 	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",      &path_pose_grip[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose",     &path_pose_grip[1]);
 	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",       &path_pose_aim[0]);
@@ -261,6 +264,11 @@ bool oxri_init() {
 	xrStringToPath(xr_instance, "/user/hand/right/input/back/click",       &path_back_click[1]);
 	xrStringToPath(xr_instance, "/user/hand/left/input/system/click",      &path_system_click[0]);
 	xrStringToPath(xr_instance, "/user/hand/right/input/system/click",     &path_system_click[1]);
+
+	xrStringToPath(xr_instance, "/user/hand/left/input/pinch_ext/value",  &path_pinch_val[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/pinch_ext/value", &path_pinch_val[1]);
+	xrStringToPath(xr_instance, "/user/hand/left/input/grasp_ext/value",  &path_grasp_val[0]);
+	xrStringToPath(xr_instance, "/user/hand/right/input/grasp_ext/value", &path_grasp_val[1]);
 
 	XrPath path_btn_x[2];
 	XrPath path_btn_y[2];
@@ -379,13 +387,13 @@ bool oxri_init() {
 	}
 
 	// microsoft/hand_interaction
-	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_hand_interaction
-	if (xr_ext_available.MSFT_hand_interaction) {
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
+	if (xr_ext_available.EXT_hand_interaction) {
 		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_select_val [0] }, { xrc_action_trigger,     path_select_val [1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
+			{ xrc_action_pose_grip,  path_pose_grip[0] }, { xrc_action_pose_grip,   path_pose_grip[1] },
+			{ xrc_action_pose_aim,   path_pose_aim [0] }, { xrc_action_pose_aim,    path_pose_aim [1] },
+			{ xrc_action_trigger,    path_pinch_val[0] }, { xrc_action_trigger,     path_pinch_val[1] },
+			{ xrc_action_grip,       path_grasp_val[0] }, { xrc_action_grip,        path_grasp_val[1] },
 		};
 		binding_arr.add_range(bindings, _countof(bindings));
 		if (xr_ext_available.EXT_palm_pose) {
@@ -393,15 +401,14 @@ bool oxri_init() {
 			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
 		}
 
-		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/hand_interaction", &profile_path);
+		xrStringToPath(xr_instance, "/interaction_profiles/ext/hand_interaction_ext", &profile_path);
 		suggested_binds.interactionProfile     = profile_path;
 		suggested_binds.suggestedBindings      = binding_arr.data;
 		suggested_binds.countSuggestedBindings = binding_arr.count;
 		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for WMR vs. HoloLens controllers
 			xrc_profile_info_t info;
 			info.profile = profile_path;
-			info.name    = "microsoft/hand_interaction";
+			info.name    = "ext/hand_interaction_ext";
 			info.offset_rot[handed_left ] = quat_identity;
 			info.offset_rot[handed_right] = quat_identity;
 			info.offset_pos[handed_left ] = vec3_zero;
@@ -413,6 +420,7 @@ bool oxri_init() {
 
 	// Bytedance PICO Neo3
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+	if (xr_ext_available.BD_controller_interaction)
 	{
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
@@ -453,6 +461,7 @@ bool oxri_init() {
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 	// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 	// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
+	if (xr_ext_available.BD_controller_interaction)
 	{
 		XrActionSuggestedBinding bindings[] = {
 			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
@@ -694,6 +703,13 @@ void oxri_shutdown() {
 	if (xrc_action_set   ) { xrDestroyActionSet(xrc_action_set   ); xrc_action_set    = {}; }
 }
 
+
+///////////////////////////////////////////
+
+button_state_ openxr_space_tracked() {
+	return xr_tracked_state;
+}
+
 ///////////////////////////////////////////
 
 void oxri_update_poses() {
@@ -714,8 +730,25 @@ void oxri_update_poses() {
 	matrix root   = render_get_cam_final    ();
 	quat   root_q = matrix_extract_rotation(root);
 
-	// Track the head location
-	openxr_get_space(xr_head_space, &input_head_pose_local);
+	// Track the head location, and use it to determine the tracking state of
+	// the world.
+	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res           = xrLocateSpace(xr_head_space, xr_app_space, xr_time, &head_location);
+	if (XR_UNQUALIFIED_SUCCESS(res) && 
+		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) != 0 &&
+		(head_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
+
+		memcpy(&input_head_pose_local.position,    &head_location.pose.position,    sizeof(vec3));
+		memcpy(&input_head_pose_local.orientation, &head_location.pose.orientation, sizeof(quat));
+	}
+	// We report tracking of the device based on the positional tracking
+	// reported here. Rotational tracking is pretty much always available to
+	// devices containing an accelerometer/gyroscope, so positional is the best
+	// metric for tracking quality.
+	xr_tracked_state = button_make_state(
+		(xr_tracked_state            & button_state_active)                    != 0,
+		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT) != 0);
+
 	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	// Get input from whatever controllers may be present

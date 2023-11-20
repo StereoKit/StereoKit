@@ -17,8 +17,9 @@ namespace StereoKit.Framework
 			uiQuadrantMaterial[MatParamName.ColorTint] = Color.Hex(0x777ae8ff);// Color.HSV(b.x,b.y*0.6f,b.z*1.4f);
 			Material uiGlassMaterial    = new Material(uiQuadrantShader);
 			uiGlassMaterial.Transparency = Transparency.Blend;
-			uiGlassMaterial.DepthWrite = false;
-			uiGlassMaterial.QueueOffset = -20;
+			uiGlassMaterial.DepthWrite   = false;
+			uiGlassMaterial.DepthTest    = DepthTest.LessOrEq;
+			uiGlassMaterial.QueueOffset  = -20;
 			uiGlassMaterial[MatParamName.ColorTint] = Color.White;
 
 			Mesh quadrantCube = Mesh.GenerateCube(Vec3.One);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../libraries/miniaudio.h"
-#include "../libraries/tinycthread.h"
+#include "../libraries/ferr_thread.h"
 #include "assets.h"
 
 namespace sk {
@@ -26,7 +26,7 @@ struct _sound_t {
 	ma_decoder     decoder;
 	buffer_t       buffer;
 	ma_pcm_rb      stream_buffer;
-	mtx_t          data_lock;
+	ft_mutex_t     data_lock;
 };
 
 void sound_destroy(sound_t sound);

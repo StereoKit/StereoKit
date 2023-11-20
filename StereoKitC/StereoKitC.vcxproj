@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.props')" />
-  <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
+  <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.props')" />
   <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -98,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
-      <PostBuildEvent>
+    <PostBuildEvent>
       <Command>xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitCTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\$(Platform)_$(Configuration)\StereoKitTest\" /d /k /y
 xcopy "$(TargetDir)*.dll" "$(ProjectDir)..\bin\distribute\bin\Win32\$(Platform)\$(Configuration)\" /d /k /y
@@ -116,6 +116,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="asset_types\anchor.cpp" />
     <ClCompile Include="asset_types\animation.cpp" />
     <ClCompile Include="asset_types\assets.cpp" />
     <ClCompile Include="asset_types\font.cpp" />
@@ -142,13 +143,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\cgltf.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
+    <ClCompile Include="libraries\ferr_thread.cpp" />
     <ClCompile Include="libraries\isac_spatial_sound.cpp" />
     <ClCompile Include="libraries\miniaudio.cpp" />
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
-    <ClCompile Include="libraries\tinycthread.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
@@ -182,15 +183,19 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="ui\ui_core.cpp" />
     <ClCompile Include="ui\ui_layout.cpp" />
     <ClCompile Include="ui\ui_theming.cpp" />
+    <ClCompile Include="utils\random.cpp" />
     <ClCompile Include="utils\sdf.cpp" />
     <ClCompile Include="xr_backends\none.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
+    <ClCompile Include="xr_backends\anchor_openxr_msft.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
     <ClCompile Include="xr_backends\openxr_scene_understanding.cpp" />
     <ClCompile Include="xr_backends\openxr_view.cpp" />
     <ClCompile Include="xr_backends\simulator.cpp" />
+    <ClCompile Include="xr_backends\anchor_stage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="asset_types\anchor.h" />
     <ClInclude Include="asset_types\animation.h" />
     <ClInclude Include="asset_types\assets.h" />
     <ClInclude Include="asset_types\font.h" />
@@ -216,6 +221,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\atomic_util.h" />
     <ClInclude Include="libraries\cgltf.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
+    <ClInclude Include="libraries\ferr_thread.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
@@ -226,7 +232,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\stb_image_write.h" />
     <ClInclude Include="libraries\stb_truetype.h" />
     <ClInclude Include="libraries\stref.h" />
-    <ClInclude Include="libraries\tinycthread.h" />
     <ClInclude Include="libraries\unicode.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="platforms\android.h" />
@@ -263,14 +268,17 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="ui\ui_core.h" />
     <ClInclude Include="ui\ui_layout.h" />
     <ClInclude Include="ui\ui_theming.h" />
+    <ClInclude Include="utils\random.h" />
     <ClInclude Include="utils\sdf.h" />
     <ClInclude Include="xr_backends\none.h" />
     <ClInclude Include="xr_backends\openxr.h" />
+    <ClInclude Include="xr_backends\anchor_openxr_msft.h" />
     <ClInclude Include="xr_backends\openxr_extensions.h" />
     <ClInclude Include="xr_backends\openxr_input.h" />
     <ClInclude Include="xr_backends\openxr_scene_understanding.h" />
     <ClInclude Include="xr_backends\openxr_view.h" />
     <ClInclude Include="xr_backends\simulator.h" />
+    <ClInclude Include="xr_backends\anchor_stage.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>
@@ -292,6 +300,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
     <None Include="shaders_builtin\shader_builtin_blit.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
@@ -299,7 +308,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.Common.1.1.1\build\Microsoft.SourceLink.Common.targets')" />
-    <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets"     Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
+    <Import Project="$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.Build.Tasks.Git.1.1.1\build\Microsoft.Build.Tasks.Git.targets')" />
     <Import Project="$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('$(ProjectDir)..\packages\Microsoft.SourceLink.GitHub.1.1.1\build\Microsoft.SourceLink.GitHub.targets')" />
   </ImportGroup>
   <Target Name="SKCleanShaders" AfterTargets="Clean">

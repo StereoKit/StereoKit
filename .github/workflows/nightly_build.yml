@@ -113,7 +113,7 @@ jobs:
             $commit   = Invoke-RestMethod -Uri "$urlBase/git/commits/$($tag.object.sha)" -Headers $header
             $prevDate = [DateTime]::Parse($commit.author.date).ToUniversalTime()
         }
-        $currVersion.pre = [int](([DateTime]::UtcNow - $prevDate).TotalDays * 4)
+        $currVersion.pre = [Math]::Max(1,[int](([DateTime]::UtcNow - $prevDate).TotalDays * 4))
         $nightlyName = "v$($currVersion.major).$($currVersion.minor).$($currVersion.patch)-preview.$($currVersion.pre)"
         Write-Output "Nightly is $nightlyName"
         

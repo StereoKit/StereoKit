@@ -1,10 +1,6 @@
 name: Release Build
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - master
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,7 +9,6 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     outputs:
       major: ${{ steps.version.outputs.major }}
       minor: ${{ steps.version.outputs.minor }}

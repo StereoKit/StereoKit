@@ -3820,7 +3820,11 @@ skg_shader_stage_t skg_shader_stage_create(const void *file_data, size_t shader_
 		log = (char*)malloc(length);
 		glGetShaderInfoLog(result._shader, length, &err, log);
 
-		skg_logf(skg_log_warning, "Unable to compile shader: ", log);
+		// Trim trailing newlines, we've already got that covered
+		size_t len = strlen(log);
+		while(len > 0 && log[len-1] == '\n') { log[len-1] = '\0'; len -= 1; }
+
+		skg_logf(skg_log_warning, "Unable to compile shader (%d):\n%s", err, log);
 		free(log);
 
 		glDeleteShader(result._shader);
@@ -3843,7 +3847,14 @@ void skg_shader_stage_destroy(skg_shader_stage_t *shader) {
 
 skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_t v_shader, skg_shader_stage_t p_shader, skg_shader_stage_t c_shader) {
 	if (v_shader._shader == 0 && p_shader._shader == 0 && c_shader._shader == 0) {
-		skg_logf(skg_log_warning, "Shader '%s' has no valid stages!", meta->name);
+#if   defined(_SKG_GL_ES)
+		const char   *gl_name      = "GLES";
+#elif defined(_SKG_GL_DESKTOP)
+		const char   *gl_name      = "OpenGL";
+#elif defined(_SKG_GL_WEB)
+		const char   *gl_name      = "WebGL";
+#endif
+		skg_logf(skg_log_warning, "Shader '%s' has no valid stages for %s!", meta->name, gl_name);
 		return {};
 	}
 
@@ -4591,6 +4602,13 @@ bool skg_tex_get_mip_contents(skg_tex_t *tex, int32_t mip_level, void *ref_data,
 ///////////////////////////////////////////
 
 bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr_index, void *ref_data, size_t data_size) {
+	uint32_t result = glGetError();
+	while (result != 0) {
+		char text[128];
+		snprintf(text, 128, "skg_tex_get_mip_contents_arr: eating a gl error from somewhere else: %d", result);
+		skg_log(skg_log_warning, text);
+	}
+	
 	// Double check on mips first
 	int32_t mip_levels = tex->mips == skg_mip_generate ? (int32_t)skg_mip_count(tex->width, tex->height) : 1;
 	if (mip_level != 0) {
@@ -4644,7 +4662,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 	}
 #endif
 
-	uint32_t result = glGetError();
+	result = glGetError();
 	if (result != 0) {
 		char text[128];
 		snprintf(text, 128, "skg_tex_get_mip_contents_arr error: %d", result);

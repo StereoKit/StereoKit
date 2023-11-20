@@ -4,7 +4,6 @@
 using namespace sk;
 
 #include "scene.h"
-#include "demo_basics.h"
 #include "demo_ui.h"
 #include "demo_ui_layout.h"
 #include "demo_mic.h"
@@ -12,6 +11,7 @@ using namespace sk;
 #include "demo_lines.h"
 #include "demo_picker.h"
 #include "demo_world.h"
+#include "demo_anchors.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
@@ -32,11 +32,6 @@ model_t     floor_model;
 
 scene_t demos[] = {
 	{
-		"Basics",
-		demo_basics_init,
-		demo_basics_update,
-		demo_basics_shutdown,
-	}, {
 		"UI",
 		demo_ui_init,
 		demo_ui_update,
@@ -71,6 +66,11 @@ scene_t demos[] = {
 		demo_world_init,
 		demo_world_update,
 		demo_world_shutdown,
+	}, {
+		"Anchors",
+		demo_anchors_init,
+		demo_anchors_update,
+		demo_anchors_shutdown,
 	}, {
 		"Lighting",
 		demo_lighting_init,
@@ -165,7 +165,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[1]);
+	scene_set_active(demos[8]);
 
 	sk_run(common_update, common_shutdown);
 

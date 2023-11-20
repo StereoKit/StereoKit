@@ -87,12 +87,36 @@ namespace StereoKit
 		/// addition to increasing the dimensions, so that the bounds still
 		/// remain sitting on the surface of the UI.
 		/// 
-		/// This depth value will not be reflected in the bounds provided by 
+		/// This depth value will not be reflected in the bounds provided by
 		/// LayouLast.</param>
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
 			=> NativeAPI.ui_layout_reserve(size, addPadding, depth);
+
+		/// <summary>Reserves a box of space for an item in the current UI
+		/// layout! If either size axis is zero, it will be auto-sized to fill
+		/// the current surface horizontally, and fill a single LineHeight
+		/// vertically. Returns the Hierarchy local bounds of the space that
+		/// was reserved, with a Z axis dimension of 0.</summary>
+		/// <param name="width">Width of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="height">Height of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="addPadding">If true, this will add the current padding
+		/// value to the total final dimensions of the space that is reserved.
+		/// </param>
+		/// <param name="depth">This allows you to quickly insert a depth into
+		/// the Bounds you're receiving. This will offset on the Z axis in
+		/// addition to increasing the dimensions, so that the bounds still
+		/// remain sitting on the surface of the UI.
+		/// 
+		/// This depth value will not be reflected in the bounds provided by
+		/// LayouLast.</param>
+		/// <returns>Returns the Hierarchy local bounds of the space that was
+		/// reserved, with a Z axis dimension of 0.</returns>
+		public static Bounds LayoutReserve(float width, float height, bool addPadding = false, float depth = 0)
+			=> NativeAPI.ui_layout_reserve(new Vec2(width, height), addPadding, depth);
 
 		/// <summary>This pushes a layout rect onto the layout stack. All UI
 		/// elements using the layout system will now exist inside this layout
@@ -278,8 +302,21 @@ namespace StereoKit
 		/// space is added vertically, otherwise, space is added
 		/// horizontally.</summary>
 		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space) 
+		public static void Space (float space)
 			=> NativeAPI.ui_space(space);
+
+		/// <summary>Adds some vertical space to the current line! All UI
+		/// following elements on this line will be offset.</summary>
+		/// <param name="verticalSpace">Space in meters to shift the layout by.
+		/// </param>
+		public static void VSpace(float verticalSpace)
+			=> NativeAPI.ui_vspace(verticalSpace);
+
+		/// <summary>Adds some horizontal space to the current line!</summary>
+		/// <param name="horizontalSpace">Space in meters to shift the layout
+		/// by.</param>
+		public static void HSpace(float horizontalSpace)
+			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <summary>This Method is obsolete and will be removed soon. Please
 		/// use any other overload of this method.</summary>
@@ -1211,6 +1248,28 @@ namespace StereoKit
 		public static void PopPreserveKeyboard()
 			=> NativeAPI.ui_pop_preserve_keyboard();
 
+		/// <summary>This pushes an enabled status for grab auras onto the
+		/// stack. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab. MUST be matched
+		/// by a PopGrabAura call.</summary>
+		/// <param name="enabled">Is the grab aura enabled or not?</param>
+		public static void PushGrabAura(bool enabled)
+			=> NativeAPI.ui_push_grab_aura(enabled);
+
+		/// <summary>This removes an enabled status for grab auras from the
+		/// stack, returning it to the state before the previous PushGrabAura
+		/// call. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab.</summary>
+		public static void PopGrabAura()
+			=> NativeAPI.ui_pop_grab_aura();
+
+		/// <summary>This retreives the top of the grab aura enablement stack,
+		/// in case you need to know if the current window will have an aura.
+		/// </summary>
+		/// <returns>The enabled value at the top of the stack.</returns>
+		public static bool GrabAuraEnabled()
+			=> NativeAPI.ui_grab_aura_enabled();
+
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
 		/// </summary>
@@ -1218,7 +1277,7 @@ namespace StereoKit
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
-		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// <summary>Removes a TextStyle from the stack, and whatever was
 		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();

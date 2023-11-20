@@ -18,6 +18,7 @@ namespace StereoKit
 	/// velocity for a single frame to travel through space to get to its
 	/// destination, while teleport will simply appear at its destination 
 	/// without touching anything between.</summary>
+	[Obsolete("Physics will be removed in v0.4, consider a 3rd party physics library like Bepu.")]
 	public class Solid : IAsset
 	{
 		internal IntPtr _inst;
