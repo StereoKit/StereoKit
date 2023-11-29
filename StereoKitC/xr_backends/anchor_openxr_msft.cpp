@@ -104,7 +104,7 @@ void anchor_oxr_msft_step() {
 		anchor_t                 anchor = oxr_msft_anchor_sys.anchors[i];
 		oxr_msft_world_anchor_t* data   = (oxr_msft_world_anchor_t*)anchor->data;
 
-		anchor->tracked = button_make_state(openxr_get_space(data->space, &anchor->pose), (anchor->tracked & button_state_active) != 0);
+		anchor->tracked = button_make_state((anchor->tracked & button_state_active) != 0, openxr_get_space(data->space, &anchor->pose));
 	}
 }
 
