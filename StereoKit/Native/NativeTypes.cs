@@ -674,6 +674,9 @@ namespace StereoKit
 		/// <summary>Refers to the text position indicator carat on text input
 		/// elements.</summary>
 		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.
+		/// </summary>
+		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
