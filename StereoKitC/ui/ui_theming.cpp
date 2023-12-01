@@ -193,29 +193,34 @@ void ui_theming_init() {
 	skui_aura_mat = material_find(default_id_material_ui_aura);
 
 	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
-	ui_set_element_color (ui_vis_default,              ui_color_common);
 	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
-	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
 	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
-	ui_set_element_color (ui_vis_window_body,          ui_color_background);
 	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
-	ui_set_element_color (ui_vis_separator,            ui_color_primary);
 	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
 	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat);
 	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
-	ui_set_element_color (ui_vis_slider_line_active,   ui_color_primary);
 	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
-	ui_set_element_color (ui_vis_slider_line_inactive, ui_color_common);
 	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_color (ui_vis_slider_pinch,         ui_color_primary);
 	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_color (ui_vis_slider_push,          ui_color_primary);
 	ui_set_element_visual(ui_vis_aura,                 skui_aura_mesh,   skui_aura_mat);
+
+	ui_set_element_color (ui_vis_default,              ui_color_common);
+	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
+	ui_set_element_color (ui_vis_window_head_only,     ui_color_primary);
+	ui_set_element_color (ui_vis_window_body,          ui_color_background);
+	ui_set_element_color (ui_vis_window_body_only,     ui_color_background);
+	ui_set_element_color (ui_vis_separator,            ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line,          ui_color_common);
+	ui_set_element_color (ui_vis_slider_line_active,   ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line_inactive, ui_color_common);
+	ui_set_element_color (ui_vis_slider_pinch,         ui_color_primary);
+	ui_set_element_color (ui_vis_slider_push,          ui_color_primary);
 	ui_set_element_color (ui_vis_aura,                 ui_color_text);
 	ui_set_element_color (ui_vis_panel,                ui_color_complement);
 	ui_set_element_color (ui_vis_handle,               ui_color_primary);
 	ui_set_element_color (ui_vis_button,               ui_color_common);
+	ui_set_element_color (ui_vis_toggle,               ui_color_common);
 	ui_set_element_color (ui_vis_button_round,         ui_color_common);
 	ui_set_element_color (ui_vis_input,                ui_color_common);
 	ui_set_element_color (ui_vis_carat,                ui_color_text);
@@ -239,6 +244,8 @@ void ui_theming_shutdown() {
 	for (int32_t i = 0; i < ui_vis_max; i++) {
 		mesh_release    (skui_visuals[i].mesh);
 		material_release(skui_visuals[i].material);
+		sound_release   (skui_visuals[i].snd_activate);
+		sound_release   (skui_visuals[i].snd_deactivate);
 		skui_visuals[i] = {};
 	}
 
@@ -305,17 +312,16 @@ void ui_theming_update() {
 ///////////////////////////////////////////
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
-	ui_el_visual_t visual = {};
+	ui_el_visual_t *vis = &skui_visuals[element_visual];
 
-	if (mesh                                  != nullptr) mesh_addref     (mesh);
-	if (material                              != nullptr) material_addref (material);
-	if (skui_visuals[element_visual].mesh     != nullptr) mesh_release    (skui_visuals[element_visual].mesh);
-	if (skui_visuals[element_visual].material != nullptr) material_release(skui_visuals[element_visual].material);
+	if (mesh          != nullptr) mesh_addref     (mesh);
+	if (material      != nullptr) material_addref (material);
+	if (vis->mesh     != nullptr) mesh_release    (vis->mesh);
+	if (vis->material != nullptr) material_release(vis->material);
 
-	visual.mesh     = mesh;
-	visual.material = material;
-	visual.min_size = min_size;
-	skui_visuals[element_visual] = visual;
+	vis->mesh     = mesh;
+	vis->material = material;
+	vis->min_size = min_size;
 }
 
 ///////////////////////////////////////////
