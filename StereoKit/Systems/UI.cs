@@ -1333,7 +1333,7 @@ namespace StereoKit
 		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
-		/// element. 
+		/// element.
 		/// 
 		/// Note that StereoKit's default UI assets use a type of quadrant
 		/// sizing that is implemented in the Material _and_ the Mesh. You
@@ -1354,7 +1354,28 @@ namespace StereoKit
 		/// This lets UI elements to accommodate for this minimum size, and
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
-			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, Vec2.Zero);
+			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, minSize);
+
+		/// <summary>This allows you to override the color category that a UI
+		/// element is assigned to.</summary>
+		/// <param name="visual">The UI element type to set the color category
+		/// of.</param>
+		/// <param name="colorCategory">The category of color to assign to this
+		/// UI element. Use UI.SetThemeColor in combination with this to assign
+		/// a specific color.</param>
+		public static void SetElementColor(UIVisual visual, UIColor colorCategory)
+			=> NativeAPI.ui_set_element_color(visual, colorCategory);
+
+		/// <summary>This sets the sound that a particulat UI element will make
+		/// when you interact with it. One sound when the interaction starts,
+		/// and one when it ends.</summary>
+		/// <param name="visual">The UI element to apply the sounds to.</param>
+		/// <param name="activate">The sound made when the interaction begins.
+		/// A null sound will fall back to the default sound.</param>
+		/// <param name="deactivate">The sound made when the interaction ends.
+		/// A null sound will fall back to the default sound.</param>
+		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
+			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user

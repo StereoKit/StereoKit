@@ -15,6 +15,9 @@ struct ui_el_visual_t {
 	mesh_t     mesh;
 	material_t material;
 	vec2       min_size;
+	sound_t    snd_activate;
+	sound_t    snd_deactivate;
+	ui_color_  color_category;
 };
 
 struct ui_theme_color_t {
@@ -87,6 +90,7 @@ void ui_theming_init() {
 	skui_tint_stack      = {};
 	skui_grab_aura_stack = {};
 	memset(skui_visuals,   0, sizeof(skui_visuals));
+	memset(skui_palette,   0, sizeof(skui_palette));
 	memset(skui_anim_id,   0, sizeof(skui_anim_id));
 	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
@@ -95,7 +99,7 @@ void ui_theming_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, 10*mm2m, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
+	skui_font_stack.add(text_make_style_mat(skui_font, 10 * mm2m, skui_font_mat, {1,1,1,1}));
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
@@ -201,6 +205,35 @@ void ui_theming_init() {
 	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_aura,                 skui_aura_mesh,   skui_aura_mat);
+
+	ui_set_element_color (ui_vis_none,                 ui_color_common);
+	ui_set_element_color (ui_vis_default,              ui_color_common);
+	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
+	ui_set_element_color (ui_vis_window_head_only,     ui_color_primary);
+	ui_set_element_color (ui_vis_window_body,          ui_color_background);
+	ui_set_element_color (ui_vis_window_body_only,     ui_color_background);
+	ui_set_element_color (ui_vis_separator,            ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line,          ui_color_common);
+	ui_set_element_color (ui_vis_slider_line_active,   ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line_inactive, ui_color_common);
+	ui_set_element_color (ui_vis_slider_pinch,         ui_color_primary);
+	ui_set_element_color (ui_vis_slider_push,          ui_color_primary);
+	ui_set_element_color (ui_vis_aura,                 ui_color_text);
+	ui_set_element_color (ui_vis_panel,                ui_color_complement);
+	ui_set_element_color (ui_vis_handle,               ui_color_primary);
+	ui_set_element_color (ui_vis_button,               ui_color_common);
+	ui_set_element_color (ui_vis_toggle,               ui_color_common);
+	ui_set_element_color (ui_vis_button_round,         ui_color_common);
+	ui_set_element_color (ui_vis_input,                ui_color_common);
+	ui_set_element_color (ui_vis_carat,                ui_color_text);
+
+	ui_set_element_sound(ui_vis_default,               skui_snd_interact, skui_snd_uninteract);
+	ui_set_element_sound(ui_vis_handle,                skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body,           skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head,           skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body_only,      skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head_only,      skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_slider_line,           skui_snd_tick,     skui_snd_tick);
 }
 
 ///////////////////////////////////////////
@@ -213,6 +246,8 @@ void ui_theming_shutdown() {
 	for (int32_t i = 0; i < ui_vis_max; i++) {
 		mesh_release    (skui_visuals[i].mesh);
 		material_release(skui_visuals[i].material);
+		sound_release   (skui_visuals[i].snd_activate);
+		sound_release   (skui_visuals[i].snd_deactivate);
 		skui_visuals[i] = {};
 	}
 
@@ -279,17 +314,34 @@ void ui_theming_update() {
 ///////////////////////////////////////////
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
-	ui_el_visual_t visual = {};
+	ui_el_visual_t *vis = &skui_visuals[element_visual];
 
-	if (mesh                                  != nullptr) mesh_addref     (mesh);
-	if (material                              != nullptr) material_addref (material);
-	if (skui_visuals[element_visual].mesh     != nullptr) mesh_release    (skui_visuals[element_visual].mesh);
-	if (skui_visuals[element_visual].material != nullptr) material_release(skui_visuals[element_visual].material);
+	if (mesh          != nullptr) mesh_addref     (mesh);
+	if (material      != nullptr) material_addref (material);
+	if (vis->mesh     != nullptr) mesh_release    (vis->mesh);
+	if (vis->material != nullptr) material_release(vis->material);
 
-	visual.mesh     = mesh;
-	visual.material = material;
-	visual.min_size = min_size;
-	skui_visuals[element_visual] = visual;
+	vis->mesh     = mesh;
+	vis->material = material;
+	vis->min_size = min_size;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_color(ui_vis_ element, ui_color_ color_category) {
+	skui_visuals[element].color_category = color_category;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_sound(ui_vis_ element, sound_t activate, sound_t deactivate) {
+	if (activate   != nullptr) sound_addref(activate);
+	if (deactivate != nullptr) sound_addref(deactivate);
+	if (skui_visuals[element].snd_activate   != nullptr) sound_release(skui_visuals[element].snd_activate);
+	if (skui_visuals[element].snd_deactivate != nullptr) sound_release(skui_visuals[element].snd_deactivate);
+
+	skui_visuals[element].snd_activate   = activate;
+	skui_visuals[element].snd_deactivate = deactivate;
 }
 
 ///////////////////////////////////////////
@@ -318,41 +370,71 @@ material_t ui_get_material(ui_vis_ element_visual) {
 
 ///////////////////////////////////////////
 
-void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, float focus) {
+ui_color_ ui_get_color(ui_vis_ element_visual) {
+	ui_color_ category = skui_visuals[element_visual].color_category;
+	return category != ui_color_none
+		? category
+		: skui_visuals[ui_vis_default].color_category;
+}
+
+///////////////////////////////////////////
+
+sound_t ui_get_sound_on(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_activate
+		? skui_visuals[element_visual].snd_activate
+		: skui_visuals[ui_vis_default].snd_activate;
+}
+
+///////////////////////////////////////////
+
+sound_t ui_get_sound_off(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_deactivate
+		? skui_visuals[element_visual].snd_deactivate
+		: skui_visuals[ui_vis_default].snd_deactivate;
+}
+
+///////////////////////////////////////////
+
+color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
+	ui_color_ color       = ui_get_color(element_visual);
+	color128  final_color = ui_is_enabled()
+		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
+		: skui_palette[color].disabled;
+	final_color   = final_color * skui_tint;
+	final_color.a = focus;
+
+	return final_color;
+}
+
+///////////////////////////////////////////
+
+void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
 	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
 	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
 	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
 
-	vec3   pos = start - size / 2;
-	matrix mx  = matrix_ts(pos, size);
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_color, focus));
+}
 
-	color128 final_color = ui_is_enabled()
-		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
-		: skui_palette[color].disabled;
-	final_color = final_color * skui_tint;
-	final_color.a = focus;
+///////////////////////////////////////////
 
-	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
+void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_visual, focus));
 }
 
 ///////////////////////////////////////////
 
 void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
-	sound_t snd_on  = nullptr;
-	sound_t snd_off = nullptr;
-
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd_on = skui_snd_grab;
-		snd_off= skui_snd_ungrab;
-	} else {
-		snd_on = skui_snd_interact;
-		snd_off= skui_snd_uninteract;
-	}
+	sound_t snd_on  = ui_get_sound_on(element_visual);
+	sound_t snd_off = ui_get_sound_off(element_visual);
 
 	if (snd_off) sound_addref(snd_off);
 	sound_release(skui_active_sound_off);
@@ -368,44 +450,14 @@ void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) 
 ///////////////////////////////////////////
 
 void ui_play_sound_on(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = nullptr;
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd = skui_snd_grab;
-	} else {
-		snd = skui_snd_interact;
-	}
-
+	sound_t snd = ui_get_sound_on(element_visual);
 	if (snd) sound_play(snd, at, 1);
 }
 
 ///////////////////////////////////////////
 
 void ui_play_sound_off(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = nullptr;
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd = skui_snd_ungrab;
-	} else {
-		snd = skui_snd_uninteract;
-	}
-
-	if (snd) sound_play(snd, at, 1);
-}
-
-///////////////////////////////////////////
-
-void ui_play_sound(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = skui_snd_tick;
-
+	sound_t snd = ui_get_sound_off(element_visual);
 	if (snd) sound_play(snd, at, 1);
 }
 

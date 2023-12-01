@@ -686,9 +686,12 @@ namespace StereoKit
 	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>The default category, used to indicate that no category
+		/// has been selected.</summary>
+		None = 0,
 		/// <summary>This is the main accent color used by window headers,
 		/// separators, etc.</summary>
-		Primary = 0,
+		Primary,
 		/// <summary>This is a background sort of color that should generally
 		/// be dark. Used by window bodies and backgrounds of certain elements.
 		/// </summary>
