@@ -743,7 +743,7 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 ///////////////////////////////////////////
 
 void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
-	ui_progress_bar_at_ex(percent, start_pos, size, 1, false);
+	ui_progress_bar_at_ex(percent, start_pos, size, 0, false);
 }
 
 ///////////////////////////////////////////
@@ -1097,24 +1097,22 @@ void ui_window_end() {
 		(skui_hand[1].focused_prev != win->hash && skui_hand[1].focused_prev_prev == win->hash))
 		ui_anim_start(win->hash, 1);
 
-	float color_blend = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
+	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
 	if (ui_anim_has(win->hash, 0, skui_anim_focus_duration)) {
-		float t = ui_anim_elapsed(win->hash, 0, skui_anim_focus_duration);
-		color_blend = math_ease_smooth(0, 1, t);
+		focus = math_ease_smooth(0, 1, ui_anim_elapsed(win->hash, 0, skui_anim_focus_duration));
 	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
-		float t = ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration);
-		color_blend = math_ease_smooth(1, 0, t);
+		focus = math_ease_smooth(1, 0, ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration));
 	}
 
 	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
 		vec3 aura_start = vec3{ start.x+skui_aura_radius,  start.y+skui_aura_radius,  start.z };
 		vec3 aura_size  = vec3{ size .x+skui_aura_radius*2,size .y+skui_aura_radius*2,size .z };
 		if (win->type & ui_win_head) { aura_start.y += line_height; aura_size.y += line_height; }
-		ui_draw_el(ui_vis_aura, aura_start, aura_size, color_blend);
+		ui_draw_el(ui_vis_aura, aura_start, aura_size, focus);
 	}
 
 	if (win->type & ui_win_head) {
-		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, color_blend);
+		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
 	}
 	if (win->type & ui_win_body) {
 		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);

@@ -90,6 +90,7 @@ void ui_theming_init() {
 	skui_tint_stack      = {};
 	skui_grab_aura_stack = {};
 	memset(skui_visuals,   0, sizeof(skui_visuals));
+	memset(skui_palette,   0, sizeof(skui_palette));
 	memset(skui_anim_id,   0, sizeof(skui_anim_id));
 	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
@@ -98,7 +99,7 @@ void ui_theming_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, 10*mm2m, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
+	skui_font_stack.add(text_make_style_mat(skui_font, 10 * mm2m, skui_font_mat, {1,1,1,1}));
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
@@ -205,6 +206,7 @@ void ui_theming_init() {
 	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_aura,                 skui_aura_mesh,   skui_aura_mat);
 
+	ui_set_element_color (ui_vis_none,                 ui_color_common);
 	ui_set_element_color (ui_vis_default,              ui_color_common);
 	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
 	ui_set_element_color (ui_vis_window_head_only,     ui_color_primary);
@@ -393,28 +395,39 @@ sound_t ui_get_sound_off(ui_vis_ element_visual) {
 
 ///////////////////////////////////////////
 
+color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
+	ui_color_ color       = ui_get_color(element_visual);
+	color128  final_color = ui_is_enabled()
+		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
+		: skui_palette[color].disabled;
+	final_color   = final_color * skui_tint;
+	final_color.a = focus;
+
+	return final_color;
+}
+
+///////////////////////////////////////////
+
 void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
 	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
 	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
 	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
 
-	vec3   pos = start - size / 2;
-	matrix mx  = matrix_ts(pos, size);
-
-	ui_color_ color       = ui_get_color(element_color);
-	color128  final_color = ui_is_enabled()
-		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
-		: skui_palette[color].disabled;
-	final_color = final_color * skui_tint;
-	final_color.a = focus;
-
-	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_color, focus));
 }
 
 ///////////////////////////////////////////
 
 void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
-	ui_draw_el_color(element_visual, element_visual, start, size, focus);
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_visual, focus));
 }
 
 ///////////////////////////////////////////
