@@ -487,7 +487,6 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 		ui_draw_el(ui_vis_handle,
 			handle_bounds.center+handle_bounds.dimensions/2,
 			handle_bounds.dimensions,
-			ui_color_primary,
 			color_blend);
 		ui_nextline();
 	}

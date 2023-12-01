@@ -18,11 +18,11 @@ void ui_theming_update();
 void ui_theming_shutdown();
 
 vec2 ui_get_mesh_minsize (ui_vis_ element_visual);
-void ui_draw_el          (ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, float focus);
+void ui_draw_el          (ui_vis_ element_visual, vec3 start, vec3 size, float focus);
+void ui_draw_el_color    (ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus);
 void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at);
 void ui_play_sound_on    (ui_vis_ element_visual, vec3 at);
 void ui_play_sound_off   (ui_vis_ element_visual, vec3 at);
-void ui_play_sound       (ui_vis_ element_visual, vec3 at);
 void ui_draw_cube        (vec3 start, vec3 size, ui_color_ color, float focus);
 
 void  ui_anim_start  (uint64_t id, int32_t channel);
