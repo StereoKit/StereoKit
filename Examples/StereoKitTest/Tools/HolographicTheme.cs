@@ -33,8 +33,8 @@ namespace StereoKit.Framework
 			UI.SetElementVisual(UIVisual.WindowBody,  backplate,      uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Separator,   quadrantCube,   uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderLine,  backplateSmall, uiQuadrantMaterial);
-			UI.SetElementVisual(UIVisual.SliderLineActive,   backplateSmall, uiQuadrantMaterial, new(0.008f, 0.008f));
-			UI.SetElementVisual(UIVisual.SliderLineInactive, backplateSmall, uiQuadrantMaterial, new(0.008f, 0.008f));
+			UI.SetElementVisual(UIVisual.SliderLineActive,   backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
+			UI.SetElementVisual(UIVisual.SliderLineInactive, backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
 			UI.SetElementVisual(UIVisual.SliderPinch, backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderPush,  backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Button,      glassMesh,      uiGlassMaterial);
