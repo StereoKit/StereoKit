@@ -288,7 +288,6 @@ void ui_theming_update() {
 	if (skui_active_sound_element_id == 0) return;
 
 	// See if our current sound on/off pair is still from a valid ui element
-	bool found_active = false;
 	for (int32_t i = 0; i < handed_max; i++) {
 		if (skui_hand[i].active_prev == skui_active_sound_element_id) {
 			return;
