@@ -492,7 +492,7 @@ bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) 
 }
 ///////////////////////////////////////////
 
-void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// Update tracking state
@@ -507,11 +507,8 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 	const pose_t* dest_pose = nullptr;
 	hand_sim_id_t pose_id         = -1;
 	int32_t       pose_idx        = -1;
-	int32_t       pose_idx_prev   = -1;
-	int32_t       pose_idx_curr   = -1;
 	float         pose_blend_curr = 0;
 	
-	const controller_t* controller = input_controller(handedness);
 	for (int32_t i = 0; i < hand_sim_poses.count; i++) {
 		float amt1 = 0, amt2 = 0;
 		hand_sim_t *p = &hand_sim_poses[i];
@@ -595,7 +592,7 @@ void input_hand_sim_pose_remove(hand_sim_id_t id) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim_pose_clear(hand_sim_id_t id) {
+void input_hand_sim_pose_clear() {
 	hand_sim_poses.clear();
 }
 
