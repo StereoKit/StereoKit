@@ -890,6 +890,8 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 			&display->view_projections[v * surfaces],
 			surfaces);
 	}
+
+	return true;
 }
 
 ///////////////////////////////////////////

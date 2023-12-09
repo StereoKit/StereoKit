@@ -3,6 +3,8 @@
 #include "../asset_types/texture.h"
 #include "../libraries/sk_gpu.h"
 
+#include <stdio.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
