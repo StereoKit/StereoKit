@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #if defined(SK_OS_ANDROID)
@@ -10,13 +10,8 @@
 	#define XR_USE_GRAPHICS_API_OPENGL_ES
 
 #elif defined(SK_OS_LINUX)
-	#if defined(SKG_LINUX_EGL)
-		#define XR_USE_PLATFORM_EGL
-		#define XR_USE_GRAPHICS_API_OPENGL_ES
-	#else
-		#define XR_USE_PLATFORM_XLIB
-		#define XR_USE_GRAPHICS_API_OPENGL
-	#endif
+	#define XR_USE_PLATFORM_EGL
+	#define XR_USE_GRAPHICS_API_OPENGL_ES
 
 	#define XR_USE_TIMESPEC
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
@@ -50,6 +45,7 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 } XrBaseHeader;
 
 #define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof(message, openxr_string(xr_call_result)); return false;}}
+#define xr_check2(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
 namespace sk {

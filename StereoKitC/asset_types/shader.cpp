@@ -1,11 +1,11 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../libraries/stref.h"
 #include "shader.h"
 #include "assets.h"
 
-#include <malloc.h>
+#include <stdlib.h>
 
 namespace sk {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
@@ -24,7 +24,9 @@
 	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_D3D11_KHR
 
 #elif defined(XR_USE_PLATFORM_WIN32) && defined(XR_USE_GRAPHICS_API_OPENGL)
-	#include <windows.h>
+	#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <unknwn.h>
 	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageOpenGLKHR
@@ -153,13 +155,9 @@ namespace sk {
 #define FOR_EACH_EXT_ANDROID(_) \
 	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
 
-#if defined(SKG_LINUX_EGL)
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
 	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
-#else
-#define FOR_EACH_EXT_LINUX(_)
-#endif
 
 // Debug builds only
 #define FOR_EACH_EXT_DEBUG(_) \

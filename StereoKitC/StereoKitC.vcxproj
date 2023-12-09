@@ -155,7 +155,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\linux.cpp" />
     <ClCompile Include="platforms\platform.cpp" />
-    <ClCompile Include="platforms\platform_utils.cpp" />
+    <ClCompile Include="platforms\platform_common_unix.cpp" />
+    <ClCompile Include="platforms\platform_common_win.cpp" />
     <ClCompile Include="platforms\uwp.cpp" />
     <ClCompile Include="platforms\web.cpp" />
     <ClCompile Include="platforms\win32.cpp" />
@@ -173,11 +174,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\render.cpp" />
+    <ClCompile Include="systems\render_pipeline.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
     <ClCompile Include="systems\world.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
+    <ClCompile Include="tools\tools.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
     <ClCompile Include="ui\stereokit_ui.cpp" />
     <ClCompile Include="ui\ui_core.cpp" />
@@ -185,7 +188,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="ui\ui_theming.cpp" />
     <ClCompile Include="utils\random.cpp" />
     <ClCompile Include="utils\sdf.cpp" />
-    <ClCompile Include="xr_backends\none.cpp" />
+    <ClCompile Include="xr_backends\offscreen.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
     <ClCompile Include="xr_backends\anchor_openxr_msft.cpp" />
     <ClCompile Include="xr_backends\openxr_input.cpp" />
@@ -193,6 +196,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="xr_backends\openxr_view.cpp" />
     <ClCompile Include="xr_backends\simulator.cpp" />
     <ClCompile Include="xr_backends\anchor_stage.cpp" />
+    <ClCompile Include="xr_backends\window.cpp" />
+    <ClCompile Include="xr_backends\xr.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="asset_types\anchor.h" />
@@ -237,10 +242,10 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="platforms\android.h" />
     <ClInclude Include="platforms\linux.h" />
     <ClInclude Include="platforms\platform.h" />
-    <ClInclude Include="platforms\platform_utils.h" />
     <ClInclude Include="platforms\uwp.h" />
     <ClInclude Include="platforms\web.h" />
     <ClInclude Include="platforms\win32.h" />
+    <ClInclude Include="platforms\_platform.h" />
     <ClInclude Include="rect_atlas.h" />
     <ClInclude Include="sk_math.h" />
     <ClInclude Include="shaders_builtin\shader_builtin.h" />
@@ -258,11 +263,13 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\render.h" />
+    <ClInclude Include="systems\render_pipeline.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
     <ClInclude Include="tools\file_picker.h" />
     <ClInclude Include="systems\world.h" />
+    <ClInclude Include="tools\tools.h" />
     <ClInclude Include="tools\virtual_keyboard.h" />
     <ClInclude Include="tools\virtual_keyboard_layouts.h" />
     <ClInclude Include="ui\ui_core.h" />
@@ -270,7 +277,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="ui\ui_theming.h" />
     <ClInclude Include="utils\random.h" />
     <ClInclude Include="utils\sdf.h" />
-    <ClInclude Include="xr_backends\none.h" />
+    <ClInclude Include="xr_backends\offscreen.h" />
     <ClInclude Include="xr_backends\openxr.h" />
     <ClInclude Include="xr_backends\anchor_openxr_msft.h" />
     <ClInclude Include="xr_backends\openxr_extensions.h" />
@@ -279,6 +286,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="xr_backends\openxr_view.h" />
     <ClInclude Include="xr_backends\simulator.h" />
     <ClInclude Include="xr_backends\anchor_stage.h" />
+    <ClInclude Include="xr_backends\window.h" />
+    <ClInclude Include="xr_backends\xr.h" />
     <ClInclude Include="_stereokit.h" />
     <ClInclude Include="_stereokit_ui.h" />
   </ItemGroup>

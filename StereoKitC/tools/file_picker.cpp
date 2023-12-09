@@ -1,12 +1,17 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "file_picker.h"
-#include "../_stereokit.h"
+
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #if defined(SK_OS_WINDOWS)
 
@@ -16,9 +21,10 @@
 	#endif
 	#include <windows.h>
 	#include <commdlg.h>
-	#include <stdio.h>
 
 #elif defined(SK_OS_WINDOWS_UWP)
+
+	#include "../libraries/ferr_hash.h"
 
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -36,11 +42,9 @@
 	using namespace winrt::Windows::Foundation;
 	using namespace winrt::Windows::Storage::Streams;
 
-#elif defined(SK_OS_WEB)
-
-	#include <stdio.h>
-
 #endif
+
+#include <stdio.h>
 
 namespace sk {
 

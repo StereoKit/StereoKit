@@ -3,10 +3,9 @@
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -146,7 +145,7 @@ void log_write(log_ level, const char *text) {
 	// Set up some memory if we have color tags we need to replace
 	char* replace_buffer = nullptr;
 	if (color_tags > 0)
-		replace_buffer = (char*)alloca(sizeof(char) * ((text_len - color_tags*7) + color_tags * 8 + 1));
+		replace_buffer = sk_stack_alloc_t(char, (text_len - color_tags*7) + color_tags * 8 + 1);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX)
 	const char* colored_text = text;

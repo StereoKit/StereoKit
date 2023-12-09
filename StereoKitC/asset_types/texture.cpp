@@ -1,5 +1,5 @@
 #include "../stereokit.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
@@ -434,7 +434,7 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data,
 	tex_set_id(result, file);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
@@ -465,7 +465,7 @@ tex_t tex_create_file(const char *file, bool32_t srgb_data, int32_t priority) {
 tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t srgb_data, int32_t priority) {
 	tex_t result = tex_create(type);
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
@@ -569,7 +569,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	tex_set_id(result, file_id);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb    = srgb_data;
 	load_data->file_count = file_count;
 	load_data->file_names = sk_malloc_t(char *, file_count);
@@ -619,7 +619,7 @@ tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_da
 	tex_set_id(result, equirect_id);
 	result->header.state = asset_state_loading;
 
-	tex_load_t *load_data = sk_calloc_t(tex_load_t, 1);
+	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
@@ -918,15 +918,15 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **data
 ///////////////////////////////////////////
 
 void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data, bool32_t blocking, int32_t priority) {
-	tex_load_t* load_data = sk_calloc_t(tex_load_t, 1);
-	load_data->is_srgb = srgb_data;
+	tex_load_t* load_data = sk_malloc_zero_t(tex_load_t, 1);
+	load_data->is_srgb    = srgb_data;
 	load_data->file_count = 1;
-	load_data->file_names = sk_malloc_t(char*, 1);
+	load_data->file_names = sk_malloc_t(char*,  1);
 	load_data->file_sizes = sk_malloc_t(size_t, 1);
-	load_data->file_data = sk_malloc_t(void*, 1);
+	load_data->file_data  = sk_malloc_t(void*,  1);
 	load_data->file_names[0] = string_copy("(memory)");
 	load_data->file_sizes[0] = data_size;
-	load_data->file_data[0] = sk_malloc(sizeof(uint8_t) * data_size);
+	load_data->file_data [0] = sk_malloc(sizeof(uint8_t) * data_size);
 	memcpy(load_data->file_data[0], data, data_size);
 
 	// Grab the file meta right away since we already have the file data, no

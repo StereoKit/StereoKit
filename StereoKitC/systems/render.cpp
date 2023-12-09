@@ -17,7 +17,7 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include <limits.h>
 
@@ -724,6 +724,8 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 ///////////////////////////////////////////
 
 void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count, render_layer_ filter) {
+	skg_event_begin("Render List Setup");
+
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -780,7 +782,12 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 		}
 	}
 
+	skg_event_end();
+	skg_event_begin("Execute Render List");
+
 	render_list_execute(local.list_primary, filter, view_count, 0, INT_MAX);
+
+	skg_event_end();
 }
 
 ///////////////////////////////////////////
@@ -800,6 +807,7 @@ void render_check_screenshots() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.screenshot_list.count; i++) {
+		skg_event_begin("Screenshot");
 		int32_t  w = local.screenshot_list[i].width;
 		int32_t  h = local.screenshot_list[i].height;
 
@@ -867,6 +875,7 @@ void render_check_screenshots() {
 		// Notify that the color data is ready!
 		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
 		sk_free(buffer);
+		skg_event_end();
 	}
 	local.screenshot_list.clear();
 	skg_tex_target_bind(old_target);
@@ -879,6 +888,7 @@ void render_check_viewpoints() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
+		skg_event_begin("Viewpoint");
 		// Setup to render the screenshot
 		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex);
 
@@ -910,6 +920,7 @@ void render_check_viewpoints() {
 
 		// Release the reference we added, the user should have their own ref
 		tex_release(local.viewpoint_list[i].rendertarget);
+		skg_event_end();
 	}
 	local.viewpoint_list.clear();
 	skg_tex_target_bind(old_target);

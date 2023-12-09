@@ -950,12 +950,12 @@ void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius
 			verts[off + c] = { tube_pt, tube_norm, uv, {255,255,255,255} };
 
 			vind_t cn   = (c + 1) % tube_corners;
-			inds[ind++] = offn + cn;
+			inds[ind++] = off  + c;
 			inds[ind++] = offn + c;
-			inds[ind++] = off  + c;
-			inds[ind++] = off  + cn;
 			inds[ind++] = offn + cn;
 			inds[ind++] = off  + c;
+			inds[ind++] = offn + cn;
+			inds[ind++] = off  + cn;
 		}
 	}
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
