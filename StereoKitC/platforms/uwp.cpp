@@ -16,7 +16,6 @@
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/stref.h"
-#include "../libraries/tinycthread.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
 #include "../systems/input.h"
