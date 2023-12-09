@@ -133,7 +133,7 @@ const hand_t *input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
-hand_source_ input_hand_source(handed_ hand) {
+hand_source_ input_hand_source(handed_) {
 	return hand_sources[hand_system].source;
 }
 
@@ -510,7 +510,6 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 	int32_t       pose_idx        = -1;
 	float         pose_blend_curr = 0;
 	
-	const controller_t* controller = input_controller(handedness);
 	for (int32_t i = 0; i < hand_sim_poses.count; i++) {
 		float amt1 = 0, amt2 = 0;
 		hand_sim_t *p = &hand_sim_poses[i];

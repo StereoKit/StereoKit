@@ -93,8 +93,8 @@ void anchors_step_end() {
 char to_hex(uint32_t val, uint32_t byte_idx) {
 	uint32_t byte = (val >> (byte_idx * 4)) & 0xF;
 	return byte < 10
-		? '0' + byte
-		: 'A' + byte - 10;
+		? (char)('0' + byte)
+		: (char)('A' + byte - 10);
 }
 
 ///////////////////////////////////////////
