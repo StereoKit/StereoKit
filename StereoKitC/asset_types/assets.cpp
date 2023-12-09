@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "assets.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -453,7 +458,6 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 	if (ft_id_matches(sk_main_thread())) {
 		return asset_job(data);
 	} else {
-		log_errf("assets_execute_gpu not called on the right thread");
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
 		*job = {};
 		job->asset_job = asset_job;
