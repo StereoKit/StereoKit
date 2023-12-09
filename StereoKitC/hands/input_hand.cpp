@@ -132,7 +132,7 @@ const hand_t *input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
-hand_source_ input_hand_source(handed_ hand) {
+hand_source_ input_hand_source(handed_) {
 	return hand_sources[hand_system].source;
 }
 
