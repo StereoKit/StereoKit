@@ -16,6 +16,7 @@
 #include "../asset_types/texture.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_thread.h"
 #include "../systems/system.h"
 #include "../systems/render.h"
 #include "../systems/input.h"
@@ -64,7 +65,7 @@ struct window_t {
 	bool                    initialized;
 	bool                    valid;
 	array_t<window_event_t> events;
-	mtx_t                   event_mtx;
+	ft_mutex_t              event_mtx;
 
 	skg_swapchain_t         swapchain;
 	bool                    has_swapchain;
@@ -605,8 +606,8 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	uwp_windows.add({});
 	platform_win_t win_id = uwp_windows.count - 1;
 	window_t      *win    = &uwp_windows[win_id];
-	win->title = platform_to_wchar(title);
-	mtx_init(&win->event_mtx, mtx_plain);
+	win->title     = platform_to_wchar(title);
+	win->event_mtx = ft_mutex_create();
 
 	_beginthread(uwp_window_thread, 0, &win_id);
 
@@ -647,7 +648,7 @@ void platform_win_destroy(platform_win_t window) {
 		skg_swapchain_destroy(&win->swapchain);
 	}
 
-	mtx_destroy(&win->event_mtx);
+	ft_mutex_destroy(&win->event_mtx);
 
 	win->events.free();
 	sk_free(win->title);
@@ -675,11 +676,11 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 	window_t *window = &uwp_windows[window_id];
 	if (window->events.count == 0) return false;
 
-	mtx_lock(&window->event_mtx);
+	ft_mutex_lock(window->event_mtx);
 	*out_event      = window->events[0].type;
 	*out_event_data = window->events[0].data;
 	window->events.remove(0);
-	mtx_unlock(&window->event_mtx);
+	ft_mutex_unlock(window->event_mtx);
 	return true;
 }
 
@@ -708,9 +709,9 @@ recti_t platform_win_rect(platform_win_t window_id) {
 
 void platform_win_add_event(platform_win_t win_id, window_event_t evt) {
 	if (uwp_windows[win_id].run_thread == false) return;
-	mtx_lock(&uwp_windows[win_id].event_mtx);
+	ft_mutex_lock(uwp_windows[win_id].event_mtx);
 	uwp_windows[win_id].events.add(evt);
-	mtx_unlock(&uwp_windows[win_id].event_mtx);
+	ft_mutex_unlock(uwp_windows[win_id].event_mtx);
 }
 
 ///////////////////////////////////////////
