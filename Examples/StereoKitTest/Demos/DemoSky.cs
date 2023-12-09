@@ -31,7 +31,7 @@ class DemoSky : ITest
 
 	Pose       windowPose    = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
 	Pose       previewPose   = (Demo.contentPose * Matrix.T(0.2f, -0.1f, 0)).Pose;
-	Pose       lightToolPose = (Demo.contentPose * Matrix.T(0.0f, -0.1f, 0)).Pose;
+	Pose       lightToolPose = new Pose((Demo.contentPose * Matrix.T(0.0f, -0.1f, 0)).Translation, Quat.Identity);
 	LightMode  mode          = LightMode.Lights;
 	Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 	Mesh       lightMesh     = Mesh.GenerateSphere(1);
@@ -134,8 +134,8 @@ class DemoSky : ITest
 
 		UI.HandleEnd();
 		Lines.Add(
-			lights[i].pose.position, Vec3.Zero, 
-			Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f, 
+			lights[i].pose.position, Vec3.Zero,
+			Color.HSV(lights[i].color) * LightIntensity(lights[i].pose.position) * 0.5f,
 			U.mm);
 
 		UI.PopId();

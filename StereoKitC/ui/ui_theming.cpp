@@ -15,6 +15,9 @@ struct ui_el_visual_t {
 	mesh_t     mesh;
 	material_t material;
 	vec2       min_size;
+	sound_t    snd_activate;
+	sound_t    snd_deactivate;
+	ui_color_  color_category;
 };
 
 struct ui_theme_color_t {
@@ -37,11 +40,13 @@ mesh_t          skui_small_right;
 mesh_t          skui_small;
 vec2            skui_small_min;
 mesh_t          skui_cylinder;
+mesh_t          skui_aura_mesh;
 
 material_t      skui_mat;
 material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 material_t      skui_font_mat;
+material_t      skui_aura_mat;
 
 sprite_t        skui_toggle_off;
 sprite_t        skui_toggle_on;
@@ -56,36 +61,45 @@ sound_t         skui_snd_tick;
 
 mesh_t          skui_box_dbg;
 
-uint64_t        skui_anim_id;
-float           skui_anim_time;
+uint64_t        skui_anim_id[3];
+float           skui_anim_time[3];
 
 ui_theme_color_t skui_palette[ui_color_max];
 color128         skui_tint;
 
 array_t<text_style_t> skui_font_stack;
 array_t<color128>     skui_tint_stack;
+array_t<bool32_t>     skui_grab_aura_stack;
+
+sound_t       skui_active_sound_off        = nullptr;
+sound_inst_t  skui_active_sound_inst       = {};
+vec3          skui_active_sound_pos        = vec3_zero;
+uint64_t      skui_active_sound_element_id = 0;
 
 ///////////////////////////////////////////
 
 void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
 void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start);
+void ui_default_aura_mesh(mesh_t* mesh,                   float diameter, float rounding, int32_t quadrant_slices, int32_t tube_corners);
 
 ///////////////////////////////////////////
 
 void ui_theming_init() {
-	skui_anim_id    = 0;
-	skui_anim_time  = 0;
-	skui_tint       = { 1,1,1,1 };
-	skui_font_stack = {};
-	skui_tint_stack = {};
-	memset(skui_visuals, 0, sizeof(skui_visuals));
+	skui_tint            = { 1,1,1,1 };
+	skui_font_stack      = {};
+	skui_tint_stack      = {};
+	skui_grab_aura_stack = {};
+	memset(skui_visuals,   0, sizeof(skui_visuals));
+	memset(skui_palette,   0, sizeof(skui_palette));
+	memset(skui_anim_id,   0, sizeof(skui_anim_id));
+	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, 10*mm2m, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
+	skui_font_stack.add(text_make_style_mat(skui_font, 10 * mm2m, skui_font_mat, {1,1,1,1}));
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
@@ -161,9 +175,9 @@ void ui_theming_init() {
 	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
-	skui_mat_dbg  = material_copy_id(default_id_material_ui);
+	skui_mat_dbg  = material_copy_id(default_id_material);
 	material_set_transparency(skui_mat_dbg, transparency_add);
-	material_set_color       (skui_mat_dbg, "color", { .5f,.5f,.5f,1 });
+	material_set_color       (skui_mat_dbg, "color", { .3f,.3f,.3f,.3f });
 	material_set_depth_write (skui_mat_dbg, false);
 	material_set_depth_test  (skui_mat_dbg, depth_test_always);
 	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
@@ -177,6 +191,7 @@ void ui_theming_init() {
 	material_set_bool(skui_mat, "ui_tint", true);
 	material_set_id  (skui_mat, "sk/ui/default_mat");
 	skui_mat_quad = material_find(default_id_material_ui_quadrant);
+	skui_aura_mat = material_find(default_id_material_ui_aura);
 
 	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
 	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
@@ -189,25 +204,59 @@ void ui_theming_init() {
 	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_visual(ui_vis_aura,                 skui_aura_mesh,   skui_aura_mat);
+
+	ui_set_element_color (ui_vis_none,                 ui_color_common);
+	ui_set_element_color (ui_vis_default,              ui_color_common);
+	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
+	ui_set_element_color (ui_vis_window_head_only,     ui_color_primary);
+	ui_set_element_color (ui_vis_window_body,          ui_color_background);
+	ui_set_element_color (ui_vis_window_body_only,     ui_color_background);
+	ui_set_element_color (ui_vis_separator,            ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line,          ui_color_common);
+	ui_set_element_color (ui_vis_slider_line_active,   ui_color_primary);
+	ui_set_element_color (ui_vis_slider_line_inactive, ui_color_common);
+	ui_set_element_color (ui_vis_slider_pinch,         ui_color_primary);
+	ui_set_element_color (ui_vis_slider_push,          ui_color_primary);
+	ui_set_element_color (ui_vis_aura,                 ui_color_text);
+	ui_set_element_color (ui_vis_panel,                ui_color_complement);
+	ui_set_element_color (ui_vis_handle,               ui_color_primary);
+	ui_set_element_color (ui_vis_button,               ui_color_common);
+	ui_set_element_color (ui_vis_toggle,               ui_color_common);
+	ui_set_element_color (ui_vis_button_round,         ui_color_common);
+	ui_set_element_color (ui_vis_input,                ui_color_common);
+	ui_set_element_color (ui_vis_carat,                ui_color_text);
+
+	ui_set_element_sound(ui_vis_default,               skui_snd_interact, skui_snd_uninteract);
+	ui_set_element_sound(ui_vis_handle,                skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body,           skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head,           skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body_only,      skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head_only,      skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_slider_line,           skui_snd_tick,     skui_snd_tick);
 }
 
 ///////////////////////////////////////////
 
 void ui_theming_shutdown() {
-	skui_font_stack.free();
-	skui_tint_stack.free();
+	skui_font_stack     .free();
+	skui_tint_stack     .free();
+	skui_grab_aura_stack.free();
 
 	for (int32_t i = 0; i < ui_vis_max; i++) {
 		mesh_release    (skui_visuals[i].mesh);
 		material_release(skui_visuals[i].material);
+		sound_release   (skui_visuals[i].snd_activate);
+		sound_release   (skui_visuals[i].snd_deactivate);
 		skui_visuals[i] = {};
 	}
 
-	sound_release   (skui_snd_interact);   skui_snd_interact   = nullptr;
-	sound_release   (skui_snd_uninteract); skui_snd_uninteract = nullptr;
-	sound_release   (skui_snd_grab);       skui_snd_grab       = nullptr;
-	sound_release   (skui_snd_ungrab);     skui_snd_ungrab     = nullptr;
-	sound_release   (skui_snd_tick);       skui_snd_tick       = nullptr;
+	sound_release   (skui_active_sound_off); skui_active_sound_off = nullptr;
+	sound_release   (skui_snd_interact);     skui_snd_interact     = nullptr;
+	sound_release   (skui_snd_uninteract);   skui_snd_uninteract   = nullptr;
+	sound_release   (skui_snd_grab);         skui_snd_grab         = nullptr;
+	sound_release   (skui_snd_ungrab);       skui_snd_ungrab       = nullptr;
+	sound_release   (skui_snd_tick);         skui_snd_tick         = nullptr;
 
 	mesh_release    (skui_box);            skui_box            = nullptr;
 	mesh_release    (skui_box_top);        skui_box_top        = nullptr;
@@ -217,11 +266,13 @@ void ui_theming_shutdown() {
 	mesh_release    (skui_small_right);    skui_small_right    = nullptr;
 	mesh_release    (skui_cylinder);       skui_cylinder       = nullptr;
 	mesh_release    (skui_box_dbg);        skui_box_dbg        = nullptr;
+	mesh_release    (skui_aura_mesh);      skui_aura_mesh      = nullptr;
 
 	material_release(skui_mat);            skui_mat            = nullptr;
 	material_release(skui_mat_quad);       skui_mat_quad       = nullptr;
 	material_release(skui_mat_dbg);        skui_mat_dbg        = nullptr;
 	material_release(skui_font_mat);       skui_font_mat       = nullptr;
+	material_release(skui_aura_mat);       skui_aura_mat       = nullptr;
 
 	sprite_release  (skui_toggle_off);     skui_toggle_off     = nullptr;
 	sprite_release  (skui_toggle_on);      skui_toggle_on      = nullptr;
@@ -232,21 +283,65 @@ void ui_theming_shutdown() {
 }
 
 ///////////////////////////////////////////
+
+void ui_theming_update() {
+	if (skui_active_sound_element_id == 0) return;
+
+	// See if our current sound on/off pair is still from a valid ui element
+	bool found_active = false;
+	for (int32_t i = 0; i < handed_max; i++) {
+		if (skui_hand[i].active_prev == skui_active_sound_element_id) {
+			return;
+		}
+	}
+	// If the "on" sound instance is still playing, we don't want to stomp on
+	// it with the off sound
+	if (sound_inst_is_playing(skui_active_sound_inst))
+		return;
+
+	// Play it, and clean everything up, we're done here!
+	if (skui_active_sound_off) {
+		sound_play(skui_active_sound_off, skui_active_sound_pos, 1);
+	}
+	sound_release(skui_active_sound_off);
+	skui_active_sound_off        = nullptr;
+	skui_active_sound_inst       = {};
+	skui_active_sound_element_id = 0;
+}
+
+///////////////////////////////////////////
 // Element visuals                       //
 ///////////////////////////////////////////
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
-	ui_el_visual_t visual = {};
+	ui_el_visual_t *vis = &skui_visuals[element_visual];
 
-	if (mesh                                  != nullptr) mesh_addref     (mesh);
-	if (material                              != nullptr) material_addref (material);
-	if (skui_visuals[element_visual].mesh     != nullptr) mesh_release    (skui_visuals[element_visual].mesh);
-	if (skui_visuals[element_visual].material != nullptr) material_release(skui_visuals[element_visual].material);
+	if (mesh          != nullptr) mesh_addref     (mesh);
+	if (material      != nullptr) material_addref (material);
+	if (vis->mesh     != nullptr) mesh_release    (vis->mesh);
+	if (vis->material != nullptr) material_release(vis->material);
 
-	visual.mesh     = mesh;
-	visual.material = material;
-	visual.min_size = min_size;
-	skui_visuals[element_visual] = visual;
+	vis->mesh     = mesh;
+	vis->material = material;
+	vis->min_size = min_size;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_color(ui_vis_ element, ui_color_ color_category) {
+	skui_visuals[element].color_category = color_category;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_sound(ui_vis_ element, sound_t activate, sound_t deactivate) {
+	if (activate   != nullptr) sound_addref(activate);
+	if (deactivate != nullptr) sound_addref(deactivate);
+	if (skui_visuals[element].snd_activate   != nullptr) sound_release(skui_visuals[element].snd_activate);
+	if (skui_visuals[element].snd_deactivate != nullptr) sound_release(skui_visuals[element].snd_deactivate);
+
+	skui_visuals[element].snd_activate   = activate;
+	skui_visuals[element].snd_deactivate = deactivate;
 }
 
 ///////////////////////////////////////////
@@ -275,20 +370,95 @@ material_t ui_get_material(ui_vis_ element_visual) {
 
 ///////////////////////////////////////////
 
-void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, float focus) {
+ui_color_ ui_get_color(ui_vis_ element_visual) {
+	ui_color_ category = skui_visuals[element_visual].color_category;
+	return category != ui_color_none
+		? category
+		: skui_visuals[ui_vis_default].color_category;
+}
+
+///////////////////////////////////////////
+
+sound_t ui_get_sound_on(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_activate
+		? skui_visuals[element_visual].snd_activate
+		: skui_visuals[ui_vis_default].snd_activate;
+}
+
+///////////////////////////////////////////
+
+sound_t ui_get_sound_off(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_deactivate
+		? skui_visuals[element_visual].snd_deactivate
+		: skui_visuals[ui_vis_default].snd_deactivate;
+}
+
+///////////////////////////////////////////
+
+color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
+	ui_color_ color       = ui_get_color(element_visual);
+	color128  final_color = ui_is_enabled()
+		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
+		: skui_palette[color].disabled;
+	final_color   = final_color * skui_tint;
+	final_color.a = focus;
+
+	return final_color;
+}
+
+///////////////////////////////////////////
+
+void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
 	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
 	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
 	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
 
-	vec3   pos = start - size / 2;
-	matrix mx  = matrix_ts(pos, size);
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_color, focus));
+}
 
-	color128 final_color = ui_is_enabled()
-		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
-		: skui_palette[color].disabled;
-	final_color = final_color * skui_tint;
+///////////////////////////////////////////
 
-	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
+void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_visual, focus));
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
+	sound_t snd_on  = ui_get_sound_on(element_visual);
+	sound_t snd_off = ui_get_sound_off(element_visual);
+
+	if (snd_off) sound_addref(snd_off);
+	sound_release(skui_active_sound_off);
+
+	skui_active_sound_off        = snd_off;
+	skui_active_sound_pos        = at;
+	skui_active_sound_element_id = element_id;
+
+	if (snd_on)
+		skui_active_sound_inst = sound_play(snd_on, at, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_on(ui_vis_ element_visual, vec3 at) {
+	sound_t snd = ui_get_sound_on(element_visual);
+	if (snd) sound_play(snd, at, 1);
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_off(ui_vis_ element_visual, vec3 at) {
+	sound_t snd = ui_get_sound_off(element_visual);
+	if (snd) sound_play(snd, at, 1);
 }
 
 ///////////////////////////////////////////
@@ -323,13 +493,15 @@ void ui_settings(ui_settings_t settings) {
 		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
 		bool    set_ids = skui_box == nullptr;
 		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
-		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2,       1.25f*mm2m, slices, 180 * deg2rad);
+		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2, 1.25f*mm2m, slices, 0);
+		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2, 1.25f*mm2m, slices, 180 * deg2rad);
 
 		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
 		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
 		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
 		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
+
+		ui_default_aura_mesh(&skui_aura_mesh, 0, skui_settings.rounding * 2, 7, 5);
 
 		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
 		skui_small_min = vec2{ small, small } / 2;
@@ -401,6 +573,30 @@ color128 ui_get_theme_color(ui_color_ color_type) {
 // Style stack                           //
 ///////////////////////////////////////////
 
+void ui_push_grab_aura(bool32_t enabled) {
+	skui_grab_aura_stack.add(enabled);
+}
+
+///////////////////////////////////////////
+
+void ui_pop_grab_aura() {
+	if (skui_grab_aura_stack.count == 0) {
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "grab aura");
+		return;
+	}
+	skui_grab_aura_stack.pop();
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_grab_aura_enabled() {
+	return skui_grab_aura_stack.count > 0
+		? skui_grab_aura_stack.last()
+		: true;
+}
+
+///////////////////////////////////////////
+
 void ui_push_text_style(text_style_t style) {
 	skui_font_stack.add(style);
 }
@@ -443,28 +639,28 @@ void ui_pop_tint() {
 // Animation                             //
 ///////////////////////////////////////////
 
-void ui_anim_start(uint64_t id) {
-	if (skui_anim_id != id) {
-		skui_anim_id = id;
-		skui_anim_time = time_totalf_unscaled();
+void ui_anim_start(uint64_t id, int32_t channel) {
+	if (skui_anim_id[channel] != id) {
+		skui_anim_id[channel] = id;
+		skui_anim_time[channel] = time_totalf_unscaled();
 	}
 }
 
 ///////////////////////////////////////////
 
-bool ui_anim_has(uint64_t id, float duration) {
-	if (id == skui_anim_id) {
-		if ((time_totalf_unscaled() - skui_anim_time) < duration)
+bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
+	if (id == skui_anim_id[channel]) {
+		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
 			return true;
-		skui_anim_id = 0;
+		skui_anim_id[channel] = 0;
 	}
 	return false;
 }
 
 ///////////////////////////////////////////
 
-float ui_anim_elapsed(uint64_t id, float duration, float max) {
-	return skui_anim_id == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time) / duration) : 0;
+float ui_anim_elapsed(uint64_t id, int32_t channel, float duration, float max) {
+	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
 }
 
 ///////////////////////////////////////////
@@ -705,6 +901,64 @@ void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float 
 	if (quadrantify)
 		ui_quadrant_size_verts(verts, vert_count, 0);
 
+	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
+
+	sk_free(verts);
+	sk_free(inds);
+}
+
+///////////////////////////////////////////
+
+void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, int32_t quadrant_slices, int32_t tube_corners) {
+	if (*mesh == nullptr) {
+		*mesh = mesh_create();
+	}
+
+	int32_t vert_count = quadrant_slices * tube_corners * 4;
+	int32_t ind_count  = quadrant_slices * tube_corners * 6 * 4;
+	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
+	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
+
+	vind_t ind    = 0;
+	vind_t steps  = quadrant_slices * 4;
+	float  radius = tube_diameter / 2;
+	for (vind_t i = 0; i < steps; i++) {
+		vind_t off  = i * tube_corners;
+		vind_t offn = ((i + 1) % steps) * tube_corners;
+
+		// Manual quadrantification, due to our perfect corners
+		int32_t quad = i / quadrant_slices;
+		float   quad_pct = (i - quad * quadrant_slices) / (float)(quadrant_slices - 1);
+
+		vec2 uv = {};
+		if      (quad == 0) uv = vec2{  1, 1 };
+		else if (quad == 1) uv = vec2{ -1, 1 };
+		else if (quad == 2) uv = vec2{ -1,-1 };
+		else if (quad == 3) uv = vec2{  1,-1 }; 
+		vec3 quad_off = vec3{ uv.x, uv.y,0 } * corner_radius * -1.5f;
+
+		float corner_ang  = (quad+quad_pct) * MATH_PI * 0.5f;
+		vec3  corner_norm = vec3{ cosf(corner_ang), sinf(corner_ang), 0 };
+		vec3  corner_pt   = quad_off + corner_norm * corner_radius;
+
+		for (vind_t c = 0; c < (vind_t)tube_corners; c++) {
+			float tube_ang  = ((float)c / tube_corners) * MATH_PI * 2;
+			float tube_x    = cosf(tube_ang);
+			float tube_y    = sinf(tube_ang);
+			vec3  tube_norm = vec3_normalize( vec3{ corner_norm.x * tube_x, corner_norm.y * tube_x, tube_y } );
+			vec3  tube_pt   = corner_pt + tube_norm*radius;
+
+			verts[off + c] = { tube_pt, tube_norm, uv, {255,255,255,255} };
+
+			vind_t cn   = (c + 1) % tube_corners;
+			inds[ind++] = offn + cn;
+			inds[ind++] = offn + c;
+			inds[ind++] = off  + c;
+			inds[ind++] = off  + cn;
+			inds[ind++] = offn + cn;
+			inds[ind++] = off  + c;
+		}
+	}
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
 	sk_free(verts);

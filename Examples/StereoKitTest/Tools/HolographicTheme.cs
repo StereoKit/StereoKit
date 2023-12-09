@@ -17,8 +17,9 @@ namespace StereoKit.Framework
 			uiQuadrantMaterial[MatParamName.ColorTint] = Color.Hex(0x777ae8ff);// Color.HSV(b.x,b.y*0.6f,b.z*1.4f);
 			Material uiGlassMaterial    = new Material(uiQuadrantShader);
 			uiGlassMaterial.Transparency = Transparency.Blend;
-			uiGlassMaterial.DepthWrite = false;
-			uiGlassMaterial.QueueOffset = -20;
+			uiGlassMaterial.DepthWrite   = false;
+			uiGlassMaterial.DepthTest    = DepthTest.LessOrEq;
+			uiGlassMaterial.QueueOffset  = -20;
 			uiGlassMaterial[MatParamName.ColorTint] = Color.White;
 
 			Mesh quadrantCube = Mesh.GenerateCube(Vec3.One);
@@ -32,6 +33,8 @@ namespace StereoKit.Framework
 			UI.SetElementVisual(UIVisual.WindowBody,  backplate,      uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Separator,   quadrantCube,   uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderLine,  backplateSmall, uiQuadrantMaterial);
+			UI.SetElementVisual(UIVisual.SliderLineActive,   backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
+			UI.SetElementVisual(UIVisual.SliderLineInactive, backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
 			UI.SetElementVisual(UIVisual.SliderPinch, backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderPush,  backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Button,      glassMesh,      uiGlassMaterial);

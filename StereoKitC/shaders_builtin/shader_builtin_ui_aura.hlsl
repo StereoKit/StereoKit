@@ -1,6 +1,6 @@
 #include "stereokit.hlsli"
 
-//--name = sk/default_ui_quadrant
+//--name = sk/default_ui_quadrant_aura
 //--color:color = 1, 1, 1, 1
 
 float4 color;
@@ -26,18 +26,22 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	
 	// Extract scale from the matrix
 	float4x4 world_mat = sk_inst[id].world;
-	float2   scale     = float2(
+	float3   scale     = float3(
 		length(float3(world_mat._11,world_mat._12,world_mat._13)),
-		length(float3(world_mat._21,world_mat._22,world_mat._23))
+		length(float3(world_mat._21,world_mat._22,world_mat._23)),
+		length(float3(world_mat._31,world_mat._32,world_mat._33))
 	);
 	// Restore scale to 1
 	world_mat[0] = world_mat[0] / scale.x;
 	world_mat[1] = world_mat[1] / scale.y;
-	// Translate the position using the quadrant (TEXCOORD0) information and 
+	world_mat[2] = world_mat[2] / scale.z;
+	// Translate the position using the quadrant (TEXCOORD0) information and
 	// the extracted scale.
 	float4 sized_pos;
-	sized_pos.xy = input.pos.xy + input.quadrant * scale * 0.5;
+	sized_pos.xy = input.pos.xy + input.quadrant * scale.xy * 0.5;
 	sized_pos.zw = input.pos.zw;
+	
+	sized_pos.xyz += input.norm * sk_inst[id].color.a * 0.002;
 
 	o.world  = mul(sized_pos, world_mat);
 	o.pos    = mul(o.world, sk_viewproj[o.view_id]);
@@ -52,5 +56,5 @@ float4 ps(psIn input) : SV_TARGET {
 	float  glow = sk_finger_glow(input.world.xyz, input.normal);
 	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow), 1);
 
-	return col;
+	return col; 
 }

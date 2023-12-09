@@ -60,11 +60,13 @@ typedef enum ui_vis_ {
 	ui_vis_button_round,
 	ui_vis_panel,
 	ui_vis_carat,
+	ui_vis_aura,
 	ui_vis_max,
 } ui_vis_;
 
 typedef enum ui_color_ {
-	ui_color_primary = 0,
+	ui_color_none = 0,
+	ui_color_primary,
 	ui_color_background,
 	ui_color_common,
 	ui_color_complement,
@@ -127,9 +129,14 @@ SK_API color128 ui_get_theme_color      (ui_color_ color_type);
 SK_API void     ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color128 color_gamma);
 SK_API color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state);
 SK_API void     ui_set_element_visual   (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API void     ui_set_element_color    (ui_vis_ element_visual, ui_color_ color_category);
+SK_API void     ui_set_element_sound    (ui_vis_ element_visual, sound_t activate, sound_t deactivate);
 SK_API bool32_t ui_has_keyboard_focus   (void);
 SK_API pose_t   ui_popup_pose           (vec3 shift);
 
+SK_API void     ui_push_grab_aura        (bool32_t enabled);
+SK_API void     ui_pop_grab_aura         ();
+SK_API bool32_t ui_grab_aura_enabled     ();
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        (void);
 SK_API text_style_t ui_get_text_style    (void);

@@ -678,6 +678,9 @@ namespace StereoKit
 		/// <summary>Refers to the text position indicator carat on text input
 		/// elements.</summary>
 		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.
+		/// </summary>
+		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
@@ -687,9 +690,12 @@ namespace StereoKit
 	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>The default category, used to indicate that no category
+		/// has been selected.</summary>
+		None = 0,
 		/// <summary>This is the main accent color used by window headers,
 		/// separators, etc.</summary>
-		Primary = 0,
+		Primary,
 		/// <summary>This is a background sort of color that should generally
 		/// be dark. Used by window bodies and backgrounds of certain elements.
 		/// </summary>
