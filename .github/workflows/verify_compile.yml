@@ -65,6 +65,7 @@ jobs:
       with:
         ndk-version: r25c
         local-cache: true
+        link-to-sdk: true
 
     - name: Build Native Android ARM64
       run: |
