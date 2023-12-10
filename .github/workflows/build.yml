@@ -167,7 +167,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang-12 lld-12 libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+        sudo apt-get install clang-12 lld-12 ninja-build libx11-dev libxfixes-dev libegl-dev libgbm-dev libfontconfig-dev
     
     - name: Set Version
       shell: pwsh
@@ -198,7 +198,7 @@ jobs:
         sudo sed -i "s/deb mirror/deb [arch=amd64] mirror/g" /etc/apt/sources.list
         sudo dpkg --add-architecture arm64
         sudo apt-get update
-        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libfontconfig1-dev:arm64 libgl1-mesa-dev:arm64 libx11-xcb-dev:arm64 libxfixes-dev:arm64 libxcb-dri2-0-dev:arm64 libxcb-glx0-dev:arm64 libxcb-icccm4-dev:arm64 libxcb-keysyms1-dev:arm64 libxcb-randr0-dev:arm64 libxrandr-dev:arm64 libxxf86vm-dev:arm64 mesa-common-dev:arm64
+        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libegl-dev:arm64 libgbm-dev:arm64 libfontconfig-dev:arm64
 
     - name: Build Linux Arm64
       run: |
