@@ -163,7 +163,6 @@ jobs:
       with:
         ndk-version: r25c
         local-cache: true
-        link-to-sdk: true
 
     - name: Install Prerequisites
       run: |
