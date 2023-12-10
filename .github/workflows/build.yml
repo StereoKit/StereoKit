@@ -158,7 +158,7 @@ jobs:
           .deps_cache
 
     - name: Set up Android NDK
-      uses: nttld/setup-ndk@v1
+      uses: nttld/setup-ndk@v1.4.2
       id: setup-ndk
       with:
         ndk-version: r25c
