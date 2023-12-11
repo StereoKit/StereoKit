@@ -1,83 +1,88 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
 
 #include "../stereokit.h"
 
 namespace sk {
 
-typedef enum special_key_ {
-	special_key_none,
-	special_key_shift,
-	special_key_alt_gr,
-	special_key_fn,
-	special_key_close_keyboard,
-	special_key_alt,
-	special_key_ctrl,
-	special_key_spacer,
-	special_key_nextline,
-	special_key_end,
-} special_key_;
+typedef enum skey_ {
+	skey_none,
+	skey_shift,
+	skey_syms,
+	skey_alt_gr,
+	skey_fn,
+	skey_close,
+	skey_alt,
+	skey_ctrl,
+	skey_spacer,
+	skey_nextline,
+	skey_end,
+} skey_;
 
 typedef struct keylayout_key_t {
-	const char16_t* clicked_text;
-	const char16_t* display_text;
-	float           width;
-	key_            key_event_type;
-	special_key_    special_key;
+	const char*  clicked_text;
+	const char*  display_text;
+	uint8_t      width;
+	uint8_t      key_event_type;
+	uint8_t      special_key;
 } keylayout_key_t;
 
 typedef struct keylayout_t {
 	// Layers:
 	// 0. Normal key layout
 	// 1. Shift
-	// 2. AltGr
-	// 3. AltGr + Shift
-	// 4. fnkey
-	const keylayout_key_t *text  [2];
-	const keylayout_key_t *uri   [2];
-	const keylayout_key_t *number[2];
-	//keylayout_t decimal       [5];
-	//keylayout_t signed        [5];
-	//keylayout_t signed_decimal[5];
+	// 2. Symbols
+	const keylayout_key_t *text  [3];
+	const keylayout_key_t *uri   [3];
+	const keylayout_key_t *number[3];
 } keylayout_t;
 
 const keylayout_key_t en_text_normal[] = {
-	{u"`",  u"`",1,key_backtick},{u"1", u"1",1,key_1}, {u"2", u"2",1,key_2}, {u"3", u"3",1,key_3}, {u"4", u"4",1,key_4}, {u"5", u"5",1,key_5}, {u"6", u"6",1,key_6}, {u"7", u"7",1,key_7}, {u"8", u"8",1,key_8}, {u"9", u"9",1,key_9}, {u"0", u"0",1,key_0}, {u"-", u"-",1,key_minus}, {u"=", u"=",1,key_equals},{u"\b", u"<--",1.5f,key_backspace},{u"", u"",2,key_none,special_key_spacer},{u"", u"X",1,key_none,special_key_close_keyboard}, {u"", u"",0,key_none,special_key_nextline},
-	{u"\t", u"Tab",1.5f,key_tab},{u"q", u"q",1,key_q},{u"w", u"w",1,key_w},{u"e", u"e",1,key_e},{u"r", u"r",1,key_r},{u"t", u"t",1,key_t},{u"y", u"y",1,key_y},{u"u", u"u",1,key_u},{u"i", u"i",1,key_i},{u"o", u"o",1,key_o},{u"p", u"p",1,key_p},{u"[", u"[",1,key_bracket_open},{u"]", u"]",1,key_bracket_close},{u"\\", u"\\",1,key_slash_back},{u"", u"",0,key_none,special_key_nextline},
-	{u"", u"CapsLk",1.9f,key_caps_lock,special_key_shift},{u"a", u"a",1,key_a},{u"s", u"s",1,key_s},{u"d", u"d",1,key_d},{u"f", u"f",1,key_f},{u"g", u"g",1,key_g},{u"h", u"h",1,key_h},{u"j", u"j",1,key_j},{u"k", u"k",1,key_k},{u"l", u"l",1,key_l},{u";", u";",1,key_semicolon},{u"'", u"'",1,key_apostrophe},{u"\r", u"Enter",1.9f,key_return},{u"", u"",0,key_none,special_key_nextline},
-	{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"z", u"z",1,key_z},{u"x", u"x",1,key_x},{u"c", u"c",1,key_c},{u"v", u"v",1,key_v},{u"b", u"b",1,key_b},{u"n", u"n",1,key_n},{u"m", u"m",1,key_m},{u",", u",",1,key_comma},{u".", u".",1,key_period},{u"/", u"/",1,key_slash_fwd},{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"", u"",1,key_none,special_key_spacer},{u"", u"^",1,key_up},{u"", u"",0,key_none,special_key_nextline},
-	{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"Cmd",1,key_rcmd},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u" ", u"     ",6.4f,key_space},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"",2,key_none,special_key_spacer},{u"", u"<",1,key_left},{u"", u"v",1,key_down},{u"", u" >",1,key_right},{u"", u"",0,key_none,special_key_end}
+	{"q","q",    2,key_q},                {"w","w",  2,key_w},             {"e", "e",2,key_e},    {"r", "r",2,key_r},    {"t", "t",2,key_t},     {"y", "y",     2,key_y},     {"u", "u",2,key_u},{"i", "i",2,key_i},{"o", "o",  2,key_o},        {"p","p",2,key_p},{"", "",0,key_none,skey_nextline},
+	{"", "",     1,key_none, skey_spacer},{"a","a",  2,key_a},             {"s", "s",2,key_s},    {"d", "d",2,key_d},    {"f", "f",2,key_f},     {"g", "g",     2,key_g},     {"h", "h",2,key_h},{"j", "j",2,key_j},{"k", "k",  2,key_k},        {"l","l",2,key_l},{"", "",0,key_none,skey_nextline},
+	{"", "Shift",3,key_shift,skey_shift}, {"z","z",  2,key_z},             {"x", "x",2,key_x},    {"c", "c",2,key_c},    {"v", "v",2,key_v},     {"b", "b",     2,key_b},     {"n", "n",2,key_n},{"m", "m",2,key_m},{"\b", "<-",3,key_backspace},                  {"", "",0,key_none,skey_nextline},
+	{"", "X",    2,key_none, skey_close}, {"", "123",3,key_none,skey_syms},{",", ",",2,key_comma},{" ", " ",7,key_space},{".", ".",2,key_period},{"\n","return",4,key_return},{"", "",0,key_none,skey_end}
 };
 const keylayout_key_t en_text_shift[] = {
-	{u"~", u"~",1,key_backtick},{u"!", u"!",1,key_1}, {u"@", u"@",1,key_2}, {u"#", u"#",1,key_3}, {u"$", u"$",1,key_4}, {u"%", u"%",1,key_5}, {u"^", u"^",1,key_6}, {u"&", u"&",1,key_7}, {u"*", u"*",1,key_8}, {u"(", u"(",1,key_9}, {u")", u")",1,key_0}, {u"_", u"_",1,key_minus}, {u"+", u"+",1,key_equals},{u"\b", u"<--",1.5f,key_backspace},{u"", u"",2,key_none,special_key_spacer},{u"", u"X",1,key_none,special_key_close_keyboard},{u"", u"",0,key_none,special_key_nextline},
-	{u"\t", u"Tab",1.5f,key_tab},{u"Q", u"Q",1,key_q},{u"W", u"W",1,key_w},{u"E", u"E",1,key_e},{u"R", u"R",1,key_r},{u"T", u"T",1,key_t},{u"Y", u"Y",1,key_y},{u"U", u"U",1,key_u},{u"I", u"I",1,key_i},{u"O", u"O",1,key_o},{u"P", u"P",1,key_p},{u"{", u"{",1,key_bracket_open},{u"}", u"}",1,key_bracket_close},{u"|", u"|",1,key_slash_back},{u"", u"",0,key_none,special_key_nextline},
-	{u"", u"CapsLk",1.9f,key_caps_lock,special_key_shift},{u"A", u"A",1,key_a},{u"S", u"S",1,key_s},{u"D", u"D",1,key_d},{u"F", u"F",1,key_f},{u"G", u"G",1,key_g},{u"H", u"H",1,key_h},{u"J", u"J",1,key_j},{u"K", u"K",1,key_k},{u"L", u"L",1,key_l},{u":", u":",1,key_semicolon},{u"\"", u"\"",1,key_apostrophe},{u"\n", u"NewLine",1.9f,key_return},{u"", u"",0,key_none,special_key_nextline},
-	{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"Z", u"Z",1,key_z},{u"X", u"X",1,key_x},{u"C", u"C",1,key_c},{u"V", u"V",1,key_v},{u"B", u"B",1,key_b},{u"N", u"N",1,key_n},{u"M", u"M",1,key_m},{u"<", u"<",1,key_comma},{u">", u">",1,key_period},{u"?", u"?",1,key_slash_fwd},{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"", u"",1,key_none,special_key_spacer},{u"", u"^",1,key_up},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"Cmd",1,key_rcmd},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u" ", u"     ",6.4f,key_space},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"",2,key_none,special_key_spacer},{u"", u"<",1,key_left},{u"", u"v",1,key_down},{u"", u" >",1,key_right},{u"",u"",0,key_none,special_key_end}
+	{"Q","Q",    2,key_q},               {"W","W",  2,key_w},             {"E", "E",2,key_e},{"R", "R",2,key_r},    {"T", "T",2,key_t},        {"Y", "Y",     2,key_y},     {"U", "U",2,key_u},{"I", "I",2,key_i},{"O", "O", 2,key_o},        {"P", "P",2,key_p},{"", "",0,key_none,skey_nextline},
+	{"", "",     1,key_none,skey_spacer},{"A","A",  2,key_a},             {"S", "S",2,key_s},{"D", "D",2,key_d},    {"F", "F",2,key_f},        {"G", "G",     2,key_g},     {"H", "H",2,key_h},{"J", "J",2,key_j},{"K", "K", 2,key_k},        {"L", "L",2,key_l},{"", "",0,key_none,skey_nextline},
+	{"", "Shift",3,key_shift,skey_shift},{"Z","Z",  2,key_z},             {"X", "X",2,key_x},{"C", "C",2,key_c},    {"V", "V",2,key_v},        {"B", "B",     2,key_b},     {"N", "N",2,key_n},{"M", "M",2,key_m},{"\b","<-",3,key_backspace},                   {"", "",0,key_none,skey_nextline},
+	{"", "X",    2,key_none, skey_close},{"", "123",3,key_none,skey_syms},{"!", "!",2,key_1},{" ", " ",7,key_space},{"?", "?",2,key_slash_fwd},{"\n","return",4,key_return},{"",  "", 0,key_none,skey_end}
+};
+const keylayout_key_t en_text_symbols[] = {
+	{"1","1",    2,key_1},               {"2","2",  2,key_2},             {"3", "3",2,key_3},        {"4", "4",2,key_4},        {"5", "5",2,key_5},        {"6", "6",     2,key_6},     {"7", "7",2,key_7},         {"8", "8", 2,key_8},         {"9", "9", 2,key_9},         {"0", "0", 2,key_0}, {"", "",0,key_none,skey_nextline},
+	{"", "",     1,key_none,skey_spacer},{"-","-",  2,key_minus},         {"/", "/",2,key_slash_fwd},{":", ":",2,key_semicolon},{";", ";",2,key_semicolon},{"(", "(",     2,key_9},     {")", ")",2,key_0},         {"$", "$", 2,key_4},         {"&", "&", 2,key_7},         {"@", "@", 2,key_2}, {"", "",0,key_none,skey_nextline},
+	{"", "Shift",3,key_shift,skey_shift},{"*","*",  2,key_8},             {"=", "=",2,key_equals},   {"+", "+",2,key_equals},   {"#", "#",2,key_3},        {"%", "%",     2,key_5},     {"'", "'",2,key_apostrophe},{"\"","\"",2,key_apostrophe},{"\b","<-",3,key_backspace},                      {"", "",0,key_none,skey_nextline},
+	{"", "X",    2,key_none, skey_close},{"", "123",3,key_none,skey_syms},{"!", "!",2,key_1},        {" ", " ",7,key_space},    {"?", "?",2,key_slash_fwd},{"\n","return",4,key_return},{"",  "", 0,key_none,skey_end}
 };
 const keylayout_key_t en_uri_normal[] = {
-	{u"`", u"`",1,key_backtick},{u"1", u"1",1,key_1}, {u"2", u"2",1,key_2}, {u"3", u"3",1,key_3}, {u"4", u"4",1,key_4}, {u"5", u"5",1,key_5}, {u"6", u"6",1,key_6}, {u"7", u"7",1,key_7}, {u"8", u"8",1,key_8}, {u"9", u"9",1,key_9}, {u"0", u"0",1,key_0}, {u"-", u"-",1,key_minus}, {u"=", u"=",1,key_equals},{u"\b", u"<--",1.5f,key_backspace},{u"", u"",2,key_none,special_key_spacer},{u"", u"X",1,key_none,special_key_close_keyboard},{u"",u"",0,key_none,special_key_nextline},
-	{u"\t", u"Tab",1.5f,key_tab},{u"q", u"q",1,key_q},{u"w", u"w",1,key_w},{u"e", u"e",1,key_e},{u"r", u"r",1,key_r},{u"t", u"t",1,key_t},{u"y", u"y",1,key_y},{u"u", u"u",1,key_u},{u"i", u"i",1,key_i},{u"o", u"o",1,key_o},{u"p", u"p",1,key_p},{u"[", u"[",1,key_bracket_open},{u"]", u"]",1,key_bracket_close},{u"\\", u"\\",1,key_slash_back},{u".com", u".com",3.25f},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"CapsLk",1.9f,key_caps_lock,special_key_shift},{u"a", u"a",1,key_a},{u"s", u"s",1,key_s},{u"d", u"d",1,key_d},{u"f", u"f",1,key_f},{u"g", u"g",1,key_g},{u"h", u"h",1,key_h},{u"j", u"j",1,key_j},{u"k", u"k",1,key_k},{u"l", u"l",1,key_l},{u";", u";",1,key_semicolon},{u"'", u"'",1,key_apostrophe},{u"\r", u"Enter",1.9f,key_return},{u"https://", u"https://",3.25f},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"z", u"z",1,key_z},{u"x", u"x",1,key_x},{u"c", u"c",1,key_c},{u"v", u"v",1,key_v},{u"b", u"b",1,key_b},{u"n", u"n",1,key_n},{u"m", u"m",1,key_m},{u",", u",",1,key_comma},{u".", u".",1,key_period},{u"/", u"/",1,key_slash_fwd},{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"", u"",1,key_none,special_key_spacer},{u"", u"^",1,key_up},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"Cmd",1,key_rcmd},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u" ", u"     ",6.4f,key_space},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"",2,key_none,special_key_spacer},{u"", u"<",1,key_left},{u"", u"v",1,key_down},{u"", u" >",1,key_right},{u"",u"",0,key_none,special_key_end}
+	{"`", "`",     2,key_backtick},         {"1","1",  2,key_1},   {"2","2",  2,key_2},           {"3","3",2,key_3},    {"4","4",  2,key_4},           {"5","5",   2,key_5},             {"6","6",2,key_6},   {"7","7",2,key_7},   {"8","8",2,key_8},    {"9","9", 2,key_9},     {"0","0",2,key_0},        {"-","-",    2,key_minus},           {"=", "=",    2,key_equals},          {"\b",      "<-",      3,key_backspace}, {"",    "",    2,key_none,skey_spacer},{"","X",2,key_none,skey_close},{"","",0,key_none,skey_nextline},
+	{"\t","Tab",   3,key_tab},              {"q","q",  2,key_q},   {"w","w",  2,key_w},           {"e","e",2,key_e},    {"r","r",  2,key_r},           {"t","t",   2,key_t},             {"y","y",2,key_y},   {"u","u",2,key_u},   {"i","i",2,key_i},    {"o","o", 2,key_o},     {"p","p",2,key_p},        {"[","[",    2,key_bracket_open},    {"]", "]",    2,key_bracket_close},   {"\\",      "\\",      2,key_slash_back},{".com",".com",4},                                                    {"","",0,key_none,skey_nextline},
+	{"\r","Enter", 4,key_return},           {"a","a",  2,key_a},   {"s","s",  2,key_s},           {"d","d",2,key_d},    {"f","f",  2,key_f},           {"g","g",   2,key_g},             {"h","h",2,key_h},   {"j","j",2,key_j},   {"k","k",2,key_k},    {"l","l", 2,key_l},     {";",";",2,key_semicolon},{"'","'",    2,key_apostrophe},      {"\r","Enter",3,key_return},          {"https://","https://",4},                                                                                     {"","",0,key_none,skey_nextline},
+	{"",  "Shift", 5,key_shift, skey_shift},{"z","z",  2,key_z},   {"x","x",  2,key_x},           {"c","c",2,key_c},    {"v","v",  2,key_v},           {"b","b",   2,key_b},             {"n","n",2,key_n},   {"m","m",2,key_m},   {",",",",2,key_comma},{".",".", 2,key_period},{"/","/",2,key_slash_fwd},{"", "Shift",4,key_shift,skey_shift},{"",  "^",    2,key_up},                                                                                                                             {"","",0,key_none,skey_nextline},
+	{"",  "Ctrl",  4,key_ctrl,  skey_ctrl}, {"", "Cmd",3,key_rcmd},{"", "Alt",3,key_alt,skey_alt},{" "," ",9,key_space},{"", "Alt",4,key_alt,skey_alt},{"", "Ctrl",4,key_ctrl,skey_ctrl},{"", "<",2,key_left},{"", "v",2,key_down},{"", ">",2,key_right}, {"", "", 0,key_none,skey_end}
 };
 const keylayout_key_t en_uri_shift[] = {
-	{u"~", u"~",1,key_backtick},{u"!", u"!",1,key_1}, {u"@", u"@",1,key_2}, {u"#", u"#",1,key_3}, {u"$", u"$",1,key_4}, {u"%", u"%",1,key_5}, {u"^", u"^",1,key_6}, {u"&", u"&",1,key_7}, {u"*", u"*",1,key_8}, {u"(", u"(",1,key_9}, {u")", u")",1,key_0}, {u"_", u"_",1,key_minus}, {u"+", u"+",1,key_equals},{u"\b", u"<--",1.5f,key_backspace},{u"", u"",2,key_none,special_key_spacer},{u"", u"X",1,key_none,special_key_close_keyboard},{u"",u"",0,key_none,special_key_nextline},
-	{u"\t", u"Tab",1.5f,key_tab},{u"Q", u"Q",1,key_q},{u"W", u"W",1,key_w},{u"E", u"E",1,key_e},{u"R", u"R",1,key_r},{u"T", u"T",1,key_t},{u"Y", u"Y",1,key_y},{u"U", u"U",1,key_u},{u"I", u"I",1,key_i},{u"O", u"O",1,key_o},{u"P", u"P",1,key_p},{u"{", u"{",1,key_bracket_open},{u"}", u"}",1,key_bracket_close},{u"|", u"|",1,key_slash_back},{u".com", u".com",3.25f},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"CapsLk",1.9f,key_caps_lock,special_key_shift},{u"A", u"A",1,key_a},{u"S", u"S",1,key_s},{u"D", u"D",1,key_d},{u"F", u"F",1,key_f},{u"G", u"G",1,key_g},{u"H", u"H",1,key_h},{u"J", u"J",1,key_j},{u"K", u"K",1,key_k},{u"L", u"L",1,key_l},{u":", u":",1,key_semicolon},{u"\"", u"\"",1,key_apostrophe},{u"\n", u"NewLine",1.9f,key_return},{u"https://", u"https://",3.25f},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"Z", u"Z",1,key_z},{u"X", u"X",1,key_x},{u"C", u"C",1,key_c},{u"V", u"V",1,key_v},{u"B", u"B",1,key_b},{u"N", u"N",1,key_n},{u"M", u"M",1,key_m},{u"<", u"<",1,key_comma},{u">", u">",1,key_period},{u"?", u"?",1,key_slash_fwd},{u"", u"Shift",2.5f,key_shift,special_key_shift},{u"", u"",1,key_none,special_key_spacer},{u"", u"^",1,key_up},{u"",u"",0,key_none,special_key_nextline},
-	{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"Cmd",1,key_rcmd},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u" ", u"     ",6.4f,key_space},{u"", u"Alt",1.75f,key_alt,special_key_alt},{u"", u"Ctrl",1.75f,key_ctrl,special_key_ctrl},{u"", u"",2,key_none,special_key_spacer},{u"", u"<",1,key_left},{u"", u"v",1,key_down},{u"", u" >",1,key_right},{u"",u"",0,key_none,special_key_end}
+	{"~", "~",     2,key_backtick},        {"!", "!", 2,key_1},   {"@", "@", 2,key_2},           {"#", "#",2,key_3},    {"$","$",  2,key_4},           {"%","%",   2,key_5},             {"^","^",2,key_6},   {"&","&",2,key_7},   {"*","*",2,key_8},    {"(","(",2,key_9},     {")", ")",2,key_0},        {"_", "_",    2,key_minus},           {"+", "+",      2,key_equals},       {"\b","<-",            3,key_backspace}, {"", "",2,key_none,skey_spacer},{"", "X",2,key_none,skey_close},{"","",0,key_none,skey_nextline},
+	{"\t","Tab",   3,key_tab},             {"Q", "Q", 2,key_q},   {"W", "W", 2,key_w},           {"E", "E",2,key_e},    {"R","R",  2,key_r},           {"T","T",   2,key_t},             {"Y","Y",2,key_y},   {"U","U",2,key_u},   {"I","I",2,key_i},    {"O","O",2,key_o},     {"P", "P",2,key_p},        {"{", "{",    2,key_bracket_open},    {"}", "}",      2,key_bracket_close},{"|", "|",             2,key_slash_back},{".com", ".com",4},                                             {"","",0,key_none,skey_nextline},
+	{"",  "Enter", 4,key_return},          {"A", "A", 2,key_a},   {"S", "S", 2,key_s},           {"D", "D",2,key_d},    {"F","F",  2,key_f},           {"G","G",   2,key_g},             {"H","H",2,key_h},   {"J","J",2,key_j},   {"K","K",2,key_k},    {"L","L",2,key_l},     {":", ":",2,key_semicolon},{"\"","\"",   2,key_apostrophe},      {"\n","NewLine",3,key_return},       {"https://","https://",4},                                                                               {"","",0,key_none,skey_nextline},
+	{"",  "Shift", 5,key_shift,skey_shift},{"Z", "Z", 2,key_z},   {"X", "X", 2,key_x},           {"C", "C",2,key_c},    {"V","V",  2,key_v},           {"B","B",   2,key_b},             {"N","N",2,key_n},   {"M","M",2,key_m},   {"<","<",2,key_comma},{">",">",2,key_period},{"?", "?",2,key_slash_fwd},{"",  "Shift",4,key_shift,skey_shift},{"",  "^",      2,key_up},                                                                                                                    {"","",0,key_none,skey_nextline},
+	{"",  "Ctrl",  4,key_ctrl,skey_ctrl},  {"", "Cmd",3,key_rcmd},{"", "Alt",3,key_alt,skey_alt},{" ", " ",9,key_space},{"", "Alt",4,key_alt,skey_alt},{"", "Ctrl",4,key_ctrl,skey_ctrl},{"", "<",2,key_left},{"", "v",2,key_down},{"", ">",2,key_right},{"", "", 0,key_none,skey_end}
 };
 const keylayout_key_t en_num_normal[] = {
-	{u"\r", u"Enter",1.6f,key_return},{u"\b", u"<--",1.6f,key_backspace}, {u"",u"",0,key_none,special_key_nextline},
-	{u"7", u"7",1,key_7},{u"8", u"8",1,key_8     },{u"9", u"9",1,key_9}, {u"",u"",0,key_none,special_key_nextline},
-	{u"4", u"4",1,key_4},{u"5", u"5",1,key_5     },{u"6", u"6",1,key_6}, {u"",u"",0,key_none,special_key_nextline},
-	{u"1", u"1",1,key_1},{u"2", u"2",1,key_2     },{u"3", u"3",1,key_3}, {u"",u"",0,key_none,special_key_nextline},
-	{u"0", u"0",1,key_0},{u".", u".",1,key_period},{u"-", u"-",1,key_minus}, {u"",u"",0,key_none,special_key_end}
+	{"7", "7",2,key_7}, {"8", "8",2,key_8     }, {"9", "9",    2,key_9},      {"\b","<-",2,key_backspace}, {"","",0,key_none,skey_nextline},
+	{"4", "4",2,key_4}, {"5", "5",2,key_5     }, {"6", "6",    2,key_6},      {"-", "-", 2,key_minus},     {"","",0,key_none,skey_nextline},
+	{"1", "1",2,key_1}, {"2", "2",2,key_2     }, {"3", "3",    2,key_3},                                   {"","",0,key_none,skey_nextline},
+	{"0", "0",2,key_0}, {".", ".",2,key_period}, {"\r","Enter",4,key_return},                              {"","",0,key_none,skey_end}
 };
 
 const keylayout_t virtualkeyboard_layout_en_us = {
-	{ en_text_normal, en_text_shift },
+	{ en_text_normal, en_text_shift, en_text_symbols },
 	{ en_uri_normal,  en_uri_shift },
 	{ en_num_normal }
 };
