@@ -22,6 +22,7 @@ typedef enum skey_ {
 	skey_spacer,
 	skey_nextline,
 	skey_end,
+	skey_go,
 } skey_;
 
 typedef struct keylayout_key_t {

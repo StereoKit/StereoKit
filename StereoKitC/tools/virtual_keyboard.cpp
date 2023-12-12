@@ -9,6 +9,7 @@
 #include "../stereokit_ui.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
+#include "../libraries/stref.h"
 
 namespace sk {
 
@@ -22,6 +23,10 @@ bool32_t           keyboard_symbols = false;
 bool32_t           keyboard_shift   = false;
 bool32_t           keyboard_ctrl    = false;
 bool32_t           keyboard_alt     = false;
+
+///////////////////////////////////////////
+
+keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t text_length);
 
 ///////////////////////////////////////////
 
@@ -185,6 +190,122 @@ void virtualkeyboard_update() {
 	ui_window_end();
 	hierarchy_pop();
 	ui_pop_preserve_keyboard();
+}
+
+///////////////////////////////////////////
+
+bool next_separator(const char* start, int32_t start_len, const char **out_next, int32_t *out_next_length, char sep) {
+	const char* end = start + start_len;
+	if (*out_next == nullptr) {
+		*out_next        = start;
+		*out_next_length = 0;
+	} else {
+		*out_next        = *out_next + *out_next_length + 1;
+		*out_next_length = 0;
+	}
+	const char* curr = *out_next;
+	while (curr < end && *curr != sep) curr++;
+	*out_next_length = curr - *out_next;
+	return *out_next < end;
+}
+
+///////////////////////////////////////////
+
+keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t text_length) {
+	// File format is:
+	// '|' separates keys on a row
+	// '-' separates arguments for defining a key
+	// A full definition would be:
+	// KeyDisplay-KeySend-KeyPress-Width-Behavior
+	// KeyDisplay - The text displayed on the button, or parentheses for indicating
+	//              a sprite, eg: '(ui/sprite_close)'
+	// KeySend    - The text injected when the key is pressed. If not present, this
+	//              will be the same as the KeyDisplay, and if empty, this will not
+	//              submit any text
+	// KeyPress   - The key code to inject into the input system. This is none by
+	//              default.
+	// Width      - The width of the key, in keyboard cells. 1 is half a cell, 2 is
+	//              a whole cell. This defaults to 2 if not specified.
+	// Behavior   - Special behavior for the key. 'close' will close the keyboard,
+	//              'go_#' will switch to the keyboard to the layout specified by
+	//              the index.
+	// 
+	// For example:
+	// 
+	// q|w|e|r|t|y|u|i|o|p
+	// ---1|a|s|d|f|g|h|j|k|l
+	// Shift---3-go_1|z|x|c|v|b|n|m|<\--\b--3
+	// X----close|123----go_2|,|- --7|.|Return-\n--4
+
+	// Fix escape characters, and transform our syntax characters into chars that
+	// won't get into our way. Count how many keys while we're at it :)
+	char*       escape_text = sk_malloc_t(char, text_length+1);
+	const char* src    = text_start;
+	char*       dst    = escape_text;
+	bool        escape = false;
+	int32_t     key_count = 0;
+	for (int32_t i = 0; i < text_length; i++) {
+		if (*src == '\\') {
+			escape = true;
+		} else if (escape) {
+			switch (*src) {
+			case 'n': *dst = '\n'; break;
+			case 'r': *dst = '\r'; break;
+			case 't': *dst = '\t'; break;
+			case 'b': *dst = '\b'; break;
+			case '\\':*dst = '\\'; break;
+			case '-': *dst = '-';  break;
+			default:  *dst = *src; break;
+			}
+			dst++;
+			escape = false;
+		} else {
+			if      (*src == '\n') { *dst = '\1'; key_count++; } // todo, may need extra keys for newlines the way it's set up now
+			if      (*src == '\r') { }
+			else if (*src == '|')  { *dst = '\2'; key_count++; }
+			else if (*src == '-')  { *dst = '\3'; }
+			else *dst = *src;
+			dst++;
+		}
+		src++;
+	}
+	*dst = '\0';
+
+	// Parse the keys into a full keyboard
+	keylayout_key_t * result  = sk_malloc_zero_t(keylayout_key_t, key_count + 1);
+	const char* text     = escape_text;
+	int32_t     text_len = strlen(escape_text);
+	const char* line     = nullptr;
+	int32_t     line_len = 0;
+	int32_t     key_idx  = 0;
+	while (next_separator(text, text_len, &line, &line_len, '\1')) {
+		const char* word     = nullptr;
+		int32_t     word_len = 0;
+		while (next_separator(line, line_len, &word, &word_len, '\2')) {
+			const char* arg = nullptr;
+			int32_t     arg_len = 0;
+			int32_t     arg_idx = 0;
+			result[key_idx].width = 2;
+
+			while (next_separator(word, word_len, &arg, &arg_len, '\3')) {
+				stref_t arg_stref = { arg, arg_len };
+				switch (arg_idx) {
+				case 0: if (arg_len > 0) result[key_idx].display_text = result[key_idx].clicked_text = stref_copy(arg_stref); break;
+				case 1: if (arg_len > 0) result[key_idx].clicked_text = stref_copy(arg_stref); break;
+				case 2: break; // todo, parse key codes
+				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
+				case 4: {
+					if      (stref_startswith(arg_stref, "go_"  )) { result[key_idx].special_key = skey_go + stref_to_i({ arg_stref.start, arg_stref.length - 3 }); }
+					else if (stref_equals    (arg_stref, "close")) { result[key_idx].special_key = skey_close; }
+					else { result[key_idx].special_key = skey_none; }
+				} break;
+				}
+				arg_idx++;
+			}
+			key_idx += 1;
+		}
+	}
+	return result;
 }
 
 }
