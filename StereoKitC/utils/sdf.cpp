@@ -2,19 +2,21 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 
+#include <stdio.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
 
-float sdf_box_round(vec2 pt, float size, float radius) {
-	vec2 q = vec2{fabsf(pt.x)-size+radius, fabsf(pt.y)-size+radius};
+float sdf_box_round(vec2 pt, vec2 size, float radius) {
+	vec2 q = vec2{fabsf(pt.x)-size.x+radius, fabsf(pt.y)-size.y+radius};
 	return fminf(fmaxf(q.x, q.y), 0.0) + vec2_magnitude({ fmaxf(q.x,0), fmaxf(q.y,0)}) - radius;
 }
 
 ///////////////////////////////////////////
 
-float sdf_box(vec2 pt, float size) {
-	vec2 d = vec2{fabsf(pt.x)-size, fabsf(pt.y)-size};
+float sdf_box(vec2 pt, vec2 size) {
+	vec2 d = vec2{fabsf(pt.x)-size.x, fabsf(pt.y)-size.y};
 	return fminf(fmaxf(d.x, d.y), 0.0) + vec2_magnitude({ fmaxf(d.x,0), fmaxf(d.y,0)});
 }
 
@@ -75,6 +77,23 @@ tex_t sdf_create_tex(int32_t width, int32_t height, float (*sdf)(vec2 pt), float
 		}
 	}
 	return tex_create_color32(data, width, height, false);
+}
+
+///////////////////////////////////////////
+
+sprite_t sdf_create_sprite(const char* name, int32_t width, int32_t height, float (*sdf)(vec2 pt), float scale) {
+	tex_t tex = sdf_create_tex(width, height, sdf, scale);
+	tex_set_address(tex, tex_address_clamp);
+
+	char id[128];
+	snprintf(id, sizeof(id), "%s_tex", name);
+	tex_set_id(tex, id);
+
+	sprite_t spr = sprite_create(tex, sprite_type_single);
+	sprite_set_id(spr, name);
+
+	tex_release(tex);
+	return spr;
 }
 
 }

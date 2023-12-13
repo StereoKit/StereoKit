@@ -114,27 +114,24 @@ void ui_theming_init() {
 	// #defines because we can't capture anything in these lambdas D:
 	#define OUTER_RADIUS 31
 	#define RING_WIDTH 8
+	#define RADIUS (OUTER_RADIUS - RING_WIDTH)
 	#define INNER_RADIUS (OUTER_RADIUS - RING_WIDTH*2)
 
-	tex_t toggle_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_on = sdf_create_sprite(ui_default_id_spr_toggle_on, 64, 64, [](vec2 pt) {
 		return
 			sdf_union(
-				sdf_box(pt, INNER_RADIUS),
+				sdf_box(pt, {INNER_RADIUS, INNER_RADIUS}),
 				sdf_subtract(
-					sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-					sdf_box_round(pt, OUTER_RADIUS, 8)))/32.0f;
+					sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+					sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8)))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_on, tex_address_clamp);
-	tex_set_id     (toggle_tex_on, "sk/ui/toggle_on_tex");
-	tex_t toggle_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_off = sdf_create_sprite(ui_default_id_spr_toggle_off, 64, 64, [](vec2 pt) {
 		return
 			sdf_subtract(
-				sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-				sdf_box_round(pt, OUTER_RADIUS, 8))/32.0f;
+				sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+				sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_off, tex_address_clamp);
-	tex_set_id     (toggle_tex_off, "sk/ui/toggle_off_tex");
-	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_on = sdf_create_sprite(ui_default_id_spr_radio_on, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return
 			sdf_union(
@@ -143,26 +140,41 @@ void ui_theming_init() {
 					dist - (OUTER_RADIUS - RING_WIDTH),
 					dist - OUTER_RADIUS)) / 32.0f;
 	}, 40);
-	tex_set_address(radio_tex_on, tex_address_clamp);
-	tex_set_id     (radio_tex_on, "sk/ui/radio_on_tex");
-	tex_t radio_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_off = sdf_create_sprite(ui_default_id_spr_radio_off, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return sdf_subtract(dist - (OUTER_RADIUS - RING_WIDTH), dist - OUTER_RADIUS)/32.0f;
 	}, 40);
-	tex_set_address(radio_tex_off, tex_address_clamp);
-	tex_set_id     (radio_tex_off, "sk/ui/radio_off_tex");
-	skui_toggle_on  = sprite_create(toggle_tex_on,  sprite_type_single);
-	skui_toggle_off = sprite_create(toggle_tex_off, sprite_type_single);
-	skui_radio_on   = sprite_create(radio_tex_on,   sprite_type_single);
-	skui_radio_off  = sprite_create(radio_tex_off,  sprite_type_single);
-	sprite_set_id(skui_toggle_on,  ui_default_id_toggle_on_spr);
-	sprite_set_id(skui_toggle_off, ui_default_id_toggle_off_spr);
-	sprite_set_id(skui_radio_on,   ui_default_id_radio_on_spr);
-	sprite_set_id(skui_radio_off,  ui_default_id_radio_off_spr);
-	tex_release(toggle_tex_on);
-	tex_release(toggle_tex_off);
-	tex_release(radio_tex_on);
-	tex_release(radio_tex_off);
+
+	// Create some sprites for common UI icons
+	sprite_t spr_backspace = sdf_create_sprite(ui_default_id_spr_backspace, 96, 64, [](vec2 pt) {
+		return
+			sdf_subtract(
+				sdf_rounded_x(pt - vec2{3.5f,0}, 20, 3.5f),
+				sdf_union(
+					sdf_box    (pt - vec2{10, 0}, {20,20})-7,
+					sdf_diamond(pt + vec2{10, 0}, {20,20})-7)) / 40.0f;
+	}, 40);
+	sprite_t spr_shift = sdf_create_sprite(ui_default_id_spr_shift, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+				sdf_triangle(pt + vec2{0,24}, {24,20}) - 4,
+				sdf_box(pt + vec2{0,-6}, {6, 12}) - 7) / 40.0f;
+	}, 40);
+	sprite_t spr_close = sdf_create_sprite(ui_default_id_spr_close, 64, 64, [](vec2 pt) {
+		return sdf_rounded_x(pt, 36, 7) / 40.0f;
+	}, 40);
+	sprite_t spr_left = sdf_create_sprite(ui_default_id_spr_arrow_left, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	sprite_t spr_right = sdf_create_sprite(ui_default_id_spr_arrow_right, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, -pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	sprite_t spr_up = sdf_create_sprite(ui_default_id_spr_arrow_up, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	sprite_t spr_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
 
 	// Create a sound for the HSlider
 	skui_snd_tick = sound_generate([](float t){

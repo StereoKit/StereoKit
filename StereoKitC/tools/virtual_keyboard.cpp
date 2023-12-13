@@ -8,7 +8,6 @@
 #include "virtual_keyboard_layouts.h"
 #include "../stereokit_ui.h"
 #include "../sk_math.h"
-#include "../utils/sdf.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
@@ -64,70 +63,6 @@ bool virtualkeyboard_get_open() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	tex_t tex_backspace = sdf_create_tex(96, 64, [](vec2 pt) {
-		return
-			sdf_subtract(
-				sdf_rounded_x(pt - vec2{3.5f,0}, 20, 3.5f),
-				sdf_union(
-					sdf_box    (pt - vec2{ 10, 0 }, 20)-7,
-					sdf_diamond(pt + vec2{ 10,0 }, { 20,20 })-7)) / 40.0f;
-	}, 40);
-	tex_set_address(tex_backspace, tex_address_clamp);
-	tex_set_id     (tex_backspace, "sk/ui/backspace_tex");
-	sprite_t spr_backspace = sprite_create(tex_backspace, sprite_type_single);
-	sprite_set_id(spr_backspace, "sk/ui/backspace");
-
-	tex_t tex_shift = sdf_create_tex(64, 64, [](vec2 pt) {
-		return 
-			sdf_union( 
-				sdf_triangle(pt + vec2{0,24}, {24,20}) - 4,
-				sdf_box     (vec2{pt.x*1.5f,pt.y} + vec2{0,-6}, 12) - 7) / 40.0f;
-	}, 40);
-	tex_set_address(tex_shift, tex_address_clamp);
-	tex_set_id     (tex_shift, "sk/ui/shift_tex");
-	sprite_t spr_shift = sprite_create(tex_shift, sprite_type_single);
-	sprite_set_id(spr_shift, "sk/ui/shift");
-
-	tex_t tex_close = sdf_create_tex(64, 64, [](vec2 pt) {
-		return sdf_rounded_x(pt, 36, 7) / 40.0f;
-	}, 40);
-	tex_set_address(tex_close, tex_address_clamp);
-	tex_set_id     (tex_close, "sk/ui/close_tex");
-	sprite_t spr_close = sprite_create(tex_close, sprite_type_single);
-	sprite_set_id(spr_close, "sk/ui/close");
-
-	tex_t tex_arrow_left = sdf_create_tex(64, 64, [](vec2 pt) {
-		return (sdf_triangle({ pt.y, pt.x + 24 }, {26,44}) - 4) / 40.0f;
-	}, 40);
-	tex_set_address(tex_arrow_left, tex_address_clamp);
-	tex_set_id     (tex_arrow_left, "sk/ui/arrow_left_tex");
-	sprite_t spr_left = sprite_create(tex_arrow_left, sprite_type_single);
-	sprite_set_id(spr_left, "sk/ui/arrow_left");
-
-	tex_t tex_arrow_right = sdf_create_tex(64, 64, [](vec2 pt) {
-		return (sdf_triangle({ pt.y, -pt.x + 24 }, {26,44}) - 4) / 40.0f;
-	}, 40);
-	tex_set_address(tex_arrow_right, tex_address_clamp);
-	tex_set_id     (tex_arrow_right, "sk/ui/arrow_right_tex");
-	sprite_t spr_right = sprite_create(tex_arrow_right, sprite_type_single);
-	sprite_set_id(spr_right, "sk/ui/arrow_right");
-
-	tex_t tex_arrow_up = sdf_create_tex(64, 64, [](vec2 pt) {
-		return (sdf_triangle({ pt.x, pt.y + 24 }, {26,44}) - 4) / 40.0f;
-	}, 40);
-	tex_set_address(tex_arrow_up, tex_address_clamp);
-	tex_set_id     (tex_arrow_up, "sk/ui/arrow_up_tex");
-	sprite_t spr_up = sprite_create(tex_arrow_up, sprite_type_single);
-	sprite_set_id(spr_up, "sk/ui/arrow_up");
-
-	tex_t tex_arrow_down = sdf_create_tex(64, 64, [](vec2 pt) {
-		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
-	}, 40);
-	tex_set_address(tex_arrow_down, tex_address_clamp);
-	tex_set_id     (tex_arrow_down, "sk/ui/arrow_down_tex");
-	sprite_t spr_down = sprite_create(tex_arrow_down, sprite_type_single);
-	sprite_set_id(spr_down, "sk/ui/arrow_down");
-
 	const char* layout = R"(q|w|e|r|t|y|u|i|o|p
 ---1|a|s|d|f|g|h|j|k|l
 spr:sk/ui/shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3

@@ -263,10 +263,17 @@ SK_API void     ui_panel_end         (void);
 
 ///////////////////////////////////////////
 
-SK_CONST char* ui_default_id_radio_on_spr   = "sk/ui/radio_on_spr";
-SK_CONST char* ui_default_id_radio_off_spr  = "sk/ui/radio_off_spr";
-SK_CONST char* ui_default_id_toggle_on_spr  = "sk/ui/toggle_on_spr";
-SK_CONST char* ui_default_id_toggle_off_spr = "sk/ui/toggle_off_spr";
+SK_CONST char* ui_default_id_spr_radio_on    = "sk/ui/radio_on";
+SK_CONST char* ui_default_id_spr_radio_off   = "sk/ui/radio_off";
+SK_CONST char* ui_default_id_spr_toggle_on   = "sk/ui/toggle_on";
+SK_CONST char* ui_default_id_spr_toggle_off  = "sk/ui/toggle_off";
+SK_CONST char* ui_default_id_spr_arrow_left  = "sk/ui/arrow_left";
+SK_CONST char* ui_default_id_spr_arrow_right = "sk/ui/arrow_right";
+SK_CONST char* ui_default_id_spr_arrow_up    = "sk/ui/arrow_up";
+SK_CONST char* ui_default_id_spr_arrow_down  = "sk/ui/arrow_down";
+SK_CONST char* ui_default_id_spr_backspace   = "sk/ui/backspace";
+SK_CONST char* ui_default_id_spr_shift       = "sk/ui/shift";
+SK_CONST char* ui_default_id_spr_close       = "sk/ui/close";
 
 #ifdef __cplusplus
 } // namespace sk
