@@ -7,6 +7,8 @@
 #include "virtual_keyboard.h"
 #include "virtual_keyboard_layouts.h"
 #include "../stereokit_ui.h"
+#include "../sk_math.h"
+#include "../utils/sdf.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
@@ -17,16 +19,12 @@ bool32_t           keyboard_open         = false;
 pose_t             keyboard_pose         = pose_identity;
 array_t<key_>      keyboard_pressed_keys = {};
 const keylayout_t* keyboard_active_layout;
+int32_t            keyboard_layer_idx = 0;
 text_context_      keyboard_text_context;
-
-bool32_t           keyboard_symbols = false;
-bool32_t           keyboard_shift   = false;
-bool32_t           keyboard_ctrl    = false;
-bool32_t           keyboard_alt     = false;
 
 ///////////////////////////////////////////
 
-keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t text_length);
+bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, keylayout_info_t* out_layout);
 
 ///////////////////////////////////////////
 
@@ -37,10 +35,6 @@ const keylayout_t* virtualkeyboard_get_system_keyboard_layout() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_reset_modifiers() {
-	if (keyboard_alt    ) { input_key_inject_release(key_alt  ); keyboard_alt     = false; }
-	if (keyboard_ctrl   ) { input_key_inject_release(key_ctrl ); keyboard_ctrl    = false; }
-	if (keyboard_shift  ) { input_key_inject_release(key_shift); keyboard_shift   = false; }
-	if (keyboard_symbols) {                                      keyboard_symbols = false; }
 }
 
 ///////////////////////////////////////////
@@ -58,6 +52,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	keyboard_text_context = type;
 	keyboard_open         = open;
+	keyboard_layer_idx    = 0;
 }
 
 ///////////////////////////////////////////
@@ -69,17 +64,66 @@ bool virtualkeyboard_get_open() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
+	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+		return sdf_subtract(
+				sdf_rounded_x(pt - vec2{3.5f,0}, 16, 3.5f),
+				sdf_union(
+					sdf_box    (pt - vec2{ 7, 0 }, 14)-7,
+					sdf_diamond(pt + vec2{ 7,0 }, { 14,14 })-7)) / 40.0f;
+	}, 40);
+	tex_set_address(radio_tex_on, tex_address_clamp);
+	tex_set_id     (radio_tex_on, "sk/ui/backspace_tex");
+	sprite_t spr_backspace = sprite_create(radio_tex_on, sprite_type_single);
+	sprite_set_id(spr_backspace, "sk/ui/backspace");
+
+	const char* layout = R"(q|w|e|r|t|y|u|i|o|p
+---1|a|s|d|f|g|h|j|k|l
+Shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3
+spr:sk/ui/radio_on_spr----close|123---3-go_2|,| - --7|.|Return-\n--4|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[0]);
+	layout = R"(Q|W|E|R|T|Y|U|I|O|P
+---1|A|S|D|F|G|H|J|K|L
+Shift---3-go_0|Z|X|C|V|B|N|M|<\--\b--3
+X----close|123---3-go_2|!| - --7|?|Return-\n--4|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[1]);
+	layout = R"(1|2|3|4|5|6|7|8|9|0
+---1|\-|/|:|;|(|)|$|&|@
+Shift---3-go_0|*|=|+|#|%|'|"|<\--\b--3
+X----close|123---3-go_2|!| - --7|?|Return-\n--4|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[2]);
+	layout = R"(7|8|9|<\--\b
+4|5|6|\-
+1|2|3
+0|.|Return-\n--4-close|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.number[0]);
+	layout = R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|<\--\b--3|---2|X----close
+Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
+Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|https://-https://--4
+Shift---5-go_1|z|x|c|v|b|n|m|,|.|/|Shift---4-go_1|^
+Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|<|v|>|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[0]);
+	layout = R"(~|!|@|#|$|%|^|&|*|(|)|_|+|<\--\b--3|---2|X----close
+Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
+Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|https://-https://--4
+Shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|Shift---4-go_0|^
+Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|<|v|>|)";
+	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[1]);
+
 	keyboard_active_layout = virtualkeyboard_get_system_keyboard_layout();
 }
 
 ///////////////////////////////////////////
 
 void send_key_data(const char* charkey,key_ key) {
-	keyboard_pressed_keys.add(key);
-	input_key_inject_press(key);
-	char32_t c = 0;
-	while (utf8_decode_fast_b(charkey, &charkey, &c)) {
-		input_text_inject_char(c);
+	if (key != key_none) {
+		keyboard_pressed_keys.add(key);
+		input_key_inject_press(key);
+	}
+	if (charkey != nullptr) {
+		char32_t c = 0;
+		while (utf8_decode_fast_b(charkey, &charkey, &c)) {
+			input_text_inject_char(c);
+		}
 	}
 }
 
@@ -96,10 +140,15 @@ void remove_last_clicked_keys() {
 
 void virtualkeyboard_keypress(keylayout_key_t key) {
 	send_key_data(key.clicked_text, (key_)key.key_event_type);
-	if (key.special_key == skey_close) {
-		keyboard_open = false;
-	}
 	virtualkeyboard_reset_modifiers();
+}
+
+///////////////////////////////////////////
+
+bool _key_button(const keylayout_key_t* key, vec2 size) {
+	return key->is_sprite
+		? ui_button_img_sz("key", key->display_sprite, ui_btn_layout_center_no_text, size)
+		: ui_button_sz(key->display_text, size);
 }
 
 ///////////////////////////////////////////
@@ -108,84 +157,57 @@ void virtualkeyboard_update() {
 	if (!keyboard_open) return;
 	if (keyboard_active_layout == nullptr) return;
 
+	// Get the right layout for this text context
+	const keylayout_info_t* layer = nullptr;
+	switch (keyboard_text_context) {
+	case text_context_text:  layer = &keyboard_active_layout->text  [keyboard_layer_idx]; break;
+	case text_context_number:layer = &keyboard_active_layout->number[keyboard_layer_idx]; break;
+	case text_context_uri:   layer = &keyboard_active_layout->uri   [keyboard_layer_idx]; break;
+	default:                 layer = &keyboard_active_layout->text  [keyboard_layer_idx]; break;
+	}
+
+	float gutter      = ui_get_gutter ();
+	float margin      = ui_get_margin ();
+	float cell_height = ui_line_height();
+	float cell_size   = cell_height * 0.5;
+	// Calculate the width in advance, so the keyboard doesn't "pop"
+	float window_width = cell_size * layer->width_cells + gutter * layer->width_gutters + margin * 2;
+
 	remove_last_clicked_keys();
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_window_begin("SK/Keyboard", keyboard_pose, {0,0}, ui_win_body, ui_system_get_move_type());
+	ui_window_begin("SK/Keyboard", keyboard_pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
 
-	// Check layer keys for switching between keyboard layout layers
-	int layer_index = 0;
-	if      (keyboard_shift)   layer_index = 1;
-	else if (keyboard_symbols) layer_index = 2;
-
-	// Until we have more, this is capped at 2
-	assert(layer_index < 3);
-
-	// Get the right layout for this text context
-	const keylayout_key_t* layer = nullptr;
-	switch (keyboard_text_context) {
-	case text_context_text:  layer = keyboard_active_layout->text  [layer_index]; break;
-	case text_context_number:layer = keyboard_active_layout->number[layer_index]; break;
-	case text_context_uri:   layer = keyboard_active_layout->uri   [layer_index]; break;
-	default:                 layer = keyboard_active_layout->text  [layer_index]; break;
-	}
-
-	float gutter = ui_get_gutter();
 	// Draw the keyboard
-	float   button_size = ui_line_height();
-	int32_t i           = 0;
-	while (layer[i].special_key != skey_end) {
-		const keylayout_key_t *curr = &layer[i];
-		i += 1;
+	for (int32_t i=0; i<layer->key_ct; i+=1) {
+		const keylayout_key_t *curr = &layer->keys[i];
 
-		float curr_width = curr->width * 0.5f;
-		float width = curr_width * button_size;
-		float width_pct = curr_width - (int)curr_width;
-		if (curr_width > 1)
-			width += (((int)curr_width) - 1) * gutter;
-
-		if (curr_width < 1)
-			width -= gutter/2;
-		else if (width_pct != 0)
-			width += gutter/2;
-
-		vec2 size = vec2{ width, button_size };
-		if (curr->special_key == skey_nextline) ui_nextline();
-		if (curr_width == 0) continue;
+		float final_width = curr->width * cell_size; // Width starts with the number of cells it crossed.
+		final_width += (int32_t)(curr->width/2.0f - 0.5f) * gutter; // for every 2 cells, we need to jump a gutter
+		if (curr->width%2 == 1) final_width -= gutter/2; // if it doesn't evenly land on a gutter, we need an offset to make it look right.
+		vec2 size = vec2{ final_width, cell_height };
 
 		ui_push_idi(i + 1000);
-		switch(curr->special_key) {
-		case skey_spacer:   ui_layout_reserve(size); break;
-		case skey_nextline: break;
-		case skey_fn:       ui_toggle_sz(curr->display_text, keyboard_symbols, size); break;
-		case skey_alt: {
-			if (ui_toggle_sz(curr->display_text, keyboard_alt, size)) {
-				if (keyboard_alt) input_key_inject_press  (key_alt);
-				else              input_key_inject_release(key_alt);
+		if      (curr->special_key  == skey_nextline) { ui_nextline(); }
+		else if (curr->display_text == nullptr      ) { ui_layout_reserve(size); ui_sameline(); }
+		else if (curr->special_key  == skey_close   ) {
+			ui_push_tint({ 0.8f,0.8f,0.8f, 1 });
+			if (_key_button(curr, size)) keyboard_open = false;
+			ui_pop_tint();
+			ui_sameline();
+		} else if (curr->special_key >= skey_go) {
+			ui_push_tint({ 0.8f,0.8f,0.8f, 1 });
+			if (_key_button(curr, size)) {
+				keyboard_layer_idx = curr->special_key - skey_go;
 			}
-		} break;
-		case skey_ctrl: {
-			if (ui_toggle_sz(curr->display_text, keyboard_ctrl, size)) {
-				if (keyboard_ctrl) input_key_inject_press  (key_ctrl);
-				else               input_key_inject_release(key_ctrl);
-			}
-		} break;
-		case skey_shift: {
-			if (ui_toggle_img_sz(curr->display_text, keyboard_shift, nullptr, nullptr, ui_btn_layout_none, size)) {
-				if (keyboard_shift) input_key_inject_press  (key_shift);
-				else                input_key_inject_release(key_shift);
-			}
-		} break;
-		case skey_syms: {
-			ui_toggle_img_sz(curr->display_text, keyboard_symbols, nullptr, nullptr, ui_btn_layout_none, size);
-		} break;
-		default: {
-			if (ui_button_sz(curr->display_text, size))
+			ui_pop_tint();
+			ui_sameline();
+		} else {
+			if (_key_button(curr, size))
 				virtualkeyboard_keypress(*curr);
-		} break;
+			ui_sameline();
 		}
 		ui_pop_id();
-		ui_sameline();
 	}
 	ui_window_end();
 	hierarchy_pop();
@@ -211,7 +233,7 @@ bool next_separator(const char* start, int32_t start_len, const char **out_next,
 
 ///////////////////////////////////////////
 
-keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t text_length) {
+bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, keylayout_info_t *out_layout) {
 	// File format is:
 	// '|' separates keys on a row
 	// '-' separates arguments for defining a key
@@ -245,23 +267,24 @@ keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t te
 	bool        escape = false;
 	int32_t     key_count = 0;
 	for (int32_t i = 0; i < text_length; i++) {
-		if (*src == '\\') {
-			escape = true;
-		} else if (escape) {
+		if (escape) {
 			switch (*src) {
 			case 'n': *dst = '\n'; break;
 			case 'r': *dst = '\r'; break;
+			case '|': *dst = '|';  break;
+			case '-': *dst = '-';  break;
 			case 't': *dst = '\t'; break;
 			case 'b': *dst = '\b'; break;
 			case '\\':*dst = '\\'; break;
-			case '-': *dst = '-';  break;
 			default:  *dst = *src; break;
 			}
 			dst++;
 			escape = false;
+		} else if (*src == '\\') {
+			escape = true;
 		} else {
-			if      (*src == '\n') { *dst = '\1'; key_count++; } // todo, may need extra keys for newlines the way it's set up now
-			if      (*src == '\r') { }
+			if      (*src == '\n') { *dst = '\1'; key_count+=2; }
+			else if (*src == '\r') { }
 			else if (*src == '|')  { *dst = '\2'; key_count++; }
 			else if (*src == '-')  { *dst = '\3'; }
 			else *dst = *src;
@@ -272,7 +295,7 @@ keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t te
 	*dst = '\0';
 
 	// Parse the keys into a full keyboard
-	keylayout_key_t * result  = sk_malloc_zero_t(keylayout_key_t, key_count + 1);
+	keylayout_key_t *result  = sk_malloc_zero_t(keylayout_key_t, key_count + 1);
 	const char* text     = escape_text;
 	int32_t     text_len = strlen(escape_text);
 	const char* line     = nullptr;
@@ -290,12 +313,23 @@ keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t te
 			while (next_separator(word, word_len, &arg, &arg_len, '\3')) {
 				stref_t arg_stref = { arg, arg_len };
 				switch (arg_idx) {
-				case 0: if (arg_len > 0) result[key_idx].display_text = result[key_idx].clicked_text = stref_copy(arg_stref); break;
-				case 1: if (arg_len > 0) result[key_idx].clicked_text = stref_copy(arg_stref); break;
+				case 0: {
+					if (arg_len > 0) {
+						if (stref_startswith(arg_stref, "spr:")) {
+							char *id = stref_copy(stref_substr(arg + 4, arg_len - 4));
+							result[key_idx].display_sprite = sprite_find(id);
+							result[key_idx].is_sprite      = true;
+							sk_free(id);
+						} else {
+							result[key_idx].display_text = result[key_idx].clicked_text = stref_copy(arg_stref);
+						}
+					}
+				} break;
+				case 1: result[key_idx].clicked_text = arg_len > 0 ? stref_copy(arg_stref) : nullptr; break;
 				case 2: break; // todo, parse key codes
 				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
 				case 4: {
-					if      (stref_startswith(arg_stref, "go_"  )) { result[key_idx].special_key = skey_go + stref_to_i({ arg_stref.start, arg_stref.length - 3 }); }
+					if      (stref_startswith(arg_stref, "go_"  )) { result[key_idx].special_key = skey_go + stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
 					else if (stref_equals    (arg_stref, "close")) { result[key_idx].special_key = skey_close; }
 					else { result[key_idx].special_key = skey_none; }
 				} break;
@@ -304,8 +338,24 @@ keylayout_key_t* virtualkeyboard_parse_layout(const char* text_start, int32_t te
 			}
 			key_idx += 1;
 		}
+		result[key_idx].special_key = skey_nextline;
+		result[key_idx].width = 0;
+		key_idx += 1;
 	}
-	return result;
+
+	*out_layout = {};
+	out_layout->keys   = result;
+	out_layout->key_ct = key_count;
+	for (int32_t i = 0; i < key_count; i++)
+	{
+		if (result[i].special_key == skey_nextline) {
+			out_layout->width_gutters -= 1;
+			break;
+		}
+		out_layout->width_cells   += result[i].width;
+		out_layout->width_gutters += 1 + (int32_t)(result[i].width / 2.0f - 0.5f);
+	}
+	return true;
 }
 
 }

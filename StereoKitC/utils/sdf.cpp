@@ -20,6 +20,27 @@ float sdf_box(vec2 pt, float size) {
 
 ///////////////////////////////////////////
 
+float sdf_diamond(vec2 pt, vec2  size) {
+	pt = vec2_abs(pt);
+
+	vec2  dot  = size - 2.0f * pt;
+	float ndot = dot.x*size.x - dot.y*size.y;
+
+	float proportions = math_clamp(ndot / vec2_dot(size, size), -1.f, 1.f);
+	float dist = vec2_magnitude(pt - 0.5f * size * vec2{ 1.f - proportions, 1.f + proportions });
+
+	return dist * ((pt.x*size.y + pt.y*size.x - size.x*size.y) > 0 ? 1 : -1);
+}
+
+///////////////////////////////////////////
+
+float sdf_rounded_x(vec2 pt, float size, float radius) {
+	pt = vec2_abs(pt);
+	return vec2_magnitude(pt - fminf(pt.x + pt.y, size) * 0.5f) - radius;
+}
+
+///////////////////////////////////////////
+
 tex_t sdf_create_tex(int32_t width, int32_t height, float (*sdf)(vec2 pt), float scale) {
 	color32 *data     = sk_malloc_t(color32, width * height);
 	float    center_x = width  / 2.0f - 0.5f;

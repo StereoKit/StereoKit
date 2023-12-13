@@ -603,6 +603,8 @@ static inline vec2   operator* (float b, vec2 a) { return { a.x * b, a.y * b }; 
 static inline vec2   operator/ (vec2 a, float b) { return { a.x / b, a.y / b }; }
 static inline vec2   operator+ (vec2 a, vec2  b) { return { a.x + b.x, a.y + b.y }; }
 static inline vec2   operator- (vec2 a, vec2  b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2   operator+ (vec2 a, float b) { return { a.x + b,   a.y + b }; }
+static inline vec2   operator- (vec2 a, float b) { return { a.x - b,   a.y - b }; }
 static inline vec2   operator* (vec2 a, vec2  b) { return { a.x * b.x, a.y * b.y }; }
 static inline vec2   operator/ (vec2 a, vec2  b) { return { a.x / b.x, a.y / b.y }; }
 static inline vec2  &operator+=(vec2 &a, vec2  b) { a.x += b.x; a.y += b.y; return a; }
