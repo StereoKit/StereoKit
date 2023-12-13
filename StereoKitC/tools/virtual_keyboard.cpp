@@ -64,22 +64,31 @@ bool virtualkeyboard_get_open() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
-		return sdf_subtract(
+	tex_t tex_backspace = sdf_create_tex(64, 64, [](vec2 pt) {
+		return
+			sdf_subtract(
 				sdf_rounded_x(pt - vec2{3.5f,0}, 16, 3.5f),
 				sdf_union(
 					sdf_box    (pt - vec2{ 7, 0 }, 14)-7,
 					sdf_diamond(pt + vec2{ 7,0 }, { 14,14 })-7)) / 40.0f;
 	}, 40);
-	tex_set_address(radio_tex_on, tex_address_clamp);
-	tex_set_id     (radio_tex_on, "sk/ui/backspace_tex");
-	sprite_t spr_backspace = sprite_create(radio_tex_on, sprite_type_single);
+	tex_set_address(tex_backspace, tex_address_clamp);
+	tex_set_id     (tex_backspace, "sk/ui/backspace_tex");
+	sprite_t spr_backspace = sprite_create(tex_backspace, sprite_type_single);
 	sprite_set_id(spr_backspace, "sk/ui/backspace");
+
+	tex_t tex_close = sdf_create_tex(64, 64, [](vec2 pt) {
+		return sdf_rounded_x(pt, 48, 7) / 40.0f;
+	}, 40);
+	tex_set_address(tex_close, tex_address_clamp);
+	tex_set_id     (tex_close, "sk/ui/close_tex");
+	sprite_t spr_close = sprite_create(tex_close, sprite_type_single);
+	sprite_set_id(spr_close, "sk/ui/close");
 
 	const char* layout = R"(q|w|e|r|t|y|u|i|o|p
 ---1|a|s|d|f|g|h|j|k|l
 Shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3
-spr:sk/ui/radio_on_spr----close|123---3-go_2|,| - --7|.|Return-\n--4|)";
+spr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return-\n--4|)";
 	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[0]);
 	layout = R"(Q|W|E|R|T|Y|U|I|O|P
 ---1|A|S|D|F|G|H|J|K|L
