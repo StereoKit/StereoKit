@@ -52,6 +52,13 @@ sprite_t        skui_toggle_off;
 sprite_t        skui_toggle_on;
 sprite_t        skui_radio_off;
 sprite_t        skui_radio_on;
+sprite_t        skui_arrow_left;
+sprite_t        skui_arrow_right;
+sprite_t        skui_arrow_up;
+sprite_t        skui_arrow_down;
+sprite_t        skui_spr_close;
+sprite_t        skui_spr_backspace;
+sprite_t        skui_spr_shift;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -146,7 +153,7 @@ void ui_theming_init() {
 	}, 40);
 
 	// Create some sprites for common UI icons
-	sprite_t spr_backspace = sdf_create_sprite(ui_default_id_spr_backspace, 96, 64, [](vec2 pt) {
+	skui_spr_backspace = sdf_create_sprite(ui_default_id_spr_backspace, 96, 64, [](vec2 pt) {
 		return
 			sdf_subtract(
 				sdf_rounded_x(pt - vec2{3.5f,0}, 20, 3.5f),
@@ -154,25 +161,25 @@ void ui_theming_init() {
 					sdf_box    (pt - vec2{10, 0}, {20,20})-7,
 					sdf_diamond(pt + vec2{10, 0}, {20,20})-7)) / 40.0f;
 	}, 40);
-	sprite_t spr_shift = sdf_create_sprite(ui_default_id_spr_shift, 64, 64, [](vec2 pt) {
+	skui_spr_shift = sdf_create_sprite(ui_default_id_spr_shift, 64, 64, [](vec2 pt) {
 		return
 			sdf_union(
 				sdf_triangle(pt + vec2{0,24}, {24,20}) - 4,
 				sdf_box(pt + vec2{0,-6}, {6, 12}) - 7) / 40.0f;
 	}, 40);
-	sprite_t spr_close = sdf_create_sprite(ui_default_id_spr_close, 64, 64, [](vec2 pt) {
+	skui_spr_close = sdf_create_sprite(ui_default_id_spr_close, 64, 64, [](vec2 pt) {
 		return sdf_rounded_x(pt, 36, 7) / 40.0f;
 	}, 40);
-	sprite_t spr_left = sdf_create_sprite(ui_default_id_spr_arrow_left, 64, 64, [](vec2 pt) {
+	skui_arrow_left = sdf_create_sprite(ui_default_id_spr_arrow_left, 64, 64, [](vec2 pt) {
 		return (sdf_triangle({ pt.y, pt.x + 24 }, {26,44}) - 4) / 40.0f;
 	}, 40);
-	sprite_t spr_right = sdf_create_sprite(ui_default_id_spr_arrow_right, 64, 64, [](vec2 pt) {
+	skui_arrow_right = sdf_create_sprite(ui_default_id_spr_arrow_right, 64, 64, [](vec2 pt) {
 		return (sdf_triangle({ pt.y, -pt.x + 24 }, {26,44}) - 4) / 40.0f;
 	}, 40);
-	sprite_t spr_up = sdf_create_sprite(ui_default_id_spr_arrow_up, 64, 64, [](vec2 pt) {
+	skui_arrow_up = sdf_create_sprite(ui_default_id_spr_arrow_up, 64, 64, [](vec2 pt) {
 		return (sdf_triangle({ pt.x, pt.y + 24 }, {26,44}) - 4) / 40.0f;
 	}, 40);
-	sprite_t spr_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
+	skui_arrow_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
 		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
 	}, 40);
 
@@ -290,6 +297,13 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_toggle_on);      skui_toggle_on      = nullptr;
 	sprite_release  (skui_radio_off);      skui_radio_off      = nullptr;
 	sprite_release  (skui_radio_on);       skui_radio_on       = nullptr;
+	sprite_release  (skui_arrow_left);     skui_arrow_left     = nullptr;
+	sprite_release  (skui_arrow_right);    skui_arrow_right    = nullptr;
+	sprite_release  (skui_arrow_up);       skui_arrow_up       = nullptr;
+	sprite_release  (skui_arrow_down);     skui_arrow_down     = nullptr;
+	sprite_release  (skui_spr_backspace);  skui_spr_backspace  = nullptr;
+	sprite_release  (skui_spr_close);      skui_spr_close      = nullptr;
+	sprite_release  (skui_spr_shift);      skui_spr_shift      = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
 }

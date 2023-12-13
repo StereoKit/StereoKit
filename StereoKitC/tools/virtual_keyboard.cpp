@@ -86,14 +86,14 @@ spr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\n--4|)";
 	layout = R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
 Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
 Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|https://-https://--4
-spr:sk/ui/shift---5-go_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---4-go_1|spr:sk/ui/arrow_up
-Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left|spr:sk/ui/arrow_down|spr:sk/ui/arrow_right|)";
+spr:sk/ui/shift---5-go_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---4-go_1|spr:sk/ui/arrow_up--38
+Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[0]);
 	layout = R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
 Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
 Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|https://-https://--4
-spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---4-go_0|spr:sk/ui/arrow_up
-Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left|spr:sk/ui/arrow_up|spr:sk/ui/arrow_right|)";
+spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---4-go_0|spr:sk/ui/arrow_up--38
+Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[1]);
 
 	keyboard_active_layout = virtualkeyboard_get_system_keyboard_layout();
@@ -298,7 +298,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 			result[key_idx].width = 2;
 
 			while (next_separator(word, word_len, &arg, &arg_len, '\3')) {
-				stref_t arg_stref = { arg, arg_len };
+				stref_t arg_stref = { arg, (uint32_t)arg_len };
 				switch (arg_idx) {
 				case 0: {
 					if (arg_len > 0) {
@@ -313,7 +313,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 					}
 				} break;
 				case 1: result[key_idx].clicked_text = arg_len > 0 ? stref_copy(arg_stref) : nullptr; break;
-				case 2: break; // todo, parse key codes
+				case 2: if (arg_len > 0) result[key_idx].key_event_type = (uint8_t)stref_to_i(arg_stref); break;
 				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
 				case 4: {
 					if      (stref_startswith(arg_stref, "go_"  )) { result[key_idx].special_key = skey_go + stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
