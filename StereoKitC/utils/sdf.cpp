@@ -20,6 +20,24 @@ float sdf_box(vec2 pt, float size) {
 
 ///////////////////////////////////////////
 
+// The MIT License
+// Copyright (c) 2018 Inigo Quilez
+float sdf_triangle(vec2 pt, vec2 size) {
+	pt.x = fabsf(pt.x);
+	vec2  base_pt     = pt - size * math_clamp(vec2_dot(pt, size) / vec2_dot(size, size), 0.f, 1.f);
+	vec2  ascend_pt   = pt - size * vec2{ math_clamp(pt.x / size.x, 0.f, 1.f), 1.f };
+
+	float orientation = size.y > 0 ? -1 : 1;
+	vec2  closest     = vec2_min(
+		vec2{ vec2_dot(base_pt,   base_pt  ), orientation * (pt.x * size.y - pt.y * size.x) },
+		vec2{ vec2_dot(ascend_pt, ascend_pt), orientation * (pt.y - size.y) } );
+	return sqrtf(closest.x) * (closest.y > 0 ? -1 : 1);
+}
+
+///////////////////////////////////////////
+
+// The MIT License
+// Copyright (c) 2017 Inigo Quilez
 float sdf_diamond(vec2 pt, vec2  size) {
 	pt = vec2_abs(pt);
 
@@ -27,13 +45,15 @@ float sdf_diamond(vec2 pt, vec2  size) {
 	float ndot = dot.x*size.x - dot.y*size.y;
 
 	float proportions = math_clamp(ndot / vec2_dot(size, size), -1.f, 1.f);
-	float dist = vec2_magnitude(pt - 0.5f * size * vec2{ 1.f - proportions, 1.f + proportions });
+	float dist        = vec2_magnitude(pt - 0.5f * size * vec2{ 1.f - proportions, 1.f + proportions });
 
 	return dist * ((pt.x*size.y + pt.y*size.x - size.x*size.y) > 0 ? 1 : -1);
 }
 
 ///////////////////////////////////////////
 
+// The MIT License
+// Copyright (c) 2019 Inigo Quilez
 float sdf_rounded_x(vec2 pt, float size, float radius) {
 	pt = vec2_abs(pt);
 	return vec2_magnitude(pt - fminf(pt.x + pt.y, size) * 0.5f) - radius;

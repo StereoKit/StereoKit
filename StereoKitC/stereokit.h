@@ -653,6 +653,8 @@ static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnit
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
 static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; return v; }
 static inline vec2     vec2_abs         (vec2 a) { vec2 v = { fabsf(a.x), fabsf(a.y) }; return v; }
+static inline vec3     vec3_min         (vec3 a, vec3 b)          { vec3 v = { fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z) }; return v; }
+static inline vec2     vec2_min         (vec2 a, vec2 b)          { vec2 v = { fminf(a.x, b.x), fminf(a.y, b.y) }; return v; }
 static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; return v; }
 static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
