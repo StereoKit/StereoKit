@@ -65,6 +65,12 @@ namespace StereoKit
 		private static void SetFilter(LogLevel level)
 			=> NativeAPI.log_set_filter(level);
 
+		/// <summary>On systems that write logs using a tag, such as Android,
+		/// StereoKit uses tag derived from the app name. This property allows
+		/// you to change that log tag to your own string. This should be
+		/// called before SK.Initialize, and any log items that are written.</summary>
+		public static string Tag { set{ NativeLib.Load(); NativeAPI.log_set_tag(value); } }
+
 		/// <summary>Writes a formatted line to the log with the specified
 		/// severity level!</summary>
 		/// <param name="level">Severity level of this log message.</param>

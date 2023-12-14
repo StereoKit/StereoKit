@@ -2331,6 +2331,7 @@ SK_API void log_errf       (const char* text, ...);
 SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
+SK_API void log_set_tag    (const char *tag_name);
 SK_API void log_set_colors (log_colors_ colors);
 SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
 SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));

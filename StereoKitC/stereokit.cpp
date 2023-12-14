@@ -116,6 +116,9 @@ bool32_t sk_init(sk_settings_t settings) {
 				: app_mode_simulator;
 	}
 
+	if(strcmp(log_get_tag(),"") == 0)
+		log_set_tag(local.settings.app_name);
+
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
 	local.settings.no_flatscreen_fallback = true;
@@ -291,6 +294,8 @@ void sk_shutdown_unsafe(void) {
 
 	systems_shutdown();
 	sk_mem_log_allocations();
+
+	log_clear_tag();
 
 	local = {};
 	local.disallow_user_shutdown = true;

@@ -16,6 +16,7 @@
 #include "../_stereokit.h"
 #include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/stref.h"
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
@@ -50,11 +51,14 @@ AAssetManager    *android_asset_manager     = nullptr;
 ANativeWindow    *android_next_window       = nullptr;
 jobject           android_next_window_xam   = nullptr;
 bool              android_next_win_ready    = false;
+bool              android_log_open          = false;
 window_t          android_window            = {};
 
 ///////////////////////////////////////////
 
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height);
+void android_log_channel_open ();
+void android_log_channel_close();
 
 ///////////////////////////////////////////
 
@@ -77,6 +81,11 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 
 bool platform_impl_init() {
 	const sk_settings_t* settings = sk_get_settings_ref();
+
+	// This will re-open on the first log, we're doing this here to make sure the
+	// tag gets set correctly, in case log messages were sent before
+	// initialization
+	android_log_channel_close();
 
 	android_activity   = (jobject)settings->android_activity;
 	if (android_vm == nullptr)
@@ -144,6 +153,7 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
+	android_log_channel_close();
 	if (android_vm)
 		android_vm->DetachCurrentThread();
 }
@@ -536,12 +546,28 @@ void platform_print_callstack() {
 
 ///////////////////////////////////////////
 
+void android_log_channel_open() {
+	if (android_log_open) return;
+	android_log_open = true;
+	const char* tag = log_get_tag();
+	if (strcmp(tag, "") == 0)
+		tag = "StereoKit";
+	openlog(tag, LOG_CONS | LOG_NOWAIT, LOG_USER);
+}
+
+///////////////////////////////////////////
+
+void android_log_channel_close() {
+	if (!android_log_open) return;
+	android_log_open = false;
+	closelog();
+}
+
+///////////////////////////////////////////
+
 void platform_debug_output(log_ level, const char *text) {
-	static bool opened = false;
-	if (!opened) {
-		opened = true;
-		openlog("StereoKit", LOG_CONS | LOG_NOWAIT, LOG_USER);
-	}
+	android_log_channel_open();
+
 	int32_t priority = LOG_INFO;
 	if      (level == log_diagnostic) priority = LOG_DEBUG;
 	else if (level == log_inform    ) priority = LOG_INFO;

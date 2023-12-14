@@ -17,6 +17,7 @@ typedef void(*log_listener_t)(log_, const char *);
 array_t<log_listener_t> log_listeners = {};
 
 log_        log_filter = log_diagnostic;
+char        log_tag[48];
 log_colors_ log_colors = log_colors_ansi;
 
 char       *log_fail_reason_str = nullptr;
@@ -228,6 +229,46 @@ void log_errf (const char* text, ...) {
 
 void log_set_filter(log_ level) {
 	log_filter = level;
+}
+
+///////////////////////////////////////////
+
+void log_set_tag(const char *tag_name) {
+	if (tag_name == nullptr)
+		snprintf(log_tag, sizeof(log_tag), "StereoKit");
+
+	const char* src = tag_name;
+	char*       dst = log_tag;
+	// Scrape out any fancy characters and spaces, just a-Z0-9_
+	while (*src != '\0' && ((dst - log_tag) < sizeof(log_tag)-1)) {
+		char c = *src;
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9')) {
+			*dst = c;
+			dst++;
+		} else if (c == ' ') {
+			*dst = '_';
+			dst++;
+		}
+		src++;
+	}
+	*dst = '\0';
+
+	// If we didn't get any valid characters, pick a default
+	if (dst - log_tag == 0)
+		snprintf(log_tag, sizeof(log_tag), "StereoKit");
+}
+
+///////////////////////////////////////////
+
+const char* log_get_tag() {
+	return log_tag;
+}
+
+///////////////////////////////////////////
+
+void log_clear_tag() {
+	log_tag[0] = '\0';
 }
 
 ///////////////////////////////////////////
