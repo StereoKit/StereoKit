@@ -169,5 +169,19 @@ namespace StereoKit
 		public static Sprite ToggleOn => Default.SpriteToggleOn;
 		/// <inheritdoc cref="Default.SpriteToggleOff" />
 		public static Sprite ToggleOff => Default.SpriteToggleOff;
+		/// <inheritdoc cref="Default.SpriteArrowLeft" />
+		public static Sprite ArrowLeft => Default.SpriteArrowLeft;
+		/// <inheritdoc cref="Default.SpriteArrowRight" />
+		public static Sprite ArrowRight => Default.SpriteArrowRight;
+		/// <inheritdoc cref="Default.SpriteArrowUp" />
+		public static Sprite ArrowUp => Default.SpriteArrowUp;
+		/// <inheritdoc cref="Default.SpriteArrowDown" />
+		public static Sprite ArrowDown => Default.SpriteArrowDown;
+		/// <inheritdoc cref="Default.SpriteBackspace" />
+		public static Sprite Backspace => Default.SpriteBackspace;
+		/// <inheritdoc cref="Default.SpriteShift" />
+		public static Sprite Shift => Default.SpriteShift;
+		/// <inheritdoc cref="Default.SpriteClose" />
+		public static Sprite Close => Default.SpriteClose;
 	}
 }
