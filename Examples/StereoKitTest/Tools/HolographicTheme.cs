@@ -343,12 +343,17 @@ namespace StereoKit.Framework
 
 		struct MeshData
 		{
-			public List<Vertex> verts = new();
-			public List<uint>   inds  = new();
+			public List<Vertex> verts;
+			public List<uint>   inds;
 
-			public MeshData() { }
-			public Mesh MakeMesh() {
-				Mesh mesh = new ();
+			public MeshData()
+			{
+				verts = new List<Vertex>();
+				inds  = new List<uint>();
+			}
+			public Mesh MakeMesh()
+			{
+				Mesh mesh = new Mesh();
 				mesh.SetData(verts.ToArray(), inds.ToArray());
 				return mesh;
 			}
