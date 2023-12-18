@@ -228,9 +228,13 @@ void ui_image(sprite_t image, vec2 size) {
 }
 
 ///////////////////////////////////////////
-
 template<typename C>
 void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
+	_ui_button_img_surface(text, image, image_layout, text_layout, window_relative_pos, size, finger_offset, skui_tint);
+}
+
+template<typename C>
+void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset, color128 image_tint) {
 	float pad2       = skui_settings.padding * 2;
 	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
@@ -283,7 +287,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	}
 
 	if (image_size>0 && image) {
-		color128 final_color = skui_tint;
+		color128 final_color = image_tint;
 		if (!ui_is_enabled()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 	
 		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
@@ -312,9 +316,13 @@ vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_lay
 }
 
 ///////////////////////////////////////////
-
 template<typename C>
 bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
+	return ui_button_img_at_g(text, image, image_layout, window_relative_pos, size, skui_tint);
+}
+
+template<typename C>
+bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) {
 	uint64_t      id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
@@ -330,13 +338,15 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
-	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset);
+	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
 	return state & button_state_just_active;
 }
+
 bool32_t ui_button_img_at   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char    >(text, image, image_layout, window_relative_pos, size); }
 bool32_t ui_button_img_at   (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
 bool32_t ui_button_img_at_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
+bool32_t ui_button_img_at_color_16(const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size, image_tint); }
 
 ///////////////////////////////////////////
 
@@ -349,8 +359,18 @@ bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_lay
 	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
 	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
 }
+template<typename C>
+bool32_t ui_button_img_color_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) {
+	vec3 final_pos;
+	vec2 final_size;
+	vec2 size = _ui_button_img_size(text, image, image_layout);
+
+	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
+	return ui_button_img_at_color_16(text, image, image_layout, final_pos, final_size, image_tint);
+}
 bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char    >(text, image, image_layout); }
 bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char16_t>(text, image, image_layout); }
+bool32_t ui_button_img_color_16(const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_color_g<char16_t>(text, image, image_layout, image_tint); }
 
 ///////////////////////////////////////////
 
