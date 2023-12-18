@@ -1,3 +1,4 @@
+#include "ui_theming.h"
 #include "ui_core.h"
 #include "ui_layout.h"
 
@@ -87,7 +88,7 @@ uint64_t      skui_active_sound_element_id = 0;
 
 void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
 void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start);
-void ui_default_aura_mesh(mesh_t* mesh,                   float diameter, float rounding, int32_t quadrant_slices, int32_t tube_corners);
+void ui_default_aura_mesh(mesh_t* mesh,                   float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
 
 ///////////////////////////////////////////
 
@@ -526,7 +527,8 @@ void ui_settings(ui_settings_t settings) {
 		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
 		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
 
-		ui_default_aura_mesh(&skui_aura_mesh, 0, skui_settings.rounding * 2, 7, 5);
+		float aura_mesh_radius = skui_aura_radius * 0.75f;
+		ui_default_aura_mesh(&skui_aura_mesh, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius-aura_mesh_radius, 7, 5);
 
 		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
 		skui_small_min = vec2{ small, small } / 2;
@@ -934,7 +936,7 @@ void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float 
 
 ///////////////////////////////////////////
 
-void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, int32_t quadrant_slices, int32_t tube_corners) {
+void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, float shrink, int32_t quadrant_slices, int32_t tube_corners) {
 	if (*mesh == nullptr) {
 		*mesh = mesh_create();
 	}
@@ -960,7 +962,7 @@ void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius
 		else if (quad == 1) uv = vec2{ -1, 1 };
 		else if (quad == 2) uv = vec2{ -1,-1 };
 		else if (quad == 3) uv = vec2{  1,-1 }; 
-		vec3 quad_off = vec3{ uv.x, uv.y,0 } * corner_radius * -1.5f;
+		vec3 quad_off = vec3{ uv.x, uv.y,0 } * -(corner_radius+shrink);
 
 		float corner_ang  = (quad+quad_pct) * MATH_PI * 0.5f;
 		vec3  corner_norm = vec3{ cosf(corner_ang), sinf(corner_ang), 0 };

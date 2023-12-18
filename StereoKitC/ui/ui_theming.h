@@ -13,6 +13,8 @@ extern mesh_t     skui_box_dbg;
 extern material_t skui_mat_dbg;
 extern material_t skui_mat;
 
+extern const float skui_aura_radius;
+
 void ui_theming_init();
 void ui_theming_update();
 void ui_theming_shutdown();
