@@ -657,11 +657,11 @@ color128 render_get_clear_color_ln() {
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
 	render_item_t item;
 	item.mesh      = mesh;
 	item.mesh_inds = mesh->ind_draw;
-	item.color     = color;
+	item.color     = color_linear;
 	item.layer     = (uint16_t)layer;
 	if (hierarchy_use_top()) {
 		matrix_mul(transform, hierarchy_top(), item.transform);
@@ -981,7 +981,7 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
 	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
 }
 
@@ -1005,7 +1005,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int width, int height, float fov_degrees) {
+void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;
