@@ -462,8 +462,10 @@ namespace StereoKit
 	/// <summary>A callback for when log events occur.</summary>
 	/// <param name="level">The level of severity of this log event.</param>
 	/// <param name="text">The text contents of the log event.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);

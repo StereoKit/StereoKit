@@ -346,11 +346,11 @@ namespace StereoKit.Framework
 			public List<Vertex> verts;
 			public List<uint>   inds;
 
-			public MeshData()
-			{
-				verts = new List<Vertex>();
-				inds  = new List<uint>();
-			}
+			public static MeshData New() => new MeshData {
+				verts = new List<Vertex>(),
+				inds  = new List<uint>(),
+			};
+
 			public Mesh MakeMesh()
 			{
 				Mesh mesh = new Mesh();
@@ -361,8 +361,7 @@ namespace StereoKit.Framework
 
 		static Mesh GlassButtonMesh(float cornerRadius, uint cornerResolution, float topRadiusScale)
 		{
-			MeshData data = new MeshData();
-		
+			MeshData data = MeshData.New();
 			AddRoundedPlane(ref data,  0.4f, cornerRadius, 1.0f,           cornerResolution, new Color32(255, 0, 255, 255), new Color32(255, 0, 255, 255));
 			AddRoundedPlane(ref data, -0.5f, cornerRadius, topRadiusScale, cornerResolution, new Color32(255, 255, 0, 255), new Color32(255, 255, 0, 0));
 			return data.MakeMesh();
@@ -370,7 +369,7 @@ namespace StereoKit.Framework
 
 		static Mesh GlassPanel(float cornerRadius, uint cornerResolution)
 		{
-			MeshData data = new MeshData();
+			MeshData data = MeshData.New();
 			AddRoundedPlane(ref data, 0, cornerRadius, 1, cornerResolution, new Color32(255, 0, 255, 255), new Color32(255, 0, 255, 255));
 			return data.MakeMesh();
 		}

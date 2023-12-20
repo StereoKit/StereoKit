@@ -163,6 +163,7 @@ namespace StereoKit.Framework
 				this.max = max;
 				calcMin = min == 0;
 				calcMax = max == 0;
+				curr = 0;
 
 				buffer = new float[100];
 				points = new LinePoint[100];

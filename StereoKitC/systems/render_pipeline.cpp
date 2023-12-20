@@ -177,7 +177,7 @@ tex_t render_pipeline_surface_get_tex(pipeline_surface_id surface_id) {
 ///////////////////////////////////////////
 
 void render_pipeline_surface_set_enabled(pipeline_surface_id surface, bool32_t enabled) {
-	local.surfaces[surface].enabled = true;
+	local.surfaces[surface].enabled = enabled;
 }
 
 ///////////////////////////////////////////
