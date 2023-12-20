@@ -2333,8 +2333,11 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
-SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));
+// TODO: v0.4, replace these with the _data versions
+SK_API void log_subscribe       (void (*log_callback)(log_ level, const char *text));
+SK_API void log_unsubscribe     (void (*log_callback)(log_ level, const char *text));
+SK_API void log_subscribe_data  (void (*log_callback)(void* context, log_ level, const char *text), void *context);
+SK_API void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char *text), void *context);
 
 ///////////////////////////////////////////
 

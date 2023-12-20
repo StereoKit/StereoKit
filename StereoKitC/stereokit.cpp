@@ -291,6 +291,7 @@ void sk_shutdown_unsafe(void) {
 
 	systems_shutdown();
 	sk_mem_log_allocations();
+	log_clear_subscribers();
 
 	local = {};
 	local.disallow_user_shutdown = true;
