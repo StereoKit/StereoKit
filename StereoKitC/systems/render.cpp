@@ -1017,17 +1017,17 @@ void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pos
 
 ///////////////////////////////////////////
 
-void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), pose_t viewpoint, int width, int height, float fov_degrees, tex_format_ tex_format) {
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float fov_degrees, tex_format_ tex_format, void* context) {
 	matrix view = matrix_invert(pose_matrix(viewpoint));
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, local.clip_planes.x, local.clip_planes.y);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
 }
 
 ///////////////////////////////////////////
 
-void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), matrix camera, matrix projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format) {
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format, void* context) {
 	matrix inv_cam = matrix_invert(camera);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
 }
 
 ///////////////////////////////////////////
