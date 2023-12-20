@@ -96,9 +96,7 @@ class Program
 
 		Init();
 
-		SK.Run(Step);
-
-		Tests.Shutdown();
+		SK.Run(Step, Tests.Shutdown);
 	}
 
 	static void Init()
