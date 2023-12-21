@@ -542,8 +542,8 @@ namespace StereoKit
 		/// will have the image on the left, and text on the right.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool ButtonImg(string text, Sprite image, Color image_tint, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_color_16(text, image?._inst ?? IntPtr.Zero, imageLayout, image_tint);
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_button_img_color_16(text, image?._inst ?? IntPtr.Zero, imageLayout, imageTint);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
