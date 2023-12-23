@@ -2,6 +2,7 @@
 /* The authors below grant copyright rights under the MIT license:
  * Copyright (c) 2019-2023 Nick Klingensmith
  * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2023 Austin Hale
  */
 
 #include "../platforms/platform.h"
@@ -702,7 +703,7 @@ bool openxr_render_frame() {
 	xr_render_sys->profile_frame_start = stm_now();
 
 	// Check each secondary display to see if it's active or not
-	for (int32_t i = 1; i < xr_displays_2nd.count; i++) {
+	for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 		if (xr_displays_2nd[i].active != (bool32_t)xr_display_2nd_states[i].active) {
 			xr_displays_2nd[i].active  = (bool32_t)xr_display_2nd_states[i].active;
 
