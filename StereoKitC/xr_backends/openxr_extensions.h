@@ -205,6 +205,7 @@ namespace sk {
 	_(xrConvertWin32PerformanceCounterToTimeKHR)     \
 	_(xrConvertTimeToWin32PerformanceCounterKHR)     \
 	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
+	_(xrTryGetPerceptionAnchorFromSpatialAnchorMSFT) \
 	_(xrGetAudioOutputDeviceGuidOculus)              \
 	_(xrGetAudioInputDeviceGuidOculus)
 #else

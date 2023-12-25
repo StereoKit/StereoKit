@@ -202,5 +202,18 @@ bool32_t anchor_oxr_msft_persist(anchor_t anchor, bool32_t persist) {
 	return true;
 }
 
+///////////////////////////////////////////
+
+bool32_t anchor_oxr_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor) {
+	if (!xr_ext_available.MSFT_perception_anchor_interop) return false;
+	oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
+	XrResult result = xr_extensions.xrTryGetPerceptionAnchorFromSpatialAnchorMSFT(xr_session, anchor_data->anchor, (IUnknown**)perception_spatial_anchor);
+	if (XR_FAILED(result)) {
+		log_warnf("xrTryGetPerceptionAnchorFromSpatialAnchorMSFT failed: %s", openxr_string(result));
+		return false;
+	}
+	return true;
+}
+
 } // namespace sk
 #endif

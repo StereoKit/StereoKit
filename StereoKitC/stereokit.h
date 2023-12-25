@@ -2160,6 +2160,7 @@ SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
 SK_API const char*    anchor_get_name          (const anchor_t anchor);
 SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+SK_API bool32_t       anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor);
 
 SK_API void           anchor_clear_stored      (void);
 SK_API anchor_caps_   anchor_get_capabilities  (void);

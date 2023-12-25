@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace StereoKit {
 	public class Anchor : IAsset
@@ -15,7 +16,17 @@ namespace StereoKit {
 		public BtnState Tracked => NativeAPI.anchor_get_tracked(_inst);
 		public bool Persistent => NativeAPI.anchor_get_persistent(_inst);
 		public string Name => NativeHelper.FromUtf8(NativeAPI.anchor_get_name(_inst));
-
+		public bool TryGetPerceptionAnchor<T>(out T spatialAnchor) where T : class
+		{
+			spatialAnchor = null;
+			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out IntPtr pointer);
+			if (result)
+			{
+				spatialAnchor = (T)Marshal.GetObjectForIUnknown(pointer);
+			}
+			return result;
+		}
+		
 		internal Anchor(IntPtr anchor)
 		{
 			_inst = anchor;
