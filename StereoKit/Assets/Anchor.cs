@@ -16,13 +16,20 @@ namespace StereoKit {
 		public BtnState Tracked => NativeAPI.anchor_get_tracked(_inst);
 		public bool Persistent => NativeAPI.anchor_get_persistent(_inst);
 		public string Name => NativeHelper.FromUtf8(NativeAPI.anchor_get_name(_inst));
+		
+		/// <summary>Tries to get the underlying perception spatial anchor 
+		/// for platforms using Microsoft spatial anchors.</summary>
+		/// <typeparam name="T">The type of the spatial anchor. Must be an instance 
+		/// of Windows.Perception.Spatial.SpatialAnchor.</typeparam>
+		/// <param name="spatialAnchor">The spatial anchor.</param>
+		/// <returns>True if the perception spatial anchor was successfully obtained, false otherwise.</returns>
 		public bool TryGetPerceptionAnchor<T>(out T spatialAnchor) where T : class
 		{
 			spatialAnchor = null;
 			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out IntPtr pointer);
 			if (result)
 			{
-				spatialAnchor = (T)Marshal.GetObjectForIUnknown(pointer);
+				spatialAnchor = Marshal.GetObjectForIUnknown(pointer) as T;
 			}
 			return result;
 		}
