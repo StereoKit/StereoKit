@@ -185,9 +185,9 @@ if (SK_BUILD_OPENXR_LOADER)
     "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
-  
-  set(OPENXR_LIB openxr_loader)
 endif()
+
+set(OPENXR_LIB openxr_loader)
 
 ###########################################
 ## Shader Compiler                       ##
