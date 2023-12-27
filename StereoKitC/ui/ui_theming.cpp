@@ -77,11 +77,21 @@ sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
 uint64_t      skui_active_sound_element_id = 0;
 
+const int32_t skui_default_lathe_count = 7;
+const ui_lathe_pt_t skui_default_lathe[skui_default_lathe_count] = {
+	{ vec2{0,    -0.5f}, vec2{0, 1}, {255,255,255,255}, true },
+	{ vec2{0.83f,-0.5f}, vec2{0, 1}, {255,255,255,255}, false},
+	{ vec2{0.83f,-0.5f}, vec2{1, 2}, {255,255,255,0},   true },
+	{ vec2{1,     0   }, vec2{1, 0}, {255,255,255,0},   true },
+	{ vec2{0.83f, 0.5f}, vec2{1,-2}, {255,255,255,0},   false},
+	{ vec2{0.83f, 0.5f}, vec2{0,-1}, {255,255,255,255}, true },
+	{ vec2{0,     0.5f}, vec2{0,-1}, {255,255,255,255}, true },
+};
+
 ///////////////////////////////////////////
 
-void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
-void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start);
-void ui_default_aura_mesh(mesh_t* mesh,                   float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
+void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
+void ui_default_aura_mesh (mesh_t* mesh, float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
 
 ///////////////////////////////////////////
 
@@ -107,10 +117,7 @@ void ui_theming_init() {
 	ui_settings_t settings = {};
 	ui_settings(settings);
 
-	ui_default_mesh(&skui_cylinder, false, 1, 4 * cm2m, 5);
-	mesh_set_id(skui_box_bot, "sk/ui/cylinder_mesh");
-
-	// Create default sprites for the toggles
+	// Create default sprites for the toggles 
 
 	// #defines because we can't capture anything in these lambdas D:
 	#define OUTER_RADIUS 31
@@ -199,7 +206,7 @@ void ui_theming_init() {
 	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
 	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
 	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
-	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat);
+	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat_quad);
 	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
 	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
@@ -492,14 +499,17 @@ void ui_settings(ui_settings_t settings) {
 	if (rebuild_meshes) {
 		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
 		bool    set_ids = skui_box == nullptr;
-		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2, 1.25f*mm2m, slices, 0);
-		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2, 1.25f*mm2m, slices, 180 * deg2rad);
 
-		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
-		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
-		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
+		_ui_gen_quadrant_mesh(&skui_box,     ui_corner_all,    settings.rounding, slices, false, skui_default_lathe, skui_default_lathe_count);
+		_ui_gen_quadrant_mesh(&skui_box_top, ui_corner_top,    settings.rounding, slices, true,  skui_default_lathe, skui_default_lathe_count);
+		_ui_gen_quadrant_mesh(&skui_box_bot, ui_corner_bottom, settings.rounding, slices, true,  skui_default_lathe, skui_default_lathe_count);
+
+		float small = fminf(ui_line_height() / 3.0f, settings.rounding)/2;
+		_ui_gen_quadrant_mesh(&skui_small,       ui_corner_all,   small, slices, false, skui_default_lathe, skui_default_lathe_count);
+		_ui_gen_quadrant_mesh(&skui_small_left,  ui_corner_left,  small, slices, true,  skui_default_lathe, skui_default_lathe_count);
+		_ui_gen_quadrant_mesh(&skui_small_right, ui_corner_right, small, slices, true,  skui_default_lathe, skui_default_lathe_count);
+
+		_ui_gen_quadrant_mesh(&skui_cylinder, ui_corner_all, ui_line_height()/2.0f, slices*2, false, skui_default_lathe, skui_default_lathe_count);
 
 		float aura_mesh_radius = skui_aura_radius * 0.75f;
 		ui_default_aura_mesh(&skui_aura_mesh, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius-aura_mesh_radius, 7, 5);
@@ -514,6 +524,7 @@ void ui_settings(ui_settings_t settings) {
 			mesh_set_id(skui_small,       "sk/ui/small_mesh");
 			mesh_set_id(skui_small_left,  "sk/ui/small_mesh_left");
 			mesh_set_id(skui_small_right, "sk/ui/small_mesh_right");
+			mesh_set_id(skui_cylinder,    "sk/ui/cylinder_mesh");
 		}
 	}
 }
@@ -528,7 +539,7 @@ void ui_set_color(color128 color) {
 	ui_set_theme_color(ui_color_primary,    color);                                                     // Primary color: Headers, separators, etc.
 	ui_set_theme_color(ui_color_background, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
 	ui_set_theme_color(ui_color_common,     color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	ui_set_theme_color(ui_color_complement, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
+	ui_set_theme_color(ui_color_complement, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.35f, color.a) ); // Complement color: unused so far?
 	ui_set_theme_color(ui_color_text,       color128{1, 1, 1, 1});                                      // Text color
 }
 
@@ -724,192 +735,6 @@ void ui_quadrant_size_mesh(mesh_t ref_mesh, float overflow) {
 
 ///////////////////////////////////////////
 
-void ui_default_mesh(mesh_t *mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices) {
-	if (*mesh == nullptr) {
-		*mesh = mesh_create();
-	}
-	
-	float radius = diameter / 2;
-
-	vind_t  subd       = (vind_t)quadrant_slices*4;
-	int     vert_count = subd * 5 + 2;
-	int     ind_count  = subd * 18;
-	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
-	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
-
-	vind_t ind = 0;
-
-	for (vind_t i = 0; i < subd; i++) {
-		float u = 0, v = 0;
-
-		float ang = ((float)i / subd + (0.5f/subd)) *(float)MATH_PI * 2;
-		float x = cosf(ang);
-		float y = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0,0,0.5f};
-		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) - vec3{0,0,0.5f};
-
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
-
-		vind_t in = (i + 1) % subd;
-		// Top slice
-		inds[ind++] = i  * 5 + 3;
-		inds[ind++] = in * 5 + 3;
-		inds[ind++] = subd * 5;
-		// Bottom slice
-		inds[ind++] = subd * 5+1;
-		inds[ind++] = in * 5 + 4;
-		inds[ind++] = i  * 5 + 4;
-
-		// Now edge strip quad bottom
-		inds[ind++] = in * 5+1;
-		inds[ind++] = in * 5;
-		inds[ind++] = i  * 5;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5;
-		// And edge strip quad top
-		inds[ind++] = in * 5+2;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = i  * 5+2;
-		inds[ind++] = in * 5+2;
-		inds[ind++] = i  * 5+1;
-	}
-
-	// center points for the circle
-	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
-	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	if (quadrantify)
-		ui_quadrant_size_verts(verts, vert_count, 0);
-
-	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
-
-	sk_free(verts);
-	sk_free(inds);
-}
-
-///////////////////////////////////////////
-
-void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start) {
-	if (*mesh == nullptr) {
-		*mesh = mesh_create();
-	}
-
-	float radius = diameter / 2;
-
-	vind_t  subd       = (vind_t)quadrant_slices*2 + 2;
-	int     vert_count = subd * 5 + 2;
-	int     ind_count  = subd * 18 - 12;
-	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
-	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
-
-	for (vind_t i = 0; i < subd-2; i++) {
-		float u = 0, v = 0;
-
-		float ang = angle_start + ((float)i / (subd-2) + (0.5f / (subd-2))) * (MATH_PI);
-		float x = cosf(ang);
-		float y = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0, 0.5f};
-		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0,-0.5f};
-
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
-	}
-	// Top half
-	{
-		int32_t i   = subd - 2;
-		float   ang = angle_start + MATH_PI;
-		float   x   = cosf(ang);
-		float   y   = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 up      = vec3{-y,x,0 } * radius;
-		vec3 top_pos = normal*(radius-rounding) + vec3{0,0, 0.5f} + up;
-		vec3 ctr_pos = normal*radius                         + up;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0,0,-0.5f} + up;
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
-
-		i   = subd - 1;
-		ang = angle_start;
-		x   = cosf(ang);
-		y   = sinf(ang);
-		normal  = {x,y,0};
-		top_pos = normal*(radius-rounding) + vec3{0,0, 0.5f} + up;
-		ctr_pos = normal*radius                         + up;
-		bot_pos = normal*(radius-rounding) + vec3{0,0,-0.5f} + up;
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
-	}
-
-	vind_t ind = 0;
-	for (vind_t i = 0; i < subd; i++) {
-		vind_t in = (i + 1) % subd;
-		// Top slice
-		inds[ind++] = i  * 5 + 3;
-		inds[ind++] = in * 5 + 3;
-		inds[ind++] = subd * 5;
-		// Bottom slice
-		inds[ind++] = subd * 5+1;
-		inds[ind++] = in * 5 + 4;
-		inds[ind++] = i  * 5 + 4;
-
-		if (i == subd - 2) continue;
-
-		// Now edge strip quad bottom
-		inds[ind++] = in * 5+1;
-		inds[ind++] = in * 5;
-		inds[ind++] = i  * 5;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5;
-		// And edge strip quad top
-		inds[ind++] = in * 5+2;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = i  * 5+2;
-		inds[ind++] = in * 5+2;
-		inds[ind++] = i  * 5+1;
-	}
-
-	// center points for the circle
-	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
-	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	if (quadrantify)
-		ui_quadrant_size_verts(verts, vert_count, 0);
-
-	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
-
-	sk_free(verts);
-	sk_free(inds);
-}
-
-///////////////////////////////////////////
-
 void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, float shrink, int32_t quadrant_slices, int32_t tube_corners) {
 	if (*mesh == nullptr) {
 		*mesh = mesh_create();
@@ -964,6 +789,144 @@ void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius
 
 	sk_free(verts);
 	sk_free(inds);
+}
+
+///////////////////////////////////////////
+
+uint32_t _lathe_corner_root_index(uint32_t corner, ui_corner_ rounded_corners, uint32_t corner_resolution, uint32_t lathe_points)
+{
+	uint32_t roundedCount = (uint32_t)(
+		(corner > 0 && (rounded_corners & ui_corner_top_left    ) != 0 ? 1 : 0) +
+		(corner > 1 && (rounded_corners & ui_corner_top_right   ) != 0 ? 1 : 0) +
+		(corner > 2 && (rounded_corners & ui_corner_bottom_right) != 0 ? 1 : 0) +
+		(corner > 3 && (rounded_corners & ui_corner_bottom_left ) != 0 ? 1 : 0));
+	uint32_t sharpCount = corner-roundedCount;
+	return (roundedCount * corner_resolution + sharpCount) * (lathe_points-1) + corner;
+}
+
+///////////////////////////////////////////
+
+void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+	float     angle_step = 90 / (float)(corner_resolution - 1);
+	uint32_t  lathe_step = (uint32_t)(lathe_pt_count - 1);
+
+	array_t<vert_t> verts = {};
+	array_t<vind_t> inds  = {};
+
+	for (uint32_t c = 0; c < 4; c++) {
+		uint32_t idx_root_curr = _lathe_corner_root_index( c,      rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t idx_root_next = _lathe_corner_root_index((c+1)%4, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+
+		bool rounded      = (rounded_corners & (ui_corner_)(1 << (int32_t)c)) != 0;
+		bool rounded_next = (rounded_corners & (ui_corner_)(1 << (int32_t)((c + 1) % 4))) != 0;
+		bool rounded_prev = (rounded_corners & (ui_corner_)(1 << (int32_t)((c+3)%4))) != 0;
+		// 1,1   -1,1   -1,-1   1,-1
+		float u = c == 0 || c == 3 ? 1 : -1;
+		float v = c == 0 || c == 1 ? 1 : -1;
+
+		vec3     offset       = { -u * corner_radius, -v * corner_radius, 0 };
+		uint32_t corner_count = corner_resolution;
+		float    angle_start  = c * 90;
+		float    curr_radius  = corner_radius;
+		if (delete_flat_sides && rounded == false && (rounded_next == false || rounded_prev == false)) {
+			corner_count = 1;
+			if (rounded_prev == true) {
+				float ang = (angle_start + 90) * deg2rad;
+				offset += vec3{cosf(ang), sinf(ang), 0} * corner_radius;
+			} else if (rounded_prev == false) {
+				float ang = angle_start * deg2rad;
+				offset += vec3{ cosf(ang), sinf(ang), 0 } * corner_radius;
+				angle_start += 90;
+			}
+		} else if (rounded == false) {
+			curr_radius  *= 1.41421356237f; // sqrt of 2
+			corner_count  = 1;
+			angle_start  += 45;
+		}
+
+		for (uint32_t s = 0; s < corner_count; s++) {
+			float ang = (angle_start + s*angle_step) * deg2rad;
+			vec2  dir = vec2{ cosf(ang), sinf(ang) };
+
+			for (uint32_t p = 0; p < lathe_pt_count; p++) {
+				ui_lathe_pt_t lp = lathe_pts[p];
+				vert_t        vert;
+				vert.col  = lp.color;
+				vert.uv   = { u, v };
+				vert.norm = { lp.normal.x * dir.x, lp.normal.x * dir.y, lp.normal.y * -1 };
+				vert.pos  = vec3{ lp.pt.x * dir.x * curr_radius, lp.pt.x * dir.y * curr_radius, lp.pt.y } + offset;
+				if (p!=0 || s==0) // If it's the root vert, it only needs added once
+					verts.add(vert);
+
+				if (lp.connect_next == false || p+1 == lathe_pt_count || (s+1==corner_count && delete_flat_sides && rounded == false && rounded_next == false)) continue;
+
+				if (p == 0 && s+1 < corner_count) {
+					inds.add(idx_root_curr + (s+1)*lathe_step + (p+1));
+					inds.add(idx_root_curr + s    *lathe_step + (p+1));
+					inds.add(idx_root_curr);
+				} else if (s+1 < corner_count) {
+					inds.add(idx_root_curr + (s+1)*lathe_step + p);
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_curr +  s   *lathe_step + p);
+
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_curr + (s+1)*lathe_step + p);
+					inds.add(idx_root_curr + (s+1)*lathe_step + p+1);
+				} else if (p==0) {
+					inds.add(idx_root_next                    + p);
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_curr                      );
+
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_next                    + p);
+					inds.add(idx_root_next                    + p+1);
+				} else {
+					inds.add(idx_root_next                    + p);
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_curr +  s   *lathe_step + p);
+
+					inds.add(idx_root_curr +  s   *lathe_step + p+1);
+					inds.add(idx_root_next                    + p);
+					inds.add(idx_root_next                    + p+1);
+				}
+			}
+		}
+	}
+
+	// Center quad
+	{
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+
+		inds.add(tl_f); inds.add(tr_f); inds.add(br_f);
+		inds.add(tl_f); inds.add(br_f); inds.add(bl_f);
+	}
+
+	if (lathe_pts[lathe_pt_count-1].connect_next) {
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
+
+		inds.add(br_f); inds.add(tr_f); inds.add(tl_f);
+		inds.add(bl_f); inds.add(br_f); inds.add(tl_f);
+	}
+
+	if (*mesh == nullptr)
+		*mesh = mesh_create();
+	mesh_set_data(*mesh, verts.data, verts.count, inds.data, inds.count);
+	verts.free();
+	inds .free();
+}
+
+///////////////////////////////////////////
+
+mesh_t ui_gen_quadrant_mesh(ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+	mesh_t result = nullptr;
+	_ui_gen_quadrant_mesh(&result, rounded_corners, corner_radius, corner_resolution, delete_flat_sides, lathe_pts, lathe_pt_count);
+	return result;
 }
 
 ///////////////////////////////////////////

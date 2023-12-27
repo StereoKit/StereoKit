@@ -709,6 +709,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_verts  ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_mesh   (IntPtr ref_mesh, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr ui_gen_quadrant_mesh    (UICorner rounded_corners, float corner_radius, uint corner_resolution, [MarshalAs(UnmanagedType.Bool)] bool delete_flat_sides, [In] UILathePt[] lathe_pts, int lathe_pt_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_show_volumes         ([MarshalAs(UnmanagedType.Bool)] bool show);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_enable_far_interact  ([MarshalAs(UnmanagedType.Bool)] bool enable);
 		[return: MarshalAs(UnmanagedType.Bool)]
