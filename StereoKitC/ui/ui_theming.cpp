@@ -32,22 +32,10 @@ struct ui_theme_color_t {
 font_t          skui_font;
 
 ui_el_visual_t  skui_visuals[ui_vis_max];
-mesh_t          skui_box_top;
-mesh_t          skui_box_bot;
-mesh_t          skui_box;
-vec2            skui_box_min;
-mesh_t          skui_small_left;
-mesh_t          skui_small_right;
-mesh_t          skui_small;
-vec2            skui_small_min;
-mesh_t          skui_cylinder;
-mesh_t          skui_aura_mesh;
 
 material_t      skui_mat;
-material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 material_t      skui_font_mat;
-material_t      skui_aura_mat;
 
 sprite_t        skui_toggle_off;
 sprite_t        skui_toggle_on;
@@ -77,21 +65,12 @@ sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
 uint64_t      skui_active_sound_element_id = 0;
 
-const int32_t skui_default_lathe_count = 7;
-const ui_lathe_pt_t skui_default_lathe[skui_default_lathe_count] = {
-	{ vec2{0,    -0.5f}, vec2{0, 1}, {255,255,255,255}, true },
-	{ vec2{0.83f,-0.5f}, vec2{0, 1}, {255,255,255,255}, false},
-	{ vec2{0.83f,-0.5f}, vec2{1, 2}, {255,255,255,0},   true },
-	{ vec2{1,     0   }, vec2{1, 0}, {255,255,255,0},   true },
-	{ vec2{0.83f, 0.5f}, vec2{1,-2}, {255,255,255,0},   false},
-	{ vec2{0.83f, 0.5f}, vec2{0,-1}, {255,255,255,255}, true },
-	{ vec2{0,     0.5f}, vec2{0,-1}, {255,255,255,255}, true },
-};
-
 ///////////////////////////////////////////
 
 void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
 void ui_default_aura_mesh (mesh_t* mesh, float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
+void ui_update_theme_visuals ();
+void ui_release_theme_visuals();
 
 ///////////////////////////////////////////
 
@@ -117,7 +96,7 @@ void ui_theming_init() {
 	ui_settings_t settings = {};
 	ui_settings(settings);
 
-	// Create default sprites for the toggles 
+	// Create default sprites for the toggles
 
 	// #defines because we can't capture anything in these lambdas D:
 	#define OUTER_RADIUS 31
@@ -172,6 +151,17 @@ void ui_theming_init() {
 	tex_release(radio_tex_on);
 	tex_release(radio_tex_off);
 
+	skui_box_dbg  = mesh_find(default_id_mesh_cube);
+	skui_mat_dbg  = material_copy_id(default_id_material);
+	material_set_transparency(skui_mat_dbg, transparency_add);
+	material_set_color       (skui_mat_dbg, "color", { .3f,.3f,.3f,.3f });
+	material_set_depth_write (skui_mat_dbg, false);
+	material_set_depth_test  (skui_mat_dbg, depth_test_always);
+	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
+
+	skui_mat = material_copy_id(default_id_material_ui);
+	material_set_id(skui_mat, "sk/ui/default_mat");
+
 	// Create a sound for the HSlider
 	skui_snd_tick = sound_generate([](float t){
 		float x     = t / 0.03f;
@@ -182,66 +172,39 @@ void ui_theming_init() {
 	}, .03f);
 	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
-	skui_box_dbg  = mesh_find(default_id_mesh_cube);
-	skui_mat_dbg  = material_copy_id(default_id_material);
-	material_set_transparency(skui_mat_dbg, transparency_add);
-	material_set_color       (skui_mat_dbg, "color", { .3f,.3f,.3f,.3f });
-	material_set_depth_write (skui_mat_dbg, false);
-	material_set_depth_test  (skui_mat_dbg, depth_test_always);
-	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
-
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
 
-	skui_mat = material_copy_id(default_id_material_ui);
-	material_set_bool(skui_mat, "ui_tint", true);
-	material_set_id  (skui_mat, "sk/ui/default_mat");
-	skui_mat_quad = material_find(default_id_material_ui_quadrant);
-	skui_aura_mat = material_find(default_id_material_ui_aura);
+	ui_set_element_color(ui_vis_none,                 ui_color_common);
+	ui_set_element_color(ui_vis_default,              ui_color_common);
+	ui_set_element_color(ui_vis_window_head,          ui_color_primary);
+	ui_set_element_color(ui_vis_window_head_only,     ui_color_primary);
+	ui_set_element_color(ui_vis_window_body,          ui_color_background);
+	ui_set_element_color(ui_vis_window_body_only,     ui_color_background);
+	ui_set_element_color(ui_vis_separator,            ui_color_primary);
+	ui_set_element_color(ui_vis_slider_line,          ui_color_common);
+	ui_set_element_color(ui_vis_slider_line_active,   ui_color_primary);
+	ui_set_element_color(ui_vis_slider_line_inactive, ui_color_common);
+	ui_set_element_color(ui_vis_slider_pinch,         ui_color_primary);
+	ui_set_element_color(ui_vis_slider_push,          ui_color_primary);
+	ui_set_element_color(ui_vis_aura,                 ui_color_text);
+	ui_set_element_color(ui_vis_panel,                ui_color_complement);
+	ui_set_element_color(ui_vis_handle,               ui_color_primary);
+	ui_set_element_color(ui_vis_button,               ui_color_common);
+	ui_set_element_color(ui_vis_toggle,               ui_color_common);
+	ui_set_element_color(ui_vis_button_round,         ui_color_common);
+	ui_set_element_color(ui_vis_input,                ui_color_common);
+	ui_set_element_color(ui_vis_carat,                ui_color_text);
 
-	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
-	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
-	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
-	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
-	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
-	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat_quad);
-	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_aura,                 skui_aura_mesh,   skui_aura_mat);
-
-	ui_set_element_color (ui_vis_none,                 ui_color_common);
-	ui_set_element_color (ui_vis_default,              ui_color_common);
-	ui_set_element_color (ui_vis_window_head,          ui_color_primary);
-	ui_set_element_color (ui_vis_window_head_only,     ui_color_primary);
-	ui_set_element_color (ui_vis_window_body,          ui_color_background);
-	ui_set_element_color (ui_vis_window_body_only,     ui_color_background);
-	ui_set_element_color (ui_vis_separator,            ui_color_primary);
-	ui_set_element_color (ui_vis_slider_line,          ui_color_common);
-	ui_set_element_color (ui_vis_slider_line_active,   ui_color_primary);
-	ui_set_element_color (ui_vis_slider_line_inactive, ui_color_common);
-	ui_set_element_color (ui_vis_slider_pinch,         ui_color_primary);
-	ui_set_element_color (ui_vis_slider_push,          ui_color_primary);
-	ui_set_element_color (ui_vis_aura,                 ui_color_text);
-	ui_set_element_color (ui_vis_panel,                ui_color_complement);
-	ui_set_element_color (ui_vis_handle,               ui_color_primary);
-	ui_set_element_color (ui_vis_button,               ui_color_common);
-	ui_set_element_color (ui_vis_toggle,               ui_color_common);
-	ui_set_element_color (ui_vis_button_round,         ui_color_common);
-	ui_set_element_color (ui_vis_input,                ui_color_common);
-	ui_set_element_color (ui_vis_carat,                ui_color_text);
-
-	ui_set_element_sound(ui_vis_default,               skui_snd_interact, skui_snd_uninteract);
-	ui_set_element_sound(ui_vis_handle,                skui_snd_grab,     skui_snd_ungrab);
-	ui_set_element_sound(ui_vis_window_body,           skui_snd_grab,     skui_snd_ungrab);
-	ui_set_element_sound(ui_vis_window_head,           skui_snd_grab,     skui_snd_ungrab);
-	ui_set_element_sound(ui_vis_window_body_only,      skui_snd_grab,     skui_snd_ungrab);
-	ui_set_element_sound(ui_vis_window_head_only,      skui_snd_grab,     skui_snd_ungrab);
-	ui_set_element_sound(ui_vis_slider_line,           skui_snd_tick,     skui_snd_tick);
+	ui_set_element_sound(ui_vis_default,              skui_snd_interact, skui_snd_uninteract);
+	ui_set_element_sound(ui_vis_handle,               skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body,          skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head,          skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body_only,     skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head_only,     skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_slider_line,          skui_snd_tick,     skui_snd_tick);
 }
 
 ///////////////////////////////////////////
@@ -259,6 +222,8 @@ void ui_theming_shutdown() {
 		skui_visuals[i] = {};
 	}
 
+	ui_release_theme_visuals();
+
 	sound_release   (skui_active_sound_off); skui_active_sound_off = nullptr;
 	sound_release   (skui_snd_interact);     skui_snd_interact     = nullptr;
 	sound_release   (skui_snd_uninteract);   skui_snd_uninteract   = nullptr;
@@ -266,21 +231,11 @@ void ui_theming_shutdown() {
 	sound_release   (skui_snd_ungrab);       skui_snd_ungrab       = nullptr;
 	sound_release   (skui_snd_tick);         skui_snd_tick         = nullptr;
 
-	mesh_release    (skui_box);            skui_box            = nullptr;
-	mesh_release    (skui_box_top);        skui_box_top        = nullptr;
-	mesh_release    (skui_box_bot);        skui_box_bot        = nullptr;
-	mesh_release    (skui_small);          skui_small          = nullptr;
-	mesh_release    (skui_small_left);     skui_small_left     = nullptr;
-	mesh_release    (skui_small_right);    skui_small_right    = nullptr;
-	mesh_release    (skui_cylinder);       skui_cylinder       = nullptr;
 	mesh_release    (skui_box_dbg);        skui_box_dbg        = nullptr;
-	mesh_release    (skui_aura_mesh);      skui_aura_mesh      = nullptr;
 
 	material_release(skui_mat);            skui_mat            = nullptr;
-	material_release(skui_mat_quad);       skui_mat_quad       = nullptr;
 	material_release(skui_mat_dbg);        skui_mat_dbg        = nullptr;
 	material_release(skui_font_mat);       skui_font_mat       = nullptr;
-	material_release(skui_aura_mat);       skui_aura_mat       = nullptr;
 
 	sprite_release  (skui_toggle_off);     skui_toggle_off     = nullptr;
 	sprite_release  (skui_toggle_on);      skui_toggle_on      = nullptr;
@@ -490,42 +445,14 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
 	if (settings.gutter           == 0) settings.gutter  = 10 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
-	if (settings.margin           == 0) settings.margin = settings.padding;
+	if (settings.margin           == 0) settings.margin  = settings.padding;
 	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
 	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
 	skui_settings = settings;
 
 	if (rebuild_meshes) {
-		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
-		bool    set_ids = skui_box == nullptr;
-
-		_ui_gen_quadrant_mesh(&skui_box,     ui_corner_all,    settings.rounding, slices, false, skui_default_lathe, skui_default_lathe_count);
-		_ui_gen_quadrant_mesh(&skui_box_top, ui_corner_top,    settings.rounding, slices, true,  skui_default_lathe, skui_default_lathe_count);
-		_ui_gen_quadrant_mesh(&skui_box_bot, ui_corner_bottom, settings.rounding, slices, true,  skui_default_lathe, skui_default_lathe_count);
-
-		float small = fminf(ui_line_height() / 3.0f, settings.rounding)/2;
-		_ui_gen_quadrant_mesh(&skui_small,       ui_corner_all,   small, slices, false, skui_default_lathe, skui_default_lathe_count);
-		_ui_gen_quadrant_mesh(&skui_small_left,  ui_corner_left,  small, slices, true,  skui_default_lathe, skui_default_lathe_count);
-		_ui_gen_quadrant_mesh(&skui_small_right, ui_corner_right, small, slices, true,  skui_default_lathe, skui_default_lathe_count);
-
-		_ui_gen_quadrant_mesh(&skui_cylinder, ui_corner_all, ui_line_height()/2.0f, slices*2, false, skui_default_lathe, skui_default_lathe_count);
-
-		float aura_mesh_radius = skui_aura_radius * 0.75f;
-		ui_default_aura_mesh(&skui_aura_mesh, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius-aura_mesh_radius, 7, 5);
-
-		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
-		skui_small_min = vec2{ small, small } / 2;
-
-		if (set_ids) {
-			mesh_set_id(skui_box,         "sk/ui/box_mesh");
-			mesh_set_id(skui_box_top,     "sk/ui/box_mesh_top");
-			mesh_set_id(skui_box_bot,     "sk/ui/box_mesh_bot");
-			mesh_set_id(skui_small,       "sk/ui/small_mesh");
-			mesh_set_id(skui_small_left,  "sk/ui/small_mesh_left");
-			mesh_set_id(skui_small_right, "sk/ui/small_mesh_right");
-			mesh_set_id(skui_cylinder,    "sk/ui/cylinder_mesh");
-		}
+		ui_update_theme_visuals();
 	}
 }
 
@@ -930,5 +857,167 @@ mesh_t ui_gen_quadrant_mesh(ui_corner_ rounded_corners, float corner_radius, uin
 }
 
 ///////////////////////////////////////////
+
+mesh_t theme_mesh_button       = nullptr;
+mesh_t theme_mesh_input        = nullptr;
+mesh_t theme_mesh_plane        = nullptr;
+mesh_t theme_mesh_panel        = nullptr;
+mesh_t theme_mesh_panel_top    = nullptr;
+mesh_t theme_mesh_panel_bot    = nullptr;
+mesh_t theme_mesh_slider       = nullptr;
+mesh_t theme_mesh_slider_left  = nullptr;
+mesh_t theme_mesh_slider_right = nullptr;
+mesh_t theme_mesh_slider_pinch = nullptr;
+mesh_t theme_mesh_slider_push  = nullptr;
+mesh_t theme_mesh_separator    = nullptr;
+mesh_t theme_mesh_aura         = nullptr;
+
+material_t theme_mat_opaque        = nullptr;
+material_t theme_mat_opaque_same_z = nullptr;
+material_t theme_mat_transparent   = nullptr;
+material_t theme_mat_aura          = nullptr;
+
+void ui_update_theme_visuals() {
+	color32 white        = {255,255,255,255};
+	color32 black        = {0,0,0,0};
+	color32 gray         = {200, 200, 200, 255};
+	color32 shadow_center = {0, 0, 0, 200};
+	color32 shadow_edge   = {0, 0, 0, 50 };
+	const ui_lathe_pt_t lathe_button[] = {
+		{ {0,    -0.5f},  {0, 1}, white,         true  },
+		{ {0.95f,-0.5f},  {0, 1}, white,         true  },
+		{ {1,    -0.45f}, {1, 0}, white,         true  },
+		{ {1,    -0.1f},  {1, 0}, white,         false },
+		{ {0,     0.49f}, {0, 1}, shadow_center, true  },
+		{ {1.2f,  0.49f}, {0, 1}, black,         false } };
+	const ui_lathe_pt_t lathe_input[] = {
+		{ {0,    -0.1f }, { 0, 1}, gray,          true  },
+		{ {0.8f, -0.1f }, { 0, 1}, gray,          false },
+		{ {0.8f, -0.1f }, {-1, 0}, gray,          true  },
+		{ {0.8f, -0.5f }, {-1, 0}, white,         false },
+		{ {0.8f, -0.5f }, { 0, 1}, white,         true  },
+		{ {0.95f,-0.5f }, { 0, 1}, white,         true  },
+		{ {1,    -0.45f}, { 1, 0}, white,         true  },
+		{ {1,    -0.1f }, { 1, 0}, white,         false },
+		{ {0,     0.49f}, { 0, 1}, shadow_center, true  },
+		{ {1.2f,  0.49f}, { 0, 1}, black,         false } };
+	const ui_lathe_pt_t lathe_plane[] = {
+		{ {0, 0}, {0, 1}, white, true  },
+		{ {1, 0}, {0, 1}, white, false } };
+	const ui_lathe_pt_t lathe_panel[] = {
+		{ {0, -0.5f}, {0, 1}, white, true  },
+		{ {1, -0.5f}, {0, 1}, white, false },
+		{ {1, -0.5f}, {1, 0}, white, true  },
+		{ {1,  0.5f}, {1, 0}, white, false },
+		{ {1,  0.5f}, {0,-1}, white, true  },
+		{ {0,  0.5f}, {0,-1}, white, true  } };
+	const ui_lathe_pt_t lathe_slider[] = {
+		{ {0,    -0.5f},  {0, 1}, white,       true  },
+		{ {1,    -0.5f},  {0, 1}, white,       false },
+		{ {1,    -0.5f},  {1, 0}, white,       true  },
+		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
+		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
+	const ui_lathe_pt_t lathe_slider_btn[] = {
+		{ {0,    -0.5f},  {0, 1}, white,       true  },
+		{ {0.8f, -0.5f},  {0, 1}, white,       true  },
+		{ {1,    -0.4f},  {1, 0}, white,       true  },
+		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
+		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
+
+	bool needs_id = theme_mesh_button == nullptr;
+
+	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all,    skui_settings.rounding, 8, false, lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_input,  _countof(lathe_input ));
+	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all,    skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, lathe_plane, _countof(lathe_plane));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, lathe_slider_btn, _countof(lathe_slider_btn));
+
+	float aura_mesh_radius = skui_aura_radius * 0.75f;
+	ui_default_aura_mesh(&theme_mesh_aura, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
+
+	if (theme_mat_transparent == nullptr) {
+		theme_mat_transparent = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_transparent, "sk/ui/mat_transparent");
+		material_set_transparency(theme_mat_transparent, transparency_blend);
+		material_set_depth_test  (theme_mat_transparent, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_transparent, -20);
+
+		theme_mat_opaque = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque");
+
+		theme_mat_opaque_same_z = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque_same_z");
+		material_set_depth_test  (theme_mat_opaque, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_opaque, -20);
+
+		theme_mat_aura = material_find(default_id_material_ui_aura);
+	}
+
+	if (needs_id) {
+		mesh_set_id(theme_mesh_button,       "sk/ui/mesh_button");
+		mesh_set_id(theme_mesh_input,        "sk/ui/mesh_input");
+		mesh_set_id(theme_mesh_plane,        "sk/ui/mesh_plane");
+		mesh_set_id(theme_mesh_panel,        "sk/ui/mesh_panel");
+		mesh_set_id(theme_mesh_panel_top,    "sk/ui/mesh_panel_top");
+		mesh_set_id(theme_mesh_panel_bot,    "sk/ui/mesh_panel_bot");
+		mesh_set_id(theme_mesh_slider,       "sk/ui/mesh_slider");
+		mesh_set_id(theme_mesh_slider_left,  "sk/ui/mesh_slider_left");
+		mesh_set_id(theme_mesh_slider_right, "sk/ui/mesh_slider_right");
+		mesh_set_id(theme_mesh_slider_pinch, "sk/ui/mesh_slider_pinch");
+		mesh_set_id(theme_mesh_slider_push,  "sk/ui/mesh_slider_push");
+		mesh_set_id(theme_mesh_separator,    "sk/ui/mesh_separator");
+	}
+
+	ui_set_element_visual(ui_vis_button,               theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_toggle,               theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_input,                theme_mesh_input,        theme_mat_transparent);
+	ui_set_element_visual(ui_vis_panel,                theme_mesh_plane,        theme_mat_opaque_same_z);
+	ui_set_element_visual(ui_vis_window_head,          theme_mesh_panel_top,    theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_body,          theme_mesh_panel_bot,    theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_body_only,     theme_mesh_panel,        theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_head_only,     theme_mesh_panel,        theme_mat_opaque);
+	ui_set_element_visual(ui_vis_slider_line,          theme_mesh_slider,       theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_line_active,   theme_mesh_slider_left,  theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_line_inactive, theme_mesh_slider_right, theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_pinch,         theme_mesh_slider_pinch, theme_mat_transparent);
+	ui_set_element_visual(ui_vis_slider_push,          theme_mesh_slider_push,  theme_mat_transparent);
+	ui_set_element_visual(ui_vis_separator,            theme_mesh_separator,    theme_mat_transparent);
+	ui_set_element_visual(ui_vis_aura,                 theme_mesh_aura,         theme_mat_aura);
+}
+
+///////////////////////////////////////////
+
+void ui_release_theme_visuals() {
+	mesh_release(theme_mesh_button      ); theme_mesh_button       = nullptr;
+	mesh_release(theme_mesh_input       ); theme_mesh_input        = nullptr;
+	mesh_release(theme_mesh_plane       ); theme_mesh_plane        = nullptr;
+	mesh_release(theme_mesh_panel       ); theme_mesh_panel        = nullptr;
+	mesh_release(theme_mesh_panel_top   ); theme_mesh_panel_top    = nullptr;
+	mesh_release(theme_mesh_panel_bot   ); theme_mesh_panel_bot    = nullptr;
+	mesh_release(theme_mesh_slider      ); theme_mesh_slider       = nullptr;
+	mesh_release(theme_mesh_slider_left ); theme_mesh_slider_left  = nullptr;
+	mesh_release(theme_mesh_slider_right); theme_mesh_slider_right = nullptr;
+	mesh_release(theme_mesh_slider_pinch); theme_mesh_slider_pinch = nullptr;
+	mesh_release(theme_mesh_slider_push ); theme_mesh_slider_push  = nullptr;
+	mesh_release(theme_mesh_separator   ); theme_mesh_separator    = nullptr;
+
+	material_release(theme_mat_opaque       ); theme_mat_opaque        = nullptr;
+	material_release(theme_mat_opaque_same_z); theme_mat_opaque_same_z = nullptr;
+	material_release(theme_mat_transparent  ); theme_mat_transparent   = nullptr;
+	material_release(theme_mat_aura         ); theme_mat_aura          = nullptr;
+}
 
 }

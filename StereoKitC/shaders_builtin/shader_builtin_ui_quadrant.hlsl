@@ -1,6 +1,5 @@
 #include "stereokit.hlsli"
 
-//--name = sk/default_ui_quadrant
 //--color:color = 1, 1, 1, 1
 
 float4 color;
@@ -14,8 +13,7 @@ struct vsIn {
 struct psIn {
 	float4 pos     : SV_Position;
 	float3 world   : TEXCOORD1;
-	half3  normal  : NORMAL0;
-	half3  color   : COLOR0;
+	half4  color   : COLOR0;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -38,16 +36,17 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float4 sized_pos;
 	sized_pos.xy = input.pos.xy + input.quadrant * scale * 0.5;
 	sized_pos.zw = input.pos.zw;
-
-	float4 world = mul(sized_pos, world_mat);
+	
+	float3 normal = normalize(mul(input.norm, (float3x3)world_mat));
+	float4 world  = mul(sized_pos, world_mat);
 	o.pos    = mul(world, sk_viewproj[o.view_id]);
-	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 	o.world  = world.xyz;
-	o.color  = lerp(color.rgb, sk_inst[id].color.rgb, input.color.a) * sk_lighting(o.normal);
+	o.color.rgb = input.color.rgb * sk_inst[id].color.rgb * sk_lighting(normal);
+	o.color.a   = input.color.a;
 	return o;
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	float glow = sk_finger_glow(input.world, input.normal);
-	return float4(lerp(input.color, float3(2, 2, 2), glow), 1);
+	float glow = pow(1-saturate(sk_finger_distance(input.world) / 0.12), 10);
+	return float4(lerp(input.color.rgb, half3(1, 1, 1), glow), input.color.a);
 }
