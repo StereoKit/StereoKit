@@ -810,6 +810,7 @@ namespace StereoKit
 		public Vec2 normal;
 		public Color32 color;
 		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
 	}
 
 	/// <summary>Id of a simulated hand pose, for use with

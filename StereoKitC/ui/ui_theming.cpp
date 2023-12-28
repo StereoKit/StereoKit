@@ -69,8 +69,8 @@ uint64_t      skui_active_sound_element_id = 0;
 
 void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
 void ui_default_aura_mesh (mesh_t* mesh, float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
-void ui_update_theme_visuals ();
-void ui_release_theme_visuals();
+void ui_theme_visuals_update ();
+void ui_theme_visuals_release();
 
 ///////////////////////////////////////////
 
@@ -222,7 +222,7 @@ void ui_theming_shutdown() {
 		skui_visuals[i] = {};
 	}
 
-	ui_release_theme_visuals();
+	ui_theme_visuals_release();
 
 	sound_release   (skui_active_sound_off); skui_active_sound_off = nullptr;
 	sound_release   (skui_snd_interact);     skui_snd_interact     = nullptr;
@@ -452,7 +452,7 @@ void ui_settings(ui_settings_t settings) {
 	skui_settings = settings;
 
 	if (rebuild_meshes) {
-		ui_update_theme_visuals();
+		ui_theme_visuals_update();
 	}
 }
 
@@ -720,29 +720,33 @@ void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius
 
 ///////////////////////////////////////////
 
-uint32_t _lathe_corner_root_index(uint32_t corner, ui_corner_ rounded_corners, uint32_t corner_resolution, uint32_t lathe_points)
-{
+uint32_t _lathe_corner_root_index(uint32_t corner, ui_corner_ rounded_corners, uint32_t corner_resolution, uint32_t lathe_points, uint32_t lathe_step) {
 	uint32_t roundedCount = (uint32_t)(
 		(corner > 0 && (rounded_corners & ui_corner_top_left    ) != 0 ? 1 : 0) +
 		(corner > 1 && (rounded_corners & ui_corner_top_right   ) != 0 ? 1 : 0) +
 		(corner > 2 && (rounded_corners & ui_corner_bottom_right) != 0 ? 1 : 0) +
 		(corner > 3 && (rounded_corners & ui_corner_bottom_left ) != 0 ? 1 : 0));
 	uint32_t sharpCount = corner-roundedCount;
-	return (roundedCount * corner_resolution + sharpCount) * (lathe_points-1) + corner;
+	return (roundedCount * corner_resolution + sharpCount) * lathe_step + corner * (lathe_points - lathe_step);
 }
 
 ///////////////////////////////////////////
 
 void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
 	float     angle_step = 90 / (float)(corner_resolution - 1);
-	uint32_t  lathe_step = (uint32_t)(lathe_pt_count - 1);
+	uint32_t  lathe_step = 0;
+	for (size_t i = 0; i < lathe_pt_count; i++)
+		if (lathe_pts[i].pt.x != 0) lathe_step += 1;
+	uint32_t  lathe_roots = lathe_pt_count - lathe_step;
 
 	array_t<vert_t> verts = {};
 	array_t<vind_t> inds  = {};
+	vind_t  curr_inds[6];
+	int32_t curr_ind_ct = 0;
 
 	for (uint32_t c = 0; c < 4; c++) {
-		uint32_t idx_root_curr = _lathe_corner_root_index( c,      rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
-		uint32_t idx_root_next = _lathe_corner_root_index((c+1)%4, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t idx_root_curr = _lathe_corner_root_index( c,      rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t idx_root_next = _lathe_corner_root_index((c+1)%4, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
 
 		bool rounded      = (rounded_corners & (ui_corner_)(1 << (int32_t)c)) != 0;
 		bool rounded_next = (rounded_corners & (ui_corner_)(1 << (int32_t)((c + 1) % 4))) != 0;
@@ -775,6 +779,7 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 			float ang = (angle_start + s*angle_step) * deg2rad;
 			vec2  dir = vec2{ cosf(ang), sinf(ang) };
 
+			int32_t p_ct = -1;
 			for (uint32_t p = 0; p < lathe_pt_count; p++) {
 				ui_lathe_pt_t lp = lathe_pts[p];
 				vert_t        vert;
@@ -782,63 +787,78 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 				vert.uv   = { u, v };
 				vert.norm = { lp.normal.x * dir.x, lp.normal.x * dir.y, lp.normal.y * -1 };
 				vert.pos  = vec3{ lp.pt.x * dir.x * curr_radius, lp.pt.x * dir.y * curr_radius, lp.pt.y } + offset;
-				if (p!=0 || s==0) // If it's the root vert, it only needs added once
+
+				bool is_root = lp.pt.x == 0;
+				if (is_root == false || s==0) // If it's a root vert, it only needs added once
 					verts.add(vert);
+
+				if (is_root == false) p_ct += 1;
 
 				if (lp.connect_next == false || p+1 == lathe_pt_count || (s+1==corner_count && delete_flat_sides && rounded == false && rounded_next == false)) continue;
 
-				if (p == 0 && s+1 < corner_count) {
-					inds.add(idx_root_curr + (s+1)*lathe_step + (p+1));
-					inds.add(idx_root_curr + s    *lathe_step + (p+1));
-					inds.add(idx_root_curr);
-				} else if (s+1 < corner_count) {
-					inds.add(idx_root_curr + (s+1)*lathe_step + p);
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_curr +  s   *lathe_step + p);
+				bool     top_is_root   = lathe_pts[p + 1].pt.x == 0;
+				bool     next_corner   = s + 1 >= corner_count;
+				uint32_t next_root_idx = next_corner ? idx_root_next : idx_root_curr;
+				uint32_t curr_bot = is_root     || s == 0      ? idx_root_curr + p   : idx_root_curr +  s   *lathe_step + lathe_roots + p_ct;
+				uint32_t next_bot = is_root     || next_corner ? next_root_idx + p   : next_root_idx + (s+1)*lathe_step + lathe_roots + p_ct;
+				uint32_t curr_top = top_is_root || s == 0      ? idx_root_curr + p+1 : idx_root_curr +  s   *lathe_step + lathe_roots + p_ct+1;
+				uint32_t next_top = top_is_root || next_corner ? next_root_idx + p+1 : next_root_idx + (s+1)*lathe_step + lathe_roots + p_ct+1;
 
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_curr + (s+1)*lathe_step + p);
-					inds.add(idx_root_curr + (s+1)*lathe_step + p+1);
-				} else if (p==0) {
-					inds.add(idx_root_next                    + p);
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_curr                      );
-
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_next                    + p);
-					inds.add(idx_root_next                    + p+1);
+				if (is_root && !top_is_root && !next_corner) {
+					curr_inds[0] = next_top;
+					curr_inds[1] = curr_top;
+					curr_inds[2] = curr_bot;
+					curr_ind_ct = 3;
+				} else if (!is_root && top_is_root && !next_corner) {
+					curr_inds[2] = next_bot;
+					curr_inds[1] = curr_bot;
+					curr_inds[0] = curr_top;
+					curr_ind_ct = 3;
 				} else {
-					inds.add(idx_root_next                    + p);
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_curr +  s   *lathe_step + p);
+					curr_inds[0] = next_top;
+					curr_inds[1] = curr_top;
+					curr_inds[2] = curr_bot;
 
-					inds.add(idx_root_curr +  s   *lathe_step + p+1);
-					inds.add(idx_root_next                    + p);
-					inds.add(idx_root_next                    + p+1);
+					curr_inds[3] = next_bot;
+					curr_inds[4] = next_top;
+					curr_inds[5] = curr_bot;
+					curr_ind_ct = 6;
 				}
+				// add the indices, forwards or backwards depending on if this should be flipped
+				if (lp.flip_face == false) inds.add_range(curr_inds, curr_ind_ct);
+				else for (int32_t i = curr_ind_ct-1; i >= 0; i--) inds.add(curr_inds[i]);
 			}
 		}
 	}
 
 	// Center quad
 	{
-		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
-		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
-		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
-		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count);
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
 
 		inds.add(tl_f); inds.add(tr_f); inds.add(br_f);
 		inds.add(tl_f); inds.add(br_f); inds.add(bl_f);
 	}
 
 	if (lathe_pts[lathe_pt_count-1].connect_next) {
-		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
-		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
-		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
-		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count) + (uint32_t)(lathe_pt_count-1);
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
 
-		inds.add(br_f); inds.add(tr_f); inds.add(tl_f);
-		inds.add(bl_f); inds.add(br_f); inds.add(tl_f);
+		curr_inds[0] = br_f;
+		curr_inds[1] = tr_f;
+		curr_inds[2] = tl_f;
+		curr_inds[3] = bl_f;
+		curr_inds[4] = br_f;
+		curr_inds[5] = tl_f;
+		curr_ind_ct = 6;
+
+		// add the indices, forwards or backwards depending on if this should be flipped
+		if (lathe_pts[lathe_pt_count - 1].flip_face == false) inds.add_range(curr_inds, curr_ind_ct);
+		else for (int32_t i = curr_ind_ct - 1; i >= 0; i--) inds.add(curr_inds[i]);
 	}
 
 	if (*mesh == nullptr)
@@ -877,7 +897,7 @@ material_t theme_mat_opaque_same_z = nullptr;
 material_t theme_mat_transparent   = nullptr;
 material_t theme_mat_aura          = nullptr;
 
-void ui_update_theme_visuals() {
+void ui_theme_visuals_update() {
 	color32 white        = {255,255,255,255};
 	color32 black        = {0,0,0,0};
 	color32 gray         = {200, 200, 200, 255};
@@ -888,8 +908,8 @@ void ui_update_theme_visuals() {
 		{ {0.95f,-0.5f},  {0, 1}, white,         true  },
 		{ {1,    -0.45f}, {1, 0}, white,         true  },
 		{ {1,    -0.1f},  {1, 0}, white,         false },
-		{ {0,     0.49f}, {0, 1}, shadow_center, true  },
-		{ {1.2f,  0.49f}, {0, 1}, black,         false } };
+		{ {1.2f,  0.49f}, {0, 1}, black,         true, true },
+		{ {0.0f,  0.49f}, {0, 1}, shadow_center, true, true } };
 	const ui_lathe_pt_t lathe_input[] = {
 		{ {0,    -0.1f }, { 0, 1}, gray,          true  },
 		{ {0.8f, -0.1f }, { 0, 1}, gray,          false },
@@ -899,8 +919,8 @@ void ui_update_theme_visuals() {
 		{ {0.95f,-0.5f }, { 0, 1}, white,         true  },
 		{ {1,    -0.45f}, { 1, 0}, white,         true  },
 		{ {1,    -0.1f }, { 1, 0}, white,         false },
-		{ {0,     0.49f}, { 0, 1}, shadow_center, true  },
-		{ {1.2f,  0.49f}, { 0, 1}, black,         false } };
+		{ {1.2f,  0.49f}, { 0, 1}, black,         true, true },
+		{ {0,     0.49f}, { 0, 1}, shadow_center, true, true }, };
 	const ui_lathe_pt_t lathe_plane[] = {
 		{ {0, 0}, {0, 1}, white, true  },
 		{ {1, 0}, {0, 1}, white, false } };
@@ -1000,7 +1020,7 @@ void ui_update_theme_visuals() {
 
 ///////////////////////////////////////////
 
-void ui_release_theme_visuals() {
+void ui_theme_visuals_release() {
 	mesh_release(theme_mesh_button      ); theme_mesh_button       = nullptr;
 	mesh_release(theme_mesh_input       ); theme_mesh_input        = nullptr;
 	mesh_release(theme_mesh_plane       ); theme_mesh_plane        = nullptr;

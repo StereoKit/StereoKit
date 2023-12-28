@@ -119,6 +119,7 @@ typedef struct ui_lathe_pt_t {
 	vec2     normal;
 	color32  color;
 	bool32_t connect_next;
+	bool32_t flip_face;
 } ui_lathe_pt_t;
 
 typedef struct ui_settings_t {
