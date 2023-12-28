@@ -989,8 +989,8 @@ void ui_theme_visuals_update() {
 	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, lathe_slider_btn, _countof(lathe_slider_btn));
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, lathe_slider_btn, _countof(lathe_slider_btn));
