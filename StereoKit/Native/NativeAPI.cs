@@ -412,7 +412,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_node_info_remove        (IntPtr model, int node, [In] byte[] info_key_u8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_info_clear         (IntPtr model, int node);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_count         (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_count         (IntPtr model, int node);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_node_info_iterate       (IntPtr model, int node, ref int ref_iterator, out IntPtr out_key_utf8, out IntPtr out_value_utf8);
 
@@ -607,6 +607,7 @@ namespace StereoKit
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_index    (int index);
 		[DllImport(dll, CallingConvention = call                 )] public static extern int                 anchor_get_new_count();
 		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_new_index(int index);
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_perception_anchor(IntPtr anchor, out IntPtr perception_spatial_anchor);
 
 		///////////////////////////////////////////
 
