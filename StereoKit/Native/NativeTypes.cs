@@ -789,6 +789,30 @@ namespace StereoKit
 		Bottom,
 	}
 
+	public enum UICorner
+	{
+		None        = 0,
+		TopRight    = 1 << 1,
+		TopLeft     = 1 << 0,
+		BottomLeft  = 1 << 3,
+		BottomRight = 1 << 2,
+		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
+		Top    = TopLeft    | TopRight,
+		Bottom = BottomLeft | BottomRight,
+		Left   = TopLeft    | BottomLeft,
+		Right  = TopRight   | BottomRight,
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UILathePt
+	{
+		public Vec2 pt;
+		public Vec2 normal;
+		public Color32 color;
+		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
+	}
+
 	/// <summary>Id of a simulated hand pose, for use with
 	/// `Input.HandSimPoseRemove`</summary>
 	public struct HandSimId
