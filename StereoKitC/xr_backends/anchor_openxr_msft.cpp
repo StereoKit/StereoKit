@@ -152,11 +152,15 @@ anchor_t anchor_oxr_msft_create(pose_t pose, const char* name_utf8) {
 		return nullptr;
 	}
 
+	// We'll need to fetch the pose real quick
+	bool32_t tracked = openxr_get_space(space, &pose);
+
 	// Create a StereoKit anchor
 	oxr_msft_world_anchor_t* anchor_data = sk_malloc_t(oxr_msft_world_anchor_t, 1);
 	anchor_data->anchor = anchor;
 	anchor_data->space  = space;
 	anchor_t sk_anchor = anchor_create_manual(oxr_msft_anchor_sys.id, pose, name_utf8, (void*)anchor_data);
+	sk_anchor->tracked = tracked ? button_state_active : button_state_inactive;
 	oxr_msft_anchor_sys.anchors.add(sk_anchor);
 	anchor_addref(sk_anchor);
 	return sk_anchor;
