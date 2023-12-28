@@ -1,7 +1,6 @@
 #include "stereokit.hlsli"
 
 //--color:color = 1, 1, 1, 1
-//--ui_tint     = 0
 //--diffuse     = white
 float4       color;
 Texture2D    diffuse   : register(t0);

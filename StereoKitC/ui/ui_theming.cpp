@@ -5,6 +5,7 @@
 #include "../libraries/array.h"
 #include "../utils/sdf.h"
 #include "../sk_math.h"
+#include "../platforms/platform.h"
 
 #include <float.h>
 
@@ -71,6 +72,7 @@ void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corne
 void ui_default_aura_mesh (mesh_t* mesh, float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
 void ui_theme_visuals_update ();
 void ui_theme_visuals_release();
+void ui_theme_visuals_assign ();
 
 ///////////////////////////////////////////
 
@@ -176,6 +178,8 @@ void ui_theming_init() {
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
+
+	ui_theme_visuals_assign();
 
 	ui_set_element_color(ui_vis_none,                 ui_color_common);
 	ui_set_element_color(ui_vis_default,              ui_color_common);
@@ -752,12 +756,12 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 		bool rounded_next = (rounded_corners & (ui_corner_)(1 << (int32_t)((c + 1) % 4))) != 0;
 		bool rounded_prev = (rounded_corners & (ui_corner_)(1 << (int32_t)((c+3)%4))) != 0;
 		// 1,1   -1,1   -1,-1   1,-1
-		float u = c == 0 || c == 3 ? 1 : -1;
-		float v = c == 0 || c == 1 ? 1 : -1;
+		float u = c == 0 || c == 3 ? 1.f : -1.f;
+		float v = c == 0 || c == 1 ? 1.f : -1.f;
 
 		vec3     offset       = { -u * corner_radius, -v * corner_radius, 0 };
 		uint32_t corner_count = corner_resolution;
-		float    angle_start  = c * 90;
+		float    angle_start  = c * 90.f;
 		float    curr_radius  = corner_radius;
 		if (delete_flat_sides && rounded == false && (rounded_next == false || rounded_prev == false)) {
 			corner_count = 1;
@@ -780,7 +784,7 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 			vec2  dir = vec2{ cosf(ang), sinf(ang) };
 
 			int32_t p_ct = -1;
-			for (uint32_t p = 0; p < lathe_pt_count; p++) {
+			for (uint32_t p = 0; p < (uint32_t)lathe_pt_count; p++) {
 				ui_lathe_pt_t lp = lathe_pts[p];
 				vert_t        vert;
 				vert.col  = lp.color;
@@ -794,7 +798,7 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 
 				if (is_root == false) p_ct += 1;
 
-				if (lp.connect_next == false || p+1 == lathe_pt_count || (s+1==corner_count && delete_flat_sides && rounded == false && rounded_next == false)) continue;
+				if (lp.connect_next == false || p+1 == (uint32_t)lathe_pt_count || (s+1==corner_count && delete_flat_sides && rounded == false && rounded_next == false)) continue;
 
 				bool     top_is_root   = lathe_pts[p + 1].pt.x == 0;
 				bool     next_corner   = s + 1 >= corner_count;
@@ -999,7 +1003,11 @@ void ui_theme_visuals_update() {
 		mesh_set_id(theme_mesh_slider_push,  "sk/ui/mesh_slider_push");
 		mesh_set_id(theme_mesh_separator,    "sk/ui/mesh_separator");
 	}
+}
 
+///////////////////////////////////////////
+
+void ui_theme_visuals_assign() {
 	ui_set_element_visual(ui_vis_button,               theme_mesh_button,       theme_mat_transparent);
 	ui_set_element_visual(ui_vis_toggle,               theme_mesh_button,       theme_mat_transparent);
 	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button,       theme_mat_transparent);

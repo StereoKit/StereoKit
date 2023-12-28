@@ -1,9 +1,5 @@
 #include "stereokit.hlsli"
 
-//--color:color = 1, 1, 1, 1
-
-float4 color;
-
 struct vsIn {
 	float4 pos      : SV_Position;
 	float3 norm     : NORMAL0;
