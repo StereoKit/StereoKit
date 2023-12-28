@@ -359,7 +359,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, IntPtr.Zero);
 		}
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
@@ -397,7 +397,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat, IntPtr.Zero);
 		}
 
 		/// <summary>This renders the current scene to the indicated 

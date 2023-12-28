@@ -291,6 +291,7 @@ void sk_shutdown_unsafe(void) {
 
 	systems_shutdown();
 	sk_mem_log_allocations();
+	log_clear_subscribers();
 
 	local = {};
 	local.disallow_user_shutdown = true;
@@ -379,13 +380,13 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 ///////////////////////////////////////////
 
-void (*_sk_run_data_app_update)(void *);
-void  *_sk_run_data_update_data;
+void (*_sk_run_data_app_step)(void *);
+void  *_sk_run_data_step_data;
 void (*_sk_run_data_app_shutdown)(void *);
 void  *_sk_run_data_shutdown_data;
-void sk_run_data(void (*app_update)(void *update_data), void *update_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
-	_sk_run_data_app_update    = app_update;
-	_sk_run_data_update_data   = update_data;
+void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
+	_sk_run_data_app_step      = app_step;
+	_sk_run_data_step_data     = step_data;
 	_sk_run_data_app_shutdown  = app_shutdown;
 	_sk_run_data_shutdown_data = shutdown_data;
 
@@ -394,11 +395,11 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 #if defined(SK_OS_WEB)
 	sk_first_step();
 	web_start_main_loop(
-		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); },
+		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); },
 		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
 #else
 	while (sk_step(
-		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); }));
+		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); }));
 
 	if (_sk_run_data_app_shutdown)
 		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);

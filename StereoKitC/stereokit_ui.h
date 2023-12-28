@@ -101,6 +101,27 @@ typedef enum ui_cut_ {
 	ui_cut_bottom,
 } ui_cut_;
 
+typedef enum ui_corner_ {
+	ui_corner_none         = 0,
+	ui_corner_top_left     = 1 << 0,
+	ui_corner_top_right    = 1 << 1,
+	ui_corner_bottom_right = 1 << 2,
+	ui_corner_bottom_left  = 1 << 3,
+	ui_corner_all          = ui_corner_top_left    | ui_corner_top_right | ui_corner_bottom_left | ui_corner_bottom_right,
+	ui_corner_top          = ui_corner_top_left    | ui_corner_top_right,
+	ui_corner_bottom       = ui_corner_bottom_left | ui_corner_bottom_right,
+	ui_corner_left         = ui_corner_top_left    | ui_corner_bottom_left,
+	ui_corner_right        = ui_corner_top_right   | ui_corner_bottom_right,
+} ui_corner_;
+
+typedef struct ui_lathe_pt_t {
+	vec2     pt;
+	vec2     normal;
+	color32  color;
+	bool32_t connect_next;
+	bool32_t flip_face;
+} ui_lathe_pt_t;
+
 typedef struct ui_settings_t {
 	float margin;
 	float padding;
@@ -113,6 +134,7 @@ typedef struct ui_settings_t {
 
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
 SK_API void     ui_quadrant_size_mesh   (mesh_t ref_mesh, float overflow_percent);
+SK_API mesh_t   ui_gen_quadrant_mesh    (ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
 SK_API void     ui_show_volumes         (bool32_t      show);
 SK_API void     ui_enable_far_interact  (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled (void);

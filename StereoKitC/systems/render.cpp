@@ -657,11 +657,11 @@ color128 render_get_clear_color_ln() {
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
 	render_item_t item;
 	item.mesh      = mesh;
 	item.mesh_inds = mesh->ind_draw;
-	item.color     = color;
+	item.color     = color_linear;
 	item.layer     = (uint16_t)layer;
 	if (hierarchy_use_top()) {
 		matrix_mul(transform, hierarchy_top(), item.transform);
@@ -981,7 +981,7 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
 	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
 }
 
@@ -1005,7 +1005,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int width, int height, float fov_degrees) {
+void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;
@@ -1017,17 +1017,17 @@ void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pos
 
 ///////////////////////////////////////////
 
-void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), pose_t viewpoint, int width, int height, float fov_degrees, tex_format_ tex_format) {
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float fov_degrees, tex_format_ tex_format, void* context) {
 	matrix view = matrix_invert(pose_matrix(viewpoint));
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, local.clip_planes.x, local.clip_planes.y);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
 }
 
 ///////////////////////////////////////////
 
-void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), matrix camera, matrix projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format) {
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format, void* context) {
 	matrix inv_cam = matrix_invert(camera);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
 }
 
 ///////////////////////////////////////////

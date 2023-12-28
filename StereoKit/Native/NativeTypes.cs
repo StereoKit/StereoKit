@@ -462,8 +462,10 @@ namespace StereoKit
 	/// <summary>A callback for when log events occur.</summary>
 	/// <param name="level">The level of severity of this log event.</param>
 	/// <param name="text">The text contents of the log event.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
@@ -785,6 +787,30 @@ namespace StereoKit
 		/// layout. This will work for layouts that are fixed sized, but not
 		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
+	}
+
+	public enum UICorner
+	{
+		None        = 0,
+		TopRight    = 1 << 1,
+		TopLeft     = 1 << 0,
+		BottomLeft  = 1 << 3,
+		BottomRight = 1 << 2,
+		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
+		Top    = TopLeft    | TopRight,
+		Bottom = BottomLeft | BottomRight,
+		Left   = TopLeft    | BottomLeft,
+		Right  = TopRight   | BottomRight,
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UILathePt
+	{
+		public Vec2 pt;
+		public Vec2 normal;
+		public Color32 color;
+		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
 	}
 
 	/// <summary>Id of a simulated hand pose, for use with

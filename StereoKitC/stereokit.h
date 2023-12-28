@@ -1421,7 +1421,7 @@ SK_API void          model_set_id                  (model_t model, const char *i
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
-SK_API void          model_draw                    (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_recalculate_bounds_exact(model_t model);
@@ -1602,15 +1602,16 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 //TODO: for v0.4, replace render_screenshot with render_screenshot_pose
 SK_API void                  render_screenshot     (const char *file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32));
+//TODO: for v0.4, reorder parameters, context in particular should be next to callback
+SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
+SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
@@ -1707,7 +1708,7 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback   )(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  (void);
 SK_API bool32_t platform_file_picker_visible(void);
@@ -2163,6 +2164,7 @@ SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
 SK_API const char*    anchor_get_name          (const anchor_t anchor);
 SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+SK_API bool32_t       anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor);
 
 SK_API void           anchor_clear_stored      (void);
 SK_API anchor_caps_   anchor_get_capabilities  (void);
@@ -2336,8 +2338,11 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
-SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));
+// TODO: v0.4, replace these with the _data versions
+SK_API void log_subscribe       (void (*log_callback)(log_ level, const char *text));
+SK_API void log_unsubscribe     (void (*log_callback)(log_ level, const char *text));
+SK_API void log_subscribe_data  (void (*log_callback)(void* context, log_ level, const char *text), void *context);
+SK_API void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char *text), void *context);
 
 ///////////////////////////////////////////
 
