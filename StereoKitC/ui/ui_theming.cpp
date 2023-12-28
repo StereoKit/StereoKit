@@ -1008,6 +1008,7 @@ void ui_theme_visuals_update() {
 ///////////////////////////////////////////
 
 void ui_theme_visuals_assign() {
+	ui_set_element_visual(ui_vis_default,              theme_mesh_panel,        theme_mat_opaque);
 	ui_set_element_visual(ui_vis_button,               theme_mesh_button,       theme_mat_transparent);
 	ui_set_element_visual(ui_vis_toggle,               theme_mesh_button,       theme_mat_transparent);
 	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button,       theme_mat_transparent);
