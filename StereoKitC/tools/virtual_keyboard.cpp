@@ -132,6 +132,11 @@ void virtualkeyboard_initialize() {
 	keylayout_info_t layer  = {};
 	const char*      layout = nullptr;
 
+	// These keyboards use VK codes for parity with the previous ones. Until
+	// the new smaller mobile keyboard ships, we'll just stick with that, but
+	// it's reasonable to imagine a virtual keyboard might not actually use VK
+	// codes at all.
+
 	////// Text keyboard //////
 	layout =
 R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|spr:sk/ui/close----close
