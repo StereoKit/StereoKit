@@ -23,6 +23,7 @@ bool32_t skui_enable_far_interact;
 ui_move_ skui_system_move_type;
 
 uint64_t skui_input_target;
+bool32_t skui_input_target_confirmed;
 int32_t  skui_input_carat;
 int32_t  skui_input_carat_end;
 float    skui_input_blink;
@@ -70,12 +71,19 @@ void ui_step() {
 	ui_theming_update();
 
 	ui_push_surface(pose_identity);
+
+	skui_input_target_confirmed = false;
 }
 
 ///////////////////////////////////////////
 
 void ui_step_late() {
 	ui_pop_surface();
+
+	// If the active input target was not confirmed to exist, we should drop
+	// input focus.
+	if (skui_input_target_confirmed == false && skui_input_target != 0)
+		skui_input_target = 0;
 
 	//if (skui_layers                 .count != 0) log_errf("ui: Mismatching number of %s calls!", "Begin/End");
 	//if (skui_id_stack               .count != 1) log_errf("ui: Mismatching number of %s calls!", "id push/pop");
@@ -647,6 +655,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// If the input is focused, display text selection information
 	if (skui_input_target == id_hash) {
+		// Confirm that the input target still exists
+		skui_input_target_confirmed = true;
+
 		// Advance the displayed text if it's off the right side of the input
 		text_style_t style = ui_get_text_style();
 

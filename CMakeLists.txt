@@ -415,7 +415,6 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_TOOLS
-  StereoKitC/tools/virtual_keyboard_layouts.h
   StereoKitC/tools/virtual_keyboard.h
   StereoKitC/tools/virtual_keyboard.cpp
   StereoKitC/tools/file_picker.h

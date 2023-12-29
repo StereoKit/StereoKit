@@ -42,6 +42,13 @@ sprite_t        skui_toggle_off;
 sprite_t        skui_toggle_on;
 sprite_t        skui_radio_off;
 sprite_t        skui_radio_on;
+sprite_t        skui_arrow_left;
+sprite_t        skui_arrow_right;
+sprite_t        skui_arrow_up;
+sprite_t        skui_arrow_down;
+sprite_t        skui_spr_close;
+sprite_t        skui_spr_backspace;
+sprite_t        skui_spr_shift;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -103,27 +110,24 @@ void ui_theming_init() {
 	// #defines because we can't capture anything in these lambdas D:
 	#define OUTER_RADIUS 31
 	#define RING_WIDTH 8
+	#define RADIUS (OUTER_RADIUS - RING_WIDTH)
 	#define INNER_RADIUS (OUTER_RADIUS - RING_WIDTH*2)
 
-	tex_t toggle_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_on = sdf_create_sprite(ui_default_id_spr_toggle_on, 64, 64, [](vec2 pt) {
 		return
 			sdf_union(
-				sdf_box(pt, INNER_RADIUS),
+				sdf_box(pt, {INNER_RADIUS, INNER_RADIUS}),
 				sdf_subtract(
-					sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-					sdf_box_round(pt, OUTER_RADIUS, 8)))/32.0f;
+					sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+					sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8)))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_on, tex_address_clamp);
-	tex_set_id     (toggle_tex_on, "sk/ui/toggle_on_tex");
-	tex_t toggle_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_off = sdf_create_sprite(ui_default_id_spr_toggle_off, 64, 64, [](vec2 pt) {
 		return
 			sdf_subtract(
-				sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-				sdf_box_round(pt, OUTER_RADIUS, 8))/32.0f;
+				sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+				sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_off, tex_address_clamp);
-	tex_set_id     (toggle_tex_off, "sk/ui/toggle_off_tex");
-	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_on = sdf_create_sprite(ui_default_id_spr_radio_on, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return
 			sdf_union(
@@ -132,26 +136,41 @@ void ui_theming_init() {
 					dist - (OUTER_RADIUS - RING_WIDTH),
 					dist - OUTER_RADIUS)) / 32.0f;
 	}, 40);
-	tex_set_address(radio_tex_on, tex_address_clamp);
-	tex_set_id     (radio_tex_on, "sk/ui/radio_on_tex");
-	tex_t radio_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_off = sdf_create_sprite(ui_default_id_spr_radio_off, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return sdf_subtract(dist - (OUTER_RADIUS - RING_WIDTH), dist - OUTER_RADIUS)/32.0f;
 	}, 40);
-	tex_set_address(radio_tex_off, tex_address_clamp);
-	tex_set_id     (radio_tex_off, "sk/ui/radio_off_tex");
-	skui_toggle_on  = sprite_create(toggle_tex_on,  sprite_type_single);
-	skui_toggle_off = sprite_create(toggle_tex_off, sprite_type_single);
-	skui_radio_on   = sprite_create(radio_tex_on,   sprite_type_single);
-	skui_radio_off  = sprite_create(radio_tex_off,  sprite_type_single);
-	sprite_set_id(skui_toggle_on,  ui_default_id_toggle_on_spr);
-	sprite_set_id(skui_toggle_off, ui_default_id_toggle_off_spr);
-	sprite_set_id(skui_radio_on,   ui_default_id_radio_on_spr);
-	sprite_set_id(skui_radio_off,  ui_default_id_radio_off_spr);
-	tex_release(toggle_tex_on);
-	tex_release(toggle_tex_off);
-	tex_release(radio_tex_on);
-	tex_release(radio_tex_off);
+
+	// Create some sprites for common UI icons
+	skui_spr_backspace = sdf_create_sprite(ui_default_id_spr_backspace, 96, 64, [](vec2 pt) {
+		return
+			sdf_subtract(
+				sdf_rounded_x(pt - vec2{3.5f,0}, 20, 3.5f),
+				sdf_union(
+					sdf_box    (pt - vec2{10, 0}, {20,20})-7,
+					sdf_diamond(pt + vec2{10, 0}, {20,20})-7)) / 40.0f;
+	}, 40);
+	skui_spr_shift = sdf_create_sprite(ui_default_id_spr_shift, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+				sdf_triangle(pt + vec2{0,24}, {24,20}) - 4,
+				sdf_box(pt + vec2{0,-6}, {6, 12}) - 7) / 40.0f;
+	}, 40);
+	skui_spr_close = sdf_create_sprite(ui_default_id_spr_close, 64, 64, [](vec2 pt) {
+		return sdf_rounded_x(pt, 36, 7) / 40.0f;
+	}, 40);
+	skui_arrow_left = sdf_create_sprite(ui_default_id_spr_arrow_left, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_right = sdf_create_sprite(ui_default_id_spr_arrow_right, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, -pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_up = sdf_create_sprite(ui_default_id_spr_arrow_up, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material);
@@ -245,6 +264,13 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_toggle_on);      skui_toggle_on      = nullptr;
 	sprite_release  (skui_radio_off);      skui_radio_off      = nullptr;
 	sprite_release  (skui_radio_on);       skui_radio_on       = nullptr;
+	sprite_release  (skui_arrow_left);     skui_arrow_left     = nullptr;
+	sprite_release  (skui_arrow_right);    skui_arrow_right    = nullptr;
+	sprite_release  (skui_arrow_up);       skui_arrow_up       = nullptr;
+	sprite_release  (skui_arrow_down);     skui_arrow_down     = nullptr;
+	sprite_release  (skui_spr_backspace);  skui_spr_backspace  = nullptr;
+	sprite_release  (skui_spr_close);      skui_spr_close      = nullptr;
+	sprite_release  (skui_spr_shift);      skui_spr_shift      = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
 }
@@ -895,11 +921,13 @@ mesh_t theme_mesh_slider_pinch = nullptr;
 mesh_t theme_mesh_slider_push  = nullptr;
 mesh_t theme_mesh_separator    = nullptr;
 mesh_t theme_mesh_aura         = nullptr;
+mesh_t theme_mesh_carat        = nullptr;
 
 material_t theme_mat_opaque        = nullptr;
 material_t theme_mat_opaque_same_z = nullptr;
 material_t theme_mat_transparent   = nullptr;
 material_t theme_mat_aura          = nullptr;
+material_t theme_mat_carat         = nullptr;
 
 void ui_theme_visuals_update() {
 	color32 white        = {255,255,255,255};
@@ -961,8 +989,8 @@ void ui_theme_visuals_update() {
 	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, lathe_slider_btn, _countof(lathe_slider_btn));
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, lathe_slider_btn, _countof(lathe_slider_btn));
@@ -970,6 +998,8 @@ void ui_theme_visuals_update() {
 
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
 	ui_default_aura_mesh(&theme_mesh_aura, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
+
+	if (theme_mesh_carat == nullptr) theme_mesh_carat = mesh_find(default_id_mesh_cube);
 
 	if (theme_mat_transparent == nullptr) {
 		theme_mat_transparent = material_copy_id(default_id_material_ui_quadrant);
@@ -986,7 +1016,8 @@ void ui_theme_visuals_update() {
 		material_set_depth_test  (theme_mat_opaque, depth_test_less_or_eq);
 		material_set_queue_offset(theme_mat_opaque, -20);
 
-		theme_mat_aura = material_find(default_id_material_ui_aura);
+		theme_mat_aura  = material_find(default_id_material_ui_aura);
+		theme_mat_carat = material_find(default_id_material_unlit);
 	}
 
 	if (needs_id) {
@@ -1025,6 +1056,7 @@ void ui_theme_visuals_assign() {
 	ui_set_element_visual(ui_vis_slider_push,          theme_mesh_slider_push,  theme_mat_transparent);
 	ui_set_element_visual(ui_vis_separator,            theme_mesh_separator,    theme_mat_transparent);
 	ui_set_element_visual(ui_vis_aura,                 theme_mesh_aura,         theme_mat_aura);
+	ui_set_element_visual(ui_vis_carat,                theme_mesh_carat,        theme_mat_carat);
 }
 
 ///////////////////////////////////////////
@@ -1042,11 +1074,14 @@ void ui_theme_visuals_release() {
 	mesh_release(theme_mesh_slider_pinch); theme_mesh_slider_pinch = nullptr;
 	mesh_release(theme_mesh_slider_push ); theme_mesh_slider_push  = nullptr;
 	mesh_release(theme_mesh_separator   ); theme_mesh_separator    = nullptr;
+	mesh_release(theme_mesh_aura        ); theme_mesh_aura         = nullptr;
+	mesh_release(theme_mesh_carat       ); theme_mesh_carat        = nullptr;
 
 	material_release(theme_mat_opaque       ); theme_mat_opaque        = nullptr;
 	material_release(theme_mat_opaque_same_z); theme_mat_opaque_same_z = nullptr;
 	material_release(theme_mat_transparent  ); theme_mat_transparent   = nullptr;
 	material_release(theme_mat_aura         ); theme_mat_aura          = nullptr;
+	material_release(theme_mat_carat        ); theme_mat_carat         = nullptr;
 }
 
 }
