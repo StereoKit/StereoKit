@@ -139,14 +139,14 @@ Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\
 Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3
 spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38
 Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
 	layout =
 R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|spr:sk/ui/close----close
 Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\|
 Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3
 spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38
 Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_layers.add(layer);
 
 	////// URI keyboard //////
 	layout =
@@ -155,14 +155,14 @@ Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
 Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|.net-.net--4
 spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
 	layout =
 		R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
 Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
 Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|.net-.net--4
 spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_layers.add(layer);
 
 	////// Numeric keyboard //////
 	layout =
@@ -170,7 +170,7 @@ R"(7|8|9|spr:sk/ui/backspace-\b
 4|5|6|\-
 1|2|3
 0|.|Return-\n--4-close|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_number = keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_ctx_root_number = keyboard_layers.add(layer);
 
 	// Mobile friendly design. This needs touch selection functionality for Input
 	// elements before it can be shipped.
@@ -239,7 +239,7 @@ void virtualkeyboard_keypress(keylayout_key_t key) {
 
 void virtualkeyboard_keymodifier(keylayout_key_t key, bool32_t modifier_state) {
 	uint64_t hash = virtualkeyboard_hash(&key);
-	if (modifier_state == true) {
+	if (modifier_state) {
 		keyboard_modifier_keys.add(hash);
 	} else {
 		int32_t idx = keyboard_modifier_keys.index_of(hash);
@@ -247,8 +247,8 @@ void virtualkeyboard_keymodifier(keylayout_key_t key, bool32_t modifier_state) {
 	}
 
 	if (key.key_event_type != key_none) {
-		if (modifier_state == true) input_key_inject_press  ((key_)key.key_event_type);
-		else                        input_key_inject_release((key_)key.key_event_type);
+		if (modifier_state) input_key_inject_press  ((key_)key.key_event_type);
+		else                input_key_inject_release((key_)key.key_event_type);
 	}
 	if (modifier_state) submit_chars(key.clicked_text);
 }
@@ -282,7 +282,7 @@ void virtualkeyboard_update() {
 	float gutter      = ui_get_gutter ();
 	float margin      = ui_get_margin ();
 	float cell_height = ui_line_height();
-	float cell_size   = cell_height * 0.5;
+	float cell_size   = cell_height * 0.5f;
 	// Calculate the width in advance, so the keyboard doesn't "pop"
 	float window_width = cell_size * keyboard->width_cells + gutter * keyboard->width_gutters + margin * 2;
 
@@ -314,7 +314,7 @@ void virtualkeyboard_update() {
 		} else if (curr->special_key == skey_mod) {
 			uint64_t hash    = virtualkeyboard_hash(curr);
 			bool32_t toggled = false;
-			for (size_t i = 0; i < keyboard_modifier_keys.count; i++) {
+			for (int32_t i = 0; i < keyboard_modifier_keys.count; i++) {
 				if (keyboard_modifier_keys[i] == hash) {
 					toggled = true;
 					break;
@@ -362,7 +362,7 @@ bool next_separator(const char* start, int32_t start_len, const char **out_next,
 	}
 	const char* curr = *out_next;
 	while (curr < end && *curr != sep) curr++;
-	*out_next_length = curr - *out_next;
+	*out_next_length = (int32_t)(curr - *out_next);
 	return *out_next < end;
 }
 
@@ -435,7 +435,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 	// Parse the keys into a full keyboard
 	keylayout_key_t *result  = sk_malloc_zero_t(keylayout_key_t, key_count + 1);
 	const char* text     = escape_text;
-	int32_t     text_len = strlen(escape_text);
+	int32_t     text_len = (int32_t)strlen(escape_text);
 	const char* line     = nullptr;
 	int32_t     line_len = 0;
 	int32_t     key_idx  = 0;
