@@ -391,9 +391,6 @@
     <ClInclude Include="tools\virtual_keyboard.h">
       <Filter>tools</Filter>
     </ClInclude>
-    <ClInclude Include="tools\virtual_keyboard_layouts.h">
-      <Filter>tools</Filter>
-    </ClInclude>
     <ClInclude Include="stereokit_ui.h">
       <Filter>ui</Filter>
     </ClInclude>

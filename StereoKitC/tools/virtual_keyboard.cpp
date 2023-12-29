@@ -5,35 +5,92 @@
  */
 
 #include "virtual_keyboard.h"
-#include "virtual_keyboard_layouts.h"
+
 #include "../stereokit_ui.h"
 #include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_hash.h"
 
 namespace sk {
 
-bool32_t           keyboard_open         = false;
-pose_t             keyboard_pose         = pose_identity;
-array_t<key_>      keyboard_pressed_keys = {};
-const keylayout_t* keyboard_active_layout;
-int32_t            keyboard_layer_idx = 0;
-text_context_      keyboard_text_context;
+typedef enum skey_ {
+	skey_none,
+	skey_close,
+	skey_spacer,
+	skey_nextline,
+	skey_mod,
+	skey_go,
+	skey_visit,
+} skey_;
+
+typedef struct keylayout_key_t {
+	const char*  clicked_text;
+	union {
+		const char* display_text;
+		sprite_t    display_sprite;
+	};
+	uint8_t      width;
+	uint8_t      key_event_type;
+	uint8_t      special_key;
+	uint8_t      is_sprite;
+	uint8_t      go_to;
+} keylayout_key_t;
+
+typedef struct keylayout_info_t {
+	keylayout_key_t* keys;
+	int32_t          key_ct;
+	int32_t          width_cells;
+	int32_t          width_gutters;
+} keylayout_info_t;
+
+bool32_t                  keyboard_open             = false;
+pose_t                    keyboard_pose             = pose_identity;
+array_t<key_>             keyboard_pressed_keys     = {};
+array_t<uint64_t>         keyboard_modifier_keys    = {};
+uint64_t                  keyboard_go_toggle        = 0;
+int32_t                   keyboard_visit_return_idx = -1;
+text_context_             keyboard_text_context     = text_context_text;
+
+array_t<keylayout_info_t> keyboard_layers           = {};
+int32_t                   keyboard_active_root      = 0;
+int32_t                   keyboard_active_idx       = 0;
+int32_t                   keyboard_ctx_root_text    = 0;
+int32_t                   keyboard_ctx_root_number  = 0;
+int32_t                   keyboard_ctx_root_uri     = 0;
 
 ///////////////////////////////////////////
 
 bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, keylayout_info_t* out_layout);
+void virtualkeyboard_go_to       (int32_t layout_idx);
 
 ///////////////////////////////////////////
 
-const keylayout_t* virtualkeyboard_get_system_keyboard_layout() {
-	return &virtualkeyboard_layout_en_us;
+uint64_t virtualkeyboard_hash(const keylayout_key_t* key) {
+	return key->is_sprite
+		? (uint64_t)key->display_sprite
+		: (key->display_text != nullptr
+			? hash_fnv64_string(key->display_text)
+			: 0);
 }
 
 ///////////////////////////////////////////
 
 void virtualkeyboard_reset_modifiers() {
+	const keylayout_info_t* keyboard = &keyboard_layers[keyboard_active_root + keyboard_active_idx];
+
+	for (int32_t i = keyboard_modifier_keys.count-1; i >= 0; i-=1) {
+		for (int32_t k = 0; k < keyboard->key_ct; k+=1) {
+			keylayout_key_t *key = &keyboard->keys[k];
+			uint64_t hash = virtualkeyboard_hash(key);
+			if (hash == keyboard_modifier_keys[i]) {
+				if (key->key_event_type != key_none) input_key_inject_release((key_)key->key_event_type);
+				break;
+			}
+		}
+	}
+	keyboard_modifier_keys.clear();
 }
 
 ///////////////////////////////////////////
@@ -49,9 +106,18 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 	// Reset the keyboard to its default state
 	virtualkeyboard_reset_modifiers();
 
-	keyboard_text_context = type;
-	keyboard_open         = open;
-	keyboard_layer_idx    = 0;
+	keyboard_text_context     = type;
+	keyboard_open             = open;
+	keyboard_visit_return_idx = -1;
+
+	// Get the right layout for this text context
+	switch (type) {
+	case text_context_text:  keyboard_active_root = keyboard_ctx_root_text;   break;
+	case text_context_number:keyboard_active_root = keyboard_ctx_root_number; break;
+	case text_context_uri:   keyboard_active_root = keyboard_ctx_root_uri;    break;
+	default:                 keyboard_active_root = keyboard_ctx_root_text;   break;
+	}
+	keyboard_active_idx = 0;
 }
 
 ///////////////////////////////////////////
@@ -63,71 +129,116 @@ bool virtualkeyboard_get_open() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	const char* layout = R"(q|w|e|r|t|y|u|i|o|p
+	keylayout_info_t layer = {};
+
+	// Text keyboard
+	const char* layout =
+R"(q|w|e|r|t|y|u|i|o|p
 ---1|a|s|d|f|g|h|j|k|l
 spr:sk/ui/shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3
 spr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return-\n--4|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[0]);
-	layout = R"(Q|W|E|R|T|Y|U|I|O|P
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
+	layout =
+R"(Q|W|E|R|T|Y|U|I|O|P
 ---1|A|S|D|F|G|H|J|K|L
 spr:sk/ui/shift---3-go_0|Z|X|C|V|B|N|M|spr:sk/ui/backspace-\b--3
 spr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\n--4|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[1]);
-	layout = R"(1|2|3|4|5|6|7|8|9|0
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+	layout =
+R"(1|2|3|4|5|6|7|8|9|0
 ---1|\-|/|:|;|(|)|$|&|@
 spr:sk/ui/shift---3-go_0|*|=|+|#|%|'|"|spr:sk/ui/backspace-\b--3
-spr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\n--4|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.text[2]);
-	layout = R"(7|8|9|spr:sk/ui/backspace-\b
+spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\n--4|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+
+	// Numeric keyboard
+	layout =
+R"(7|8|9|spr:sk/ui/backspace-\b
 4|5|6|\-
 1|2|3
 0|.|Return-\n--4-close|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.number[0]);
-	layout = R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_number = keyboard_layers.add(layer);
+
+	// URI keyboard
+	layout =
+R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
 Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
 Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|https://-https://--4
-spr:sk/ui/shift---5-go_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---4-go_1|spr:sk/ui/arrow_up--38
-Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[0]);
-	layout = R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
+spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---4-visit_1|spr:sk/ui/arrow_up--38
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---4-mod|Ctrl---4-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
+	layout =
+R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
 Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
 Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|https://-https://--4
 spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---4-go_0|spr:sk/ui/arrow_up--38
-Ctrl---4|Cmd---3|Alt---3| - --9|Alt---4|Ctrl---4|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	virtualkeyboard_parse_layout(layout, strlen(layout), &virtualkeyboard_layout_en_us.uri[1]);
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---4-mod|Ctrl---4-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
 
-	keyboard_active_layout = virtualkeyboard_get_system_keyboard_layout();
+	keyboard_active_root = keyboard_ctx_root_text;
+	keyboard_active_idx  = 0;
 }
 
 ///////////////////////////////////////////
 
-void send_key_data(const char* charkey,key_ key) {
-	if (key != key_none) {
-		keyboard_pressed_keys.add(key);
-		input_key_inject_press(key);
-	}
-	if (charkey != nullptr) {
-		char32_t c = 0;
-		while (utf8_decode_fast_b(charkey, &charkey, &c)) {
-			input_text_inject_char(c);
-		}
-	}
-}
-
-///////////////////////////////////////////
-
-void remove_last_clicked_keys() {
+void virtualkeyboard_release_keys() {
 	for (int32_t i = 0; i < keyboard_pressed_keys.count; i++) {
-		input_key_inject_release(keyboard_pressed_keys[0]);
-		keyboard_pressed_keys.remove(0);
+		input_key_inject_release(keyboard_pressed_keys[i]);
+	}
+	keyboard_pressed_keys.clear();
+}
+
+///////////////////////////////////////////
+
+void submit_chars(const char *utf8) {
+	if (utf8 == nullptr) return;
+
+	char32_t c = 0;
+	while (utf8_decode_fast_b(utf8, &utf8, &c)) {
+		input_text_inject_char(c);
 	}
 }
 
 ///////////////////////////////////////////
 
 void virtualkeyboard_keypress(keylayout_key_t key) {
-	send_key_data(key.clicked_text, (key_)key.key_event_type);
+	if (key.key_event_type != key_none) {
+		keyboard_pressed_keys.add((key_)key.key_event_type);
+		input_key_inject_press((key_)key.key_event_type);
+	}
+	if (keyboard_modifier_keys.count == 0)
+		submit_chars(key.clicked_text);
 	virtualkeyboard_reset_modifiers();
+
+	if (keyboard_visit_return_idx != -1) {
+		virtualkeyboard_go_to(keyboard_visit_return_idx);
+		keyboard_visit_return_idx = -1;
+		keyboard_go_toggle        = 0;
+	}
+}
+
+///////////////////////////////////////////
+
+void virtualkeyboard_keymodifier(keylayout_key_t key, bool32_t modifier_state) {
+	uint64_t hash = virtualkeyboard_hash(&key);
+	if (modifier_state == true) {
+		keyboard_modifier_keys.add(hash);
+	} else {
+		int32_t idx = keyboard_modifier_keys.index_of(hash);
+		if (idx >= 0) keyboard_modifier_keys.remove(idx);
+	}
+
+	if (key.key_event_type != key_none) {
+		if (modifier_state == true) input_key_inject_press  ((key_)key.key_event_type);
+		else                        input_key_inject_release((key_)key.key_event_type);
+	}
+	if (modifier_state) submit_chars(key.clicked_text);
+}
+
+///////////////////////////////////////////
+
+void virtualkeyboard_go_to(int32_t layout_idx) {
+	keyboard_active_idx = layout_idx;
 }
 
 ///////////////////////////////////////////
@@ -138,36 +249,35 @@ bool _key_button(const keylayout_key_t* key, vec2 size) {
 		: ui_button_sz(key->display_text, size);
 }
 
+bool _key_toggle(const keylayout_key_t* key, bool32_t *toggle, vec2 size) {
+	return key->is_sprite
+		? ui_toggle_img_sz("key", *toggle, key->display_sprite, key->display_sprite, ui_btn_layout_center_no_text, size)
+		: ui_toggle_img_sz(key->display_text, *toggle, nullptr, nullptr, ui_btn_layout_none, size);
+}
+
 ///////////////////////////////////////////
 
 void virtualkeyboard_update() {
 	if (!keyboard_open) return;
-	if (keyboard_active_layout == nullptr) return;
-
-	// Get the right layout for this text context
-	const keylayout_info_t* layer = nullptr;
-	switch (keyboard_text_context) {
-	case text_context_text:  layer = &keyboard_active_layout->text  [keyboard_layer_idx]; break;
-	case text_context_number:layer = &keyboard_active_layout->number[keyboard_layer_idx]; break;
-	case text_context_uri:   layer = &keyboard_active_layout->uri   [keyboard_layer_idx]; break;
-	default:                 layer = &keyboard_active_layout->text  [keyboard_layer_idx]; break;
-	}
+	const keylayout_info_t* keyboard = &keyboard_layers[keyboard_active_root + keyboard_active_idx];
 
 	float gutter      = ui_get_gutter ();
 	float margin      = ui_get_margin ();
 	float cell_height = ui_line_height();
 	float cell_size   = cell_height * 0.5;
 	// Calculate the width in advance, so the keyboard doesn't "pop"
-	float window_width = cell_size * layer->width_cells + gutter * layer->width_gutters + margin * 2;
+	float window_width = cell_size * keyboard->width_cells + gutter * keyboard->width_gutters + margin * 2;
 
-	remove_last_clicked_keys();
+	// Make sure any keys pressed last frame get a release event this frame.
+	virtualkeyboard_release_keys();
+
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
 	ui_window_begin("SK/Keyboard", keyboard_pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
 
 	// Draw the keyboard
-	for (int32_t i=0; i<layer->key_ct; i+=1) {
-		const keylayout_key_t *curr = &layer->keys[i];
+	for (int32_t i=0; i< keyboard->key_ct; i+=1) {
+		const keylayout_key_t *curr = &keyboard->keys[i];
 
 		float final_width = curr->width * cell_size; // Width starts with the number of cells it crossed.
 		final_width += (int32_t)(curr->width/2.0f - 0.5f) * gutter; // for every 2 cells, we need to jump a gutter
@@ -179,13 +289,31 @@ void virtualkeyboard_update() {
 		else if (curr->display_text == nullptr      ) { ui_layout_reserve(size); ui_sameline(); }
 		else if (curr->special_key  == skey_close   ) {
 			ui_push_tint({ 0.8f,0.8f,0.8f, 1 });
-			if (_key_button(curr, size)) keyboard_open = false;
+			if (_key_button(curr, size)) virtualkeyboard_open(false, text_context_text);
 			ui_pop_tint();
 			ui_sameline();
-		} else if (curr->special_key >= skey_go) {
+		} else if (curr->special_key == skey_mod) {
+			uint64_t hash    = virtualkeyboard_hash(curr);
+			bool32_t toggled = false;
+			for (size_t i = 0; i < keyboard_modifier_keys.count; i++) {
+				if (keyboard_modifier_keys[i] == hash) {
+					toggled = true;
+					break;
+				}
+			}
+			if (_key_toggle(curr, &toggled, size)) {
+				virtualkeyboard_keymodifier(*curr, toggled);
+			}
+			ui_sameline();
+		} else if (curr->special_key == skey_go || curr->special_key == skey_visit) {
+			uint64_t hash    = virtualkeyboard_hash(curr);
+			bool32_t toggled = keyboard_go_toggle == hash;
+
 			ui_push_tint({ 0.8f,0.8f,0.8f, 1 });
-			if (_key_button(curr, size)) {
-				keyboard_layer_idx = curr->special_key - skey_go;
+			if (_key_toggle(curr, &toggled, size)) {
+				keyboard_visit_return_idx = curr->special_key == skey_visit && toggled ? keyboard_active_idx : -1;
+				keyboard_go_toggle        = toggled ? hash : 0;
+				virtualkeyboard_go_to(curr->go_to);
 			}
 			ui_pop_tint();
 			ui_sameline();
@@ -316,8 +444,10 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 				case 2: if (arg_len > 0) result[key_idx].key_event_type = (uint8_t)stref_to_i(arg_stref); break;
 				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
 				case 4: {
-					if      (stref_startswith(arg_stref, "go_"  )) { result[key_idx].special_key = skey_go + stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
-					else if (stref_equals    (arg_stref, "close")) { result[key_idx].special_key = skey_close; }
+					if      (stref_startswith(arg_stref, "go_"   )) { result[key_idx].special_key = skey_go;    result[key_idx].go_to = stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
+					else if (stref_startswith(arg_stref, "visit_")) { result[key_idx].special_key = skey_visit; result[key_idx].go_to = stref_to_i({ arg_stref.start+6, arg_stref.length - 6 }); }
+					else if (stref_equals    (arg_stref, "close" )) { result[key_idx].special_key = skey_close; }
+					else if (stref_equals    (arg_stref, "mod"   )) { result[key_idx].special_key = skey_mod; }
 					else { result[key_idx].special_key = skey_none; }
 				} break;
 				}
