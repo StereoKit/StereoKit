@@ -134,34 +134,34 @@ void virtualkeyboard_initialize() {
 
 	////// Text keyboard //////
 	layout =
-R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|spr:sk/ui/close----close
-Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\
-Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3
-spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|spr:sk/ui/close----close
+Tab-\t-9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220
+Enter-\n-13-4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter-\n-13-3
+spr:sk/ui/shift--16-5-visit_1|z-z-90|x-x-88|c-c-67|v-v-86|b-b-66|n-n-78|m-m-77|,-,-188|.-.-190|/-/-191|spr:sk/ui/shift--16-2-visit_1|spr:sk/ui/arrow_up--38
+Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
 	layout =
-R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|spr:sk/ui/close----close
-Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\|
-Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3
-spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace-\b-8-3|spr:sk/ui/close----close
+Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220
+Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\n-13-3
+spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38
+Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_layers.add(layer);
 
 	////// URI keyboard //////
 	layout =
-		R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
-Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
-Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|.net-.net--4
-spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38|https://-https://--4
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|---2|spr:sk/ui/close----close
+Tab-\t-9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220|.com-.com--4
+Enter-\n-13-4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter-\n-13-3|.net-.net--4
+spr:sk/ui/shift--16-5-visit_1|z-z-90|x-x-88|c-c-67|v-v-86|b-b-66|n-n-78|m-m-77|,-,-188|.-.-190|/-/-191|spr:sk/ui/shift--16-2-visit_1|spr:sk/ui/arrow_up--38|https://-https://--4
+Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
 	layout =
-		R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
-Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
-Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|.net-.net--4
-spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace-\b-8-3|---2|spr:sk/ui/close----close
+Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220|.com-.com--4
+Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\n-13-3|.net-.net--4
+spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
+Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	if (virtualkeyboard_parse_layout(layout, (int32_t)strlen(layout), &layer)) keyboard_layers.add(layer);
 
 	////// Numeric keyboard //////
