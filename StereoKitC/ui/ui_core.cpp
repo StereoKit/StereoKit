@@ -453,10 +453,11 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 						case ui_move_face_user: {
 							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
 							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt[i].x, local_pt[i].z }) / 0.1f);
-							vec3  look_from    = {
-								math_lerp(local_pt[i].x, handle_pose.position.x, head_xz_lerp),
-								local_pt[i].y,
-								math_lerp(local_pt[i].z, handle_pose.position.z, head_xz_lerp) };
+							vec3  handle_center= matrix_transform_pt(pose_matrix(handle_pose), handle_bounds.center);
+							// Previously, facing happened from a point
+							// influenced by the hand-grip position:
+							// vec3  handle_center= { handle_pose.position.x, local_pt[i].y, handle_pose.position.z };
+							vec3  look_from    = vec3_lerp(local_pt[i], handle_center, head_xz_lerp);
 							
 							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_handle_parent_local, vec3_up));
 							dest_rot = quat_difference(start_handle_rot[i], dest_rot);
