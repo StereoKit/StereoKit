@@ -129,10 +129,52 @@ bool virtualkeyboard_get_open() {
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	keylayout_info_t layer = {};
+	keylayout_info_t layer  = {};
+	const char*      layout = nullptr;
 
-	// Text keyboard
-	const char* layout =
+	////// Text keyboard //////
+	layout =
+R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|spr:sk/ui/close----close
+Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\
+Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3
+spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
+	layout =
+R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|spr:sk/ui/close----close
+Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\|
+Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3
+spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+
+	////// URI keyboard //////
+	layout =
+		R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
+Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
+Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|.net-.net--4
+spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---2-visit_1|spr:sk/ui/arrow_up--38|https://-https://--4
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
+	layout =
+		R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
+Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
+Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|.net-.net--4
+spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
+Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---3-mod|Ctrl---3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+
+	////// Numeric keyboard //////
+	layout =
+R"(7|8|9|spr:sk/ui/backspace-\b
+4|5|6|\-
+1|2|3
+0|.|Return-\n--4-close|)";
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_number = keyboard_layers.add(layer);
+
+	// Mobile friendly design. This needs touch selection functionality for Input
+	// elements before it can be shipped.
+	/*layout =
 R"(q|w|e|r|t|y|u|i|o|p
 ---1|a|s|d|f|g|h|j|k|l
 spr:sk/ui/shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3
@@ -149,31 +191,7 @@ R"(1|2|3|4|5|6|7|8|9|0
 ---1|\-|/|:|;|(|)|$|&|@
 spr:sk/ui/shift---3-go_0|*|=|+|#|%|'|"|spr:sk/ui/backspace-\b--3
 spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\n--4|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
-
-	// Numeric keyboard
-	layout =
-R"(7|8|9|spr:sk/ui/backspace-\b
-4|5|6|\-
-1|2|3
-0|.|Return-\n--4-close|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_number = keyboard_layers.add(layer);
-
-	// URI keyboard
-	layout =
-R"(`|1|2|3|4|5|6|7|8|9|0|\-|=|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
-Tab-\t--3|q|w|e|r|t|y|u|i|o|p|[|]|\\|.com-.com--4
-Enter-\n--4|a|s|d|f|g|h|j|k|l|;|'|Enter-\n--3|https://-https://--4
-spr:sk/ui/shift---5-visit_1|z|x|c|v|b|n|m|,|.|/|spr:sk/ui/shift---4-visit_1|spr:sk/ui/arrow_up--38
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---4-mod|Ctrl---4-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_uri = keyboard_layers.add(layer);
-	layout =
-R"(~|!|@|#|$|%|^|&|*|(|)|_|+|spr:sk/ui/backspace-\b--3|---2|spr:sk/ui/close----close
-Tab-\t--3|Q|W|E|R|T|Y|U|I|O|P|{|}|\||.com-.com--4
-Enter-\n--4|A|S|D|F|G|H|J|K|L|:|"|Enter-\n--3|https://-https://--4
-spr:sk/ui/shift---5-go_0|Z|X|C|V|B|N|M|<|>|?|spr:sk/ui/shift---4-go_0|spr:sk/ui/arrow_up--38
-Ctrl---4-mod|Cmd---3|Alt---3-mod| - --9|Alt---4-mod|Ctrl---4-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
+	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);*/
 
 	keyboard_active_root = keyboard_ctx_root_text;
 	keyboard_active_idx  = 0;
@@ -367,7 +385,10 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 	//              a whole cell. This defaults to 2 if not specified.
 	// Behavior   - Special behavior for the key. 'close' will close the keyboard,
 	//              'go_#' will switch to the keyboard to the layout specified by
-	//              the index.
+	//              the index. 'visit_#' will switch the keyboard, but return
+	//              after a key has been pressed. 'mod' will treat the key as a
+	//              toggleable modifier key, like alt or ctrl, and will not submit
+	//              characters.
 	// 
 	// For example:
 	// 
