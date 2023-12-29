@@ -212,8 +212,18 @@ set(SK_SRC_SHADERS_HLSL
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
-set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
-foreach(SHADER ${SK_SRC_SHADERS_HLSL})
+
+if(CMAKE_HOST_WIN32)
+  set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
+elseif(CMAKE_HOST_APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+  set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc_macos_arm64")
+elseif(CMAKE_HOST_LINUX AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+  set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc_linux_x86_64")
+else()
+  message(FATAL_ERROR "No skshaderc binary for this platform!")
+endif()
+
+  foreach(SHADER ${SK_SRC_SHADERS_HLSL})
   if (WIN32)
     set(SK_SHADER_TARGETS "x")
   elseif(ANDROID)
