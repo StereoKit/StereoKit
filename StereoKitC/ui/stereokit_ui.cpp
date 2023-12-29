@@ -10,6 +10,7 @@
 #include "../stereokit_ui.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
+#include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
@@ -1060,7 +1061,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
-	ui_layout_push_win(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
+	ui_layout_window(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label
 	if (win->type & ui_win_head) {
@@ -1091,7 +1092,10 @@ void ui_window_end() {
 	ui_window_id win_id      = ui_layout_curr_window();
 	ui_window_t* win         = ui_window_get(win_id);
 	float        line_height = ui_line_height();
-	ui_layout_pop();
+
+	ui_handle_end();
+	hierarchy_push(pose_matrix(win->pose));
+
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
 
@@ -1126,8 +1130,12 @@ void ui_window_end() {
 	if (win->type & ui_win_body) {
 		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);
 	}
-	ui_handle_end();
+	hierarchy_pop();
 	ui_pop_id();
+
+	// Store this as the most recent layout
+	if (win->type & ui_win_head) { start.y += line_height; size.y += line_height; }
+	ui_override_recent_layout(start, { size.x, size.y });
 }
 
 ///////////////////////////////////////////
