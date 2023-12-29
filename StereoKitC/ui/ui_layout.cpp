@@ -39,28 +39,6 @@ inline bool ui_layout_is_auto_height(const ui_layout_t* layout) { return layout-
 
 ///////////////////////////////////////////
 
-void ui_layout_area(vec3 start, vec2 dimensions, bool32_t add_margin) {
-	if (add_margin) {
-		start      -= vec3{ skui_settings.margin, skui_settings.margin, 0 };
-		dimensions -= vec2{ skui_settings.margin, skui_settings.margin } * 2;
-	}
-	ui_layout_t *layout = &skui_layouts.last();
-	layout->margin           = add_margin ? skui_settings.margin : 0;
-	layout->offset_initial   = start;
-	layout->offset           = start;
-	layout->offset_prev      = layout->offset;
-	layout->furthest         = { start.x, start.y };
-	layout->child_min = layout->child_max = layout->furthest;
-	layout->size             = dimensions;
-	layout->line             = {};
-	layout->line_prev        = {};
-	layout->line_pad         = 0;
-	layout->parent           = -1;
-	layout->window           = -1;
-}
-
-///////////////////////////////////////////
-
 float _ui_get_right_x(const ui_layout_t* layout) {
 	float right = 0;
 	if      (layout->size.x != 0)                                              right = layout->offset_initial.x - layout->size.x;
@@ -107,6 +85,15 @@ vec3 ui_layout_at() {
 
 bounds_t ui_layout_last() {
 	return skui_recent_layout;
+}
+
+///////////////////////////////////////////
+
+void ui_override_recent_layout(vec3 start, vec2 size) {
+	skui_recent_layout = {
+		{start.x - size.x/2, start.y - size.y/2, 0},
+		{size.x, size.y, 0}
+	};
 }
 
 ///////////////////////////////////////////
@@ -184,26 +171,33 @@ bounds_t ui_layout_reserve(vec2 size, bool32_t add_padding, float depth) {
 
 ///////////////////////////////////////////
 
-void ui_layout_push(vec3 start, vec2 dimensions, bool32_t add_margin) {
+void ui_layout_area(vec3 start, vec2 dimensions, bool32_t add_margin) {
 	vec3 margin_start = start;
 	if (add_margin) {
 		margin_start -= vec3{ skui_settings.margin, skui_settings.margin, 0 };
 		if (dimensions.x != 0) dimensions.x -= skui_settings.margin * 2;
 		if (dimensions.y != 0) dimensions.y -= skui_settings.margin * 2;
 	}
+	ui_layout_t* layout = &skui_layouts.last();
+	layout->margin           = add_margin ? skui_settings.margin : 0;
+	layout->offset_initial   = margin_start;
+	layout->offset_prev      = margin_start;
+	layout->offset           = margin_start;
+	layout->furthest         = { margin_start.x, margin_start.y };
+	layout->child_min = layout->child_max = layout->furthest;
+	layout->size             = dimensions;
+	layout->line             = {};
+	layout->line_prev        = {};
+}
+
+///////////////////////////////////////////
+
+void ui_layout_push(vec3 start, vec2 dimensions, bool32_t add_margin) {
 	ui_layout_t layout = {};
-	layout.margin           = add_margin ? skui_settings.margin : 0;
-	layout.offset_initial   = margin_start;
-	layout.offset_prev      = margin_start;
-	layout.offset           = margin_start;
-	layout.furthest         = { margin_start.x, margin_start.y };
-	layout.child_min = layout.child_max = layout.furthest;
-	layout.size             = dimensions;
-	layout.line             = {};
-	layout.line_prev        = {};
-	layout.parent           = -1;
-	layout.window           = -1;
+	layout.parent = -1;
+	layout.window = -1;
 	skui_layouts.add(layout);
+	ui_layout_area(start, dimensions, add_margin);
 }
 
 ///////////////////////////////////////////
@@ -256,8 +250,8 @@ void ui_layout_push_cut(ui_cut_ cut_to, float size, bool32_t add_margin) {
 
 ///////////////////////////////////////////
 
-void ui_layout_push_win(ui_window_id window_id, vec3 start, vec2 dimensions, bool32_t add_margin) {
-	ui_layout_push(start, dimensions, add_margin);
+void ui_layout_window(ui_window_id window_id, vec3 start, vec2 dimensions, bool32_t add_margin) {
+	ui_layout_area(start, dimensions, add_margin);
 
 	ui_window_t* win    = &skui_windows[window_id];
 	ui_layout_t* layout = &skui_layouts.last();
@@ -392,6 +386,11 @@ void ui_layout_pop() {
 			win->curr_size.y = fmaxf(win->curr_size.y, (max_y - min_y));
 		}
 	}
+
+	// Store this as the most recent layout
+	ui_override_recent_layout(
+		{ layout->offset_initial.x + layout->margin, layout->offset_initial.y + layout->margin, layout->offset_initial.z },
+		{ max_x - min_x, max_y - min_y });
 
 	// Other part of the tools for viewing layouts
 	//if (idx == idx_show)
