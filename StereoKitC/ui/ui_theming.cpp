@@ -1012,9 +1012,9 @@ void ui_theme_visuals_update() {
 		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque");
 
 		theme_mat_opaque_same_z = material_copy_id(default_id_material_ui_quadrant);
-		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque_same_z");
-		material_set_depth_test  (theme_mat_opaque, depth_test_less_or_eq);
-		material_set_queue_offset(theme_mat_opaque, -20);
+		material_set_id          (theme_mat_opaque_same_z, "sk/ui/mat_opaque_same_z");
+		material_set_depth_test  (theme_mat_opaque_same_z, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_opaque_same_z, -10);
 
 		theme_mat_aura  = material_find(default_id_material_ui_aura);
 		theme_mat_carat = material_find(default_id_material_unlit);
