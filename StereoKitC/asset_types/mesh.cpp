@@ -328,7 +328,7 @@ bool32_t mesh_has_skin(mesh_t mesh) {
 ///////////////////////////////////////////
 
 void _mesh_set_weights(mesh_t mesh, const uint16_t* bone_ids_4, int32_t bone_id_4_count, const vec4* bone_weights, int32_t bone_weight_count) {
-	for (uint32_t i = 0; i < bone_weight_count; i++) {
+	for (int32_t i = 0; i < bone_weight_count; i++) {
 		mesh->skin_data.bone_data[i].weight[0] = (uint8_t)fminf(255, bone_weights[i].x * 255);
 		mesh->skin_data.bone_data[i].weight[1] = (uint8_t)fminf(255, bone_weights[i].y * 255);
 		mesh->skin_data.bone_data[i].weight[2] = (uint8_t)fminf(255, bone_weights[i].z * 255);
