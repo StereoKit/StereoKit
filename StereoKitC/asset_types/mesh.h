@@ -11,10 +11,8 @@
 
 namespace sk {
 
-
 struct mesh_weights_t {
-	uint16_t *bone_ids;
-	vec4     *weights;
+	bone_weight_t *bone_data;
 	matrix   *bone_inverse_transforms;
 	matrix   *bone_transforms;
 	vert_t   *deformed_verts;
