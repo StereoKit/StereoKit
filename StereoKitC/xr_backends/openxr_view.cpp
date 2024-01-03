@@ -159,7 +159,6 @@ void xr_extension_structs_free() {
 	xr_compositor_layers    .free();
 	xr_compositor_layer_sort.free();
 	xr_compositor_layer_ptrs.free();
-	xr_compositor_2nd_layer_ptrs.free();
 
 	xr_end_frame_chain_bytes .free();
 	xr_end_frame_chain_offset.free();
@@ -307,6 +306,7 @@ bool openxr_views_create() {
 			device_display_t display = {};
 			if (!openxr_display_create(types[t], &display))
 				return false;
+			display.active = false;
 
 			XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
 			state.active                = false;
@@ -369,6 +369,7 @@ void openxr_views_destroy() {
 	xr_displays_2nd      .free();
 	xr_display_2nd_states.free();
 	xr_display_2nd_layers.free();
+	xr_compositor_2nd_layer_ptrs.free();
 	xr_extension_structs_free();
 }
 
@@ -706,10 +707,12 @@ bool openxr_render_frame() {
 
 	// Check each secondary display to see if it's active or not
 	for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
-		xr_displays_2nd[i].active  = (bool32_t)xr_display_2nd_states[i].active;
+		if (xr_displays_2nd[i].active != (bool32_t)xr_display_2nd_states[i].active) {
+			xr_displays_2nd[i].active = (bool32_t)xr_display_2nd_states[i].active;
 
-		if (xr_displays_2nd[i].active) {
-			openxr_display_swapchain_update(&xr_displays_2nd[i]);
+			if (xr_displays_2nd[i].active) {
+				openxr_display_swapchain_update(&xr_displays_2nd[i]);
+			}
 		}
 	}
 	if (xr_displays[xr_display_primary_idx].render_scale != render_get_scaling() || xr_displays[xr_display_primary_idx].multisample != render_get_multisample()) {
