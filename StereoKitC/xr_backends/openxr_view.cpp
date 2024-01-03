@@ -105,6 +105,7 @@ array_t<size_t>  xr_compositor_layers     = {};
 array_t<int32_t> xr_compositor_layer_sort = {};
 
 array_t<XrCompositionLayerBaseHeader*> xr_compositor_layer_ptrs = {};
+array_t<XrCompositionLayerBaseHeader*> xr_compositor_2nd_layer_ptrs = {};
 
 ///////////////////////////////////////////
 
@@ -305,6 +306,7 @@ bool openxr_views_create() {
 			device_display_t display = {};
 			if (!openxr_display_create(types[t], &display))
 				return false;
+			display.active = false;
 
 			XrSecondaryViewConfigurationStateMSFT state = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_STATE_MSFT };
 			state.active                = false;
@@ -367,6 +369,7 @@ void openxr_views_destroy() {
 	xr_displays_2nd      .free();
 	xr_display_2nd_states.free();
 	xr_display_2nd_layers.free();
+	xr_compositor_2nd_layer_ptrs.free();
 	xr_extension_structs_free();
 }
 
@@ -705,7 +708,7 @@ bool openxr_render_frame() {
 	// Check each secondary display to see if it's active or not
 	for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 		if (xr_displays_2nd[i].active != (bool32_t)xr_display_2nd_states[i].active) {
-			xr_displays_2nd[i].active  = (bool32_t)xr_display_2nd_states[i].active;
+			xr_displays_2nd[i].active = (bool32_t)xr_display_2nd_states[i].active;
 
 			if (xr_displays_2nd[i].active) {
 				openxr_display_swapchain_update(&xr_displays_2nd[i]);
@@ -760,6 +763,7 @@ bool openxr_render_frame() {
 
 		// Set up any secondary displays
 		xr_display_2nd_layers.clear();
+		xr_compositor_2nd_layer_ptrs.clear();
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 			device_display_t* display = &xr_displays_2nd[i];
 			for (uint32_t s = 0; s < display->swapchain_color.backbuffer_views; s++)
@@ -770,11 +774,13 @@ bool openxr_render_frame() {
 				continue;
 			openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_capture_filter());
 
+			xr_compositor_2nd_layer_ptrs.add((XrCompositionLayerBaseHeader*)&display->projection_layer);
+
 			XrSecondaryViewConfigurationLayerInfoMSFT layer2nd = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_LAYER_INFO_MSFT };
 			layer2nd.viewConfigurationType = display->type;
 			layer2nd.environmentBlendMode  = display->blend;
 			layer2nd.layerCount            = 1;
-			layer2nd.layers                = (XrCompositionLayerBaseHeader**)&display->projection_layer;
+			layer2nd.layers                = xr_compositor_2nd_layer_ptrs.data + (xr_compositor_2nd_layer_ptrs.count - 1);
 			xr_display_2nd_layers.add(layer2nd);
 		}
 		if (xr_display_2nd_layers.count > 0) {
