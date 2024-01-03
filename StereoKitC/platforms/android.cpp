@@ -43,15 +43,26 @@ struct window_t {
 	bool                    uses_swapchain;
 };
 
-JavaVM           *android_vm                = nullptr;
-jobject           android_activity          = nullptr;
-JNIEnv           *android_env               = nullptr;
-AAssetManager    *android_asset_manager     = nullptr;
-jobject           android_asset_manager_obj = nullptr;
-ANativeWindow    *android_next_window       = nullptr;
-jobject           android_next_window_xam   = nullptr;
-bool              android_next_win_ready    = false;
-window_t          android_window            = {};
+// These are variables that are set outside of the normal initialization cycle,
+// such as the vm from when the library loads, or window change events from the
+// main activity.
+struct platform_android_persistent_state_t {
+	JavaVM        *vm;
+	ANativeWindow *next_window;
+	jobject        next_window_xam;
+	bool           next_win_ready;
+};
+
+struct platform_android_state_t {
+	JNIEnv        *env;
+	jobject        activity;
+	AAssetManager *asset_manager;
+	jobject        asset_manager_obj;
+	window_t       window;
+};
+
+static platform_android_state_t            local         = {};
+static platform_android_persistent_state_t local_persist = {};
 
 ///////////////////////////////////////////
 
@@ -65,7 +76,7 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 #if defined(SK_BUILD_SHARED)
 
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-	android_vm = vm;
+	local_persist.vm = vm;
 	return JNI_VERSION_1_6;
 }
 extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
@@ -78,21 +89,22 @@ extern "C" jint JNI_OnLoad_L(JavaVM* vm, void* reserved) {
 
 bool platform_impl_init() {
 	const sk_settings_t* settings = sk_get_settings_ref();
+	local = {};
 
-	android_activity   = (jobject)settings->android_activity;
-	if (android_vm == nullptr)
-		android_vm = (JavaVM*)settings->android_java_vm;
+	local.activity   = (jobject)settings->android_activity;
+	if (local_persist.vm == nullptr)
+		local_persist.vm = (JavaVM*)settings->android_java_vm;
 
-	if (android_vm == nullptr || android_activity == nullptr) {
+	if (local_persist.vm == nullptr || local.activity == nullptr) {
 		log_fail_reason(95, log_error, "Couldn't find Android's Java VM or Activity, you should load the StereoKitC library with something like Xamarin's JavaSystem.LoadLibrary, or manually assign it using sk_set_settings()");
 		return false;
 	}
 
 	// Get the java environment from the VM, and ensure it's attached to this
 	// thread
-	int result = android_vm->GetEnv((void **)&android_env, JNI_VERSION_1_6);
+	int result = local_persist.vm->GetEnv((void **)&local.env, JNI_VERSION_1_6);
 	if (result == JNI_EDETACHED) {
-		if (android_vm->AttachCurrentThread(&android_env, nullptr) != JNI_OK) {
+		if (local_persist.vm->AttachCurrentThread(&local.env, nullptr) != JNI_OK) {
 			log_fail_reason(95, log_error, "Couldn't attach the Java Environment to the current thread!");
 			return false;
 		}
@@ -102,34 +114,34 @@ bool platform_impl_init() {
 	}
 
 	// https://stackoverflow.com/questions/51099200/native-crash-jni-detected-error-in-application-thread-using-jnienv-from-th
-	//android_vm->AttachCurrentThread(&android_env, nullptr);
+	//local_persist.vm->AttachCurrentThread(&local.env, nullptr);
 
 	// Find the current android activity
 	// https://stackoverflow.com/questions/46869901/how-to-get-the-android-context-instance-when-calling-jni-method
-	/*jclass    activity_thread      = android_env->FindClass("android/app/ActivityThread");
-	jmethodID curr_activity_thread = android_env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
-	jobject   at                   = android_env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
-	jmethodID get_application      = android_env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
-	jobject   activity_inst        = android_env->CallObjectMethod(at, get_application);
-	android_activity = android_env->NewGlobalRef(activity_inst);
-	if (android_activity == nullptr) {
+	/*jclass    activity_thread      = local.env->FindClass("android/app/ActivityThread");
+	jmethodID curr_activity_thread = local.env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
+	jobject   at                   = local.env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
+	jmethodID get_application      = local.env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
+	jobject   activity_inst        = local.env->CallObjectMethod(at, get_application);
+	local.activity = local.env->NewGlobalRef(activity_inst);
+	if (local.activity == nullptr) {
 		log_fail_reason(95,  "Couldn't find the current Android application context!");
 		return false;
 	}*/
 
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
-	jclass    activity_class           = android_env->GetObjectClass(android_activity);
-	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
-	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
-	android_asset_manager_obj          = android_env->NewGlobalRef(asset_manager);
-	android_asset_manager = AAssetManager_fromJava(android_env, android_asset_manager_obj);
-	if (android_asset_manager == nullptr) {
+	jclass    activity_class           = local.env->GetObjectClass(local.activity);
+	jmethodID activity_class_getAssets = local.env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
+	jobject   asset_manager            = local.env->CallObjectMethod(local.activity, activity_class_getAssets); // activity.getAssets();
+	local.asset_manager_obj            = local.env->NewGlobalRef(asset_manager);
+	local.asset_manager = AAssetManager_fromJava(local.env, local.asset_manager_obj);
+	if (local.asset_manager == nullptr) {
 		log_fail_reason(95, log_error, "Couldn't get the Android asset manager!");
 		return false;
 	}
-	android_env->DeleteLocalRef(activity_class);
-	android_env->DeleteLocalRef(asset_manager);
+	local.env->DeleteLocalRef(activity_class);
+	local.env->DeleteLocalRef(asset_manager);
 
 #if defined(SK_DYNAMIC_OPENXR)
 	// Android has no universally supported openxr_loader yet, so on this
@@ -147,50 +159,50 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
-	android_env->DeleteGlobalRef(android_asset_manager_obj);
+	local.env->DeleteGlobalRef(local.asset_manager_obj);
 }
 
 ///////////////////////////////////////////
 
 void platform_impl_step() {
-	if (!android_next_win_ready) return;
+	if (!local_persist.next_win_ready) return;
 
 	// If we got our window from xamarin, it's a jobject, and needs
 	// converted into an ANativeWindow first!
-	if (android_next_window_xam != nullptr) {
-		android_next_window = ANativeWindow_fromSurface(android_env, android_next_window_xam);
-		android_next_window_xam = nullptr;
+	if (local_persist.next_window_xam != nullptr) {
+		local_persist.next_window = ANativeWindow_fromSurface(local.env, local_persist.next_window_xam);
+		local_persist.next_window_xam = nullptr;
 	}
 
-	if (android_window.window && android_window.window == android_next_window) {
+	if (local.window.window && local.window.window == local_persist.next_window) {
 		// It's the same window, lets just resize it
-		int32_t width  = ANativeWindow_getWidth (android_window.window);
-		int32_t height = ANativeWindow_getHeight(android_window.window);
+		int32_t width  = ANativeWindow_getWidth (local.window.window);
+		int32_t height = ANativeWindow_getHeight(local.window.window);
 		platform_win_resize(1, width, height);
 	} else {
 		// Completely new window! Destroy the old swapchain, and make a
 		// new one.
-		if (android_window.has_swapchain) {
-			android_window.has_swapchain = false;
-			skg_swapchain_destroy(&android_window.swapchain);
+		if (local.window.has_swapchain) {
+			local.window.has_swapchain = false;
+			skg_swapchain_destroy(&local.window.swapchain);
 		}
-		android_window.window = (ANativeWindow*)android_next_window;
+		local.window.window = (ANativeWindow*)local_persist.next_window;
 
-		if (android_window.window) {
-			int32_t width  = ANativeWindow_getWidth (android_window.window);
-			int32_t height = ANativeWindow_getHeight(android_window.window);
+		if (local.window.window) {
+			int32_t width  = ANativeWindow_getWidth (local.window.window);
+			int32_t height = ANativeWindow_getHeight(local.window.window);
 			platform_win_resize(1, width, height);
 		}
 	}
-	android_next_win_ready = false;
-	android_next_window    = nullptr;
+	local_persist.next_win_ready = false;
+	local_persist.next_window    = nullptr;
 }
 
 ///////////////////////////////////////////
 
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
 	if (window_id != 1) return;
-	window_t * win = &android_window;
+	window_t * win = &local.window;
 
 	width  = maxi(1, width);
 	height = maxi(1, height);
@@ -217,15 +229,15 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 ///////////////////////////////////////////
 
 void android_set_window(void *window) {
-	android_next_window    = (ANativeWindow*)window;
-	android_next_win_ready = true;
+	local_persist.next_window    = (ANativeWindow*)window;
+	local_persist.next_win_ready = true;
 }
 
 ///////////////////////////////////////////
 
 void android_set_window_xam(void *window) {
-	android_next_window_xam = (jobject)window;
-	android_next_win_ready  = true;
+	local_persist.next_window_xam = (jobject)window;
+	local_persist.next_win_ready  = true;
 }
 
 ///////////////////////////////////////////
@@ -233,7 +245,7 @@ void android_set_window_xam(void *window) {
 bool android_read_asset(const char* asset_name, void** out_data, size_t* out_size) {
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
 
-	AAsset *asset = AAssetManager_open(android_asset_manager, asset_name, AASSET_MODE_BUFFER);
+	AAsset *asset = AAssetManager_open(local.asset_manager, asset_name, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
 		*out_data = sk_malloc(*out_size + 1);
@@ -256,13 +268,13 @@ const int32_t PERMISSION_GRANTED = 0;
 ///////////////////////////////////////////
 
 bool android_check_app_permission(const char* permission) {
-	jclass    class_activity               = android_env->GetObjectClass(android_activity);
-	jmethodID activity_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jclass    class_activity               = local.env->GetObjectClass(local.activity);
+	jmethodID activity_checkSelfPermission = local.env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
 
-	jstring jobj_permission = android_env->NewStringUTF(permission);
-	jint    result          = android_env->CallIntMethod(android_activity, activity_checkSelfPermission, jobj_permission);
+	jstring jobj_permission = local.env->NewStringUTF(permission);
+	jint    result          = local.env->CallIntMethod(local.activity, activity_checkSelfPermission, jobj_permission);
 
-	android_env->DeleteLocalRef(jobj_permission);
+	local.env->DeleteLocalRef(jobj_permission);
 
 	return result == PERMISSION_GRANTED;
 }
@@ -271,32 +283,32 @@ bool android_check_app_permission(const char* permission) {
 
 bool android_check_manifest_permission(const char* permission)
 {
-	jclass       class_activity                =          android_env->GetObjectClass  (android_activity);
-	jmethodID    activity_getPackageManager    =          android_env->GetMethodID     (class_activity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
-	jmethodID    activity_getPackageName       =          android_env->GetMethodID     (class_activity, "getPackageName", "()Ljava/lang/String;");
-	jobject      jobj_packageManager           =          android_env->CallObjectMethod(android_activity, activity_getPackageManager);
-	jclass       class_packageManager          =          android_env->GetObjectClass  (jobj_packageManager);
-	jmethodID    packageManager_getPackageInfo =          android_env->GetMethodID     (class_packageManager, "getPackageInfo", "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
-	jstring      jobj_packageName              = (jstring)android_env->CallObjectMethod(android_activity, activity_getPackageName);
+	jclass       class_activity                =          local.env->GetObjectClass  (local.activity);
+	jmethodID    activity_getPackageManager    =          local.env->GetMethodID     (class_activity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+	jmethodID    activity_getPackageName       =          local.env->GetMethodID     (class_activity, "getPackageName", "()Ljava/lang/String;");
+	jobject      jobj_packageManager           =          local.env->CallObjectMethod(local.activity, activity_getPackageManager);
+	jclass       class_packageManager          =          local.env->GetObjectClass  (jobj_packageManager);
+	jmethodID    packageManager_getPackageInfo =          local.env->GetMethodID     (class_packageManager, "getPackageInfo", "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+	jstring      jobj_packageName              = (jstring)local.env->CallObjectMethod(local.activity, activity_getPackageName);
 
 	jint         flags = 4096; // PackageManager.GET_PERMISSIONS
-	jobject      jobj_packageInfo  = android_env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
-	jclass       class_packageInfo = android_env->GetObjectClass(jobj_packageInfo);
+	jobject      jobj_packageInfo  = local.env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
+	jclass       class_packageInfo = local.env->GetObjectClass(jobj_packageInfo);
 
-	jfieldID     packageInfo_requestedPermissions = android_env->GetFieldID(class_packageInfo, "requestedPermissions", "[Ljava/lang/String;");
-	jobjectArray jobj_requestedPermissions        = (jobjectArray)android_env->GetObjectField(jobj_packageInfo, packageInfo_requestedPermissions);
+	jfieldID     packageInfo_requestedPermissions = local.env->GetFieldID(class_packageInfo, "requestedPermissions", "[Ljava/lang/String;");
+	jobjectArray jobj_requestedPermissions        = (jobjectArray)local.env->GetObjectField(jobj_packageInfo, packageInfo_requestedPermissions);
 
-	jstring      jobj_permission = android_env->NewStringUTF(permission);
-	jclass       class_string    = android_env->GetObjectClass(jobj_permission);
-	jmethodID    string_equals   = android_env->GetMethodID(class_string, "equals", "(Ljava/lang/Object;)Z");
+	jstring      jobj_permission = local.env->NewStringUTF(permission);
+	jclass       class_string    = local.env->GetObjectClass(jobj_permission);
+	jmethodID    string_equals   = local.env->GetMethodID(class_string, "equals", "(Ljava/lang/Object;)Z");
 
 	// Iterate over the array
-	jsize length = android_env->GetArrayLength(jobj_requestedPermissions);
+	jsize length = local.env->GetArrayLength(jobj_requestedPermissions);
 	bool  result = false;
 	for (jsize i = 0; i < length; i++) {
-		jstring jobj_currPermission = (jstring)android_env->GetObjectArrayElement(jobj_requestedPermissions, i);
-		bool match = android_env->CallBooleanMethod(jobj_permission, string_equals, jobj_currPermission);
-		android_env->DeleteLocalRef(jobj_currPermission);
+		jstring jobj_currPermission = (jstring)local.env->GetObjectArrayElement(jobj_requestedPermissions, i);
+		bool match = local.env->CallBooleanMethod(jobj_permission, string_equals, jobj_currPermission);
+		local.env->DeleteLocalRef(jobj_currPermission);
 
 		if (match) {
 			result = true;
@@ -304,11 +316,11 @@ bool android_check_manifest_permission(const char* permission)
 		}
 	}
 
-	android_env->DeleteLocalRef(jobj_packageManager);
-	android_env->DeleteLocalRef(jobj_packageName);
-	android_env->DeleteLocalRef(jobj_packageInfo);
-	android_env->DeleteLocalRef(jobj_requestedPermissions);
-	android_env->DeleteLocalRef(jobj_permission);
+	local.env->DeleteLocalRef(jobj_packageManager);
+	local.env->DeleteLocalRef(jobj_packageName);
+	local.env->DeleteLocalRef(jobj_packageInfo);
+	local.env->DeleteLocalRef(jobj_requestedPermissions);
+	local.env->DeleteLocalRef(jobj_permission);
 
 	return result;
 
@@ -317,27 +329,27 @@ bool android_check_manifest_permission(const char* permission)
 ///////////////////////////////////////////
 
 void android_request_permission(const char* permission) {
-	jclass    class_activity                    = android_env->GetObjectClass(android_activity);
-	jmethodID contextCompat_checkSelfPermission = android_env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
-	jmethodID activity_requestPermissions       = android_env->GetMethodID   (class_activity, "requestPermissions",  "([Ljava/lang/String;I)V");
+	jclass    class_activity                    = local.env->GetObjectClass(local.activity);
+	jmethodID contextCompat_checkSelfPermission = local.env->GetMethodID   (class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jmethodID activity_requestPermissions       = local.env->GetMethodID   (class_activity, "requestPermissions",  "([Ljava/lang/String;I)V");
 
-	jstring      jobj_permission      = android_env->NewStringUTF  (permission);
-	jobjectArray jobj_permission_list = android_env->NewObjectArray(1, android_env->FindClass("java/lang/String"), NULL);
+	jstring      jobj_permission      = local.env->NewStringUTF  (permission);
+	jobjectArray jobj_permission_list = local.env->NewObjectArray(1, local.env->FindClass("java/lang/String"), NULL);
 
-	android_env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
-	android_env->CallVoidMethod       (android_activity, activity_requestPermissions, jobj_permission_list, 0);
+	local.env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
+	local.env->CallVoidMethod       (local.activity, activity_requestPermissions, jobj_permission_list, 0);
 
-	android_env->DeleteLocalRef(jobj_permission);
-	android_env->DeleteLocalRef(jobj_permission_list);
+	local.env->DeleteLocalRef(jobj_permission);
+	local.env->DeleteLocalRef(jobj_permission_list);
 }
 
 ///////////////////////////////////////////
 // Backend                               //
 ///////////////////////////////////////////
 
-void *backend_android_get_java_vm () { return android_vm; }
-void *backend_android_get_activity() { return android_activity; }
-void *backend_android_get_jni_env () { return android_env; }
+void *backend_android_get_java_vm () { return local_persist.vm; }
+void *backend_android_get_activity() { return local.activity; }
+void *backend_android_get_jni_env () { return local.env; }
 
 ///////////////////////////////////////////
 // Window code                           //
@@ -352,7 +364,7 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 ///////////////////////////////////////////
 
 platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
-	window_t* win = &android_window;
+	window_t* win = &local.window;
 
 	// Not all windows need a swapchain, but here's where we make 'em for those
 	// that do.
@@ -371,7 +383,7 @@ platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
 
 void platform_win_destroy(platform_win_t window) {
 	if (window != 1) return;
-	window_t* win = &android_window;
+	window_t* win = &local.window;
 
 	if (win->has_swapchain) {
 		skg_swapchain_destroy(&win->swapchain);
@@ -390,7 +402,7 @@ void platform_check_events() {
 
 bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
 	if (window_id != 1) return false;
-	window_t* win = &android_window;
+	window_t* win = &local.window;
 
 	if (win->events.count > 0) {
 		*out_event      = win->events[0].type;
@@ -404,7 +416,7 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
 	if (window != 1) return nullptr;
-	window_t* win = &android_window;
+	window_t* win = &local.window;
 
 	return win->has_swapchain ? &win->swapchain : nullptr;
 }
@@ -413,7 +425,7 @@ skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
 
 recti_t platform_win_rect(platform_win_t window_id) {
 	if (window_id != 1) return {};
-	window_t* win = &android_window;
+	window_t* win = &local.window;
 
 	return recti_t{ 0, 0,
 		win->swapchain.width,
