@@ -47,6 +47,7 @@ JavaVM           *android_vm                = nullptr;
 jobject           android_activity          = nullptr;
 JNIEnv           *android_env               = nullptr;
 AAssetManager    *android_asset_manager     = nullptr;
+jobject           android_asset_manager_obj = nullptr;
 ANativeWindow    *android_next_window       = nullptr;
 jobject           android_next_window_xam   = nullptr;
 bool              android_next_win_ready    = false;
@@ -121,12 +122,14 @@ bool platform_impl_init() {
 	jclass    activity_class           = android_env->GetObjectClass(android_activity);
 	jmethodID activity_class_getAssets = android_env->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
 	jobject   asset_manager            = android_env->CallObjectMethod(android_activity, activity_class_getAssets); // activity.getAssets();
-	jobject   global_asset_manager     = android_env->NewGlobalRef(asset_manager);
-	android_asset_manager = AAssetManager_fromJava(android_env, global_asset_manager);
+	android_asset_manager_obj          = android_env->NewGlobalRef(asset_manager);
+	android_asset_manager = AAssetManager_fromJava(android_env, android_asset_manager_obj);
 	if (android_asset_manager == nullptr) {
 		log_fail_reason(95, log_error, "Couldn't get the Android asset manager!");
 		return false;
 	}
+	android_env->DeleteLocalRef(activity_class);
+	android_env->DeleteLocalRef(asset_manager);
 
 #if defined(SK_DYNAMIC_OPENXR)
 	// Android has no universally supported openxr_loader yet, so on this
@@ -144,8 +147,7 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
-	if (android_vm)
-		android_vm->DetachCurrentThread();
+	android_env->DeleteGlobalRef(android_asset_manager_obj);
 }
 
 ///////////////////////////////////////////
