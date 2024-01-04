@@ -352,9 +352,7 @@ bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_lay
 	return ui_button_img_at(text, image, image_layout, final_pos, final_size, image_tint);
 }
 bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_g<char    >(text, image, image_layout, image_tint); }
-bool32_t ui_button_img_color(const char* text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img(text, image, image_layout, image_tint); }
 bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_g<char16_t>(text, image, image_layout, image_tint); }
-bool32_t ui_button_img_color_16(const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_g<char16_t>(text, image, image_layout, image_tint); }
 
 ///////////////////////////////////////////
 
