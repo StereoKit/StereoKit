@@ -619,6 +619,14 @@ float bounds_sdf_manhattan(bounds_t bounds, vec3 sample_point) {
 
 ///////////////////////////////////////////
 
+float bounds_sdf(bounds_t bounds, vec3 point) {
+	vec3  q      = vec3_abs(point-bounds.center) - bounds.dimensions/2;
+	float inside = fminf(fmaxf(q.x, fmaxf(q.y, q.z)), 0.0);
+	return vec3_magnitude(vec3{fmaxf(q.x,0), fmaxf(q.y,0), fmaxf(q.z,0)}) + inside;
+}
+
+///////////////////////////////////////////
+
 bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 	pt = vec3_abs(pt - bounds.center) * 2;
 	return

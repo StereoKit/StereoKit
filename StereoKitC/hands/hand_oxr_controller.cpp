@@ -1,4 +1,4 @@
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "../stereokit.h"
@@ -57,7 +57,7 @@ void hand_oxrc_update_pose(bool animate) {
 			? controller->palm
 			: hand->palm;
 
-		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
+		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked);
 		else         input_hand_sim_poses((handed_)hand_id, false, hand_pose.position, hand_pose.orientation);
 	}
 }

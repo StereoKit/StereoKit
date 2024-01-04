@@ -1,12 +1,17 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "file_picker.h"
-#include "../_stereokit.h"
+
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #if defined(SK_OS_WINDOWS)
 
@@ -16,9 +21,10 @@
 	#endif
 	#include <windows.h>
 	#include <commdlg.h>
-	#include <stdio.h>
 
 #elif defined(SK_OS_WINDOWS_UWP)
+
+	#include "../libraries/ferr_hash.h"
 
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -36,11 +42,9 @@
 	using namespace winrt::Windows::Foundation;
 	using namespace winrt::Windows::Storage::Streams;
 
-#elif defined(SK_OS_WEB)
-
-	#include <stdio.h>
-
 #endif
+
+#include <stdio.h>
 
 namespace sk {
 
@@ -127,16 +131,16 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 ///////////////////////////////////////////
 
-void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length), const file_filter_t *filters, int32_t filter_count) {
+void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
 	if (device_display_get_type() == display_type_flatscreen) {
 		fp_wfilename[0] = '\0';
 
 		// Build a filter string
 		char *filter = string_append(nullptr , 1, "(");
-		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], false, e == filter_count - 1 ? "" : ", ");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &in_arr_filters[e], false, e == filter_count - 1 ? "" : ", ");
 		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &filters[e], true, e == filter_count - 1 ? "" : ";");
+		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &in_arr_filters[e], true, e == filter_count - 1 ? "" : ";");
 		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
 		size_t len = strlen(filter);
 		wchar_t *w_filter = platform_to_wchar(filter);
@@ -155,20 +159,20 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 			settings.lpstrTitle = L"Open";
 			if (GetOpenFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
+				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				sk_free(filename);
 			} else {
-				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
+				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
 			}
 		} else if (mode == picker_mode_save) {
 			settings.Flags      = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = L"Save As";
 			if (GetSaveFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (on_confirm) on_confirm(callback_data, true, filename, (int32_t)(strlen(filename)+1));
+				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
 				sk_free(filename);
 			} else {
-				if (on_confirm) on_confirm(callback_data, false, nullptr, 0);
+				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
 			}
 		}
 
@@ -177,7 +181,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 		return;
 	}
 #elif defined(SK_OS_WINDOWS_UWP)
-	fp_callback  = on_confirm;
+	fp_callback  = picker_callback_sz;
 	fp_call_data = callback_data;
 
 	CoreDispatcher dispatcher = CoreApplication::MainView().CoreWindow().Dispatcher();
@@ -185,7 +189,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	if (mode == picker_mode_open) {
 		Pickers::FileOpenPicker picker;
 		for (int32_t i = 0; i < filter_count; i++) {
-			const char *ext = filters[i].ext;
+			const char *ext = in_arr_filters[i].ext;
 			while (*ext == '*') ext++;
 
 			char *ext_mem = nullptr;
@@ -207,7 +211,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 		Pickers::FileSavePicker picker;
 		auto exts{ winrt::single_threaded_vector<winrt::hstring>() };
 		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, filters[i].ext, (int)strlen(filters[i].ext)+1, wext, 32);
+			MultiByteToWideChar(CP_UTF8, 0, in_arr_filters[i].ext, (int)strlen(in_arr_filters[i].ext)+1, wext, 32);
 			exts.Append(wext);
 		}
 		picker.FileTypeChoices().Insert(L"File Type", exts);
@@ -230,7 +234,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	case picker_mode_open: {
 		fp_title = string_append(fp_title, 1, "Open (");
 		for (int32_t e = 0; e < filter_count; e++)
-			fp_title = platform_append_filter(fp_title, &filters[e], false, e == filter_count - 1 ? "" : ", ");
+			fp_title = platform_append_filter(fp_title, &in_arr_filters[e], false, e == filter_count - 1 ? "" : ", ");
 		fp_title = string_append(fp_title, 1, ")");
 	} break;
 	}
@@ -238,13 +242,13 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*on_c
 	fp_filter_count = filter_count;
 	sk_free(fp_filters);
 	fp_filters = sk_malloc_t(file_filter_t, fp_filter_count);
-	memcpy(fp_filters, filters, sizeof(file_filter_t) * fp_filter_count);
+	memcpy(fp_filters, in_arr_filters, sizeof(file_filter_t) * fp_filter_count);
 
 	file_picker_open_folder(fp_path.folder);
 
 	fp_win_pose  = matrix_transform_pose( matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	fp_call_data = callback_data;
-	fp_callback  = on_confirm;
+	fp_callback  = picker_callback_sz;
 	fp_mode = mode;
 	fp_show = true;
 #endif

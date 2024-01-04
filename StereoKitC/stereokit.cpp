@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
@@ -5,6 +10,7 @@
 
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
+#include "utils/random.h"
 
 #include "systems/render.h"
 #include "systems/input.h"
@@ -17,13 +23,13 @@
 #include "systems/world.h"
 #include "systems/defaults.h"
 #include "asset_types/animation.h"
-#include "platforms/win32.h"
-#include "platforms/uwp.h"
-#include "platforms/android.h"
+#include "platforms/_platform.h"
 #include "platforms/web.h"
-#include "platforms/platform.h"
-#include "platforms/platform_utils.h"
-#include "xr_backends/openxr.h"
+#include "tools/tools.h"
+
+#if defined(SK_OS_WEB)
+#include <emscripten/threading.h>
+#endif
 
 ///////////////////////////////////////////
 
@@ -32,7 +38,7 @@ using namespace sk;
 struct sk_state_t {
 	void        (*app_step_func)(void);
 	sk_settings_t settings;
-	system_info_t info ;
+	system_info_t info;
 	app_focus_    focus;
 	bool32_t      running;
 	bool32_t      in_step;
@@ -80,6 +86,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
+	ft_thread_name(ft_thread_current(), "StereoKit Main");
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
 
@@ -92,16 +99,22 @@ bool32_t sk_init(sk_settings_t settings) {
 		local.settings.flatscreen_pos_y  != 0;
 
 	// Set some default values
-	if (local.settings.app_name == nullptr)
-		local.settings.app_name = "StereoKit App";
-	if (local.settings.flatscreen_width  == 0)
-		local.settings.flatscreen_width  = 1280;
-	if (local.settings.flatscreen_height == 0)
-		local.settings.flatscreen_height = 720;
-	if (local.settings.render_scaling == 0)
-		local.settings.render_scaling = 1;
-	if (local.settings.render_multisample == 0)
-		local.settings.render_multisample = 1;
+	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
+	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
+	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
+	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
+	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
+
+	// display_preference is obsolete, so we'll fill in `mode` based on it, if
+	// mode hasn't been specified.
+	if (local.settings.mode == app_mode_none) {
+		if      (local.settings.display_preference == display_mode_mixedreality) local.settings.mode = app_mode_xr;
+		else if (local.settings.display_preference == display_mode_none        ) local.settings.mode = app_mode_window;
+		else if (local.settings.display_preference == display_mode_flatscreen  )
+			local.settings.mode = local.settings.disable_flatscreen_mr_sim
+				? app_mode_window
+				: app_mode_simulator;
+	}
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
@@ -116,23 +129,19 @@ bool32_t sk_init(sk_settings_t settings) {
 	stm_setup();
 	sk_step_timer();
 	local.frame = 0;
+	rand_set_seed((uint32_t)stm_now());
 
 	// Platform related systems
 	system_t sys_platform         = { "Platform"    };
 	system_t sys_platform_begin   = { "FrameBegin"  };
 	system_t sys_platform_render  = { "FrameRender" };
 
-	const char* platform_deps[] = { "Assets" };
-	sys_platform        .init_dependencies     = platform_deps;
-	sys_platform        .init_dependency_count = _countof(platform_deps);
-	sys_platform        .func_initialize       = platform_init;
-	sys_platform        .func_shutdown         = platform_shutdown;
-	sys_platform_begin  .func_step             = platform_step_begin;
-	sys_platform_render .func_step             = platform_step_end;
+	system_set_step_deps(sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
 
-	const char *frame_render_step_deps [] = {"App", "Text", "Sprites", "Lines", "World", "UILate", "Animation"};
-	sys_platform_render .step_dependencies     = frame_render_step_deps;
-	sys_platform_render .step_dependency_count = _countof(frame_render_step_deps);
+	sys_platform       .func_initialize = platform_init;
+	sys_platform       .func_shutdown   = platform_shutdown;
+	sys_platform_begin .func_step       = platform_step_begin;
+	sys_platform_render.func_step       = platform_step_end;
 
 	systems_add(&sys_platform);
 	systems_add(&sys_platform_begin);
@@ -140,149 +149,112 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Rest of the systems
 	system_t sys_defaults = { "Defaults" };
-	const char *default_deps[] = { "Platform", "Assets" };
-	sys_defaults.init_dependencies     = default_deps;
-	sys_defaults.init_dependency_count = _countof(default_deps);
-	sys_defaults.func_initialize       = defaults_init;
-	sys_defaults.func_shutdown         = defaults_shutdown;
+	system_set_initialize_deps(sys_defaults, "Platform", "Assets");
+	sys_defaults.func_initialize = defaults_init;
+	sys_defaults.func_shutdown   = defaults_shutdown;
 	systems_add(&sys_defaults);
 
 	system_t sys_ui = { "UI" };
-	const char *ui_deps     [] = {"Defaults"};
-	const char *ui_step_deps[] = {"Input", "FrameBegin"};
-	sys_ui.init_dependencies     = ui_deps;
-	sys_ui.init_dependency_count = _countof(ui_deps);
-	sys_ui.step_dependencies     = ui_step_deps;
-	sys_ui.step_dependency_count = _countof(ui_step_deps);
-	sys_ui.func_initialize       = ui_init;
-	sys_ui.func_step             = ui_step;
-	sys_ui.func_shutdown         = ui_shutdown;
+	system_set_initialize_deps(sys_ui, "Defaults");
+	system_set_step_deps      (sys_ui, "Input", "FrameBegin");
+	sys_ui.func_initialize = ui_init;
+	sys_ui.func_step       = ui_step;
+	sys_ui.func_shutdown   = ui_shutdown;
 	systems_add(&sys_ui);
 
 	system_t sys_ui_late = { "UILate" };
-	const char *ui_late_step_deps[] = {"App"};
-	sys_ui_late.step_dependencies     = ui_late_step_deps;
-	sys_ui_late.step_dependency_count = _countof(ui_late_step_deps);
-	sys_ui_late.func_step             = ui_step_late;
+	system_set_step_deps(sys_ui_late, "App", "Tools");
+	sys_ui_late.func_step = ui_step_late;
 	systems_add(&sys_ui_late);
 
 	system_t sys_physics = { "Physics" };
-	const char *physics_deps     [] = {"Defaults"};
-	const char *physics_step_deps[] = {"Input", "FrameBegin"};
-	sys_physics.init_dependencies     = physics_deps;
-	sys_physics.init_dependency_count = _countof(physics_deps);
-	sys_physics.step_dependencies     = physics_step_deps;
-	sys_physics.step_dependency_count = _countof(physics_step_deps);
-	sys_physics.func_initialize       = physics_init;
-	sys_physics.func_step             = physics_step;
-	sys_physics.func_shutdown         = physics_shutdown;
+	system_set_initialize_deps(sys_physics, "Defaults");
+	system_set_step_deps      (sys_physics, "Input", "FrameBegin");
+	sys_physics.func_initialize = physics_init;
+	sys_physics.func_step       = physics_step;
+	sys_physics.func_shutdown   = physics_shutdown;
 	systems_add(&sys_physics);
 
 	system_t sys_renderer = { "Renderer" };
-	const char *renderer_deps     [] = {"Platform", "Defaults"};
-	const char *renderer_step_deps[] = {"Physics", "FrameBegin"};
-	sys_renderer.init_dependencies     = renderer_deps;
-	sys_renderer.init_dependency_count = _countof(renderer_deps);
-	sys_renderer.step_dependencies     = renderer_step_deps;
-	sys_renderer.step_dependency_count = _countof(renderer_step_deps);
-	sys_renderer.func_initialize       = render_init;
-	sys_renderer.func_step             = render_step;
-	sys_renderer.func_shutdown         = render_shutdown;
+	system_set_initialize_deps(sys_renderer, "Platform", "Defaults");
+	system_set_step_deps      (sys_renderer, "Physics", "FrameBegin");
+	sys_renderer.func_initialize = render_init;
+	sys_renderer.func_step       = render_step;
+	sys_renderer.func_shutdown   = render_shutdown;
 	systems_add(&sys_renderer);
 
 	system_t sys_assets = { "Assets" };
-	const char *assets_step_deps[] = {"FrameRender"};
-	sys_assets.step_dependencies     = assets_step_deps;
-	sys_assets.step_dependency_count = _countof(assets_step_deps);
+	system_set_initialize_deps(sys_assets, "Platform");
+	system_set_step_deps      (sys_assets, "FrameRender");
 	sys_assets.func_initialize       = assets_init;
 	sys_assets.func_step             = assets_step;
 	sys_assets.func_shutdown         = assets_shutdown;
 	systems_add(&sys_assets);
 
 	system_t sys_audio = { "Audio" };
-	const char *audio_deps     [] = {"Platform"};
-	const char *audio_step_deps[] = {"Platform"};
-	sys_audio.init_dependencies     = audio_deps;
-	sys_audio.init_dependency_count = _countof(audio_deps);
-	sys_audio.step_dependencies     = audio_step_deps;
-	sys_audio.step_dependency_count = _countof(audio_step_deps);
-	sys_audio.func_initialize       = audio_init;
-	sys_audio.func_step             = audio_step;
-	sys_audio.func_shutdown         = audio_shutdown;
+	system_set_initialize_deps(sys_audio, "Platform");
+	system_set_step_deps      (sys_audio, "Platform");
+	sys_audio.func_initialize = audio_init;
+	sys_audio.func_step       = audio_step;
+	sys_audio.func_shutdown   = audio_shutdown;
 	systems_add(&sys_audio);
 
 	system_t sys_input = { "Input" };
-	const char *input_deps     [] = {"Platform", "Defaults"};
-	const char *input_step_deps[] = {"FrameBegin"};
-	sys_input.init_dependencies     = input_deps;
-	sys_input.init_dependency_count = _countof(input_deps);
-	sys_input.step_dependencies     = input_step_deps;
-	sys_input.step_dependency_count = _countof(input_step_deps);
-	sys_input.func_initialize       = input_init;
-	//sys_input.func_step             = input_step; // Handled by the platform, not my fav solution
-	sys_input.func_shutdown         = input_shutdown;
+	system_set_initialize_deps(sys_input, "Platform", "Defaults");
+	system_set_step_deps      (sys_input, "FrameBegin");
+	sys_input.func_initialize = input_init;
+	//sys_input.func_step       = input_step; // Handled by the platform, not my fav solution
+	sys_input.func_shutdown   = input_shutdown;
 	systems_add(&sys_input);
 
 	system_t sys_text = { "Text" };
-	const char *text_deps     [] = {"Defaults"};
-	const char *text_step_deps[] = {"App"};
-	sys_text.init_dependencies     = text_deps;
-	sys_text.init_dependency_count = _countof(text_deps);
-	sys_text.step_dependencies     = text_step_deps;
-	sys_text.step_dependency_count = _countof(text_step_deps);
-	sys_text.func_step             = text_step;
-	sys_text.func_shutdown         = text_shutdown;
+	system_set_initialize_deps(sys_text, "Defaults");
+	system_set_step_deps      (sys_text, "App");
+	sys_text.func_step     = text_step;
+	sys_text.func_shutdown = text_shutdown;
 	systems_add(&sys_text);
 
 	system_t sys_sprite = { "Sprites" };
-	const char *sprite_deps     [] = {"Defaults"};
-	const char *sprite_step_deps[] = {"App"};
-	sys_sprite.init_dependencies     = sprite_deps;
-	sys_sprite.init_dependency_count = _countof(sprite_deps);
-	sys_sprite.step_dependencies     = sprite_step_deps;
-	sys_sprite.step_dependency_count = _countof(sprite_step_deps);
-	sys_sprite.func_initialize       = sprite_drawer_init;
-	sys_sprite.func_step             = sprite_drawer_step;
-	sys_sprite.func_shutdown         = sprite_drawer_shutdown;
+	system_set_initialize_deps(sys_sprite, "Defaults");
+	system_set_step_deps      (sys_sprite, "App", "Tools");
+	sys_sprite.func_initialize = sprite_drawer_init;
+	sys_sprite.func_step       = sprite_drawer_step;
+	sys_sprite.func_shutdown   = sprite_drawer_shutdown;
 	systems_add(&sys_sprite);
 
 	system_t sys_lines = { "Lines" };
-	const char *line_deps       [] = {"Defaults"};
-	const char *line_step_deps[] = {"App"};
-	sys_lines.init_dependencies     = line_deps;
-	sys_lines.init_dependency_count = _countof(line_deps);
-	sys_lines.step_dependencies     = line_step_deps;
-	sys_lines.step_dependency_count = _countof(line_step_deps);
-	sys_lines.func_initialize       = line_drawer_init;
-	sys_lines.func_step             = line_drawer_step;
-	sys_lines.func_shutdown         = line_drawer_shutdown;
+	system_set_initialize_deps(sys_lines, "Defaults");
+	system_set_step_deps      (sys_lines, "App");
+	sys_lines.func_initialize = line_drawer_init;
+	sys_lines.func_step       = line_drawer_step;
+	sys_lines.func_shutdown   = line_drawer_shutdown;
 	systems_add(&sys_lines);
 
 	system_t sys_world = { "World" };
-	const char *world_deps     [] = {"Platform", "Defaults", "Renderer"};
-	const char *world_step_deps[] = {"Platform", "App"};
-	sys_world.init_dependencies     = world_deps;
-	sys_world.init_dependency_count = _countof(world_deps);
-	sys_world.step_dependencies     = world_step_deps;
-	sys_world.step_dependency_count = _countof(world_step_deps);
-	sys_world.func_initialize       = world_init;
-	sys_world.func_step             = world_step;
-	sys_world.func_shutdown         = world_shutdown;
+	system_set_initialize_deps(sys_world, "Platform", "Defaults", "Renderer");
+	system_set_step_deps      (sys_world, "Platform", "App");
+	sys_world.func_initialize = world_init;
+	sys_world.func_step       = world_step;
+	sys_world.func_shutdown   = world_shutdown;
 	systems_add(&sys_world);
 
+	system_t sys_tools = { "Tools" };
+	system_set_initialize_deps(sys_tools, "Platform", "Defaults", "UI");
+	system_set_step_deps      (sys_tools, "App");
+	sys_tools.func_initialize = tools_init;
+	sys_tools.func_step       = tools_step;
+	sys_tools.func_shutdown   = tools_shutdown;
+	systems_add(&sys_tools);
+
 	system_t sys_anim = { "Animation" };
-	const char *anim_step_deps[] = {"App"};
-	sys_anim.step_dependencies     = anim_step_deps;
-	sys_anim.step_dependency_count = _countof(anim_step_deps);
-	sys_anim.func_step             = anim_step;
-	sys_anim.func_shutdown         = anim_shutdown;
+	system_set_step_deps(sys_anim, "App");
+	sys_anim.func_step     = anim_step;
+	sys_anim.func_shutdown = anim_shutdown;
 	systems_add(&sys_anim);
 
 	system_t sys_app = { "App" };
-	const char *app_step_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
-	sys_app.step_dependencies     = app_step_deps;
-	sys_app.step_dependency_count = _countof(app_step_deps);
-	sys_app.func_step             = sk_app_step;
+	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI");
+	sys_app.func_step = sk_app_step;
 	systems_add(&sys_app);
 
 	local.initialized = systems_initialize();
@@ -319,6 +291,7 @@ void sk_shutdown_unsafe(void) {
 
 	systems_shutdown();
 	sk_mem_log_allocations();
+	log_clear_subscribers();
 
 	local = {};
 	local.disallow_user_shutdown = true;
@@ -407,13 +380,13 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 ///////////////////////////////////////////
 
-void (*_sk_run_data_app_update)(void *);
-void  *_sk_run_data_update_data;
+void (*_sk_run_data_app_step)(void *);
+void  *_sk_run_data_step_data;
 void (*_sk_run_data_app_shutdown)(void *);
 void  *_sk_run_data_shutdown_data;
-void sk_run_data(void (*app_update)(void *update_data), void *update_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
-	_sk_run_data_app_update    = app_update;
-	_sk_run_data_update_data   = update_data;
+void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
+	_sk_run_data_app_step      = app_step;
+	_sk_run_data_step_data     = step_data;
 	_sk_run_data_app_shutdown  = app_shutdown;
 	_sk_run_data_shutdown_data = shutdown_data;
 
@@ -422,11 +395,11 @@ void sk_run_data(void (*app_update)(void *update_data), void *update_data, void 
 #if defined(SK_OS_WEB)
 	sk_first_step();
 	web_start_main_loop(
-		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); },
+		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); },
 		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
 #else
 	while (sk_step(
-		[]() { if (_sk_run_data_app_update  ) _sk_run_data_app_update  (_sk_run_data_update_data  ); }));
+		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); }));
 
 	if (_sk_run_data_app_shutdown)
 		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);
@@ -472,6 +445,12 @@ void sk_assert_thread_valid() {
 		platform_msgbox_err(err, "Fatal Error");
 		abort();
 	}
+}
+
+///////////////////////////////////////////
+
+ft_id_t  sk_main_thread() {
+	return local.init_thread;
 }
 
 ///////////////////////////////////////////
@@ -580,6 +559,10 @@ bool32_t sk_has_stepped() { return local.has_stepped; }
 ///////////////////////////////////////////
 
 bool32_t sk_is_initialized() { return local.initialized; }
+
+///////////////////////////////////////////
+
+bool32_t sk_is_running() { return local.running; }
 
 ///////////////////////////////////////////
 

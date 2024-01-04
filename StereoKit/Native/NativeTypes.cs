@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -14,7 +13,12 @@ namespace StereoKit
 
 		/// <summary>Which display type should we try to load? Default is 
 		/// `DisplayMode.MixedReality`.</summary>
+		[Obsolete("displayPreference will be removed in v0.4, use SKSettings.mode instead.")]
 		public DisplayMode  displayPreference;
+		/// <summary>Which operation mode should we use for this app? Default
+		/// is XR, and by default the app will fall back to Simulator if XR
+		/// fails or is unavailable.</summary>
+		public AppMode      mode;
 		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
@@ -101,6 +105,11 @@ namespace StereoKit
 		/// can check World.OriginMode and World.OriginOffset to inspect what
 		/// StereoKit actually landed on.</summary>
 		public OriginMode origin;
+
+		/// <summary>If StereoKit has nothing to render for this frame, it
+		/// skips submitting a proojection layer to OpenXR entirely.</summary>
+		public bool omitEmptyFrames { get { return _omitEmptyFrames > 0; } set { _omitEmptyFrames = value ? 1 : 0; } }
+		private int _omitEmptyFrames;
 
 		/// <summary>A pointer to the JNI's JavaVM structure, only used for
 		/// Android applications. This is optional, even for Android.</summary>
@@ -453,8 +462,10 @@ namespace StereoKit
 	/// <summary>A callback for when log events occur.</summary>
 	/// <param name="level">The level of severity of this log event.</param>
 	/// <param name="text">The text contents of the log event.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
@@ -669,6 +680,9 @@ namespace StereoKit
 		/// <summary>Refers to the text position indicator carat on text input
 		/// elements.</summary>
 		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.
+		/// </summary>
+		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
@@ -678,9 +692,12 @@ namespace StereoKit
 	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>The default category, used to indicate that no category
+		/// has been selected.</summary>
+		None = 0,
 		/// <summary>This is the main accent color used by window headers,
 		/// separators, etc.</summary>
-		Primary = 0,
+		Primary,
 		/// <summary>This is a background sort of color that should generally
 		/// be dark. Used by window bodies and backgrounds of certain elements.
 		/// </summary>
@@ -770,6 +787,30 @@ namespace StereoKit
 		/// layout. This will work for layouts that are fixed sized, but not
 		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
+	}
+
+	public enum UICorner
+	{
+		None        = 0,
+		TopRight    = 1 << 1,
+		TopLeft     = 1 << 0,
+		BottomLeft  = 1 << 3,
+		BottomRight = 1 << 2,
+		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
+		Top    = TopLeft    | TopRight,
+		Bottom = BottomLeft | BottomRight,
+		Left   = TopLeft    | BottomLeft,
+		Right  = TopRight   | BottomRight,
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UILathePt
+	{
+		public Vec2 pt;
+		public Vec2 normal;
+		public Color32 color;
+		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
 	}
 
 	/// <summary>Id of a simulated hand pose, for use with

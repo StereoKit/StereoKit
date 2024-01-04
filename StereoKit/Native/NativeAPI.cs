@@ -412,7 +412,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_node_info_remove        (IntPtr model, int node, [In] byte[] info_key_u8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_node_info_clear         (IntPtr model, int node);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_count         (IntPtr model, int node);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_node_info_count         (IntPtr model, int node);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_node_info_iterate       (IntPtr model, int node, ref int ref_iterator, out IntPtr out_key_utf8, out IntPtr out_value_utf8);
 
@@ -472,8 +472,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model_mat  (IntPtr model, IntPtr material_override, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_blit           (IntPtr to_rendertarget, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_pose([In] byte[] file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture  ([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float fov_degrees, TexFormat tex_format);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture  ([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float fov_degrees, TexFormat tex_format, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 
@@ -585,6 +585,32 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_find         ([In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_create       (Pose pose);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_set_id       (IntPtr anchor, [In] byte[] asset_id_utf8);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_id       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_addref       (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_release      (IntPtr anchor);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_try_set_persistent(IntPtr anchor, [MarshalAs(UnmanagedType.Bool)] bool persistent);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_persistent(IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern Pose                anchor_get_pose     (IntPtr anchor);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_changed  (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_name     (IntPtr anchor);
+		[DllImport(dll, CallingConvention = call                 )] public static extern BtnState            anchor_get_tracked  (IntPtr anchor);
+
+		[DllImport(dll, CallingConvention = call                 )] public static extern void                anchor_clear_stored ();
+		[DllImport(dll, CallingConvention = call                 )] public static extern AnchorCaps          anchor_get_capabilities();
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 anchor_get_count    ();
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_index    (int index);
+		[DllImport(dll, CallingConvention = call                 )] public static extern int                 anchor_get_new_count();
+		[DllImport(dll, CallingConvention = call                 )] public static extern IntPtr              anchor_get_new_index(int index);
+		[DllImport(dll, CallingConvention = call                 )] public static extern bool                anchor_get_perception_anchor(IntPtr anchor, out IntPtr perception_spatial_anchor);
+
+		///////////////////////////////////////////
+
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_has_bounds                ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         world_get_bounds_size           ();
@@ -660,8 +686,8 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_write      (LogLevel level, string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallback on_log);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_unsubscribe(LogCallback on_log);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe_data  (LogCallbackData on_log, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_unsubscribe_data(LogCallbackData on_log, IntPtr context);
 		
 		///////////////////////////////////////////
 
@@ -684,6 +710,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_verts  ([In, Out] Vertex[] ref_vertices, int vertex_count, float overflow);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_quadrant_size_mesh   (IntPtr ref_mesh, float overflow);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr ui_gen_quadrant_mesh    (UICorner rounded_corners, float corner_radius, uint corner_resolution, [MarshalAs(UnmanagedType.Bool)] bool delete_flat_sides, [In] UILathePt[] lathe_pts, int lathe_pt_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_show_volumes         ([MarshalAs(UnmanagedType.Bool)] bool show);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_enable_far_interact  ([MarshalAs(UnmanagedType.Bool)] bool enable);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -698,8 +725,14 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_theme_color_state(UIColor color_type, UIColorState state, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_theme_color_state(UIColor color_type, UIColorState state);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_element_visual   (UIVisual element_visual, IntPtr mesh, IntPtr material, Vec2 min_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_element_color    (UIVisual element_visual, UIColor color_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_set_element_sound    (UIVisual element_visual, IntPtr activate, IntPtr deactivate);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose   ui_popup_pose           (Vec3 shift);
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_grab_aura        ([MarshalAs(UnmanagedType.Bool)] bool enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_grab_aura         ();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_grab_aura_enabled     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_text_style       (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_text_style        ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle ui_get_text_style   ();
@@ -736,6 +769,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_sameline      ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  ui_line_height   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_space         (float space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_vspace        (float vertical_space);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_hspace        (float horizontal_space);
 
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting (Handed hand);

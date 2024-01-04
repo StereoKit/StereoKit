@@ -106,6 +106,14 @@ float2 FingerGlowEx(float3 world_pos, float3 world_norm) { return sk_finger_glow
 
 ///////////////////////////////////////////
 
+float sk_finger_distance(float3 world_pos) {
+	return min(
+		length(sk_fingertip[0].xyz - world_pos),
+		length(sk_fingertip[1].xyz - world_pos));
+}
+
+///////////////////////////////////////////
+
 float sk_finger_glow(float3 world_pos, float3 world_norm) {
 	float2 glow = sk_finger_glow_ex(world_pos, world_norm);
 	glow.x = pow(saturate(1 - glow.x / 0.12), 2);

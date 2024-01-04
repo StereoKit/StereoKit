@@ -1,43 +1,66 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "simulator.h"
 
 #include "../_stereokit.h"
 #include "../stereokit_ui.h" // for ui_has_keyboard_focus
 #include "../device.h"
+#include "../log.h"
 #include "../libraries/stref.h"
-#include "../platforms/platform_utils.h"
+#include "../libraries/sokol_time.h"
+#include "../platforms/platform.h"
+#include "../platforms/_platform.h"
+#include "../systems/system.h"
 #include "../systems/input.h"
+#include "../systems/input_keyboard.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../systems/world.h"
+#include "../asset_types/anchor.h"
 
 namespace sk {
 
 ///////////////////////////////////////////
 
-int32_t sim_gaze_pointer;
-vec3    sim_head_rot;
-vec3    sim_head_pos;
-pose_t  sim_bounds_pose;
-bool    sim_mouse_look;
+int32_t        sim_gaze_pointer;
+vec3           sim_head_rot;
+vec3           sim_head_pos;
+pose_t         sim_bounds_pose;
+bool           sim_mouse_look;
 
-const float sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
-const vec2  sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement to rotation;
+platform_win_t      sim_window;
+pipeline_surface_id sim_surface;
+system_t*           sim_render_sys;
+
+const float    sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
+const vec2     sim_rot_speed  = { 10.f, 5.f }; // converting mouse pixel movement to rotation;
 
 ///////////////////////////////////////////
 
-void simulator_mouse_step();
+void sim_physical_key_interact();
+void sim_surface_resize        (pipeline_surface_id surface, int32_t width, int32_t height);
 
 ///////////////////////////////////////////
 
 bool simulator_init() {
+	const sk_settings_t* settings = sk_get_settings_ref();
+
 	device_data.has_hand_tracking = true;
 	device_data.has_eye_gaze      = true;
 	device_data.tracking          = device_tracking_6dof;
+	device_data.display_blend     = display_blend_opaque;
+	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Simulator");
 
 	sim_head_rot     = { -21, 0.0001f, 0 };
 	sim_head_pos     = { 0, 0.2f, 0.0f };
 	sim_mouse_look   = false;
 	sim_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
+	sim_window       = -1;
+	sim_render_sys   = systems_find("FrameRender");
 
 	quat initial_rot = quat_from_angles(0, sim_head_rot.y, 0);
 	switch (sk_get_settings_ref()->origin) {
@@ -46,19 +69,84 @@ bool simulator_init() {
 	case origin_mode_stage: world_origin_mode = origin_mode_local; world_origin_offset = { sim_head_pos - vec3{0,1.5f,0}, initial_rot }; sim_bounds_pose = { world_origin_offset.position, quat_inverse(world_origin_offset.orientation) }; break;
 	}
 
+	recti_t win_size = {};
+	if (sk_use_manual_pos() || !platform_key_load_bytes("WindowLocation", &win_size, sizeof(win_size))) {
+		win_size.x = settings->flatscreen_pos_x;
+		win_size.y = settings->flatscreen_pos_y;
+		win_size.w = settings->flatscreen_width;
+		win_size.h = settings->flatscreen_height;
+	}
+
+	switch (platform_win_type()) {
+	case platform_win_type_creatable: {
+		sim_window = platform_win_make(settings->app_name, win_size, platform_surface_swapchain);
+		if (sim_window == -1) {
+			log_fail_reason(90, log_error, "Failed to create platform window.");
+			return false;
+		}
+	} break;
+	case platform_win_type_existing: {
+		sim_window = platform_win_get_existing(platform_surface_swapchain);
+	} break;
+	}
+
+	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
+	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
+	if (swapchain)
+		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
+
+	anchors_init(anchor_system_stage);
 	return true;
 }
 
 ///////////////////////////////////////////
 
+void sim_surface_resize(pipeline_surface_id surface, int32_t width, int32_t height) {
+	device_data.display_width  = width;
+	device_data.display_height = height;
+
+	if (render_pipeline_surface_resize(surface, width, height, 8))
+		render_update_projection();
+}
+
+///////////////////////////////////////////
+
 void simulator_shutdown() {
+	recti_t r = platform_win_rect(sim_window);
+	platform_key_save_bytes("WindowLocation", &r, sizeof(r));
+
+	render_pipeline_shutdown();
+	sim_surface = -1;
+	platform_win_destroy(sim_window);
+	sim_window = -1;
+	anchors_shutdown();
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_begin() {
-	if (simulator_is_simulating_movement()) {
+	// Process events from the simulator window
+	platform_evt_       evt  = {};
+	platform_evt_data_t data = {};
+	while (platform_win_next_event(sim_window, &evt, &data)) {
+		switch (evt) {
+		case platform_evt_app_focus:    sk_set_app_focus (data.app_focus); break;
+		case platform_evt_key_press:    input_key_inject_press  (data.press_release); sim_physical_key_interact(); break;
+		case platform_evt_key_release:  input_key_inject_release(data.press_release); sim_physical_key_interact(); break;
+		case platform_evt_character:    input_text_inject_char  (data.character);                                  break;
+		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
+		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
+		//case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
+		case platform_evt_close:        sk_quit(); break;
+		case platform_evt_resize:       sim_surface_resize(sim_surface, data.resize.width, data.resize.height); break;
+		case platform_evt_none: break;
+		default: break;
+		}
+	}
 
+	input_step();
+
+	if (simulator_is_simulating_movement()) {
 		// Get key based movement
 		vec3 movement = {};
 		if (!ui_has_keyboard_focus()) {
@@ -102,18 +190,14 @@ void simulator_step_begin() {
 		sim_mouse_look = false;
 	}
 
-	if (sk_get_settings_ref()->disable_flatscreen_mr_sim) {
-		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, false);
-	} else {
-		bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
-		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
-		ray_t ray = {};
-		if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
-			input_eyes_pose_world.position    = ray.pos;
-			input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
-			input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
-			input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
-		}
+	bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
+	input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
+	ray_t ray = {};
+	if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
+		input_eyes_pose_world.position    = ray.pos;
+		input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
+		input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
+		input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
 	}
 
 	pointer_t *pointer_head = input_get_pointer(sim_gaze_pointer);
@@ -123,12 +207,26 @@ void simulator_step_begin() {
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_end() {
+	anchors_step_end();
 	input_update_poses(true);
+
+	matrix view = matrix_invert(render_get_cam_final());
+	matrix proj = render_get_projection_matrix();
+	render_pipeline_surface_set_clear      (sim_surface, render_get_clear_color_ln());
+	render_pipeline_surface_set_layer      (sim_surface, render_get_filter());
+	render_pipeline_surface_set_perspective(sim_surface, &view, &proj, 1);
+
+	render_pipeline_draw();
+
+	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
+	sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
+	render_pipeline_surface_to_swapchain(sim_surface, swapchain);
 }
 
 ///////////////////////////////////////////
@@ -160,5 +258,12 @@ pose_t simulator_bounds_pose() {
 	});
 }
 
+///////////////////////////////////////////
+
+void sim_physical_key_interact() {
+	// On desktop, we want to hide soft keyboards on physical presses
+	input_set_last_physical_keypress_time(time_totalf_unscaled());
+	platform_keyboard_show(false, text_context_text);
+}
 
 }

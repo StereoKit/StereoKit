@@ -302,8 +302,21 @@ namespace StereoKit
 		/// space is added vertically, otherwise, space is added
 		/// horizontally.</summary>
 		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space) 
+		public static void Space (float space)
 			=> NativeAPI.ui_space(space);
+
+		/// <summary>Adds some vertical space to the current line! All UI
+		/// following elements on this line will be offset.</summary>
+		/// <param name="verticalSpace">Space in meters to shift the layout by.
+		/// </param>
+		public static void VSpace(float verticalSpace)
+			=> NativeAPI.ui_vspace(verticalSpace);
+
+		/// <summary>Adds some horizontal space to the current line!</summary>
+		/// <param name="horizontalSpace">Space in meters to shift the layout
+		/// by.</param>
+		public static void HSpace(float horizontalSpace)
+			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <summary>This Method is obsolete and will be removed soon. Please
 		/// use any other overload of this method.</summary>
@@ -1235,6 +1248,28 @@ namespace StereoKit
 		public static void PopPreserveKeyboard()
 			=> NativeAPI.ui_pop_preserve_keyboard();
 
+		/// <summary>This pushes an enabled status for grab auras onto the
+		/// stack. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab. MUST be matched
+		/// by a PopGrabAura call.</summary>
+		/// <param name="enabled">Is the grab aura enabled or not?</param>
+		public static void PushGrabAura(bool enabled)
+			=> NativeAPI.ui_push_grab_aura(enabled);
+
+		/// <summary>This removes an enabled status for grab auras from the
+		/// stack, returning it to the state before the previous PushGrabAura
+		/// call. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab.</summary>
+		public static void PopGrabAura()
+			=> NativeAPI.ui_pop_grab_aura();
+
+		/// <summary>This retreives the top of the grab aura enablement stack,
+		/// in case you need to know if the current window will have an aura.
+		/// </summary>
+		/// <returns>The enabled value at the top of the stack.</returns>
+		public static bool GrabAuraEnabled()
+			=> NativeAPI.ui_grab_aura_enabled();
+
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
 		/// </summary>
@@ -1242,7 +1277,7 @@ namespace StereoKit
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
-		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// <summary>Removes a TextStyle from the stack, and whatever was
 		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
@@ -1298,7 +1333,7 @@ namespace StereoKit
 		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
-		/// element. 
+		/// element.
 		/// 
 		/// Note that StereoKit's default UI assets use a type of quadrant
 		/// sizing that is implemented in the Material _and_ the Mesh. You
@@ -1319,7 +1354,28 @@ namespace StereoKit
 		/// This lets UI elements to accommodate for this minimum size, and
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
-			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, Vec2.Zero);
+			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, minSize);
+
+		/// <summary>This allows you to override the color category that a UI
+		/// element is assigned to.</summary>
+		/// <param name="visual">The UI element type to set the color category
+		/// of.</param>
+		/// <param name="colorCategory">The category of color to assign to this
+		/// UI element. Use UI.SetThemeColor in combination with this to assign
+		/// a specific color.</param>
+		public static void SetElementColor(UIVisual visual, UIColor colorCategory)
+			=> NativeAPI.ui_set_element_color(visual, colorCategory);
+
+		/// <summary>This sets the sound that a particulat UI element will make
+		/// when you interact with it. One sound when the interaction starts,
+		/// and one when it ends.</summary>
+		/// <param name="visual">The UI element to apply the sounds to.</param>
+		/// <param name="activate">The sound made when the interaction begins.
+		/// A null sound will fall back to the default sound.</param>
+		/// <param name="deactivate">The sound made when the interaction ends.
+		/// A null sound will fall back to the default sound.</param>
+		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
+			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user
@@ -1365,6 +1421,12 @@ namespace StereoKit
 		/// the boundary of the box and continue outside it.</param>
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
 			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
+
+		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
+		{
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, lathePts, lathePts.Length);
+			return result != IntPtr.Zero ? new Mesh(result) : null;
+		}
 
 		/// <summary>This will hash the given text based id into a hash for use
 		/// with certain StereoKit UI functions. This includes the hash of the

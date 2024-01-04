@@ -1,55 +1,90 @@
-#include "platform.h"
-#include "platform_utils.h"
-#include "../device.h"
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
 
+#include "_platform.h"
+
+#include "../device.h"
 #include "../_stereokit.h"
+#include "../sk_memory.h"
+#include "../sk_math.h"
 #include "../log.h"
 #include "../libraries/stref.h"
-#include "../systems/input.h"
-#include "win32.h"
-#include "uwp.h"
-#include "linux.h"
-#include "android.h"
-#include "web.h"
+#include "../libraries/ferr_thread.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
-#include "../xr_backends/none.h"
+#include "../xr_backends/window.h"
+#include "../xr_backends/offscreen.h"
+#include "../xr_backends/xr.h"
+#include "../platforms/android.h"
 
-#include "../libraries/sk_gpu.h"
+#include "../systems/input_keyboard.h"
+#include "../tools/virtual_keyboard.h"
+#include "../tools/file_picker.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+
+#if defined(SK_OS_LINUX)
+
+	#include <limits.h>
+	#include <unistd.h>
+	#include <libgen.h>
+
+#endif
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+
+	#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+
+#endif
+
+///////////////////////////////////////////
+
+using namespace sk;
+
+struct platform_state_t {
+	app_mode_ mode;
+	bool32_t  force_fallback_keyboard;
+};
+static platform_state_t* local = {};
+
+///////////////////////////////////////////
 
 namespace sk {
+
+///////////////////////////////////////////
+
+const char* app_mode_str      (app_mode_ mode);
+bool        platform_set_mode (app_mode_ mode);
+void        platform_stop_mode();
 
 ///////////////////////////////////////////
 
 bool platform_init() {
 	device_data_init(&device_data);
 
+	local = sk_malloc_zero_t(platform_state_t, 1);
+	const sk_settings_t* settings = sk_get_settings_ref();
+
 	// Set up any platform dependent variables
-#if   defined(SK_OS_ANDROID)
-	bool result = android_init();
-#elif defined(SK_OS_LINUX)
-	bool result = linux_init  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-	bool result = uwp_init    ();
-#elif defined(SK_OS_WINDOWS)
-	bool result = win32_init  ();
-#elif defined(SK_OS_WEB)
-	bool result = web_init    ();
-#endif
-	if (!result) {
+	if (!platform_impl_init()) {
 		log_fail_reason(80, log_error, "Platform initialization failed!");
 		return false;
 	}
 
-	const sk_settings_t *settings = sk_get_settings_ref();
-
 	// Initialize graphics
+	void* luid = nullptr;
 #if defined(SK_XR_OPENXR)
-	void *luid = settings->display_preference == display_mode_mixedreality
-		? openxr_get_luid()
-		: nullptr;
-#else
-	void *luid = nullptr;
+	if (settings->mode == app_mode_xr)
+		luid = openxr_get_luid();
 #endif
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
@@ -64,49 +99,100 @@ bool platform_init() {
 	}
 	device_data.gpu = string_copy(skg_adapter_name());
 
-	// Convert from the legacy display_mode_ type
-	display_type_ display_type = display_type_none;
-	switch (settings->display_preference) {
-	case display_mode_flatscreen:   display_type = display_type_flatscreen; break;
-	case display_mode_mixedreality: display_type = display_type_stereo;     break;
-	case display_mode_none:         display_type = display_type_none;       break;
-	}
-
 	// Start up the current mode!
-	if (!platform_set_mode(display_type)) {
-		if (!settings->no_flatscreen_fallback && display_type != display_type_flatscreen) {
-			log_clear_any_fail_reason();
-			log_infof("Couldn't create a stereo display, falling back to flatscreen");
-			if (!platform_set_mode(display_type_flatscreen))
-				return false;
-		} else {
-			log_errf("Couldn't initialize a %s display!", display_type == display_type_stereo ? "stereo" : "flatscreen");
-			return false;
-		}
+	bool result = platform_set_mode(settings->mode);
+	if (result == false && settings->no_flatscreen_fallback == false && settings->mode != app_mode_simulator) {
+		log_clear_any_fail_reason();
+		log_infof("Couldn't create an XR app, falling back to Simulator");
+		result = platform_set_mode(app_mode_simulator);
 	}
-	return platform_utils_init();
+	if (result == false)
+		log_errf("Couldn't initialize a <~grn>%s<~clr> mode app!", app_mode_str(settings->mode));
+	return result;
 }
 
 ///////////////////////////////////////////
 
 void platform_shutdown() {
-	platform_utils_shutdown();
 	platform_stop_mode();
 	skg_shutdown();
 
-#if   defined(SK_OS_ANDROID)
-	android_shutdown();
-#elif defined(SK_OS_LINUX)
-	linux_shutdown  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-	uwp_shutdown    ();
-#elif defined(SK_OS_WINDOWS)
-	win32_shutdown  ();
-#elif defined(SK_OS_WEB)
-	web_shutdown    ();
-#endif
+	platform_impl_shutdown();
 
 	device_data_free(&device_data);
+	*local = {};
+	sk_free(local);
+}
+
+///////////////////////////////////////////
+
+bool platform_set_mode(app_mode_ mode) {
+	if (local->mode == mode)          return true;
+	if (mode        == app_mode_none) return false;
+
+	platform_stop_mode();
+	local->mode = mode;
+
+	log_diagf("Starting a <~grn>%s<~clr> mode app", app_mode_str(local->mode));
+	switch (local->mode) {
+	case app_mode_offscreen: return offscreen_init(); break;
+	case app_mode_simulator: return simulator_init(); break;
+	case app_mode_window:    return window_init   (); break;
+	case app_mode_xr:        return xr_init       (); break;
+	case app_mode_none:      return false;
+	}
+
+	return false;
+}
+///////////////////////////////////////////
+
+
+void platform_step_begin() {
+	platform_impl_step();
+	switch (local->mode) {
+	case app_mode_offscreen: offscreen_step_begin(); break;
+	case app_mode_simulator: simulator_step_begin(); break;
+	case app_mode_window:    window_step_begin   (); break;
+	case app_mode_xr:        xr_step_begin       (); break;
+	case app_mode_none:      break;
+	}
+}
+
+///////////////////////////////////////////
+
+void platform_step_end() {
+	switch (local->mode) {
+	case app_mode_offscreen: offscreen_step_end(); break;
+	case app_mode_simulator: simulator_step_end(); break;
+	case app_mode_window:    window_step_end   (); break;
+	case app_mode_xr:        xr_step_end       (); break;
+	case app_mode_none:      break;
+	}
+}
+
+///////////////////////////////////////////
+
+void platform_stop_mode() {
+	switch (local->mode) {
+	case app_mode_offscreen: offscreen_shutdown(); break;
+	case app_mode_simulator: simulator_shutdown(); break;
+	case app_mode_window:    window_shutdown   (); break;
+	case app_mode_xr:        xr_shutdown       (); break;
+	case app_mode_none:      break;
+	}
+}
+
+///////////////////////////////////////////
+
+const char* app_mode_str(app_mode_ mode) {
+	switch (mode) {
+	case app_mode_none:      return "None";
+	case app_mode_simulator: return "Simulator";
+	case app_mode_window:    return "Window";
+	case app_mode_offscreen: return "Offscreen";
+	case app_mode_xr:        return "XR";
+	}
+	return "";
 }
 
 ///////////////////////////////////////////
@@ -131,178 +217,282 @@ void platform_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
-bool platform_set_mode(display_type_ mode) {
-	if (device_data.display_type == mode)
-		return true;
 
-	switch (mode) {
-	case display_type_none:       log_diagf("Starting a <~grn>%s<~clr> display", "headless"  ); break;
-	case display_type_stereo:     log_diagf("Starting a <~grn>%s<~clr> display", "stereo"    ); break;
-	case display_type_flatscreen: log_diagf("Starting a <~grn>%s<~clr> display", "flatscreen"); break;
+bool32_t platform_keyboard_get_force_fallback() {
+	return local->force_fallback_keyboard;
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_set_force_fallback(bool32_t force_fallback) {
+	local->force_fallback_keyboard = force_fallback;
+}
+
+///////////////////////////////////////////
+
+void platform_keyboard_show(bool32_t visible, text_context_ type) {
+	if (platform_xr_keyboard_present() && local->force_fallback_keyboard == false) {
+		platform_xr_keyboard_show(visible);
+		return;
 	}
 
-	platform_stop_mode();
-	device_data.display_type = mode;
+	// Since we're now using the fallback keyboard, we need to balance soft
+	// keyboards with physical keyboard on our own.
+	// - It's always OK to set visible to false.
+	// - Flatscreen never needs a soft keyboard.
+	// - We'll assume someone in XR needs a soft keyboard up until they
+	//   touch a physical keyboard. If a physical keyboard has been
+	//   touched, then we'll avoid popping up a soft keyboard until a few
+	//   minutes have passed since that interaction. TODO: this behavior
+	//   may need some revision based on how people interact with it.
+	const float physical_interact_timeout = 60 * 5; // 5 minutes
+	if (visible == false) virtualkeyboard_open(false, type);
+	else if (device_display_get_type() != display_type_flatscreen &&
+	         (input_get_last_physical_keypress_time() < 0 || (time_totalf_unscaled()-input_get_last_physical_keypress_time()) > physical_interact_timeout) ) {
 
-	bool result = true;
-	if (mode == display_type_stereo) {
-
-		// Platform init before OpenXR
-#if defined(SK_OS_ANDROID)
-			result = android_start_pre_xr();
-#elif defined(SK_OS_LINUX)
-			result = linux_start_pre_xr  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-			result = uwp_start_pre_xr    ();
-#elif defined(SK_OS_WINDOWS)
-			result = win32_start_pre_xr  ();
-#elif defined(SK_OS_WEB)
-			result = web_start_pre_xr    ();
-#endif
-
-		// Init OpenXR
-		if (result) {
-#if defined(SK_XR_OPENXR)
-			result = openxr_init ();
-#else
-			result = true;
-#endif
-		}
-
-		// Platform init after OpenXR
-		if (result) {
-#if defined(SK_OS_ANDROID)
-			result = android_start_post_xr();
-#elif defined(SK_OS_LINUX)
-			result = linux_start_post_xr  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-			result = uwp_start_post_xr    ();
-#elif defined(SK_OS_WINDOWS)
-			result = win32_start_post_xr  ();
-#elif defined(SK_OS_WEB)
-			result = web_start_post_xr    ();
-#endif
-		}
-	} else if (mode == display_type_flatscreen) {
-#if   defined(SK_OS_ANDROID)
-		result = android_start_flat();
-#elif defined(SK_OS_LINUX)
-		result = linux_start_flat  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		result = uwp_start_flat    ();
-#elif defined(SK_OS_WINDOWS)
-		result = win32_start_flat  ();
-#elif defined(SK_OS_WEB)
-		result = web_start_flat    ();
-#endif
-		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_init();
-		else                                                  simulator_init();
+		virtualkeyboard_open(visible, type);
 	}
+}
+
+///////////////////////////////////////////
+
+bool32_t platform_keyboard_visible() {
+	return platform_xr_keyboard_present() && local->force_fallback_keyboard == false
+		? platform_xr_keyboard_visible()
+		: virtualkeyboard_get_open    ();
+}
+
+///////////////////////////////////////////
+
+bool platform_file_exists(const char *filename) {
+	struct stat buffer;
+	return (stat (filename, &buffer) == 0);
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_ref(char *path, const char *directory) {
+	char *result = platform_push_path_new(path, directory);
+	sk_free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_pop_path_ref(char *path) {
+	char *result = platform_pop_path_new(path);
+	sk_free(path);
+	return result;
+}
+
+///////////////////////////////////////////
+
+char *platform_push_path_new(const char *path, const char *directory) {
+	if (path == nullptr || directory == nullptr) return nullptr;
+	if (directory[0] == '\0') return string_copy(path);
+
+	size_t len = strlen(path);
+	if (len == 0) {
+		bool trailing_cslash = string_endswith(directory, ":\\") || string_endswith(directory, ":/");
+		bool trailing_c      = string_endswith(directory, ":");
+		if      (trailing_cslash) return string_copy  (directory);
+		else if (trailing_c)      return string_append(nullptr, 2, directory, platform_path_separator);
+		else return nullptr;
+	}
+
+	bool ends_with   = path     [len-1] == '\\' || path     [len-1] == '/';
+	bool starts_with = directory[0]     == '\\' || directory[0]     == '/';
+
+	char *result = nullptr;
+	if (!ends_with && !starts_with)
+		result = string_append(nullptr, 3, path, platform_path_separator, directory);
+	else if (ends_with && starts_with)
+		result = string_append(nullptr, 2, path, directory[1]);
+	else 
+		result = string_append(nullptr, 2, path, directory);
 
 	return result;
 }
+
 ///////////////////////////////////////////
 
+char *platform_pop_path_new(const char *path) {
+	stref_t src_path  = stref_make(path);
+	// Trim off trailing slashes
+	while (src_path.length > 0 && (path[src_path.length-1] == '\\' || path[src_path.length-1] == '/'))
+		src_path.length -= 1;
 
-void platform_step_begin() {
-	switch (device_data.display_type) {
-	case display_type_none: break;
-	case display_type_stereo: {
-#if   defined(SK_OS_ANDROID)
-		android_step_begin_xr();
-#elif defined(SK_OS_LINUX)
-		linux_step_begin_xr  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_begin_xr    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_step_begin_xr  ();
-#elif defined(SK_OS_WEB)
-		web_step_begin_xr    ();
-#endif
-
-#if defined(SK_XR_OPENXR)
-		openxr_step_begin();
+	int32_t last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last != -1) {
+		src_path = stref_substr(src_path, 0, last);
+	} else {
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+		return string_copy("");
 #else
+		return string_copy(platform_path_separator);
 #endif
-		input_step();
-	} break;
-	case display_type_flatscreen: {
-#if   defined(SK_OS_ANDROID)
-		android_step_begin_flat();
-#elif defined(SK_OS_LINUX)
-		linux_step_begin_flat  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_begin_flat    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_step_begin_flat  ();
-#elif defined(SK_OS_WEB)
-		web_step_begin_flat    ();
-#endif
-		input_step();
-		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_step_begin();
-		else                                                  simulator_step_begin();
-	} break;
 	}
-	platform_utils_update();
-}
 
-///////////////////////////////////////////
-
-void platform_step_end() {
-	switch (device_data.display_type) {
-	case display_type_none: break;
-	case display_type_stereo:
-#if defined(SK_XR_OPENXR)
-		openxr_step_end();
-#else
-#endif
-		break;
-	case display_type_flatscreen: {
-		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_step_end();
-		else                                                  simulator_step_end();
-#if   defined(SK_OS_ANDROID)
-		android_step_end_flat();
-#elif defined(SK_OS_LINUX)
-		linux_step_end_flat  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_step_end_flat    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_step_end_flat  ();
-#elif defined(SK_OS_WEB)
-		web_step_end_flat    ();
-#endif
-	} break;
+	last = maxi( stref_lastof(src_path, '\\'), stref_lastof(src_path, '/') );
+	if (last == -1) {
+		return string_append(stref_copy(src_path), 1, platform_path_separator);
+	} else {
+		return stref_copy(src_path);
 	}
 }
 
 ///////////////////////////////////////////
 
-void platform_stop_mode() {
-	switch (device_data.display_type) {
-	case display_type_none: break;
-	case display_type_stereo:
-#if defined(SK_XR_OPENXR)
-		openxr_shutdown();
-#else
-#endif
-		break;
-	case display_type_flatscreen: {
-		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) none_shutdown();
-		else                                                  simulator_shutdown();
-#if   defined(SK_OS_ANDROID)
-		android_stop_flat();
-#elif defined(SK_OS_LINUX)
-		linux_stop_flat  ();
-#elif defined(SK_OS_WINDOWS_UWP)
-		uwp_stop_flat    ();
-#elif defined(SK_OS_WINDOWS)
-		win32_stop_flat  ();
-#elif defined(SK_OS_WEB)
-		web_stop_flat    ();
-#endif
-	} break;
+bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_size) {
+	*out_data = nullptr;
+	*out_size = 0;
+
+	char* slash_fix_filename = string_copy(filename);
+	char* curr               = slash_fix_filename;
+	while (*curr != '\0') {
+		if (*curr == '\\' || *curr == '/') {
+			*curr = platform_path_separator_c;
+		}
+		curr++;
 	}
-	device_data.display_type = display_type_none;
+	
+	// Open file
+#if defined(SK_OS_ANDROID)
+
+	// Try and load using Android API first!
+	if (android_read_asset(slash_fix_filename, out_data, out_size)) {
+		sk_free(slash_fix_filename);
+		return true;
+	}
+
+	// Fall back to standard file io functions, they -can- work on Android
+#elif defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	if (file_picker_cache_read(slash_fix_filename, out_data, out_size)) {
+		sk_free(slash_fix_filename);
+		return true;
+	}
+#endif
+
+#if defined(SK_OS_LINUX)
+
+	// Linux thinks folders are files, but then fails in a bad way when
+	// treating them like files.
+	struct stat buffer;
+	if (stat(slash_fix_filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
+		log_diagf("platform_read_file can't read folders: %s", slash_fix_filename);
+		sk_free(slash_fix_filename);
+		return false;
+	}
+#endif
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	wchar_t* wfilename = platform_to_wchar(slash_fix_filename);
+	FILE*    fp        = _wfopen(wfilename, L"rb");
+	if (fp == nullptr) {
+		// If the working directory has been changed, and the exe is called
+		// from a folder other than where the exe sits (like dotnet vs VS), the
+		// file may be relative to where the exe is. We attempt to find that
+		// here.
+		wchar_t drive[MAX_PATH];
+		_wsplitpath(wfilename, drive, nullptr, nullptr, nullptr);
+		if (drive[0] == '\0') {
+			wchar_t exe_name[MAX_PATH];
+			wchar_t dir     [MAX_PATH];
+			GetModuleFileNameW(nullptr, exe_name, _countof(exe_name));
+			_wsplitpath(exe_name, drive, dir, nullptr, nullptr);
+			wchar_t fullpath[MAX_PATH];
+			wcscpy(fullpath, drive);
+			wcscat(fullpath, dir);
+			wcscat(fullpath, wfilename);
+			fp = _wfopen(fullpath, L"rb");
+		}
+	}
+	if (fp == nullptr) {
+		wchar_t* buffer      = nullptr;
+		DWORD    buffer_size = GetFullPathNameW(wfilename, 0, buffer, nullptr);
+		buffer = sk_malloc_t(wchar_t, buffer_size);
+		DWORD err = GetFullPathNameW(wfilename, buffer_size, buffer, nullptr);
+
+		if (err == 0) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
+		else          { log_diagf("platform_read_file can't find %ls", buffer); }
+		sk_free(slash_fix_filename);
+		sk_free(buffer);
+		return false;
+	}
+	sk_free(wfilename);
+#else
+	FILE *fp = fopen(slash_fix_filename, "rb");
+
+	#if defined(SK_OS_LINUX)
+	// If the working directory has been changed, and the exe is called
+	// from a folder other than where the exe sits (like dotnet vs VS), the
+	// file may be relative to where the exe is. We attempt to find that
+	// here.
+	if (fp == nullptr && slash_fix_filename[0] != '/') {
+		char exe_path[PATH_MAX];
+		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+		exe_path[len] = '\0';
+		char* dir = dirname(exe_path);
+		char  fullpath[PATH_MAX];
+		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
+		fp = fopen(fullpath, "rb");
+	}
+	#endif
+	if (fp == nullptr) {
+		log_diagf("platform_read_file can't find %s", slash_fix_filename);
+		sk_free(slash_fix_filename);
+		return false;
+	}
+#endif
+
+	// Get length of file
+	fseek(fp, 0, SEEK_END);
+	*out_size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	// Read the data
+	*out_data = sk_malloc(*out_size+1);
+	size_t read = fread (*out_data, 1, *out_size, fp);
+	fclose(fp);
+
+	// Stick an end string 0 character at the end in case the caller wants
+	// to treat it like a string
+	((uint8_t *)*out_data)[*out_size] = 0;
+
+	sk_free(slash_fix_filename);
+	return read != 0 || *out_size == 0;
 }
+
+///////////////////////////////////////////
+
+bool32_t _platform_write_file(const char* filename, void* data, size_t size, bool32_t binary) {
+#if defined(SK_OS_WINDOWS_UWP)
+	// See if we have a Handle cached from the FilePicker that matches this
+	// file name.
+	if (file_picker_cache_save(filename, data, size))
+		return true;
+#endif
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	wchar_t* wfilename = platform_to_wchar(filename);
+	FILE*    fp        = _wfopen(wfilename, binary?L"wb":L"w");
+	sk_free(wfilename);
+#else
+	FILE* fp = fopen(filename, binary?"wb":"w");
+#endif
+	if (fp == nullptr) {
+		log_diagf("platform_read_file can't write %s", filename);
+		return false;
+	}
+
+	fwrite(data, 1, size, fp);
+	fclose(fp);
+
+	return true;
+}
+bool32_t platform_write_file     (const char *filename, void *data, size_t size) { return _platform_write_file(filename, data, size, true); }
+bool32_t platform_write_file_text(const char* filename, const char *text)        { return _platform_write_file(filename, (void*)text, strlen(text), false); }
 
 } // namespace sk

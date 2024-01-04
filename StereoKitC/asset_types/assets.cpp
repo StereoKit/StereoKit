@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "assets.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -10,6 +15,8 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
+#include "anchor.h"
+#include "../platforms/platform.h"
 #include "../systems/physics.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
@@ -21,6 +28,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+
+#if defined(SK_OS_WEB)
+#include <emscripten/threading.h>
+#endif
 
 namespace sk {
 
@@ -42,7 +53,6 @@ struct asset_thread_t {
 array_t<asset_header_t *>      assets = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
-ft_id_t                        assets_gpu_thread = {};
 ft_mutex_t                     assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
 ft_mutex_t                     assets_load_event_lock = {};
@@ -108,6 +118,7 @@ void *assets_allocate(asset_type_ type) {
 	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
 	case asset_type_sound:    size = sizeof(_sound_t);    break;
 	case asset_type_solid:    size = sizeof(_solid_t);    break;
+	case asset_type_anchor:   size = sizeof(_anchor_t);   break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -215,6 +226,7 @@ void assets_destroy(asset_header_t *asset) {
 	case asset_type_sprite:   sprite_destroy  ((sprite_t  )asset); break;
 	case asset_type_sound:    sound_destroy   ((sound_t   )asset); break;
 	case asset_type_solid:    solid_destroy   ((solid_t   )asset); break;
+	case asset_type_anchor:   anchor_destroy  ((anchor_t  )asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -287,6 +299,7 @@ void  assets_shutdown_check() {
 			case asset_type_sprite:   type_name = "sprite_t";   break;
 			case asset_type_sound:    type_name = "sound_t";    break;
 			case asset_type_solid:    type_name = "solid_t";    break;
+			case asset_type_anchor:   type_name = "anchor_t";   break;
 			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
@@ -329,7 +342,6 @@ char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
-	assets_gpu_thread               = ft_id_current();
 	assets_multithread_destroy_lock = ft_mutex_create();
 	assets_job_lock                 = ft_mutex_create();
 	asset_thread_task_mtx           = ft_mutex_create();
@@ -443,7 +455,7 @@ void assets_shutdown() {
 ///////////////////////////////////////////
 
 bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (ft_id_matches(assets_gpu_thread)) {
+	if (ft_id_matches(sk_main_thread())) {
 		return asset_job(data);
 	} else {
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
@@ -732,6 +744,8 @@ int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
 	thread->id      = ft_id_current();
 	thread->running = true;
+
+	ft_thread_name(ft_thread_current(), "StereoKit Assets");
 	 
 	ft_mutex_t wait_mtx = ft_mutex_create();
 

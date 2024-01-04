@@ -1,20 +1,20 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_layout.h"
 #include "ui_theming.h"
 #include "ui_core.h"
 #include "../stereokit_ui.h"
-#include "../_stereokit_ui.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
-#include "../systems/input.h"
-#include "../systems/input_keyboard.h"
-#include "../platforms/platform_utils.h"
-#include "../hands/input_hand.h"
-#include "../libraries/ferr_hash.h"
+#include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
 #include <math.h>
-#include <float.h>
 
 ///////////////////////////////////////////
 
@@ -24,6 +24,7 @@ bool32_t skui_enable_far_interact;
 ui_move_ skui_system_move_type;
 
 uint64_t skui_input_target;
+bool32_t skui_input_target_confirmed;
 int32_t  skui_input_carat;
 int32_t  skui_input_carat_end;
 float    skui_input_blink;
@@ -31,8 +32,10 @@ float    skui_input_blink;
 // Button activation animations all use the same values
 const float    skui_anim_duration  = 0.2f;
 const float    skui_anim_overshoot = 10;
+const float    skui_anim_focus_duration = 0.1f;
 const float    skui_pressed_depth  = 0.4f;
 const color128 skui_color_border   = { 1,1,1,1 };
+const float    skui_aura_radius    = 0.02f;
 
 ///////////////////////////////////////////
 
@@ -66,14 +69,22 @@ void ui_shutdown() {
 
 void ui_step() {
 	ui_core_update();
+	ui_theming_update();
 
 	ui_push_surface(pose_identity);
+
+	skui_input_target_confirmed = false;
 }
 
 ///////////////////////////////////////////
 
 void ui_step_late() {
 	ui_pop_surface();
+
+	// If the active input target was not confirmed to exist, we should drop
+	// input focus.
+	if (skui_input_target_confirmed == false && skui_input_target != 0)
+		skui_input_target = 0;
 
 	//if (skui_layers                 .count != 0) log_errf("ui: Mismatching number of %s calls!", "Begin/End");
 	//if (skui_id_stack               .count != 1) log_errf("ui: Mismatching number of %s calls!", "id push/pop");
@@ -128,7 +139,7 @@ void ui_hseparator() {
 	vec2 size;
 	ui_layout_reserve_sz({ 0, text_style_get_char_height(ui_get_text_style())*0.4f }, false, &pos, &size);
 
-	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, ui_color_primary, 0);
+	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
 }
 
 ///////////////////////////////////////////
@@ -229,7 +240,6 @@ void ui_image(sprite_t image, vec2 size) {
 template<typename C>
 void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
 	float pad2       = skui_settings.padding * 2;
-	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
 	vec3  image_at   = {};
 	float image_size;
@@ -318,15 +328,15 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
 	return state & button_state_just_active;
@@ -388,10 +398,10 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -400,8 +410,8 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
 	return state & button_state_just_active;
@@ -463,15 +473,15 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1-(finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_color_common, fmaxf(activation, color_blend));
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, fmaxf(activation, color_blend));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
@@ -552,10 +562,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	if (state & button_state_just_active)
-		ui_anim_start(id_hash);
+		ui_anim_start(id_hash, 0);
 	float color_blend = skui_input_target == id_hash ? 1.0f : 0.0f;
-	if (ui_anim_has(id_hash, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id_hash, skui_anim_duration);
+	if (ui_anim_has(id_hash, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id_hash, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -631,13 +641,13 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// Render the input UI
 	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
-	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
+	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, color_blend);
 
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
 	if (type == text_context_password) {
 		size_t len          = utf_charlen(buffer);
-		C*     password_txt = (C*)alloca(sizeof(C) * (len + 1));
+		C*     password_txt = sk_stack_alloc_t(C, len + 1);
 		for (size_t i = 0; i < len; i++)
 			password_txt[i] = '*';
 		password_txt[len] = '\0';
@@ -646,6 +656,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// If the input is focused, display text selection information
 	if (skui_input_target == id_hash) {
+		// Confirm that the input target still exists
+		skui_input_target_confirmed = true;
+
 		// Advance the displayed text if it's off the right side of the input
 		text_style_t style = ui_get_text_style();
 
@@ -673,7 +686,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 		// Show a blinking text carat
 		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
-			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
+			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, 0);
 		}
 	}
 
@@ -710,17 +723,17 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	float bar_length = math_saturate(percent) * size.x;
 	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
-		ui_draw_el(ui_vis_slider_line,
+		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_inactive,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
-			ui_color_common, focus);
+			focus);
 		hierarchy_pop();
 		return;
 	} else if (bar_length >= size.x-min_size.x) {
-		ui_draw_el(ui_vis_slider_line,
+		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_active,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
-			ui_color_primary, focus);
+			focus);
 		hierarchy_pop();
 		return;
 	}
@@ -729,18 +742,18 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	ui_draw_el(ui_vis_slider_line_active,
 		vec3{ 0,          bar_y,      0 },
 		vec3{ bar_length, bar_height, bar_depth },
-		ui_color_primary, focus);
+		focus);
 	ui_draw_el(ui_vis_slider_line_inactive,
 		vec3{        - bar_length, bar_y,      0 },
 		vec3{ size.x - bar_length, bar_height, bar_depth },
-		ui_color_common, focus);
+		focus);
 	hierarchy_pop();
 }
 
 ///////////////////////////////////////////
 
 void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
-	ui_progress_bar_at_ex(percent, start_pos, size, 1, false);
+	ui_progress_bar_at_ex(percent, start_pos, size, 0, false);
 }
 
 ///////////////////////////////////////////
@@ -865,7 +878,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			
 			if (step != 0) {
 				// Play on every change if there's a user specified step value
-				sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+				ui_play_sound_on(ui_vis_slider_line, skui_hand[hand].finger_world);
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -876,7 +889,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 				if (old_quantize != new_quantize) {
-					sound_play(skui_snd_tick, skui_hand[hand].finger_world, 1);
+					ui_play_sound_on(ui_vis_slider_line, skui_hand[hand].finger_world);
 				}
 			}
 		}
@@ -886,10 +899,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	}
 
 	if (button_state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = focus_state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -912,12 +925,12 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 		ui_draw_el(ui_vis_slider_push,
 			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
 			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_pressed_depth +mm2m)},
-			ui_color_primary, color_blend);
+			color_blend);
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		ui_draw_el(ui_vis_slider_pinch,
 			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
 			vec3{button_size.x, button_size.y, button_depth},
-			ui_color_primary, color_blend);
+			color_blend);
 
 		vec3 pinch_local = hand < 0
 			? vec3_zero
@@ -956,15 +969,13 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 					? vec3{ x - slide_x_rel, scaled_at - slide_y_rel * scale, window_relative_pos.z + z }
 					: vec3{ scaled_at - slide_x_rel * scale, y - slide_y_rel, window_relative_pos.z + z },
 				vec3{ button_size.x, button_size.y, button_depth },
-				ui_color_primary, color_blend);
+				color_blend);
 		}
 	}
 	
 	if (hand >= 0 && hand < 2) {
 		if (button_state & button_state_just_active)
-			sound_play(skui_snd_interact, skui_hand[hand].finger_world, 1);
-		else if (button_state & button_state_just_inactive)
-			sound_play(skui_snd_uninteract, skui_hand[hand].finger_world, 1);
+			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_hand[hand].finger_world);
 	}
 
 	if      (notify_on == ui_notify_change)   return result;
@@ -1023,6 +1034,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	ui_window_t* win    = ui_window_get(win_id);
 	win->age  = 0;
 	win->type = window_type;
+	win->move = move_type;
 	
 	// figure out the size of it, based on its window type
 	vec3 box_start = {}, box_size = {};
@@ -1030,7 +1042,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		float line = ui_line_height();
 		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
 		box_size  = vec3{ win->prev_size.x, line, skui_settings.depth*2 };
-	} 
+	}
 	if (win->type & ui_win_body || win->type & ui_win_empty) {
 		box_start.z  = skui_settings.depth/2;
 		box_start.y -= win->prev_size.y / 2;
@@ -1038,10 +1050,18 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_size.y  += win->prev_size.y;
 		box_size.z   = skui_settings.depth * 2;
 	}
+	// Expand the volume a bit if we're using a grab aura
+	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
+		box_size .x += skui_aura_radius*2;
+		box_size .y += skui_aura_radius*2;
+	}
+	// Add a little extra depth to the box, so that it's easier to grab
+	box_start.z += 0.01f;
+	box_size .z += 0.02f;
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
-	ui_layout_push_win(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
+	ui_layout_window(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label
 	if (win->type & ui_win_head) {
@@ -1069,27 +1089,53 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_window_id win_id = ui_layout_curr_window();
-	ui_window_t* win    = ui_window_get(win_id);
-	ui_layout_pop();
+	ui_window_id win_id      = ui_layout_curr_window();
+	ui_window_t* win         = ui_window_get(win_id);
+	float        line_height = ui_line_height();
+
+	ui_handle_end();
+	hierarchy_push(pose_matrix(win->pose));
+
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
 
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
-	float line_height = ui_line_height();
+	// Focus animation
+	if ((skui_hand[0].focused_prev == win->hash && skui_hand[0].focused_prev_prev != win->hash) ||
+		(skui_hand[1].focused_prev == win->hash && skui_hand[1].focused_prev_prev != win->hash))
+		ui_anim_start(win->hash, 0);
+	if ((skui_hand[0].focused_prev != win->hash && skui_hand[0].focused_prev_prev == win->hash) ||
+		(skui_hand[1].focused_prev != win->hash && skui_hand[1].focused_prev_prev == win->hash))
+		ui_anim_start(win->hash, 1);
+
+	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
+	if (ui_anim_has(win->hash, 0, skui_anim_focus_duration)) {
+		focus = math_ease_smooth(0, 1, ui_anim_elapsed(win->hash, 0, skui_anim_focus_duration));
+	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
+		focus = math_ease_smooth(1, 0, ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration));
+	}
+
+	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
+		vec3 aura_start = vec3{ start.x+skui_aura_radius,  start.y+skui_aura_radius,  start.z };
+		vec3 aura_size  = vec3{ size .x+skui_aura_radius*2,size .y+skui_aura_radius*2,size .z };
+		if (win->type & ui_win_head) { aura_start.y += line_height; aura_size.y += line_height; }
+		ui_draw_el(ui_vis_aura, aura_start, aura_size, focus);
+	}
+
 	if (win->type & ui_win_head) {
-		float color_blend = 0;
-		if (ui_id_focused(win->hash))
-			color_blend = 1;
-		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, color_blend);
+		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
 	}
 	if (win->type & ui_win_body) {
-		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 0);
+		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);
 	}
-	ui_handle_end();
+	hierarchy_pop();
 	ui_pop_id();
+
+	// Store this as the most recent layout
+	if (win->type & ui_win_head) { start.y += line_height; size.y += line_height; }
+	ui_override_recent_layout(start, { size.x, size.y });
 }
 
 ///////////////////////////////////////////
@@ -1103,7 +1149,7 @@ void ui_panel_at(vec3 start, vec2 size, ui_pad_ padding) {
 		start_offset = { gutter,  gutter,  0 };
 		size_offset  = { gutter2, gutter2, 0 };
 	}
-	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, ui_color_complement, 0);
+	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, 0);
 }
 
 } // namespace sk

@@ -4,7 +4,7 @@
 	
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:label="@string/app_name" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
 		<!-- Oculus -->
-		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro"/>
+		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
 		<uses-native-library android:name="libopenxr_forwardloader.oculus.so" android:required="false"/>
 		<!-- Pico -->
@@ -12,6 +12,8 @@
 		<meta-data android:name="handtracking" android:value="1" />
 		<!-- Snapdragon -->
 		<meta-data android:name="spaces.version" android:value="0.15.0"/>
+
+		<profileable android:shell="true"/>
 	</application>
 
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

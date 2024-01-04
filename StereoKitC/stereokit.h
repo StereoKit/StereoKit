@@ -130,6 +130,29 @@ typedef enum display_mode_ {
 	display_mode_none             = 2,
 } display_mode_;
 
+/*Specifies a type of display mode StereoKit uses, like
+  Mixed Reality headset display vs. a PC display, or even just
+  rendering to an offscreen surface, or not rendering at all!*/
+typedef enum app_mode_ {
+	/*No mode has been specified, default behavior will be used. StereoKit will
+	  pick XR in this case.*/
+	app_mode_none = 0,
+	/*Creates an OpenXR or WebXR instance, and drives display/input through
+	  that.*/
+	app_mode_xr,
+	/*Creates a flat window, and simulates some XR functionality. Great for
+	  development and debugging.*/
+	app_mode_simulator,
+	/*Creates a flat window and displays to that, but doesn't simulate XR at
+	  all. You will need to control your own camera here. This can be useful
+	  if using StereoKit for non-XR 3D applications.*/
+	app_mode_window,
+	/*No display at all! StereoKit won't even render to a texture unless
+	  requested to. This may be good for running tests on a server, or doing
+	  graphics related tool or CLI work.*/
+	app_mode_offscreen,
+} app_mode_;
+
 /*This is used to determine what kind of depth buffer
   StereoKit uses!*/
 typedef enum depth_mode_ {
@@ -381,6 +404,7 @@ typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
 	display_mode_  display_preference;
+	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
@@ -397,6 +421,7 @@ typedef struct sk_settings_t {
 	float          render_scaling;
 	int32_t        render_multisample;
 	origin_mode_   origin;
+	bool32_t       omit_empty_frames;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -578,6 +603,8 @@ static inline vec2   operator* (float b, vec2 a) { return { a.x * b, a.y * b }; 
 static inline vec2   operator/ (vec2 a, float b) { return { a.x / b, a.y / b }; }
 static inline vec2   operator+ (vec2 a, vec2  b) { return { a.x + b.x, a.y + b.y }; }
 static inline vec2   operator- (vec2 a, vec2  b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2   operator+ (vec2 a, float b) { return { a.x + b,   a.y + b }; }
+static inline vec2   operator- (vec2 a, float b) { return { a.x - b,   a.y - b }; }
 static inline vec2   operator* (vec2 a, vec2  b) { return { a.x * b.x, a.y * b.y }; }
 static inline vec2   operator/ (vec2 a, vec2  b) { return { a.x / b.x, a.y / b.y }; }
 static inline vec2  &operator+=(vec2 &a, vec2  b) { a.x += b.x; a.y += b.y; return a; }
@@ -626,6 +653,8 @@ static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnit
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
 static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; return v; }
 static inline vec2     vec2_abs         (vec2 a) { vec2 v = { fabsf(a.x), fabsf(a.y) }; return v; }
+static inline vec3     vec3_min         (vec3 a, vec3 b)          { vec3 v = { fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z) }; return v; }
+static inline vec2     vec2_min         (vec2 a, vec2 b)          { vec2 v = { fminf(a.x, b.x), fminf(a.y, b.y) }; return v; }
 static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; return v; }
 static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
@@ -719,6 +748,7 @@ SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
+SK_DeclarePrivateType(anchor_t);
 
 ///////////////////////////////////////////
 
@@ -1012,6 +1042,7 @@ SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 // TODO: For v0.4, combine these two functions
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
@@ -1390,7 +1421,7 @@ SK_API void          model_set_id                  (model_t model, const char *i
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
-SK_API void          model_draw                    (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_recalculate_bounds_exact(model_t model);
@@ -1571,15 +1602,16 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 //TODO: for v0.4, replace render_screenshot with render_screenshot_pose
 SK_API void                  render_screenshot     (const char *file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32));
+//TODO: for v0.4, reorder parameters, context in particular should be next to callback
+SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
+SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
@@ -1676,7 +1708,7 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback   )(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  (void);
 SK_API bool32_t platform_file_picker_visible(void);
@@ -2114,6 +2146,35 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
+typedef enum anchor_caps_ {
+	anchor_caps_storable  = 1 << 0,
+	anchor_caps_stability = 1 << 1,
+} anchor_caps_;
+SK_MakeFlag(anchor_caps_);
+
+SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API anchor_t       anchor_create            (pose_t pose);
+SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
+SK_API const char*    anchor_get_id            (const anchor_t anchor);
+SK_API void           anchor_addref            (      anchor_t anchor);
+SK_API void           anchor_release           (      anchor_t anchor);
+SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
+SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
+SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
+SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
+SK_API const char*    anchor_get_name          (const anchor_t anchor);
+SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+SK_API bool32_t       anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor);
+
+SK_API void           anchor_clear_stored      (void);
+SK_API anchor_caps_   anchor_get_capabilities  (void);
+SK_API int32_t        anchor_get_count         (void);
+SK_API anchor_t       anchor_get_index         (int32_t index);
+SK_API int32_t        anchor_get_new_count     (void);
+SK_API anchor_t       anchor_get_new_index     (int32_t index);
+
+///////////////////////////////////////////
+
 /*A settings flag that lets you describe the behavior of how
   StereoKit will refresh data about the world mesh, if applicable. This
   is used with `World.RefreshType`.*/
@@ -2149,6 +2210,7 @@ SK_API void           world_set_refresh_radius        (float radius_meters);
 SK_API float          world_get_refresh_radius        (void);
 SK_API void           world_set_refresh_interval      (float every_seconds);
 SK_API float          world_get_refresh_interval      (void);
+SK_API button_state_  world_get_tracked               (void);
 SK_API origin_mode_   world_get_origin_mode           (void);
 SK_API pose_t         world_get_origin_offset         (void);
 SK_API void           world_set_origin_offset         (pose_t offset);
@@ -2276,8 +2338,11 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
-SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));
+// TODO: v0.4, replace these with the _data versions
+SK_API void log_subscribe       (void (*log_callback)(log_ level, const char *text));
+SK_API void log_unsubscribe     (void (*log_callback)(log_ level, const char *text));
+SK_API void log_subscribe_data  (void (*log_callback)(void* context, log_ level, const char *text), void *context);
+SK_API void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char *text), void *context);
 
 ///////////////////////////////////////////
 
@@ -2303,6 +2368,8 @@ typedef enum asset_type_ {
 	asset_type_sound,
 	/*A Solid.*/
 	asset_type_solid,
+	/*An Anchor.*/
+	asset_type_anchor,
 } asset_type_;
 
 typedef void* asset_t;
@@ -2335,6 +2402,7 @@ SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
 SK_CONST char *default_id_material_ui_box      = "default/material_ui_box";
 SK_CONST char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+SK_CONST char *default_id_material_ui_aura     = "default/material_ui_aura";
 SK_CONST char *default_id_tex                  = "default/tex";
 SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
@@ -2362,6 +2430,7 @@ SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";
 SK_CONST char *default_id_shader_ui_box        = "default/shader_ui_box";
 SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
