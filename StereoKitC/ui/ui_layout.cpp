@@ -558,7 +558,7 @@ ui_window_t* ui_window_get(ui_window_id window) {
 
 ///////////////////////////////////////////
 
-ui_window_id ui_window_find_or_add(uint64_t hash, vec2 size) {
+ui_window_id ui_window_find_or_add(id_hash_t hash, vec2 size) {
 	for (int32_t i = 0; i < skui_windows.count; i++) {
 		if (skui_windows[i].hash == hash) {
 			return i;

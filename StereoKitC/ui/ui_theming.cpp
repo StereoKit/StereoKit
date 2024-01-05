@@ -58,7 +58,7 @@ sound_t         skui_snd_tick;
 
 mesh_t          skui_box_dbg;
 
-uint64_t        skui_anim_id[3];
+id_hash_t       skui_anim_id[3];
 float           skui_anim_time[3];
 
 ui_theme_color_t skui_palette[ui_color_max];
@@ -71,7 +71,7 @@ array_t<bool32_t>     skui_grab_aura_stack;
 sound_t       skui_active_sound_off        = nullptr;
 sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
-uint64_t      skui_active_sound_element_id = 0;
+id_hash_t     skui_active_sound_element_id = 0;
 
 ///////////////////////////////////////////
 
@@ -424,7 +424,7 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
 
 ///////////////////////////////////////////
 
-void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
+void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at) {
 	sound_t snd_on  = ui_get_sound_on(element_visual);
 	sound_t snd_off = ui_get_sound_off(element_visual);
 
@@ -608,7 +608,7 @@ void ui_pop_tint() {
 // Animation                             //
 ///////////////////////////////////////////
 
-void ui_anim_start(uint64_t id, int32_t channel) {
+void ui_anim_start(id_hash_t id, int32_t channel) {
 	if (skui_anim_id[channel] != id) {
 		skui_anim_id[channel] = id;
 		skui_anim_time[channel] = time_totalf_unscaled();
@@ -617,7 +617,7 @@ void ui_anim_start(uint64_t id, int32_t channel) {
 
 ///////////////////////////////////////////
 
-bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
+bool ui_anim_has(id_hash_t id, int32_t channel, float duration) {
 	if (id == skui_anim_id[channel]) {
 		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
 			return true;
@@ -628,7 +628,7 @@ bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
 
 ///////////////////////////////////////////
 
-float ui_anim_elapsed(uint64_t id, int32_t channel, float duration, float max) {
+float ui_anim_elapsed(id_hash_t id, int32_t channel, float duration, float max) {
 	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
 }
 

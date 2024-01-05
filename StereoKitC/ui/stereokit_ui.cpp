@@ -23,11 +23,11 @@ namespace sk {
 bool32_t skui_enable_far_interact;
 ui_move_ skui_system_move_type;
 
-uint64_t skui_input_target;
-bool32_t skui_input_target_confirmed;
-int32_t  skui_input_carat;
-int32_t  skui_input_carat_end;
-float    skui_input_blink;
+id_hash_t skui_input_target;
+bool32_t  skui_input_target_confirmed;
+int32_t   skui_input_carat;
+int32_t   skui_input_carat_end;
+float     skui_input_blink;
 
 // Button activation animations all use the same values
 const float    skui_anim_duration  = 0.2f;
@@ -322,7 +322,7 @@ vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_lay
 
 template<typename C>
 bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -392,7 +392,7 @@ bool32_t ui_button_16(const char16_t *text) { return ui_button_img_16(text, null
 
 template<typename C>
 bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
@@ -467,7 +467,7 @@ bool32_t ui_toggle_sz_16(const char16_t* text, bool32_t& pressed, vec2 size) { r
 
 template<typename C>
 bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
-	uint64_t      id = ui_stack_hash(text);
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
@@ -544,9 +544,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	uint64_t id_hash  = ui_stack_hash(id);
-	bool     result   = false;
-	vec3     box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
+	id_hash_t id_hash  = ui_stack_hash(id);
+	bool      result   = false;
+	vec3      box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
 
 	// Find out if the user is trying to focus this UI element
 	float         finger_offset;
@@ -770,8 +770,8 @@ void ui_progress_bar(float percent, float width) {
 
 template<typename C, typename N>
 bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
-	uint64_t id     = ui_stack_hash(id_text);
-	bool     result = false;
+	id_hash_t id     = ui_stack_hash(id_text);
+	bool      result = false;
 
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
@@ -1029,7 +1029,7 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 
 template<typename C>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	uint64_t     hash   = ui_push_id(text);
+	id_hash_t    hash   = ui_push_id(text);
 	ui_window_id win_id = ui_window_find_or_add(hash, window_size);
 	ui_window_t* win    = ui_window_get(win_id);
 	win->age  = 0;

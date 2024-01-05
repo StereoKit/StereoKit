@@ -132,6 +132,8 @@ typedef struct ui_settings_t {
 	float backplate_border;
 } ui_settings_t;
 
+typedef uint64_t id_hash_t;
+
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
 SK_API void     ui_quadrant_size_mesh   (mesh_t ref_mesh, float overflow_percent);
 SK_API mesh_t   ui_gen_quadrant_mesh    (ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
@@ -170,12 +172,13 @@ SK_API void     ui_push_preserve_keyboard(bool32_t preserve_keyboard);
 SK_API void     ui_pop_preserve_keyboard (void);
 SK_API void     ui_push_surface          (pose_t surface_pose, vec3 layout_start sk_default(vec3_zero), vec2 layout_dimensions sk_default(vec2_zero));
 SK_API void     ui_pop_surface           (void);
-SK_API uint64_t ui_push_id               (const char     *id);
-SK_API uint64_t ui_push_id_16            (const char16_t *id);
-SK_API uint64_t ui_push_idi              (int32_t id);
-SK_API void     ui_pop_id                (void);
-SK_API uint64_t ui_stack_hash            (const char     *string);
-SK_API uint64_t ui_stack_hash_16         (const char16_t *string);
+
+SK_API id_hash_t ui_push_id              (const char*     id);
+SK_API id_hash_t ui_push_id_16           (const char16_t* id);
+SK_API id_hash_t ui_push_idi             (int32_t id);
+SK_API void      ui_pop_id               (void);
+SK_API id_hash_t ui_stack_hash           (const char*     string);
+SK_API id_hash_t ui_stack_hash_16        (const char16_t* string);
 
 SK_API void     ui_layout_area     (vec3 start, vec2 dimensions, bool32_t add_margin sk_default(true));
 SK_API vec2     ui_layout_remaining(void);
@@ -198,8 +201,8 @@ SK_API void     ui_sameline      (void);
 SK_API float    ui_line_height   (void);
 
 SK_API bool32_t ui_is_interacting       (handed_ hand);
-SK_API void     ui_button_behavior      (vec3 window_relative_pos, vec2 size, uint64_t id, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
-SK_API void     ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, float button_depth, float button_activation_depth, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
+SK_API void     ui_button_behavior      (vec3 window_relative_pos, vec2 size, id_hash_t id, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
+SK_API void     ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
 
 SK_API button_state_ ui_volumei_at        (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
 SK_API button_state_ ui_volumei_at_16     (const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));

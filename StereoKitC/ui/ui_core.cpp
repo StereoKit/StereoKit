@@ -22,24 +22,20 @@ struct layer_t {
 	vec3         pinch_pt_prev[handed_max];
 };
 
-struct ui_id_t {
-	uint64_t id;
-};
-
 ///////////////////////////////////////////
 
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius;
-uint64_t        skui_last_element;
+id_hash_t       skui_last_element;
 bool32_t        skui_show_volumes;
 
 array_t<bool32_t>    skui_enabled_stack;
-array_t<ui_id_t>     skui_id_stack;
+array_t<id_hash_t>   skui_id_stack;
 array_t<layer_t>     skui_layers;
 array_t<bool>        skui_preserve_keyboard_stack;
-array_t<uint64_t>    skui_preserve_keyboard_ids[2];
-array_t<uint64_t>   *skui_preserve_keyboard_ids_read;
-array_t<uint64_t>   *skui_preserve_keyboard_ids_write;
+array_t<id_hash_t>   skui_preserve_keyboard_ids[2];
+array_t<id_hash_t>*  skui_preserve_keyboard_ids_read;
+array_t<id_hash_t>*  skui_preserve_keyboard_ids_write;
 
 ///////////////////////////////////////////
 
@@ -138,7 +134,7 @@ void ui_core_update() {
 
 	// Clear current keyboard ignore elements
 	skui_preserve_keyboard_ids_read->clear();
-	array_t<uint64_t>* tmp = skui_preserve_keyboard_ids_read;
+	array_t<id_hash_t>* tmp = skui_preserve_keyboard_ids_read;
 	skui_preserve_keyboard_ids_read  = skui_preserve_keyboard_ids_write;
 	skui_preserve_keyboard_ids_write = tmp;
 }
@@ -147,7 +143,7 @@ void ui_core_update() {
 
 template<typename C>
 button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
-	uint64_t      id_hash = ui_stack_hash(id);
+	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
 	int32_t       hand    = -1;
@@ -185,8 +181,8 @@ button_state_ ui_volumei_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ 
 
 template<typename C>
 bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
-	uint64_t id_hash = ui_stack_hash(id);
-	bool     result  = false;
+	id_hash_t id_hash = ui_stack_hash(id);
+	bool      result  = false;
 
 	skui_last_element = id_hash;
 
@@ -234,13 +230,13 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 
 ///////////////////////////////////////////
 
-void ui_button_behavior(vec3 window_relative_pos, vec2 size, uint64_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, int32_t* out_opt_hand) {
+void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, int32_t* out_opt_hand) {
 	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, out_finger_offset, out_button_state, out_focus_state, out_opt_hand);
 }
 
 ///////////////////////////////////////////
 
-void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
+void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
 	out_button_state = button_state_inactive;
 	out_focus_state  = button_state_inactive;
 	int32_t hand     = -1;
@@ -286,7 +282,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, uint64_t id, 
 
 ///////////////////////////////////////////
 
-bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
 	bool  result      = false;
 	float color_blend = 0;
 
@@ -511,7 +507,7 @@ void ui_handle_end() {
 
 ///////////////////////////////////////////
 
-void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
+void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
 	
@@ -557,7 +553,7 @@ void ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start, vec3 box
 
 ///////////////////////////////////////////
 
-void ui_box_interaction_1h_poke(uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
+void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_hand) {
 	*out_hand        = -1;
 	*out_focus_state = button_state_inactive;
 
@@ -651,7 +647,7 @@ void ui_pop_surface() {
 
 ///////////////////////////////////////////
 
-button_state_ ui_focus_set(int32_t hand, uint64_t for_el_id, bool32_t focused, float priority) {
+button_state_ ui_focus_set(int32_t hand, id_hash_t for_el_id, bool32_t focused, float priority) {
 	if (hand < 0 || hand > 1) {
 		if      (skui_hand[0].active_prev == for_el_id) hand = 0;
 		else if (skui_hand[1].active_prev == for_el_id) hand = 1;
@@ -675,7 +671,7 @@ button_state_ ui_focus_set(int32_t hand, uint64_t for_el_id, bool32_t focused, f
 
 ///////////////////////////////////////////
 
-button_state_ ui_active_set(int32_t hand, uint64_t for_el_id, bool32_t active) {
+button_state_ ui_active_set(int32_t hand, id_hash_t for_el_id, bool32_t active) {
 	if (hand == -1) return button_state_inactive;
 
 	bool was_active = skui_hand[hand].active_prev == for_el_id;
@@ -695,7 +691,7 @@ button_state_ ui_active_set(int32_t hand, uint64_t for_el_id, bool32_t active) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_id_focused(uint64_t id) {
+bool32_t ui_id_focused(id_hash_t id) {
 	return skui_hand[0].focused_prev == id || skui_hand[1].focused_prev == id;
 }
 
@@ -715,7 +711,7 @@ void ui_show_volumes(bool32_t show) {
 
 ///////////////////////////////////////////
 
-bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused) {
+bool32_t ui_is_hand_preoccupied(handed_ hand, id_hash_t for_el_id, bool32_t include_focused) {
 	const ui_hand_t &h = skui_hand[hand];
 	return (include_focused && h.focused_prev != 0 && h.focused_prev != for_el_id)
 		|| (h.active_prev != 0 && h.active_prev != for_el_id);
@@ -723,7 +719,7 @@ bool32_t ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t inclu
 
 ///////////////////////////////////////////
 
-int32_t ui_last_active_hand(uint64_t for_el_id) {
+int32_t ui_last_active_hand(id_hash_t for_el_id) {
 	if      (skui_hand[0].active_prev == for_el_id) return 0;
 	else if (skui_hand[1].active_prev == for_el_id) return 1;
 	return -1;
@@ -731,7 +727,7 @@ int32_t ui_last_active_hand(uint64_t for_el_id) {
 
 ///////////////////////////////////////////
 
-int32_t ui_last_focused_hand(uint64_t for_el_id) {
+int32_t ui_last_focused_hand(id_hash_t for_el_id) {
 	if      (skui_hand[0].focused_prev == for_el_id) return 0;
 	else if (skui_hand[1].focused_prev == for_el_id) return 1;
 	return -1;
@@ -791,8 +787,8 @@ button_state_ ui_last_element_focused() {
 
 ///////////////////////////////////////////
 
-uint64_t hash_fnv64_string_16(const char16_t* string, uint64_t start_hash = HASH_FNV64_START) {
-	uint64_t hash = start_hash;
+id_hash_t hash_fnv64_string_16(const char16_t* string, id_hash_t start_hash = HASH_FNV64_START) {
+	id_hash_t hash = start_hash;
 	while (*string != '\0') {
 		hash = (hash ^ ((*string & 0xFF00) >> 2)) * 1099511628211;
 		hash = (hash ^ ( *string & 0x00FF      )) * 1099511628211;
@@ -803,48 +799,48 @@ uint64_t hash_fnv64_string_16(const char16_t* string, uint64_t start_hash = HASH
 
 ///////////////////////////////////////////
 
-uint64_t ui_stack_hash(const char *string) {
+id_hash_t ui_stack_hash(const char *string) {
 	return skui_id_stack.count > 0 
-		? hash_fnv64_string(string, skui_id_stack.last().id) 
+		? hash_fnv64_string(string, skui_id_stack.last())
 		: hash_fnv64_string(string);
 }
 
 ///////////////////////////////////////////
 
-uint64_t ui_stack_hash_16(const char16_t *string) {
+id_hash_t ui_stack_hash_16(const char16_t *string) {
 	return skui_id_stack.count > 0 
-		? hash_fnv64_string_16(string, skui_id_stack.last().id) 
+		? hash_fnv64_string_16(string, skui_id_stack.last())
 		: hash_fnv64_string_16(string);
 }
 
 ///////////////////////////////////////////
 
-uint64_t ui_stack_hashi(int32_t id) {
+id_hash_t ui_stack_hashi(int32_t id) {
 	return skui_id_stack.count > 0 
-		? hash_fnv64_data(&id, sizeof(int32_t), skui_id_stack.last().id) 
+		? hash_fnv64_data(&id, sizeof(int32_t), skui_id_stack.last())
 		: hash_fnv64_data(&id, sizeof(int32_t));
 }
 
 ///////////////////////////////////////////
 
-uint64_t ui_push_id(const char *id) {
-	uint64_t result = ui_stack_hash(id);
+id_hash_t ui_push_id(const char *id) {
+	id_hash_t result = ui_stack_hash(id);
 	skui_id_stack.add({ result });
 	return result;
 }
 
 ///////////////////////////////////////////
 
-uint64_t ui_push_id_16(const char16_t *id) {
-	uint64_t result = ui_stack_hash(id);
+id_hash_t ui_push_id_16(const char16_t *id) {
+	id_hash_t result = ui_stack_hash(id);
 	skui_id_stack.add({ result });
 	return result;
 }
 
 ///////////////////////////////////////////
 
-uint64_t ui_push_idi(int32_t id) {
-	uint64_t result = ui_stack_hashi(id);
+id_hash_t ui_push_idi(int32_t id) {
+	id_hash_t result = ui_stack_hashi(id);
 	skui_id_stack.add({ result });
 	return result;
 }
@@ -895,7 +891,7 @@ void ui_pop_preserve_keyboard(){
 
 ///////////////////////////////////////////
 
-bool32_t ui_keyboard_focus_lost(uint64_t focused_id) {
+bool32_t ui_keyboard_focus_lost(id_hash_t focused_id) {
 	for (int32_t i = 0; i < handed_max; i++) {
 		const ui_hand_t& h = skui_hand[i];
 		if (ui_is_hand_preoccupied((handed_)i, focused_id, false) && h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) {
