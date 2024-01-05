@@ -366,7 +366,6 @@ bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_
 }
 bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint /*= color128{ 1,1,1,1 }*/) { return ui_button_img_sz_g<char    >(text, image, image_layout, size, image_tint); }
 bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size, image_tint); }
-bool32_t ui_button_img_sz_color_16(const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size, image_tint); }
 
 ///////////////////////////////////////////
 
