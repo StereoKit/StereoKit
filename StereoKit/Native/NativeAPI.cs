@@ -815,9 +815,9 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_sz_16    (string text, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_16   (string text, IntPtr image, UIBtnLayout image_layout);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_16   (string text, IntPtr image, UIBtnLayout image_layout, Color image_tint);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_sz_16(string text, IntPtr image, UIBtnLayout image_layout, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_sz_16(string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16 (string id, IntPtr image, float diameter);
 		[return: MarshalAs(UnmanagedType.Bool)]

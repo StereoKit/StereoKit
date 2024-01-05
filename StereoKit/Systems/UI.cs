@@ -525,7 +525,25 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout);
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1,1,1,1));
+
+		/// <summary>A pressable button accompanied by an image! The button
+		/// will expand to fit the text provided to it, horizontally. Text is
+		/// re-used as the id. Will return true only on the first frame it is
+		/// pressed! Image can be tinted by passing a custom color</summary>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="image">This is the image that will be drawn along with
+		/// the text. See imageLayout for where the image gets drawn!</param>
+		/// <param name="image_tint">Image can tinted with this color</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, imageTint);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -533,7 +551,15 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1));
+
+		/// <inheritdoc cref="ButtonImg(string,Sprite,Color,UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool ButtonImg(string text, Sprite image, Color image_tint, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, image_tint);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -552,7 +578,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1, 1, 1, 1));
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
