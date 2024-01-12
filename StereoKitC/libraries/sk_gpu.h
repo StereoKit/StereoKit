@@ -3277,7 +3277,7 @@ int32_t gl_init_emscripten() {
 int32_t gl_init_egl() {
 #ifdef _SKG_GL_LOAD_EGL
 	const EGLint attribs[] = {
-		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+		EGL_SURFACE_TYPE, EGL_DONT_CARE,
 		EGL_CONFORMANT,   EGL_OPENGL_ES3_BIT_KHR,
 		EGL_BLUE_SIZE,  8,
 		EGL_GREEN_SIZE, 8,
