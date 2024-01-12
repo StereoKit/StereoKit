@@ -28,7 +28,7 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		surface.RequestFocus();
 
 		Run();
-		SetContentView(StereoKitTest.Resource.Layout.activity_main);
+		SetContentView(new View(this));
 	}
 
 	protected override void OnDestroy()
