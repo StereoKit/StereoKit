@@ -329,10 +329,36 @@ bool32_t mesh_has_skin(mesh_t mesh) {
 
 void _mesh_set_weights(mesh_t mesh, const uint16_t* bone_ids_4, int32_t bone_id_4_count, const vec4* bone_weights, int32_t bone_weight_count) {
 	for (int32_t i = 0; i < bone_weight_count; i++) {
-		mesh->skin_data.bone_data[i].weight[0] = (uint8_t)fminf(255, bone_weights[i].x * 255);
-		mesh->skin_data.bone_data[i].weight[1] = (uint8_t)fminf(255, bone_weights[i].y * 255);
-		mesh->skin_data.bone_data[i].weight[2] = (uint8_t)fminf(255, bone_weights[i].z * 255);
-		mesh->skin_data.bone_data[i].weight[3] = (uint8_t)fminf(255, bone_weights[i].w * 255);
+		// Convert the weights to 8-bit integers, for a more memory efficient
+		// representation. This will also ensure the weights are normalized.
+		float   multiplier = 255.0f / (bone_weights[i].x + bone_weights[i].y + bone_weights[i].z + bone_weights[i].w);
+		uint8_t weight[4]  = {
+			(uint8_t)fminf(255, roundf(bone_weights[i].x * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].y * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].z * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].w * multiplier)) 
+		};
+
+		// A small percentage of the time, the weights will add up to 254 or
+		// 256, which will cause artifacts when skinning. This code certifies
+		// that the weights always add up to 255.
+		int32_t sum = weight[0] + weight[1] + weight[2] + weight[3];
+		if      (sum < 255) weight[0] += (uint8_t)(255 - sum);
+		else if (sum > 255) {
+			// Remove weights from the last item first. This loop will almost
+			// certainly execute only once.
+			while (sum > 255) {
+				if      (weight[3] > 0) { weight[3]--; sum--; }
+				else if (weight[2] > 0) { weight[2]--; sum--; }
+				else if (weight[1] > 0) { weight[1]--; sum--; }
+				else if (weight[0] > 0) { weight[0]--; sum--; }
+			}
+		}
+
+		mesh->skin_data.bone_data[i].weight[0] = weight[0];
+		mesh->skin_data.bone_data[i].weight[1] = weight[1];
+		mesh->skin_data.bone_data[i].weight[2] = weight[2];
+		mesh->skin_data.bone_data[i].weight[3] = weight[3];
 		mesh->skin_data.bone_data[i].bone_id[0] = bone_ids_4[i * 4 + 0];
 		mesh->skin_data.bone_data[i].bone_id[1] = bone_ids_4[i * 4 + 1];
 		mesh->skin_data.bone_data[i].bone_id[2] = bone_ids_4[i * 4 + 2];
