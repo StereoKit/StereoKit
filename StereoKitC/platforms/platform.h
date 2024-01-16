@@ -139,8 +139,7 @@ void   platform_set_window_xam    (void *window);
 
 bool   platform_file_exists       (const char* filename);
 char  *platform_working_dir       ();
-void   platform_iterate_dir       (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const long size));
-
+void   platform_iterate_dir       (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const int32_t size));
 char  *platform_push_path_ref     (char       *path, const char *directory);
 char  *platform_pop_path_ref      (char       *path);
 char  *platform_push_path_new     (const char *path, const char *directory);

@@ -530,7 +530,7 @@ font_t platform_default_font() {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const int32_t size)) {
 	if (string_eq(directory_path, "")) {
 		directory_path = platform_path_separator;
 	}
@@ -544,9 +544,9 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 		if (string_eq(dir_info->d_name, ".") || string_eq(dir_info->d_name, "..")) continue;
 
 		if (dir_info->d_type == DT_DIR)
-			on_item(callback_data, dir_info->d_name, false);
+			on_item(callback_data, dir_info->d_name, false, 0);
 		else if (dir_info->d_type == DT_REG)
-			on_item(callback_data, dir_info->d_name, true);
+			on_item(callback_data, dir_info->d_name, true, 0);
 	}
 	closedir(dir);
 }

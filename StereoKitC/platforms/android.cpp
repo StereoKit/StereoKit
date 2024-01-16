@@ -495,7 +495,7 @@ font_t platform_default_font() {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, bool file)) {}
+void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, bool file, const int32_t size)) {}
 
 ///////////////////////////////////////////
 

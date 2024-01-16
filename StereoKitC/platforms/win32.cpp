@@ -367,7 +367,7 @@ float platform_get_scroll() {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const long size)) {
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const int32_t size)) {
 	if (string_eq(directory_path, "")) {
 		DWORD size = ::GetLogicalDriveStringsW(0, nullptr);
 		wchar_t *drive_names = sk_malloc_t(wchar_t, size);

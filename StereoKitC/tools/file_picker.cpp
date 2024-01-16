@@ -53,7 +53,7 @@ namespace sk {
 struct fp_item_t {
 	char *name;
 	bool  file;
-	long size;
+	int32_t size;
 };
 
 struct fp_path_t {
@@ -61,7 +61,7 @@ struct fp_path_t {
 	array_t<char*> fragments;
 };
 
-enum FpSortBy { Name, Size };
+enum fp_sort_by_t { Name, Size };
 
 #if defined(SK_OS_WINDOWS_UWP)
 struct fp_file_cache_t {
@@ -79,8 +79,8 @@ bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
 bool                         fp_files_sorted_asc = true;
-FpSortBy                     fp_sortby = Name;
-bool                         sort_order_changed = false;
+fp_sort_by_t                 fp_sortby = Name;
+bool                         fp_sort_order_changed = false;
 bool                         fp_list_mode = false;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
 
@@ -94,6 +94,8 @@ array_t<fp_item_t>           fp_items         = {};
 pose_t                       fp_win_pose      = pose_identity;
 fp_path_t                    fp_path          = {};
 int32_t                      fp_scroll_offset = 0;
+sprite_t                     spr_folder       = nullptr;
+sprite_t                     spr_up           = nullptr;
 
 ///////////////////////////////////////////
 
@@ -309,8 +311,8 @@ void file_picker_open_folder(const char *folder) {
 	fp_items.each([](fp_item_t &item) { sk_free(item.name); });
 	fp_items.clear();
 	fp_sortby = Name;
-	sort_order_changed = false;
-	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file, const long size) {
+	fp_sort_order_changed = false;
+	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file, const int32_t size) {
 		bool valid = fp_filter_count == 0;
 		// If the extension matches our filter, add it
 		if (file) {
@@ -367,6 +369,10 @@ void file_picker_finish() {
 	fp_call_data   = nullptr;
 	fp_call        = false;
 	fp_show        = false;
+	sprite_release(spr_folder);
+	spr_folder = nullptr;
+	sprite_release(spr_up);
+	spr_up = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -474,42 +480,46 @@ void file_picker_update() {
 
 		ui_hseparator();
 
-		sprite_t spr_folder = sprite_find(ui_default_id_spr_arrow_right);
+		if (spr_folder == nullptr) {
+			spr_folder = sprite_find(ui_default_id_spr_arrow_right);
+		}
+		if (spr_up == nullptr) {
+			spr_up = sprite_find(ui_default_id_spr_arrow_up);
+		}
 		static ui_btn_layout_ ui_folderimg_button_layout = ui_btn_layout_left;
 		// List the files
 		vec2 size = { .12f, line_height * 1.5f };
 		if (fp_list_mode) {
-			sprite_t spr_up = sprite_find(ui_default_id_spr_arrow_up);
 			static ui_btn_layout_ layout = ui_btn_layout_left;
 			if (fp_sortby == Name) {
 				if (ui_button_img_sz("Name", spr_up, layout, size)) {
 					fp_sortby = Name;
-					sort_order_changed = true;
+					fp_sort_order_changed = true;
 				}
 			}
 			else {
 				if (ui_button_sz("Name", size)) {
 					fp_sortby = Name;
-					sort_order_changed = true;
+					fp_sort_order_changed = true;
 				}
 			}
 			ui_sameline();
-			ui_text_sz(" ", text_align_x_center, text_fit_clip, size);
+			ui_layout_reserve(size, false, 0.0f);
 			ui_sameline();
 			if (fp_sortby == Size) {
 				if (ui_button_img_sz("Size", spr_up, layout, size)) {
 					fp_sortby = Size;
-					sort_order_changed = true;
+					fp_sort_order_changed = true;
 				}
 			}
 			else {
 				if (ui_button_sz("Size", size)) {
 					fp_sortby = Size;
-					sort_order_changed = true;
+					fp_sort_order_changed = true;
 				}
 			}
 			ui_hseparator();
-			if (sort_order_changed) {
+			if (fp_sort_order_changed) {
 				switch (fp_sortby) {
 				case Name:
 					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file != b.file ? a.file - b.file : strcmp(a.name, b.name); });
@@ -528,11 +538,11 @@ void file_picker_update() {
 		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
 			if (fp_list_mode) {
 				if (i >= fp_items.count) {
-					ui_text_sz("", text_align_center, text_fit_clip, size);
+					ui_layout_reserve(size, false, 0.0f);
 					ui_sameline();
-					ui_text_sz("", text_align_center, text_fit_clip, size);
+					ui_layout_reserve(size, false, 0.0f);
 					ui_sameline();
-					ui_text_sz("", text_align_center, text_fit_clip, size);
+					ui_layout_reserve(size, false, 0.0f);
 				}
 				else {
 					if (fp_items[i].file) {
@@ -549,7 +559,7 @@ void file_picker_update() {
 					char buffer[128];
 					int ret = snprintf(buffer, sizeof(buffer), "%ld", fp_items[i].size);
 					char* num_string = buffer;
-					ui_text_sz(" ", text_align_center, text_fit_clip, size);
+					ui_layout_reserve(size, false, 0.0f);
 					ui_sameline();
 					ui_text_sz(num_string, text_align_center, text_fit_clip, size);
 				}
