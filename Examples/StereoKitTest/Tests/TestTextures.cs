@@ -55,7 +55,43 @@ internal class TestTextures : ITest
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, ow, oh));
 
+		Tests.Test(CheckTextureFormats);
+		Tests.Test(CheckTextureRead);
+
 		Tests.Screenshot("TexFormats.jpg", 0, 400, 400, 50, V.XYZ(0,-0.15f, 0), V.XYZ(0,-0.15f,-0.5f) );
+	}
+
+	bool CheckTextureFormats()
+	{
+		foreach (FormatTest test in testTextures)
+		{
+			if (test.tex.AssetState < 0)
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTextureRead()
+	{
+		foreach (FormatTest test in testTextures)
+		{
+			Tex texture = test.tex;
+			if (test.tex.Format != TexFormat.Rgba32       &&
+				test.tex.Format != TexFormat.Rgba32Linear &&
+				test.tex.Format != TexFormat.Bgra32       &&
+				test.tex.Format != TexFormat.Bgra32Linear &&
+				test.tex.Format != TexFormat.R32)
+				continue;
+
+			if (texture.AssetState < 0)
+				continue;
+
+			Color32[] colors1 = texture.GetColors(1);
+			Color32[] colors0 = texture.GetColors(0);
+			if (colors0 == null || colors1 == null)
+				return false;
+		}
+		return true;
 	}
 
 	public void Step()
