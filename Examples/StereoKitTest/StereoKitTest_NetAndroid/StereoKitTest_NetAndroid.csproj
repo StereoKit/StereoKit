@@ -16,8 +16,8 @@
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
 		
-		<!--<TestBuildMode>x64</TestBuildMode>-->
-		<TestBuildMode>ARM64</TestBuildMode>
+		<TestBuildMode>x64</TestBuildMode>
+		<!--<TestBuildMode>ARM64</TestBuildMode>-->
 
 		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='ARM64'">android-arm64</RuntimeIdentifiers>
 		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='x64'">android-x64</RuntimeIdentifiers>
