@@ -53,7 +53,7 @@ namespace sk {
 struct fp_item_t {
 	char *name;
 	bool  file;
-	int32_t size;
+	int64_t size;
 };
 
 struct fp_path_t {
@@ -61,7 +61,11 @@ struct fp_path_t {
 	array_t<char*> fragments;
 };
 
-enum fp_sort_by_t { Name, Size };
+//enum fp_sort_by_t { Name, Size };
+enum fp_sort_by_ {
+	fp_sort_by_name,
+	fp_sort_by_size
+};
 
 #if defined(SK_OS_WINDOWS_UWP)
 struct fp_file_cache_t {
@@ -79,7 +83,7 @@ bool                         fp_call          = false;
 void                        *fp_call_data     = nullptr;
 bool                         fp_call_status   = false;
 bool                         fp_files_sorted_asc = true;
-fp_sort_by_t                 fp_sortby = Name;
+fp_sort_by_                  fp_sortby = fp_sort_by_name;
 bool                         fp_sort_order_changed = false;
 bool                         fp_list_mode = false;
 void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
@@ -310,7 +314,7 @@ void file_picker_open_folder(const char *folder) {
 
 	fp_items.each([](fp_item_t &item) { sk_free(item.name); });
 	fp_items.clear();
-	fp_sortby = Name;
+	fp_sortby = fp_sort_by_name;
 	fp_sort_order_changed = false;
 	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file, const int32_t size) {
 		bool valid = fp_filter_count == 0;
@@ -491,40 +495,40 @@ void file_picker_update() {
 		vec2 size = { .12f, line_height * 1.5f };
 		if (fp_list_mode) {
 			static ui_btn_layout_ layout = ui_btn_layout_left;
-			if (fp_sortby == Name) {
+			if (fp_sortby == fp_sort_by_name) {
 				if (ui_button_img_sz("Name", spr_up, layout, size)) {
-					fp_sortby = Name;
+					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
 				}
 			}
 			else {
 				if (ui_button_sz("Name", size)) {
-					fp_sortby = Name;
+					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
 				}
 			}
 			ui_sameline();
 			ui_layout_reserve(size, false, 0.0f);
 			ui_sameline();
-			if (fp_sortby == Size) {
+			if (fp_sortby == fp_sort_by_size) {
 				if (ui_button_img_sz("Size", spr_up, layout, size)) {
-					fp_sortby = Size;
+					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
 				}
 			}
 			else {
 				if (ui_button_sz("Size", size)) {
-					fp_sortby = Size;
+					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
 				}
 			}
 			ui_hseparator();
 			if (fp_sort_order_changed) {
 				switch (fp_sortby) {
-				case Name:
+				case fp_sort_by_name:
 					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file != b.file ? a.file - b.file : strcmp(a.name, b.name); });
 					break;
-				case Size:
+				case fp_sort_by_size:
 					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.size == b.size ? 0 : a.size - b.size > 0 ? 1 : -1;});
 					break;
 				}
@@ -538,11 +542,7 @@ void file_picker_update() {
 		for (int32_t i = fp_scroll_offset; i < fp_scroll_offset + scroll_step; i++) {
 			if (fp_list_mode) {
 				if (i >= fp_items.count) {
-					ui_layout_reserve(size, false, 0.0f);
-					ui_sameline();
-					ui_layout_reserve(size, false, 0.0f);
-					ui_sameline();
-					ui_layout_reserve(size, false, 0.0f);
+					ui_layout_reserve({size.x * 3, size.y}, false, 0.0f);
 				}
 				else {
 					if (fp_items[i].file) {
