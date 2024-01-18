@@ -342,7 +342,9 @@ namespace StereoKit
 		/// array if an invalid mip-level is provided.</param>
 		public void GetColors(ref Color32[] colorData, int mipLevel = 0)
 		{
-			int count = Width * Height;
+			int width  = Width  >> mipLevel;
+			int height = Height >> mipLevel;
+			int count  = width * height;
 			if (colorData == null || colorData.Length != count)
 				colorData = new Color32[count];
 
@@ -360,7 +362,9 @@ namespace StereoKit
 		/// </returns>
 		public Color32[] GetColors(int mipLevel = 0)
 		{
-			Color32[] result      = new Color32[Width * Height];
+			int width  = Width  >> mipLevel;
+			int height = Height >> mipLevel;
+			Color32[] result      = new Color32[width * height];
 			GCHandle  pinnedArray = GCHandle.Alloc(result, GCHandleType.Pinned);
 			IntPtr    pointer     = pinnedArray.AddrOfPinnedObject();
 			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(result.Length * 4), mipLevel);
