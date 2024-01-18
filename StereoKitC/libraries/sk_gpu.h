@@ -4560,9 +4560,17 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 	}
 
 	if (tex->multisample > 1) {
-		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
-		glBindTexture      (destination->_target, destination->_texture);
+		uint32_t temp_framebuffer;
+		glGenFramebuffers     (1, &temp_framebuffer);
+		glBindFramebuffer     (GL_FRAMEBUFFER, temp_framebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, destination->_target, destination->_texture, 0);
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, temp_framebuffer);
+
 		glBlitFramebuffer  (0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		glDeleteFramebuffers(1, &temp_framebuffer);
 	} else {
 		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
 		glBindTexture      (destination->_target, destination->_texture);
