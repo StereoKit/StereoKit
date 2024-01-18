@@ -2966,6 +2966,8 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_UNSIGNED_INT_8_8_8_8 0x8035
 #define GL_UNSIGNED_INT_8_8_8_8_REV 0x8367
 #define GL_MAX_SAMPLES 0x8D57
+#define GL_PACK_ALIGNMENT 0x0D05
+#define GL_UNPACK_ALIGNMENT 0x0CF5
 
 #define GL_FRAGMENT_SHADER 0x8B30
 #define GL_VERTEX_SHADER 0x8B31
@@ -3049,6 +3051,7 @@ GLE(void,     glTexStorage3DMultisample, uint32_t target, uint32_t samples, int3
 GLE(void,     glCopyTexSubImage2D,       uint32_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height) \
 GLE(void,     glGetTexImage,             uint32_t target, int32_t level, uint32_t format, uint32_t type, void *img) \
 GLE(void,     glReadPixels,              int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t format, uint32_t type, void *data) \
+GLE(void,     glPixelStorei,             uint32_t pname, int32_t param) \
 GLE(void,     glActiveTexture,           uint32_t texture) \
 GLE(void,     glGenerateMipmap,          uint32_t target) \
 GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
@@ -4663,6 +4666,9 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 
 	glBindTexture(tex->_target, tex->_texture);
 
+	if (tex->format == skg_tex_fmt_r8)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	tex->_format    = (uint32_t)skg_tex_fmt_to_native   (tex->format);
 	uint32_t layout =           skg_tex_fmt_to_gl_layout(tex->format);
 	uint32_t type   =           skg_tex_fmt_to_gl_type  (tex->format);
@@ -4683,6 +4689,8 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		glTexImage2D(GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 		#endif
 	}
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
 	if (tex->mips == skg_mip_generate)
 		glGenerateMipmap(tex->_target);
