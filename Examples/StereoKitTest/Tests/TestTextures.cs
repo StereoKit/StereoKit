@@ -32,26 +32,31 @@ internal class TestTextures : ITest
 		failedFallbackMat = Material.Default.Copy();
 		failedFallbackMat[MatParamName.DiffuseTex] = failedFallbackTex;
 
-		ulong on64  = 0xFFFF00000000FFFF;
-		ulong off64 = 0xFFFF000000000000;
+		// 0x3C00 is a half float with value 1.0f
+		ulong  on64  = 0x3C00000000003C00;
+		ulong  off64 = 0x3C00000000000000;
+		ushort on16  = 0x3C00;
+		ushort off16 = 0x0000;
 
 		// Test a NPOT size to ensure mips work properly with that
 		int w = 32;
 		int h = 32;
 		int ow = 41;
-		int oh = 32;
+		int oh = 33;
 		testTextures.Add(MakeTest(TexFormat.Rgba32,       new Color32(255,0,0,255), new Color32(0,0,0,255), w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Rgba32Linear, new Color32(255,0,0,255), new Color32(0,0,0,255), ow, oh));
 		testTextures.Add(MakeTest(TexFormat.Bgra32,       new Color32(0,0,255,255), new Color32(0,0,0,255), w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Bgra32Linear, new Color32(0,0,255,255), new Color32(0,0,0,255), ow, oh));
-		testTextures.Add(MakeTest(TexFormat.Rgba64u,      on64, off64, w,  h ));
-		testTextures.Add(MakeTest(TexFormat.Rgba64u,      on64, off64, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.Rgba64f,      on64, off64, w,  h ));
+		testTextures.Add(MakeTest(TexFormat.Rgba64f,      on64, off64, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.Rgba128,      new Color(1,0,0,1), new Color(0,0,0,1), w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Rgba128,      new Color(1,0,0,1), new Color(0,0,0,1), ow, oh));
 		testTextures.Add(MakeTest(TexFormat.R8,           (byte)255, (byte)0, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R8,           (byte)255, (byte)0, ow, oh));
-		testTextures.Add(MakeTest(TexFormat.R16,          (ushort)ushort.MaxValue, (ushort)0, w,  h ));
-		testTextures.Add(MakeTest(TexFormat.R16,          (ushort)ushort.MaxValue, (ushort)0, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.R16f,         on16, off16, w,  h ));
+		testTextures.Add(MakeTest(TexFormat.R16f,         on16, off16, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.R16u,         ushort.MaxValue, (ushort)0, w,  h ));
+		testTextures.Add(MakeTest(TexFormat.R16u,         ushort.MaxValue, (ushort)0, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, ow, oh));
 
