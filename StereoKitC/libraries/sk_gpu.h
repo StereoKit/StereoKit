@@ -4730,6 +4730,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		char text[128];
 		snprintf(text, 128, "skg_tex_get_mip_contents_arr: eating a gl error from somewhere else: %d", result);
 		skg_log(skg_log_warning, text);
+		result = glGetError();
 	}
 	
 	// Double check on mips first
