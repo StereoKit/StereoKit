@@ -140,7 +140,9 @@ typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_rgba64f,
 	skg_tex_fmt_rgba128,
 	skg_tex_fmt_r8,
-	skg_tex_fmt_r16,
+	skg_tex_fmt_r16u,
+	skg_tex_fmt_r16s,
+	skg_tex_fmt_r16f,
 	skg_tex_fmt_r32,
 	skg_tex_fmt_depthstencil,
 	skg_tex_fmt_depth32,
@@ -2075,7 +2077,8 @@ bool skg_can_make_mips(skg_tex_fmt_ format) {
 	case skg_tex_fmt_depth32:
 	case skg_tex_fmt_r32:
 	case skg_tex_fmt_depth16:
-	case skg_tex_fmt_r16:
+	case skg_tex_fmt_r16u:
+	case skg_tex_fmt_r16s:
 	case skg_tex_fmt_r8g8:
 	case skg_tex_fmt_r8: return true;
 	default: return false;
@@ -2112,7 +2115,8 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 			skg_downsample_1((float    *)mip_data, mip_w, mip_h, (float    **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
 		case skg_tex_fmt_depth16:
-		case skg_tex_fmt_r16:
+		case skg_tex_fmt_r16u:
+		case skg_tex_fmt_r16s:
 		case skg_tex_fmt_r8g8:
 			skg_downsample_1((uint16_t *)mip_data, mip_w, mip_h, (uint16_t **)&tex_mem[m].pSysMem, &mip_w, &mip_h); 
 			break;
@@ -2633,7 +2637,9 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format){
 	case skg_tex_fmt_depth32:       return DXGI_FORMAT_D32_FLOAT;
 	case skg_tex_fmt_depthstencil:  return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	case skg_tex_fmt_r8:            return DXGI_FORMAT_R8_UNORM;
-	case skg_tex_fmt_r16:           return DXGI_FORMAT_R16_UNORM;
+	case skg_tex_fmt_r16u:          return DXGI_FORMAT_R16_UNORM;
+	case skg_tex_fmt_r16s:          return DXGI_FORMAT_R16_SNORM;
+	case skg_tex_fmt_r16f:          return DXGI_FORMAT_R16_FLOAT;
 	case skg_tex_fmt_r32:           return DXGI_FORMAT_R32_FLOAT;
 	case skg_tex_fmt_r8g8:          return DXGI_FORMAT_R8G8_UNORM;
 	default: return DXGI_FORMAT_UNKNOWN;
@@ -2658,7 +2664,9 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case DXGI_FORMAT_D32_FLOAT:           return skg_tex_fmt_depth32;
 	case DXGI_FORMAT_D24_UNORM_S8_UINT:   return skg_tex_fmt_depthstencil;
 	case DXGI_FORMAT_R8_UNORM:            return skg_tex_fmt_r8;
-	case DXGI_FORMAT_R16_UNORM:           return skg_tex_fmt_r16;
+	case DXGI_FORMAT_R16_UNORM:           return skg_tex_fmt_r16u;
+	case DXGI_FORMAT_R16_SNORM:           return skg_tex_fmt_r16s;
+	case DXGI_FORMAT_R16_FLOAT:           return skg_tex_fmt_r16f;
 	case DXGI_FORMAT_R32_FLOAT:           return skg_tex_fmt_r32;
 	case DXGI_FORMAT_R8G8_UNORM:          return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
@@ -2915,6 +2923,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_R8 0x8229
 #define GL_RG8 0x822B
 #define GL_RG16 0x822C
+#define GL_R16 0x822A
 #define GL_R16F 0x822D
 #define GL_R32F 0x822E
 #define GL_RG16F 0x822F
@@ -2962,10 +2971,13 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_UNSIGNED_INT 0x1405
 #define GL_UNSIGNED_INT_24_8 0x84FA;
 #define GL_FLOAT 0x1406
+#define GL_HALF_FLOAT 0x140B
 #define GL_DOUBLE 0x140A
 #define GL_UNSIGNED_INT_8_8_8_8 0x8035
 #define GL_UNSIGNED_INT_8_8_8_8_REV 0x8367
 #define GL_MAX_SAMPLES 0x8D57
+#define GL_PACK_ALIGNMENT 0x0D05
+#define GL_UNPACK_ALIGNMENT 0x0CF5
 
 #define GL_FRAGMENT_SHADER 0x8B30
 #define GL_VERTEX_SHADER 0x8B31
@@ -3049,6 +3061,7 @@ GLE(void,     glTexStorage3DMultisample, uint32_t target, uint32_t samples, int3
 GLE(void,     glCopyTexSubImage2D,       uint32_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height) \
 GLE(void,     glGetTexImage,             uint32_t target, int32_t level, uint32_t format, uint32_t type, void *img) \
 GLE(void,     glReadPixels,              int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t format, uint32_t type, void *data) \
+GLE(void,     glPixelStorei,             uint32_t pname, int32_t param) \
 GLE(void,     glActiveTexture,           uint32_t texture) \
 GLE(void,     glGenerateMipmap,          uint32_t target) \
 GLE(void,     glBindAttribLocation,      uint32_t program, uint32_t index, const char *name) \
@@ -4546,9 +4559,23 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 		skg_tex_set_contents_arr(destination, nullptr, tex->array_count, tex->width, tex->height, tex->multisample);
 	}
 
-	glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
-	glBindTexture      (destination->_target, destination->_texture);
-	glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
+	if (tex->multisample > 1) {
+		uint32_t temp_framebuffer;
+		glGenFramebuffers     (1, &temp_framebuffer);
+		glBindFramebuffer     (GL_FRAMEBUFFER, temp_framebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, destination->_target, destination->_texture, 0);
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, temp_framebuffer);
+
+		glBlitFramebuffer  (0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		glDeleteFramebuffers(1, &temp_framebuffer);
+	} else {
+		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
+		glBindTexture      (destination->_target, destination->_texture);
+		glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
+	}
 }
 
 ///////////////////////////////////////////
@@ -4663,6 +4690,11 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 
 	glBindTexture(tex->_target, tex->_texture);
 
+	if (tex->format == skg_tex_fmt_r8)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	else if (tex->format == skg_tex_fmt_r16u || tex->format == skg_tex_fmt_r16s || tex->format == skg_tex_fmt_r16f || tex->format == skg_tex_fmt_r8g8 || tex->format == skg_tex_fmt_depth16)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+
 	tex->_format    = (uint32_t)skg_tex_fmt_to_native   (tex->format);
 	uint32_t layout =           skg_tex_fmt_to_gl_layout(tex->format);
 	uint32_t type   =           skg_tex_fmt_to_gl_type  (tex->format);
@@ -4683,6 +4715,8 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		glTexImage2D(GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 		#endif
 	}
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
 	if (tex->mips == skg_mip_generate)
 		glGenerateMipmap(tex->_target);
@@ -4730,6 +4764,7 @@ bool skg_tex_get_mip_contents_arr(skg_tex_t *tex, int32_t mip_level, int32_t arr
 		char text[128];
 		snprintf(text, 128, "skg_tex_get_mip_contents_arr: eating a gl error from somewhere else: %d", result);
 		skg_log(skg_log_warning, text);
+		result = glGetError();
 	}
 	
 	// Double check on mips first
@@ -4851,15 +4886,17 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	case skg_tex_fmt_bgra32_linear: return GL_RGBA8;
 	case skg_tex_fmt_rg11b10:       return GL_R11F_G11F_B10F;
 	case skg_tex_fmt_rgb10a2:       return GL_RGB10_A2;
-	case skg_tex_fmt_rgba64u:       return GL_RGBA16F;
-	case skg_tex_fmt_rgba64s:       return GL_RGBA16F;
+	case skg_tex_fmt_rgba64u:       return GL_RGBA16;
+	case skg_tex_fmt_rgba64s:       return GL_RGBA16_SNORM;
 	case skg_tex_fmt_rgba64f:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba128:       return GL_RGBA32F;
 	case skg_tex_fmt_depth16:       return GL_DEPTH_COMPONENT16;
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT32F;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH24_STENCIL8;
 	case skg_tex_fmt_r8:            return GL_R8;
-	case skg_tex_fmt_r16:           return GL_R16F;
+	case skg_tex_fmt_r16u:          return GL_R16;
+	case skg_tex_fmt_r16s:          return GL_R16_SNORM;
+	case skg_tex_fmt_r16f:          return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
 	case skg_tex_fmt_r8g8:          return GL_RG8;
 	default: return 0;
@@ -4874,15 +4911,17 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case GL_RGBA8:              return skg_tex_fmt_rgba32_linear;
 	case GL_R11F_G11F_B10F:     return skg_tex_fmt_rg11b10;
 	case GL_RGB10_A2:           return skg_tex_fmt_rgb10a2;
-	case GL_RGBA16UI:           return skg_tex_fmt_rgba64u;
-	case GL_RGBA16I:            return skg_tex_fmt_rgba64s;
+	case GL_RGBA16:             return skg_tex_fmt_rgba64u;
+	case GL_RGBA16_SNORM:       return skg_tex_fmt_rgba64s;
 	case GL_RGBA16F:            return skg_tex_fmt_rgba64f;
 	case GL_RGBA32F:            return skg_tex_fmt_rgba128;
 	case GL_DEPTH_COMPONENT16:  return skg_tex_fmt_depth16;
 	case GL_DEPTH_COMPONENT32F: return skg_tex_fmt_depth32;
 	case GL_DEPTH24_STENCIL8:   return skg_tex_fmt_depthstencil;
 	case GL_R8:                 return skg_tex_fmt_r8;
-	case GL_R16UI:              return skg_tex_fmt_r16;
+	case GL_R16:                return skg_tex_fmt_r16u;
+	case GL_R16F:               return skg_tex_fmt_r16f;
+	case GL_R16_SNORM:          return skg_tex_fmt_r16s;
 	case GL_R32F:               return skg_tex_fmt_r32;
 	case GL_RG8:                return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
@@ -4912,7 +4951,9 @@ uint32_t skg_tex_fmt_to_gl_layout(skg_tex_fmt_ format) {
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH_STENCIL;
 	case skg_tex_fmt_r8:
-	case skg_tex_fmt_r16:
+	case skg_tex_fmt_r16u:
+	case skg_tex_fmt_r16s:
+	case skg_tex_fmt_r16f:
 	case skg_tex_fmt_r32:           return GL_RED;
 	case skg_tex_fmt_r8g8:          return GL_RG;
 	default: return 0;
@@ -4931,13 +4972,15 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rg11b10:       return GL_FLOAT;
 	case skg_tex_fmt_rgba64u:       return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_rgba64s:       return GL_SHORT;
-	case skg_tex_fmt_rgba64f:       return GL_FLOAT;
+	case skg_tex_fmt_rgba64f:       return GL_HALF_FLOAT;
 	case skg_tex_fmt_rgba128:       return GL_FLOAT;
 	case skg_tex_fmt_depth16:       return GL_UNSIGNED_SHORT;
 	case skg_tex_fmt_depth32:       return GL_FLOAT;
 	case skg_tex_fmt_depthstencil:  return GL_UNSIGNED_INT_24_8;
 	case skg_tex_fmt_r8:            return GL_UNSIGNED_BYTE;
-	case skg_tex_fmt_r16:           return GL_UNSIGNED_SHORT;
+	case skg_tex_fmt_r16u:          return GL_UNSIGNED_SHORT;
+	case skg_tex_fmt_r16s:          return GL_SHORT;
+	case skg_tex_fmt_r16f:          return GL_HALF_FLOAT;
 	case skg_tex_fmt_r32:           return GL_FLOAT;
 	case skg_tex_fmt_r8g8:          return GL_UNSIGNED_SHORT;
 	default: return 0;
@@ -5759,7 +5802,7 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_rgba32_linear:
 	case skg_tex_fmt_bgra32:
 	case skg_tex_fmt_bgra32_linear:
-	case skg_tex_fmt_rg11b10: 
+	case skg_tex_fmt_rg11b10:
 	case skg_tex_fmt_rgb10a2:       return sizeof(uint8_t )*4;
 	case skg_tex_fmt_rgba64u:
 	case skg_tex_fmt_rgba64s:
@@ -5769,7 +5812,9 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_depth32:       return sizeof(uint32_t);
 	case skg_tex_fmt_depthstencil:  return sizeof(uint32_t);
 	case skg_tex_fmt_r8:            return sizeof(uint8_t );
-	case skg_tex_fmt_r16:           return sizeof(uint16_t);
+	case skg_tex_fmt_r16u:
+	case skg_tex_fmt_r16s:
+	case skg_tex_fmt_r16f:          return sizeof(uint16_t);
 	case skg_tex_fmt_r32:           return sizeof(uint32_t);
 	case skg_tex_fmt_r8g8:          return sizeof(uint16_t);
 	default: return 0;
