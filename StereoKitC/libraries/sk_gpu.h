@@ -4559,9 +4559,15 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 		skg_tex_set_contents_arr(destination, nullptr, tex->array_count, tex->width, tex->height, tex->multisample);
 	}
 
-	glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
-	glBindTexture      (destination->_target, destination->_texture);
-	glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
+	if (tex->multisample > 1) {
+		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
+		glBindTexture      (destination->_target, destination->_texture);
+		glBlitFramebuffer  (0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	} else {
+		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
+		glBindTexture      (destination->_target, destination->_texture);
+		glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
+	}
 }
 
 ///////////////////////////////////////////
