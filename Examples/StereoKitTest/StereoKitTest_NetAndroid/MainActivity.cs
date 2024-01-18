@@ -6,6 +6,7 @@ using Android.Runtime;
 using Android.Views;
 using StereoKit;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
@@ -50,6 +51,19 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		// be set before any other SK calls, otherwise native library
 		// loading may fail.
 		SK.AndroidActivity = this;
+
+		SK.ExecuteOnMain(() =>
+		{
+			// For requesting permission to use the microphone, eye tracking, and spatial mapping
+			List<string> permissions = new();
+			if (CheckSelfPermission(Android.Manifest.Permission.RecordAudio) != Android.Content.PM.Permission.Granted)
+				permissions.Add(Android.Manifest.Permission.RecordAudio);
+			if (CheckSelfPermission("com.magicleap.permission.EYE_TRACKING") != Android.Content.PM.Permission.Granted)
+				permissions.Add("com.magicleap.permission.EYE_TRACKING");
+			if (CheckSelfPermission("com.magicleap.permission.SPATIAL_MAPPING") != Android.Content.PM.Permission.Granted)
+				permissions.Add("com.magicleap.permission.SPATIAL_MAPPING");
+			RequestPermissions(permissions.ToArray(), permissions.Count);
+		});
 
 		// Task.Run will eat exceptions, but Thread.Start doesn't seem to.
 		new Thread(InvokeStereoKit).Start();
