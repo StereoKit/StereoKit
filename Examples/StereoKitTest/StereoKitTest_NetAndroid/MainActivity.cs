@@ -62,7 +62,8 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 				permissions.Add("com.magicleap.permission.EYE_TRACKING");
 			if (CheckSelfPermission("com.magicleap.permission.SPATIAL_MAPPING") != Android.Content.PM.Permission.Granted)
 				permissions.Add("com.magicleap.permission.SPATIAL_MAPPING");
-			RequestPermissions(permissions.ToArray(), permissions.Count);
+			if (permissions.Count > 0)
+				RequestPermissions(permissions.ToArray(), permissions.Count);
 		});
 
 		// Task.Run will eat exceptions, but Thread.Start doesn't seem to.
