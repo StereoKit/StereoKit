@@ -536,7 +536,7 @@ namespace StereoKit
 		/// </param>
 		/// <param name="image">This is the image that will be drawn along with
 		/// the text. See imageLayout for where the image gets drawn!</param>
-		/// <param name="image_tint">Image can tinted with this color</param>
+		/// <param name="imageTint">Image can tinted with this color.</param>
 		/// <param name="imageLayout">This enum specifies how the text and
 		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
 		/// will have the image on the left, and text on the right.</param>
@@ -1448,6 +1448,20 @@ namespace StereoKit
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
 			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
 
+		/// <summary>This generates a quadrantified mesh meant for UI buttons
+		/// by sweeping a lathe over the rounded corners of a rectangle! Note
+		/// that this mesh is quadrantified, so it requires special shaders to
+		/// draw properly!</summary>
+		/// <param name="roundedCorners">A bit-flag indicating which corners
+		/// should be rounded, and which should be sharp!</param>
+		/// <param name="cornerRadius">The radius of each rounded corner.</param>
+		/// <param name="cornerResolution">How many slices/verts go into each corner?
+		/// More is smoother, but more expensive to render.</param>
+		/// <param name="deleteFlatSides">If two adjacent corners are sharp, should
+		/// we skip connecting them with triangles? If this edge will always be
+		/// covered, then deleting these faces may save you some performance.</param>
+		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
+		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
 		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
 		{
 			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, lathePts, lathePts.Length);
