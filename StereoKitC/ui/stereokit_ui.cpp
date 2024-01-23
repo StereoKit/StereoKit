@@ -824,10 +824,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			bool pressed  = finger_offset < button_depth / 2;
 			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
 
-			button_state = ui_active_set(hand, id, pinch & button_state_active || pressed);
+			button_state = interactor_set_active(hand, id, pinch & button_state_active || pressed);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			focus_state = ui_focus_set(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
+			focus_state = interactor_set_focus(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
 
 			finger_at = vertical ? skui_interactor[hand].finger.y : skui_interactor[hand].finger.x;
 		}
@@ -852,10 +852,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 		if (hand != -1) {
 			const hand_t *h     = input_hand((handed_)hand);
 			button_state_ pinch = h->pinch_state;
-			button_state = ui_active_set(hand, id, pinch & button_state_active);
+			button_state = interactor_set_active(hand, id, pinch & button_state_active);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
+			focus_state = interactor_set_focus(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
 			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 			finger_at = vertical ? pinch_local.y : pinch_local.x;
