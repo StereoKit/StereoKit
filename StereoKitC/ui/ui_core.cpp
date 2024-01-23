@@ -90,6 +90,7 @@ void ui_core_update() {
 		skui_interactor[i].focused_prev_prev   = skui_interactor[i].focused_prev;
 		skui_interactor[i].focused_prev        = skui_interactor[i].focused;
 		skui_interactor[i].active_prev         = skui_interactor[i].active;
+		skui_interactor[i].pinch_state         = hand->pinch_state;
 
 		skui_interactor[i].focus_priority = FLT_MAX;
 		skui_interactor[i].focused = 0;
@@ -145,31 +146,31 @@ button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact
 	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
-	int32_t       hand    = -1;
+	int32_t       interactor = -1;
 
 	vec3 start = bounds.center + bounds.dimensions / 2;
 	if (interact_type == ui_confirm_push) {
 		ui_box_interaction_1h_poke(id_hash,
 			start, bounds.dimensions,
 			start, bounds.dimensions,
-			&focus, &hand);
+			&focus, &interactor);
 	} else {
 		ui_box_interaction_1h_pinch(id_hash,
 			start, bounds.dimensions,
 			start, bounds.dimensions,
-			&focus, &hand);
+			&focus, &interactor);
 	}
 
 	bool active = focus & button_state_active && !(focus & button_state_just_inactive);
-	if (interact_type != ui_confirm_push && hand != -1) {
-		active = input_hand((handed_)hand)->pinch_state & button_state_active;
+	if (interact_type != ui_confirm_push && interactor != -1) {
+		active = skui_interactor[interactor].pinch_state & button_state_active;
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
-		focus = interactor_set_focus(hand, id_hash, active || focus & button_state_active, 0);
+		focus = interactor_set_focus(interactor, id_hash, active || focus & button_state_active, 0);
 	}
-	result = interactor_set_active(hand, id_hash, active);
+	result = interactor_set_active(interactor, id_hash, active);
 
-	if (out_opt_hand        != nullptr) *out_opt_hand        = (handed_)hand;
+	if (out_opt_hand        != nullptr) *out_opt_hand        = (handed_)interactor;
 	if (out_opt_focus_state != nullptr) *out_opt_focus_state = focus;
 	return result;
 }
@@ -216,7 +217,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 			continue;
 
 		if (skui_interactor[i].tracked && ui_in_box(skui_interactor[i].finger, skui_interactor[i].finger_prev, skui_finger_radius, bounds)) {
-			button_state_ state = input_hand((handed_)i)->pinch_state;
+			button_state_ state = skui_interactor[i].pinch_state;
 			if (state != button_state_inactive) {
 				result = state;
 				out_hand = (handed_)i;

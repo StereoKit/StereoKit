@@ -554,9 +554,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// Find out if the user is trying to focus this UI element
 	float         finger_offset;
-	int32_t       hand;
+	int32_t       interactor;
 	button_state_ state, focus;
-	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &hand);
+	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active) {
 		platform_keyboard_show(true,type);
@@ -800,7 +800,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	button_state_ button_state  = button_state_inactive;
 	float         finger_offset = button_depth;
 	float         finger_at     = 0;
-	int32_t       hand          = -1;
+	int32_t       interactor    = -1;
 	if (confirm_method == ui_confirm_push) {
 		vec3  activation_start = vertical
 			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
@@ -812,24 +812,23 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 		ui_box_interaction_1h_poke(id,
 			activation_start, activation_size,
 			sustain_start,    sustain_size,
-			&focus_state, &hand);
+			&focus_state, &interactor);
 
 		// Here, we allow for pressing or pinching of the button to activate
 		// the slider!
-		if (hand != -1) {
-			const hand_t* h     = input_hand((handed_)hand);
-			button_state_ pinch = h->pinch_state;
+		if (interactor != -1) {
+			button_state_ pinch = skui_interactor[interactor].pinch_state;
 
-			finger_offset = -skui_interactor[hand].finger.z - window_relative_pos.z;
+			finger_offset = -skui_interactor[interactor].finger.z - window_relative_pos.z;
 			bool pressed  = finger_offset < button_depth / 2;
 			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
 
-			button_state = interactor_set_active(hand, id, pinch & button_state_active || pressed);
+			button_state = interactor_set_active(interactor, id, pinch & button_state_active || pressed);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			focus_state = interactor_set_focus(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
+			focus_state = interactor_set_focus(interactor, id, pinch & button_state_active || focus_state & button_state_active, 0);
 
-			finger_at = vertical ? skui_interactor[hand].finger.y : skui_interactor[hand].finger.x;
+			finger_at = vertical ? skui_interactor[interactor].finger.y : skui_interactor[interactor].finger.x;
 		}
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		vec3 activation_start;
@@ -845,18 +844,17 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 		ui_box_interaction_1h_pinch(id,
 			activation_start, activation_size,
 			activation_start, activation_size,
-			&focus_state, &hand);
+			&focus_state, &interactor);
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		if (hand != -1) {
-			const hand_t *h     = input_hand((handed_)hand);
-			button_state_ pinch = h->pinch_state;
-			button_state = interactor_set_active(hand, id, pinch & button_state_active);
+		if (interactor != -1) {
+			button_state_ pinch = skui_interactor[interactor].pinch_state;
+			button_state = interactor_set_active(interactor, id, pinch & button_state_active);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			focus_state = interactor_set_focus(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
-			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
+			focus_state = interactor_set_focus(interactor, id, button_state & button_state_active || focus_state & button_state_active, 0);
+			vec3    pinch_local = hierarchy_to_local_point(skui_interactor[interactor].pinch_pt);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 			finger_at = vertical ? pinch_local.y : pinch_local.x;
 
@@ -882,7 +880,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			
 			if (step != 0) {
 				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_interactor[hand].finger_world);
+				ui_play_sound_on(ui_vis_slider_line, skui_interactor[interactor].finger_world);
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -893,7 +891,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_interactor[hand].finger_world);
+					ui_play_sound_on(ui_vis_slider_line, skui_interactor[interactor].finger_world);
 				}
 			}
 		}
@@ -936,9 +934,9 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			vec3{button_size.x, button_size.y, button_depth},
 			color_blend);
 
-		vec3 pinch_local = hand < 0
+		vec3 pinch_local = interactor < 0
 			? vec3_zero
-			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
+			: hierarchy_to_local_point(skui_interactor[interactor].pinch_pt);
 		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
 			float scale     = 1 + scale_step * snap_scale;
@@ -977,9 +975,9 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 		}
 	}
 	
-	if (hand >= 0 && hand < 2) {
+	if (interactor >= 0 && interactor < 2) {
 		if (button_state & button_state_just_active)
-			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_interactor[hand].finger_world);
+			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_interactor[interactor].finger_world);
 	}
 
 	if      (notify_on == ui_notify_change)   return result;
@@ -1025,9 +1023,6 @@ bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, floa
 
 bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
 bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-
-///////////////////////////////////////////
-
 
 ///////////////////////////////////////////
 
