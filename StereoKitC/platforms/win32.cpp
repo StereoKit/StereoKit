@@ -367,7 +367,7 @@ float platform_get_scroll() {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file, const int32_t size)) {
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, const platform_file_attr_t file_attr)) {
 	if (string_eq(directory_path, "")) {
 		DWORD size = ::GetLogicalDriveStringsW(0, nullptr);
 		wchar_t *drive_names = sk_malloc_t(wchar_t, size);
@@ -376,7 +376,10 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 		wchar_t *curr = drive_names;
 		while (*curr != '\0') {
 			char *drive_u8 = platform_from_wchar(curr);
-			on_item(callback_data, drive_u8, false, 0);
+			platform_file_attr_t file_attr;
+			file_attr.file = false;
+			file_attr.size = 0;
+			on_item(callback_data, drive_u8, file_attr);
 			curr = curr + wcslen(curr)+1;
 			sk_free(drive_u8);
 		}
@@ -400,10 +403,16 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 	while (handle) {
 		char *filename_u8 = platform_from_wchar(info.cFileName);
 		if (!string_eq(filename_u8, ".") && !string_eq(filename_u8, "..")) {
-			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				on_item(callback_data, filename_u8, false, 0);
-			else
-				on_item(callback_data, filename_u8, true, info.nFileSizeLow);
+			platform_file_attr_t file_attr;
+			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+				file_attr.file = false;
+				file_attr.size = 0;
+				on_item(callback_data, filename_u8, file_attr);
+			} else {
+				file_attr.file = true;
+				file_attr.size = info.nFileSizeLow;
+				on_item(callback_data, filename_u8, file_attr);
+			}
 		}
 		free(filename_u8);
 

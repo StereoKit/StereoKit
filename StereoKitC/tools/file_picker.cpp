@@ -52,8 +52,7 @@ namespace sk {
 
 struct fp_item_t {
 	char *name;
-	bool  file;
-	int64_t size;
+	platform_file_attr_t file_attr;
 };
 
 struct fp_path_t {
@@ -61,7 +60,6 @@ struct fp_path_t {
 	array_t<char*> fragments;
 };
 
-//enum fp_sort_by_t { Name, Size };
 enum fp_sort_by_ {
 	fp_sort_by_name,
 	fp_sort_by_size
@@ -79,27 +77,27 @@ std::vector<fp_file_cache_t> fp_file_cache;
 char                         fp_filename [1024];
 wchar_t                      fp_wfilename[1024];
 char                         fp_buffer[1023];
-bool                         fp_call          = false;
-void                        *fp_call_data     = nullptr;
-bool                         fp_call_status   = false;
-bool                         fp_files_sorted_asc = true;
-fp_sort_by_                  fp_sortby = fp_sort_by_name;
-bool                         fp_sort_order_changed = false;
-bool                         fp_list_mode = false;
-void                       (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
+bool                         fp_call                  = false;
+void                        *fp_call_data             = nullptr;
+bool                         fp_call_status           = false;
+bool                         fp_files_sorted_asc      = true;
+fp_sort_by_                  fp_sortby                = fp_sort_by_name;
+bool                         fp_sort_order_changed    = false;
+bool                         fp_list_mode             = false;
+void                         (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
 
-bool                         fp_show          = false;
+bool                         fp_show                  = false;
 picker_mode_                 fp_mode;
-file_filter_t               *fp_filters       = nullptr;
-int32_t                      fp_filter_count  = 0;
-char                        *fp_title         = nullptr;
-char                        *fp_active        = nullptr;
-array_t<fp_item_t>           fp_items         = {};
-pose_t                       fp_win_pose      = pose_identity;
-fp_path_t                    fp_path          = {};
-int32_t                      fp_scroll_offset = 0;
-sprite_t                     spr_folder       = nullptr;
-sprite_t                     spr_up           = nullptr;
+file_filter_t               *fp_filters               = nullptr;
+int32_t                      fp_filter_count          = 0;
+char                        *fp_title                 = nullptr;
+char                        *fp_active                = nullptr;
+array_t<fp_item_t>           fp_items                 = {};
+pose_t                       fp_win_pose              = pose_identity;
+fp_path_t                    fp_path                  = {};
+int32_t                      fp_scroll_offset         = 0;
+sprite_t                     spr_folder               = nullptr;
+sprite_t                     spr_up                   = nullptr;
 
 ///////////////////////////////////////////
 
@@ -251,7 +249,6 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 		fp_title = string_append(fp_title, 1, ")");
 	} break;
 	}
-
 	fp_filter_count = filter_count;
 	sk_free(fp_filters);
 	fp_filters = sk_malloc_t(file_filter_t, fp_filter_count);
@@ -316,10 +313,10 @@ void file_picker_open_folder(const char *folder) {
 	fp_items.clear();
 	fp_sortby = fp_sort_by_name;
 	fp_sort_order_changed = false;
-	platform_iterate_dir(folder, nullptr, [](void*, const char *name, bool file, const int32_t size) {
+	platform_iterate_dir(folder, nullptr, [](void*, const char *name, const platform_file_attr_t file_attr) {
 		bool valid = fp_filter_count == 0;
 		// If the extension matches our filter, add it
-		if (file) {
+		if (file_attr.file) {
 			for (int32_t e = 0; e < fp_filter_count; e++) {
 				if (string_endswith(name, fp_filters[e].ext, false)) {
 					valid = true;
@@ -330,13 +327,12 @@ void file_picker_open_folder(const char *folder) {
 
 		if (valid) {
 			fp_item_t item;
-			item.file = file;
 			item.name = string_copy(name);
-			item.size = size;
+			item.file_attr = file_attr;
 			fp_items.add(item);
 		}
-	});
-	fp_items.sort([](const fp_item_t &a, const fp_item_t &b) { return a.file != b.file ? a.file-b.file : strcmp(a.name, b.name); });
+		});
+	fp_items.sort([](const fp_item_t &a, const fp_item_t &b) { return a.file_attr.file != b.file_attr.file ? a.file_attr.file -b.file_attr.file : strcmp(a.name, b.name); });
 
 	char *new_folder = string_copy(folder);
 	sk_free(fp_path.folder);
@@ -382,7 +378,7 @@ void file_picker_finish() {
 ///////////////////////////////////////////
 
 void file_picker_click_item(fp_item_t item) {
-	if (item.file)
+	if (item.file_attr.file)
 		fp_active = item.name;
 	else {
 		char* path = platform_push_path_new(fp_path.folder, item.name);
@@ -459,11 +455,11 @@ void file_picker_update() {
 				fp_call_status = true;
 			}
 			ui_sameline();
+			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
+			ui_sameline();
 			if (ui_button("ListMode")) {
 				fp_list_mode = !fp_list_mode;
 			}
-			ui_sameline();
-			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
 		} break;
 		case picker_mode_open: {
 			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
@@ -471,14 +467,14 @@ void file_picker_update() {
 			if (fp_active == nullptr) ui_push_enabled(false);
 			if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 			ui_sameline();
+			if (fp_active == nullptr) ui_push_enabled(false);
+			ui_label(fp_active ? fp_active : "None selected...");
+			if (fp_active == nullptr) ui_pop_enabled();
+			ui_sameline();
 			ui_push_enabled(true);
 			if (ui_button("ListMode")) {
 				fp_list_mode = !fp_list_mode;
 			}
-			ui_sameline();
-			if (fp_active == nullptr) ui_push_enabled(false);
-			ui_label(fp_active?fp_active:"None selected...");
-			if (fp_active == nullptr) ui_pop_enabled();
 		} break;
 		}
 
@@ -526,10 +522,10 @@ void file_picker_update() {
 			if (fp_sort_order_changed) {
 				switch (fp_sortby) {
 				case fp_sort_by_name:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file != b.file ? a.file - b.file : strcmp(a.name, b.name); });
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file_attr.file != b.file_attr.file ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name); });
 					break;
 				case fp_sort_by_size:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.size == b.size ? 0 : a.size - b.size > 0 ? 1 : -1;});
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1;});
 					break;
 				}
 			}
@@ -545,7 +541,7 @@ void file_picker_update() {
 					ui_layout_reserve({size.x * 3, size.y}, false, 0.0f);
 				}
 				else {
-					if (fp_items[i].file) {
+					if (fp_items[i].file_attr.file) {
 						if (ui_button_sz(fp_items[i].name, size)) {
 							file_picker_click_item(fp_items[i]);
 						}
@@ -557,7 +553,7 @@ void file_picker_update() {
 					}
 					ui_sameline();
 					char buffer[128];
-					int ret = snprintf(buffer, sizeof(buffer), "%ld", fp_items[i].size);
+					int ret = snprintf(buffer, sizeof(buffer), "%ld", fp_items[i].file_attr.size);
 					char* num_string = buffer;
 					ui_layout_reserve(size, false, 0.0f);
 					ui_sameline();
@@ -569,7 +565,7 @@ void file_picker_update() {
 					ui_layout_reserve(size);
 				}
 				else {
-					if (fp_items[i].file) {
+					if (fp_items[i].file_attr.file) {
 						if (ui_button_sz(fp_items[i].name, size)) {
 							file_picker_click_item(fp_items[i]);
 						}

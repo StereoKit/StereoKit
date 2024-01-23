@@ -747,7 +747,7 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char*, void*, void (*)(void* callback_data, const char* name, bool file, const int32_t size)) {
+void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, const platform_file_attr_t file_attr)) {
 }
 
 }
