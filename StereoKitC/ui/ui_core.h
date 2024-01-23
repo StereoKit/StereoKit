@@ -2,7 +2,7 @@
 
 namespace sk {
 
-struct ui_hand_t {
+struct interactor_t {
 	vec3      finger;
 	vec3      finger_prev;
 	vec3      finger_world;
@@ -17,17 +17,20 @@ struct ui_hand_t {
 	bool      ray_enabled;
 	bool      ray_discard;
 	float     ray_visibility;
+
+	button_state_ pinch_state;
+
 	id_hash_t focused_prev_prev;
 	id_hash_t focused_prev;
 	id_hash_t focused;
 	float     focus_priority;
 	id_hash_t active_prev;
 	id_hash_t active;
-	button_state_ pinch_state;
 };
 
-extern ui_hand_t skui_hand[2];
-extern float     skui_finger_radius;
+#define skui_interactor_count 2
+extern interactor_t skui_interactor[skui_interactor_count];
+extern float        skui_finger_radius;
 
 void             ui_core_init               ();
 void             ui_core_update             ();
@@ -39,9 +42,9 @@ void             ui_box_interaction_1h_poke (id_hash_t id, vec3 box_unfocused_st
 bool32_t         _ui_handle_begin           (id_hash_t id, pose_t& handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
 bool32_t         ui_is_enabled              ();
-bool32_t         ui_is_hand_preoccupied     (handed_ hand, id_hash_t for_el_id, bool32_t include_focused);
-int32_t          ui_last_focused_hand       (id_hash_t for_el_id);
-button_state_    ui_focus_set               (int32_t hand, id_hash_t for_el_id, bool32_t focused, float priority);
+bool32_t         ui_is_interactor_preoccupied(int32_t interactor, id_hash_t for_el_id, bool32_t include_focused);
+int32_t          ui_last_focused_interactor (id_hash_t for_el_id);
+button_state_    ui_focus_set               (int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority);
 button_state_    ui_active_set              (int32_t hand, id_hash_t for_el_id, bool32_t active);
 bool32_t         ui_id_focused              (id_hash_t id);
 bool32_t         ui_keyboard_focus_lost     (id_hash_t focused_id);

@@ -820,7 +820,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			const hand_t* h     = input_hand((handed_)hand);
 			button_state_ pinch = h->pinch_state;
 
-			finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
+			finger_offset = -skui_interactor[hand].finger.z - window_relative_pos.z;
 			bool pressed  = finger_offset < button_depth / 2;
 			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
 
@@ -829,7 +829,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			// it to focused if it's still active.
 			focus_state = ui_focus_set(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
 
-			finger_at = vertical ? skui_hand[hand].finger.y : skui_hand[hand].finger.x;
+			finger_at = vertical ? skui_interactor[hand].finger.y : skui_interactor[hand].finger.x;
 		}
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		vec3 activation_start;
@@ -882,7 +882,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 			
 			if (step != 0) {
 				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_hand[hand].finger_world);
+				ui_play_sound_on(ui_vis_slider_line, skui_interactor[hand].finger_world);
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -893,7 +893,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_hand[hand].finger_world);
+					ui_play_sound_on(ui_vis_slider_line, skui_interactor[hand].finger_world);
 				}
 			}
 		}
@@ -979,7 +979,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	
 	if (hand >= 0 && hand < 2) {
 		if (button_state & button_state_just_active)
-			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_hand[hand].finger_world);
+			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_interactor[hand].finger_world);
 	}
 
 	if      (notify_on == ui_notify_change)   return result;
@@ -1107,11 +1107,11 @@ void ui_window_end() {
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
 	// Focus animation
-	if ((skui_hand[0].focused_prev == win->hash && skui_hand[0].focused_prev_prev != win->hash) ||
-		(skui_hand[1].focused_prev == win->hash && skui_hand[1].focused_prev_prev != win->hash))
+	if ((skui_interactor[0].focused_prev == win->hash && skui_interactor[0].focused_prev_prev != win->hash) ||
+		(skui_interactor[1].focused_prev == win->hash && skui_interactor[1].focused_prev_prev != win->hash))
 		ui_anim_start(win->hash, 0);
-	if ((skui_hand[0].focused_prev != win->hash && skui_hand[0].focused_prev_prev == win->hash) ||
-		(skui_hand[1].focused_prev != win->hash && skui_hand[1].focused_prev_prev == win->hash))
+	if ((skui_interactor[0].focused_prev != win->hash && skui_interactor[0].focused_prev_prev == win->hash) ||
+		(skui_interactor[1].focused_prev != win->hash && skui_interactor[1].focused_prev_prev == win->hash))
 		ui_anim_start(win->hash, 1);
 
 	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
