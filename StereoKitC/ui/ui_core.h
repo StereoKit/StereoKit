@@ -2,7 +2,23 @@
 
 namespace sk {
 
+enum interactor_type_ {
+	interactor_type_none,
+	interactor_type_point,
+	interactor_type_line,
+};
+
+enum interactor_event_ {
+	interactor_event_poke  = 1 << 1,
+	interactor_event_grip  = 1 << 2,
+	interactor_event_pinch = 1 << 3
+};
+
 struct interactor_t {
+	// What type of interactions does this provide
+	interactor_event_ events;
+	interactor_type_  type;
+
 	vec3      finger;
 	vec3      finger_prev;
 	vec3      finger_world;
@@ -19,6 +35,7 @@ struct interactor_t {
 	float     ray_visibility;
 
 	button_state_ pinch_state;
+	float radius;
 
 	id_hash_t focused_prev_prev;
 	id_hash_t focused_prev;
@@ -28,7 +45,7 @@ struct interactor_t {
 	id_hash_t active;
 };
 
-#define skui_interactor_count 2
+#define skui_interactor_count 4
 extern interactor_t skui_interactor[skui_interactor_count];
 extern float        skui_finger_radius;
 
@@ -49,6 +66,7 @@ bool32_t         interactor_is_preoccupied  (int32_t interactor, id_hash_t for_e
 int32_t          interactor_last_focused    (                    id_hash_t for_el_id);
 button_state_    interactor_set_focus       (int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority);
 button_state_    interactor_set_active      (int32_t interactor, id_hash_t for_el_id, bool32_t active);
+bool32_t         interactor_check_box       (const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority);
 
 inline bounds_t  ui_size_box  (vec3 top_left, vec3 dimensions) { return { top_left - dimensions / 2, dimensions }; }
 inline id_hash_t ui_stack_hash(const char16_t* string)         { return ui_stack_hash_16(string); }
