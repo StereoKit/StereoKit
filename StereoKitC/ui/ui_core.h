@@ -67,6 +67,7 @@ int32_t          interactor_last_focused    (                    id_hash_t for_e
 button_state_    interactor_set_focus       (int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority);
 button_state_    interactor_set_active      (int32_t interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority);
+void             interactor_plate_1h        (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec2 plate_size, button_state_* out_focus_state, int32_t* out_interactor, vec3* out_interaction_at_local);
 
 inline bounds_t  ui_size_box  (vec3 top_left, vec3 dimensions) { return { top_left - dimensions / 2, dimensions }; }
 inline id_hash_t ui_stack_hash(const char16_t* string)         { return ui_stack_hash_16(string); }

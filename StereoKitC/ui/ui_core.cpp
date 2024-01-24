@@ -164,6 +164,12 @@ void ui_core_update() {
 
 ///////////////////////////////////////////
 
+inline bounds_t size_box(vec3 top_left, vec3 dimensions) {
+	return { top_left - dimensions / 2, dimensions };
+}
+
+///////////////////////////////////////////
+
 template<typename C>
 button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
 	id_hash_t     id_hash = ui_stack_hash(id);
@@ -263,35 +269,25 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	out_button_state = button_state_inactive;
 	out_focus_state  = button_state_inactive;
 	int32_t interactor = -1;
+	vec3    interaction_at;
 
-	// Button interaction focus is detected out in front of the button to 
-	// prevent 'reverse' or 'side' presses where the finger comes from the
-	// back or side.
-	//
-	// Once focused is gained, interaction is tracked within a volume that
-	// extends from the detection plane, to a good distance through the
-	// button's back. This is to help when the user's finger inevitably goes
-	// completely through the button. Width and height is added to this 
-	// volume to account for vertical or horizontal movement during a press,
-	// such as the downward motion often accompanying a 'poke' motion.
-	float activation_plane = button_depth + skui_finger_radius*2;
-	vec3  activation_start = window_relative_pos + vec3{ 0, 0, -activation_plane };
-	vec3  activation_size  = vec3{ size.x, size.y, 0.0001f };
-
-	vec3  box_size  = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-	vec3  box_start = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + box_size.z };
-	ui_box_interaction_1h_poke(id,
-		activation_start, activation_size,
-		box_start,        box_size,
-		&out_focus_state, &interactor);
+	interactor_plate_1h(id, interactor_event_poke,
+		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, size,
+		&out_focus_state, &interactor, &interaction_at);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	out_finger_offset = button_depth;
 	if (out_focus_state & button_state_active) {
-		out_finger_offset = -(skui_interactor[interactor].finger.z+skui_finger_radius) - window_relative_pos.z;
-		bool pressed  = out_finger_offset < button_activation_depth;
-		out_button_state  = interactor_set_active(interactor, id, pressed);
-		out_finger_offset = fminf(fmaxf(2*mm2m, out_finger_offset), button_depth);
+		interactor_t* actor = &skui_interactor[interactor];
+
+		out_finger_offset = -(interaction_at.z+actor->radius) - window_relative_pos.z;
+		bool pressed = out_finger_offset < skui_settings.depth / 2;
+		if ((actor->active_prev == id && (actor->pinch_state & button_state_active)) || (actor->pinch_state & button_state_just_active)) {
+			pressed = true;
+			out_finger_offset = 0;
+		}
+		out_button_state = interactor_set_active(interactor, id, pressed);
+		out_finger_offset = fminf(fmaxf(2*mm2m, out_finger_offset), skui_settings.depth);
 	} else if (out_focus_state & button_state_just_inactive) {
 		out_button_state = interactor_set_active(interactor, id, false);
 	}
@@ -527,6 +523,7 @@ bool32_t ui_handle_begin_16(const char16_t *text, pose_t &movement, bounds_t han
 void ui_handle_end() {
 	ui_pop_surface();
 }
+
 ///////////////////////////////////////////
 
 bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority) {
@@ -562,13 +559,14 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 	}
 }
 
+///////////////////////////////////////////
+
 void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec2 plate_size, button_state_ *out_focus_state, int32_t *out_interactor, vec3 *out_interaction_at_local) {
 	*out_interactor           = -1;
 	*out_focus_state          = button_state_inactive;
 	*out_interaction_at_local = vec3_zero;
 
-	// If the element is disabled, leave it unfocused and ditch out
-	//if (!skui_interact_enabled) { return; }
+	if (!ui_is_enabled()) { return; }
 
 	//if (skui_preserve_keyboard_stack.last()) {
 	///	skui_preserve_keyboard_ids_write->add(id);
@@ -580,27 +578,23 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 			interactor_is_preoccupied(i, id, false))
 			continue;
 
+		// Button interaction focus is detected out in front of the button to 
+		// prevent 'reverse' or 'side' presses where the finger comes from the
+		// back or side.
+		//
+		// Once focused is gained, interaction is tracked within a volume that
+		// extends from the detection plane, to a good distance through the
+		// button's back. This is to help when the user's finger inevitably goes
+		// completely through the button. Width and height is added to this 
+		// volume to account for vertical or horizontal movement during a press,
+		// such as the downward motion often accompanying a 'poke' motion.
 		bounds_t bounds = {};
-		if (actor->_el_focused_prev != id) {
-			bounds = size_box({ plate_start.x, plate_start.y, plate_start.z - actor->line_radius*2 }, { plate_size.x, plate_size.y, 0.0001f });
+		if (actor->focused_prev != id) {
+			bounds = size_box({ plate_start.x, plate_start.y, plate_start.z - actor->radius*2 }, { plate_size.x, plate_size.y, 0.0001f });
 		} else {
-			float depth = fmaxf(0.0001f, 8 * actor->line_radius);
-			bounds = size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->line_radius*2 }, { plate_size.x, plate_size.y, depth });
+			float depth = fmaxf(0.0001f, 8 * actor->radius);
+			bounds = size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->radius*2 }, { plate_size.x, plate_size.y, depth });
 		}
-
-		/*bool was_focused = actor->_el_focused_prev == id;
-		bounds_t bounds = size_box(box_unfocused_start, box_unfocused_size);
-		if (was_focused) {
-			bounds.dimensions.z += 6 * actor->radius;
-			bounds.center.z	    -= 3 * actor->radius;
-		} else {
-			bounds.center.z -= bounds.dimensions.z/2.0f + actor->radius;
-			bounds.dimensions.z = 0.0001f;
-		}*/
-
-		/*bounds_t bounds = actor->_el_focused_prev == id
-			? size_box(box_focused_start,   box_focused_size)
-			: size_box(box_unfocused_start, box_unfocused_size);*/
 
 		float         priority = 0;
 		vec3          interact_at;
