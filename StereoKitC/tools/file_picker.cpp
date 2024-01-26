@@ -83,6 +83,7 @@ bool                         fp_call_status           = false;
 bool                         fp_files_sorted_asc      = true;
 fp_sort_by_                  fp_sortby                = fp_sort_by_name;
 bool                         fp_sort_order_changed    = false;
+bool                         fp_sort_order_asc        = true;
 bool                         fp_list_mode             = false;
 void                         (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
 
@@ -98,6 +99,7 @@ fp_path_t                    fp_path                  = {};
 int32_t                      fp_scroll_offset         = 0;
 sprite_t                     spr_folder               = nullptr;
 sprite_t                     spr_up                   = nullptr;
+sprite_t                     spr_down                 = nullptr;
 
 ///////////////////////////////////////////
 
@@ -313,6 +315,7 @@ void file_picker_open_folder(const char *folder) {
 	fp_items.clear();
 	fp_sortby = fp_sort_by_name;
 	fp_sort_order_changed = false;
+	fp_sort_order_asc = true;
 	platform_iterate_dir(folder, nullptr, [](void*, const char *name, const platform_file_attr_t file_attr) {
 		bool valid = fp_filter_count == 0;
 		// If the extension matches our filter, add it
@@ -332,7 +335,7 @@ void file_picker_open_folder(const char *folder) {
 			fp_items.add(item);
 		}
 		});
-	fp_items.sort([](const fp_item_t &a, const fp_item_t &b) { return a.file_attr.file != b.file_attr.file ? a.file_attr.file -b.file_attr.file : strcmp(a.name, b.name); });
+	fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
 
 	char *new_folder = string_copy(folder);
 	sk_free(fp_path.folder);
@@ -372,7 +375,9 @@ void file_picker_finish() {
 	sprite_release(spr_folder);
 	spr_folder = nullptr;
 	sprite_release(spr_up);
+	sprite_release(spr_down);
 	spr_up = nullptr;
+	spr_down = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -457,7 +462,8 @@ void file_picker_update() {
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
 			ui_sameline();
-			if (ui_button("ListMode")) {
+			bool32_t list_mode_toogle_pressed = fp_list_mode;
+			if (ui_toggle("ListMode", list_mode_toogle_pressed)) {
 				fp_list_mode = !fp_list_mode;
 			}
 		} break;
@@ -472,7 +478,8 @@ void file_picker_update() {
 			if (fp_active == nullptr) ui_pop_enabled();
 			ui_sameline();
 			ui_push_enabled(true);
-			if (ui_button("ListMode")) {
+			bool32_t list_mode_toogle_pressed = fp_list_mode;
+			if (ui_toggle("ListMode", list_mode_toogle_pressed)) {
 				fp_list_mode = !fp_list_mode;
 			}
 		} break;
@@ -486,46 +493,53 @@ void file_picker_update() {
 		if (spr_up == nullptr) {
 			spr_up = sprite_find(ui_default_id_spr_arrow_up);
 		}
-		static ui_btn_layout_ ui_folderimg_button_layout = ui_btn_layout_left;
+		if (spr_down == nullptr) {
+			spr_down = sprite_find(ui_default_id_spr_arrow_down);
+		}
+		ui_btn_layout_ ui_folderimg_button_layout = ui_btn_layout_left;
 		// List the files
 		vec2 size = { .12f, line_height * 1.5f };
 		if (fp_list_mode) {
-			static ui_btn_layout_ layout = ui_btn_layout_left;
+			ui_btn_layout_ layout = ui_btn_layout_left;
 			if (fp_sortby == fp_sort_by_name) {
-				if (ui_button_img_sz("Name", spr_up, layout, size)) {
+				if (ui_button_img_sz("Name", fp_sort_order_asc?spr_up:spr_down, layout, size)) {
 					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
+					fp_sort_order_asc = !fp_sort_order_asc;
 				}
 			}
 			else {
 				if (ui_button_sz("Name", size)) {
 					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
+					fp_sort_order_asc = true;
 				}
 			}
 			ui_sameline();
 			ui_layout_reserve(size, false, 0.0f);
 			ui_sameline();
 			if (fp_sortby == fp_sort_by_size) {
-				if (ui_button_img_sz("Size", spr_up, layout, size)) {
+				if (ui_button_img_sz("Size", fp_sort_order_asc?spr_up:spr_down, layout, size)) {
 					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
+					fp_sort_order_asc = !fp_sort_order_asc;
 				}
 			}
 			else {
 				if (ui_button_sz("Size", size)) {
 					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
+					fp_sort_order_asc = true;
 				}
 			}
 			ui_hseparator();
 			if (fp_sort_order_changed) {
 				switch (fp_sortby) {
 				case fp_sort_by_name:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file_attr.file != b.file_attr.file ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name); });
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ( (a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
 					break;
 				case fp_sort_by_size:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1;});
+					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * (a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1);});
 					break;
 				}
 			}
