@@ -37,6 +37,8 @@ struct interactor_t {
 	button_state_ pinch_state;
 	float radius;
 
+	quat orientation;
+
 	id_hash_t focused_prev_prev;
 	id_hash_t focused_prev;
 	id_hash_t focused;
