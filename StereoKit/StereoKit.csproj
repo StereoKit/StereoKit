@@ -2,8 +2,8 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
-		<Platforms>x64;ARM64;ARM;Any CPU</Platforms>
-		<BaseOutputPath>../bin/</BaseOutputPath>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<OutputPath>../bin/</OutputPath>
 		<DocumentationFile>../bin/StereoKit.xml</DocumentationFile>
 
 		<NoWarn>1701;1702;1573</NoWarn>
