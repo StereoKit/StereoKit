@@ -231,8 +231,17 @@ void platform_keyboard_set_force_fallback(bool32_t force_fallback) {
 ///////////////////////////////////////////
 
 void platform_keyboard_show(bool32_t visible, text_context_ type) {
-	if (platform_xr_keyboard_present() && local->force_fallback_keyboard == false) {
+	// If we're _forcing_ the fallback keyboard, this becomes quite simple!
+	if (local->force_fallback_keyboard) {
+		virtualkeyboard_open(visible, type);
+		return;
+	}
+
+	if (platform_xr_keyboard_present()) {
 		platform_xr_keyboard_show(visible);
+		// If a soft keyboard was forced open, we want to make sure it's not
+		// conflicting with an OS provided one.
+		virtualkeyboard_open(false, type);
 		return;
 	}
 
