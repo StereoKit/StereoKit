@@ -59,7 +59,7 @@ void render_pipeline_draw() {
 		{
 			skg_tex_target_bind(&s->tex->tex);
 			skg_target_clear   (true, &s->clear_color.r);
-			render_draw_matrix (s->view_matrices, s->proj_matrices, s->surface_count, s->layer);
+			render_draw_matrix (s->view_matrices, s->proj_matrices, i, s->surface_count, s->layer);
 		}
 		skg_event_end();
 	}
