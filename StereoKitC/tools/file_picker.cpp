@@ -100,6 +100,8 @@ int32_t                      fp_scroll_offset         = 0;
 sprite_t                     spr_folder               = nullptr;
 sprite_t                     spr_up                   = nullptr;
 sprite_t                     spr_down                 = nullptr;
+sprite_t                     spr_toggle_on            = nullptr;
+sprite_t                     spr_toggle_off           = nullptr;
 
 ///////////////////////////////////////////
 
@@ -146,7 +148,7 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
-	if (device_display_get_type() == display_type_flatscreen) {
+	if (false) {
 		fp_wfilename[0] = '\0';
 
 		// Build a filter string
@@ -363,6 +365,24 @@ void file_picker_open_folder(const char *folder) {
 	}
 }
 
+vec2 button_img_size(const char* text, sprite_t image, ui_btn_layout_ image_layout) {
+	vec2 size = {};
+	float font_size = text_style_get_char_height(ui_get_text_style());
+	if (image_layout == font_size || image_layout == ui_btn_layout_center_no_text) {
+		size = { font_size, font_size };
+	}
+	else if (image_layout == ui_btn_layout_none) {
+		size = text_size(text, ui_get_text_style());
+	}
+	else {
+		vec2  txt_size = text_size(text, ui_get_text_style());
+		float aspect = image != nullptr ? sprite_get_aspect(image) : 1;
+		float image_size = font_size * aspect;
+		size = vec2{ txt_size.x + image_size + ui_get_gutter(), font_size };
+	}
+	return size;
+}
+
 ///////////////////////////////////////////
 
 void file_picker_finish() {
@@ -376,8 +396,12 @@ void file_picker_finish() {
 	spr_folder = nullptr;
 	sprite_release(spr_up);
 	sprite_release(spr_down);
+	sprite_release(spr_toggle_off);
+	sprite_release(spr_toggle_on);
 	spr_up = nullptr;
 	spr_down = nullptr;
+	spr_toggle_on = nullptr;
+	spr_toggle_off = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -461,11 +485,6 @@ void file_picker_update() {
 			}
 			ui_sameline();
 			ui_input("SaveFile", fp_buffer, sizeof(fp_buffer), vec2{ ui_layout_remaining().x, ui_line_height() });
-			ui_sameline();
-			bool32_t list_mode_toogle_pressed = fp_list_mode;
-			if (ui_toggle("ListMode", list_mode_toogle_pressed)) {
-				fp_list_mode = !fp_list_mode;
-			}
 		} break;
 		case picker_mode_open: {
 			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
@@ -476,12 +495,7 @@ void file_picker_update() {
 			if (fp_active == nullptr) ui_push_enabled(false);
 			ui_label(fp_active ? fp_active : "None selected...");
 			if (fp_active == nullptr) ui_pop_enabled();
-			ui_sameline();
 			ui_push_enabled(true);
-			bool32_t list_mode_toogle_pressed = fp_list_mode;
-			if (ui_toggle("ListMode", list_mode_toogle_pressed)) {
-				fp_list_mode = !fp_list_mode;
-			}
 		} break;
 		}
 
@@ -496,43 +510,55 @@ void file_picker_update() {
 		if (spr_down == nullptr) {
 			spr_down = sprite_find(ui_default_id_spr_arrow_down);
 		}
+		if (spr_toggle_on == nullptr) {
+			spr_toggle_on = sprite_find(ui_default_id_spr_toggle_on);
+		}
+		if (spr_toggle_off == nullptr) {
+			spr_toggle_off = sprite_find(ui_default_id_spr_toggle_off);
+		}
 		ui_btn_layout_ ui_folderimg_button_layout = ui_btn_layout_left;
 		// List the files
 		vec2 size = { .12f, line_height * 1.5f };
 		if (fp_list_mode) {
 			ui_btn_layout_ layout = ui_btn_layout_left;
 			if (fp_sortby == fp_sort_by_name) {
-				if (ui_button_img_sz("Name", fp_sort_order_asc?spr_up:spr_down, layout, size)) {
+				if (ui_button_img("Name", fp_sort_order_asc?spr_up:spr_down, layout)) {
 					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc = !fp_sort_order_asc;
 				}
 			}
 			else {
-				if (ui_button_sz("Name", size)) {
+				if (ui_button("Name")) {
 					fp_sortby = fp_sort_by_name;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc = true;
 				}
 			}
 			ui_sameline();
-			ui_layout_reserve(size, false, 0.0f);
+			ui_layout_reserve({ size.x, line_height }, false, 0.0f);
 			ui_sameline();
+			float size_mode_btn_size = 0.0f;
+			float list_mode_btn_size = button_img_size("ListMode", fp_list_mode?spr_toggle_on:spr_toggle_off, ui_btn_layout_left).x;
 			if (fp_sortby == fp_sort_by_size) {
-				if (ui_button_img_sz("Size", fp_sort_order_asc?spr_up:spr_down, layout, size)) {
+				size_mode_btn_size = button_img_size("Size", fp_sort_order_asc ? spr_up : spr_down, layout).x;
+				ui_hspace(ui_layout_remaining().x - list_mode_btn_size - (5 * ui_get_gutter()) - size_mode_btn_size);
+				if (ui_button_img("Size", fp_sort_order_asc?spr_up:spr_down, layout)) {
 					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc = !fp_sort_order_asc;
 				}
 			}
 			else {
-				if (ui_button_sz("Size", size)) {
+				size_mode_btn_size = button_img_size("Size", nullptr, layout).x;
+				ui_hspace(ui_layout_remaining().x - list_mode_btn_size - size_mode_btn_size - (4 * ui_get_gutter()));
+				if (ui_button("Size")) {
 					fp_sortby = fp_sort_by_size;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc = true;
 				}
 			}
-			ui_hseparator();
+			
 			if (fp_sort_order_changed) {
 				switch (fp_sortby) {
 				case fp_sort_by_name:
@@ -543,7 +569,19 @@ void file_picker_update() {
 					break;
 				}
 			}
+			ui_sameline();
 		}
+		if (!fp_list_mode) {
+			float list_mode_btn_size = button_img_size("ListMode", fp_list_mode ? spr_toggle_on : spr_toggle_off, ui_btn_layout_left).x;
+			ui_hspace(ui_layout_remaining().x - list_mode_btn_size - (2 * ui_get_gutter()));
+		}
+		if (ui_button_img("ListMode", fp_list_mode ? spr_toggle_on : spr_toggle_off, ui_btn_layout_left)) {
+			fp_list_mode = !fp_list_mode;
+			fp_scroll_offset = 0;
+		}
+
+		ui_hseparator();
+
 		const int32_t scroll_cols = 3;
 		const int32_t scroll_rows = 5;
 		const int32_t scroll_step = fp_list_mode ? scroll_rows : scroll_cols * scroll_rows;
@@ -556,12 +594,12 @@ void file_picker_update() {
 				}
 				else {
 					if (fp_items[i].file_attr.file) {
-						if (ui_button_sz(fp_items[i].name, size)) {
+						if (ui_button_sz(fp_items[i].name, { 2* size.x, size.y })) {
 							file_picker_click_item(fp_items[i]);
 						}
 					}
 					else {
-						if (ui_button_img_sz(fp_items[i].name, spr_folder, ui_folderimg_button_layout, size)) {
+						if (ui_button_img_sz(fp_items[i].name, spr_folder, ui_btn_layout_left, { 2 * size.x, size.y })) {
 							file_picker_click_item(fp_items[i]);
 						}
 					}
@@ -569,7 +607,6 @@ void file_picker_update() {
 					char buffer[128];
 					int ret = snprintf(buffer, sizeof(buffer), "%ld", fp_items[i].file_attr.size);
 					char* num_string = buffer;
-					ui_layout_reserve(size, false, 0.0f);
 					ui_sameline();
 					ui_text_sz(num_string, text_align_center, text_fit_clip, size);
 				}
