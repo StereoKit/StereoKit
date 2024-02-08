@@ -28,7 +28,6 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		surface.RequestFocus();
 
 		Run();
-		SetContentView(new View(this));
 	}
 
 	protected override void OnDestroy()

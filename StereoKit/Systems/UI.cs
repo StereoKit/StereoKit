@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Text;
 
 namespace StereoKit
@@ -536,7 +541,8 @@ namespace StereoKit
 		/// </param>
 		/// <param name="image">This is the image that will be drawn along with
 		/// the text. See imageLayout for where the image gets drawn!</param>
-		/// <param name="imageTint">Image can tinted with this color.</param>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
 		/// <param name="imageLayout">This enum specifies how the text and
 		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
 		/// will have the image on the left, and text on the right.</param>
@@ -558,8 +564,8 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool ButtonImg(string text, Sprite image, Color image_tint, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, image_tint);
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, imageTint);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -578,7 +584,13 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1, 1, 1, 1));
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1, 1, 1, 1));
+
+		/// <inheritdoc cref="ButtonImgAt(string,Sprite,UIBtnLayout,Vec3,Vec2)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool ButtonImgAt(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint);
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be

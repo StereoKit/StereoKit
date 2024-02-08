@@ -26,9 +26,6 @@
 
 			<SKOpenXRLoaderFolder>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
 			<SKShaderStandardInclude>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
-			
-			<!--Quest no longer uses a custom loader-->
-			<SKOpenXRLoader Condition="'$(SKOpenXRLoader.ToLower())' == 'oculus'">Standard</SKOpenXRLoader>
 		</PropertyGroup>
 
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>
