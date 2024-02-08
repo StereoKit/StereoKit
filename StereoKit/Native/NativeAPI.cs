@@ -640,6 +640,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern OriginMode   world_get_origin_mode           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         world_get_origin_offset         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_origin_offset         (Pose offset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     world_get_tracked               ();
+
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);
