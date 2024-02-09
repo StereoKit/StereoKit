@@ -105,6 +105,20 @@ class TestBounds : ITest
 		return true;
 	}
 
+	bool TestBoundsContains()
+	{
+		Bounds bounds = new Bounds(V.XYZ(1,0,0), Vec3.One);
+		if (!bounds.Contains(V.XYZ( 1.45f,0.45f,0.45f))) return false;
+		if (!bounds.Contains(V.XYZ( 0.55f,0.45f,0.45f))) return false;
+		if (!bounds.Contains(V.XYZ(1,0,0)))              return false;
+
+		if ( bounds.Contains(V.XYZ( 1.45f, 0.55f,0.45f))) return false;
+		if ( bounds.Contains(V.XYZ( 0.55f,-0.55f,0.45f))) return false;
+		if ( bounds.Contains(V.XYZ(1,1,0)))               return false;
+
+		return true;
+	}
+
 	bool TestMeshBounds()
 	{
 		Mesh mesh = Mesh.GenerateCube(Vec3.One*0.5f);
@@ -149,6 +163,7 @@ class TestBounds : ITest
 		Tests.Test(TestBoundsScaledScalarIsPure);
 		Tests.Test(TestBoundsScale);
 		Tests.Test(TestBoundsScaleByVec3);
+		Tests.Test(TestBoundsContains);
 		Tests.Test(TestMeshBounds);
 		Tests.Test(TestModelBounds);
 	}
