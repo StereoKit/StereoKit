@@ -37,7 +37,28 @@ struct interactor_t {
 	button_state_ pinch_state;
 	float radius;
 
+	vec3 position;
+	vec3 position_prev;
 	quat orientation;
+	quat orientation_prev;
+	// This is a point that defines where the interactor's motion is rooted,
+	// like for a hand ray, this would be the shoulder. This can then be used
+	// to amplify or reduce motion based on the distance from this point.
+	vec3 motion_anchor;
+
+	vec3 interaction_start_position;
+	quat interaction_start_orientation;
+	vec3 interaction_start_motion_anchor;
+
+	vec3 interaction_start_local_position;
+	quat interaction_start_local_orientation;
+	vec3 interaction_start_local_motion_anchor;
+
+	vec3 interaction_pt_position;
+	quat interaction_pt_orientation;
+	vec3 interaction_pt_pivot; // the location from where the interaction is happening, relative to the interaction pt
+
+	vec3 interaction_intersection_local;
 
 	id_hash_t focused_prev_prev;
 	id_hash_t focused_prev;
