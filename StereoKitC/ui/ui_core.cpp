@@ -385,45 +385,48 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 					actor->focused = id;
 
 					quat dest_rot = quat_identity;
-					vec3 dest_pos;
-
-					float amplify_factor_start = vec3_distance(actor->interaction_start_position, actor->interaction_start_motion_anchor);
-					float amplify_factor_curr  = vec3_distance(actor->position, actor->motion_anchor);
-					float amplify_factor       = amplify_factor_curr / amplify_factor_start;
-					vec3  amplify_dir          = hierarchy_to_local_direction(actor->position - actor->motion_anchor);
-
-					line_add_axis({ actor->interaction_pt_pivot, quat_from_angles(0,180,0) }, 0.02f);
 					switch (move_type) {
 					case ui_move_exact: {
-						dest_rot = quat_difference(actor->interaction_start_orientation, actor->orientation);
+						dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_orientation, actor->orientation);
 					} break;
 					case ui_move_face_user: {
-						// TODO: some bad positions in here? maybe local_pt?
-						vec3  local_pt     = matrix_transform_pt(to_handle_parent_local, hierarchy_to_world_point(actor->interaction_intersection_local));
-						vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
-						float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt.x, local_pt.z }) / 0.1f);
-						vec3  handle_center= matrix_transform_pt(pose_matrix(handle_pose), handle_bounds.center);
-						// Previously, facing happened from a point
-						// influenced by the hand-grip position:
-						// vec3  handle_center= { handle_pose.position.x, local_pt[i].y, handle_pose.position.z };
-						vec3  look_from    = vec3_lerp(local_pt, handle_center, head_xz_lerp);
+						if (device_display_get_type() == display_type_flatscreen) {
+							// If we're on a flat screen, facing the window is
+							// a better experience than facing the user.
+							dest_rot = quat_from_angles(0, 180, 0) * input_head()->orientation;
+						} else {
+							vec3  local_pt     = matrix_transform_pt(to_handle_parent_local, hierarchy_to_world_point(actor->interaction_pt_pivot));
+							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
+							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt.x, local_pt.z }) / 0.1f);
+							vec3  handle_center= matrix_transform_pt(pose_matrix(handle_pose), handle_bounds.center);
+							// Previously, facing happened from a point
+							// influenced by the hand-grip position:
+							// vec3  handle_center= { handle_pose.position.x, local_pt[i].y, handle_pose.position.z };
+							vec3  look_from    = vec3_lerp(local_pt, handle_center, head_xz_lerp);
 
-						dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_handle_parent_local, vec3_up));
-						dest_rot = quat_difference(actor->interaction_pt_orientation, dest_rot);
+							dest_rot = quat_lookat_up(look_from, local_head, matrix_transform_dir(to_handle_parent_local, vec3_up));
+						}
 					} break;
-					case ui_move_pos_only: { dest_rot = quat_identity; } break;
-					default:               { dest_rot = quat_identity; log_err("Unimplemented move type!"); } break;
+					case ui_move_pos_only: { dest_rot = actor->interaction_pt_orientation; } break;
+					default:               { dest_rot = actor->interaction_pt_orientation; log_err("Unimplemented move type!"); } break;
 					}
 
-					float amp = 5;
+					// Amplify the movement in and out, so that objects at a
+					// distance can be manipulated easier.
+					const float amp = 3;
+					float amplify_factor = 
+						vec3_distance(actor->position,                   actor->motion_anchor) /
+						vec3_distance(actor->interaction_start_position, actor->interaction_start_motion_anchor);
 					amplify_factor = fmaxf(0, (amplify_factor - 1) * amp + 1);
+					// Disable amplification for now
+					amplify_factor = 1;
 
 					vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->position, actor->orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
-					vec3 handle_world_offset = (actor->interaction_pt_orientation * dest_rot) * (-actor->interaction_pt_pivot);
-					dest_pos = pivot_new_position + handle_world_offset;
+					vec3 handle_world_offset = dest_rot * (-actor->interaction_pt_pivot);
+					vec3 dest_pos            = pivot_new_position + handle_world_offset;
 
-					handle_pose.position    = vec3_lerp (handle_pose.position,    dest_pos,                                     0.6f);
-					handle_pose.orientation = quat_slerp(handle_pose.orientation, actor->interaction_pt_orientation * dest_rot, 0.4f);
+					handle_pose.position    = vec3_lerp (handle_pose.position,    dest_pos, 0.6f);
+					handle_pose.orientation = quat_slerp(handle_pose.orientation, dest_rot, 0.4f);
 
 					if (actor->pinch_state & button_state_just_inactive) {
 						actor->active = 0;
