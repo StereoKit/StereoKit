@@ -431,6 +431,7 @@ void file_picker_update() {
 
 		const float gutter = ui_get_gutter();
 		const float padding = ui_get_padding();
+		bool should_change_list_mode = false;
 
 		// Start at the end, and look backwards until we rin out of room!
 		// That's the fragment we'll start with
@@ -557,30 +558,19 @@ void file_picker_update() {
 					fp_sort_order_asc = true;
 				}
 			}
-
-			if (fp_sort_order_changed) {
-				switch (fp_sortby) {
-				case fp_sort_by_name:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
-					break;
-				case fp_sort_by_size:
-					fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * (a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1);});
-					break;
-				}
-			}
 			ui_sameline();
 		}
 		if (!fp_list_mode) {
 			ui_hspace(ui_layout_remaining().x - list_mode_btn_size.x - (2 * ui_get_gutter()));
 			if (ui_button_img("List", fp_list_mode ? spr_toggle_on : spr_toggle_off, ui_btn_layout_left)) {
-				fp_list_mode = !fp_list_mode;
+				should_change_list_mode = true;
 				fp_scroll_offset = 0;
 			}
 		}
 		else {
 			ui_hspace(ui_layout_remaining().x - list_mode_btn_size.x - (2 * ui_get_gutter()));
 			if (ui_button_img("List", fp_list_mode ? spr_toggle_on : spr_toggle_off, ui_btn_layout_left)) {
-				fp_list_mode = !fp_list_mode;
+				should_change_list_mode = true;
 				fp_scroll_offset = 0;
 			}
 		}
@@ -656,12 +646,26 @@ void file_picker_update() {
 				fp_scroll_offset = fp_scroll_offset + scroll_step;
 			}
 		}
+		if (should_change_list_mode) {
+			fp_list_mode = !fp_list_mode;
+		}
 		
 		ui_pop_enabled();
 
 		ui_window_end();
 		hierarchy_pop();
 		ui_pop_id();
+
+		if (fp_sort_order_changed) {
+			switch (fp_sortby) {
+			case fp_sort_by_name:
+				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
+				break;
+			case fp_sort_by_size:
+				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * (a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1);});
+				break;
+			}
+		}
 	}
 
 	if (fp_call) {
