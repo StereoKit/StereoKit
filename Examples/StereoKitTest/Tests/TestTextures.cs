@@ -78,23 +78,55 @@ internal class TestTextures : ITest
 
 	bool CheckTextureRead()
 	{
+		// RGBA values
 		foreach (FormatTest test in testTextures)
 		{
 			Tex texture = test.tex;
-			if (test.tex.Format != TexFormat.Rgba32       &&
-				test.tex.Format != TexFormat.Rgba32Linear &&
-				test.tex.Format != TexFormat.Bgra32       &&
-				test.tex.Format != TexFormat.Bgra32Linear &&
-				test.tex.Format != TexFormat.R32)
-				continue;
+			if (texture.AssetState < 0) continue;
 
-			if (texture.AssetState < 0)
-				continue;
-
-			Color32[] colors1 = texture.GetColors(1);
-			Color32[] colors0 = texture.GetColors(0);
-			if (colors0 == null || colors1 == null)
-				return false;
+			switch (test.tex.Format)
+			{
+				case TexFormat.Rgba32:
+				case TexFormat.Rgba32Linear:
+				case TexFormat.Bgra32:
+				case TexFormat.Bgra32Linear:
+					Color32[] colors1 = texture.GetColorData<Color32>(1);
+					Color32[] colors0 = texture.GetColorData<Color32>(0);
+					if (colors0 == null || colors1 == null)
+						return false;
+					break;
+				case TexFormat.Rgba128:
+					Color[] colors1_128 = texture.GetColorData<Color>(1);
+					Color[] colors0_128 = texture.GetColorData<Color>(0);
+					if (colors0_128 == null || colors1_128 == null)
+						return false;
+					break;
+				case TexFormat.R8:
+					byte[] colors1b = texture.GetColorData<byte>(1);
+					byte[] colors0b = texture.GetColorData<byte>(0);
+					if (colors0b == null || colors1b == null)
+						return false;
+					break;
+				case TexFormat.R16f:
+				case TexFormat.R16u:
+					ushort[] colors1s = texture.GetColorData<ushort>(1);
+					ushort[] colors0s = texture.GetColorData<ushort>(0);
+					if (colors0s == null || colors1s == null)
+						return false;
+					break;
+				case TexFormat.R32:
+					float[] colors1f = texture.GetColorData<float>(1);
+					float[] colors0f = texture.GetColorData<float>(0);
+					if (colors0f == null || colors1f == null)
+						return false;
+					break;
+				case TexFormat.Rgba64f:
+					ushort[] colors1l = texture.GetColorData<ushort>(1, 4);
+					ushort[] colors0l = texture.GetColorData<ushort>(0, 4);
+					if (colors0l == null || colors1l == null)
+						return false;
+					break;
+			}
 		}
 		return true;
 	}
