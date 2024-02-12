@@ -15,6 +15,7 @@ cbuffer stereokit_buffer : register(b1) {
 	float4   sk_cubemap_i;
 	float    sk_time;
 	uint     sk_view_count;
+	uint     sk_eye_offset;
 };
 struct inst_t {
 	float4x4 world;

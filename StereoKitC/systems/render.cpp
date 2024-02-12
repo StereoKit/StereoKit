@@ -71,6 +71,7 @@ struct render_global_buffer_t {
 	vec4     cubemap_i;
 	float    time;
 	uint32_t view_count;
+	uint32_t eye_offset;
 };
 struct render_blit_data_t {
 	float width;
@@ -238,6 +239,7 @@ bool render_init() {
 	material_set_id          (local.sky_mat, "sk/render/skybox_material");
 	material_set_queue_offset(local.sky_mat, 100);
 	material_set_depth_write (local.sky_mat, false);
+	material_set_depth_test  (local.sky_mat, depth_test_less_or_eq);
 
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);
@@ -723,7 +725,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, int32_t view_count, render_layer_ filter) {
+void render_draw_queue(const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
 
 	// Copy camera information into the global buffer
@@ -750,6 +752,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 	memcpy(local.global_buffer.lighting, local.lighting, sizeof(vec4) * 9);
 	local.global_buffer.time       = time_totalf();
 	local.global_buffer.view_count = view_count;
+	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
 		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
@@ -792,9 +795,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t v
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
+void render_draw_matrix(const matrix* views, const matrix* projections, int32_t eye_offset, int32_t count, render_layer_ render_filter) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, count, render_filter);
+	render_draw_queue(views, projections, eye_offset, count, render_filter);
 	render_check_screenshots();
 }
 
@@ -850,7 +853,7 @@ void render_check_screenshots() {
 		}
 
 		// Render!
-		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 1, local.screenshot_list[i].layer_filter);
+		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
@@ -915,7 +918,7 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 1, local.viewpoint_list[i].layer_filter);
+		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref

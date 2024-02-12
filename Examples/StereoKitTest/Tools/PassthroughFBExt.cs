@@ -1,5 +1,13 @@
-﻿// This requires an addition to the Android Manifest to work on quest:
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+// This requires an addition to the Android Manifest to work on quest:
 // <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="true" />
+// And adding this to the application section can also improve the passthrough
+// experience:
+// <meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual"/>
 //
 // To work on Quest+Link, you may need to enable beta features in the Oculus
 // app's settings.
@@ -51,9 +59,6 @@ namespace StereoKit.Framework
 				LoadBindings()                                 &&
 				InitPassthrough();
 
-			if (enableOnInitialize)
-				Enabled = true;
-
 			return true;
 		}
 
@@ -75,9 +80,13 @@ namespace StereoKit.Framework
 
 		bool InitPassthrough()
 		{
+			XrPassthroughFlagsFB flags = enableOnInitialize
+				? XrPassthroughFlagsFB.IS_RUNNING_AT_CREATION_BIT_FB
+				: XrPassthroughFlagsFB.None;
+
 			XrResult result = xrCreatePassthroughFB(
 				Backend.OpenXR.Session,
-				new XrPassthroughCreateInfoFB(XrPassthroughFlagsFB.None),
+				new XrPassthroughCreateInfoFB(flags),
 				out activePassthrough);
 			if (result != XrResult.Success)
 			{
@@ -87,13 +96,16 @@ namespace StereoKit.Framework
 
 			result = xrCreatePassthroughLayerFB(
 				Backend.OpenXR.Session,
-				new XrPassthroughLayerCreateInfoFB(activePassthrough, XrPassthroughFlagsFB.None, XrPassthroughLayerPurposeFB.RECONSTRUCTION_FB),
+				new XrPassthroughLayerCreateInfoFB(activePassthrough, flags, XrPassthroughLayerPurposeFB.RECONSTRUCTION_FB),
 				out activeLayer);
 			if (result != XrResult.Success)
 			{
 				Log.Err($"xrCreatePassthroughLayerFB failed: {result}");
 				return false;
 			}
+
+			enabled  = enableOnInitialize;
+			StartSky();
 			return true;
 		}
 
@@ -119,16 +131,33 @@ namespace StereoKit.Framework
 				return false;
 			}
 
+			StartSky();
+			return true;
+		}
+
+		void StartSky()
+		{
 			oldColor = Renderer.ClearColor;
 			oldSky   = Renderer.EnableSky;
 			Renderer.ClearColor = Color.BlackTransparent;
 			Renderer.EnableSky  = false;
-			return true;
 		}
 
 		void PausePassthrough()
 		{
-			xrPassthroughPauseFB(activePassthrough);
+			XrResult result = xrPassthroughLayerPauseFB(activeLayer);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughLayerPauseFB failed: {result}");
+				return;
+			}
+
+			result = xrPassthroughPauseFB(activePassthrough);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughPauseFB failed: {result}");
+				return;
+			}
 
 			Renderer.ClearColor = oldColor;
 			Renderer.EnableSky  = oldSky;
@@ -168,9 +197,10 @@ namespace StereoKit.Framework
 		}
 
 #pragma warning disable 0169 // handle is not "used", but required for interop
-		struct XrPassthroughFB      { ulong handle; }
-		struct XrPassthroughLayerFB { ulong handle; }
+		[StructLayout(LayoutKind.Sequential)] struct XrPassthroughFB      { ulong handle; }
+		[StructLayout(LayoutKind.Sequential)] struct XrPassthroughLayerFB { ulong handle; }
 #pragma warning restore 0169
+
 
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB
