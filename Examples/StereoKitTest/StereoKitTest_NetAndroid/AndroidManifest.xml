@@ -6,6 +6,7 @@
 		<!-- Oculus -->
 		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
+		<meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual"/>
 		<uses-native-library android:name="libopenxr_forwardloader.oculus.so" android:required="false"/>
 		<!-- Pico -->
 		<meta-data android:name="pvr.app.type" android:value="vr" />

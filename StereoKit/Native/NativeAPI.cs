@@ -640,6 +640,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern OriginMode   world_get_origin_mode           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         world_get_origin_offset         ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_origin_offset         (Pose offset);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     world_get_tracked               ();
+
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void input_subscribe  (InputSource source, BtnState evt, InputEventCallback event_callback);
@@ -818,6 +820,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_16   (string text, IntPtr image, UIBtnLayout image_layout, Color image_tint);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_sz_16(string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_img_at_16(string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_round_16 (string id, IntPtr image, float diameter);
 		[return: MarshalAs(UnmanagedType.Bool)]
