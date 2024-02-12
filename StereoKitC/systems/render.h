@@ -35,7 +35,7 @@ matrix        render_get_cam_final_inv    ();
 color128      render_get_clear_color_ln   ();
 vec2          render_get_clip             ();
 render_list_t render_get_primary_list     ();
-void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t view_count, render_layer_ render_filter);
+void          render_draw_matrix          (const matrix *views, const matrix *projs, int32_t eye_offset, int32_t view_count, render_layer_ render_filter);
 void          render_clear                ();
 vec3          render_unproject_pt         (vec3 normalized_screen_pt);
 void          render_update_projection    ();
@@ -44,7 +44,7 @@ tex_format_   render_preferred_depth_fmt  ();
 void          render_blit_to_bound        (material_t material);
 void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
-void          render_draw_queue           (const matrix* views, const matrix* projections, int32_t view_count, render_layer_ filter);
+void          render_draw_queue           (const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, render_layer_ filter);
 void          render_check_screenshots    ();
 void          render_check_viewpoints     ();
 
