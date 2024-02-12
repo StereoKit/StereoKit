@@ -50,10 +50,6 @@ struct interactor_t {
 	quat interaction_start_orientation;
 	vec3 interaction_start_motion_anchor;
 
-	vec3 interaction_start_local_position;
-	quat interaction_start_local_orientation;
-	vec3 interaction_start_local_motion_anchor;
-
 	vec3 interaction_pt_position;
 	quat interaction_pt_orientation;
 	vec3 interaction_pt_pivot; // the location from where the interaction is happening, relative to the interaction pt

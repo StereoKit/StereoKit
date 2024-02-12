@@ -357,17 +357,11 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 					actor->interaction_start_orientation   = actor->orientation;
 					actor->interaction_start_motion_anchor = actor->motion_anchor;
 
-					actor->interaction_start_local_position      = matrix_transform_pt  (to_handle_parent_local, actor->position);
-					actor->interaction_start_local_orientation   = matrix_transform_quat(to_handle_parent_local, actor->orientation);
-					actor->interaction_start_local_motion_anchor = matrix_transform_pt  (to_handle_parent_local, actor->motion_anchor);
-
 					actor->interaction_pt_position         = handle_pose.position;
 					actor->interaction_pt_orientation      = handle_pose.orientation;
 					actor->interaction_pt_pivot            = at;
 
 					actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->position, actor->orientation)), hierarchy_to_world_point(at));
-					log_infof("Interaction at  : %.2f %.2f %.2f", at.x, at.y, at.z);
-					log_infof("Interaction from: %.2f %.2f %.2f", actor->interaction_start_local_position.x, actor->interaction_start_local_position.y, actor->interaction_start_local_position.z);
 				}
 			}
 			button_state_ focused = interactor_set_focus(i, id, has_hand_attention, hand_attention_dist);
@@ -424,6 +418,10 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 					vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->position, actor->orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
 					vec3 handle_world_offset = dest_rot * (-actor->interaction_pt_pivot);
 					vec3 dest_pos            = pivot_new_position + handle_world_offset;
+
+					// Transform from world space, to the space the handle is in
+					dest_pos = matrix_transform_pt  (to_handle_parent_local, dest_pos);
+					dest_rot = matrix_transform_quat(to_handle_parent_local, dest_rot);
 
 					handle_pose.position    = vec3_lerp (handle_pose.position,    dest_pos, 0.6f);
 					handle_pose.orientation = quat_slerp(handle_pose.orientation, dest_rot, 0.4f);
