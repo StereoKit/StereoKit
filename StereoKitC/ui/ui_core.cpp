@@ -14,24 +14,15 @@
 
 namespace sk {
 
-struct layer_t {
-	vec3         finger_pos   [skui_interactor_count];
-	vec3         finger_prev  [skui_interactor_count];
-	vec3         thumb_pos    [skui_interactor_count];
-	vec3         pinch_pt_pos [skui_interactor_count];
-	vec3         pinch_pt_prev[skui_interactor_count];
-};
-
 ///////////////////////////////////////////
 
-interactor_t         skui_interactor[skui_interactor_count];
-float                skui_finger_radius;
-id_hash_t            skui_last_element;
-bool32_t             skui_show_volumes;
+array_t<interactor_t> skui_interactors;
+float                 skui_finger_radius;
+id_hash_t             skui_last_element;
+bool32_t              skui_show_volumes;
 
 array_t<bool32_t>    skui_enabled_stack;
 array_t<id_hash_t>   skui_id_stack;
-array_t<layer_t>     skui_layers;
 array_t<bool>        skui_preserve_keyboard_stack;
 array_t<id_hash_t>   skui_preserve_keyboard_ids[2];
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_read;
@@ -45,24 +36,28 @@ void ui_core_init() {
 	skui_show_volumes             = false;
 	skui_enabled_stack            = {};
 	skui_id_stack                 = {};
-	skui_layers                   = {};
 	skui_preserve_keyboard_stack  = {};
 	skui_preserve_keyboard_ids[0] = {};
 	skui_preserve_keyboard_ids[1] = {};
-	memset(skui_interactor, 0, sizeof(skui_interactor));
+	skui_interactors              = {};
 
 	skui_preserve_keyboard_ids_read  = &skui_preserve_keyboard_ids[0];
 	skui_preserve_keyboard_ids_write = &skui_preserve_keyboard_ids[1];
 
 	skui_id_stack.add({ HASH_FNV64_START });
+
+	skui_interactors.add({});
+	skui_interactors.add({});
+	skui_interactors.add({});
+	skui_interactors.add({});
 }
 
 ///////////////////////////////////////////
 
 void ui_core_shutdown() {
+	skui_interactors             .free();
 	skui_enabled_stack           .free();
 	skui_id_stack                .free();
-	skui_layers                  .free();
 	skui_preserve_keyboard_stack .free();
 	skui_preserve_keyboard_ids[0].free();
 	skui_preserve_keyboard_ids[1].free();
@@ -76,92 +71,93 @@ void ui_core_update() {
 	skui_finger_radius = 0;
 	const matrix *to_local = hierarchy_to_local();
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		skui_interactor[i].pinch_pt_world_prev = skui_interactor[i].pinch_pt;
-		skui_interactor[i].focused_prev_prev   = skui_interactor[i].focused_prev;
-		skui_interactor[i].focused_prev        = skui_interactor[i].focused;
-		skui_interactor[i].active_prev         = skui_interactor[i].active;
-		skui_interactor[i].orientation_prev    = skui_interactor[i].orientation;
-		skui_interactor[i].position_prev       = skui_interactor[i].position;
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		skui_interactors[i].pinch_pt_world_prev = skui_interactors[i].pinch_pt;
+		skui_interactors[i].focused_prev_prev   = skui_interactors[i].focused_prev;
+		skui_interactors[i].focused_prev        = skui_interactors[i].focused;
+		skui_interactors[i].active_prev_prev    = skui_interactors[i].active_prev;
+		skui_interactors[i].active_prev         = skui_interactors[i].active;
+		skui_interactors[i].orientation_prev    = skui_interactors[i].orientation;
+		skui_interactors[i].position_prev       = skui_interactors[i].position;
 
-		skui_interactor[i].focus_priority = FLT_MAX;
-		skui_interactor[i].focused = 0;
-		skui_interactor[i].active  = 0;
-		skui_interactor[i].finger       = matrix_transform_pt(*to_local, skui_interactor[i].finger_world);
-		skui_interactor[i].finger_prev  = matrix_transform_pt(*to_local, skui_interactor[i].finger_world_prev);
-		skui_interactor[i].thumb        = matrix_transform_pt(*to_local, skui_interactor[i].thumb_world);
-		skui_interactor[i].pinch_pt     = matrix_transform_pt(*to_local, skui_interactor[i].pinch_pt);
-		skui_interactor[i].pinch_pt_prev= matrix_transform_pt(*to_local, skui_interactor[i].pinch_pt_prev);
-		skui_interactor[i].ray_enabled  = skui_interactor[i].tracked > 0 && skui_interactor[i].tracked && (vec3_dot(skui_interactor[i].finger_world - skui_interactor[i].finger_world_prev, input_head()->position - skui_interactor[i].finger_world_prev) < 0);
+		skui_interactors[i].focus_priority = FLT_MAX;
+		skui_interactors[i].focused = 0;
+		skui_interactors[i].active  = 0;
+		skui_interactors[i].finger       = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
+		skui_interactors[i].finger_prev  = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
+		skui_interactors[i].thumb        = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
+		skui_interactors[i].pinch_pt     = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt);
+		skui_interactors[i].pinch_pt_prev= matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_prev);
+		skui_interactors[i].ray_enabled  = skui_interactors[i].tracked > 0 && skui_interactors[i].tracked && (vec3_dot(skui_interactors[i].finger_world - skui_interactors[i].finger_world_prev, input_head()->position - skui_interactors[i].finger_world_prev) < 0);
 
 		// Don't let the hand trigger things while popping in and out of
 		// tracking
-		if (skui_interactor[i].tracked & button_state_just_active) {
-			skui_interactor[i].finger_prev         = skui_interactor[i].finger;
-			skui_interactor[i].finger_world_prev   = skui_interactor[i].finger_world;
-			skui_interactor[i].pinch_pt_prev       = skui_interactor[i].pinch_pt;
-			skui_interactor[i].pinch_pt_world_prev = skui_interactor[i].pinch_pt_world;
-			skui_interactor[i].orientation_prev    = skui_interactor[i].orientation;
-			skui_interactor[i].position_prev       = skui_interactor[i].position;
+		if (skui_interactors[i].tracked & button_state_just_active) {
+			skui_interactors[i].finger_prev         = skui_interactors[i].finger;
+			skui_interactors[i].finger_world_prev   = skui_interactors[i].finger_world;
+			skui_interactors[i].pinch_pt_prev       = skui_interactors[i].pinch_pt;
+			skui_interactors[i].pinch_pt_world_prev = skui_interactors[i].pinch_pt_world;
+			skui_interactors[i].orientation_prev    = skui_interactors[i].orientation;
+			skui_interactors[i].position_prev       = skui_interactors[i].position;
 		}
 
 		// draw hand rays
 		//skui_interactor[i].ray_visibility = math_lerp(skui_interactor[i].ray_visibility,
 		//	was_ray_enabled && ui_far_interact_enabled() && skui_interactor[i].ray_enabled && !skui_interactor[i].ray_discard ? 1.0f : 0.0f,
 		//	20.0f * time_stepf_unscaled());
-		if (skui_interactor[i].focused_prev != 0) skui_interactor[i].ray_visibility = 0;
-		if (skui_interactor[i].ray_visibility > 0.004f) {
+		if (skui_interactors[i].focused_prev != 0) skui_interactors[i].ray_visibility = 0;
+		if (skui_interactors[i].ray_visibility > 0.004f) {
 			ray_t       r     = input_get_pointer(input_hand_pointer_id[i])->ray;
 			const float scale = 2;
 			line_point_t points[5] = {
 				line_point_t{r.pos+r.dir*(0.07f              ), 0.001f,  color32{255,255,255,0}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.01f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactor[i].ray_visibility * 60 )}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.02f*scale), 0.0020f, color32{255,255,255,(uint8_t)(skui_interactor[i].ray_visibility * 80)}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.07f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactor[i].ray_visibility * 25 )}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.01f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 60 )}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.02f*scale), 0.0020f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 80)}},
+				line_point_t{r.pos+r.dir*(0.07f + 0.07f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 25 )}},
 				line_point_t{r.pos+r.dir*(0.07f + 0.11f*scale), 0.001f,  color32{255,255,255,0}} };
 			line_add_listv(points, 5);
 		}
-		skui_interactor[i].ray_discard = false;
+		skui_interactors[i].ray_discard = false;
 	}
 
 	// Direct touch
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t *hand = input_hand((handed_)i);
-		bool was_ray_enabled = skui_interactor[i].ray_enabled && !skui_interactor[i].ray_discard;
+		bool was_ray_enabled = skui_interactors[i].ray_enabled && !skui_interactors[i].ray_discard;
 
 		skui_finger_radius += hand->fingers[1][4].radius;
-		skui_interactor[i].finger_world_prev   = skui_interactor[i].finger_world;
-		skui_interactor[i].finger_world        = hand->fingers[1][4].position;
-		skui_interactor[i].thumb_world         = hand->fingers[0][4].position;
-		skui_interactor[i].pinch_pt_world      = hand->pinch_pt;
-		skui_interactor[i].pinch_state         = hand->pinch_state;
-		skui_interactor[i].radius              = hand->fingers[1][4].radius;
-		skui_interactor[i].orientation         = hand->palm.orientation;
-		skui_interactor[i].position            = hand->fingers[1][4].position;
-		skui_interactor[i].type                = interactor_type_point;
-		skui_interactor[i].events              = (interactor_event_)(interactor_event_poke | interactor_event_pinch);
-		skui_interactor[i].tracked             = hand->tracked_state & button_state_active;
+		skui_interactors[i].finger_world_prev   = skui_interactors[i].finger_world;
+		skui_interactors[i].finger_world        = hand->fingers[1][4].position;
+		skui_interactors[i].thumb_world         = hand->fingers[0][4].position;
+		skui_interactors[i].pinch_pt_world      = hand->pinch_pt;
+		skui_interactors[i].pinch_state         = hand->pinch_state;
+		skui_interactors[i].radius              = hand->fingers[1][4].radius;
+		skui_interactors[i].orientation         = hand->palm.orientation;
+		skui_interactors[i].position            = hand->fingers[1][4].position;
+		skui_interactors[i].type                = interactor_type_point;
+		skui_interactors[i].events              = (interactor_event_)(interactor_event_poke | interactor_event_pinch);
+		skui_interactors[i].tracked             = hand->tracked_state & button_state_active;
 
 	}
-	skui_finger_radius /= (float)skui_interactor_count;
+	skui_finger_radius /= (float)skui_interactors.count;
 
 	// hand rays
-	for (int32_t i = handed_max; i < skui_interactor_count; i++) {
+	for (int32_t i = handed_max; i < skui_interactors.count; i++) {
 		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i-handed_max]);
-		bool was_ray_enabled = skui_interactor[i].ray_enabled && !skui_interactor[i].ray_discard;
+		bool was_ray_enabled = skui_interactors[i].ray_enabled && !skui_interactors[i].ray_discard;
 
-		skui_interactor[i].finger_world_prev   = pointer->ray.pos;
-		skui_interactor[i].finger_world        = pointer->ray.pos + pointer->ray.dir * 100;
-		skui_interactor[i].thumb_world         = pointer->ray.pos;
-		skui_interactor[i].pinch_pt_world      = pointer->ray.pos;
-		skui_interactor[i].pinch_state         = pointer->state;
-		skui_interactor[i].radius              = 0.00f;
-		skui_interactor[i].orientation         = pointer->orientation;
-		skui_interactor[i].position            = pointer->ray.pos;
-		skui_interactor[i].motion_anchor       = input_head()->position;
-		skui_interactor[i].type                = interactor_type_line;
-		skui_interactor[i].events              = (interactor_event_)(interactor_event_poke | interactor_event_pinch);
-		skui_interactor[i].tracked             = pointer->tracked & button_state_active;
+		skui_interactors[i].finger_world_prev   = pointer->ray.pos;
+		skui_interactors[i].finger_world        = pointer->ray.pos + pointer->ray.dir * 100;
+		skui_interactors[i].thumb_world         = pointer->ray.pos;
+		skui_interactors[i].pinch_pt_world      = pointer->ray.pos;
+		skui_interactors[i].pinch_state         = pointer->state;
+		skui_interactors[i].radius              = 0.00f;
+		skui_interactors[i].orientation         = pointer->orientation;
+		skui_interactors[i].position            = pointer->ray.pos;
+		skui_interactors[i].motion_anchor       = input_head()->position;
+		skui_interactors[i].type                = interactor_type_line;
+		skui_interactors[i].events              = (interactor_event_)(interactor_event_poke | interactor_event_pinch);
+		skui_interactors[i].tracked             = pointer->tracked & button_state_active;
 	}
 
 	// Clear current keyboard ignore elements
@@ -201,7 +197,7 @@ button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact
 
 	bool active = focus & button_state_active && !(focus & button_state_just_inactive);
 	if (interact_type != ui_confirm_push && interactor != -1) {
-		active = skui_interactor[interactor].pinch_state & button_state_active;
+		active = skui_interactors[interactor].pinch_state & button_state_active;
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
 		focus = interactor_set_focus(interactor, id_hash, active || focus & button_state_active, 0);
@@ -224,14 +220,14 @@ bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 
 	skui_last_element = id_hash;
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		bool     was_focused = skui_interactor[i].focused_prev == id_hash;
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		bool     was_focused = skui_interactors[i].focused_prev == id_hash;
 		bounds_t size        = bounds;
 		if (was_focused) {
 			size.dimensions = bounds.dimensions + vec3_one*skui_settings.padding;
 		}
 
-		bool          in_box = skui_interactor[i].tracked && ui_in_box(skui_interactor[i].finger, skui_interactor[i].finger_prev, skui_finger_radius, size);
+		bool          in_box = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, size);
 		button_state_ state  = interactor_set_focus(i, id_hash, in_box, 0);
 		if (state & button_state_just_active)
 			result = true;
@@ -248,14 +244,14 @@ bool32_t ui_volume_at_16(const char16_t *id, bounds_t bounds) { return ui_volume
 button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 	button_state_ result  = button_state_inactive;
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		bool     was_active  = skui_interactor[i].active_prev  != 0;
-		bool     was_focused = skui_interactor[i].focused_prev != 0 || was_active;
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		bool     was_active  = skui_interactors[i].active_prev  != 0;
+		bool     was_focused = skui_interactors[i].focused_prev != 0 || was_active;
 		if (was_active || was_focused)
 			continue;
 
-		if (skui_interactor[i].tracked && ui_in_box(skui_interactor[i].finger, skui_interactor[i].finger_prev, skui_finger_radius, bounds)) {
-			button_state_ state = skui_interactor[i].pinch_state;
+		if (skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, bounds)) {
+			button_state_ state = skui_interactors[i].pinch_state;
 			if (state != button_state_inactive) {
 				result = state;
 				out_hand = (handed_)i;
@@ -287,7 +283,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	// If a hand is interacting, adjust the button surface accordingly
 	out_finger_offset = button_depth;
 	if (out_focus_state & button_state_active) {
-		interactor_t* actor = &skui_interactor[interactor];
+		interactor_t* actor = &skui_interactors[interactor];
 
 		out_finger_offset = -(interaction_at.z+actor->radius) - window_relative_pos.z;
 		bool pressed = out_finger_offset < skui_settings.depth / 2;
@@ -302,7 +298,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	}
 	
 	if (out_button_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_button, id, skui_interactor[interactor].finger_world);
+		ui_play_sound_on_off(ui_vis_button, id, skui_interactors[interactor].finger_world);
 
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
@@ -310,6 +306,134 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 
 ///////////////////////////////////////////
 
+void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, float max, float step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2 *out_button_center, float *out_finger_offset, button_state_ *out_focus_state, button_state_ *out_active_state, int32_t *out_interactor) {
+	bool result = false;
+
+	const float snap_scale = 1;
+	const float snap_dist  = 7*cm2m;
+
+	// Find sizes of slider elements
+	float percent      = (*value - min) / (max - min);
+	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
+
+	// Activation bounds sizing
+	float activation_plane = button_depth + skui_finger_radius;
+
+	// Set up for getting the state of the sliders.
+	*out_focus_state   = button_state_inactive;
+	*out_active_state  = button_state_inactive;
+	*out_interactor    = -1;
+	*out_finger_offset = button_depth;
+	float finger_at = 0;
+	if (confirm_method == ui_confirm_push) {
+		vec3  activation_start = vertical
+			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
+			: window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x / 2.0f, -(size.y/2 - button_size.y/2)     + button_size.y/2.0f, -activation_plane };
+		vec3  activation_size = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
+		vec3  sustain_size    = vec3{ size.x, size.y, activation_plane + 6*skui_finger_radius  };
+		vec3  sustain_start   = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+
+		vec3 finger_pt;
+		interactor_plate_1h(id, interactor_event_poke,
+			activation_start, { activation_size.x, activation_size.y },
+			out_focus_state, out_interactor, &finger_pt);
+
+		//ui_box_interaction_1h_poke(id,
+		//	activation_start, activation_size,
+		//	sustain_start,    sustain_size,
+		//	out_focus_state, out_interactor);
+
+		// Here, we allow for pressing or pinching of the button to activate
+		// the slider!
+		if (*out_interactor != -1) {
+			button_state_ pinch = skui_interactors[*out_interactor].pinch_state;
+
+			*out_finger_offset = -skui_interactors[*out_interactor].finger.z - window_relative_pos.z;
+			bool pressed  = *out_finger_offset < button_depth / 2;
+			*out_finger_offset = fminf(fmaxf(2 * mm2m, *out_finger_offset), button_depth);
+
+			*out_active_state = interactor_set_active(*out_interactor, id, pinch & button_state_active || pressed);
+			// Focus can get lost if the user is dragging outside the box, so set
+			// it to focused if it's still active.
+			*out_focus_state = interactor_set_focus(*out_interactor, id, pinch & button_state_active || (*out_focus_state) & button_state_active, 0);
+
+			finger_at = vertical ? skui_interactors[*out_interactor].finger.y : skui_interactors[*out_interactor].finger.x;
+		}
+	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
+		vec3 activation_start;
+		vec3 activation_size;
+		if (vertical) {
+			activation_start = window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2), percent * -(size.y - button_size.y) + button_size.y, button_depth };
+			activation_size  = vec3{ button_size.x, button_size.y * 3, button_depth * 2 };
+		} else {
+			activation_start = window_relative_pos + vec3{ percent * -(size.x - button_size.x) + button_size.x, -(size.y / 2 - button_size.y / 2), button_depth };
+			activation_size  = vec3{ button_size.x * 3, button_size.y, button_depth * 2 };
+		}
+
+		ui_box_interaction_1h_pinch(id,
+			activation_start, activation_size,
+			activation_start, activation_size,
+			out_focus_state, out_interactor);
+
+		// Pinch confirm uses a handle that the user must pinch, in order to
+		// drag it around the slider.
+		if (*out_interactor != -1) {
+			button_state_ pinch = skui_interactors[*out_interactor].pinch_state;
+			*out_active_state = interactor_set_active(*out_interactor, id, pinch & button_state_active);
+			// Focus can get lost if the user is dragging outside the box, so set
+			// it to focused if it's still active.
+			*out_focus_state = interactor_set_focus(*out_interactor, id, (*out_active_state) & button_state_active || (*out_focus_state) & button_state_active, 0);
+			vec3    pinch_local = hierarchy_to_local_point(skui_interactors[*out_interactor].pinch_pt);
+			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
+			finger_at = vertical ? pinch_local.y : pinch_local.x;
+
+			if (confirm_method == ui_confirm_variable_pinch && (*out_active_state) & button_state_active && scale_step > 0) {
+				finger_at = finger_at / (1 + scale_step * snap_scale);
+			}
+		}
+	}
+
+	if ((*out_active_state) & button_state_active) {
+		float pos_in_slider = vertical
+			? (float)fmin(1, fmax(0, ((window_relative_pos.y-button_size.y/2)-finger_at) / (size.y-button_size.y)))
+			: (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_at) / (size.x-button_size.x)));
+		float new_val = min + pos_in_slider*(max-min);
+		if (step != 0) {
+			new_val = min + ((int)(((new_val - min) / step) + 0.5f)) * step;
+		}
+		result  = *value != new_val;
+		percent = (new_val - min) / (max - min);
+
+		// Play tick sound as the value updates
+		if (result) {
+			
+			if (step != 0) {
+				// Play on every change if there's a user specified step value
+				ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].finger_world);
+			} else {
+				// If no user specified step, then we'll do a set number of
+				// clicks across the whole bar.
+				const int32_t click_steps = 10;
+
+				float   old_percent  = (*value - min) / (max - min);
+				int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
+				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
+
+				if (old_quantize != new_quantize) {
+					ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].finger_world);
+				}
+			}
+		}
+
+		// Do this down here so we can calculate old_percent above
+		*value = new_val;
+	}
+	*out_button_center = vertical
+		? vec2{ window_relative_pos.x - size.x/2.0f,                                           window_relative_pos.y - (button_size.y/2.0f + percent*(size.y - button_size.y))}
+		: vec2{ window_relative_pos.x - button_size.x/2.0f - percent*(size.x - button_size.x), window_relative_pos.y - size.y/2.0f  };
+}
+
+///////////////////////////////////////////
 
 bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
 	bool  result      = false;
@@ -331,8 +455,8 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 	if (!ui_is_enabled() || move_type == ui_move_none) {
 		interactor_set_focus(-1, id, false, 0);
 	} else {
-		for (int32_t i = 0; i < skui_interactor_count; i++) {
-			interactor_t* actor = &skui_interactor[i];
+		for (int32_t i = 0; i < skui_interactors.count; i++) {
+			interactor_t* actor = &skui_interactors[i];
 			// Skip this if something else has some focus!
 			if (((actor->events & event_mask) == 0) || interactor_is_preoccupied(i, id, false))
 				continue;
@@ -341,7 +465,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 			bool  has_hand_attention  = actor->active_prev == id;
 			bool  is_far_interact     = false;
 			float hand_attention_dist = 0;
-			if (actor->tracked && ui_in_box(actor->finger, actor->thumb, skui_finger_radius, handle_bounds)) {
+			if (actor->tracked && ui_in_box(actor->finger, actor->thumb, actor->radius, handle_bounds)) {
 				has_hand_attention  = true;
 				hand_attention_dist = bounds_sdf(handle_bounds, actor->pinch_pt) + vec3_distance(actor->pinch_pt, actor->thumb);
 
@@ -510,8 +634,8 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 	///	skui_preserve_keyboard_ids_write->add(id);
 	//}
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		const interactor_t *actor = &skui_interactor[i];
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		const interactor_t *actor = &skui_interactors[i];
 		if (((actor->events & event_mask) == 0) ||
 			interactor_is_preoccupied(i, id, false))
 			continue;
@@ -567,10 +691,10 @@ void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 bo
 		skui_preserve_keyboard_ids_write->add(id);
 	}
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
 		if (interactor_is_preoccupied(i, id, false))
 			continue;
-		bool was_focused = skui_interactor[i].focused_prev == id;
+		bool was_focused = skui_interactors[i].focused_prev == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
 		if (was_focused) {
@@ -579,9 +703,9 @@ void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 bo
 		}
 
 		bounds_t bounds   = ui_size_box(box_start, box_size);
-		bool     in_box   = skui_interactor[i].tracked && ui_in_box(skui_interactor[i].finger, skui_interactor[i].thumb, skui_finger_radius, bounds);
+		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].thumb, skui_interactors[i].radius, bounds);
 		float    priority = in_box
-			? bounds_sdf(bounds, skui_interactor[i].pinch_pt) + vec3_distance(skui_interactor[i].thumb, skui_interactor[i].pinch_pt)
+			? bounds_sdf(bounds, skui_interactors[i].pinch_pt) + vec3_distance(skui_interactors[i].thumb, skui_interactors[i].pinch_pt)
 			: FLT_MAX;
 
 		button_state_ focus  = interactor_set_focus(i, id, in_box, priority);
@@ -613,10 +737,10 @@ void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box
 		skui_preserve_keyboard_ids_write->add(id);
 	}
 
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
 		if (interactor_is_preoccupied(i, id, false))
 			continue;
-		bool was_focused = skui_interactor[i].focused_prev == id;
+		bool was_focused = skui_interactors[i].focused_prev == id;
 		vec3 box_start = box_unfocused_start;
 		vec3 box_size  = box_unfocused_size;
 		if (was_focused) {
@@ -625,9 +749,9 @@ void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box
 		}
 
 		bounds_t bounds   = ui_size_box(box_start, box_size);
-		bool     in_box   = skui_interactor[i].tracked && ui_in_box(skui_interactor[i].finger, skui_interactor[i].finger_prev, skui_finger_radius, bounds);
+		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, bounds);
 		float    priority = in_box
-			? bounds_sdf(bounds, skui_interactor[i].finger)
+			? bounds_sdf(bounds, skui_interactors[i].finger)
 			: FLT_MAX;
 
 		button_state_ focus = interactor_set_focus(i, id, in_box, priority);
@@ -648,62 +772,49 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation);
 	hierarchy_push(trs);
 
-	skui_layers.add(layer_t{});
 	ui_layout_push(layout_start, layout_dimensions, true);
 
-	layer_t*      layer    = &skui_layers.last();
 	const matrix *to_local = hierarchy_to_local();
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		layer->finger_pos   [i] = skui_interactor[i].finger        = matrix_transform_pt(*to_local, skui_interactor[i].finger_world);
-		layer->finger_prev  [i] = skui_interactor[i].finger_prev   = matrix_transform_pt(*to_local, skui_interactor[i].finger_world_prev);
-		layer->thumb_pos    [i] = skui_interactor[i].thumb         = matrix_transform_pt(*to_local, skui_interactor[i].thumb_world);
-		layer->pinch_pt_pos [i] = skui_interactor[i].pinch_pt      = matrix_transform_pt(*to_local, skui_interactor[i].pinch_pt_world);
-		layer->pinch_pt_prev[i] = skui_interactor[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_interactor[i].pinch_pt_world_prev);
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		skui_interactors[i].finger        = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
+		skui_interactors[i].finger_prev   = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
+		skui_interactors[i].thumb         = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
+		skui_interactors[i].pinch_pt      = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world);
+		skui_interactors[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world_prev);
 	}
 }
 
 ///////////////////////////////////////////
 
 void ui_pop_surface() {
-	skui_layers.pop();
 	ui_layout_pop();
 	hierarchy_pop();
 
-	if (skui_layers.count <= 0) {
-		for (int32_t i = 0; i < skui_interactor_count; i++) {
-			skui_interactor[i].finger        = skui_interactor[i].finger_world;
-			skui_interactor[i].finger_prev   = skui_interactor[i].finger_world_prev;
-			skui_interactor[i].thumb         = skui_interactor[i].thumb_world;
-			skui_interactor[i].pinch_pt      = skui_interactor[i].pinch_pt_world;
-			skui_interactor[i].pinch_pt_prev = skui_interactor[i].pinch_pt_world_prev;
-		}
-	} else {
-		layer_t *layer = &skui_layers.last();
-		for (int32_t i = 0; i < skui_interactor_count; i++) {
-			skui_interactor[i].finger        = layer->finger_pos[i];
-			skui_interactor[i].finger_prev   = layer->finger_prev[i];
-			skui_interactor[i].thumb         = layer->thumb_pos[i];
-			skui_interactor[i].pinch_pt      = layer->pinch_pt_pos[i];
-			skui_interactor[i].pinch_pt_prev = layer->pinch_pt_prev[i];
-		}
+	const matrix *to_local = hierarchy_to_local();
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		skui_interactors[i].finger        = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
+		skui_interactors[i].finger_prev   = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
+		skui_interactors[i].thumb         = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
+		skui_interactors[i].pinch_pt      = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world);
+		skui_interactors[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world_prev);
 	}
 }
 
 ///////////////////////////////////////////
 
 button_state_ interactor_set_focus(int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority) {
-	if (interactor < 0 || interactor >= skui_interactor_count) {
-		for (size_t i = 0; i < skui_interactor_count; i++)
-			if (skui_interactor[i].active_prev == for_el_id) { interactor = i; break; }
-		if (interactor < 0 || interactor >= skui_interactor_count) return button_state_inactive;
+	if (interactor < 0 || interactor >= skui_interactors.count) {
+		for (int32_t i = 0; i < skui_interactors.count; i++)
+			if (skui_interactors[i].active_prev == for_el_id) { interactor = i; break; }
+		if (interactor < 0 || interactor >= skui_interactors.count) return button_state_inactive;
 	}
-	bool was_focused = skui_interactor[interactor].focused_prev == for_el_id;
+	bool was_focused = skui_interactors[interactor].focused_prev == for_el_id;
 	bool is_focused  = false;
 
-	if (focused && priority <= skui_interactor[interactor].focus_priority) {
+	if (focused && priority <= skui_interactors[interactor].focus_priority) {
 		is_focused = focused;
-		skui_interactor[interactor].focused        = for_el_id;
-		skui_interactor[interactor].focus_priority = priority;
+		skui_interactors[interactor].focused        = for_el_id;
+		skui_interactors[interactor].focus_priority = priority;
 	}
 
 	button_state_ result = button_state_inactive;
@@ -718,12 +829,12 @@ button_state_ interactor_set_focus(int32_t interactor, id_hash_t for_el_id, bool
 button_state_ interactor_set_active(int32_t interactor, id_hash_t for_el_id, bool32_t active) {
 	if (interactor == -1) return button_state_inactive;
 
-	bool was_active = skui_interactor[interactor].active_prev == for_el_id;
+	bool was_active = skui_interactors[interactor].active_prev == for_el_id;
 	bool is_active  = false;
 
-	if (active && (was_active || skui_interactor[interactor].focused_prev == for_el_id || skui_interactor[interactor].focused == for_el_id)) {
+	if (active && (was_active || skui_interactors[interactor].focused_prev == for_el_id || skui_interactors[interactor].focused == for_el_id)) {
 		is_active = active;
-		skui_interactor[interactor].active = for_el_id;
+		skui_interactors[interactor].active = for_el_id;
 	}
 
 	button_state_ result = button_state_inactive;
@@ -736,9 +847,43 @@ button_state_ interactor_set_active(int32_t interactor, id_hash_t for_el_id, boo
 ///////////////////////////////////////////
 
 bool32_t ui_id_focused(id_hash_t id) {
-	for (size_t i = 0; i < skui_interactor_count; i++)
-		if (skui_interactor[i].focused_prev == id) return true;
+	for (int32_t i = 0; i < skui_interactors.count; i++)
+		if (skui_interactors[i].focused_prev == id) return true;
 	return false;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_id_focus_state(id_hash_t id) {
+	bool was_focused = false;
+	bool is_focused  = false;
+
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		if (skui_interactors[i].focused_prev      == id) is_focused  = true;
+		if (skui_interactors[i].focused_prev_prev == id) was_focused = true;
+	}
+	return button_make_state(was_focused, is_focused);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_id_active(id_hash_t id) {
+	for (int32_t i = 0; i < skui_interactors.count; i++)
+		if (skui_interactors[i].active_prev == id) return true;
+	return false;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_id_active_state(id_hash_t id) {
+	bool was_active = false;
+	bool is_active  = false;
+
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		if (skui_interactors[i].active_prev      == id) is_active  = true;
+		if (skui_interactors[i].active_prev_prev == id) was_active = true;
+	}
+	return button_make_state(was_active, is_active);
 }
 
 ///////////////////////////////////////////
@@ -758,7 +903,7 @@ void ui_show_volumes(bool32_t show) {
 ///////////////////////////////////////////
 
 bool32_t interactor_is_preoccupied(int32_t interactor, id_hash_t for_el_id, bool32_t include_focused) {
-	const interactor_t &h = skui_interactor[interactor];
+	const interactor_t &h = skui_interactors[interactor];
 	return (include_focused && h.focused_prev != 0 && h.focused_prev != for_el_id)
 		|| (h.active_prev != 0 && h.active_prev != for_el_id);
 }
@@ -766,39 +911,39 @@ bool32_t interactor_is_preoccupied(int32_t interactor, id_hash_t for_el_id, bool
 ///////////////////////////////////////////
 
 int32_t ui_last_active_hand(id_hash_t for_el_id) {
-	for (size_t i = 0; i < skui_interactor_count; i++)
-		if (skui_interactor[i].active_prev == for_el_id) return i;
+	for (int32_t i = 0; i < skui_interactors.count; i++)
+		if (skui_interactors[i].active_prev == for_el_id) return i;
 	return -1;
 }
 
 ///////////////////////////////////////////
 
 int32_t interactor_last_focused(id_hash_t for_el_id) {
-	for (size_t i = 0; i < skui_interactor_count; i++)
-		if (skui_interactor[i].focused_prev == for_el_id) return i;
+	for (int32_t i = 0; i < skui_interactors.count; i++)
+		if (skui_interactors[i].focused_prev == for_el_id) return i;
 	return -1;
 }
 
 ///////////////////////////////////////////
 
 bool32_t ui_is_interacting(handed_ hand) {
-	return skui_interactor[hand].active_prev != 0 || skui_interactor[hand].focused_prev != 0;
+	return skui_interactors[hand].active_prev != 0 || skui_interactors[hand].focused_prev != 0;
 }
 
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_hand_used(handed_ hand) {
 	return button_make_state(
-		skui_interactor[hand].active_prev == skui_last_element || skui_interactor[hand].focused_prev_prev == skui_last_element,
-		skui_interactor[hand].active      == skui_last_element || skui_interactor[hand].focused_prev      == skui_last_element);
+		skui_interactors[hand].active_prev == skui_last_element || skui_interactors[hand].focused_prev_prev == skui_last_element,
+		skui_interactors[hand].active      == skui_last_element || skui_interactors[hand].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_hand_active(handed_ hand) {
 	return button_make_state(
-		skui_interactor[hand].active_prev == skui_last_element,
-		skui_interactor[hand].active      == skui_last_element);
+		skui_interactors[hand].active_prev == skui_last_element,
+		skui_interactors[hand].active      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -808,8 +953,8 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 	// against the last two frame's focus ids, which are set in stone after the
 	// frame ends.
 	return button_make_state(
-		skui_interactor[hand].focused_prev_prev == skui_last_element,
-		skui_interactor[hand].focused_prev      == skui_last_element);
+		skui_interactors[hand].focused_prev_prev == skui_last_element,
+		skui_interactors[hand].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -817,8 +962,8 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 button_state_ ui_last_element_active() {
 	// TODO: needs interactor work
 	return button_make_state(
-		skui_interactor[handed_left].active_prev == skui_last_element || skui_interactor[handed_right].active_prev == skui_last_element,
-		skui_interactor[handed_left].active      == skui_last_element || skui_interactor[handed_right].active      == skui_last_element);
+		skui_interactors[handed_left].active_prev == skui_last_element || skui_interactors[handed_right].active_prev == skui_last_element,
+		skui_interactors[handed_left].active      == skui_last_element || skui_interactors[handed_right].active      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -830,8 +975,8 @@ button_state_ ui_last_element_focused() {
 	// against the last two frame's focus ids, which are set in stone after the
 	// frame ends.
 	return button_make_state(
-		skui_interactor[handed_left].focused_prev_prev == skui_last_element || skui_interactor[handed_right].focused_prev_prev == skui_last_element,
-		skui_interactor[handed_left].focused_prev      == skui_last_element || skui_interactor[handed_right].focused_prev      == skui_last_element);
+		skui_interactors[handed_left].focused_prev_prev == skui_last_element || skui_interactors[handed_right].focused_prev_prev == skui_last_element,
+		skui_interactors[handed_left].focused_prev      == skui_last_element || skui_interactors[handed_right].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////
@@ -941,8 +1086,8 @@ void ui_pop_preserve_keyboard(){
 ///////////////////////////////////////////
 
 bool32_t ui_keyboard_focus_lost(id_hash_t focused_id) {
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		const interactor_t& h = skui_interactor[i];
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		const interactor_t& h = skui_interactors[i];
 		if (interactor_is_preoccupied(i, focused_id, false) && h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) {
 			return true;
 		}

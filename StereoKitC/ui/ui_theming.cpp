@@ -281,11 +281,8 @@ void ui_theming_update() {
 	if (skui_active_sound_element_id == 0) return;
 
 	// See if our current sound on/off pair is still from a valid ui element
-	for (int32_t i = 0; i < skui_interactor_count; i++) {
-		if (skui_interactor[i].active_prev == skui_active_sound_element_id) {
-			return;
-		}
-	}
+	if (ui_id_active(skui_active_sound_element_id))
+		return;
 	// If the "on" sound instance is still playing, we don't want to stomp on
 	// it with the off sound
 	if (sound_inst_is_playing(skui_active_sound_inst))

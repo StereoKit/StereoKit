@@ -772,135 +772,28 @@ void ui_progress_bar(float percent, float width) {
 
 ///////////////////////////////////////////
 
-template<typename C, typename N>
-bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
-	id_hash_t id     = ui_stack_hash(id_text);
-	bool      result = false;
+template<typename C>
+bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+	id_hash_t id = ui_stack_hash(id_text);
 
-	const float snap_scale = 1;
-	const float snap_dist  = 7*cm2m;
-
-	float size_min = vertical ? size.x : size.y;
-
-	// Find sizes of slider elements
-	float percent      = (float)((value - min) / (max - min));
-	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size    = fmaxf(skui_settings.padding, size_min / 6.f);
-	vec2  button_size  = confirm_method == ui_confirm_push
+	float button_depth  = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
+	float size_min    = vertical ? size.x : size.y;
+	float rule_size   = fmaxf(skui_settings.padding, size_min / 6.f);
+	vec2  button_size = confirm_method == ui_confirm_push
 		? vec2{ size_min / 2, size_min / 2 }
 		: (vertical
 			? vec2{ size_min, size_min / 4 }
-			: vec2{ size_min / 4, size_min } );
+			: vec2{ size_min / 4, size_min });
 
-	// Activation bounds sizing
-	float activation_plane = button_depth + skui_finger_radius;
+	button_state_ active_state;
+	button_state_ focus_state;
+	int32_t       interactor;
+	vec2          button_center;
+	float         finger_offset;
+	float         old_value = value;
+	ui_slider_behavior(vertical, id, &value, min, max, step, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &active_state, &focus_state, &interactor);
 
-	// Set up for getting the state of the sliders.
-	button_state_ focus_state   = button_state_inactive;
-	button_state_ button_state  = button_state_inactive;
-	float         finger_offset = button_depth;
-	float         finger_at     = 0;
-	int32_t       interactor    = -1;
-	if (confirm_method == ui_confirm_push) {
-		vec3  activation_start = vertical
-			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
-			: window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
-		vec3  activation_size = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
-		vec3  sustain_size    = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-		vec3  sustain_start   = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
-
-		ui_box_interaction_1h_poke(id,
-			activation_start, activation_size,
-			sustain_start,    sustain_size,
-			&focus_state, &interactor);
-
-		// Here, we allow for pressing or pinching of the button to activate
-		// the slider!
-		if (interactor != -1) {
-			button_state_ pinch = skui_interactor[interactor].pinch_state;
-
-			finger_offset = -skui_interactor[interactor].finger.z - window_relative_pos.z;
-			bool pressed  = finger_offset < button_depth / 2;
-			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
-
-			button_state = interactor_set_active(interactor, id, pinch & button_state_active || pressed);
-			// Focus can get lost if the user is dragging outside the box, so set
-			// it to focused if it's still active.
-			focus_state = interactor_set_focus(interactor, id, pinch & button_state_active || focus_state & button_state_active, 0);
-
-			finger_at = vertical ? skui_interactor[interactor].finger.y : skui_interactor[interactor].finger.x;
-		}
-	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		vec3 activation_start;
-		vec3 activation_size;
-		if (vertical) {
-			activation_start = window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2), percent * -(size.y - button_size.y) + button_size.y, button_depth };
-			activation_size  = vec3{ button_size.x, button_size.y * 3, button_depth * 2 };
-		} else {
-			activation_start = window_relative_pos + vec3{ percent * -(size.x - button_size.x) + button_size.x, -(size.y / 2 - button_size.y / 2), button_depth };
-			activation_size  = vec3{ button_size.x * 3, button_size.y, button_depth * 2 };
-		}
-
-		ui_box_interaction_1h_pinch(id,
-			activation_start, activation_size,
-			activation_start, activation_size,
-			&focus_state, &interactor);
-
-		// Pinch confirm uses a handle that the user must pinch, in order to
-		// drag it around the slider.
-		if (interactor != -1) {
-			button_state_ pinch = skui_interactor[interactor].pinch_state;
-			button_state = interactor_set_active(interactor, id, pinch & button_state_active);
-			// Focus can get lost if the user is dragging outside the box, so set
-			// it to focused if it's still active.
-			focus_state = interactor_set_focus(interactor, id, button_state & button_state_active || focus_state & button_state_active, 0);
-			vec3    pinch_local = hierarchy_to_local_point(skui_interactor[interactor].pinch_pt);
-			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-			finger_at = vertical ? pinch_local.y : pinch_local.x;
-
-			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-				finger_at = finger_at / (1 + scale_step * snap_scale);
-			}
-		}
-	}
-
-	if (button_state & button_state_active) {
-		float pos_in_slider = vertical
-			? (float)fmin(1, fmax(0, ((window_relative_pos.y-button_size.y/2)-finger_at) / (size.y-button_size.y)))
-			: (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_at) / (size.x-button_size.x)));
-		N new_val = (N)min + (N)pos_in_slider*(N)(max-min);
-		if (step != 0) {
-			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
-		}
-		result  = value != new_val;
-		percent = (float)((new_val - min) / (max - min));
-
-		// Play tick sound as the value updates
-		if (result) {
-			
-			if (step != 0) {
-				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_interactor[interactor].finger_world);
-			} else {
-				// If no user specified step, then we'll do a set number of
-				// clicks across the whole bar.
-				const int32_t click_steps = 10;
-
-				float   old_percent  = (float)((value - min) / (max - min));
-				int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
-				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
-
-				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_interactor[interactor].finger_world);
-				}
-			}
-		}
-
-		// Do this down here so we can calculate old_percent above
-		value = new_val;
-	}
-
-	if (button_state & button_state_just_active)
+	if (active_state & button_state_just_active)
 		ui_anim_start(id, 0);
 	float color_blend = focus_state & button_state_active ? 1.0f : 0.0f;
 	if (ui_anim_has(id, 0, skui_anim_duration)) {
@@ -909,120 +802,58 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max,
 	}
 
 	// Draw the UI
-	float x           = window_relative_pos.x;
-	float y           = window_relative_pos.y;
-	float slide_x_rel = 0;
-	float slide_y_rel = 0;
-	if (vertical) {
-		slide_x_rel = (size.x - button_size.x) / 2;
-		slide_y_rel = (float)(percent * (size.y - button_size.y));
-	} else {
-		slide_x_rel = (float)(percent * (size.x - button_size.x));
-		slide_y_rel = (size.y - button_size.y) / 2;
-	}
-
+	float percent = (value - min) / (max - min);
 	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend, vertical);
-
-	if (confirm_method == ui_confirm_push) {
-		ui_draw_el(ui_vis_slider_push,
-			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
-			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_pressed_depth +mm2m)},
-			color_blend);
-	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		ui_draw_el(ui_vis_slider_pinch,
-			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
-			vec3{button_size.x, button_size.y, button_depth},
-			color_blend);
-
-		vec3 pinch_local = interactor < 0
-			? vec3_zero
-			: hierarchy_to_local_point(skui_interactor[interactor].pinch_pt);
-		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-			float scale     = 1 + scale_step * snap_scale;
-			float z         = -activation_plane - (scale_step * snap_dist) + button_depth/2;
-			float scaled_at = vertical
-				? y+size.y*(scale-1)*0.5f
-				: x+size.x*(scale-1)*0.5f;
-			
-			if (vertical) {
-				float connector_x = (x-slide_x_rel) - size_min * 0.5f;
-				line_add({ connector_x, y,        window_relative_pos.z}, { connector_x, scaled_at,              window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-				line_add({ connector_x, y-size.y, window_relative_pos.z}, { connector_x, scaled_at-size.y*scale, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			} else {
-				float connector_y = (y-slide_y_rel) - size_min * 0.5f;
-				line_add({ x,        connector_y, window_relative_pos.z}, { scaled_at,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-				line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_at-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			}
-
-			if (vertical) {
-				ui_progress_bar_at_ex(percent,
-					vec3{ x-slide_x_rel, scaled_at, window_relative_pos.z + z },
-					vec2{ size.x, size.y*scale },
-					color_blend, vertical);
-			} else {
-				ui_progress_bar_at_ex(percent,
-					vec3{ scaled_at, y-slide_y_rel, window_relative_pos.z + z },
-					vec2{ size.x*scale, size.y },
-					color_blend, vertical);
-			}
-			ui_draw_el(ui_vis_slider_pinch,
-				vertical
-					? vec3{ x - slide_x_rel, scaled_at - slide_y_rel * scale, window_relative_pos.z + z }
-					: vec3{ scaled_at - slide_x_rel * scale, y - slide_y_rel, window_relative_pos.z + z },
-				vec3{ button_size.x, button_size.y, button_depth },
-				color_blend);
-		}
-	}
+	ui_draw_el(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
+		vec3{ button_center.x+button_size.x/2, button_center.y+button_size.y/2, window_relative_pos.z },
+		vec3{ button_size.x, button_size.y, fmaxf(finger_offset,rule_size * skui_pressed_depth + mm2m) },
+		color_blend);
 	
-	if (interactor >= 0 && interactor < 2) {
-		if (button_state & button_state_just_active)
-			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_interactor[interactor].finger_world);
-	}
+	if (active_state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ button_center.x, button_center.y,0 }));
 
-	if      (notify_on == ui_notify_change)   return result;
-	else if (notify_on == ui_notify_finalize) return button_state & button_state_just_inactive;
-	else                                      return result;
+	if (notify_on == ui_notify_finalize) return active_state & button_state_just_inactive;
+	else                                 return old_value != value;
 }
-bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    >(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
-bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    , float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_hslider_at_f64_16(const char16_t* id_text, double& value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    >(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64_16(const char16_t* id_text, double& value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
 
-bool32_t ui_vslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_vslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_vslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    >(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
-bool32_t ui_vslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    , float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_vslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_vslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    >(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
 
 ///////////////////////////////////////////
 
-template<typename C, typename N>
-bool32_t ui_slider_g(bool vertical, const C *name, N &value, N min, N max, N step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+template<typename C>
+bool32_t ui_slider_g(bool vertical, const C *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
 	vec3 final_pos;
 	vec2 final_size;
-	if (vertical) ui_layout_reserve_vertical_sz({width, 0}, false, &final_pos, &final_size);
+	if (vertical) ui_layout_reserve_vertical_sz({0, width}, false, &final_pos, &final_size);
 	else          ui_layout_reserve_sz         ({width, 0}, false, &final_pos, &final_size);
 
-	return ui_slider_at_g<C, N>(vertical, name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
+	return ui_slider_at_g<C>(vertical, name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
 }
 
-bool32_t ui_hslider       (const char     *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider       (const char     *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char    >(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t>(false, name, value, min, max, step, width, confirm_method, notify_on); }
 
-bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char    >(false, name, tmp, (float)min, (float)max, (float)step, width, confirm_method, notify_on); value = tmp; return result; }
+bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char16_t>(false, name, tmp, (float)min, (float)max, (float)step, width, confirm_method, notify_on); value = tmp; return result; }
 
-bool32_t ui_vslider       (const char     *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider       (const char     *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char    >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
 
-bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char    >(true, name, tmp, (float)min, (float)max, (float)step, height, confirm_method, notify_on); value = tmp; return result; }
+bool32_t ui_vslider_f64_16(const char16_t* name, double& value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char16_t>(true, name, tmp, (float)min, (float)max, (float)step, height, confirm_method, notify_on); value = tmp; return result; }
 
 ///////////////////////////////////////////
 
@@ -1102,12 +933,9 @@ void ui_window_end() {
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
 	// Focus animation
-	if ((skui_interactor[0].focused_prev == win->hash && skui_interactor[0].focused_prev_prev != win->hash) ||
-		(skui_interactor[1].focused_prev == win->hash && skui_interactor[1].focused_prev_prev != win->hash))
-		ui_anim_start(win->hash, 0);
-	if ((skui_interactor[0].focused_prev != win->hash && skui_interactor[0].focused_prev_prev == win->hash) ||
-		(skui_interactor[1].focused_prev != win->hash && skui_interactor[1].focused_prev_prev == win->hash))
-		ui_anim_start(win->hash, 1);
+	button_state_ focus_state = ui_id_focus_state(win->hash);
+	if (focus_state & button_state_just_active)   ui_anim_start(win->hash, 0);
+	if (focus_state & button_state_just_inactive) ui_anim_start(win->hash, 1);
 
 	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
 	if (ui_anim_has(win->hash, 0, skui_anim_focus_duration)) {
