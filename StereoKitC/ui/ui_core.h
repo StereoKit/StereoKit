@@ -19,23 +19,18 @@ struct interactor_t {
 	interactor_event_ events;
 	interactor_type_  type;
 
-	vec3      finger;
-	vec3      finger_prev;
-	vec3      finger_world;
-	vec3      finger_world_prev;
-	vec3      thumb;
-	vec3      thumb_world;
-	vec3      pinch_pt;
-	vec3      pinch_pt_prev;
-	vec3      pinch_pt_world;
-	vec3      pinch_pt_world_prev;
-	bool      tracked;
+	vec3      capsule_end;
+	vec3      capsule_end_world;
+	vec3      capsule_start;
+	vec3      capsule_start_world;
+	float     capsule_radius;
+
+	bool          tracked;
+	button_state_ pinch_state;
+
 	bool      ray_enabled;
 	bool      ray_discard;
 	float     ray_visibility;
-
-	button_state_ pinch_state;
-	float radius;
 
 	vec3 position;
 	vec3 position_prev;

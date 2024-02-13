@@ -50,6 +50,8 @@ void ui_core_init() {
 	skui_interactors.add({});
 	skui_interactors.add({});
 	skui_interactors.add({});
+	skui_interactors.add({});
+	skui_interactors.add({});
 }
 
 ///////////////////////////////////////////
@@ -72,7 +74,6 @@ void ui_core_update() {
 	const matrix *to_local = hierarchy_to_local();
 
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
-		skui_interactors[i].pinch_pt_world_prev = skui_interactors[i].pinch_pt;
 		skui_interactors[i].focused_prev_prev   = skui_interactors[i].focused_prev;
 		skui_interactors[i].focused_prev        = skui_interactors[i].focused;
 		skui_interactors[i].active_prev_prev    = skui_interactors[i].active_prev;
@@ -81,22 +82,17 @@ void ui_core_update() {
 		skui_interactors[i].position_prev       = skui_interactors[i].position;
 
 		skui_interactors[i].focus_priority = FLT_MAX;
-		skui_interactors[i].focused = 0;
-		skui_interactors[i].active  = 0;
-		skui_interactors[i].finger       = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
-		skui_interactors[i].finger_prev  = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
-		skui_interactors[i].thumb        = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
-		skui_interactors[i].pinch_pt     = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt);
-		skui_interactors[i].pinch_pt_prev= matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_prev);
-		skui_interactors[i].ray_enabled  = skui_interactors[i].tracked > 0 && skui_interactors[i].tracked && (vec3_dot(skui_interactors[i].finger_world - skui_interactors[i].finger_world_prev, input_head()->position - skui_interactors[i].finger_world_prev) < 0);
+		skui_interactors[i].focused        = 0;
+		skui_interactors[i].active         = 0;
+		skui_interactors[i].capsule_end    = matrix_transform_pt(*to_local, skui_interactors[i].capsule_end_world);
+		skui_interactors[i].capsule_start  = matrix_transform_pt(*to_local, skui_interactors[i].capsule_start_world);
+		skui_interactors[i].ray_enabled    = skui_interactors[i].tracked > 0 && skui_interactors[i].tracked && (vec3_dot(skui_interactors[i].capsule_end_world - skui_interactors[i].capsule_start_world, input_head()->position - skui_interactors[i].capsule_start_world) < 0);
 
 		// Don't let the hand trigger things while popping in and out of
 		// tracking
 		if (skui_interactors[i].tracked & button_state_just_active) {
-			skui_interactors[i].finger_prev         = skui_interactors[i].finger;
-			skui_interactors[i].finger_world_prev   = skui_interactors[i].finger_world;
-			skui_interactors[i].pinch_pt_prev       = skui_interactors[i].pinch_pt;
-			skui_interactors[i].pinch_pt_world_prev = skui_interactors[i].pinch_pt_world;
+			skui_interactors[i].capsule_start       = skui_interactors[i].capsule_end;
+			skui_interactors[i].capsule_start_world = skui_interactors[i].capsule_end_world;
 			skui_interactors[i].orientation_prev    = skui_interactors[i].orientation;
 			skui_interactors[i].position_prev       = skui_interactors[i].position;
 		}
@@ -120,38 +116,50 @@ void ui_core_update() {
 		skui_interactors[i].ray_discard = false;
 	}
 
-	// Direct touch
+	// Direct poke
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t *hand = input_hand((handed_)i);
 		bool was_ray_enabled = skui_interactors[i].ray_enabled && !skui_interactors[i].ray_discard;
 
 		skui_finger_radius += hand->fingers[1][4].radius;
-		skui_interactors[i].finger_world_prev   = skui_interactors[i].finger_world;
-		skui_interactors[i].finger_world        = hand->fingers[1][4].position;
-		skui_interactors[i].thumb_world         = hand->fingers[0][4].position;
-		skui_interactors[i].pinch_pt_world      = hand->pinch_pt;
+		skui_interactors[i].capsule_start_world = skui_interactors[i].capsule_end_world;
+		skui_interactors[i].capsule_end_world   = hand->fingers[1][4].position;
+		skui_interactors[i].capsule_radius      = hand->fingers[1][4].radius;
 		skui_interactors[i].pinch_state         = hand->pinch_state;
-		skui_interactors[i].radius              = hand->fingers[1][4].radius;
 		skui_interactors[i].orientation         = hand->palm.orientation;
 		skui_interactors[i].position            = hand->fingers[1][4].position;
 		skui_interactors[i].type                = interactor_type_point;
-		skui_interactors[i].events              = (interactor_event_)(interactor_event_poke | interactor_event_pinch);
+		skui_interactors[i].events              = interactor_event_poke;
 		skui_interactors[i].tracked             = hand->tracked_state & button_state_active;
-
 	}
 	skui_finger_radius /= (float)skui_interactors.count;
 
-	// hand rays
-	for (int32_t i = handed_max; i < skui_interactors.count; i++) {
-		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i-handed_max]);
+	// Direct pinch
+	for (int32_t i = 2; i < 4; i++) {
+		const hand_t *hand = input_hand((handed_)i);
 		bool was_ray_enabled = skui_interactors[i].ray_enabled && !skui_interactors[i].ray_discard;
 
-		skui_interactors[i].finger_world_prev   = pointer->ray.pos;
-		skui_interactors[i].finger_world        = pointer->ray.pos + pointer->ray.dir * 100;
-		skui_interactors[i].thumb_world         = pointer->ray.pos;
-		skui_interactors[i].pinch_pt_world      = pointer->ray.pos;
+		skui_finger_radius += hand->fingers[1][4].radius;
+		skui_interactors[i].capsule_start_world = hand->fingers[0][4].position;
+		skui_interactors[i].capsule_end_world   = hand->fingers[1][4].position;
+		skui_interactors[i].capsule_radius      = hand->fingers[1][4].radius;
+		skui_interactors[i].pinch_state         = hand->pinch_state;
+		skui_interactors[i].orientation         = hand->palm.orientation;
+		skui_interactors[i].position            = hand->pinch_pt;
+		skui_interactors[i].type                = interactor_type_point;
+		skui_interactors[i].events              = interactor_event_pinch;
+		skui_interactors[i].tracked             = hand->tracked_state & button_state_active;
+	}
+
+	// hand rays
+	for (int32_t i = 4; i < skui_interactors.count; i++) {
+		const pointer_t *pointer = input_get_pointer(input_hand_pointer_id[i-4]);
+		bool was_ray_enabled = skui_interactors[i].ray_enabled && !skui_interactors[i].ray_discard;
+
+		skui_interactors[i].capsule_start_world = pointer->ray.pos;
+		skui_interactors[i].capsule_end_world   = pointer->ray.pos + pointer->ray.dir * 100;
+		skui_interactors[i].capsule_radius      = 0.00f;
 		skui_interactors[i].pinch_state         = pointer->state;
-		skui_interactors[i].radius              = 0.00f;
 		skui_interactors[i].orientation         = pointer->orientation;
 		skui_interactors[i].position            = pointer->ray.pos;
 		skui_interactors[i].motion_anchor       = input_head()->position;
@@ -227,7 +235,7 @@ bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 			size.dimensions = bounds.dimensions + vec3_one*skui_settings.padding;
 		}
 
-		bool          in_box = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, size);
+		bool          in_box = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].capsule_end, skui_interactors[i].capsule_start, skui_interactors[i].capsule_radius, size);
 		button_state_ state  = interactor_set_focus(i, id_hash, in_box, 0);
 		if (state & button_state_just_active)
 			result = true;
@@ -250,7 +258,7 @@ button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
 		if (was_active || was_focused)
 			continue;
 
-		if (skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, bounds)) {
+		if (skui_interactors[i].tracked && ui_in_box(skui_interactors[i].capsule_end, skui_interactors[i].capsule_start, skui_interactors[i].capsule_radius, bounds)) {
 			button_state_ state = skui_interactors[i].pinch_state;
 			if (state != button_state_inactive) {
 				result = state;
@@ -285,7 +293,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	if (out_focus_state & button_state_active) {
 		interactor_t* actor = &skui_interactors[interactor];
 
-		out_finger_offset = -(interaction_at.z+actor->radius) - window_relative_pos.z;
+		out_finger_offset = -(interaction_at.z+actor->capsule_radius) - window_relative_pos.z;
 		bool pressed = out_finger_offset < skui_settings.depth / 2;
 		if ((actor->active_prev == id && (actor->pinch_state & button_state_active)) || (actor->pinch_state & button_state_just_active)) {
 			pressed = true;
@@ -298,7 +306,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	}
 	
 	if (out_button_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_button, id, skui_interactors[interactor].finger_world);
+		ui_play_sound_on_off(ui_vis_button, id, skui_interactors[interactor].capsule_end_world);
 
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
@@ -348,7 +356,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 		if (*out_interactor != -1) {
 			button_state_ pinch = skui_interactors[*out_interactor].pinch_state;
 
-			*out_finger_offset = -skui_interactors[*out_interactor].finger.z - window_relative_pos.z;
+			*out_finger_offset = -skui_interactors[*out_interactor].capsule_end.z - window_relative_pos.z;
 			bool pressed  = *out_finger_offset < button_depth / 2;
 			*out_finger_offset = fminf(fmaxf(2 * mm2m, *out_finger_offset), button_depth);
 
@@ -357,7 +365,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 			// it to focused if it's still active.
 			*out_focus_state = interactor_set_focus(*out_interactor, id, pinch & button_state_active || (*out_focus_state) & button_state_active, 0);
 
-			finger_at = vertical ? skui_interactors[*out_interactor].finger.y : skui_interactors[*out_interactor].finger.x;
+			finger_at = vertical ? finger_pt.y : finger_pt.x;
 		}
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		vec3 activation_start;
@@ -383,7 +391,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
 			*out_focus_state = interactor_set_focus(*out_interactor, id, (*out_active_state) & button_state_active || (*out_focus_state) & button_state_active, 0);
-			vec3    pinch_local = hierarchy_to_local_point(skui_interactors[*out_interactor].pinch_pt);
+			vec3    pinch_local = hierarchy_to_local_point(skui_interactors[*out_interactor].position);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 			finger_at = vertical ? pinch_local.y : pinch_local.x;
 
@@ -409,7 +417,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 			
 			if (step != 0) {
 				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].finger_world);
+				ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -420,7 +428,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].finger_world);
+					ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
 				}
 			}
 		}
@@ -465,16 +473,16 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 			bool  has_hand_attention  = actor->active_prev == id;
 			bool  is_far_interact     = false;
 			float hand_attention_dist = 0;
-			if (actor->tracked && ui_in_box(actor->finger, actor->thumb, actor->radius, handle_bounds)) {
+			if (actor->tracked && ui_in_box(actor->capsule_start, actor->capsule_end, actor->capsule_radius, handle_bounds)) {
 				has_hand_attention  = true;
-				hand_attention_dist = bounds_sdf(handle_bounds, actor->pinch_pt) + vec3_distance(actor->pinch_pt, actor->thumb);
+				hand_attention_dist = bounds_sdf(handle_bounds, actor->capsule_start);
 
 				vec3  at;
-				float r = actor->radius * 2;
-				bounds_ray_intersect(bounds_t{ handle_bounds.center, handle_bounds.dimensions + vec3{r,r,r} }, { actor->thumb, actor->finger - actor->thumb}, &at);
+				float r = actor->capsule_radius * 2;
+				bounds_ray_intersect(bounds_t{ handle_bounds.center, handle_bounds.dimensions + vec3{r,r,r} }, { actor->capsule_start, actor->capsule_end - actor->capsule_start}, &at);
 
 				if (actor->pinch_state & button_state_just_active) {
-					ui_play_sound_on(ui_vis_handle, actor->finger_world);
+					ui_play_sound_on(ui_vis_handle, actor->capsule_end_world);
 
 					actor->active = id;
 					actor->interaction_start_position      = actor->position;
@@ -552,7 +560,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 
 					if (actor->pinch_state & button_state_just_inactive) {
 						actor->active = 0;
-						ui_play_sound_off(ui_vis_handle, actor->finger_world);
+						ui_play_sound_off(ui_vis_handle, actor->capsule_end_world);
 					}
 					ui_pop_surface();
 					ui_push_surface(handle_pose);
@@ -600,15 +608,15 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 
 	switch (actor->type) {
 	case interactor_type_point: {
-		bool32_t result = bounds_capsule_contains(box, actor->finger_prev, actor->finger, actor->radius);
+		bool32_t result = bounds_capsule_contains(box, actor->capsule_start, actor->capsule_end, actor->capsule_radius);
 		if (result) {
-			*out_at       = actor->finger;
+			*out_at       = actor->capsule_end;
 			*out_priority = bounds_sdf_manhattan(box, *out_at);
 		}
 		return result;
 	} break;
 	case interactor_type_line: {
-		ray_t    ray    = { actor->finger_prev, actor->finger - actor->finger_prev };
+		ray_t    ray    = { actor->capsule_start, actor->capsule_end - actor->capsule_start };
 		float    dist   = 0;
 		bool32_t result = bounds_ray_intersect_dist(box, ray, &dist);
 		if (result && dist <= 1) {
@@ -652,10 +660,10 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		// such as the downward motion often accompanying a 'poke' motion.
 		bounds_t bounds = {};
 		if (actor->focused_prev != id) {
-			bounds = size_box({ plate_start.x, plate_start.y, plate_start.z - actor->radius*2 }, { plate_size.x, plate_size.y, 0.0001f });
+			bounds = size_box({ plate_start.x, plate_start.y, plate_start.z - actor->capsule_radius*2 }, { plate_size.x, plate_size.y, 0.0001f });
 		} else {
-			float depth = fmaxf(0.0001f, 8 * actor->radius);
-			bounds = size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->radius*2 }, { plate_size.x, plate_size.y, depth });
+			float depth = fmaxf(0.0001f, 8 * actor->capsule_radius);
+			bounds = size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->capsule_radius*2 }, { plate_size.x, plate_size.y, depth });
 		}
 
 		float         priority = 0;
@@ -703,9 +711,9 @@ void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 bo
 		}
 
 		bounds_t bounds   = ui_size_box(box_start, box_size);
-		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].thumb, skui_interactors[i].radius, bounds);
+		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].capsule_start, skui_interactors[i].capsule_end, skui_interactors[i].capsule_radius, bounds);
 		float    priority = in_box
-			? bounds_sdf(bounds, skui_interactors[i].pinch_pt) + vec3_distance(skui_interactors[i].thumb, skui_interactors[i].pinch_pt)
+			? bounds_sdf(bounds, skui_interactors[i].capsule_start)
 			: FLT_MAX;
 
 		button_state_ focus  = interactor_set_focus(i, id, in_box, priority);
@@ -749,9 +757,9 @@ void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box
 		}
 
 		bounds_t bounds   = ui_size_box(box_start, box_size);
-		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].finger, skui_interactors[i].finger_prev, skui_interactors[i].radius, bounds);
+		bool     in_box   = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].capsule_start, skui_interactors[i].capsule_end, skui_interactors[i].capsule_radius, bounds);
 		float    priority = in_box
-			? bounds_sdf(bounds, skui_interactors[i].finger)
+			? bounds_sdf(bounds, skui_interactors[i].capsule_start)
 			: FLT_MAX;
 
 		button_state_ focus = interactor_set_focus(i, id, in_box, priority);
@@ -771,16 +779,12 @@ void ui_push_surface(pose_t surface_pose, vec3 layout_start, vec2 layout_dimensi
 	vec3   right = surface_pose.orientation * vec3_right;
 	matrix trs   = matrix_trs(surface_pose.position + right*layout_start, surface_pose.orientation);
 	hierarchy_push(trs);
-
 	ui_layout_push(layout_start, layout_dimensions, true);
 
 	const matrix *to_local = hierarchy_to_local();
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
-		skui_interactors[i].finger        = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
-		skui_interactors[i].finger_prev   = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
-		skui_interactors[i].thumb         = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
-		skui_interactors[i].pinch_pt      = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world);
-		skui_interactors[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world_prev);
+		skui_interactors[i].capsule_end   = matrix_transform_pt(*to_local, skui_interactors[i].capsule_end_world);
+		skui_interactors[i].capsule_start = matrix_transform_pt(*to_local, skui_interactors[i].capsule_start_world);
 	}
 }
 
@@ -792,11 +796,8 @@ void ui_pop_surface() {
 
 	const matrix *to_local = hierarchy_to_local();
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
-		skui_interactors[i].finger        = matrix_transform_pt(*to_local, skui_interactors[i].finger_world);
-		skui_interactors[i].finger_prev   = matrix_transform_pt(*to_local, skui_interactors[i].finger_world_prev);
-		skui_interactors[i].thumb         = matrix_transform_pt(*to_local, skui_interactors[i].thumb_world);
-		skui_interactors[i].pinch_pt      = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world);
-		skui_interactors[i].pinch_pt_prev = matrix_transform_pt(*to_local, skui_interactors[i].pinch_pt_world_prev);
+		skui_interactors[i].capsule_end   = matrix_transform_pt(*to_local, skui_interactors[i].capsule_end_world);
+		skui_interactors[i].capsule_start = matrix_transform_pt(*to_local, skui_interactors[i].capsule_start_world);
 	}
 }
 
