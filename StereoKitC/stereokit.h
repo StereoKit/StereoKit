@@ -1607,6 +1607,8 @@ SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     (void);
+SK_API void                  render_set_skymaterial(material_t sky_material);
+SK_API material_t            render_get_skymaterial(void);
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   (void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);

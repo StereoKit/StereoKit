@@ -23,6 +23,24 @@ namespace StereoKit
 			set => NativeAPI.render_set_skytex(value == null ? IntPtr.Zero : value._inst);
 		}
 
+		/// <summary>This is the Material that StereoKit is currently using to
+		/// draw the skybox! It needs a special shader that's tuned for a
+		/// full-screen quad. If you just want to change the skybox image, try
+		/// setting `Renderer.SkyTex` instead.
+		/// 
+		/// This value will never be null! If you try setting this to null, it
+		/// will assign SK's built-in default sky material. If you want to turn
+		/// off the skybox, see `Renderer.EnableSky` instead.
+		/// 
+		/// Recommended Material settings would be:
+		/// - DepthWrite: false
+		/// - DepthTest: LessOrEq
+		/// - QueueOffset: 100</summary>
+		public static Material SkyMaterial {
+			get { return new Material(NativeAPI.render_get_skymaterial()); }
+			set => NativeAPI.render_set_skymaterial(value == null ? IntPtr.Zero : value._inst);
+		}
+
 		/// <summary>Sets the lighting information for the scene! You can
 		/// build one through `SphericalHarmonics.FromLights`, or grab one
 		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
