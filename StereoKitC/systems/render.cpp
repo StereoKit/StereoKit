@@ -147,6 +147,7 @@ struct render_state_t {
 
 	mesh_t                  sky_mesh;
 	material_t              sky_mat;
+	material_t              sky_mat_default;
 	bool32_t                sky_show;
 
 	material_t              last_material;
@@ -232,15 +233,17 @@ bool render_init() {
 	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
 	mesh_set_id  (local.sky_mesh, "sk/render/skybox_mesh");
 
+	// Create a default skybox material
 	shader_t shader_sky = shader_find(default_id_shader_sky);
-	local.sky_mat = material_create(shader_sky);
+	local.sky_mat_default = material_create(shader_sky);
+	material_set_id          (local.sky_mat_default, "sk/render/skybox_material");
+	material_set_queue_offset(local.sky_mat_default, 100);
+	material_set_depth_write (local.sky_mat_default, false);
+	material_set_depth_test  (local.sky_mat_default, depth_test_less_or_eq);
+	render_set_skymaterial(local.sky_mat_default);
 	shader_release(shader_sky);
 
-	material_set_id          (local.sky_mat, "sk/render/skybox_material");
-	material_set_queue_offset(local.sky_mat, 100);
-	material_set_depth_write (local.sky_mat, false);
-	material_set_depth_test  (local.sky_mat, depth_test_less_or_eq);
-
+	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);
 	render_set_skylight (sk_default_lighting);
@@ -274,6 +277,7 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
 	mesh_release           (local.sky_mesh);
 	mesh_release           (local.blit_quad);
@@ -533,6 +537,27 @@ tex_t render_get_skytex() {
 	if (local.global_textures[render_skytex_register] != nullptr)
 		tex_addref(local.global_textures[render_skytex_register]);
 	return local.global_textures[render_skytex_register];
+}
+
+///////////////////////////////////////////
+
+void render_set_skymaterial(material_t sky_material) {
+	// Don't allow null, fall back to the default sky material on null.
+	if (sky_material == nullptr) {
+		sky_material = local.sky_mat_default;
+	}
+
+	// Safe swap the material reference
+	material_addref(sky_material);
+	if (local.sky_mat != nullptr) material_release(local.sky_mat);
+	local.sky_mat = sky_material;
+}
+
+///////////////////////////////////////////
+
+material_t render_get_skymaterial(void) {
+	material_addref(local.sky_mat);
+	return local.sky_mat;
 }
 
 ///////////////////////////////////////////

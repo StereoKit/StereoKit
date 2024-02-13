@@ -450,6 +450,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_cam_root   (in Matrix cam_root);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_skytex     (IntPtr sky_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_skytex     ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_skymaterial(IntPtr sky_material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_skymaterial();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_skylight   (in SphericalHarmonics lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer        render_get_filter     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_filter     (RenderLayer layer_filter);
