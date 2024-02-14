@@ -1032,8 +1032,8 @@ bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, doub
 ///////////////////////////////////////////
 
 template<typename C>
-void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	uint64_t     hash   = ui_push_id(text);
+void ui_window_begin_g(const C *title, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	uint64_t     hash   = ui_push_id(title);
 	ui_window_id win_id = ui_window_find_or_add(hash, window_size);
 	ui_window_t* win    = ui_window_get(win_id);
 	win->age  = 0;
