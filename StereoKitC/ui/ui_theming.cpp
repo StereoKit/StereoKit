@@ -49,6 +49,8 @@ sprite_t        skui_arrow_down;
 sprite_t        skui_spr_close;
 sprite_t        skui_spr_backspace;
 sprite_t        skui_spr_shift;
+sprite_t        skui_spr_list;
+sprite_t        skui_spr_grid;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -172,6 +174,35 @@ void ui_theming_init() {
 		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
 	}, 40);
 
+	skui_spr_list = sdf_create_sprite(ui_default_id_spr_list, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_box_round(pt + vec2{ 0, 20 }, vec2{30, 6}, 6 ),
+				sdf_box_round(pt + vec2{ 0, 0  }, vec2{30, 6}, 6 )),
+				sdf_box_round(pt + vec2{ 0,-20 }, vec2{30, 6}, 6 ))/32.0f;
+	}, 40);
+	skui_spr_grid = sdf_create_sprite(ui_default_id_spr_grid, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{-20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{-20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{-20,-20 }, vec2{6, 6}, 3 )),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{  0, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{  0, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{  0,-20 }, vec2{6, 6}, 3 ))),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{ 20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{ 20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{ 20,-20 }, vec2{6, 6}, 3 ))) / 32.0f;
+	}, 40);
+
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
 	skui_mat_dbg  = material_copy_id(default_id_material);
 	material_set_transparency(skui_mat_dbg, transparency_add);
@@ -271,6 +302,8 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_spr_backspace);  skui_spr_backspace  = nullptr;
 	sprite_release  (skui_spr_close);      skui_spr_close      = nullptr;
 	sprite_release  (skui_spr_shift);      skui_spr_shift      = nullptr;
+	sprite_release  (skui_spr_list);       skui_spr_list       = nullptr;
+	sprite_release  (skui_spr_grid);       skui_spr_grid       = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
 }
