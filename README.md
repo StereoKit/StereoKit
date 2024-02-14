@@ -1,4 +1,4 @@
-<p align="center"><img src="/Tools/img/StereoKitWideBackground.svg" alt="StereoKit Logo" height="160"></p>
+<p align="center"><img src="/tools/img/StereoKitWideBackground.svg" alt="StereoKit Logo" height="160"></p>
 <p align="center">
     <a href="https://github.com/StereoKit/StereoKit/branches"><img src="https://img.shields.io/github/last-commit/StereoKit/StereoKit/develop" /></a>
     <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/StereoKit/StereoKit" /></a>
@@ -17,7 +17,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Drop into the [Discord channel](https://discord.gg/jtZpfS7nyK) for discussion, help and updates.
 - Check out [this blog](https://playdeck.net/project/stereokit) for occasional substantial updates!
 
-![Screenshot](/Tools/screenshots/FeatureImage.jpg)
+![Screenshot](/tools/screenshots/FeatureImage.jpg)
 
 ## StereoKit Features
 
@@ -42,7 +42,7 @@ These are the binaries that currently ship in the NuGet package. StereoKit devel
 
 | Platform | x64 | ARM | ARM64 |
 |----------|-----|-----|-------|
-| Windows (Desktop/Win32) | X |   |   |
+| Windows (Desktop/Win32) | X |   | X |
 | Windows (HoloLens/UWP)  | X | X | X |
 | Linux                   | X |   | X |
 | Android                 | X |   | X |
@@ -58,7 +58,7 @@ StereoKit focuses on getting you productive with the least amount of code possib
 ```CSharp
 using StereoKit;
 
-SK.Initialize(new SKSettings{ appName = "Project" });
+SK.Initialize();
 
 Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
 
@@ -67,7 +67,7 @@ SK.Run(() => {
 });
 ```
 
-![Hello World](/Tools/img/StereoKitMin.gif)
+![Hello World](/tools/img/StereoKitMin.gif)
 
 ## FAQ
 
@@ -98,4 +98,3 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.
 - [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.
 - [sokol_time](https://github.com/floooh/sokol) - Cross platform high performance time.
-- [TinyCThread](https://github.com/tinycthread/tinycthread) - For portable threading.

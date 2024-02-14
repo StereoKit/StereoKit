@@ -53,6 +53,8 @@ backend_xr_type_webxr WebXR
 backend_xr_type_openxr OpenXR
 backend_graphics_d3d11 D3D11
 
+app_mode_xr XR
+
 backend_graphics_opengl_glx OpenGL_GLX
 backend_graphics_opengl_wgl OpenGL_WGL
 backend_graphics_opengles_egl OpenGLES_EGL

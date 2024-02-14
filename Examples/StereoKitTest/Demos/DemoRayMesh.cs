@@ -7,7 +7,7 @@ using StereoKit;
 
 class DemoRayMesh : ITest
 {
-	string title       = "Ray -> Mesh";
+	string title       = "Ray to Mesh";
 	string description = "";
 
 	/// :CodeSample: Ray.Intersect Mesh.Intersect

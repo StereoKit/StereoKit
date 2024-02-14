@@ -71,17 +71,17 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 
 ///////////////////////////////////////////
 
-void input_subscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
-	input_listeners.add({ source, event, event_callback });
+void input_subscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
+	input_listeners.add({ source, input_event, input_event_callback });
 }
 
 ///////////////////////////////////////////
 
-void input_unsubscribe(input_source_ source, button_state_ event, void (*event_callback)(input_source_ source, button_state_ event, const pointer_t &pointer)) {
+void input_unsubscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
 	for (int32_t i = input_listeners.count-1; i >= 0; i--) {
-		if (input_listeners[i].source         == source && 
-			input_listeners[i].event          == event  && 
-			input_listeners[i].event_callback == event_callback) {
+		if (input_listeners[i].source         == source      &&
+			input_listeners[i].event          == input_event &&
+			input_listeners[i].event_callback == input_event_callback) {
 			input_listeners.remove(i);
 		}
 	}
@@ -89,10 +89,10 @@ void input_unsubscribe(input_source_ source, button_state_ event, void (*event_c
 
 ///////////////////////////////////////////
 
-void input_fire_event(input_source_ source, button_state_ event, const pointer_t &pointer) {
+void input_fire_event(input_source_ source, button_state_ input_event, const pointer_t &pointer) {
 	for (int32_t i = 0; i < input_listeners.count; i++) {
-		if (input_listeners[i].source & source && input_listeners[i].event & event) {
-			input_listeners[i].event_callback(source, event, pointer);
+		if (input_listeners[i].source & source && input_listeners[i].event & input_event) {
+			input_listeners[i].event_callback(source, input_event, pointer);
 		}
 	}
 }
@@ -168,7 +168,7 @@ button_state_ input_eyes_tracked() {
 void input_mouse_update() {
 	vec2  mouse_pos    = {};
 	float mouse_scroll = platform_get_scroll();
-	input_mouse_data.available = platform_get_cursor(mouse_pos) && sk_app_focus() == app_focus_active;
+	input_mouse_data.available = platform_get_cursor(&mouse_pos) && sk_app_focus() == app_focus_active;
 
 	// Mouse scroll
 	if (sk_app_focus() == app_focus_active) {

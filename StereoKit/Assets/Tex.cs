@@ -340,17 +340,9 @@ namespace StereoKit
 		/// <param name="mipLevel">Retrieves the color data for a specific
 		/// mip-mapping level. This function will log a fail and return a black
 		/// array if an invalid mip-level is provided.</param>
-		public void GetColors(ref Color32[] colorData, int mipLevel = 0)
-		{
-			int count = Width * Height;
-			if (colorData == null || colorData.Length != count)
-				colorData = new Color32[count];
+		[Obsolete("Use GetColorData<Color32>")]
+		public void GetColors(ref Color32[] colorData, int mipLevel = 0) => GetColorData(ref colorData, mipLevel);
 
-			GCHandle pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
-			IntPtr   pointer     = pinnedArray.AddrOfPinnedObject();
-			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(count * 4), mipLevel);
-			pinnedArray.Free();
-		}
 		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously.</summary>
 		/// <param name="mipLevel">Retrieves the color data for a specific
@@ -358,14 +350,62 @@ namespace StereoKit
 		/// array if an invalid mip-level is provided.</param>
 		/// <returns>The texture's color values in an array sized Width*Height.
 		/// </returns>
-		public Color32[] GetColors(int mipLevel = 0)
+		[Obsolete("Use GetColorData<Color32>")]
+		public Color32[] GetColors(int mipLevel = 0) => GetColorData<Color32>(mipLevel);
+
+		/// <summary>Retrieve the color data of the texture from the GPU. This
+		/// can be a very slow operation, so use it cautiously.</summary>
+		/// <typeparam name="T">This should be a struct or basic type used to
+		/// represent your color/pixel data. Structs should use
+		/// `[StructLayout(LayoutKind.Sequential)]`.</typeparam>
+		/// <param name="mipLevel">Retrieves the color data for a specific
+		/// mip-mapping level. This function will log a fail and return a black
+		/// array if an invalid mip-level is provided.</param>
+		/// <param name="structPerPixel">The number of `T` that fit in a single
+		/// pixel. For example, if your texture format is RGBA128, and your T
+		/// is float, this value would be 4.</param>
+		/// <returns>The texture's color values in an array sized
+		/// Width*Height*structPerPixel.</returns>
+		public T[] GetColorData<T>(int mipLevel = 0, int structPerPixel = 1) where T:struct
 		{
-			Color32[] result      = new Color32[Width * Height];
-			GCHandle  pinnedArray = GCHandle.Alloc(result, GCHandleType.Pinned);
-			IntPtr    pointer     = pinnedArray.AddrOfPinnedObject();
-			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(result.Length * 4), mipLevel);
-			pinnedArray.Free();
+			T[] result = null;
+			GetColorData(ref result, mipLevel, structPerPixel);
 			return result;
+		}
+
+		/// <summary>Retrieve the color data of the texture from the GPU. This
+		/// can be a very slow operation, so use it cautiously.</summary>
+		/// <typeparam name="T">This should be a struct or basic type used to
+		/// represent your color/pixel data. Structs should use
+		/// `[StructLayout(LayoutKind.Sequential)]`.</typeparam>
+		/// <param name="colorData">An array of colors that will be filled out
+		/// with the texture's data. It can be null, or an incorrect size. If
+		/// so, it will be reallocated to the correct size.</param>
+		/// <param name="mipLevel">Retrieves the color data for a specific
+		/// mip-mapping level. This function will log a fail and return a black
+		/// array if an invalid mip-level is provided.</param>
+		/// <param name="structPerPixel">The number of `T` that fit in a single
+		/// pixel. For example, if your texture format is RGBA128, and your T
+		/// is float, this value would be 4.</param>
+		/// <exception cref="ArgumentException">structPerPixel must be larger
+		/// than 0</exception>
+		public void GetColorData<T>(ref T[] colorData, int mipLevel = 0, int structPerPixel = 1) where T:struct
+		{
+			int structSize  = Marshal.SizeOf<T>();
+			int pixelSize   = structPerPixel * structSize;
+
+			if (structPerPixel <= 0)
+				throw new ArgumentException("structPerPixel must be larger than 0");
+
+			int width      = Width  >> mipLevel;
+			int height     = Height >> mipLevel;
+			int dataLength = width * height * structPerPixel;
+			if (colorData == null || colorData.Length != dataLength) colorData = new T[dataLength];
+
+			GCHandle  pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
+			IntPtr    pointer     = pinnedArray.AddrOfPinnedObject();
+			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(width * height * pixelSize), mipLevel);
+			pinnedArray.Free();
 		}
 
 		/// <summary>Set the texture's size without providing any color data.
@@ -384,6 +424,7 @@ namespace StereoKit
 		/// use when rendering to it.</summary>
 		/// <param name="depthFormat">The format of the depth texture, must
 		/// be a depth format type!</param>
+		/// <returns>A new Tex asset with the specified depth.</returns>
 		public Tex AddZBuffer(TexFormat depthFormat)
 			=> new Tex(NativeAPI.tex_add_zbuffer(_inst, depthFormat));
 		#endregion

@@ -60,12 +60,9 @@ class GuideUsingTheSimulator : ITest
 		SKSettings settings = new SKSettings {
 			appName                = "Flatscreen Simulator",
 			assetsFolder           = "Assets",
-			// This tells StereoKit to always start in a 2D flatscreen
+			// This tells StereoKit to always start in a 2D simulator
 			// window, instead of an immersive MR environment.
-			displayPreference      = DisplayMode.Flatscreen,
-			// Setting this to true will disable all built-in MR simulator
-			// controls.
-			disableFlatscreenMRSim = false,
+			mode                   = AppMode.Simulator,
 			// Setting this to true will prevent StereoKit from creating the
 			// fallback simulator when OpenXR fails to initialize. This is
 			// important when shipping a final application to users.

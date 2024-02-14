@@ -24,11 +24,8 @@
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
 
-			<SKOpenXRLoaderFolder>$([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))</SKOpenXRLoaderFolder>
-			<SKShaderStandardInclude>$([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))</SKShaderStandardInclude>
-			
-			<!--Quest no longer uses a custom loader-->
-			<SKOpenXRLoader Condition="'$(SKOpenXRLoader.ToLower())' == 'oculus'">Standard</SKOpenXRLoader>
+			<SKOpenXRLoaderFolder>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
+			<SKShaderStandardInclude>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
 		</PropertyGroup>
 
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>

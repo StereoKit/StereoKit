@@ -22,7 +22,7 @@ class DemoUnicode : ITest
 	{
 		atlasModel = new Model(Mesh.Quad, TextStyle.Default.Material);
 		atlasModel.RootNode.LocalTransform = Matrix.T(0,0,-0.01f);
-		Tests.RunForFrames(2);
+		Tests.RunForFrames(3);
 	}
 
 	public void Shutdown()
@@ -51,7 +51,7 @@ class DemoUnicode : ITest
 		UI.WindowEnd();
 
 		Vec3 at = Demo.contentPose.Translation + V.XY0(0,-0.17f);
-		Tests.Screenshot("Unicode-ユニコード.jpg", 1, 600, 400, 90, at-V.XYZ(0,0,-.22f), at);
+		Tests.Screenshot("Unicode-ユニコード.jpg", 2, 600, 400, 90, at-V.XYZ(0,0,-.22f), at);
 
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.17f), V.XYZ(.7f, .44f, 0.1f)));
 	}

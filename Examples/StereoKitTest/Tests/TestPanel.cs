@@ -4,6 +4,7 @@ internal class TestPanel : ITest
 {
 	public void Initialize()
 	{
+		Tests.RunForFrames(2);
 	}
 
 	public void Shutdown()
@@ -54,6 +55,6 @@ internal class TestPanel : ITest
 		UI.WindowEnd();
 
 		Vec3 at = new Vec3(0.05f,-0.06f, -0.3f);
-		Tests.Screenshot("UI/Panels.jpg", 600, 400, at, at - Vec3.UnitZ);
+		Tests.Screenshot("UI/Panels.jpg", 1, 600, 400, 90, at, at - Vec3.UnitZ);
 	}
 }

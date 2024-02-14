@@ -98,7 +98,7 @@ namespace StereoKit.Framework
 			if (_frameTime + rateTime < Time.TotalUnscaledf)
 			{
 				_frameTime = Time.TotalUnscaledf;
-				_frameSurface.GetColors(ref buffer);
+				_frameSurface.GetColorData(ref buffer);
 
 				Directory.CreateDirectory(folder);
 				Stream writer = new FileStream($"{folder}/image{_frameIndex:D4}.bmp", FileMode.Create);

@@ -21,7 +21,7 @@ void input_shutdown    ();
 void input_step        ();
 void input_update_poses(bool update_visuals);
 
-inline button_state_ button_make_state(bool32_t was, bool32_t is) { 
+inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 	button_state_ result = is ? button_state_active : button_state_inactive;
 	if (was && !is)
 		result |= button_state_just_inactive;

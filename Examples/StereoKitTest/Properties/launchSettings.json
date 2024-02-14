@@ -6,7 +6,7 @@
     },
     "StereoKitTest Tests": {
       "commandName": "Project",
-      "commandLineArgs": "-test -screenfolder ../../../tools/Screenshots/",
+      "commandLineArgs": "-test -screenfolder ../../../tools/screenshots/",
       "nativeDebugging": true
     },
     "StereoKitTest GLTF": {

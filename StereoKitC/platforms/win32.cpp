@@ -1,5 +1,10 @@
-#include "win32.h"
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
 
+#include "win32.h"
 #if defined(SK_OS_WINDOWS)
 
 #define WIN32_LEAN_AND_MEAN
@@ -7,150 +12,48 @@
 #include <shellapi.h>
 
 #include "../stereokit.h"
-#include "../_stereokit.h"
-#include "../device.h"
 #include "../sk_math.h"
-#include "../asset_types/texture.h"
-#include "../libraries/sokol_time.h"
-#include "../libraries/stref.h"
-#include "../systems/system.h"
 #include "../systems/render.h"
-#include "../systems/input_keyboard.h"
-#include "../hands/input_hand.h"
+#include "../libraries/stref.h"
 
 namespace sk {
 
 ///////////////////////////////////////////
 
-HWND            win32_window              = nullptr;
-HINSTANCE       win32_hinst               = nullptr;
-HICON           win32_icon                = nullptr;
-skg_swapchain_t win32_swapchain           = {};
-bool            win32_swapchain_initialized = false;
-tex_t           win32_target              = {};
-float           win32_scroll              = 0;
-LONG_PTR        win32_openxr_base_winproc = 0;
-system_t       *win32_render_sys          = nullptr;
+struct window_event_t {
+	platform_evt_           type;
+	platform_evt_data_t     data;
+};
 
-// For managing window resizing
-bool win32_check_resize = true;
-UINT win32_resize_x     = 0;
-UINT win32_resize_y     = 0;
+struct window_t {
+	wchar_t*                title;
+	HWND                    handle;
+	array_t<window_event_t> events;
 
-#if defined(SKG_OPENGL)
-const int32_t win32_multisample = 1;
-#else
-const int32_t win32_multisample = 8;
-#endif
+	skg_swapchain_t         swapchain;
+	bool                    has_swapchain;
 
-// Constants for the registry key and value names
-const wchar_t* REG_KEY_NAME   = L"Software\\StereoKit Simulator";
-const wchar_t* REG_VALUE_NAME = L"WindowLocation";
+	bool                    check_resize;
+	int32_t                 resize_x, resize_y;
+	RECT                    save_rect;
+};
 
 ///////////////////////////////////////////
 
-void win32_resize(int width, int height) {
-	width  = maxi(1, width);
-	height = maxi(1, height);
-	if (win32_swapchain_initialized == false || (width == device_data.display_width && height == device_data.display_height))
-		return;
-
-	device_data.display_width  = width;
-	device_data.display_height = height;
-	log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
-	
-	skg_swapchain_resize(&win32_swapchain, device_data.display_width, device_data.display_height);
-	tex_set_color_arr   (win32_target,     device_data.display_width, device_data.display_height, nullptr, 1, nullptr, win32_multisample);
-	render_update_projection();
-}
+array_t<window_t> win32_windows = {};
+HINSTANCE         win32_hinst   = nullptr;
+HICON             win32_icon    = nullptr;
+float             win32_scroll  = 0;
 
 ///////////////////////////////////////////
 
-void win32_physical_key_interact() {
-	// On desktop, we want to hide soft keyboards on physical presses
-	input_set_last_physical_keypress_time(time_totalf_unscaled());
-	platform_keyboard_show(false, text_context_text);
-}
+void    platform_check_events      ();
+LRESULT platform_message_callback  (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 ///////////////////////////////////////////
 
-bool win32_window_message_common(UINT message, WPARAM wParam, LPARAM lParam) {
-	switch(message) {
-	case WM_LBUTTONDOWN: if (sk_app_focus() == app_focus_active) input_key_inject_press  (key_mouse_left);   return true;
-	case WM_LBUTTONUP:   if (sk_app_focus() == app_focus_active) input_key_inject_release(key_mouse_left);   return true;
-	case WM_RBUTTONDOWN: if (sk_app_focus() == app_focus_active) input_key_inject_press  (key_mouse_right);  return true;
-	case WM_RBUTTONUP:   if (sk_app_focus() == app_focus_active) input_key_inject_release(key_mouse_right);  return true;
-	case WM_MBUTTONDOWN: if (sk_app_focus() == app_focus_active) input_key_inject_press  (key_mouse_center); return true;
-	case WM_MBUTTONUP:   if (sk_app_focus() == app_focus_active) input_key_inject_release(key_mouse_center); return true;
-	case WM_XBUTTONDOWN: input_key_inject_press  (GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_XBUTTONUP:   input_key_inject_release(GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward); return true;
-	case WM_KEYDOWN:     input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); if ((key_)wParam == key_del) input_text_inject_char(0x7f); return true;
-	case WM_KEYUP:       input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYDOWN:  input_key_inject_press  ((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_SYSKEYUP:    input_key_inject_release((key_)wParam); win32_physical_key_interact(); return true;
-	case WM_CHAR:        input_text_inject_char   ((uint32_t)wParam); return true;
-	case WM_MOUSEWHEEL:  if (sk_app_focus() == app_focus_active) win32_scroll += (short)HIWORD(wParam); return true;
-	default: return false;
-	}
-}
-
-///////////////////////////////////////////
-
-LRESULT win32_openxr_winproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (!win32_window_message_common(message, wParam, lParam)) {
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
-}
-
-///////////////////////////////////////////
-
-bool win32_start_pre_xr() {
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool win32_start_post_xr() {
-	wchar_t *app_name_w = platform_to_wchar(sk_get_settings_ref()->app_name);
-
-	// Create a window just to grab input
-	WNDCLASSW wc = {0}; 
-	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-		if (!win32_window_message_common(message, wParam, lParam)) {
-			switch (message) {
-			case WM_CLOSE: sk_quit(); PostQuitMessage(0); break;
-			default: return DefWindowProcW(hWnd, message, wParam, lParam);
-			}
-		}
-		return (LRESULT)0;
-	};
-	wc.hInstance     = GetModuleHandle(NULL);
-	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = app_name_w;
-	wc.hIcon         = win32_icon;
-	if( !RegisterClassW(&wc) ) return false;
-
-	win32_window = CreateWindowW(
-		app_name_w,
-		app_name_w,
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		0, 0, 0, 0,
-		0, 0, 
-		wc.hInstance,
-		nullptr);
-
-	sk_free(app_name_w);
-	if (!win32_window) {
-		return false;
-	}
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool win32_init() {
-	win32_render_sys = systems_find("FrameRender");
+bool platform_impl_init() {
+	win32_hinst = GetModuleHandle(NULL);
 
 	// Find the icon from the exe itself
 	wchar_t path[MAX_PATH];
@@ -162,167 +65,149 @@ bool win32_init() {
 
 ///////////////////////////////////////////
 
-void win32_shutdown() {
+void platform_impl_shutdown() {
+	for (int32_t i = 0; i < win32_windows.count; i++) {
+		platform_win_destroy(i);
+	}
+	win32_windows.free();
+	win32_hinst  = nullptr;
+	win32_icon   = nullptr;
+	win32_scroll = 0;
 }
 
 ///////////////////////////////////////////
 
-bool win32_start_flat() {
-	const sk_settings_t* settings = sk_get_settings_ref();
+void platform_impl_step() {
+	platform_check_events();
+}
 
-	device_data.display_blend = display_blend_opaque;
+///////////////////////////////////////////
 
-	wchar_t *app_name_w = platform_to_wchar(settings->app_name);
+void *win32_hwnd() {
+	return win32_windows.count > 0
+		? win32_windows[0].handle
+		: nullptr;
+}
 
-	WNDCLASSW wc = {0};
-	wc.lpfnWndProc   = [](HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-		if (!win32_window_message_common(message, wParam, lParam)) {
-			switch(message) {
-			case WM_CLOSE:      sk_quit(); PostQuitMessage(0);   break;
-			case WM_SETFOCUS:   sk_set_app_focus(app_focus_active);     break;
-			case WM_KILLFOCUS:  sk_set_app_focus(app_focus_background); break;
-			case WM_MOUSEWHEEL: if (sk_app_focus() == app_focus_active) win32_scroll += (short)HIWORD(wParam); break;
-			case WM_SYSCOMMAND: {
-				// Has the user pressed the restore/'un-maximize' button?
-				// WM_SIZE happens -after- this event, and contains the new size.
-				if (GET_SC_WPARAM(wParam) == SC_RESTORE)
-					win32_check_resize = true;
-			
-				// Disable alt menu
-				if (GET_SC_WPARAM(wParam) == SC_KEYMENU) 
-					return (LRESULT)0; 
-			} return DefWindowProcW(hWnd, message, wParam, lParam); 
-			case WM_SIZE: {
-				win32_resize_x = (UINT)LOWORD(lParam);
-				win32_resize_y = (UINT)HIWORD(lParam);
+///////////////////////////////////////////
+// Window code                           //
+///////////////////////////////////////////
 
-				// Don't check every time the size changes, this can lead to ugly memory alloc.
-				// If a restore event, a maximize, or something else says we should resize, check it!
-				if (win32_check_resize || wParam == SIZE_MAXIMIZED) { 
-					win32_check_resize = false; 
-					win32_resize(win32_resize_x, win32_resize_y); 
-				}
-			} return DefWindowProcW(hWnd, message, wParam, lParam);
-			case WM_EXITSIZEMOVE: {
-				// If the user was dragging the window around, WM_SIZE is called -before- this 
-				// event, so we can go ahead and resize now!
-				win32_resize(win32_resize_x, win32_resize_y);
-			} return DefWindowProcW(hWnd, message, wParam, lParam);
-			default: return DefWindowProcW(hWnd, message, wParam, lParam);
-			}
-		}
-		return (LRESULT)0;
-	};
-	wc.hInstance     = GetModuleHandleW(NULL);
-	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
-	wc.lpszClassName = app_name_w;
-	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_get_existing(platform_surface_ surface_type) { return -1; }
+
+///////////////////////////////////////////
+
+platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
+	window_t win = {};
+	win.title = platform_to_wchar(title);
+
+	WNDCLASSW wc = {};
+	wc.lpszClassName = win.title;
+	wc.hInstance     = win32_hinst;
 	wc.hIcon         = win32_icon;
-	if (!RegisterClassW(&wc)) { sk_free(app_name_w); return false; }
-	win32_hinst = wc.hInstance;
+	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
+	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	wc.lpfnWndProc   = platform_message_callback;
+	if (!RegisterClassW(&wc)) { sk_free(win.title); return -1; }
 
 	RECT rect = {};
-	HKEY reg_key;
-	if (backend_xr_get_type() == backend_xr_type_simulator && RegOpenKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, KEY_READ, &reg_key) == ERROR_SUCCESS) {
-		DWORD data_size = sizeof(RECT);
-		RegQueryValueExW(reg_key, REG_VALUE_NAME, 0, nullptr, (BYTE*)&rect, &data_size);
-		RegCloseKey     (reg_key);
-	} else {
-		rect.left   = settings->flatscreen_pos_x;
-		rect.right  = settings->flatscreen_pos_x + settings->flatscreen_width;
-		rect.top    = settings->flatscreen_pos_y;
-		rect.bottom = settings->flatscreen_pos_y + settings->flatscreen_height;
-		AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
-	}
-	if (rect.right == rect.left)   rect.right  = rect.left + settings->flatscreen_width;
-	if (rect.top   == rect.bottom) rect.bottom = rect.top  + settings->flatscreen_height;
-	
-	win32_window = CreateWindowW(
-		app_name_w,
-		app_name_w,
+	rect.left   = win_rect.x;
+	rect.right  = win_rect.x + win_rect.w;
+	rect.top    = win_rect.y;
+	rect.bottom = win_rect.y + win_rect.h;
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
+	if (rect.right == rect.left)   rect.right  = rect.left + win_rect.w;
+	if (rect.top   == rect.bottom) rect.bottom = rect.top  + win_rect.h;
+
+	win.handle = CreateWindowW(
+		win.title,
+		win.title,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		maxi(0,rect.left),
-		maxi(0,rect.top),
-		rect.right  - rect.left,
+		maxi(0, rect.left),
+		maxi(0, rect.top),
+		rect.right - rect.left,
 		rect.bottom - rect.top,
-		0, 0, 
+		0, 0,
 		wc.hInstance,
 		nullptr);
 
-	sk_free(app_name_w);
+	if (!win.handle) { sk_free(win.title); return -1; }
 
-	if( !win32_window ) return false;
+	// Save the initial size, let's not trust the numbers we asked for.
+	RECT r = {};
+	if (GetWindowRect(win.handle, &r))
+		win.save_rect = r;
 
-	RECT bounds;
-	GetClientRect(win32_window, &bounds);
-	int32_t width  = maxi(1, bounds.right  - bounds.left);
-	int32_t height = maxi(1, bounds.bottom - bounds.top);
+	// The final window size can often vary from what we expect, so this just
+	// ensures we're working with the correct size.
+	GetClientRect(win.handle, &rect);
+	int32_t final_width  = maxi(1, rect.right  - rect.left);
+	int32_t final_height = maxi(1, rect.bottom - rect.top);
+	win.resize_x = final_width;
+	win.resize_y = final_height;
 
-	skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-	skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
+	// Not all windows need a swapchain, but here's where we make 'em for those
+	// that do.
+	if (surface_type == platform_surface_swapchain) {
+		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
+		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
 #if defined(SKG_OPENGL)
-	depth_fmt = skg_tex_fmt_depthstencil;
+		depth_fmt = skg_tex_fmt_depthstencil;
 #endif
-	win32_swapchain = skg_swapchain_create(win32_window, color_fmt, skg_tex_fmt_none, width, height);
-	win32_swapchain_initialized = true;
-	device_data.display_width  = win32_swapchain.width;
-	device_data.display_height = win32_swapchain.height;
-	win32_target = tex_create(tex_type_rendertarget, tex_format_rgba32);
-	tex_set_id       (win32_target, "sk/platform/swapchain");
-	tex_set_color_arr(win32_target, win32_swapchain.width, win32_swapchain.height, nullptr, 1, nullptr, win32_multisample);
+		win.swapchain     = skg_swapchain_create(win.handle, color_fmt, skg_tex_fmt_none, final_width, final_height);
+		win.has_swapchain = true;
 
-	tex_t zbuffer = tex_add_zbuffer (win32_target, (tex_format_)depth_fmt);
-	tex_set_id (zbuffer, "sk/platform/swapchain_zbuffer");
-	tex_release(zbuffer);
-
-	log_diagf("Created swapchain: %dx%d color:%s depth:%s", win32_swapchain.width, win32_swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
-
-	return true;
-}
-
-///////////////////////////////////////////
-
-void win32_stop_flat() { 
-	if (backend_xr_get_type() == backend_xr_type_simulator) {
-		RECT rect;
-		HKEY reg_key;
-		GetWindowRect(win32_window, &rect);
-		if (RegCreateKeyExW(HKEY_CURRENT_USER, REG_KEY_NAME, 0, nullptr, 0, KEY_WRITE, nullptr, &reg_key, nullptr) == ERROR_SUCCESS) {
-			RegSetValueExW(reg_key, REG_VALUE_NAME, 0, REG_BINARY, (const BYTE*)&rect, sizeof(RECT));
-			RegCloseKey   (reg_key);
-		}
+		log_diagf("Created swapchain: <~grn>%d<~clr>x<~grn>%d<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 	}
 
-	tex_release          (win32_target);
-	skg_swapchain_destroy(&win32_swapchain);
-	win32_swapchain_initialized = false;
-
-
-	if (win32_icon)   DestroyIcon  (win32_icon);
-	if (win32_window) DestroyWindow(win32_window);
-	wchar_t* app_name_w = platform_to_wchar(sk_get_settings_ref()->app_name);
-	UnregisterClassW(app_name_w, win32_hinst);
-	sk_free(app_name_w);
-
-	win32_icon   = nullptr;
-	win32_window = nullptr;
-	win32_hinst  = nullptr;
+	win32_windows.add(win);
+	return win32_windows.count - 1;
 }
 
 ///////////////////////////////////////////
 
-void win32_step_begin_xr() {
-	MSG msg = {0};
-	while (PeekMessage(&msg, win32_window, 0U, 0U, PM_REMOVE)) {
-		TranslateMessage(&msg);
-		DispatchMessage (&msg);
+void platform_win_destroy(platform_win_t window) {
+	window_t* win = &win32_windows[window];
+
+	if (win->has_swapchain) {
+		skg_swapchain_destroy(&win->swapchain);
 	}
+
+	if (win->handle) DestroyWindow   (win->handle);
+	if (win->title)  UnregisterClassW(win->title, win32_hinst);
+
+	win->events.free();
+	sk_free(win->title);
+	*win = {};
 }
 
 ///////////////////////////////////////////
 
-void win32_step_begin_flat() {
-	MSG msg = {0};
+void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
+	window_t* win = &win32_windows[window_id];
+
+	width  = maxi(1, width);
+	height = maxi(1, height);
+
+	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
+		return;
+
+	// Save the window position when it changes
+	RECT r = {};
+	if (GetWindowRect(win->handle, &r))
+		win->save_rect = r;
+
+	skg_swapchain_resize(&win->swapchain, width, height);
+}
+
+///////////////////////////////////////////
+
+void platform_check_events() {
+	MSG msg = { 0 };
 	while (PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage (&msg);
@@ -331,38 +216,220 @@ void win32_step_begin_flat() {
 
 ///////////////////////////////////////////
 
-void win32_step_end_flat() {
-	skg_draw_begin();
+LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	window_t      *win       = nullptr;
+	platform_win_t window_id = -1;
+	for (int32_t i = 0; i < win32_windows.count; i++) {
+		if (hwnd == win32_windows[i].handle) {
+			win       = &win32_windows[i];
+			window_id = i;
+			break;
+		}
+	}
+	if (win == nullptr)
+		return DefWindowProcW(hwnd, message, wParam, lParam);
 
-	color128 col = render_get_clear_color_ln();
-#if defined(SKG_OPENGL)
-	skg_swapchain_bind(&win32_swapchain);
-#else
-	skg_tex_target_bind(&win32_target->tex);
-#endif
-	skg_target_clear(true, &col.r);
+	window_event_t e = {};
+	switch(message) {
+	case WM_LBUTTONDOWN: e.type = platform_evt_mouse_press;   e.data.press_release = key_mouse_left;                                                              win->events.add(e); return true;
+	case WM_LBUTTONUP:   e.type = platform_evt_mouse_release; e.data.press_release = key_mouse_left;                                                              win->events.add(e); return true;
+	case WM_RBUTTONDOWN: e.type = platform_evt_mouse_press;   e.data.press_release = key_mouse_right;                                                             win->events.add(e); return true;
+	case WM_RBUTTONUP:   e.type = platform_evt_mouse_release; e.data.press_release = key_mouse_right;                                                             win->events.add(e); return true;
+	case WM_MBUTTONDOWN: e.type = platform_evt_mouse_press;   e.data.press_release = key_mouse_center;                                                            win->events.add(e); return true;
+	case WM_MBUTTONUP:   e.type = platform_evt_mouse_release; e.data.press_release = key_mouse_center;                                                            win->events.add(e); return true;
+	case WM_XBUTTONDOWN: e.type = platform_evt_mouse_press;   e.data.press_release = GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward; win->events.add(e); return true;
+	case WM_XBUTTONUP:   e.type = platform_evt_mouse_release; e.data.press_release = GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? key_mouse_back : key_mouse_forward; win->events.add(e); return true;
+	case WM_KEYDOWN:     e.type = platform_evt_key_press;     e.data.press_release = (key_)wParam; win->events.add(e);
+		if ((key_)wParam == key_del) { 
+			window_event_t e2 = { platform_evt_character }; e2.data.character = 0x7f; win->events.add(e2);
+		}
+		return true;
+	case WM_KEYUP:       e.type = platform_evt_key_release;   e.data.press_release = (key_)wParam;         win->events.add(e); return true;
+	case WM_SYSKEYDOWN:  e.type = platform_evt_key_press;     e.data.press_release = (key_)wParam;         win->events.add(e); return true;
+	case WM_SYSKEYUP:    e.type = platform_evt_key_release;   e.data.press_release = (key_)wParam;         win->events.add(e); return true;
+	case WM_CHAR:        e.type = platform_evt_character;     e.data.character     = (char32_t)wParam;     win->events.add(e); return true;
+	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); PostQuitMessage(0); break;
+	case WM_SETFOCUS:    e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_active;     win->events.add(e); break;
+	case WM_KILLFOCUS:   e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_background; win->events.add(e); break;
+	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
+	case WM_SYSCOMMAND: {
+		// Has the user pressed the restore/'un-maximize' button? WM_SIZE
+		// happens -after- this event, and contains the new size.
+		if (GET_SC_WPARAM(wParam) == SC_RESTORE)
+			win->check_resize = true;
 
-	matrix view = render_get_cam_final        ();
-	matrix proj = render_get_projection_matrix();
-	matrix_inverse(view, view);
-	render_draw_matrix(&view, &proj, 1, render_get_filter());
-	render_clear();
+		// Disable alt menu
+		if (GET_SC_WPARAM(wParam) == SC_KEYMENU)
+			return (LRESULT)0;
+	} break;
+	case WM_MOVE: {
+		// Save the window position when it changes
+		RECT r = {};
+		if (GetWindowRect(win->handle, &r))
+			win->save_rect = r;
+	} break;
+	case WM_SIZE: {
+		win->resize_x = (UINT)LOWORD(lParam);
+		win->resize_y = (UINT)HIWORD(lParam);
 
-#if !defined(SKG_OPENGL)
-	// This copies the color data over to the swapchain, and resolves any
-	// multisampling on the primary target texture.
-	skg_tex_copy_to_swapchain(&win32_target->tex, &win32_swapchain);
-#endif
+		// Don't check every time the size changes, this can lead to ugly
+		// memory alloc. If a restore event, a maximize, or something else says
+		// we should resize, check it!
+		if (win->check_resize || wParam == SIZE_MAXIMIZED) {
+			win->check_resize = false;
 
-	win32_render_sys->profile_frame_duration = stm_since(win32_render_sys->profile_frame_start);
-	skg_swapchain_present(&win32_swapchain);
+			platform_win_resize(window_id, win->resize_x, win->resize_y);
+			e.type        = platform_evt_resize;
+			e.data.resize = { win->resize_x, win->resize_y };
+			win->events.add(e);
+		}
+	} break;
+	case WM_EXITSIZEMOVE: {
+		// If the user was dragging the window around, WM_SIZE is called
+		// -before- this event, so we can go ahead and resize now!
+		platform_win_resize(window_id, win->resize_x, win->resize_y);
+		e.type        = platform_evt_resize;
+		e.data.resize = { win->resize_x, win->resize_y };
+		win->events.add(e);
+	}break;
+	default: break;
+	}
+	return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
 ///////////////////////////////////////////
 
-void *win32_hwnd() {
-	return win32_window;
+bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
+	window_t *window = &win32_windows[window_id];
+	if (window->events.count > 0) {
+		*out_event      = window->events[0].type;
+		*out_event_data = window->events[0].data;
+		window->events.remove(0);
+		return true;
+	} return false;
 }
+
+///////////////////////////////////////////
+
+skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return win32_windows[window].has_swapchain ? &win32_windows[window].swapchain : nullptr; }
+
+///////////////////////////////////////////
+
+recti_t platform_win_rect(platform_win_t window_id) {
+	window_t* win = &win32_windows[window_id];
+
+	// See if we can update it real quick
+	RECT r = {};
+	if (GetWindowRect(win->handle, &r))
+		win->save_rect = r;
+
+	return recti_t{
+		win->save_rect.left,
+		win->save_rect.top,
+		win->save_rect.right  - win->save_rect.left,
+		win->save_rect.bottom - win->save_rect.top };
+}
+
+///////////////////////////////////////////
+
+void platform_msgbox_err(const char* text, const char* header) {
+	wchar_t* text_w   = platform_to_wchar(text);
+	wchar_t* header_w = platform_to_wchar(header);
+	MessageBoxW(nullptr, text_w, header_w, MB_OK | MB_ICONERROR);
+	sk_free(text_w);
+	sk_free(header_w);
+}
+
+///////////////////////////////////////////
+
+bool platform_get_cursor(vec2 *out_pos) {
+	POINT cursor_pos;
+	bool  result = GetCursorPos  (&cursor_pos)
+	            && ScreenToClient((HWND)win32_hwnd(), &cursor_pos);
+	out_pos->x = (float)cursor_pos.x;
+	out_pos->y = (float)cursor_pos.y;
+	return result;
+}
+
+///////////////////////////////////////////
+
+void platform_set_cursor(vec2 window_pos) {
+	POINT pt = { (LONG)window_pos.x, (LONG)window_pos.y };
+	ClientToScreen((HWND)win32_hwnd(), &pt);
+	SetCursorPos  (pt.x, pt.y);
+}
+
+///////////////////////////////////////////
+
+float platform_get_scroll() {
+	return win32_scroll;
+}
+
+///////////////////////////////////////////
+
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, const platform_file_attr_t file_attr)) {
+	if (string_eq(directory_path, "")) {
+		DWORD size = ::GetLogicalDriveStringsW(0, nullptr);
+		wchar_t *drive_names = sk_malloc_t(wchar_t, size);
+		::GetLogicalDriveStringsW(size, drive_names);
+
+		wchar_t *curr = drive_names;
+		while (*curr != '\0') {
+			char *drive_u8 = platform_from_wchar(curr);
+			platform_file_attr_t file_attr;
+			file_attr.file = false;
+			file_attr.size = 0;
+			on_item(callback_data, drive_u8, file_attr);
+			curr = curr + wcslen(curr)+1;
+			sk_free(drive_u8);
+		}
+
+		sk_free(drive_names);
+		return;
+	}
+
+	WIN32_FIND_DATAW info;
+	HANDLE           handle = nullptr;
+
+	char *filter = string_copy(directory_path);
+	if (string_endswith(filter, "\\"))
+		filter = string_append(filter, 1, "*.*");
+	else filter = string_append(filter, 1, "\\*.*");
+	wchar_t *filter_w = platform_to_wchar(filter);
+
+	handle = FindFirstFileW(filter_w, &info);
+	if (handle == INVALID_HANDLE_VALUE) return;
+
+	while (handle) {
+		char *filename_u8 = platform_from_wchar(info.cFileName);
+		if (!string_eq(filename_u8, ".") && !string_eq(filename_u8, "..")) {
+			platform_file_attr_t file_attr;
+			if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+				file_attr.file = false;
+				file_attr.size = 0;
+				on_item(callback_data, filename_u8, file_attr);
+			} else {
+				file_attr.file = true;
+				file_attr.size = info.nFileSizeLow;
+				on_item(callback_data, filename_u8, file_attr);
+			}
+		}
+		free(filename_u8);
+
+		if (!FindNextFileW(handle, &info)) {
+			FindClose(handle);
+			handle = nullptr;
+		}
+	}
+	sk_free(filter);
+	sk_free(filter_w);
+}
+
+///////////////////////////////////////////
+
+void platform_xr_keyboard_show   (bool show) { }
+bool platform_xr_keyboard_present()          { return false; }
+bool platform_xr_keyboard_visible()          { return false; }
 
 } // namespace sk
 

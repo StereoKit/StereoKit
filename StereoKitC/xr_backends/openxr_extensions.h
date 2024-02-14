@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
@@ -24,7 +24,9 @@
 	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_D3D11_KHR
 
 #elif defined(XR_USE_PLATFORM_WIN32) && defined(XR_USE_GRAPHICS_API_OPENGL)
-	#include <windows.h>
+	#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <unknwn.h>
 	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageOpenGLKHR
@@ -131,10 +133,12 @@ namespace sk {
 	_(EXT_eye_gaze_interaction,          true) \
 	_(EXT_local_floor,                   true) \
 	_(FB_color_space,                    true) \
+	_(FB_spatial_entity,                 true) \
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
 	_(MSFT_spatial_anchor,               true) \
+	_(MSFT_spatial_anchor_persistence,   true) \
 	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
@@ -151,13 +155,9 @@ namespace sk {
 #define FOR_EACH_EXT_ANDROID(_) \
 	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
 
-#if defined(SKG_LINUX_EGL)
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
 	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
-#else
-#define FOR_EACH_EXT_LINUX(_)
-#endif
 
 // Debug builds only
 #define FOR_EACH_EXT_DEBUG(_) \
@@ -171,6 +171,13 @@ namespace sk {
 	_(xrCreateSpatialAnchorMSFT)                 \
 	_(xrCreateSpatialAnchorSpaceMSFT)            \
 	_(xrDestroySpatialAnchorMSFT)                \
+	_(xrCreateSpatialAnchorStoreConnectionMSFT)  \
+	_(xrDestroySpatialAnchorStoreConnectionMSFT) \
+	_(xrPersistSpatialAnchorMSFT)                \
+	_(xrEnumeratePersistedSpatialAnchorNamesMSFT)\
+	_(xrCreateSpatialAnchorFromPersistedNameMSFT)\
+	_(xrUnpersistSpatialAnchorMSFT)              \
+	_(xrClearSpatialAnchorStoreMSFT)             \
 	_(xrCreateSceneObserverMSFT)                 \
 	_(xrDestroySceneObserverMSFT)                \
 	_(xrCreateSceneMSFT)                         \
@@ -198,6 +205,7 @@ namespace sk {
 	_(xrConvertWin32PerformanceCounterToTimeKHR)     \
 	_(xrConvertTimeToWin32PerformanceCounterKHR)     \
 	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
+	_(xrTryGetPerceptionAnchorFromSpatialAnchorMSFT) \
 	_(xrGetAudioOutputDeviceGuidOculus)              \
 	_(xrGetAudioInputDeviceGuidOculus)
 #else

@@ -60,11 +60,13 @@ typedef enum ui_vis_ {
 	ui_vis_button_round,
 	ui_vis_panel,
 	ui_vis_carat,
+	ui_vis_aura,
 	ui_vis_max,
 } ui_vis_;
 
 typedef enum ui_color_ {
-	ui_color_primary = 0,
+	ui_color_none = 0,
+	ui_color_primary,
 	ui_color_background,
 	ui_color_common,
 	ui_color_complement,
@@ -99,6 +101,27 @@ typedef enum ui_cut_ {
 	ui_cut_bottom,
 } ui_cut_;
 
+typedef enum ui_corner_ {
+	ui_corner_none         = 0,
+	ui_corner_top_left     = 1 << 0,
+	ui_corner_top_right    = 1 << 1,
+	ui_corner_bottom_right = 1 << 2,
+	ui_corner_bottom_left  = 1 << 3,
+	ui_corner_all          = ui_corner_top_left    | ui_corner_top_right | ui_corner_bottom_left | ui_corner_bottom_right,
+	ui_corner_top          = ui_corner_top_left    | ui_corner_top_right,
+	ui_corner_bottom       = ui_corner_bottom_left | ui_corner_bottom_right,
+	ui_corner_left         = ui_corner_top_left    | ui_corner_bottom_left,
+	ui_corner_right        = ui_corner_top_right   | ui_corner_bottom_right,
+} ui_corner_;
+
+typedef struct ui_lathe_pt_t {
+	vec2     pt;
+	vec2     normal;
+	color32  color;
+	bool32_t connect_next;
+	bool32_t flip_face;
+} ui_lathe_pt_t;
+
 typedef struct ui_settings_t {
 	float margin;
 	float padding;
@@ -111,6 +134,7 @@ typedef struct ui_settings_t {
 
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
 SK_API void     ui_quadrant_size_mesh   (mesh_t ref_mesh, float overflow_percent);
+SK_API mesh_t   ui_gen_quadrant_mesh    (ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
 SK_API void     ui_show_volumes         (bool32_t      show);
 SK_API void     ui_enable_far_interact  (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled (void);
@@ -127,9 +151,14 @@ SK_API color128 ui_get_theme_color      (ui_color_ color_type);
 SK_API void     ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color128 color_gamma);
 SK_API color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state);
 SK_API void     ui_set_element_visual   (ui_vis_ element_visual, mesh_t mesh, material_t material sk_default(nullptr), vec2 min_size sk_default(vec2_zero));
+SK_API void     ui_set_element_color    (ui_vis_ element_visual, ui_color_ color_category);
+SK_API void     ui_set_element_sound    (ui_vis_ element_visual, sound_t activate, sound_t deactivate);
 SK_API bool32_t ui_has_keyboard_focus   (void);
 SK_API pose_t   ui_popup_pose           (vec3 shift);
 
+SK_API void     ui_push_grab_aura        (bool32_t enabled);
+SK_API void     ui_pop_grab_aura         ();
+SK_API bool32_t ui_grab_aura_enabled     ();
 SK_API void     ui_push_text_style       (text_style_t  style);
 SK_API void     ui_pop_text_style        (void);
 SK_API text_style_t ui_get_text_style    (void);
@@ -178,60 +207,60 @@ SK_API bool32_t      ui_volume_at         (const char     *id, bounds_t bounds);
 SK_API bool32_t      ui_volume_at_16      (const char16_t *id, bounds_t bounds); // TODO: remove in v0.4
 SK_API button_state_ ui_interact_volume_at(bounds_t bounds, sk_ref(handed_) out_hand);  // TODO: remove in v0.4
 
-SK_API void     ui_label             (const char*     show_text, bool32_t use_padding sk_default(true));
-SK_API void     ui_label_16          (const char16_t* show_text, bool32_t use_padding sk_default(true));
-SK_API void     ui_label_sz          (const char*     show_text, vec2 size, bool32_t use_padding sk_default(true));
-SK_API void     ui_label_sz_16       (const char16_t* show_text, vec2 size, bool32_t use_padding sk_default(true));
-SK_API void     ui_text              (const char*     show_text, text_align_ text_align sk_default(text_align_top_left));
-SK_API void     ui_text_16           (const char16_t* show_text, text_align_ text_align sk_default(text_align_top_left));
-SK_API void     ui_text_sz           (const char*     show_text, text_align_ text_align, text_fit_ fit, vec2 size);
-SK_API void     ui_text_sz_16        (const char16_t* show_text, text_align_ text_align, text_fit_ fit, vec2 size);
-SK_API void     ui_text_at           (const char*     show_text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
-SK_API void     ui_text_at_16        (const char16_t* show_text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_button            (const char*     id_text);
-SK_API bool32_t ui_button_16         (const char16_t* id_text);
-SK_API bool32_t ui_button_sz         (const char*     id_text, vec2 size);
-SK_API bool32_t ui_button_sz_16      (const char16_t* id_text, vec2 size);
-SK_API bool32_t ui_button_at         (const char*     id_text, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_button_at_16      (const char16_t* id_text, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_button_img        (const char*     id_text, sprite_t sprite, ui_btn_layout_ sprite_layout);
-SK_API bool32_t ui_button_img_16     (const char16_t* id_text, sprite_t sprite, ui_btn_layout_ sprite_layout);
-SK_API bool32_t ui_button_img_sz     (const char*     id_text, sprite_t sprite, ui_btn_layout_ sprite_layout, vec2 size);
-SK_API bool32_t ui_button_img_sz_16  (const char16_t* id_text, sprite_t sprite, ui_btn_layout_ sprite_layout, vec2 size);
-SK_API bool32_t ui_button_img_at     (const char*     id_text, sprite_t sprite, ui_btn_layout_ sprite_layout, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_button_img_at_16  (const char16_t* id_text, sprite_t sprite, ui_btn_layout_ sprite_layout, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_button_round      (const char*     id,      sprite_t sprite, float diameter sk_default(0));
-SK_API bool32_t ui_button_round_16   (const char16_t* id,      sprite_t sprite, float diameter sk_default(0));
-SK_API bool32_t ui_button_round_at   (const char*     id,      sprite_t sprite, vec3 window_relative_pos, float diameter);
-SK_API bool32_t ui_button_round_at_16(const char16_t* id,      sprite_t sprite, vec3 window_relative_pos, float diameter);
-SK_API bool32_t ui_toggle            (const char*     id_text, sk_ref(bool32_t) pressed);
-SK_API bool32_t ui_toggle_16         (const char16_t* id_text, sk_ref(bool32_t) pressed);
-SK_API bool32_t ui_toggle_sz         (const char*     id_text, sk_ref(bool32_t) pressed, vec2 size);
-SK_API bool32_t ui_toggle_sz_16      (const char16_t* id_text, sk_ref(bool32_t) pressed, vec2 size);
-SK_API bool32_t ui_toggle_at         (const char     *id_text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_toggle_at_16      (const char16_t *id_text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_toggle_img        (const char*     id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout);
-SK_API bool32_t ui_toggle_img_16     (const char16_t* id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout);
-SK_API bool32_t ui_toggle_img_sz     (const char*     id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size);
-SK_API bool32_t ui_toggle_img_sz_16  (const char16_t* id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size);
-SK_API bool32_t ui_toggle_img_at     (const char*     id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_toggle_img_at_16  (const char16_t* id_text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_hslider           (const char*     id,   sk_ref(float)  value, float  min, float  max, float  value_step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_16        (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  value_step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_f64       (const char*     id,   sk_ref(double) value, double min, double max, double value_step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_f64_16    (const char16_t* id,   sk_ref(double) value, double min, double max, double value_step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_at        (const char*     id,   sk_ref(float)  value, float  min, float  max, float  value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_hslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider           (const char*     id,   sk_ref(float)  value, float  min, float  max, float  value_step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_16        (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  value_step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_f64       (const char*     id,   sk_ref(double) value, double min, double max, double value_step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_f64_16    (const char16_t* id,   sk_ref(double) value, double min, double max, double value_step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_at        (const char*     id,   sk_ref(float)  value, float  min, float  max, float  value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_vslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double value_step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API void     ui_label             (const char*     text, bool32_t use_padding sk_default(true));
+SK_API void     ui_label_16          (const char16_t* text, bool32_t use_padding sk_default(true));
+SK_API void     ui_label_sz          (const char*     text, vec2 size, bool32_t use_padding sk_default(true));
+SK_API void     ui_label_sz_16       (const char16_t* text, vec2 size, bool32_t use_padding sk_default(true));
+SK_API void     ui_text              (const char*     text, text_align_ text_align sk_default(text_align_top_left));
+SK_API void     ui_text_16           (const char16_t* text, text_align_ text_align sk_default(text_align_top_left));
+SK_API void     ui_text_sz           (const char*     text, text_align_ text_align, text_fit_ fit, vec2 size);
+SK_API void     ui_text_sz_16        (const char16_t* text, text_align_ text_align, text_fit_ fit, vec2 size);
+SK_API void     ui_text_at           (const char*     text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
+SK_API void     ui_text_at_16        (const char16_t* text, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_button            (const char*     text);
+SK_API bool32_t ui_button_16         (const char16_t* text);
+SK_API bool32_t ui_button_sz         (const char*     text, vec2 size);
+SK_API bool32_t ui_button_sz_16      (const char16_t* text, vec2 size);
+SK_API bool32_t ui_button_at         (const char*     text, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_button_at_16      (const char16_t* text, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_button_img        (const char*     text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_img_16     (const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_img_sz     (const char*     text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_img_sz_16  (const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_img_at     (const char*     text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_img_at_16  (const char16_t* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint sk_default(color128{ 1,1,1,1 }));
+SK_API bool32_t ui_button_round      (const char*     id,   sprite_t image, float diameter sk_default(0));
+SK_API bool32_t ui_button_round_16   (const char16_t* id,   sprite_t image, float diameter sk_default(0));
+SK_API bool32_t ui_button_round_at   (const char*     id,   sprite_t image, vec3 window_relative_pos, float diameter);
+SK_API bool32_t ui_button_round_at_16(const char16_t* id,   sprite_t image, vec3 window_relative_pos, float diameter);
+SK_API bool32_t ui_toggle            (const char*     text, sk_ref(bool32_t) pressed);
+SK_API bool32_t ui_toggle_16         (const char16_t* text, sk_ref(bool32_t) pressed);
+SK_API bool32_t ui_toggle_sz         (const char*     text, sk_ref(bool32_t) pressed, vec2 size);
+SK_API bool32_t ui_toggle_sz_16      (const char16_t* text, sk_ref(bool32_t) pressed, vec2 size);
+SK_API bool32_t ui_toggle_at         (const char     *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_toggle_at_16      (const char16_t *text, sk_ref(bool32_t) pressed, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_toggle_img        (const char*     text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_toggle_img_16     (const char16_t* text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout);
+SK_API bool32_t ui_toggle_img_sz     (const char*     text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size);
+SK_API bool32_t ui_toggle_img_sz_16  (const char16_t* text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec2 size);
+SK_API bool32_t ui_toggle_img_at     (const char*     text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_toggle_img_at_16  (const char16_t* text, sk_ref(bool32_t) pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_hslider           (const char*     id,   sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_16        (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_f64       (const char*     id,   sk_ref(double) value, double min, double max, double step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_f64_16    (const char16_t* id,   sk_ref(double) value, double min, double max, double step sk_default(0), float width  sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_at        (const char*     id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_hslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider           (const char*     id,   sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_16        (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_f64       (const char*     id,   sk_ref(double) value, double min, double max, double step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_f64_16    (const char16_t* id,   sk_ref(double) value, double min, double max, double step sk_default(0), float height sk_default(0), ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_at        (const char*     id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
+SK_API bool32_t ui_vslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_input             (const char*     id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API bool32_t ui_input_16          (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
 SK_API void     ui_image             (sprite_t sprite, vec2 size);
@@ -240,7 +269,9 @@ SK_API void     ui_model_at          (model_t show_model, vec3 start, vec3 size,
 SK_API void     ui_progress_bar      (float percent, float width sk_default(0));
 SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
 SK_API void     ui_hseparator        (void);
-SK_API void     ui_space             (float space_size);
+SK_API void     ui_space             (float space);
+SK_API void     ui_hspace            (float horizontal_space);
+SK_API void     ui_vspace            (float vertical_space);
 
 SK_API bool32_t ui_handle_begin      (const char     *id, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
 SK_API bool32_t ui_handle_begin_16   (const char16_t *id, sk_ref(pose_t) movement, bounds_t handle, bool32_t draw, ui_move_ move_type sk_default(ui_move_exact), ui_gesture_ allowed_gestures sk_default(ui_gesture_pinch));
@@ -254,10 +285,20 @@ SK_API void     ui_panel_end         (void);
 
 ///////////////////////////////////////////
 
-SK_CONST char* ui_default_id_radio_on_spr   = "sk/ui/radio_on_spr";
-SK_CONST char* ui_default_id_radio_off_spr  = "sk/ui/radio_off_spr";
-SK_CONST char* ui_default_id_toggle_on_spr  = "sk/ui/toggle_on_spr";
-SK_CONST char* ui_default_id_toggle_off_spr = "sk/ui/toggle_off_spr";
+SK_CONST char* ui_default_id_spr_radio_on    = "sk/ui/radio_on";
+SK_CONST char* ui_default_id_spr_radio_off   = "sk/ui/radio_off";
+SK_CONST char* ui_default_id_spr_toggle_on   = "sk/ui/toggle_on";
+SK_CONST char* ui_default_id_spr_toggle_off  = "sk/ui/toggle_off";
+SK_CONST char* ui_default_id_spr_arrow_left  = "sk/ui/arrow_left";
+SK_CONST char* ui_default_id_spr_arrow_right = "sk/ui/arrow_right";
+SK_CONST char* ui_default_id_spr_arrow_up    = "sk/ui/arrow_up";
+SK_CONST char* ui_default_id_spr_arrow_down  = "sk/ui/arrow_down";
+SK_CONST char* ui_default_id_spr_backspace   = "sk/ui/backspace";
+SK_CONST char* ui_default_id_spr_shift       = "sk/ui/shift";
+SK_CONST char* ui_default_id_spr_close       = "sk/ui/close";
+SK_CONST char* ui_default_id_spr_list        = "sk/ui/list";
+SK_CONST char* ui_default_id_spr_grid        = "sk/ui/grid";
+
 
 #ifdef __cplusplus
 } // namespace sk

@@ -1,7 +1,13 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #if defined(SK_XR_OPENXR)
 
@@ -20,11 +26,7 @@
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
-#include "../hands/input_hand.h"
-#include "../platforms/android.h"
-#include "../platforms/linux.h"
-#include "../platforms/uwp.h"
-#include "../platforms/win32.h"
+#include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -179,8 +181,8 @@ bool openxr_create_system() {
 		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
 
 	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
-	init_android.applicationVM      = android_vm;
-	init_android.applicationContext = android_activity;
+	init_android.applicationVM      = backend_android_get_java_vm ();
+	init_android.applicationContext = backend_android_get_activity();
 	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
 		log_fail_reasonf(90, log_warning, "Failed to initialize OpenXR loader");
 		return false;
@@ -221,8 +223,8 @@ bool openxr_create_system() {
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #if defined(SK_OS_ANDROID)
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
-	create_android.applicationVM       = android_vm;
-	create_android.applicationActivity = android_activity;
+	create_android.applicationVM       = backend_android_get_java_vm ();
+	create_android.applicationActivity = backend_android_get_activity();
 	create_info.next = (void*)&create_android;
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
@@ -343,6 +345,8 @@ XrTime openxr_acquire_time() {
 bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
+
+	device_data.display_type = display_type_stereo;
 
 	// A number of other items also use the xr_time, so lets get this ready
 	// right away.
@@ -473,7 +477,7 @@ bool openxr_init() {
 	// Exception for the articulated WMR hand simulation, and the Vive Index
 	// controller equivalent. These simulations are insufficient to treat them
 	// like true articulated hands.
-	// 
+	//
 	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
 	// tracking layer is present.
 	//
@@ -579,7 +583,8 @@ bool openxr_init() {
 	// valid data, so we'll wait for that here.
 	// TODO: Loop here may be optional, but some platforms may need it? Waiting
 	// for some feedback here.
-	int32_t ref_space_tries = 10;
+	// - HTC Vive XR Elite requires around 50 frames
+	int32_t ref_space_tries = 1000;
 	while (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, xr_time, &xr_app_space_type, &world_origin_offset, &xr_app_space) == false && openxr_poll_events() && ref_space_tries > 0) {
 		ref_space_tries--;
 		log_diagf("Failed getting reference spaces: %d tries remaining", ref_space_tries);
@@ -598,8 +603,12 @@ bool openxr_init() {
 		return false;
 	}
 
-	if (sys_info->overlay_app) {
-		log_diag("Starting as an overlay app, display blend mode switched to blend.");
+	// If this is an overlay app, and the user has not explicitly requested a
+	// blend mode, then we'll auto-switch to 'blend', as that's likely the most
+	// appropriate mode for the app.
+	if (sys_info->overlay_app) log_diag("Starting as an overlay app.");
+	if (sys_info->overlay_app && sk_get_settings_ref()->blend_preference == display_blend_none) {
+		log_diag("Overlay app defaulting to 'blend' display_blend.");
 		device_data.display_blend = display_blend_blend;
 	}
 
@@ -617,6 +626,9 @@ bool openxr_init() {
 		}
 	}
 #endif
+
+	if (xr_ext_available.MSFT_spatial_anchor)
+		anchors_init(anchor_system_openxr_msft);
 
 	return true;
 }
@@ -858,7 +870,11 @@ void openxr_cleanup() {
 	}
 }
 
+///////////////////////////////////////////
+
 void openxr_shutdown() {
+	anchors_shutdown();
+
 	openxr_cleanup();
 
 	xr_minimum_exts   = false;
@@ -877,11 +893,16 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
+	input_step();
+	
+	anchors_step_begin();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	anchors_step_end();
+
 	if (xr_running)
 		openxr_render_frame();
 
@@ -915,15 +936,23 @@ bool openxr_poll_events() {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
-				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
-				if (xr_display_types.count > 1) {
-					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_types.count-1;
-					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
+				// If the XR_MSFT_first_person_observer extension is present,
+				// we may have a secondary display we need to enable. This is
+				// typically the HoloLens video recording or streaming feature.
+				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary      = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
+				XrViewConfigurationType                          secondary_type = XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
+				if (xr_ext_available.MSFT_first_person_observer && xr_view_type_valid(secondary_type)) {
+					secondary.viewConfigurationCount        = 1;
+					secondary.enabledViewConfigurationTypes = &secondary_type;
 					begin_info.next = &secondary;
 				}
 
-				xrBeginSession(xr_session, &begin_info);
+				XrResult xresult = xrBeginSession(xr_session, &begin_info);
+				if (XR_FAILED(xresult)) {
+					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
+					sk_quit();
+					result = false;
+				}
 
 				// FoV normally updates right before drawing, but we need it to
 				// be available as soon as the session begins, for apps that
@@ -952,6 +981,15 @@ bool openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit(); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+
+			// Update the main app space. In particular, some fallback spaces
+			// may require recalculation.
+			XrSpace new_space = {};
+			if (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
+				if (xr_app_space) xrDestroySpace(xr_app_space);
+				xr_app_space = new_space;
+			}
+
 			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 		} break;

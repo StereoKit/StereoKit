@@ -15,6 +15,7 @@ cbuffer stereokit_buffer : register(b1) {
 	float4   sk_cubemap_i;
 	float    sk_time;
 	uint     sk_view_count;
+	uint     sk_eye_offset;
 };
 struct inst_t {
 	float4x4 world;
@@ -103,6 +104,14 @@ float2 sk_finger_glow_ex(float3 world_pos, float3 world_norm) {
 }
 // Legacy name, use sk_finger_glow_ex
 float2 FingerGlowEx(float3 world_pos, float3 world_norm) { return sk_finger_glow_ex(world_pos, world_norm); }
+
+///////////////////////////////////////////
+
+float sk_finger_distance(float3 world_pos) {
+	return min(
+		length(sk_fingertip[0].xyz - world_pos),
+		length(sk_fingertip[1].xyz - world_pos));
+}
 
 ///////////////////////////////////////////
 

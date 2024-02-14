@@ -1,8 +1,8 @@
 #include "input.h"
 #include "input_keyboard.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../libraries/array.h"
-#include "../libraries/tinycthread.h"
+#include "../libraries/ferr_thread.h"
 
 namespace sk {
 
@@ -26,7 +26,7 @@ struct input_keyboard_state_t {
 	keyboard_t                key_data;
 	array_t<keyboard_event_t> key_pending;
 	array_t<char32_t>         chars_pending;
-	mtx_t                     key_pending_mtx;
+	ft_mutex_t                key_pending_mtx;
 	bool                      key_suspended;
 	float                     last_physical_keypress;
 };
@@ -37,14 +37,13 @@ static input_keyboard_state_t local = {};
 void input_keyboard_initialize() {
 	local = {};
 	local.last_physical_keypress = -1000;
-
-	mtx_init(&local.key_pending_mtx, mtx_plain);
+	local.key_pending_mtx        = ft_mutex_create();
 }
 
 ///////////////////////////////////////////
 
 void input_keyboard_shutdown() {
-	mtx_destroy(&local.key_pending_mtx);
+	ft_mutex_destroy(&local.key_pending_mtx);
 	local.key_pending        .free();
 	local.chars_pending      .free();
 	local.key_data.events    .free();
@@ -75,12 +74,12 @@ void input_keyboard_update() {
 	// Thread safe copy new key events into the main thread
 	local.key_data.events    .clear();
 	local.key_data.characters.clear();
-	mtx_lock(&local.key_pending_mtx);
+	ft_mutex_lock(local.key_pending_mtx);
 	local.key_data.events    .add_range(local.key_pending  .data, local.key_pending  .count);
 	local.key_data.characters.add_range(local.chars_pending.data, local.chars_pending.count);
 	local.key_pending  .clear();
 	local.chars_pending.clear();
-	mtx_unlock(&local.key_pending_mtx);
+	ft_mutex_unlock(local.key_pending_mtx);
 
 	// Set key activity flags based on the new event queue
 	evts = local.key_data.events;
@@ -101,14 +100,14 @@ void input_key_inject_press(key_ key) {
 	// Don't inject keys if input is suspended
 	if (local.key_suspended) return;
 
-	mtx_lock(&local.key_pending_mtx);
+	ft_mutex_lock(local.key_pending_mtx);
 
 	keyboard_event_t evt;
 	evt.key  = key;
 	evt.down = 1;
 	local.key_pending.add(evt);
 
-	mtx_unlock(&local.key_pending_mtx);
+	ft_mutex_unlock(local.key_pending_mtx);
 }
 
 ///////////////////////////////////////////
@@ -119,14 +118,14 @@ void input_key_inject_release(key_ key) {
 	if (local.key_suspended && (input_keyboard_get(key) & button_state_inactive))
 		return;
 
-	mtx_lock(&local.key_pending_mtx);
+	ft_mutex_lock(local.key_pending_mtx);
 
 	keyboard_event_t evt;
 	evt.key  = key;
 	evt.down = 0;
 	local.key_pending.add(evt);
 
-	mtx_unlock(&local.key_pending_mtx);
+	ft_mutex_unlock(local.key_pending_mtx);
 }
 
 ///////////////////////////////////////////
@@ -141,11 +140,11 @@ void input_text_inject_char(char32_t character) {
 	// Don't inject characters if input is suspended
 	if (local.key_suspended) return;
 
-	mtx_lock(&local.key_pending_mtx);
+	ft_mutex_lock(local.key_pending_mtx);
 
 	local.chars_pending.add(character);
 
-	mtx_unlock(&local.key_pending_mtx);
+	ft_mutex_unlock(local.key_pending_mtx);
 }
 
 ///////////////////////////////////////////

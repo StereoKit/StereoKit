@@ -5,7 +5,7 @@
 		<OutputType>Exe</OutputType>
 		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>0.3.9</ApplicationDisplayVersion>
 		<RootNamespace>StereoKitTest</RootNamespace>
 		<ReadOnlyProject>true</ReadOnlyProject>
 
@@ -54,11 +54,9 @@
 	<PropertyGroup>
 		<!--Unlike the other projects, this seems to invoke from the bin
 		    folder, and $(ProjectDir) doesn't work.-->
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">cd ..\..\..\..\..\..\ &amp; cmake --workflow --preset AndroidArm64$(Configuration)</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">cd ..\..\..\..\..\..\ &amp; cmake --workflow --preset Androidx64$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" />
 	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
 		<RemoveDir Condition="'$(TestBuildMode)'=='ARM64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
 		<RemoveDir Condition="'$(TestBuildMode)'=='x64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_x64_$(Configuration)" />
@@ -68,6 +66,10 @@
 		<Message Importance="high" Text="=========$(TestBuildMode)" />
 		<Error Condition="('$(TestBuildMode)'=='ARM64') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
 		<Error Condition="('$(TestBuildMode)'=='x64') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
+
+		<Error
+			Condition="!Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/libopenxr_loader.so') and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/x64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/arm64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/libopenxr_loader.so') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so')"
+			Text="Couldn't find binaries for the '$(SKOpenXRLoader)' OpenXR Loader. Expected to find a 'libopenxr_loader.so' in the '$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64|x64\' or '$(MSBuildThisFileDirectory)..\android_openxr_loaders\$(SKOpenXRLoader.ToLower())\arm64|x64\' folders." />
 	</Target>
 
 	<ItemGroup>

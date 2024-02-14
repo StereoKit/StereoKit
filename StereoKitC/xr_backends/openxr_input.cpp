@@ -1,4 +1,4 @@
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
@@ -42,7 +42,8 @@ XrSpace     xrc_space_grip         [2] = {};
 XrSpace     xrc_space_palm         [2] = {};
 XrSpace     xr_gaze_space              = {};
 
-int32_t xr_eyes_pointer;
+int32_t    xr_eyes_pointer;
+button_state_ xr_tracked_state = button_state_inactive;
 
 struct xrc_profile_info_t {
 	const char *name;
@@ -702,6 +703,13 @@ void oxri_shutdown() {
 	if (xrc_action_set   ) { xrDestroyActionSet(xrc_action_set   ); xrc_action_set    = {}; }
 }
 
+
+///////////////////////////////////////////
+
+button_state_ openxr_space_tracked() {
+	return xr_tracked_state;
+}
+
 ///////////////////////////////////////////
 
 void oxri_update_poses() {
@@ -722,8 +730,25 @@ void oxri_update_poses() {
 	matrix root   = render_get_cam_final    ();
 	quat   root_q = matrix_extract_rotation(root);
 
-	// Track the head location
-	openxr_get_space(xr_head_space, &input_head_pose_local);
+	// Track the head location, and use it to determine the tracking state of
+	// the world.
+	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
+	XrResult        res           = xrLocateSpace(xr_head_space, xr_app_space, xr_time, &head_location);
+	if (XR_UNQUALIFIED_SUCCESS(res) && 
+		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) != 0 &&
+		(head_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
+
+		memcpy(&input_head_pose_local.position,    &head_location.pose.position,    sizeof(vec3));
+		memcpy(&input_head_pose_local.orientation, &head_location.pose.orientation, sizeof(quat));
+	}
+	// We report tracking of the device based on the positional tracking
+	// reported here. Rotational tracking is pretty much always available to
+	// devices containing an accelerometer/gyroscope, so positional is the best
+	// metric for tracking quality.
+	xr_tracked_state = button_make_state(
+		(xr_tracked_state            & button_state_active)                    != 0,
+		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT) != 0);
+
 	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
 
 	// Get input from whatever controllers may be present
@@ -741,7 +766,7 @@ void oxri_update_poses() {
 		// Get the grip pose the verbose way, since we want to know if
 		// rotation or position are tracked independently of eachother.
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
-		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		res = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
 		bool tracked_pos = false;
 		bool tracked_rot = false;
 		bool valid_pos   = false;

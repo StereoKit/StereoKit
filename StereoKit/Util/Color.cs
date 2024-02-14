@@ -243,6 +243,7 @@ namespace StereoKit
 		/// _not_ convert from linear to gamma corrected, or clamp to 0-1
 		/// first.</summary>
 		/// <param name="c">A 128 bit color to crush down.</param>
+		/// <returns>A crushed down color.</returns>
 		public static implicit operator Color32(Color c)
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
 		/// <summary>This will multiply a color linearly, including alpha. Best

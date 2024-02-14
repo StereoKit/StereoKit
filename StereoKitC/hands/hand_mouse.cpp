@@ -24,8 +24,8 @@ bool hand_mouse_available() {
 void hand_mouse_init() {
 	mouse_pointer_id = input_hand_pointer_id[handed_right];
 
-	input_hand_sim(handed_left,  true, vec3_zero, quat_identity, false, false, false);
-	input_hand_sim(handed_right, true, vec3_zero, quat_identity, false, false, false);
+	input_hand_sim(handed_left,  true, vec3_zero, quat_identity, false);
+	input_hand_sim(handed_right, true, vec3_zero, quat_identity, false);
 }
 
 ///////////////////////////////////////////
@@ -93,7 +93,7 @@ void hand_mouse_update_frame() {
 	quat hand_rot = (mouse_active_hand == handed_right
 		? quat_from_angles(40, 30, 90)
 		: quat_from_angles(40,-30,-90)) * pointer_cursor->orientation;
-	input_hand_sim(mouse_active_hand, true, pointer_cursor->ray.pos, hand_rot, hand_tracked, l_pressed, r_pressed);
+	input_hand_sim(mouse_active_hand, true, pointer_cursor->ray.pos, hand_rot, hand_tracked);
 
 	input_source_ src = input_source_hand | input_source_hand_right;
 	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? button_state_just_active : button_state_just_inactive, *pointer_cursor);

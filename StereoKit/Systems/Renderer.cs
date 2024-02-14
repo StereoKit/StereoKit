@@ -23,6 +23,24 @@ namespace StereoKit
 			set => NativeAPI.render_set_skytex(value == null ? IntPtr.Zero : value._inst);
 		}
 
+		/// <summary>This is the Material that StereoKit is currently using to
+		/// draw the skybox! It needs a special shader that's tuned for a
+		/// full-screen quad. If you just want to change the skybox image, try
+		/// setting `Renderer.SkyTex` instead.
+		/// 
+		/// This value will never be null! If you try setting this to null, it
+		/// will assign SK's built-in default sky material. If you want to turn
+		/// off the skybox, see `Renderer.EnableSky` instead.
+		/// 
+		/// Recommended Material settings would be:
+		/// - DepthWrite: false
+		/// - DepthTest: LessOrEq
+		/// - QueueOffset: 100</summary>
+		public static Material SkyMaterial {
+			get { return new Material(NativeAPI.render_get_skymaterial()); }
+			set => NativeAPI.render_set_skymaterial(value == null ? IntPtr.Zero : value._inst);
+		}
+
 		/// <summary>Sets the lighting information for the scene! You can
 		/// build one through `SphericalHarmonics.FromLights`, or grab one
 		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
@@ -84,8 +102,7 @@ namespace StereoKit
 		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
 
 		/// <summary>This is the gamma space color the renderer will clear
-		/// the screen to when beginning to draw a new frame. This is ignored
-		/// on displays with transparent screens</summary>
+		/// the screen to when beginning to draw a new frame.</summary>
 		public static Color ClearColor
 		{
 			get => NativeAPI.render_get_clear_color();
@@ -360,7 +377,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat);
+			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, IntPtr.Zero);
 		}
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
@@ -398,7 +415,7 @@ namespace StereoKit
 				_ = _renderCaptureCallbacks.Dequeue();
 			};
 			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat);
+			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat, IntPtr.Zero);
 		}
 
 		/// <summary>This renders the current scene to the indicated 

@@ -27,7 +27,7 @@ Foreach-Object {
 /// $desc
 "
 
-    $imgName = $title.replace(' ', '') + '.png'
+    $imgName = $title.replace(' ', '') + '.jpg'
     if (Test-Path -Path "screenshots/Demos/$imgName" -PathType Leaf) {
         $demoGuide += "///
 /// ![$title]({{site.screen_url}}/Demos/$imgName)

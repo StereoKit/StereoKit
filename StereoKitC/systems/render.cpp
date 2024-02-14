@@ -17,7 +17,7 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include <limits.h>
 
@@ -71,6 +71,7 @@ struct render_global_buffer_t {
 	vec4     cubemap_i;
 	float    time;
 	uint32_t view_count;
+	uint32_t eye_offset;
 };
 struct render_blit_data_t {
 	float width;
@@ -146,6 +147,7 @@ struct render_state_t {
 
 	mesh_t                  sky_mesh;
 	material_t              sky_mat;
+	material_t              sky_mat_default;
 	bool32_t                sky_show;
 
 	material_t              last_material;
@@ -170,8 +172,6 @@ const skg_bind_t render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pi
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
-void          render_check_screenshots();
-void          render_check_viewpoints ();
 
 void          render_list_prep        (render_list_t list);
 void          render_list_add         (const render_item_t *item);
@@ -196,7 +196,7 @@ bool render_init() {
 	local.ortho_near_clip       = 0.0f;
 	local.ortho_far_clip        = 50.0f;
 	local.ortho_viewport_height = 1.0f;
-	local.clear_col             = {0,0,0,1};
+	local.clear_col             = color128{0,0,0,0};
 	local.list_primary          = -1;
 	local.scale                 = 1;
 	local.multisample           = 1;
@@ -233,13 +233,17 @@ bool render_init() {
 	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
 	mesh_set_id  (local.sky_mesh, "sk/render/skybox_mesh");
 
+	// Create a default skybox material
 	shader_t shader_sky = shader_find(default_id_shader_sky);
-	local.sky_mat = material_create(shader_sky);
+	local.sky_mat_default = material_create(shader_sky);
+	material_set_id          (local.sky_mat_default, "sk/render/skybox_material");
+	material_set_queue_offset(local.sky_mat_default, 100);
+	material_set_depth_write (local.sky_mat_default, false);
+	material_set_depth_test  (local.sky_mat_default, depth_test_less_or_eq);
+	render_set_skymaterial(local.sky_mat_default);
 	shader_release(shader_sky);
 
-	material_set_id          (local.sky_mat, "sk/render/skybox_material");
-	material_set_queue_offset(local.sky_mat, 100);
-
+	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);
 	render_set_skylight (sk_default_lighting);
@@ -273,6 +277,7 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
 	mesh_release           (local.sky_mesh);
 	mesh_release           (local.blit_quad);
@@ -476,6 +481,12 @@ matrix render_get_cam_final_inv() {
 
 ///////////////////////////////////////////
 
+render_list_t render_get_primary_list() {
+	return local.list_primary;
+}
+
+///////////////////////////////////////////
+
 void render_set_cam_root(const matrix &cam_root) {
 	local.camera_root       = cam_root;
 	local.camera_root_final = local.sim_head * cam_root * local.sim_origin;
@@ -526,6 +537,27 @@ tex_t render_get_skytex() {
 	if (local.global_textures[render_skytex_register] != nullptr)
 		tex_addref(local.global_textures[render_skytex_register]);
 	return local.global_textures[render_skytex_register];
+}
+
+///////////////////////////////////////////
+
+void render_set_skymaterial(material_t sky_material) {
+	// Don't allow null, fall back to the default sky material on null.
+	if (sky_material == nullptr) {
+		sky_material = local.sky_mat_default;
+	}
+
+	// Safe swap the material reference
+	material_addref(sky_material);
+	if (local.sky_mat != nullptr) material_release(local.sky_mat);
+	local.sky_mat = sky_material;
+}
+
+///////////////////////////////////////////
+
+material_t render_get_skymaterial(void) {
+	material_addref(local.sky_mat);
+	return local.sky_mat;
 }
 
 ///////////////////////////////////////////
@@ -652,11 +684,11 @@ color128 render_get_clear_color_ln() {
 
 ///////////////////////////////////////////
 
-void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color, render_layer_ layer) {
+void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
 	render_item_t item;
 	item.mesh      = mesh;
 	item.mesh_inds = mesh->ind_draw;
-	item.color     = color;
+	item.color     = color_linear;
 	item.layer     = (uint16_t)layer;
 	if (hierarchy_use_top()) {
 		matrix_mul(transform, hierarchy_top(), item.transform);
@@ -718,7 +750,9 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, render_layer_ filter, int32_t view_count) {
+void render_draw_queue(const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
+	skg_event_begin("Render List Setup");
+
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -743,6 +777,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 	memcpy(local.global_buffer.lighting, local.lighting, sizeof(vec4) * 9);
 	local.global_buffer.time       = time_totalf();
 	local.global_buffer.view_count = view_count;
+	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
 		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
@@ -775,14 +810,19 @@ void render_draw_queue(const matrix *views, const matrix *projections, render_la
 		}
 	}
 
+	skg_event_end();
+	skg_event_begin("Execute Render List");
+
 	render_list_execute(local.list_primary, filter, view_count, 0, INT_MAX);
+
+	skg_event_end();
 }
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t count, render_layer_ render_filter) {
+void render_draw_matrix(const matrix* views, const matrix* projections, int32_t eye_offset, int32_t count, render_layer_ render_filter) {
 	render_check_viewpoints();
-	render_draw_queue(views, projections, render_filter, count);
+	render_draw_queue(views, projections, eye_offset, count, render_filter);
 	render_check_screenshots();
 }
 
@@ -795,6 +835,7 @@ void render_check_screenshots() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.screenshot_list.count; i++) {
+		skg_event_begin("Screenshot");
 		int32_t  w = local.screenshot_list[i].width;
 		int32_t  h = local.screenshot_list[i].height;
 
@@ -837,7 +878,7 @@ void render_check_screenshots() {
 		}
 
 		// Render!
-		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, local.screenshot_list[i].layer_filter, 1);
+		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
@@ -862,6 +903,7 @@ void render_check_screenshots() {
 		// Notify that the color data is ready!
 		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
 		sk_free(buffer);
+		skg_event_end();
 	}
 	local.screenshot_list.clear();
 	skg_tex_target_bind(old_target);
@@ -874,6 +916,7 @@ void render_check_viewpoints() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
+		skg_event_begin("Viewpoint");
 		// Setup to render the screenshot
 		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex);
 
@@ -900,11 +943,12 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, local.viewpoint_list[i].layer_filter, 1);
+		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
 		skg_tex_target_bind(nullptr);
 
 		// Release the reference we added, the user should have their own ref
 		tex_release(local.viewpoint_list[i].rendertarget);
+		skg_event_end();
 	}
 	local.viewpoint_list.clear();
 	skg_tex_target_bind(old_target);
@@ -965,7 +1009,7 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int width, int height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
 	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
 }
 
@@ -989,7 +1033,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int width, int height, float fov_degrees) {
+void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;
@@ -1001,17 +1045,17 @@ void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pos
 
 ///////////////////////////////////////////
 
-void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), pose_t viewpoint, int width, int height, float fov_degrees, tex_format_ tex_format) {
+void render_screenshot_capture(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float fov_degrees, tex_format_ tex_format, void* context) {
 	matrix view = matrix_invert(pose_matrix(viewpoint));
 	matrix proj = matrix_perspective(fov_degrees, (float)width / height, local.clip_planes.x, local.clip_planes.y);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, view, proj, rect_t{}, width, height, render_layer_all, render_clear_all, tex_format });
 }
 
 ///////////////////////////////////////////
 
-void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int width, int height, void* context), matrix camera, matrix projection, int width, int height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format) {
+void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter, render_clear_ clear, rect_t viewport, tex_format_ tex_format, void* context) {
 	matrix inv_cam = matrix_invert(camera);
-	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, nullptr, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
+	local.screenshot_list.add(render_screenshot_t{ render_on_screenshot_callback, context, inv_cam, projection, viewport, width, height, layer_filter, clear, tex_format });
 }
 
 ///////////////////////////////////////////
@@ -1330,6 +1374,12 @@ void render_list_clear(render_list_t list) {
 	local.lists[list].stats   = {};
 	local.lists[list].prepped = false;
 	local.lists[list].state   = render_list_state_empty;
+}
+
+///////////////////////////////////////////
+
+int32_t render_list_item_count(render_list_t list) {
+	return local.lists[list].queue.count;
 }
 
 ///////////////////////////////////////////

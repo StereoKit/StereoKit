@@ -111,13 +111,25 @@ jobs:
       run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
 
     - name: Build Native Win32 x64
-      run: cmake --workflow --preset Win32x64Release
+      run: |
+        cmake --preset Win32_x64_Release
+        cmake --build --preset Win32_x64_Release
+    - name: Build Native Win32 Arm64
+      run: |
+        cmake --preset Win32_Arm64_Release
+        cmake --build --preset Win32_Arm64_Release
     - name: Build Native UWP x64
-      run: cmake --workflow --preset Uwpx64Release
+      run: |
+        cmake --preset Uwp_x64_Release
+        cmake --build --preset Uwp_x64_Release
     - name: Build Native UWP ARM64
-      run: cmake --workflow --preset UwpArm64Release
+      run: |
+        cmake --preset Uwp_Arm64_Release
+        cmake --build --preset Uwp_Arm64_Release
     - name: Build Native UWP ARM32
-      run: cmake --workflow --preset UwpArm32Release
+      run: |
+        cmake --preset Uwp_Arm32_Release
+        cmake --build --preset Uwp_Arm32_Release
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
@@ -128,7 +140,7 @@ jobs:
 ###########################################
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CPM_SOURCE_CACHE: .deps_cache
 
@@ -146,32 +158,62 @@ jobs:
           .deps_cache
 
     - name: Set up Android NDK
-      uses: nttld/setup-ndk@v1
+      uses: nttld/setup-ndk@v1.4.2
       id: setup-ndk
       with:
-        ndk-version: r21e
+        ndk-version: r25c
         local-cache: true
+
+    - name: Restore Android Symlinks
+      run: |
+        directory="${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        find "$directory" -type l | while read link; do
+            current_target=$(readlink "$link")
+            new_target="$directory/$(basename "$current_target")"
+            ln -sf "$new_target" "$link"
+            echo "Changed $(basename "$link") from $current_target to $new_target"
+        done
 
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+        sudo apt-get install clang-12 lld-12 ninja-build libx11-dev libxfixes-dev libegl-dev libgbm-dev libfontconfig-dev
     
     - name: Set Version
       shell: pwsh
       run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
   
     - name: Build Native Linux x64
-      run: cmake --workflow --preset Linuxx64Release
+      run: |
+        cmake --preset Linux_x64_Release
+        cmake --build --preset Linux_x64_Release
+        
     - name: Build Native Android ARM64
-      run: cmake --workflow --preset AndroidArm64Release
+      run: |
+        cmake --preset Android_Arm64_Release
+        cmake --build --preset Android_Arm64_Release
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
         
     - name: Build Native Android x64
-      run: cmake --workflow --preset Androidx64Release
+      run: |
+        cmake --preset Android_x64_Release
+        cmake --build --preset Android_x64_Release
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+    - name: Install Arm64 Prerequisites
+      run: |
+        sudo cp ./tools/docker/arm-cross-compile-sources-focal.list /etc/apt/sources.list.d/
+        sudo sed -i "s/deb mirror/deb [arch=amd64] mirror/g" /etc/apt/sources.list
+        sudo dpkg --add-architecture arm64
+        sudo apt-get update
+        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libegl-dev:arm64 libgbm-dev:arm64 libfontconfig-dev:arm64
+
+    - name: Build Linux Arm64
+      run: |
+        cmake --preset Linux_Arm64_Release
+        cmake --build --preset Linux_Arm64_Release
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3

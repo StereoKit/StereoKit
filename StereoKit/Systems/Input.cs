@@ -285,20 +285,20 @@ namespace StereoKit
 		/// <summary>Is the controller's X2 button currently pressed? 
 		/// Depending on the specific hardware, this is the second general
 		/// purpose button on the controller. For example, on an Oculus Quest
-		/// Touch controller this would represent 'X' on the left controller,
-		/// and 'A' on the right controller.</summary>
+		/// Touch controller this would represent 'Y' on the left controller,
+		/// and 'B' on the right controller.</summary>
 		public bool IsX2Pressed => (x2 & BtnState.Active) > 0;
 		/// <summary>Has the controller's X2 button just been pressed this
 		/// frame? Depending on the specific hardware, this is the second
 		/// general purpose button on the controller. For example, on an
-		/// Oculus Quest Touch controller this would represent 'X' on the
-		/// left controller, and 'A' on the right controller.</summary>
+		/// Oculus Quest Touch controller this would represent 'Y' on the
+		/// left controller, and 'B' on the right controller.</summary>
 		public bool IsX2JustPressed => (x2 & BtnState.JustActive) > 0;
 		/// <summary>Has the controller's X2 button just been released this
 		/// frame? Depending on the specific hardware, this is the second
 		/// general purpose button on the controller. For example, on an
-		/// Oculus Quest Touch controller this would represent 'X' on the
-		/// left controller, and 'A' on the right controller.</summary>
+		/// Oculus Quest Touch controller this would represent 'Y' on the
+		/// left controller, and 'B' on the right controller.</summary>
 		public bool IsX2JustUnPressed => (x2 & BtnState.JustInactive) > 0;
 
 		/// <summary>Is the analog stick/directional controller button 
@@ -429,6 +429,9 @@ namespace StereoKit
 		/// Note that this may change during a session, the user may put down
 		/// their controllers, automatically switching to hands, or visa versa.
 		/// </summary>
+		/// <param name="hand">Do  you want the left or right hand? 0 is left,
+		/// and 1 is right.</param>
+		/// <returns>Returns information about hand tracking data source.</returns>
 		public static HandSource HandSource(Handed hand) => NativeAPI.input_hand_source(hand);
 
 		/// <summary>This allows you to completely override the hand's pose 
