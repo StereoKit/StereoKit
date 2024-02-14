@@ -296,6 +296,9 @@ SK_CONST char* ui_default_id_spr_arrow_down  = "sk/ui/arrow_down";
 SK_CONST char* ui_default_id_spr_backspace   = "sk/ui/backspace";
 SK_CONST char* ui_default_id_spr_shift       = "sk/ui/shift";
 SK_CONST char* ui_default_id_spr_close       = "sk/ui/close";
+SK_CONST char* ui_default_id_spr_list        = "sk/ui/list";
+SK_CONST char* ui_default_id_spr_grid        = "sk/ui/grid";
+
 
 #ifdef __cplusplus
 } // namespace sk
