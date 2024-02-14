@@ -25,7 +25,7 @@ struct interactor_t {
 	vec3      capsule_start_world;
 	float     capsule_radius;
 
-	bool          tracked;
+	button_state_ tracked;
 	button_state_ pinch_state;
 
 	bool      ray_enabled;
@@ -68,7 +68,7 @@ bool32_t         ui_in_box                  (vec3 pt, vec3 pt_prev, float radius
 void             ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_interactor);
 void             ui_box_interaction_1h_poke (id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_interactor);
 bool32_t         _ui_handle_begin           (id_hash_t id, pose_t& handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures);
-void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, float max, float step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2* out_button_center, float* out_finger_offset, button_state_* out_focus_state, button_state_* out_active_state, int32_t* out_interactor);
+void             ui_slider_behavior         (bool vertical, id_hash_t id, float* value, float min, float max, float step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2* out_button_center, float* out_finger_offset, button_state_* out_focus_state, button_state_* out_active_state, int32_t* out_interactor);
 
 bool32_t         ui_is_enabled              ();
 bool32_t         ui_id_focused              (id_hash_t id);
@@ -83,6 +83,9 @@ button_state_    interactor_set_focus       (int32_t interactor, id_hash_t for_e
 button_state_    interactor_set_active      (int32_t interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority);
 void             interactor_plate_1h        (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec2 plate_size, button_state_* out_focus_state, int32_t* out_interactor, vec3* out_interaction_at_local);
+
+int32_t          interactor_create          (interactor_type_ type, interactor_event_ events);
+void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked);
 
 inline bounds_t  ui_size_box  (vec3 top_left, vec3 dimensions) { return { top_left - dimensions / 2, dimensions }; }
 inline id_hash_t ui_stack_hash(const char16_t* string)         { return ui_stack_hash_16(string); }
