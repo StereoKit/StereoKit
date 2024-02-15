@@ -58,6 +58,8 @@ struct interactor_t {
 	id_hash_t active_prev_prev;
 	id_hash_t active_prev;
 	id_hash_t active;
+
+	vec3 focus_center_world;
 };
 
 void             ui_core_init               ();
@@ -79,7 +81,7 @@ bool32_t         ui_keyboard_focus_lost     (id_hash_t focused_id);
 
 bool32_t         interactor_is_preoccupied  (int32_t interactor, id_hash_t for_el_id, bool32_t include_focused);
 int32_t          interactor_last_focused    (                    id_hash_t for_el_id);
-button_state_    interactor_set_focus       (int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority);
+button_state_    interactor_set_focus       (int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority, vec3 element_center_local);
 button_state_    interactor_set_active      (int32_t interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority);
 void             interactor_plate_1h        (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec2 plate_size, button_state_* out_focus_state, int32_t* out_interactor, vec3* out_interaction_at_local);

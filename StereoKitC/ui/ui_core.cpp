@@ -117,9 +117,14 @@ void ui_core_update() {
 			line_add_listv(points, 5);
 		}
 		skui_interactors[i].ray_discard = false;*/
+
+		if ((skui_interactors[i].tracked & button_state_active) > 0 && skui_interactors[i].focused_prev != 0) {
+			line_add(skui_interactors[i].position, skui_interactors[i].focus_center_world, color32{255,255,255,255}, color32{ 255,255,255,255 }, 0.001f);
+		}
 	}
 
 	if (skui_input_mode == 0) {
+		input_hand_visible(handed_max, true);
 		for (int32_t i = 0; i < handed_max; i++) {
 			const hand_t*    hand    = input_hand       ((handed_)i);
 			const pointer_t* pointer = input_get_pointer(input_hand_pointer_id[i]);
@@ -143,6 +148,7 @@ void ui_core_update() {
 				pointer->state, pointer->tracked);
 		}
 	} else if (skui_input_mode == 1) {
+		input_hand_visible(handed_max, false);
 		const pose_t*  head = input_head();
 		const mouse_t* m    = input_mouse();
 		ray_t ray;
@@ -196,7 +202,7 @@ button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact
 		active = skui_interactors[interactor].pinch_state & button_state_active;
 		// Focus can get lost if the user is dragging outside the box, so set
 		// it to focused if it's still active.
-		focus = interactor_set_focus(interactor, id_hash, active || focus & button_state_active, 0);
+		focus = interactor_set_focus(interactor, id_hash, active || focus & button_state_active, 0, bounds.center);
 	}
 	result = interactor_set_active(interactor, id_hash, active);
 
@@ -224,7 +230,7 @@ bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
 		}
 
 		bool          in_box = skui_interactors[i].tracked && ui_in_box(skui_interactors[i].capsule_end, skui_interactors[i].capsule_start, skui_interactors[i].capsule_radius, size);
-		button_state_ state  = interactor_set_focus(i, id_hash, in_box, 0);
+		button_state_ state  = interactor_set_focus(i, id_hash, in_box, 0, bounds.center);
 		if (state & button_state_just_active)
 			result = true;
 	}
@@ -351,7 +357,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 			*out_active_state = interactor_set_active(*out_interactor, id, pinch & button_state_active || pressed);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			*out_focus_state = interactor_set_focus(*out_interactor, id, pinch & button_state_active || (*out_focus_state) & button_state_active, 0);
+			*out_focus_state = interactor_set_focus(*out_interactor, id, pinch & button_state_active || (*out_focus_state) & button_state_active, 0, activation_start - activation_size/2);
 
 			finger_at = vertical ? finger_pt.y : finger_pt.x;
 		}
@@ -378,7 +384,7 @@ void ui_slider_behavior(bool vertical, id_hash_t id, float* value, float min, fl
 			*out_active_state = interactor_set_active(*out_interactor, id, pinch & button_state_active);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
-			*out_focus_state = interactor_set_focus(*out_interactor, id, (*out_active_state) & button_state_active || (*out_focus_state) & button_state_active, 0);
+			*out_focus_state = interactor_set_focus(*out_interactor, id, (*out_active_state) & button_state_active || (*out_focus_state) & button_state_active, 0, activation_start - activation_size/2);
 			vec3    pinch_local = hierarchy_to_local_point(skui_interactors[*out_interactor].position);
 			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
 			finger_at = vertical ? pinch_local.y : pinch_local.x;
@@ -449,7 +455,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 	if (allowed_gestures & ui_gesture_grip ) event_mask = (interactor_event_)(event_mask | interactor_event_grip );
 
 	if (!ui_is_enabled() || move_type == ui_move_none) {
-		interactor_set_focus(-1, id, false, 0);
+		interactor_set_focus(-1, id, false, 0, vec3_zero);
 	} else {
 		for (int32_t i = 0; i < skui_interactors.count; i++) {
 			interactor_t* actor = &skui_interactors[i];
@@ -484,7 +490,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 					actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->position, actor->orientation)), hierarchy_to_world_point(at));
 				}
 			}
-			button_state_ focused = interactor_set_focus(i, id, has_hand_attention, hand_attention_dist);
+			button_state_ focused = interactor_set_focus(i, id, has_hand_attention, hand_attention_dist, vec3_zero);
 
 
 			// This waits until the window has been focused for a frame,
@@ -688,7 +694,7 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		float         priority = 0;
 		vec3          interact_at;
 		bool          in_box   = interactor_check_box(actor, bounds, &interact_at, &priority);
-		button_state_ focus    = interactor_set_focus(i, id, in_box, priority);
+		button_state_ focus    = interactor_set_focus(i, id, in_box, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
 		if (focus != button_state_inactive) {
 			*out_interactor           = i;
 			*out_focus_state          = focus;
@@ -710,7 +716,7 @@ void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 bo
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!ui_is_enabled()) {
-		*out_focus_state = interactor_set_focus(-1, id, false, 0);
+		*out_focus_state = interactor_set_focus(-1, id, false, 0, vec3_zero);
 		return;
 	}
 
@@ -735,7 +741,7 @@ void ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 bo
 			? bounds_sdf(bounds, skui_interactors[i].capsule_start)
 			: FLT_MAX;
 
-		button_state_ focus  = interactor_set_focus(i, id, in_box, priority);
+		button_state_ focus  = interactor_set_focus(i, id, in_box, priority, bounds.center);
 		if (focus != button_state_inactive) {
 			*out_interactor        = i;
 			*out_focus_state = focus;
@@ -756,7 +762,7 @@ void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box
 
 	// If the element is disabled, unfocus it and ditch out
 	if (!ui_is_enabled()) {
-		*out_focus_state = interactor_set_focus(-1, id, false, 0);
+		*out_focus_state = interactor_set_focus(-1, id, false, 0, vec3_zero);
 		return;
 	}
 
@@ -781,7 +787,7 @@ void ui_box_interaction_1h_poke(id_hash_t id, vec3 box_unfocused_start, vec3 box
 			? bounds_sdf(bounds, skui_interactors[i].capsule_start)
 			: FLT_MAX;
 
-		button_state_ focus = interactor_set_focus(i, id, in_box, priority);
+		button_state_ focus = interactor_set_focus(i, id, in_box, priority, bounds.center);
 		if (focus != button_state_inactive) {
 			*out_interactor        = i;
 			*out_focus_state = focus;
@@ -822,7 +828,7 @@ void ui_pop_surface() {
 
 ///////////////////////////////////////////
 
-button_state_ interactor_set_focus(int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority) {
+button_state_ interactor_set_focus(int32_t interactor, id_hash_t for_el_id, bool32_t focused, float priority, vec3 element_center_local) {
 	if (interactor < 0 || interactor >= skui_interactors.count) {
 		for (int32_t i = 0; i < skui_interactors.count; i++)
 			if (skui_interactors[i].active_prev == for_el_id) { interactor = i; break; }
@@ -833,8 +839,9 @@ button_state_ interactor_set_focus(int32_t interactor, id_hash_t for_el_id, bool
 
 	if (focused && priority <= skui_interactors[interactor].focus_priority) {
 		is_focused = focused;
-		skui_interactors[interactor].focused        = for_el_id;
-		skui_interactors[interactor].focus_priority = priority;
+		skui_interactors[interactor].focused            = for_el_id;
+		skui_interactors[interactor].focus_priority     = priority;
+		skui_interactors[interactor].focus_center_world = hierarchy_to_world_point( element_center_local );
 	}
 
 	button_state_ result = button_state_inactive;
