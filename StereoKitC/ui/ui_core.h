@@ -66,17 +66,16 @@ void             ui_core_init               ();
 void             ui_core_update             ();
 void             ui_core_shutdown           ();
 
-bool32_t         ui_in_box                  (vec3 pt, vec3 pt_prev, float radius, bounds_t box);
-void             ui_box_interaction_1h_pinch(id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_interactor);
-void             ui_box_interaction_1h_poke (id_hash_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_interactor);
+void             ui_box_interaction_1h      (id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_interactor);
 bool32_t         _ui_handle_begin           (id_hash_t id, pose_t& handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures);
-void             ui_slider_behavior         (bool vertical, id_hash_t id, float* value, float min, float max, float step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2* out_button_center, float* out_finger_offset, button_state_* out_focus_state, button_state_* out_active_state, int32_t* out_interactor);
+void             ui_slider_behavior         (id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2* out_button_center, float* out_finger_offset, button_state_* out_focus_state, button_state_* out_active_state, int32_t* out_interactor);
 
 bool32_t         ui_is_enabled              ();
 bool32_t         ui_id_focused              (id_hash_t id);
 button_state_    ui_id_focus_state          (id_hash_t id);
 bool32_t         ui_id_active               (id_hash_t id);
 button_state_    ui_id_active_state         (id_hash_t id);
+int32_t          ui_id_active_interactor    (id_hash_t id);
 bool32_t         ui_keyboard_focus_lost     (id_hash_t focused_id);
 
 bool32_t         interactor_is_preoccupied  (int32_t interactor, id_hash_t for_el_id, bool32_t include_focused);

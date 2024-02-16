@@ -791,7 +791,12 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	vec2          button_center;
 	float         finger_offset;
 	float         old_value = value;
-	ui_slider_behavior(vertical, id, &value, min, max, step, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &active_state, &focus_state, &interactor);
+
+	vec2 vmin, vmax, vstep, vval;
+	if (vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
+	else          { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
+	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &focus_state, &active_state, &interactor);
+	value = vertical ? vval.y : vval.x;
 
 	if (active_state & button_state_just_active)
 		ui_anim_start(id, 0);
