@@ -679,11 +679,12 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 	*out_focus_state          = button_state_inactive;
 	*out_interaction_at_local = vec3_zero;
 
-	if (!ui_is_enabled()) { return; }
+	skui_last_element = id;
 
-	//if (skui_preserve_keyboard_stack.last()) {
-	///	skui_preserve_keyboard_ids_write->add(id);
-	//}
+	if (!ui_is_enabled()) return;
+	if (skui_preserve_keyboard_stack.last()) {
+		skui_preserve_keyboard_ids_write->add(id);
+	}
 
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
 		const interactor_t *actor = &skui_interactors[i];
@@ -701,13 +702,12 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		// completely through the button. Width and height is added to this 
 		// volume to account for vertical or horizontal movement during a press,
 		// such as the downward motion often accompanying a 'poke' motion.
-		bounds_t bounds = {};
-		if (actor->focused_prev != id) {
-			bounds = size_box({ plate_start.x, plate_start.y, plate_start.z - actor->capsule_radius*2 }, { plate_size.x, plate_size.y, 0.0001f });
-		} else {
-			float depth = fmaxf(0.0001f, 8 * actor->capsule_radius);
-			bounds = size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->capsule_radius*2 }, { plate_size.x, plate_size.y, depth });
-		}
+
+		bool     was_focused = actor->focused_prev == id;
+		float    depth  = fmaxf(0.0001f, 8 * actor->capsule_radius);
+		bounds_t bounds = was_focused
+			? size_box({ plate_start.x, plate_start.y, plate_start.z           - actor->capsule_radius * 2 }, { plate_size.x, plate_size.y, 0.0001f })
+			: size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->capsule_radius * 2 }, { plate_size.x, plate_size.y, depth });
 
 		float         priority = 0;
 		vec3          interact_at;
@@ -732,12 +732,7 @@ void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_
 	
 	skui_last_element = id;
 
-	// If the element is disabled, unfocus it and ditch out
-	if (!ui_is_enabled()) {
-		*out_focus_state = interactor_set_focus(-1, id, false, 0, vec3_zero);
-		return;
-	}
-
+	if (!ui_is_enabled()) return;
 	if (skui_preserve_keyboard_stack.last()) {
 		skui_preserve_keyboard_ids_write->add(id);
 	}
@@ -748,7 +743,7 @@ void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_
 			interactor_is_preoccupied(i, id, false))
 			continue;
 
-		bool     was_focused = skui_interactors[i].focused_prev == id;
+		bool     was_focused = actor->focused_prev == id;
 		bounds_t bounds      = was_focused
 			? ui_size_box(box_focused_start,   box_focused_size)
 			: ui_size_box(box_unfocused_start, box_unfocused_size);
@@ -1084,10 +1079,9 @@ void ui_pop_preserve_keyboard(){
 
 bool32_t ui_keyboard_focus_lost(id_hash_t focused_id) {
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
-		const interactor_t& h = skui_interactors[i];
-		if (interactor_is_preoccupied(i, focused_id, false) && h.focused_prev && skui_preserve_keyboard_ids_read->index_of(h.focused_prev) < 0) {
+		id_hash_t active_id = skui_interactors[i].active_prev;
+		if (active_id != 0 && active_id != focused_id && skui_preserve_keyboard_ids_read->index_of(active_id) < 0)
 			return true;
-		}
 	}
 	return false;
 }
