@@ -25,17 +25,16 @@ internal class DemoLaserPointer : ITest
 
 	public void Step()
 	{
-		if (Input.HandSource(Handed.Left) == HandSource.None) {
+		//if (Input.HandSource(Handed.Left) == HandSource.None) {
+		{
 			Pointer pl = Input.Pointer(0, InputSource.HandLeft);
 			if (pl.tracked.IsActive()) {
 				controllerL.Draw(pl.Pose.ToMatrix());
-				Lines.Add(pl.ray.position, pl.ray.At(0.5f), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 0), 0.005f);
 			}
 
 			Pointer pr = Input.Pointer(0, InputSource.HandRight);
 			if (pr.tracked.IsActive()) {
 				controllerR.Draw(pr.Pose.ToMatrix());
-				Lines.Add(pr.ray.position, pr.ray.At(0.5f), new Color32(255,255,255,255), new Color32(255, 255, 255, 0), 0.005f);
 			}
 		}
 
