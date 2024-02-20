@@ -28,7 +28,7 @@ array_t<id_hash_t>   skui_preserve_keyboard_ids[2];
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_read;
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_write;
 
-int32_t skui_input_mode = 1;
+int32_t skui_input_mode = 2;
 int32_t skui_hand_interactors[6] = { -1, -1, -1, -1 };
 int32_t skui_mouse_interactor    = -1;
 int32_t skui_eye_interactors[2]  = { -1, -1 };
@@ -62,6 +62,10 @@ void ui_core_init() {
 
 	skui_eye_interactors[0]  = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
 	skui_eye_interactors[1]  = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
+
+	skui_input_mode = device_display_get_type() == display_type_flatscreen
+		? 2  // Mouse
+		: 0; // Hands
 }
 
 ///////////////////////////////////////////
@@ -83,24 +87,27 @@ void ui_show_ray(int32_t interactor) {
 	interactor_t* actor = &skui_interactors[interactor];
 	if ((actor->tracked & button_state_active) == 0) return;
 
+	float length         = 0.5f;
+	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->capsule_start_world);
+	vec3  centered_dir   = uncentered_dir;
 	if (actor->focused_prev != 0) {
-		float length         = vec3_distance (actor->focus_center_world, actor->capsule_start_world);
-		vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->capsule_start_world);
-		vec3  centered_dir   = vec3_normalize(actor->focus_center_world - actor->capsule_start_world);
-
-		const int32_t ct = 10;
-		line_point_t pts[ct];
-		for (int32_t i = 0; i < ct; i += 1) {
-			float pct   = (float)i / (float)(ct - 1);
-			float blend = pct * pct;
-			float d     = pct * length;
-			pts[i] = line_point_t{ actor->capsule_start_world + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), 0.004f, color32{ 255,255,255,(uint8_t)(255-pct*255) } };
-		}
-		line_add_listv(pts, ct);
-	} else {
-		vec3 dir = vec3_normalize(actor->capsule_end_world - actor->capsule_start_world);
-		line_add(actor->position, actor->position + dir * 0.5f, color32{ 255,255,255,255 }, color32{ 255,255,255,0 }, 0.004f);
+		length       = vec3_distance (actor->focus_center_world, actor->capsule_start_world);
+		centered_dir = vec3_normalize(actor->focus_center_world - actor->capsule_start_world);
 	}
+
+	const int32_t ct = 20;
+	line_point_t pts[ct];
+	for (int32_t i = 0; i < ct; i += 1) {
+		float pct   = (float)i / (float)(ct - 1);
+		float blend = pct * pct;
+		float d     = pct * length;
+
+		float pct_i = 1 - pct;
+		float curve = sin(pct_i * pct_i * 3.14159f);
+		float width = 0.002f + curve * 0.0015f;
+		pts[i] = line_point_t{ actor->capsule_start_world + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*255) } };
+	}
+	line_add_listv(pts, ct);
 }
 
 void ui_core_hands_step() {
@@ -118,14 +125,14 @@ void ui_core_hands_step() {
 		// Pinch
 		interactor_update(skui_hand_interactors[i*3 + 1],
 			hand->fingers[0][4].position, hand->fingers[1][4].position, hand->fingers[1][4].radius,
-			hand->pinch_pt, hand->palm.orientation, hand->pinch_pt,
+			hand->pinch_pt,    hand->palm.orientation, hand->pinch_pt,
 			hand->pinch_state, hand->tracked_state);
 
 		// Hand ray
 		interactor_update(skui_hand_interactors[i*3 + 2],
-			pointer->ray.pos, pointer->ray.pos + pointer->ray.dir * 100, 0.00f,
-			pointer->ray.pos, pointer->orientation, input_head()->position,
-			pointer->state, pointer->tracked);
+			pointer->ray.pos + pointer->ray.dir * 0.4f, pointer->ray.pos + pointer->ray.dir * 100, 0.00f,
+			pointer->ray.pos,  pointer->orientation, input_head()->position,
+			hand->pinch_state, pointer->tracked);
 	}
 
 	ui_show_ray(skui_hand_interactors[2]);
@@ -161,7 +168,7 @@ void ui_core_mouse_step() {
 		end, quat_lookat(ray.pos, end), end,
 		input_key(key_mouse_left), button_make_state(skui_interactors[skui_mouse_interactor].tracked & button_state_active, tracked));
 
-	ui_show_ray(skui_mouse_interactor);
+	//ui_show_ray(skui_mouse_interactor);
 }
 
 void ui_core_update() {
@@ -202,6 +209,13 @@ void ui_core_update() {
 			line_add_listv(points, 5);
 		}
 		skui_interactors[i].ray_discard = false;*/
+	}
+
+	// auto-switch between hands and controllers
+	if (skui_input_mode != 2) {
+		skui_input_mode = input_hand_source(handed_right) == hand_source_articulated
+			? 0
+			: 1;
 	}
 
 	if      (skui_input_mode == 0) { ui_core_hands_step(); }
