@@ -32,6 +32,9 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
+#include "string.h"
+#include "sys/stat.h"
+
 
 namespace sk {
 
@@ -530,7 +533,7 @@ font_t platform_default_font() {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, bool file)) {
+void platform_iterate_dir(const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, const platform_file_attr_t file_attr)) {
 	if (string_eq(directory_path, "")) {
 		directory_path = platform_path_separator;
 	}
@@ -542,11 +545,24 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 
 	while ((dir_info = readdir(dir)) != nullptr) {
 		if (string_eq(dir_info->d_name, ".") || string_eq(dir_info->d_name, "..")) continue;
-
-		if (dir_info->d_type == DT_DIR)
-			on_item(callback_data, dir_info->d_name, false);
-		else if (dir_info->d_type == DT_REG)
-			on_item(callback_data, dir_info->d_name, true);
+		platform_file_attr_t file_attr;
+		if (dir_info->d_type == DT_DIR) {
+			file_attr.size    = 0;
+			file_attr.file    = false;
+			on_item(callback_data, dir_info->d_name, file_attr);
+		}
+		else if (dir_info->d_type == DT_REG) {
+			char* file_path = new char[strlen(directory_path) + strlen(dir_info->d_name) + 1];
+			strcpy(file_path, directory_path);
+			strcat(file_path, "/");
+			strcat(file_path, dir_info->d_name);
+			struct stat file_stat;
+			stat(file_path, &file_stat);
+			free(file_path);
+			platform_file_attr_t file_attr;
+			file_attr.size = file_stat.st_size;
+			on_item(callback_data, dir_info->d_name, file_attr);
+		}
 	}
 	closedir(dir);
 }
