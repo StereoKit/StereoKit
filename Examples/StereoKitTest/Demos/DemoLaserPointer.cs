@@ -3,8 +3,6 @@ using StereoKit.Framework;
 
 internal class DemoLaserPointer : ITest
 {
-	Model controllerL;
-	Model controllerR;
 	Pose  pose = Demo.contentPose.Pose;
 	float sliderVal = 0;
 
@@ -12,10 +10,6 @@ internal class DemoLaserPointer : ITest
 
 	public void Initialize()
 	{
-		controllerL = Model.FromFile("ControllerLeft.glb");
-		controllerR = Model.FromFile("ControllerRight.glb");
-		Input.HandVisible(Handed.Right, false);
-		Input.HandVisible(Handed.Left, false);
 		SK.RemoveStepper<HandMenuRadial>();
 	}
 
@@ -25,19 +19,6 @@ internal class DemoLaserPointer : ITest
 
 	public void Step()
 	{
-		//if (Input.HandSource(Handed.Left) == HandSource.None) {
-		{
-			Pointer pl = Input.Pointer(0, InputSource.HandLeft);
-			if (pl.tracked.IsActive()) {
-				controllerL.Draw(pl.Pose.ToMatrix());
-			}
-
-			Pointer pr = Input.Pointer(0, InputSource.HandRight);
-			if (pr.tracked.IsActive()) {
-				controllerR.Draw(pr.Pose.ToMatrix());
-			}
-		}
-
 		UI.WindowBegin("Laser Pointer", ref pose, new Vec2(20, 0) * U.cm);
 		UI.Button("Clickable");
 		UI.Toggle("Slider Mode", ref sliderMode);
@@ -45,5 +26,42 @@ internal class DemoLaserPointer : ITest
 		UI.VSlider("VSlider", ref sliderVal, -0.1f, 0.1f, 0, 0.1f, confirmMethod: sliderMode ? UIConfirm.Push : UIConfirm.Pinch);
 
 		UI.WindowEnd();
+	}
+}
+
+class ControllerStepper : IStepper
+{
+	Model controllerL;
+	Model controllerR;
+
+	public bool Enabled => true;
+
+	public bool Initialize()
+	{
+		controllerL = Model.FromFile("ControllerLeft.glb");
+		controllerR = Model.FromFile("ControllerRight.glb");
+		return true;
+	}
+
+	public void Shutdown()
+	{
+	}
+
+	public void Step()
+	{
+		if (Input.HandSource(Handed.Left) != HandSource.Articulated)
+		{
+			Controller l = Input.Controller(Handed.Left);
+			if (l.tracked.IsActive())
+			{
+				controllerL.Draw(l.aim.ToMatrix());
+			}
+
+			Controller r = Input.Controller(Handed.Right);
+			if (r.tracked.IsActive())
+			{
+				controllerR.Draw(r.aim.ToMatrix());
+			}
+		}
 	}
 }
