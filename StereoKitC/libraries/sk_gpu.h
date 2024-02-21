@@ -4982,7 +4982,7 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r16s:          return GL_SHORT;
 	case skg_tex_fmt_r16f:          return GL_HALF_FLOAT;
 	case skg_tex_fmt_r32:           return GL_FLOAT;
-	case skg_tex_fmt_r8g8:          return GL_UNSIGNED_SHORT;
+	case skg_tex_fmt_r8g8:          return GL_UNSIGNED_BYTE;
 	default: return 0;
 	}
 }
