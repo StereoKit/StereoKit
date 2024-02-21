@@ -348,15 +348,16 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	// If a hand is interacting, adjust the button surface accordingly
 	out_finger_offset = button_depth;
 	if (out_focus_state & button_state_active) {
-
-		out_finger_offset = -(interaction_at.z+actor->capsule_radius) - window_relative_pos.z;
-		bool pressed = out_finger_offset < skui_settings.depth / 2;
-		if ((actor->active_prev == id && (actor->pinch_state & button_state_active)) || (actor->pinch_state & button_state_just_active)) {
-			pressed = true;
-			out_finger_offset = 0;
+		bool pressed;
+		if (actor->type == interactor_type_point) {
+			out_finger_offset = -(interaction_at.z + actor->capsule_radius) - window_relative_pos.z;
+			pressed = out_finger_offset < button_activation_depth;
+		} else {
+			pressed = actor->pinch_state & button_state_active;
+			if (pressed) out_finger_offset = 0;
 		}
+		out_finger_offset = fminf(fmaxf(2 * mm2m, out_finger_offset), button_depth);
 		out_button_state  = interactor_set_active(actor, id, pressed);
-		out_finger_offset = fminf(fmaxf(2*mm2m, out_finger_offset), skui_settings.depth);
 	} else if (out_focus_state & button_state_just_inactive) {
 		out_button_state = interactor_set_active(actor, id, false);
 	}
@@ -684,8 +685,8 @@ int32_t interactor_create(interactor_type_ type, interactor_event_ events) {
 void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked) {
 	if (interactor < 0 || interactor >= skui_interactors.count) return;
 	interactor_t *actor = &skui_interactors[interactor];
-	actor->capsule_start_world = capsule_start;
-	actor->capsule_end_world   = capsule_end;
+	actor->capsule_start_world = actor->capsule_start = capsule_start;
+	actor->capsule_end_world   = actor->capsule_end   = capsule_end;
 	actor->capsule_radius      = capsule_radius;
 	actor->position            = motion_pos;
 	actor->orientation         = motion_orientation;
@@ -775,6 +776,7 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		// such as the downward motion often accompanying a 'poke' motion.
 
 		bool     was_focused = actor->focused_prev == id;
+		bool     was_active  = actor->active_prev  == id;
 		float    depth  = fmaxf(0.0001f, 8 * actor->capsule_radius);
 		bounds_t bounds = was_focused
 			? size_box({ plate_start.x, plate_start.y, plate_start.z           - actor->capsule_radius * 2 }, { plate_size.x, plate_size.y, 0.0001f })
@@ -783,7 +785,7 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		float         priority = 0;
 		vec3          interact_at;
 		bool          in_box   = interactor_check_box(actor, bounds, &interact_at, &priority);
-		button_state_ focus    = interactor_set_focus(actor, id, in_box, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
+		button_state_ focus    = interactor_set_focus(actor, id, in_box || was_active, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
 		if (focus != button_state_inactive) {
 			*out_interactor           = i;
 			*out_focus_state          = focus;
