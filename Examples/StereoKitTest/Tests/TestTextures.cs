@@ -37,6 +37,8 @@ internal class TestTextures : ITest
 		ulong  off64 = 0x3C00000000000000;
 		ushort on16  = 0x3C00;
 		ushort off16 = 0x0000;
+		ushort onRG  = 0xFF00;
+		ushort offRG = 0x00FF;
 
 		// Test a NPOT size to ensure mips work properly with that
 		int w = 32;
@@ -59,6 +61,8 @@ internal class TestTextures : ITest
 		testTextures.Add(MakeTest(TexFormat.R16u,         ushort.MaxValue, (ushort)0, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, w,  h ));
+		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, ow, oh));
 
 		Tests.Test(CheckTextureFormats);
 		Tests.Test(CheckTextureRead);
@@ -124,6 +128,12 @@ internal class TestTextures : ITest
 					ushort[] colors1l = texture.GetColorData<ushort>(1, 4);
 					ushort[] colors0l = texture.GetColorData<ushort>(0, 4);
 					if (colors0l == null || colors1l == null)
+						return false;
+					break;
+				case TexFormat.R8g8:
+					byte[] colors1b2 = texture.GetColorData<byte>(1, 2);
+					byte[] colors0b2 = texture.GetColorData<byte>(0, 2);
+					if (colors0b2 == null || colors1b2 == null)
 						return false;
 					break;
 			}
