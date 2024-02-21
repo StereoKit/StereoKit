@@ -247,15 +247,12 @@ bool openxr_create_system() {
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
 		"xrGetInstanceProperties failed [%s]");
 
+	device_data.runtime = string_copy(inst_properties.runtimeName);
 	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
 		inst_properties.runtimeName,
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
 		XR_VERSION_PATCH(inst_properties.runtimeVersion));
-
-	if (strstr(inst_properties.runtimeName, "Snapdragon") != nullptr) {
-		xr_ext_available.MSFT_hand_tracking_mesh = false; // Hand mesh doesn't currently show up, needs investigation
-	}
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
@@ -503,8 +500,8 @@ bool openxr_init() {
 
 		// The Leap hand tracking layer seems to supercede the built-in extensions.
 		if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-			if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
-				strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+			if (strcmp(device_get_runtime(), "Windows Mixed Reality Runtime") == 0 ||
+				strcmp(device_get_runtime(), "SteamVR/OpenXR") == 0) {
 				log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
 				xr_has_articulated_hands = false;
 				xr_has_hand_meshes       = false;
