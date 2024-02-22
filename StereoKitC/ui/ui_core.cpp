@@ -378,10 +378,7 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 	// Find sizes of slider elements
 	vec2  range        = max - min;
 	vec2  percent      = { range.x == 0 ? 0.5f : (value->x - min.x)/range.x,  range.y == 0 ? 0.5f : (value->y - min.y)/range.y };
-	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-
-	// Activation bounds sizing
-	float activation_plane = button_depth + skui_finger_radius;
+	float button_depth = skui_settings.depth;
 
 	// Set up for getting the state of the sliders.
 	*out_focus_state   = button_state_inactive;
@@ -393,91 +390,42 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 		window_relative_pos.y - (percent.y * (size.y - button_size.y) + button_size.y/2.0f) };
 
 	vec2 finger_at = {};
+	interactor_t* actor = nullptr;
+	vec3 activation_size  = vec3{ button_size.x, button_size.y, button_depth };
+	vec3 activation_start = { out_button_center->x+activation_size.x/2.0f, out_button_center->y+activation_size.y/2.0f, window_relative_pos.z };
 	if (confirm_method == ui_confirm_push) {
-		vec3  activation_size  = vec3{ button_size.x, button_size.y, 0.0001f };
-		vec3  activation_start = { out_button_center->x+activation_size.x/2.0f, out_button_center->y+activation_size.y/2.0f, -activation_plane };
-		vec3  sustain_size     = vec3{ size.x, size.y, activation_plane + 6*skui_finger_radius  };
-		vec3  sustain_start    = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, *out_finger_offset, *out_active_state, *out_focus_state, out_interactor);
 
-		//ui_button_behavior(activation_start, { activation_size.x, activation_size.y }, id,
-		//	*out_finger_offset, *out_active_state, *out_focus_state, out_interactor);
-		//
-		//if (*out_active_state & button_state_active) {
-		//	//finger_at = { finger_pt.x, finger_pt.y };
-		//}
-
-		*out_interactor = ui_id_active_interactor(id);
-		interactor_t *actor = *out_interactor == -1 ? nullptr : &skui_interactors[*out_interactor];
-		if (actor && actor->pinch_state & button_state_active) {
-			*out_focus_state  = interactor_set_focus (actor, id, true, 0, vec3_zero);
-			*out_active_state = interactor_set_active(actor, id, true);
-		} else {
-			vec3 finger_pt;
-			interactor_plate_1h(id, (interactor_event_)(interactor_event_poke | interactor_event_pinch),
-				activation_start, { activation_size.x, activation_size.y },
-				out_focus_state, out_interactor, &finger_pt);
-
-			if (*out_focus_state & button_state_active) {
-				actor = &skui_interactors[*out_interactor];
-
-				*out_finger_offset = -(finger_pt.z + actor->capsule_radius) - window_relative_pos.z;
-				bool pressed = *out_finger_offset < skui_settings.depth / 2;
-				if ((actor->active_prev == id && (actor->pinch_state & button_state_active)) || (actor->pinch_state & button_state_just_active)) {
-					pressed = true;
-					*out_finger_offset = 0;
-				}
-				*out_active_state  = interactor_set_active(actor, id, pressed);
-				*out_finger_offset = fminf(fmaxf(2 * mm2m, *out_finger_offset), skui_settings.depth);
-
-				finger_at = { finger_pt.x, finger_pt.y };
-			}
-			else if (*out_focus_state & button_state_just_inactive) {
-				*out_active_state = interactor_set_active(actor, id, false);
-			}
-		}
-
-		//ui_box_interaction_1h_poke(id,
-		//	activation_start, activation_size,
-		//	sustain_start,    sustain_size,
-		//	out_focus_state, out_interactor);
-
-		// Here, we allow for pressing or pinching of the button to activate
-		// the slider!
-		/*if (*out_interactor != -1) {
-			button_state_ pinch = skui_interactors[*out_interactor].pinch_state;
-
-			*out_finger_offset = -skui_interactors[*out_interactor].capsule_end.z - window_relative_pos.z;
-			bool pressed  = *out_finger_offset < button_depth / 2;
-			*out_finger_offset = fminf(fmaxf(2 * mm2m, *out_finger_offset), button_depth);
-
-			*out_active_state = interactor_set_active(*out_interactor, id, pinch & button_state_active || pressed);
-			// Focus can get lost if the user is dragging outside the box, so set
-			// it to focused if it's still active.
-			*out_focus_state = interactor_set_focus(*out_interactor, id, pinch & button_state_active || (*out_focus_state) & button_state_active, 0, activation_start - activation_size/2);
-
-			finger_at = { finger_pt.x, finger_pt.y };
-		}*/
+		actor = interactor_get(*out_interactor);
+		
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		vec3 activation_start = window_relative_pos + vec3{ percent.x * -(size.x - button_size.x) + button_size.x / 2.0f, percent.y * -(size.y - button_size.y) + button_size.y / 2.0f, button_depth };
-		vec3 activation_size  = vec3{ button_size.x, button_size.y, button_depth * 2 };
-
 		ui_box_interaction_1h(id, interactor_event_pinch,
 			activation_start, activation_size,
 			activation_start, activation_size,
 			out_focus_state, out_interactor);
-		interactor_t* actor = *out_interactor == -1 ? nullptr : &skui_interactors[*out_interactor];
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		if (actor) {
-			button_state_ pinch = actor->pinch_state;
-			*out_active_state = interactor_set_active(actor, id, pinch & button_state_active);
+		actor = interactor_get(*out_interactor);
+		if (actor != nullptr) {
+			*out_active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
 			// Focus can get lost if the user is dragging outside the box, so set
 			// it to focused if it's still active.
 			*out_focus_state = interactor_set_focus(actor, id, (*out_active_state) & button_state_active || (*out_focus_state) & button_state_active, 0, activation_start - activation_size/2);
-			vec3    pinch_local = hierarchy_to_local_point(actor->position);
-			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-			finger_at = { pinch_local.x, pinch_local.y };
+		}
+	}
+
+	if (actor != nullptr) {
+		if (actor->type == interactor_type_point) {
+			vec3 local_pos = hierarchy_to_local_point(actor->position);
+			finger_at = { local_pos.x, local_pos.y };
+		} else {
+			ray_t ray = { actor->capsule_start, actor->capsule_end - actor->capsule_start };
+			float t;
+			if (ray_intersect_plane(ray, {0,0,window_relative_pos.z}, { 0,0,1 }, t)) {
+				vec3 pt = ray.pos + ray.dir * t;
+				finger_at = { pt.x, pt.y };
+			}
 		}
 	}
 
