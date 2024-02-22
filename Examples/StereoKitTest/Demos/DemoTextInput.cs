@@ -9,7 +9,8 @@ class DemoTextInput : ITest
 {
 	string title       = "Text Input";
 	string description = "";
-
+	string keyboardLayoutSmall = "`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\\--\\--189|=-=-187|spr:sk/ui/backspace-\\b-8-3|spr:sk/ui/close----close\nTab-\\t-9-3|w-w-87|q-q-81|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\\\-\\\\-220\nEnter-\\n-13-4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter-\\n-13-3\nspr:sk/ui/shift--16-5-visit_1|z-z-90|x-x-88|c-c-67|v-v-86|b-b-66|n-n-78|m-m-77|,-,-188|.-.-190|/-/-191|spr:sk/ui/shift--16-2-visit_1|spr:sk/ui/arrow_up--38\nCtrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|";
+	string keyboardLayoutCaps = "~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace-\\b-8-3|spr:sk/ui/close----close\nTab-\\t-9-3|W-W-87|Q-Q-81|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\\|-\\|-220\nEnter-\\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|\"-\"-222|Enter-\\n-13-3\nspr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38\nCtrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|";
 	Pose windowPose = Demo.contentPose.Pose;
 	string text    = "Edit me";
 	string textUri = "https://stereokit.net";
@@ -50,6 +51,13 @@ class DemoTextInput : ITest
 		bool openKeyboard = Platform.KeyboardVisible;
 		if (UI.Toggle("Show Keyboard", ref openKeyboard))
 			Platform.KeyboardShow(openKeyboard);
+
+		UI.HSeparator();
+		if (UI.Button("Switch Keyboard"))
+		{
+			string[] keyboardLayouts = { keyboardLayoutSmall, keyboardLayoutCaps };
+			Platform.KeyboardSwitch(keyboardLayouts, KeyBoardType.Text);
+		}
 
 		UI.WindowEnd();
 

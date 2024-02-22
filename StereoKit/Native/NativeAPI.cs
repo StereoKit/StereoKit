@@ -553,6 +553,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_visible           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void platform_keyboard_show              ([MarshalAs(UnmanagedType.Bool)] bool show, TextContext inputType);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool platform_keyboard_switch(string[] keyboard_layout, int layouts_num, KeyBoardType keyboard_type);
 
 		///////////////////////////////////////////
 
