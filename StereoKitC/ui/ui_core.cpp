@@ -506,7 +506,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 			if (interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist)) {
 				has_hand_attention = true;
 
-				if (actor->pinch_state & button_state_just_active) {
+				if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
 					ui_play_sound_on(ui_vis_handle, actor->capsule_end_world);
 
 					actor->active = id;
