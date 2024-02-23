@@ -129,9 +129,11 @@ void ui_core_hands_step() {
 			hand->pinch_state, hand->tracked_state);
 
 		// Hand ray
+		float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12,0});
+		float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
 		interactor_update(skui_hand_interactors[i*3 + 2],
-			pointer->ray.pos + pointer->ray.dir * 0.4f, pointer->ray.pos + pointer->ray.dir * 100, 0.00f,
-			pointer->ray.pos,  pointer->orientation, input_head()->position,
+			pointer->ray.pos + pointer->ray.dir * ray_dist, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
+			pointer->ray.pos,  pointer->orientation, input_head()->position + vec3{0,-0.12,0},
 			hand->pinch_state, pointer->tracked);
 	}
 
@@ -146,7 +148,7 @@ void ui_core_controllers_step() {
 
 		// controller ray
 		interactor_update(skui_hand_interactors[i*3 + 2],
-			pointer->ray.pos, pointer->ray.pos + pointer->ray.dir * 100, 0.00f,
+			pointer->ray.pos, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
 			pointer->ray.pos, pointer->orientation, input_head()->position,
 			pointer->state,   pointer->tracked);
 	}
@@ -164,7 +166,7 @@ void ui_core_mouse_step() {
 
 	vec3 end = ray.pos + ray.dir * 100;
 	interactor_update(skui_mouse_interactor,
-		ray.pos, end, 0,
+		ray.pos, end, 0.005f,
 		end, quat_lookat(ray.pos, end), end,
 		input_key(key_mouse_left), button_make_state(skui_interactors[skui_mouse_interactor].tracked & button_state_active, tracked));
 
@@ -341,7 +343,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	vec3    interaction_at;
 
 	interactor_plate_1h(id, interactor_event_poke,
-		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, size,
+		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, { size.x, size.y, button_depth },
 		&out_focus_state, &interactor, &interaction_at);
 	interactor_t* actor = interactor_get(interactor);
 
@@ -505,6 +507,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 			vec3  at;
 			if (interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist)) {
 				has_hand_attention = true;
+				hand_attention_dist += 0.1f; // penalty to prefer non-handle elements
 
 				if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
 					ui_play_sound_on(ui_vis_handle, actor->capsule_end_world);
@@ -670,32 +673,16 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 	if (skui_show_volumes)
 		render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
 
-	switch (actor->type) {
-	case interactor_type_point: {
-		bool32_t result = bounds_capsule_contains(box, actor->capsule_start, actor->capsule_end, actor->capsule_radius);
-		if (result) {
-			*out_at       = actor->capsule_end;
-			*out_priority = bounds_sdf_manhattan(box, *out_at);
-		}
-		return result;
-	} break;
-	case interactor_type_line: {
-		ray_t    ray    = { actor->capsule_start, actor->capsule_end - actor->capsule_start };
-		float    dist   = 0;
-		bool32_t result = bounds_ray_intersect_dist(box, ray, &dist);
-		if (result && dist <= 1) {
-			*out_at       = ray.pos + dist * ray.dir;
-			*out_priority = bounds_sdf_manhattan(box, *out_at) + vec3_distance_sq(ray.pos, *out_at);
-		}
-		return result;
-	} break;
-	default: return false;
+	bool32_t result = bounds_capsule_intersect(box, actor->capsule_start, actor->capsule_end, actor->capsule_radius, out_at);
+	if (result) {
+		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, actor->capsule_start);
 	}
+	return result;
 }
 
 ///////////////////////////////////////////
 
-void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec2 plate_size, button_state_ *out_focus_state, int32_t *out_interactor, vec3 *out_interaction_at_local) {
+void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_state, int32_t *out_interactor, vec3 *out_interaction_at_local) {
 	*out_interactor           = -1;
 	*out_focus_state          = button_state_inactive;
 	*out_interaction_at_local = vec3_zero;
@@ -723,12 +710,14 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		// volume to account for vertical or horizontal movement during a press,
 		// such as the downward motion often accompanying a 'poke' motion.
 
+		float    surface_offset = actor->type == interactor_type_point ? actor->capsule_radius*2 : 0;
+
 		bool     was_focused = actor->focused_prev == id;
 		bool     was_active  = actor->active_prev  == id;
-		float    depth  = fmaxf(0.0001f, 8 * actor->capsule_radius);
-		bounds_t bounds = was_focused
-			? size_box({ plate_start.x, plate_start.y, plate_start.z           - actor->capsule_radius * 2 }, { plate_size.x, plate_size.y, 0.0001f })
-			: size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - actor->capsule_radius * 2 }, { plate_size.x, plate_size.y, depth });
+		float    depth  = fmaxf(0.0001f, 8 * plate_size.z);
+		bounds_t bounds = was_focused && actor->type == interactor_type_point
+			? size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - surface_offset }, { plate_size.x, plate_size.y, depth })
+			: size_box({ plate_start.x, plate_start.y, plate_start.z           - surface_offset }, { plate_size.x, plate_size.y, 0.0001f });
 
 		float         priority = 0;
 		vec3          interact_at;

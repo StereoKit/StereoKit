@@ -659,7 +659,7 @@ bool32_t bounds_ray_intersect_dist(bounds_t bounds, ray_t ray, float* out_distan
 ///////////////////////////////////////////
 
 bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
-	float    dist = 0;
+	float    dist   = 0;
 	bool32_t result = bounds_ray_intersect_dist(bounds, ray, &dist);
 	if (out_pt)
 		*out_pt = ray.pos + ray.dir * dist;
@@ -668,8 +668,60 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 
 ///////////////////////////////////////////
 
+bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
+	float d   = 0;
+	ray_t ray = { line_start, line_end - line_start };
+	if (bounds_ray_intersect_dist(bounds, ray, &d) && d <= 1) {
+		*out_at = line_start + (line_end - line_start) * d;
+		return true;
+	}
+
+	// Make this all relative to the center of the bounds
+	ray.pos    -= bounds.center;
+	line_start -= bounds.center;
+	line_end   -= bounds.center;
+	vec3 size = bounds.dimensions / 2;
+
+	float closest_sq = FLT_MAX;
+	vec3  closest_pt = vec3{0,0,0};
+
+	vec3 edges[] = {
+		{-1,-1,-1}, { 1,-1,-1},
+		{-1, 1,-1}, { 1, 1,-1},
+		{-1,-1, 1}, { 1,-1, 1},
+		{-1, 1, 1}, { 1, 1, 1},
+		{-1,-1,-1}, {-1, 1,-1},
+		{ 1,-1,-1}, { 1, 1,-1},
+		{-1,-1, 1}, {-1, 1, 1},
+		{ 1,-1, 1}, { 1, 1, 1},
+		{-1,-1,-1}, {-1,-1, 1},
+		{ 1,-1,-1}, { 1,-1, 1},
+		{-1, 1,-1}, {-1, 1, 1},
+		{ 1, 1,-1}, { 1, 1, 1}
+	};
+	// check all edges
+	for (int32_t i = 0; i < 12; i += 1) {
+		vec3 a, b;
+		line_line_closest_point_tdist(edges[i*2]*size, edges[i*2+1]*size, line_start, line_end, &a, &b);
+		float dist_sq = vec3_distance_sq(a, b);
+		if (closest_sq > dist_sq) {
+			closest_sq = dist_sq;
+			closest_pt = b;
+		}
+	}
+
+	if (closest_sq <= radius * radius) {
+		*out_at = closest_pt + bounds.center;
+		return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
 bool32_t bounds_line_contains(bounds_t bounds, vec3 pt1, vec3 pt2) {
 	vec3  delta = pt2 - pt1;
+	// If this is just a point, then we can just do a simple contains check
 	if (vec3_dot(delta, delta) <= 0.0001f)
 		return bounds_point_contains(bounds, pt1);
 
@@ -766,6 +818,41 @@ bounds_t bounds_grow_to_fit_box(bounds_t bounds, bounds_t box, const matrix* opt
 
 bounds_t bounds_transform(bounds_t bounds, matrix transform) {
 	return bounds_grow_to_fit_box_opt(nullptr, bounds, &transform);
+}
+
+///////////////////////////////////////////
+// lines                                 //
+///////////////////////////////////////////
+
+float line_closest_point_tdist(vec3 line_start, vec3 line_end, vec3 point) {
+	vec3 dir = line_end - line_start;
+	return vec3_dot(point - line_start, dir) / vec3_dot(dir, dir);
+}
+
+///////////////////////////////////////////
+
+void line_line_closest_point_tdist(vec3 line_start, vec3 line_end, vec3 other_line_start, vec3 other_line_end, vec3* out_line_at, vec3* out_other_line_at) {
+	vec3 V1  = line_end         - line_start;
+	vec3 V2  = other_line_end   - other_line_start;
+	vec3 V21 = other_line_start - line_start;
+
+	float v22   = vec3_dot(V2,  V2);
+	float v11   = vec3_dot(V1,  V1);
+	float v21   = vec3_dot(V2,  V1);
+	float v21_1 = vec3_dot(V21, V1);
+	float v21_2 = vec3_dot(V21, V2);
+	float denom = v21 * v21 - v22 * v11;
+
+	float s, t;
+	if (fabsf(denom) < 1e-6) {
+		s = 0.;
+		t = (v11 * s - v21_1) / (v21 != 0 ? v21 : 1e-6); // Avoid division by zero
+	} else {
+		s = ( v21_2 * v21 - v22 * v21_1) / denom;
+		t = (-v21_1 * v21 + v11 * v21_2) / denom;
+	}
+	*out_line_at       = line_start       + V1 * fmaxf(fminf(s, 1.f), 0.f);
+	*out_other_line_at = other_line_start + V2 * fmaxf(fminf(t, 1.f), 0.f);
 }
 
 } // namespace sk
