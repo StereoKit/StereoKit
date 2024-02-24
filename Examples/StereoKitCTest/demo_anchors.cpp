@@ -22,9 +22,9 @@ void demo_anchors_init() {
 void demo_anchors_update() {
 	// Show settings window
 	static pose_t   window_pose     = pose_t{ {0.4f,0.0,-0.4f}, quat_lookat({}, {-1,0,1}) };
-	static bool32_t persist_anchors = anchor_get_capabilities() & anchor_caps_storable != 0;
+	static bool32_t persist_anchors = (anchor_get_capabilities() & anchor_caps_storable) != 0;
 	ui_window_begin("Anchor Options", window_pose);
-	ui_push_enabled(anchor_get_capabilities() & anchor_caps_storable != 0);
+	ui_push_enabled((anchor_get_capabilities() & anchor_caps_storable) != 0);
 	ui_toggle("Persist New Anchors", persist_anchors);
 	ui_pop_enabled();
 	if (ui_button("Clear Stored Anchors")) {
@@ -49,10 +49,13 @@ void demo_anchors_update() {
 			pose.position = input_hand(handed_left)->pinch_pt;
 		pose.orientation = quat_lookat(pose.position, input_head()->position);
 
-		anchor_t anch = anchor_create(nullptr, pose);
-		if (anch && persist_anchors)
-			anchor_try_set_persistent(anch, true);
-		anchors.push_back(anch);
+		anchor_t anch = anchor_create(pose);
+		if (anch) {
+			anchors.push_back(anch);
+			if (persist_anchors) anchor_try_set_persistent(anch, true);
+		} else {
+			log_info("Failed to create anchor!");
+		}
 	}
 
 	for (int32_t i = 0; i < anchor_get_new_count(); i++) {

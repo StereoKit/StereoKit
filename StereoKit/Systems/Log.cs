@@ -56,7 +56,7 @@ namespace StereoKit
 		}
 		#endregion
 
-		static List<LogCallback> callbacks = new List<LogCallback>();
+		static Dictionary<LogCallback, LogCallbackData> callbacks = new Dictionary<LogCallback, LogCallbackData>();
 
 		/// <summary>What's the lowest level of severity logs to display on
 		/// the console? Default is LogLevel.Info. This property can safely
@@ -144,8 +144,8 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
-			callbacks.Add(onLog); // This prevents the callback from getting GCed
-			NativeAPI.log_subscribe(onLog);
+			callbacks.Add(onLog, (IntPtr context, LogLevel level, string text) => onLog(level, text)); // This prevents the callback from getting GCed
+			NativeAPI.log_subscribe_data(callbacks[onLog], IntPtr.Zero);
 		}
 
 		/// <summary>If you subscribed to the log callback, you can
@@ -161,8 +161,8 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
+			NativeAPI.log_unsubscribe_data(callbacks[onLog], IntPtr.Zero);
 			callbacks.Remove(onLog);
-			NativeAPI.log_unsubscribe(onLog);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
@@ -766,7 +766,7 @@ void oxri_update_poses() {
 		// Get the grip pose the verbose way, since we want to know if
 		// rotation or position are tracked independently of eachother.
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
-		XrResult        res            = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
+		res = xrLocateSpace(xrc_space_grip[hand], xr_app_space, xr_time, &space_location);
 		bool tracked_pos = false;
 		bool tracked_rot = false;
 		bool valid_pos   = false;

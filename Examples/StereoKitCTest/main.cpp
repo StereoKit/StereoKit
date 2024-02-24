@@ -157,9 +157,9 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	log_set_filter(log_diagnostic);
 
 	sk_settings_t settings = {};
-	settings.app_name           = "StereoKit C";
-	settings.assets_folder      = "Assets";
-	settings.display_preference = display_mode_mixedreality;
+	settings.app_name      = "StereoKit C";
+	settings.assets_folder = "Assets";
+	settings.mode          = app_mode_xr;
 	if (!sk_init(settings))
 		return 1;
 
@@ -200,33 +200,39 @@ void common_init() {
 
 	demo_select_pose.position = vec3{0, 0, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
+
+		// Log some system info
+	const char* text = "";
+	log_infof("Device:   %s", device_get_name());
+	log_infof("GPU:      %s", device_get_gpu());
+	switch (device_get_tracking()) { case device_tracking_none: text = "none"; break; case device_tracking_3dof: text = "3dof"; break; case device_tracking_6dof: text = "6dof"; break; }
+	log_infof("Tracking: %s", text);
+	log_infof("Hands:    %s", device_has_hand_tracking()?"true":"false");
+	log_infof("Eyes:     %s", device_has_eye_gaze()?"true":"false");
+	switch (device_display_get_type()) { case display_type_none: text = "none"; break; case display_type_flatscreen: text = "flatscreen"; break; case display_type_stereo: text = "stereo"; break; }
+	log_infof("Display Type:  %s", text);
+	switch (device_display_get_blend()) { case display_blend_additive: text = "additive"; break; case display_blend_blend: text = "blend"; break; case display_blend_opaque: text = "opaque"; break; case display_blend_none: text = "none"; break; default: text = "unknown";  break; }
+	log_infof("Display Blend: %s", text);
+	log_infof("Display FoV:   %.0f, %.0f, %.0f, %.0f",
+		device_display_get_fov().right,
+		device_display_get_fov().left,
+		device_display_get_fov().top,
+		device_display_get_fov().bottom);
+	log_infof("Display Hz:    %.1f", device_display_get_refresh_rate());
+	log_infof("Display Size:  %d<~BLK>x<~clr>%d", device_display_get_width(), device_display_get_height());
 }
 
 void common_update() {
 	static app_focus_ prev_focus = app_focus_hidden;
 	app_focus_        curr_focus = sk_app_focus();
-	if (curr_focus == app_focus_active && prev_focus != app_focus_active) {
-		// Log some system info
-		const char* text = "";
-		log_infof("Device:   %s", device_get_name());
-		log_infof("GPU:      %s", device_get_gpu());
-		switch (device_get_tracking()) { case device_tracking_none: text = "none"; break; case device_tracking_3dof: text = "3dof"; break; case device_tracking_6dof: text = "6dof"; break; }
-		log_infof("Tracking: %s", text);
-		log_infof("Hands:    %s", device_has_hand_tracking()?"true":"false");
-		log_infof("Eyes:     %s", device_has_eye_gaze()?"true":"false");
-		switch (device_display_get_type()) { case display_type_none: text = "none"; break; case display_type_flatscreen: text = "flatscreen"; break; case display_type_stereo: text = "stereo"; break; }
-		log_infof("Display Type:  %s", text);
-		switch (device_display_get_blend()) { case display_blend_additive: text = "additive"; break; case display_blend_blend: text = "blend"; break; case display_blend_opaque: text = "opaque"; break; case display_blend_none: text = "none"; break; default: text = "unknown";  break; }
-		log_infof("Display Blend: %s", text);
-		log_infof("Display FoV:   %.0f, %.0f, %.0f, %.0f",
-			device_display_get_fov().right,
-			device_display_get_fov().left,
-			device_display_get_fov().top,
-			device_display_get_fov().bottom);
-		log_infof("Display Hz:    %.1f", device_display_get_refresh_rate());
-		log_infof("Display Size:  %d<~BLK>x<~clr>%d", device_display_get_width(), device_display_get_height());
+	if (curr_focus != prev_focus) {
+		switch (curr_focus) {
+		case app_focus_active:     log_write(log_diagnostic, "Focus: Active");     break;
+		case app_focus_background: log_write(log_diagnostic, "Focus: Background"); break;
+		case app_focus_hidden:     log_write(log_diagnostic, "Focus: Hidden");     break;
+		}
+		prev_focus = curr_focus;
 	}
-	prev_focus = curr_focus;
 
 	scene_update();
 
@@ -247,7 +253,7 @@ void common_update() {
 	}
 #if !defined(__EMSCRIPTEN__)
 	ui_hseparator();
-	if (ui_button("Exit")) sk_quit();
+	if (ui_button("Exit") || (input_key(key_esc) & button_state_just_active)) sk_quit();
 #endif
 	ui_window_end();
 

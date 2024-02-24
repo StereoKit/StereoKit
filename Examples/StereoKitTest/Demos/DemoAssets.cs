@@ -72,8 +72,6 @@ class DemoAssets : ITest
 
 		UI.LayoutPop();
 
-		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
-
 		UI.LayoutPushCut(UICut.Right, UI.LineHeight);
 		UI.VSlider("scroll", ref filterScroll, 0, Math.Max(0,filteredAssets.Count-3), 1, 0, UIConfirm.Pinch);
 		UI.LayoutPop();

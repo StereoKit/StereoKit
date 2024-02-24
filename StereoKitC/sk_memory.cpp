@@ -1,7 +1,6 @@
 #include "sk_memory.h"
 
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 

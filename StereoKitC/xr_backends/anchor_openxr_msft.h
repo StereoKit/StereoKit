@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "../stereokit.h"
@@ -19,6 +19,7 @@ void     anchor_oxr_msft_destroy     (anchor_t anchor);
 void     anchor_oxr_msft_clear_stored();
 bool32_t anchor_oxr_msft_persist     (anchor_t anchor, bool32_t persist);
 anchor_caps_ anchor_oxr_msft_capabilities();
+bool32_t anchor_oxr_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor);
 
 } // namespace sk
 

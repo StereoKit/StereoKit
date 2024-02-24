@@ -6,7 +6,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 using namespace DirectX;
 
@@ -191,10 +191,13 @@ void model_recalculate_bounds_exact(model_t model) {
 	}
 
 	// Get an initial size
-	vec3     first_corner = model->visuals[0].mesh->verts[0].pos;
-	vec3     minf         = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
-	XMVECTOR min          = XMLoadFloat3((XMFLOAT3*)&minf);
-	XMVECTOR max          = XMLoadFloat3((XMFLOAT3*)&minf);
+	vec3 first_corner = model->visuals[0].mesh->verts != nullptr
+		? model->visuals[0].mesh->verts[0].pos
+		: bounds_corner(model->visuals[0].mesh->bounds, 0);
+
+	vec3     minf = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
+	XMVECTOR min  = XMLoadFloat3((XMFLOAT3*)&minf);
+	XMVECTOR max  = XMLoadFloat3((XMFLOAT3*)&minf);
 
 	// Use all the transformed vertices, and factor them in!
 	for (int32_t m = 0; m < model->visuals.count; m += 1) {
@@ -202,11 +205,21 @@ void model_recalculate_bounds_exact(model_t model) {
 		const mesh_t  mesh            = model->visuals[m].mesh;
 		const vert_t* verts           = mesh->verts;
 
-		for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
-			XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
+		if (verts != nullptr) {
+			for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
+				XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
 
-			min = XMVectorMin(min, pt);
-			max = XMVectorMax(max, pt);
+				min = XMVectorMin(min, pt);
+				max = XMVectorMax(max, pt);
+			}
+		} else {
+			for (int32_t i = 0; i < 8; i += 1) {
+				vec3     corner = bounds_corner(mesh->bounds, i);
+				XMVECTOR pt     = matrix_mul_pointx(transform_model, corner);
+
+				min = XMVectorMin(min, pt);
+				max = XMVectorMax(max, pt);
+			}
 		}
 	}
 

@@ -54,7 +54,7 @@ class DemoAnchors : ITest
 		// List options for the selected anchor
 		UI.PushEnabled(selected != null);
 		UI.HSeparator();
-		UI.Label(selected?.Id ?? "None selected");
+		UI.Label(selected?.Name ?? "None selected");
 		if (UI.Button("Delete"))
 		{
 			selected.TrySetPersistent(false);
@@ -78,7 +78,7 @@ class DemoAnchors : ITest
 			Mesh.Cube.Draw(Material.UIBox, selected.Pose.ToMatrix(0.1f));
 
 		foreach (Anchor a in Anchor.NewAnchors)
-			Log.Info($"New anchor: {a.Id}");
+			Log.Info($"New anchor: {a.Name}");
 
 		Demo.ShowSummary(title, description,
 			new Bounds(V.XY0(-0.1f, 0.02f), V.XYZ(.4f, .36f, 0.1f)));

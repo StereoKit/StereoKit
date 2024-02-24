@@ -130,6 +130,29 @@ typedef enum display_mode_ {
 	display_mode_none             = 2,
 } display_mode_;
 
+/*Specifies a type of display mode StereoKit uses, like
+  Mixed Reality headset display vs. a PC display, or even just
+  rendering to an offscreen surface, or not rendering at all!*/
+typedef enum app_mode_ {
+	/*No mode has been specified, default behavior will be used. StereoKit will
+	  pick XR in this case.*/
+	app_mode_none = 0,
+	/*Creates an OpenXR or WebXR instance, and drives display/input through
+	  that.*/
+	app_mode_xr,
+	/*Creates a flat window, and simulates some XR functionality. Great for
+	  development and debugging.*/
+	app_mode_simulator,
+	/*Creates a flat window and displays to that, but doesn't simulate XR at
+	  all. You will need to control your own camera here. This can be useful
+	  if using StereoKit for non-XR 3D applications.*/
+	app_mode_window,
+	/*No display at all! StereoKit won't even render to a texture unless
+	  requested to. This may be good for running tests on a server, or doing
+	  graphics related tool or CLI work.*/
+	app_mode_offscreen,
+} app_mode_;
+
 /*This is used to determine what kind of depth buffer
   StereoKit uses!*/
 typedef enum depth_mode_ {
@@ -381,6 +404,7 @@ typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
 	display_mode_  display_preference;
+	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
@@ -484,6 +508,7 @@ SK_API int32_t          device_display_get_height (void);
 SK_API fov_info_t       device_display_get_fov    (void);
 SK_API device_tracking_ device_get_tracking       (void);
 SK_API const char*      device_get_name           (void);
+SK_API const char*      device_get_runtime        (void);
 SK_API const char*      device_get_gpu            (void);
 SK_API bool32_t         device_has_eye_gaze       (void);
 SK_API bool32_t         device_has_hand_tracking  (void);
@@ -579,6 +604,8 @@ static inline vec2   operator* (float b, vec2 a) { return { a.x * b, a.y * b }; 
 static inline vec2   operator/ (vec2 a, float b) { return { a.x / b, a.y / b }; }
 static inline vec2   operator+ (vec2 a, vec2  b) { return { a.x + b.x, a.y + b.y }; }
 static inline vec2   operator- (vec2 a, vec2  b) { return { a.x - b.x, a.y - b.y }; }
+static inline vec2   operator+ (vec2 a, float b) { return { a.x + b,   a.y + b }; }
+static inline vec2   operator- (vec2 a, float b) { return { a.x - b,   a.y - b }; }
 static inline vec2   operator* (vec2 a, vec2  b) { return { a.x * b.x, a.y * b.y }; }
 static inline vec2   operator/ (vec2 a, vec2  b) { return { a.x / b.x, a.y / b.y }; }
 static inline vec2  &operator+=(vec2 &a, vec2  b) { a.x += b.x; a.y += b.y; return a; }
@@ -627,6 +654,8 @@ static inline vec3     vec3_normalize   (vec3 a) { float imag = 1.0f/vec3_magnit
 static inline vec2     vec2_normalize   (vec2 a) { float imag = 1.0f/vec2_magnitude(a); vec2 v = {a.x*imag, a.y*imag}; return v; }
 static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(a.y), fabsf(a.z) }; return v; }
 static inline vec2     vec2_abs         (vec2 a) { vec2 v = { fabsf(a.x), fabsf(a.y) }; return v; }
+static inline vec3     vec3_min         (vec3 a, vec3 b)          { vec3 v = { fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z) }; return v; }
+static inline vec2     vec2_min         (vec2 a, vec2 b)          { vec2 v = { fminf(a.x, b.x), fminf(a.y, b.y) }; return v; }
 static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; return v; }
 static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
@@ -927,28 +956,49 @@ typedef enum tex_format_ {
 	tex_format_r8 = 11,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
-	  information in it. Values in the shader are always 0.0-1.0.*/
+	  information in it. Values in the shader are always 0.0-1.0.
+	  TODO: remove during major version update, prefer s, f, or u
+	  postfixed versions of this format, this item is the same as
+	  r16u.*/
 	tex_format_r16 = 12,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The u postfix indicates that the raw color data
+	  is stored as an unsigned 16 bit integer, which is then normalized
+	  into the 0, 1 floating point range on the GPU.*/
+	tex_format_r16u = tex_format_r16,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The s postfix indicates that the raw color
+	  data is stored as a signed 16 bit integer, which is then
+	  normalized into the -1, +1 floating point range on the GPU.*/
+	tex_format_r16s = 13,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The f postfix indicates that the raw color
+	  data is stored as 16 bit floats, which may be tricky to work with
+	  in most languages.*/
+	tex_format_r16f = 14,
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32 = 13,
+	tex_format_r32 = 15,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil = 14,
+	tex_format_depthstencil = 16,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
-	tex_format_depth32 = 15,
+	tex_format_depth32 = 17,
 	/*16 bits of depth is not a lot, but it can be enough if
 	  your far clipping plane is pretty close. If you're seeing lots of
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 16,
+	tex_format_depth16 = 18,
 	/*A double channel of data that supports 8 bits for the red
 	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 17,
+	tex_format_r8g8 = 19,
 
 } tex_format_;
 
@@ -1014,6 +1064,7 @@ SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 // TODO: For v0.4, combine these two functions
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
 SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
@@ -1392,7 +1443,7 @@ SK_API void          model_set_id                  (model_t model, const char *i
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
-SK_API void          model_draw                    (model_t model, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_recalculate_bounds_exact(model_t model);
@@ -1557,6 +1608,8 @@ SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     (void);
+SK_API void                  render_set_skymaterial(material_t sky_material);
+SK_API material_t            render_get_skymaterial(void);
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   (void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
@@ -1573,15 +1626,16 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
-SK_API void                  render_add_mesh       (mesh_t mesh, material_t material, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void                  render_add_model      (model_t model, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
 //TODO: for v0.4, replace render_screenshot with render_screenshot_pose
 SK_API void                  render_screenshot     (const char *file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
 SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32));
+//TODO: for v0.4, reorder parameters, context in particular should be next to callback
+SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
+SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
@@ -1678,7 +1732,7 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback   )(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
 SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  (void);
 SK_API bool32_t platform_file_picker_visible(void);
@@ -2116,24 +2170,33 @@ SK_API void                  input_fire_event     (input_source_ source, button_
 
 ///////////////////////////////////////////
 
+/*This is a bit flag that describes what an anchoring system is capable of
+  doing.*/
 typedef enum anchor_caps_ {
+	/*This anchor system can store/persist anchors across sessions. Anchors
+	  must still be explicitly marked as persistent.*/
 	anchor_caps_storable  = 1 << 0,
+	/*This anchor system will provide extra accuracy in locating the Anchor, so
+	  if the SLAM/6dof tracking drifts over time or distance, the anchor may
+	  remain fixed in the correct physical space, instead of drifting with the
+	  virtual content.*/
 	anchor_caps_stability = 1 << 1,
 } anchor_caps_;
 SK_MakeFlag(anchor_caps_);
 
 SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
+SK_API anchor_t       anchor_create            (pose_t pose);
 SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
 SK_API const char*    anchor_get_id            (const anchor_t anchor);
 SK_API void           anchor_addref            (      anchor_t anchor);
 SK_API void           anchor_release           (      anchor_t anchor);
-SK_API anchor_t       anchor_create            (const char *unique_name_utf8, pose_t pose);
 SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
 SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
 SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
 SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
 SK_API const char*    anchor_get_name          (const anchor_t anchor);
 SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
+SK_API bool32_t       anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor);
 
 SK_API void           anchor_clear_stored      (void);
 SK_API anchor_caps_   anchor_get_capabilities  (void);
@@ -2307,8 +2370,11 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-SK_API void log_subscribe  (void (*log_callback)(log_ level, const char *text));
-SK_API void log_unsubscribe(void (*log_callback)(log_ level, const char *text));
+// TODO: v0.4, replace these with the _data versions
+SK_API void log_subscribe       (void (*log_callback)(log_ level, const char *text));
+SK_API void log_unsubscribe     (void (*log_callback)(log_ level, const char *text));
+SK_API void log_subscribe_data  (void (*log_callback)(void* context, log_ level, const char *text), void *context);
+SK_API void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char *text), void *context);
 
 ///////////////////////////////////////////
 
@@ -2368,6 +2434,7 @@ SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
 SK_CONST char *default_id_material_ui_box      = "default/material_ui_box";
 SK_CONST char *default_id_material_ui_quadrant = "default/material_ui_quadrant";
+SK_CONST char *default_id_material_ui_aura     = "default/material_ui_aura";
 SK_CONST char *default_id_tex                  = "default/tex";
 SK_CONST char *default_id_tex_black            = "default/tex_black";
 SK_CONST char *default_id_tex_gray             = "default/tex_gray";
@@ -2395,6 +2462,7 @@ SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";
 SK_CONST char *default_id_shader_ui_box        = "default/shader_ui_box";
 SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
+SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_sound_click          = "default/sound_click";

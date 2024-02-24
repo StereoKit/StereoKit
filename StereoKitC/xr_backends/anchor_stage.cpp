@@ -33,10 +33,10 @@ bool32_t anchor_stage_init() {
 	anchor_stage_sys = {};
 
 	// Read anchors from a text file
-	char*  anchor_data      = nullptr;
-	size_t anchor_data_size = 0;
-	if (platform_read_file(anchor_stage_store_filename, (void**)&anchor_data, &anchor_data_size)) {
-		stref_t data_stref = stref_make(anchor_data);
+	char*  anchor_file      = nullptr;
+	size_t anchor_file_size = 0;
+	if (platform_read_file(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+		stref_t data_stref = stref_make(anchor_file);
 		stref_t line = {};
 		while (stref_nextline(data_stref, line)) {
 			stref_t word = {};
@@ -63,14 +63,15 @@ bool32_t anchor_stage_init() {
 			char* name = stref_copy(stref_substr(word.start, line.length - (uint32_t)maxi(0LL, (int64_t)(word.start - line.start))));
 
 			// Create a StereoKit anchor
-			anchor_stage_t* anchor_data = sk_malloc_t(anchor_stage_t, 1);
-			anchor_t        anchor      = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_data);
+			anchor_stage_t* anchor_obj = sk_malloc_t(anchor_stage_t, 1);
+			anchor_t        anchor     = anchor_create_manual(anchor_stage_sys.id, { pos, rot }, name, (void*)anchor_obj);
 			anchor->tracked = button_state_active;
 			anchor_stage_persist(anchor, true);
+			anchor_release(anchor);
 
 			sk_free(name);
 		}
-		sk_free(anchor_data);
+		sk_free(anchor_file);
 	}
 	anchor_stage_sys.loaded = true;
 	return true;
@@ -142,8 +143,11 @@ bool32_t anchor_stage_persist(anchor_t anchor, bool32_t persist) {
 		anchor_addref(anchor);
 		persist_list->add(anchor);
 	} else {
-		persist_list->remove(persist_list->index_of(anchor));
-		anchor_release(anchor);
+		int32_t idx = persist_list->index_of(anchor);
+		if (idx >= 0) {
+			persist_list->remove(idx);
+			anchor_release(anchor);
+		}
 	}
 
 	return true;

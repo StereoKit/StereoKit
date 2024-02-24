@@ -76,7 +76,7 @@ void hierarchy_pop() {
 
 void hierarchy_set_enabled(bool32_t enabled) {
 	local->userenabled = enabled;
-	local->enabled     = local->stack.count != 0 && local->userenabled == true;
+	local->enabled     = local->stack.count != 0 && local->userenabled == (bool32_t)true;
 }
 
 ///////////////////////////////////////////

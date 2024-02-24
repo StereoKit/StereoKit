@@ -1,4 +1,4 @@
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "anchor_openxr_msft.h"
@@ -41,7 +41,7 @@ bool32_t anchor_oxr_msft_init() {
 
 	uint32_t count = 0;
 	xr_extensions.xrEnumeratePersistedSpatialAnchorNamesMSFT(oxr_msft_anchor_sys.store, 0, &count, nullptr);
-	if (count == 0) return false;
+	if (count == 0) return true;
 
 	XrSpatialAnchorPersistenceNameMSFT* names = sk_malloc_t(XrSpatialAnchorPersistenceNameMSFT, count);
 	xr_extensions.xrEnumeratePersistedSpatialAnchorNamesMSFT(oxr_msft_anchor_sys.store, count, &count, names);
@@ -89,6 +89,9 @@ bool32_t anchor_oxr_msft_init() {
 ///////////////////////////////////////////
 
 void anchor_oxr_msft_shutdown() {
+	for (int32_t i = oxr_msft_anchor_sys.anchors.count-1; i >= 0; i--)
+		anchor_release(oxr_msft_anchor_sys.anchors[i]);
+
 	if (oxr_msft_anchor_sys.store != XR_NULL_HANDLE)
 		xr_extensions.xrDestroySpatialAnchorStoreConnectionMSFT(oxr_msft_anchor_sys.store);
 	oxr_msft_anchor_sys.anchors.free();
@@ -101,7 +104,7 @@ void anchor_oxr_msft_step() {
 		anchor_t                 anchor = oxr_msft_anchor_sys.anchors[i];
 		oxr_msft_world_anchor_t* data   = (oxr_msft_world_anchor_t*)anchor->data;
 
-		anchor->tracked = button_make_state(openxr_get_space(data->space, &anchor->pose), (anchor->tracked & button_state_active) != 0);
+		anchor->tracked = button_make_state((anchor->tracked & button_state_active) != 0, openxr_get_space(data->space, &anchor->pose));
 	}
 }
 
@@ -149,12 +152,17 @@ anchor_t anchor_oxr_msft_create(pose_t pose, const char* name_utf8) {
 		return nullptr;
 	}
 
+	// We'll need to fetch the pose real quick
+	bool32_t tracked = openxr_get_space(space, &pose);
+
 	// Create a StereoKit anchor
 	oxr_msft_world_anchor_t* anchor_data = sk_malloc_t(oxr_msft_world_anchor_t, 1);
 	anchor_data->anchor = anchor;
 	anchor_data->space  = space;
 	anchor_t sk_anchor = anchor_create_manual(oxr_msft_anchor_sys.id, pose, name_utf8, (void*)anchor_data);
+	sk_anchor->tracked = tracked ? button_state_active : button_state_inactive;
 	oxr_msft_anchor_sys.anchors.add(sk_anchor);
+	anchor_addref(sk_anchor);
 	return sk_anchor;
 }
 
@@ -196,6 +204,24 @@ bool32_t anchor_oxr_msft_persist(anchor_t anchor, bool32_t persist) {
 	}
 	anchor->persisted = persist;
 	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t anchor_oxr_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor) {
+#if defined(SK_OS_WINDOWS_UWP)
+	if (!xr_ext_available.MSFT_perception_anchor_interop) return false;
+	oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
+	XrResult result = xr_extensions.xrTryGetPerceptionAnchorFromSpatialAnchorMSFT(xr_session, anchor_data->anchor, (IUnknown**)perception_spatial_anchor);
+	if (XR_FAILED(result)) {
+		log_warnf("xrTryGetPerceptionAnchorFromSpatialAnchorMSFT failed: %s", openxr_string(result));
+		return false;
+	}
+	return true;
+#else
+	log_warn("anchor_oxr_get_perception_anchor not available outside of Windows UWP!");
+	return false;
+#endif
 }
 
 } // namespace sk

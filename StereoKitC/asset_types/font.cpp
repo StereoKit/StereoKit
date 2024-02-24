@@ -12,7 +12,7 @@
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../rect_atlas.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../sk_memory.h"
 
 #include <stdio.h>
@@ -65,7 +65,8 @@ int32_t font_source_add(const char *filename) {
 
 	if (font_sources[id].references == 1) {
 		size_t length;
-		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
+		char* asset_filename = assets_file(filename);
+		if (!platform_read_file(asset_filename, (void **)&font_sources[id].file, &length)) {
 			log_warnf("Font file failed to load: %s", filename);
 		} else {
 			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
@@ -74,6 +75,7 @@ int32_t font_source_add(const char *filename) {
 			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
 			font_sources[id].char_height = y1 * font_sources[id].scale;
 		}
+		sk_free(asset_filename);
 	}
 
 	return font_sources[id].file == nullptr
@@ -330,8 +332,8 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		to_u     = 1.0f / font->atlas.w;
 		to_v     = 1.0f / font->atlas.h;
 	}
-	recti_t  rect       = font->atlas.packed[rect_idx];
-	recti_t  rect_unpad = { 
+	rect_area_t rect       = font->atlas.packed[rect_idx];
+	rect_area_t rect_unpad = { 
 		rect.x+pad_empty+pad_content,
 		rect.y+pad_empty+pad_content,
 		rect.w - (pad_empty*2 + pad_content*2),
@@ -440,7 +442,7 @@ void font_upsize_texture(font_t font) {
 		font->glyph_map.items[i].value = new_ch;
 
 		// Copy memory
-		recti_t src = {
+		rect_area_t src = {
 			(int32_t)(ch.u0 * font->atlas.w),
 			(int32_t)(ch.v0 * font->atlas.h),
 			(int32_t)((ch.u1-ch.u0) * font->atlas.w),

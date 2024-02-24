@@ -10,6 +10,7 @@ struct ui_window_t {
 	vec3         layout_start;
 	vec2         layout_size;
 	ui_win_      type;
+	ui_move_     move;
 	uint64_t     hash;
 	uint32_t     age;
 };
@@ -40,7 +41,8 @@ ui_window_id ui_layout_curr_window        ();
 ui_layout_t* ui_layout_curr               ();
 void         ui_layout_reserve_sz         (vec2 size, bool32_t add_padding, vec3* out_position, vec2* out_size);
 void         ui_layout_reserve_vertical_sz(vec2 size, bool32_t add_padding, vec3* out_position, vec2* out_size);
-void         ui_layout_push_win           (ui_window_id window, vec3 start, vec2 dimensions, bool32_t add_margin);
+void         ui_layout_window             (ui_window_id window, vec3 start, vec2 dimensions, bool32_t add_margin);
+void         ui_override_recent_layout    (vec3 start, vec2 size);
 
 ui_window_t *ui_window_get        (ui_window_id window);
 ui_window_id ui_window_find_or_add(uint64_t hash, vec2 size);

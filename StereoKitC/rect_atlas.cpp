@@ -20,7 +20,7 @@ void rect_atlas_destroy(rect_atlas_t *atlas) {
 
 ///////////////////////////////////////////
 
-int32_t _rect_atlas_fit(recti_t src, const recti_t &r) {
+int32_t _rect_atlas_fit(rect_area_t src, const rect_area_t &r) {
 	if (r.w < src.w || r.h < src.h) return 0x7FFFFFFF;
 	int16_t w_diff = (int16_t)(r.w - src.w);
 	int16_t h_diff = (int16_t)(r.h - src.h);
@@ -34,7 +34,7 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 	if (idx == -1 || atlas->free_space[idx].w < width || atlas->free_space[idx].h < height)
 		return -1;
 
-	const recti_t parent = atlas->free_space[idx];
+	const rect_area_t parent = atlas->free_space[idx];
 
 	if (parent.h == height && parent.w == width) { 
 		// Perfect fit!
@@ -49,7 +49,7 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 		atlas->free_space[idx].h -= height;
 	} else {
 		// Split along the shortest edge, try and preserve large areas
-		recti_t new_free = {};
+		rect_area_t new_free = {};
 		if (parent.h - height < parent.w - width) {
 			// Vertical axis is shorter, split horizontally
 			atlas->free_space[idx].y += height;
@@ -72,7 +72,7 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 		atlas->free_space.add(new_free);
 	}
 
-	recti_t new_rect = {};
+	rect_area_t new_rect = {};
 	new_rect.x = parent.x;
 	new_rect.y = parent.y;
 	new_rect.w = width;
@@ -83,14 +83,14 @@ int32_t rect_atlas_add(rect_atlas_t *atlas, int32_t width, int32_t height) {
 
 ///////////////////////////////////////////
 
-int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, recti_t rect, int32_t idx) {
+int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, rect_area_t rect, int32_t idx) {
 	int32_t rect_r = rect.x + rect.w;
 	int32_t rect_b = rect.y + rect.h;
 	int32_t result = -1;
 
 	for (int32_t i = 0; i < atlas->free_space.count; i++) {
 		if (i == idx) continue;
-		recti_t cell = atlas->free_space[i];
+		rect_area_t cell = atlas->free_space[i];
 
 		if (cell.h == rect.h && cell.y == rect.y) {
 			int32_t cell_r = cell.x + cell.w;
@@ -137,7 +137,7 @@ int32_t _rect_atlas_add_free_space(rect_atlas_t *atlas, recti_t rect, int32_t id
 ///////////////////////////////////////////
 
 void rect_atlas_remove(rect_atlas_t *atlas, int32_t idx) {
-	recti_t free_space = atlas->packed[idx];
+	rect_area_t free_space = atlas->packed[idx];
 	atlas->packed.remove(idx);
 	atlas->used_area -= free_space.w * free_space.h;
 

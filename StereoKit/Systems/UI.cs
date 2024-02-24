@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Text;
 
 namespace StereoKit
@@ -302,8 +307,21 @@ namespace StereoKit
 		/// space is added vertically, otherwise, space is added
 		/// horizontally.</summary>
 		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space) 
+		public static void Space (float space)
 			=> NativeAPI.ui_space(space);
+
+		/// <summary>Adds some vertical space to the current line! All UI
+		/// following elements on this line will be offset.</summary>
+		/// <param name="verticalSpace">Space in meters to shift the layout by.
+		/// </param>
+		public static void VSpace(float verticalSpace)
+			=> NativeAPI.ui_vspace(verticalSpace);
+
+		/// <summary>Adds some horizontal space to the current line!</summary>
+		/// <param name="horizontalSpace">Space in meters to shift the layout
+		/// by.</param>
+		public static void HSpace(float horizontalSpace)
+			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <summary>This Method is obsolete and will be removed soon. Please
 		/// use any other overload of this method.</summary>
@@ -512,7 +530,26 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout);
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1,1,1,1));
+
+		/// <summary>A pressable button accompanied by an image! The button
+		/// will expand to fit the text provided to it, horizontally. Text is
+		/// re-used as the id. Will return true only on the first frame it is
+		/// pressed! Image can be tinted by passing a custom color</summary>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="image">This is the image that will be drawn along with
+		/// the text. See imageLayout for where the image gets drawn!</param>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, imageTint);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -520,7 +557,15 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1));
+
+		/// <inheritdoc cref="ButtonImg(string,Sprite,Color,UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, imageTint);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -539,7 +584,13 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size);
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1, 1, 1, 1));
+
+		/// <inheritdoc cref="ButtonImgAt(string,Sprite,UIBtnLayout,Vec3,Vec2)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool ButtonImgAt(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint);
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
@@ -1235,6 +1286,28 @@ namespace StereoKit
 		public static void PopPreserveKeyboard()
 			=> NativeAPI.ui_pop_preserve_keyboard();
 
+		/// <summary>This pushes an enabled status for grab auras onto the
+		/// stack. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab. MUST be matched
+		/// by a PopGrabAura call.</summary>
+		/// <param name="enabled">Is the grab aura enabled or not?</param>
+		public static void PushGrabAura(bool enabled)
+			=> NativeAPI.ui_push_grab_aura(enabled);
+
+		/// <summary>This removes an enabled status for grab auras from the
+		/// stack, returning it to the state before the previous PushGrabAura
+		/// call. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab.</summary>
+		public static void PopGrabAura()
+			=> NativeAPI.ui_pop_grab_aura();
+
+		/// <summary>This retreives the top of the grab aura enablement stack,
+		/// in case you need to know if the current window will have an aura.
+		/// </summary>
+		/// <returns>The enabled value at the top of the stack.</returns>
+		public static bool GrabAuraEnabled()
+			=> NativeAPI.ui_grab_aura_enabled();
+
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
 		/// </summary>
@@ -1242,7 +1315,7 @@ namespace StereoKit
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
-		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// <summary>Removes a TextStyle from the stack, and whatever was
 		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
@@ -1298,7 +1371,7 @@ namespace StereoKit
 		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
-		/// element. 
+		/// element.
 		/// 
 		/// Note that StereoKit's default UI assets use a type of quadrant
 		/// sizing that is implemented in the Material _and_ the Mesh. You
@@ -1319,7 +1392,28 @@ namespace StereoKit
 		/// This lets UI elements to accommodate for this minimum size, and
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
-			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, Vec2.Zero);
+			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, minSize);
+
+		/// <summary>This allows you to override the color category that a UI
+		/// element is assigned to.</summary>
+		/// <param name="visual">The UI element type to set the color category
+		/// of.</param>
+		/// <param name="colorCategory">The category of color to assign to this
+		/// UI element. Use UI.SetThemeColor in combination with this to assign
+		/// a specific color.</param>
+		public static void SetElementColor(UIVisual visual, UIColor colorCategory)
+			=> NativeAPI.ui_set_element_color(visual, colorCategory);
+
+		/// <summary>This sets the sound that a particulat UI element will make
+		/// when you interact with it. One sound when the interaction starts,
+		/// and one when it ends.</summary>
+		/// <param name="visual">The UI element to apply the sounds to.</param>
+		/// <param name="activate">The sound made when the interaction begins.
+		/// A null sound will fall back to the default sound.</param>
+		/// <param name="deactivate">The sound made when the interaction ends.
+		/// A null sound will fall back to the default sound.</param>
+		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
+			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user
@@ -1365,6 +1459,26 @@ namespace StereoKit
 		/// the boundary of the box and continue outside it.</param>
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
 			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
+
+		/// <summary>This generates a quadrantified mesh meant for UI buttons
+		/// by sweeping a lathe over the rounded corners of a rectangle! Note
+		/// that this mesh is quadrantified, so it requires special shaders to
+		/// draw properly!</summary>
+		/// <param name="roundedCorners">A bit-flag indicating which corners
+		/// should be rounded, and which should be sharp!</param>
+		/// <param name="cornerRadius">The radius of each rounded corner.</param>
+		/// <param name="cornerResolution">How many slices/verts go into each corner?
+		/// More is smoother, but more expensive to render.</param>
+		/// <param name="deleteFlatSides">If two adjacent corners are sharp, should
+		/// we skip connecting them with triangles? If this edge will always be
+		/// covered, then deleting these faces may save you some performance.</param>
+		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
+		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
+		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
+		{
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, lathePts, lathePts.Length);
+			return result != IntPtr.Zero ? new Mesh(result) : null;
+		}
 
 		/// <summary>This will hash the given text based id into a hash for use
 		/// with certain StereoKit UI functions. This includes the hash of the

@@ -43,7 +43,7 @@ set NDK C:\Users\[user]\AppData\Local\Android\Sdk\ndk\25.2.9519653
 [Environment]::SetEnvironmentVariable('NDK', 'C:\Users\[user]\AppData\Local\Android\Sdk\ndk\25.2.9519653', 'User')
 
 # Linux
-# Doing this properly is more complicated
+sudo echo "NDK=~/Android/Sdk/ndk/25.2.9519653" >> ~/.profile
 ```
 
 The Visual Studio projects `StereoKitTest_NetAndroid` and `StereoKitTest_Xamarin` will now automatically trigger Android cmake builds before compiling their C# code.
@@ -56,7 +56,7 @@ Here's the pre-reqs you'll need first!
 ```shell
 # here's the commands for installing Linux build pre-reqs:
 sudo apt-get update
-sudo apt-get install build-essential cmake unzip clang lld libfontconfig1-dev libgl1-mesa-dev libx11-xcb-dev libxfixes-dev libxcb-dri2-0-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-randr0-dev libxrandr-dev libxxf86vm-dev mesa-common-dev
+sudo apt-get install cmake ninja-build clang lld libx11-dev libxfixes-dev libegl-dev libgbm-dev libfontconfig-dev
 ```
 
 To build with cmake:
@@ -67,11 +67,11 @@ To build with cmake:
 cmake --preset Linux_x64_Release
 cmake --build --preset Linux_x64_Release
 
-# Run the test app
+# Run the native test app
 ./bin/intermediate/cmake/Linux_x64_Release/StereoKitCTest
 
-# On WSL, run the test app with the software renderer
-LIBGL_ALWAYS_SOFTWARE=1 ./bin/intermediate/cmake/Linux_x64_Release/StereoKitCTest
+# To run the C# test app, you will need the .NET SDK installed
+dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTest.csproj
 
 # check /bin/distribute for final binary files
 ```
