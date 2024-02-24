@@ -296,7 +296,7 @@ void virtualkeyboard_update() {
 
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_push_idi((int32_t)keyboard_text_context);
+	ui_push_idi(keyboard_active_root+keyboard_active_idx);
 	ui_window_begin("SK/Keyboard", keyboard_pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
 
 	// Draw the keyboard
