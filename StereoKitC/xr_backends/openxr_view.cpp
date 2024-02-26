@@ -921,6 +921,9 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	for (uint32_t s_layer = 0; s_layer < display->swapchain_color.backbuffer_views; s_layer++) {
 		int32_t index = s_layer*display->swapchain_color.backbuffer_count + color_id;
 
+		display->swapchain_color.textures[index]->width = display->swapchain_color.width;
+		display->swapchain_color.textures[index]->height = display->swapchain_color.height;
+
 		render_pipeline_surface_set_tex  (display->swapchain_color.render_surfaces[s_layer], display->swapchain_color.textures[index]);
 		render_pipeline_surface_set_clear(display->swapchain_color.render_surfaces[s_layer], color);
 		render_pipeline_surface_set_layer(display->swapchain_color.render_surfaces[s_layer], render_filter);

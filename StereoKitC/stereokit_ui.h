@@ -261,8 +261,10 @@ SK_API bool32_t ui_vslider_at        (const char*     id,   sk_ref(float)  value
 SK_API bool32_t ui_vslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_vslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_vslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_input             (const char*     id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
-SK_API bool32_t ui_input_16          (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
+SK_API bool32_t ui_input             (const char*     id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text), const char     *prompt_text sk_default(nullptr));
+SK_API bool32_t ui_input_16          (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text), const char16_t *prompt_text sk_default(nullptr));
+
+
 SK_API void     ui_image             (sprite_t image, vec2 size);
 SK_API void     ui_model             (model_t model, vec2 ui_size, float model_scale);
 SK_API void     ui_model_at          (model_t model, vec3 start, vec3 size, color128 color);

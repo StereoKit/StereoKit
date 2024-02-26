@@ -543,7 +543,7 @@ inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t cha
 inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
 
 template<typename C>
-bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
+bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text_context_ type, const C* prompt_text) {
 	vec3 final_pos;
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
@@ -648,7 +648,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, color_blend);
 
 	// Swap out for a string of asterisks to hide any password
-	const C* draw_text = buffer;
+	C* draw_text = buffer;
 	if (type == text_context_password) {
 		size_t len          = utf_charlen(buffer);
 		C*     password_txt = sk_stack_alloc_t(C, len + 1);
@@ -694,16 +694,23 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		}
 	}
 
-	ui_text_at(draw_text, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds);
+	if ((draw_text[0] == '\0') && (prompt_text != nullptr)) {
+		// Buffer is empty and there is a prompt string
+		ui_text_at(prompt_text, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds);
+	} else {
+		// Normal case
+		ui_text_at(draw_text, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds);
+	}
+
 
 	return result;
 }
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
-	return ui_input_g<char>(id, buffer, buffer_size, size, type);
+bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, text_context_ type, const char *prompt_text) {
+	return ui_input_g<char>(id, buffer, buffer_size, size, type, prompt_text);
 }
-bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
-	return ui_input_g<char16_t>(id, buffer, buffer_size, size, type);
+bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, text_context_ type, const char16_t* prompt_text) {
+	return ui_input_g<char16_t>(id, buffer, buffer_size, size, type, prompt_text);
 }
 
 ///////////////////////////////////////////

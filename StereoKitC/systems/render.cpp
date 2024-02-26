@@ -305,6 +305,14 @@ void render_step() {
 ///////////////////////////////////////////
 
 inline uint64_t render_sort_id(material_t material, mesh_t mesh) {
+	// Top 32 bits for developer's desired queue offset + which queue it's in, next 16 bits for material asset index, next 16 bits for mesh asset index
+
+	// We determine "which queue" we're in based on the material's transparency mode. 
+	// Opaque materials are rendered first, then alpha blend materials, then additive materials.
+
+	// You want to render opaque materials first, because alpha blended materials depend on the pixels _underneath_ them already being non-empty.
+	// Additive materials coming after that is somewhat arbitrary.
+
 	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
 }
 inline uint64_t render_sort_id_from_queue(int32_t queue_position) {
