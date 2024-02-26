@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -27,6 +27,8 @@
 #include "../systems/input.h"
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
+
+#include "openxr_fb_entity.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -624,8 +626,12 @@ bool openxr_init() {
 	}
 #endif
 
+	openxr_fb_entity_init();
+
 	if (xr_ext_available.MSFT_spatial_anchor)
 		anchors_init(anchor_system_openxr_msft);
+	else if (xr_ext_available.FB_spatial_entity)
+		anchors_init(anchor_system_openxr_fb);
 
 	return true;
 }
@@ -1338,10 +1344,10 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 ///////////////////////////////////////////
 
 void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
-	if (backend_xr_get_type() != backend_xr_type_openxr) {
+	/*if (backend_xr_get_type() != backend_xr_type_openxr) {
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 		return;
-	}
+	}*/
 
 	xr_callbacks_poll_event.add({ on_poll_event, context });
 }

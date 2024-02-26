@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "anchor.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
@@ -5,7 +11,9 @@
 #include "../platforms/platform.h"
 
 #include "../xr_backends/anchor_openxr_msft.h"
+#include "../xr_backends/anchor_openxr_fb.h"
 #include "../xr_backends/anchor_stage.h"
+#include "../xr_backends/openxr_fb_entity.h"
 
 namespace sk {
 
@@ -28,8 +36,9 @@ void anchors_init(anchor_system_ system) {
 	switch (system) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
+	case anchor_system_openxr_fb:   result = anchor_oxr_fb_init  (); break;
 #endif
-	case anchor_system_stage:       result = anchor_stage_init(); break;
+	case anchor_system_stage:       result = anchor_stage_init   (); break;
 	default: break;
 	}
 
@@ -39,6 +48,7 @@ void anchors_init(anchor_system_ system) {
 
 	switch (system) {
 	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
+	case anchor_system_openxr_fb:   log_diagf("Using FB spatial anchors."); break;
 	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
 	default:                        log_diagf("NOT using spatial anchors."); break;
 	}
@@ -48,6 +58,8 @@ void anchors_init(anchor_system_ system) {
 
 void anchors_shutdown() {
 	if (!anch_initialized) return;
+
+	openxr_fb_entity_shutdown();
 
 	for (int32_t i = anch_list   .count-1; i>=0; i--) anchor_release(anch_list   [i]);
 	for (int32_t i = anch_changed.count-1; i>=0; i--) anchor_release(anch_changed[i]);
@@ -72,6 +84,7 @@ void anchors_step_begin() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_step(); break;
+	case anchor_system_openxr_fb:   anchor_oxr_fb_step(); break;
 #endif
 	case anchor_system_stage:       break;
 	default: break;
@@ -111,6 +124,7 @@ anchor_t anchor_create(pose_t pose) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, name);
+	case anchor_system_openxr_fb:   return anchor_oxr_fb_create  (pose, name);
 #endif
 	case anchor_system_stage:       return anchor_stage_create   (pose, name);
 	default: return nullptr;
@@ -139,6 +153,7 @@ void anchor_destroy(anchor_t anchor) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_destroy(anchor); break;
+	case anchor_system_openxr_fb:   anchor_oxr_fb_destroy  (anchor); break;
 #endif
 	//case anchor_system_stage:       anchor_stage_destroy   (anchor); break;
 	default: break;
@@ -205,6 +220,7 @@ bool32_t anchor_try_set_persistent(anchor_t anchor, bool32_t persistent) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: return anchor_oxr_msft_persist(anchor, persistent);
+	case anchor_system_openxr_fb:   return anchor_oxr_fb_persist  (anchor, persistent);
 #endif
 	case anchor_system_stage:       return anchor_stage_persist   (anchor, persistent);
 	default: return false;
@@ -267,6 +283,7 @@ void anchor_clear_stored() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_clear_stored(); break;
+	case anchor_system_openxr_fb:   anchor_oxr_fb_clear_stored  (); break;
 #endif
 	case anchor_system_stage:       anchor_stage_clear_stored(); break;
 	default: break;
@@ -279,6 +296,7 @@ anchor_caps_ anchor_get_capabilities() {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: return anchor_oxr_msft_capabilities();
+	case anchor_system_openxr_fb:   return anchor_oxr_fb_capabilities  ();
 #endif
 	case anchor_system_stage:       return anchor_caps_storable;
 	default: return (anchor_caps_)0;

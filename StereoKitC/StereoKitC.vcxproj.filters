@@ -247,6 +247,12 @@
     <ClCompile Include="systems\render_pipeline.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\anchor_openxr_fb.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\openxr_fb_entity.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -513,6 +519,12 @@
     </ClInclude>
     <ClInclude Include="systems\render_pipeline.h">
       <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\anchor_openxr_fb.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_fb_entity.h">
+      <Filter>xr_backends</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
