@@ -320,23 +320,6 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr solid_create          (in Vec3 position, in Quat rotation, SolidType type = SolidType.Normal);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_release         (IntPtr solid);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_id          (IntPtr solid, string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr solid_get_id          (IntPtr solid);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_sphere      (IntPtr solid, float diameter,               float kilograms, in Vec3 offset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_box         (IntPtr solid, in Vec3 dimensions,           float kilograms, in Vec3 offset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_add_capsule     (IntPtr solid, float diameter, float height, float kilograms, in Vec3 offset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_type        (IntPtr solid, SolidType type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_enabled     (IntPtr solid, [MarshalAs(UnmanagedType.Bool)] bool enabled);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_move            (IntPtr solid, in Vec3 position, in Quat rotation);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_teleport        (IntPtr solid, in Vec3 position, in Quat rotation);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_velocity    (IntPtr solid, in Vec3 meters_per_second);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_set_velocity_ang(IntPtr solid, in Vec3 radians_per_second);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   solid_get_pose        (IntPtr solid, out Pose out_pose);
-
-		///////////////////////////////////////////
-
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_find              (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_copy              (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_create            ();
@@ -583,7 +566,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_reset   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_inject_char(uint character);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, [MarshalAs(UnmanagedType.Bool)] bool visible);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_solid   (Handed hand, [MarshalAs(UnmanagedType.Bool)] bool solid);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_material(Handed hand, IntPtr material);
 
 		///////////////////////////////////////////

@@ -10,9 +10,6 @@
     <ClCompile Include="systems\input.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="systems\physics.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\render.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -263,9 +260,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="systems\input.h">
-      <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\physics.h">
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\render.h">

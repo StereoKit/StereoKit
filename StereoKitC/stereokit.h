@@ -748,7 +748,6 @@ SK_DeclarePrivateType(material_buffer_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
-SK_DeclarePrivateType(solid_t);
 SK_DeclarePrivateType(anchor_t);
 
 ///////////////////////////////////////////
@@ -1378,41 +1377,6 @@ SK_API vec2          text_char_at_16               (const char16_t* text_utf16, 
 SK_API material_t    text_style_get_material       (text_style_t style);
 SK_API float         text_style_get_char_height    (text_style_t style);
 SK_API void          text_style_set_char_height    (text_style_t style, float height_meters);
-
-///////////////////////////////////////////
-
-/*This describes the behavior of a 'Solid' physics object! The
-  physics engine will apply forces differently based on this type.*/
-typedef enum solid_type_ {
-	/*This object behaves like a normal physical object, it'll
-	  fall, get pushed around, and generally be susceptible to physical
-	  forces! This is a 'Dynamic' body in physics simulation terms.*/
-	solid_type_normal = 0,
-	/*Immovable objects are always stationary! They have
-	  infinite mass, zero velocity, and can't collide with Immovable of
-	  Unaffected types.*/
-	solid_type_immovable,
-	/*Unaffected objects have infinite mass, but can have a
-	  velocity! They'll move under their own forces, but nothing in the
-	  simulation will affect them. They don't collide with Immovable or
-	  Unaffected types.*/
-	solid_type_unaffected,
-} solid_type_;
-
-SK_API solid_t       solid_create                  (const sk_ref(vec3) position, const sk_ref(quat) rotation, solid_type_ type sk_default(solid_type_normal));
-SK_API void          solid_release                 (solid_t solid);
-SK_API void          solid_set_id                  (const solid_t solid, const char *id);
-SK_API const char*   solid_get_id                  (const solid_t solid);
-SK_API void          solid_add_sphere              (solid_t solid, float diameter sk_default(1), float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_add_box                 (solid_t solid, const sk_ref(vec3) dimensions,float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_add_capsule             (solid_t solid, float diameter, float height, float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_set_type                (solid_t solid, solid_type_ type);
-SK_API void          solid_set_enabled             (solid_t solid, bool32_t enabled);
-SK_API void          solid_move                    (solid_t solid, const sk_ref(vec3) position, const sk_ref(quat) rotation);
-SK_API void          solid_teleport                (solid_t solid, const sk_ref(vec3) position, const sk_ref(quat) rotation);
-SK_API void          solid_set_velocity            (solid_t solid, const sk_ref(vec3) meters_per_second);
-SK_API void          solid_set_velocity_ang        (solid_t solid, const sk_ref(vec3) radians_per_second);
-SK_API void          solid_get_pose                (const solid_t solid, sk_ref(pose_t) out_pose);
 
 ///////////////////////////////////////////
 
@@ -2157,7 +2121,6 @@ SK_API char32_t              input_text_consume      (void);
 SK_API void                  input_text_reset        (void);
 SK_API void                  input_text_inject_char  (char32_t character);
 SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
 SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));

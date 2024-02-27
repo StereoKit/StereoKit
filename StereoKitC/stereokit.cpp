@@ -14,7 +14,6 @@
 
 #include "systems/render.h"
 #include "systems/input.h"
-#include "systems/physics.h"
 #include "systems/system.h"
 #include "systems/text.h"
 #include "systems/audio.h"
@@ -167,17 +166,9 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_ui_late.func_step = ui_step_late;
 	systems_add(&sys_ui_late);
 
-	system_t sys_physics = { "Physics" };
-	system_set_initialize_deps(sys_physics, "Defaults");
-	system_set_step_deps      (sys_physics, "Input", "FrameBegin");
-	sys_physics.func_initialize = physics_init;
-	sys_physics.func_step       = physics_step;
-	sys_physics.func_shutdown   = physics_shutdown;
-	systems_add(&sys_physics);
-
 	system_t sys_renderer = { "Renderer" };
 	system_set_initialize_deps(sys_renderer, "Platform", "Defaults");
-	system_set_step_deps      (sys_renderer, "Physics", "FrameBegin");
+	system_set_step_deps      (sys_renderer, "FrameBegin");
 	sys_renderer.func_initialize = render_init;
 	sys_renderer.func_step       = render_step;
 	sys_renderer.func_shutdown   = render_shutdown;
@@ -253,7 +244,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_anim);
 
 	system_t sys_app = { "App" };
-	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI");
+	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Renderer", "UI");
 	sys_app.func_step = sk_app_step;
 	systems_add(&sys_app);
 
@@ -623,7 +614,6 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	local.timev_stepf    = (float)local.timev_step;
 	local.timevf_us      = (float)local.timev_us;
 	local.timevf         = (float)local.timev;
-	physics_sim_time  = local.timev;
 }
 
 } // namespace sk

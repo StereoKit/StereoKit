@@ -25,7 +25,6 @@ using namespace sk;
 #include <string>
 #include <list>
 
-solid_t     floor_solid;
 matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
@@ -191,12 +190,8 @@ void common_init() {
 	floor_model  = model_create_mesh(mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
 
-	// Build a physical floor!
-	vec3 pos   = vec3{ 0,-1.5f,0 };
-	vec3 scale = vec3{ 5,1,5 };
-	floor_tr    = matrix_trs(pos, quat_identity, scale);
-	floor_solid = solid_create(pos, quat_identity, solid_type_immovable);
-	solid_add_box (floor_solid, scale);
+	// Build a floor!
+	floor_tr = matrix_trs(vec3{ 0,-1.5f,0 }, quat_identity, vec3{ 5,1,5 });
 
 	demo_select_pose.position = vec3{0, 0, -0.4f};
 	demo_select_pose.orientation = quat_lookat(vec3_forward, vec3_zero);
@@ -264,7 +259,6 @@ void common_update() {
 void common_shutdown() {
 	scene_shutdown();
 
-	solid_release   (floor_solid);
 	material_release(floor_mat);
 	model_release   (floor_model);
 }
