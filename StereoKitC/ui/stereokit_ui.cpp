@@ -232,7 +232,7 @@ void ui_image(sprite_t image, vec2 size) {
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw_at(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
 }
 
 ///////////////////////////////////////////
@@ -292,7 +292,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		color128 final_color = image_tint;
 		if (!ui_is_enabled()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 	
-		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
+		sprite_draw(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 	}
 	if (image_layout != ui_btn_layout_center_no_text)
 		ui_text_in(text, text_align, text_layout, text_fit_squeeze, text_at, text_size);
@@ -489,7 +489,7 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
-	sprite_draw_at(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
 
 	return state & button_state_just_active;
 }

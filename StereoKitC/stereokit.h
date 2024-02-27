@@ -1438,8 +1438,7 @@ SK_API float       sprite_get_aspect (sprite_t sprite);
 SK_API int32_t     sprite_get_width  (sprite_t sprite);
 SK_API int32_t     sprite_get_height (sprite_t sprite);
 SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void        sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
-SK_API void        sprite_draw_at    (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw       (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 

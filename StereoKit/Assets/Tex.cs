@@ -332,28 +332,6 @@ namespace StereoKit
 			=> NativeAPI.tex_get_surface(_inst);
 
 		/// <summary>Retrieve the color data of the texture from the GPU. This
-		/// can be a very slow operation, so use it cautiously. If the color
-		/// array is the correct size, it will not be re-allocated.</summary>
-		/// <param name="colorData">An array of colors that will be filled out
-		/// with the texture's data. It can be null, or an incorrect size. If
-		/// so, it will be reallocated to the correct size.</param>
-		/// <param name="mipLevel">Retrieves the color data for a specific
-		/// mip-mapping level. This function will log a fail and return a black
-		/// array if an invalid mip-level is provided.</param>
-		[Obsolete("Use GetColorData<Color32>")]
-		public void GetColors(ref Color32[] colorData, int mipLevel = 0) => GetColorData(ref colorData, mipLevel);
-
-		/// <summary>Retrieve the color data of the texture from the GPU. This
-		/// can be a very slow operation, so use it cautiously.</summary>
-		/// <param name="mipLevel">Retrieves the color data for a specific
-		/// mip-mapping level. This function will log a fail and return a black
-		/// array if an invalid mip-level is provided.</param>
-		/// <returns>The texture's color values in an array sized Width*Height.
-		/// </returns>
-		[Obsolete("Use GetColorData<Color32>")]
-		public Color32[] GetColors(int mipLevel = 0) => GetColorData<Color32>(mipLevel);
-
-		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously.</summary>
 		/// <typeparam name="T">This should be a struct or basic type used to
 		/// represent your color/pixel data. Structs should use

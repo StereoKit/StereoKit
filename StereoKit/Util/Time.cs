@@ -28,29 +28,6 @@ namespace StereoKit
 		/// </summary>
 		public static ulong  Frame => NativeAPI.time_frame();
 
-		/// <summary> (Deprecated, use Time.Step) How many seconds have elapsed
-		/// since the last frame? 64 bit time precision, calculated at
-		/// the start of the frame.</summary>
-		[Obsolete("Use Time.Step")]
-		public static double Elapsed => NativeAPI.time_step();
-		/// <summary> (Deprecated, use Time.Stepf) How many seconds have
-		/// elapsed since the last frame? 32 bit time precision, calculated at
-		/// the start of the frame.</summary>
-		[Obsolete("Use Time.Stepf")]
-		public static float  Elapsedf => NativeAPI.time_stepf();
-		/// <summary> (Deprecated, use Time.StepUnscaled) How many seconds have
-		/// elapsed during the last frame? 64 bit time precision, calculated at
-		/// the start of the frame. This version is unaffected by the
-		/// Time.Scale value!</summary>
-		[Obsolete("Use Time.StepUnscaled")]
-		public static double ElapsedUnscaled => NativeAPI.time_step_unscaled ();
-		/// <summary> (Deprecated, use Time.StepUnscaledf) How many seconds
-		/// have elapsed during the last frame? 32 bit time precision,
-		/// calculated at the start of the frame. This version is unaffected by
-		/// the Time.Scale value!</summary>
-		[Obsolete("Use Time.StepUnscaledf")]
-		public static float  ElapsedUnscaledf => NativeAPI.time_stepf_unscaled();
-
 		/// <summary> How many seconds have elapsed since the last frame? 64
 		/// bit time precision, calculated at the start of the frame.</summary>
 		public static double Step => NativeAPI.time_step();
