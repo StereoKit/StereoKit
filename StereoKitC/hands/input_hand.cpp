@@ -220,7 +220,7 @@ void input_hand_init() {
 	for (int32_t x = 0; x < 16; x++) {
 		gradient[x + y * 16] = col;
 	} }
-	gradient_release(color_grad);
+	gradient_destroy(color_grad);
 
 	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
 	tex_set_colors (gradient_tex, 16, 16, gradient);

@@ -121,7 +121,8 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 		snprintf(name, sizeof(name), "sk/pipeline_surface_%d", surface_id);
 		tex_set_id(surface->tex, name);
 
-		tex_t zbuffer = tex_add_zbuffer(surface->tex, surface->depth);
+		tex_add_zbuffer(surface->tex, surface->depth);
+		tex_t zbuffer = tex_get_zbuffer(surface->tex);
 		snprintf(name, sizeof(name), "sk/pipeline_surface_%d_depth", surface_id);
 		tex_set_id(zbuffer, name);
 		tex_release(zbuffer);

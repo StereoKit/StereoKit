@@ -28,11 +28,6 @@ namespace StereoKit
 		private ModelVisualCollection _visualCollection;
 		private ModelAnimCollection   _animCollection;
 
-		/// <summary>The number of mesh subsets attached to this model.
-		/// </summary>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals instead.")]
-		public int SubsetCount => NativeAPI.model_subset_count(_inst);
-
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managine your assets, or finding
 		/// them later on!</summary>
@@ -151,130 +146,6 @@ namespace StereoKit
 		public Model Copy()
 			=> new Model(NativeAPI.model_copy(_inst));
 
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes/Visuals.Name
-		/// instead. Returns the name of the specific subset! This will be the
-		/// node name of your model asset. If no node name is available,
-		/// SteroKit will generate a name in the format of "subsetX", where
-		/// X would be the subset index. Note that names are not guaranteed
-		/// to be unique (users may assign the same name to multiple nodes).
-		/// Some nodes may also produce multiple subsets with the same name,
-		/// such as when a node contains a Mesh with multiple Materials, each
-		/// Mesh/Material combination will receive a subset with the same
-		/// name.</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the 
-		/// Material for, should be less than SubsetCount.</param>
-		/// <returns>See summary for details.</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Name instead.")]
-		public string GetName(int subsetIndex)
-			=> Marshal.PtrToStringAnsi(NativeAPI.model_get_name(_inst, subsetIndex));
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes/Visuals.Material
-		/// instead. Gets a link to the Material asset used by the model
-		/// subset! Note that this is not necessarily a unique material, and
-		/// could be shared in a number of other places. Consider copying and
-		/// replacing it if you intend to modify it!</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the
-		/// Material for, should be less than SubsetCount.</param>
-		/// <returns>A link to the Material asset used by the model subset at
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
-		public Material GetMaterial(int subsetIndex)
-			=> new Material(NativeAPI.model_get_material(_inst, subsetIndex));
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes/Visuals.Mesh
-		/// instead. Gets a link to the Mesh asset used by the model subset!
-		/// Note that this is not necessarily a unique mesh, and could be
-		/// shared in a number of other places. Consider copying and
-		/// replacing it if you intend to modify it!</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the
-		/// Mesh for, should be less than SubsetCount.</param>
-		/// <returns>A link to the Mesh asset used by the model subset at
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
-		public Mesh GetMesh(int subsetIndex)
-			=> new Mesh(NativeAPI.model_get_mesh(_inst, subsetIndex));
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes /
-		/// Visuals.ModelTransform instead. Gets the transform matrix used by
-		/// the model subset!</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the 
-		/// transform for, should be less than SubsetCount.</param>
-		/// <returns>A transform matrix used by the model subset at 
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
-		public Matrix GetTransform(int subsetIndex)
-			=> NativeAPI.model_get_transform(_inst, subsetIndex);
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes/Visuals.Material
-		/// instead. Changes the Material for the subset to a new one!
-		/// </summary>
-		/// <param name="subsetIndex">Index of the model subset to replace,
-		/// should be less than SubsetCount.</param>
-		/// <param name="material">The new Material, cannot be null.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
-		public void SetMaterial(int subsetIndex, Material material)
-			=> NativeAPI.model_set_material(_inst, subsetIndex, material._inst);
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes/Visuals.Mesh
-		/// instead. Changes the mesh for the subset to a new one!</summary>
-		/// <param name="subsetIndex">Index of the model subset to replace,
-		/// should be less than SubsetCount.</param>
-		/// <param name="mesh">The new Mesh, cannot be null.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
-		public void SetMesh(int subsetIndex, Mesh mesh)
-			=> NativeAPI.model_set_mesh(_inst, subsetIndex, mesh._inst);
-
-		/// <summary>[Obsolete] For removal in v0.4. Use Nodes / 
-		/// Visuals.ModelTransform instead. Changes the transform for the
-		/// subset to a new one! This is in Model space, so it's relative to
-		/// the origin of the model.</summary>
-		/// <param name="subsetIndex">Index of the transform to replace,
-		/// should be less than SubsetCount.</param>
-		/// <param name="transform">The new transform.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
-		public void SetTransform(int subsetIndex, in Matrix transform)
-			=> NativeAPI.model_set_transform(_inst, subsetIndex, transform);
-
-		/// <summary>[Obsolete] For removal in v0.4. Use AddNode or Nodes /
-		/// Visuals.AddChild instead. Adds a new subset to the Model, and
-		/// recalculates the bounds. A default subset name of "subsetX" will be
-		/// used, where X is the subset's index.</summary>
-		/// <param name="mesh">The Mesh for the subset, may not be null.
-		/// </param>
-		/// <param name="material">The Material for the subset, may not be 
-		/// null.</param>
-		/// <param name="transform">A transform Matrix representing the 
-		/// Mesh's location relative to the origin of the Model.</param>
-		/// <returns>The index of the subset that was just added.</returns>
-		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
-		public int AddSubset(Mesh mesh, Material material, in Matrix transform)
-			=> NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
-
-		/// <summary>[Obsolete] For removal in v0.4. Use AddNode or Nodes /
-		/// Visuals.AddChild instead. Adds a new subset to the Model, and
-		/// recalculates the bounds.</summary>
-		/// <param name="name">The text name of the subset. If this is null,
-		/// then a default name of "subsetX" will be used, where X is the
-		/// subset's index.</param>
-		/// <param name="mesh">The Mesh for the subset, may not be null.
-		/// </param>
-		/// <param name="material">The Material for the subset, may not be
-		/// null.</param>
-		/// <param name="transform">A transform Matrix representing the
-		/// Mesh's location relative to the origin of the Model.</param>
-		/// <returns>The index of the subset that was just added.</returns>
-		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
-		public int AddSubset(string name, Mesh mesh, Material material, in Matrix transform)
-			=> NativeAPI.model_add_named_subset(_inst, name, mesh._inst, material._inst, transform);
-
-		/// <summary>[Obsolete] For removal in v0.4. Removes and dereferences a
-		/// subset from the model.</summary>
-		/// <param name="subsetIndex">Index of the subset to remove, should
-		/// be less than SubsetCount.</param>
-		[Obsolete("For removal in v0.4.")]
-		public void RemoveSubset(int subsetIndex)
-			=> NativeAPI.model_remove_subset(_inst, subsetIndex);
-
 		/// <summary>Searches for an animation with the given name, and if it's
 		/// found, sets it up as the active animation and begins playing it
 		/// with the animation mode.</summary>
@@ -359,16 +230,20 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt);
+
+		/// <inheritdoc cref="Intersect(Ray, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
 		/// to the direction the triangles are facing? Should we skip triangles
 		/// that are facing away from the ray, or don't skip anything?</param>
-		/// <returns>True if an intersection occurs, false otherwise!
-		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, cullFaces);
+		public bool Intersect(Ray modelSpaceRay, Cull cullFaces, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt);
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a

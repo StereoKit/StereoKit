@@ -52,7 +52,7 @@ namespace StereoKit
 		/// be sorted by their GradientKey.position value regardless!</param>
 		public Gradient(params GradientKey[] keys) => _inst = NativeAPI.gradient_create_keys(keys, keys.Length);
 		/// <summary>Release reference to the StereoKit asset.</summary>
-		~Gradient() => NativeAPI.gradient_release(_inst);
+		~Gradient() => NativeAPI.gradient_destroy(_inst);
 
 		/// <summary>This adds a color key into the list. It'll get inserted
 		/// to the right slot based on its position.</summary>

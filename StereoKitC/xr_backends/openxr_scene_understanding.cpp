@@ -367,7 +367,7 @@ bool32_t oxr_su_raycast(ray_t ray, ray_t *out_intersection) {
 	for (int32_t i = 0; i < xr_scene_colliders.count; i++) {
 		ray_t intersection = {};
 		ray_t local_ray    = matrix_transform_ray(xr_scene_colliders[i].inv_transform, ray);
-		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, &intersection)) {
+		if (mesh_ray_intersect(xr_scene_colliders[i].mesh_ref, local_ray, cull_back, &intersection)) {
 			float intersection_mag = vec3_magnitude_sq(intersection.pos - local_ray.pos);
 			if (result_mag > intersection_mag) {
 				result_mag        = intersection_mag;

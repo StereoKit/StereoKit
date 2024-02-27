@@ -404,7 +404,7 @@ namespace StereoKit
 
 			GCHandle  pinnedArray = GCHandle.Alloc(colorData, GCHandleType.Pinned);
 			IntPtr    pointer     = pinnedArray.AddrOfPinnedObject();
-			NativeAPI.tex_get_data_mip(_inst, pointer, (UIntPtr)(width * height * pixelSize), mipLevel);
+			NativeAPI.tex_get_data(_inst, pointer, (UIntPtr)(width * height * pixelSize), mipLevel);
 			pinnedArray.Free();
 		}
 

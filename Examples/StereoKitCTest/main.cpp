@@ -124,7 +124,7 @@ void ruler_window();
 pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forward)};
 std::list<std::string> log_list;
 
-void on_log(log_ log_level, const char* log_c_str) {
+void on_log(void*, log_ log_level, const char* log_c_str) {
 	if (log_level == log_error) {
 		log_level = log_level;
 	}
@@ -232,7 +232,7 @@ void common_update() {
 	scene_update();
 
 	// Render floor
-	if (sk_system_info().display_type == display_opaque)
+	if (device_display_get_blend() == display_blend_opaque)
 		render_add_model(floor_model, floor_tr);
 
 	ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});

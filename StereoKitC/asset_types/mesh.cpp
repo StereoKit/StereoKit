@@ -616,7 +616,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -694,7 +694,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);

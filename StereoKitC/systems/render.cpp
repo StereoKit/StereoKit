@@ -845,7 +845,7 @@ void render_check_screenshots() {
 
 		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_release(tex_add_zbuffer(render_capture_surface));
+		tex_add_zbuffer(render_capture_surface);
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -1009,12 +1009,6 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
-	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
-}
-
-///////////////////////////////////////////
-
 struct screenshot_ctx_t {
 	char*   filename;
 	int32_t quality;
@@ -1033,7 +1027,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;

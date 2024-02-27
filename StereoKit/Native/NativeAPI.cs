@@ -119,7 +119,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int     gradient_count  (IntPtr gradient);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color   gradient_get    (IntPtr gradient, float at);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color32 gradient_get32  (IntPtr gradient, float at);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void    gradient_release(IntPtr gradient);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void    gradient_destroy(IntPtr gradient);
 
 		///////////////////////////////////////////
 
@@ -152,9 +152,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   mesh_set_bounds      (IntPtr mesh, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds mesh_get_bounds      (IntPtr mesh);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect   (IntPtr mesh, Ray model_space_ray, out Ray out_pt, IntPtr out_start_inds, Cull cull_mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect   (IntPtr mesh, Ray model_space_ray, Cull cull_mode, out Ray out_pt, IntPtr out_start_inds);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect   (IntPtr mesh, Ray model_space_ray, out Ray out_pt, out uint out_start_inds, Cull cull_mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_ray_intersect   (IntPtr mesh, Ray model_space_ray, Cull cull_mode, out Ray out_pt, out uint out_start_inds);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   mesh_get_triangle    (IntPtr mesh, uint triangle_index, out Vertex a, out Vertex b, out Vertex c);
 
@@ -196,7 +196,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_surface         (IntPtr texture, IntPtr native_surface, TexType type, long native_fmt, int width, int height, int surface_count, [MarshalAs(UnmanagedType.Bool)] bool owned);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_get_surface         (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_add_zbuffer         (IntPtr texture, TexFormat format = TexFormat.DepthStencil);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data_mip        (IntPtr texture, IntPtr out_data, UIntPtr out_data_size, int mip_level);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_get_data            (IntPtr texture, IntPtr out_data, UIntPtr out_data_size, int mip_level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_color           (Color color, int width, int height, TexType type, TexFormat format);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_particle        (int width, int height, float roundness, IntPtr gradient);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_gen_cubemap         (IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr lighting_info);
@@ -330,23 +330,11 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_id            (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_addref            (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_release           (IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_name          (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_material      (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr model_get_mesh          (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix model_get_transform     (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_material      (IntPtr model, int subset, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_mesh          (IntPtr model, int subset, IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_transform     (IntPtr model, int subset, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_remove_subset     (IntPtr model, int subset);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_subset        (IntPtr model, IntPtr mesh, IntPtr material, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_add_named_subset  (IntPtr model, string name, IntPtr mesh, IntPtr material, in Matrix transform);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    model_subset_count      (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_recalculate_bounds_exact(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_ray_intersect     (IntPtr model, Ray model_space_ray, out Ray out_pt, Cull cull_mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_ray_intersect     (IntPtr model, Ray model_space_ray, Cull cull_mode, out Ray out_pt);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_step_anim             (IntPtr model);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -457,7 +445,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model      (IntPtr model, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model_mat  (IntPtr model, IntPtr material_override, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_blit           (IntPtr to_rendertarget, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_pose([In] byte[] file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     ([In] byte[] file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture  ([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float fov_degrees, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
@@ -673,8 +661,8 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_write      (LogLevel level, string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_set_filter (LogLevel level);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe_data  (LogCallbackData on_log, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_unsubscribe_data(LogCallbackData on_log, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_subscribe  (LogCallbackData on_log, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void log_unsubscribe(LogCallbackData on_log, IntPtr context);
 		
 		///////////////////////////////////////////
 
