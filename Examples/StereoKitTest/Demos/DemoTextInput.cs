@@ -56,7 +56,7 @@ class DemoTextInput : ITest
 		if (UI.Button("Switch Keyboard"))
 		{
 			string[] keyboardLayouts = { keyboardLayoutSmall, keyboardLayoutCaps };
-			Platform.KeyboardSwitch(keyboardLayouts, KeyBoardType.Text);
+			Platform.KeyboardSwitch(TextContext.Text, keyboardLayouts);
 		}
 
 		UI.WindowEnd();

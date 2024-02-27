@@ -1309,20 +1309,4 @@ namespace StereoKit
 		Anchor,
 	}
 
-	/*Soft keyboard layouts are often specific to the type of text that they're
-  editing! This enum is a collection of common keyboard types that SK can pass
-  along to the OS's soft keyboard for a more optimal layout.*/
-	public enum KeyBoardType
-	{
-		/*General text editing, this is the most common type of text, and would
-		  result in a 'standard' keyboard layout.*/
-		Text = 1,
-		/*Numbers and numerical values.*/
-		Number = 2,
-		/*This text specifically represents some kind of URL/URI address.*/
-		Uri = 10,
-		/*This is a password, and should not be visible when typed!*/
-		Password = 18,
-
-	}
 }

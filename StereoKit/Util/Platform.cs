@@ -61,8 +61,8 @@ namespace StereoKit
 		/// optimize for the type of text that's required. StereoKit will
 		/// request the soft keyboard layout that most closely represents the
 		/// TextContext provided.</param>
-		public static bool KeyboardSwitch(string[] keyboardLayout, KeyBoardType keyboardType)
-			=> NativeAPI.platform_keyboard_switch(keyboardLayout, keyboardLayout.Length, keyboardType);
+		public static bool KeyboardSwitch(TextContext keyboardType, string[] keyboardLayout)
+			=> NativeAPI.platform_keyboard_switch(keyboardType, keyboardLayout, keyboardLayout.Length);
 		#endregion
 
 		#region File Picker
