@@ -393,7 +393,7 @@ bool _mesh_set_skin(mesh_t mesh, const bone_weight_t *bone_weights, uint32_t bon
 ///////////////////////////////////////////
 
 void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
-	if (bone_weight_count != bone_id_4_count || bone_weight_count != mesh->vert_count) {
+	if (bone_weight_count != bone_id_4_count || bone_weight_count != (int32_t)mesh->vert_count) {
 		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
 		return;
 	}
