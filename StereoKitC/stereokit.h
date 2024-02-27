@@ -7,8 +7,8 @@
 #pragma once
 
 #define SK_VERSION_MAJOR 0
-#define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 9
+#define SK_VERSION_MINOR 4
+#define SK_VERSION_PATCH 0
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
