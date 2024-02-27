@@ -92,20 +92,35 @@ jobs:
             "X-GitHub-Api-Version" = "2022-11-28"
         }
 
-        # Get the previous version we'll base our nightly version off of.
+        # Get the current version that we use to figure out our preview version id.
         $currVersion = & tools/Get-Version.ps1
-        $prevVersion = $currVersion.PsObject.Copy();
-        if     ($prevVersion.patch -ne 0) { $prevVersion.patch = $prevVersion.patch - 1 }
-        elseif ($prevVersion.minor -ne 0) { $prevVersion.minor = $prevVersion.minor - 1 }
-        elseif ($prevVersion.major -ne 0) { $prevVersion.major = $prevVersion.major - 1 }
-        $tagName = "v$($prevVersion.major).$($prevVersion.minor).$($prevVersion.patch)"
-        Write-Output "Previous version is $tagName"
-        
-        # Use the GitHub rest API to get the date of the previous version, since the
+
+        # Use the GitHub rest API to get the date of a tagged commit, since the
         # git repository is likely just shallow cloned.
         $prevDate = [DateTime]::Parse('2023-01-01').ToUniversalTime()
-        $ref      = Invoke-RestMethod -Uri "$urlBase/git/refs/tags/$tagName" -Headers $header
+        $ref      = $null
         $tag      = $null
+        try {
+            # Check if we have an explicit starting date tagged for the current version
+            $tagName = "v$($currVersion.major).$($currVersion.minor).$($currVersion.patch)-start"
+            $ref     = Invoke-RestMethod -Uri "$urlBase/git/refs/tags/$tagName" -Headers $header
+            Write-Output "Preview versioning from explicit start tag: $tagName"
+        } catch {
+            # If no explicit starting date, then finding the previous version can be an
+            # acceptable fallback.
+            $prevVersion = $currVersion.PsObject.Copy();
+            if     ($prevVersion.patch -ne 0) { $prevVersion.patch = $prevVersion.patch - 1 }
+            elseif ($prevVersion.minor -ne 0) { $prevVersion.minor = $prevVersion.minor - 1 }
+            elseif ($prevVersion.major -ne 0) { $prevVersion.major = $prevVersion.major - 1 }
+            $tagName = "v$($prevVersion.major).$($prevVersion.minor).$($prevVersion.patch)"
+            try {
+                $ref = Invoke-RestMethod -Uri "$urlBase/git/refs/tags/$tagName" -Headers $header
+                Write-Output "Preview versioning from previous version tag: $tagName"
+            } catch {
+                Write-Output "Preview versioning tag not found! Versioning from 2023-1-1"
+            }
+        }
+        
         if ($ref) {
             $tag = Invoke-RestMethod -Uri "$urlBase/git/tags/$($ref.object.sha)" -Headers $header
         }
