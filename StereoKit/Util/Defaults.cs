@@ -222,6 +222,35 @@
 		/// selected checkbox. This is used by the UI for toggle buttons!
 		/// </summary>
 		public static Sprite SpriteToggleOff { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing up.</summary>
+		public static Sprite SpriteArrowUp { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing down.</summary>
+		public static Sprite SpriteArrowDown { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing left.</summary>
+		public static Sprite SpriteArrowLeft { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing right.</summary>
+		public static Sprite SpriteArrowRight { get; private set; }
+		/// <summary>This is a 64x64 image of a backspace action button,
+		/// similar to a backspace button you might find on a mobile keyboard.
+		/// </summary>
+		public static Sprite SpriteBackspace { get; private set; }
+		/// <summary>This is a 64x64 image of an upward facing rounded arrow.
+		/// This is a triangular top with a narrow rectangular base, and is
+		/// used to indicate a 'shift' icon on a keyboard.</summary>
+		public static Sprite SpriteShift { get; private set; }
+		/// <summary>This is a 64x64 image of a square aspect X, with rounded
+		/// edge. It's used to indicate a 'close' icon.</summary>
+		public static Sprite SpriteClose { get; private set; }
+		/// <summary>3 horizontal bars, indicating either a 'hamburger' menu,
+		/// or a list of items.</summary>
+		public static Sprite SpriteList { get; private set; }
+		/// <summary>A 3x3 grid of squares, indicating a grid of items.
+		/// </summary>
+		public static Sprite SpriteGrid { get; private set; }
 
 		/// <summary>The default font used by StereoKit's text. This varies
 		/// from platform to platform, but is typically a sans-serif general
@@ -271,10 +300,19 @@
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
 
-			SpriteRadioOn   = Sprite.Find(DefaultIds.spriteRadioOn);
-			SpriteRadioOff  = Sprite.Find(DefaultIds.spriteRadioOff);
-			SpriteToggleOn  = Sprite.Find(DefaultIds.spriteToggleOn);
-			SpriteToggleOff = Sprite.Find(DefaultIds.spriteToggleOff);
+			SpriteRadioOn    = Sprite.Find(DefaultIds.spriteRadioOn);
+			SpriteRadioOff   = Sprite.Find(DefaultIds.spriteRadioOff);
+			SpriteToggleOn   = Sprite.Find(DefaultIds.spriteToggleOn);
+			SpriteToggleOff  = Sprite.Find(DefaultIds.spriteToggleOff);
+			SpriteArrowLeft  = Sprite.Find(DefaultIds.spriteArrowLeft);
+			SpriteArrowRight = Sprite.Find(DefaultIds.spriteArrowRight);
+			SpriteArrowUp    = Sprite.Find(DefaultIds.spriteArrowUp);
+			SpriteArrowDown  = Sprite.Find(DefaultIds.spriteArrowDown);
+			SpriteBackspace  = Sprite.Find(DefaultIds.spriteBackspace);
+			SpriteShift      = Sprite.Find(DefaultIds.spriteShift);
+			SpriteClose      = Sprite.Find(DefaultIds.spriteClose);
+			SpriteList       = Sprite.Find(DefaultIds.spriteList);
+			SpriteGrid       = Sprite.Find(DefaultIds.spriteGrid);
 		}
 
 		internal static void Shutdown()
@@ -317,10 +355,19 @@
 			SoundClick   = null;
 			SoundUnclick = null;
 
-			SpriteRadioOn   = null;
-			SpriteRadioOff  = null;
-			SpriteToggleOn  = null;
-			SpriteToggleOff = null;
+			SpriteRadioOn    = null;
+			SpriteRadioOff   = null;
+			SpriteToggleOn   = null;
+			SpriteToggleOff  = null;
+			SpriteArrowLeft  = null;
+			SpriteArrowRight = null;
+			SpriteArrowUp    = null;
+			SpriteArrowDown  = null;
+			SpriteBackspace  = null;
+			SpriteShift      = null;
+			SpriteClose      = null;
+			SpriteList       = null;
+			SpriteGrid       = null;
 		}
 	}
 }

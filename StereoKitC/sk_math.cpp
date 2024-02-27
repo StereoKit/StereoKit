@@ -516,6 +516,14 @@ vec3 bounds_corner(const bounds_t &bounds, int32_t index8) {
 
 ///////////////////////////////////////////
 
+float bounds_sdf(bounds_t bounds, vec3 point) {
+	vec3  q      = vec3_abs(point-bounds.center) - bounds.dimensions/2;
+	float inside = fminf(fmaxf(q.x, fmaxf(q.y, q.z)), 0.0);
+	return vec3_magnitude(vec3{fmaxf(q.x,0), fmaxf(q.y,0), fmaxf(q.z,0)}) + inside;
+}
+
+///////////////////////////////////////////
+
 vec3 math_cubemap_corner(int i) {
 	float neg = (float)((i / 4) % 2 ? -1 : 1);
 	int nx  = ((i+24) / 16) % 2;

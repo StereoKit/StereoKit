@@ -1,5 +1,5 @@
 #include "world.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
@@ -39,7 +39,11 @@ bool world_init() {
 	default: break;
 	}
 
+#if defined(SK_XR_OPENXR)
 	return oxr_su_init();
+#else
+	return true;
+#endif
 }
 
 ///////////////////////////////////////////
@@ -47,13 +51,17 @@ bool world_init() {
 void world_shutdown() {
 	material_release(world_occlusion_material);
 
+#if defined(SK_XR_OPENXR)
 	oxr_su_shutdown();
+#endif
 }
 
 ///////////////////////////////////////////
 
 void world_step() {
+#if defined(SK_XR_OPENXR)
 	oxr_su_step();
+#endif
 }
 
 ///////////////////////////////////////////
@@ -237,6 +245,16 @@ pose_t world_get_bounds_pose() {
 #endif
 	case backend_xr_type_simulator: return simulator_bounds_pose();
 	default:                        return pose_identity;
+	}
+}
+
+button_state_ world_get_tracked() {
+	switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	case backend_xr_type_openxr:    return openxr_space_tracked();
+#endif
+	case backend_xr_type_simulator: return button_state_active;
+	default:                        return button_state_active;
 	}
 }
 

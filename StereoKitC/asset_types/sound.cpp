@@ -3,7 +3,7 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../systems/audio.h"
 #include "../libraries/ferr_thread.h"
 

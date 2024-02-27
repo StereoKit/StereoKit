@@ -637,7 +637,12 @@ namespace StereoKit
 		/// <returns>Null if this key does not exist, or a string with data
 		/// otherwise.</returns>
 		public string GetInfo(string key)
-			=> NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key)));
+		{
+			IntPtr result = NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key));
+			return result == IntPtr.Zero
+				? null
+				: NativeHelper.FromUtf8(result);
+		}
 
 		/// <summary>Set a Key/Value pair associated with this ModelNode. This
 		/// is auto-populated from the GLTF extras, and you can also add your

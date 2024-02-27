@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: MIT
-// The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
 
 #include "../stereokit.h"
 #include "../sk_math.h"
@@ -16,7 +17,7 @@
 #include "hand_oxr_controller.h"
 #include "hand_oxr_articulated.h"
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include <math.h>
 #include <string.h>
@@ -132,7 +133,7 @@ const hand_t *input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
-hand_source_ input_hand_source(handed_ hand) {
+hand_source_ input_hand_source(handed_) {
 	return hand_sources[hand_system].source;
 }
 
@@ -202,10 +203,19 @@ void input_hand_init() {
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
-	gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
-	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
-	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
-	gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
+	// Snapdragon's implementation of XR_MSFT_hand_tracking_mesh does not work
+	// well with SK's implementation of UV generation just yet, so we set it to
+	// pure white for now instead. Users can always opt out of the extension if
+	// they prefer the fallback hand mesh.
+	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && backend_openxr_ext_enabled("XR_MSFT_hand_tracking_mesh")) {
+		gradient_add(color_grad, color128{ 1,1,1,1 }, 0.0f);
+		gradient_add(color_grad, color128{ 1,1,1,1 }, 1.0f);
+	} else {
+		gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
+		gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
+		gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
+		gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
+	}
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
@@ -492,7 +502,7 @@ bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) 
 }
 ///////////////////////////////////////////
 
-void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked, bool trigger_pressed, bool grip_pressed) {
+void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// Update tracking state
@@ -507,11 +517,8 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 	const pose_t* dest_pose = nullptr;
 	hand_sim_id_t pose_id         = -1;
 	int32_t       pose_idx        = -1;
-	int32_t       pose_idx_prev   = -1;
-	int32_t       pose_idx_curr   = -1;
 	float         pose_blend_curr = 0;
 	
-	const controller_t* controller = input_controller(handedness);
 	for (int32_t i = 0; i < hand_sim_poses.count; i++) {
 		float amt1 = 0, amt2 = 0;
 		hand_sim_t *p = &hand_sim_poses[i];
@@ -595,7 +602,7 @@ void input_hand_sim_pose_remove(hand_sim_id_t id) {
 
 ///////////////////////////////////////////
 
-void input_hand_sim_pose_clear(hand_sim_id_t id) {
+void input_hand_sim_pose_clear() {
 	hand_sim_poses.clear();
 }
 

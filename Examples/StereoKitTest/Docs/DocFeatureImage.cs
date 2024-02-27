@@ -53,7 +53,7 @@ class DocFeatureImage : ITest
 
 		UI.Text("StereoKit is a C#, code-first, lightweight Mixed Reality engine. Welcome back to .NET! :)\n\nBuilt around an intuitive API, an MR friendly UI, MR interaction systems, and more!");
 
-		UI.Space(UI.LineHeight*0.5f);
+		UI.VSpace(UI.LineHeight*0.5f);
 
 		UI.PanelBegin();
 		UI.Button("Load File");

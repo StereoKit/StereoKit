@@ -21,6 +21,8 @@ class DemoDevice : ITest
 		Vec2 labelSize = V.XY(0.08f,0);
 		UI.Label("Name", labelSize); UI.SameLine();
 		UI.Label(Device.Name, false);
+		UI.Label("Runtime", labelSize); UI.SameLine();
+		UI.Label(Device.Runtime, false);
 		UI.Label("GPU", labelSize); UI.SameLine();
 		UI.Label(Device.GPU, false);
 		UI.Label("Tracking", labelSize); UI.SameLine();

@@ -50,7 +50,8 @@ namespace StereoKit
 			if (loadLibrary == null) return false;
 
 			try {
-				// If we're on the right thread, this will just work.
+				// If we're on the right thread, this will just work. But
+				// there's a good chance we're not, and that's okay.
 				loadLibrary.Invoke(null, new object[] { "StereoKitC" });
 				return true;
 			} catch {

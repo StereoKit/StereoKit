@@ -1,5 +1,5 @@
 #include "defaults.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
@@ -34,6 +34,7 @@ shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
 shader_t     sk_default_shader_ui_box;
 shader_t     sk_default_shader_ui_quadrant;
+shader_t     sk_default_shader_ui_aura;
 shader_t     sk_default_shader_sky;
 shader_t     sk_default_shader_lines;
 material_t   sk_default_material;
@@ -46,6 +47,7 @@ material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
 material_t   sk_default_material_ui_box;
 material_t   sk_default_material_ui_quadrant;
+material_t   sk_default_material_ui_aura;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
 sound_t      sk_default_click;
@@ -186,6 +188,7 @@ bool defaults_init() {
 	SHADER_DECODE(sks_shader_builtin_ui_hlsl_zip         ); sk_default_shader_ui          = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_box_hlsl_zip     ); sk_default_shader_ui_box      = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_quadrant_hlsl_zip); sk_default_shader_ui_quadrant = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_aura_hlsl_zip    ); sk_default_shader_ui_aura     = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_skybox_hlsl_zip     ); sk_default_shader_sky         = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
@@ -215,6 +218,7 @@ bool defaults_init() {
 		sk_default_shader_ui          == nullptr ||
 		sk_default_shader_ui_box      == nullptr ||
 		sk_default_shader_ui_quadrant == nullptr ||
+		sk_default_shader_ui_aura     == nullptr ||
 		sk_default_shader_sky         == nullptr ||
 		sk_default_shader_lines       == nullptr)
 		return false;
@@ -230,6 +234,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
 	shader_set_id(sk_default_shader_ui_box,      default_id_shader_ui_box);
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
+	shader_set_id(sk_default_shader_ui_aura,     default_id_shader_ui_aura);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
 
@@ -244,29 +249,32 @@ bool defaults_init() {
 	sk_default_material_ui          = material_create(sk_default_shader_ui);
 	sk_default_material_ui_box      = material_create(sk_default_shader_ui_box);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
+	sk_default_material_ui_aura     = material_create(sk_default_shader_ui_aura);
 
-	if (sk_default_material          == nullptr ||
-		sk_default_material_pbr      == nullptr ||
-		sk_default_material_pbr_clip == nullptr ||
-		sk_default_material_unlit    == nullptr ||
-		sk_default_material_unlit_clip == nullptr ||
-		sk_default_material_equirect == nullptr ||
-		sk_default_material_font     == nullptr ||
-		sk_default_material_ui       == nullptr ||
-		sk_default_material_ui_box   == nullptr ||
-		sk_default_material_ui_quadrant == nullptr)
+	if (sk_default_material             == nullptr ||
+		sk_default_material_pbr         == nullptr ||
+		sk_default_material_pbr_clip    == nullptr ||
+		sk_default_material_unlit       == nullptr ||
+		sk_default_material_unlit_clip  == nullptr ||
+		sk_default_material_equirect    == nullptr ||
+		sk_default_material_font        == nullptr ||
+		sk_default_material_ui          == nullptr ||
+		sk_default_material_ui_box      == nullptr ||
+		sk_default_material_ui_quadrant == nullptr ||
+		sk_default_material_ui_aura     == nullptr)
 		return false;
 
-	material_set_id(sk_default_material,          default_id_material);
-	material_set_id(sk_default_material_pbr,      default_id_material_pbr);
-	material_set_id(sk_default_material_pbr_clip, default_id_material_pbr_clip);
-	material_set_id(sk_default_material_unlit,    default_id_material_unlit);
-	material_set_id(sk_default_material_unlit_clip, default_id_material_unlit_clip);
-	material_set_id(sk_default_material_equirect, default_id_material_equirect);
-	material_set_id(sk_default_material_font,     default_id_material_font);
-	material_set_id(sk_default_material_ui,       default_id_material_ui);
-	material_set_id(sk_default_material_ui_box,   default_id_material_ui_box);
+	material_set_id(sk_default_material,             default_id_material);
+	material_set_id(sk_default_material_pbr,         default_id_material_pbr);
+	material_set_id(sk_default_material_pbr_clip,    default_id_material_pbr_clip);
+	material_set_id(sk_default_material_unlit,       default_id_material_unlit);
+	material_set_id(sk_default_material_unlit_clip,  default_id_material_unlit_clip);
+	material_set_id(sk_default_material_equirect,    default_id_material_equirect);
+	material_set_id(sk_default_material_font,        default_id_material_font);
+	material_set_id(sk_default_material_ui,          default_id_material_ui);
+	material_set_id(sk_default_material_ui_box,      default_id_material_ui_box);
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
+	material_set_id(sk_default_material_ui_aura,     default_id_material_ui_aura);
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 	material_set_cull(sk_default_material_ui_box, cull_none);
@@ -289,9 +297,10 @@ bool defaults_init() {
 		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
 		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
 		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+		float silencer = fmaxf(0,fminf(1,(0.03f-t)*200));
 
-		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
-		}, .03f);
+		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f * silencer;
+		}, .08f);
 	sk_default_unclick = sound_generate([](float t){
 		float x = t / 0.03f;
 		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
@@ -349,6 +358,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
+	material_release(sk_default_material_ui_aura);
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_blit);
 	shader_release  (sk_default_shader_unlit);
@@ -358,6 +368,7 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_box);
 	shader_release  (sk_default_shader_ui_quadrant);
+	shader_release  (sk_default_shader_ui_aura);
 	shader_release  (sk_default_shader_sky);
 	shader_release  (sk_default_shader_lines);
 	shader_release  (sk_default_shader_pbr);
