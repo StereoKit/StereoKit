@@ -307,6 +307,7 @@ namespace StereoKit
 		/// space is added vertically, otherwise, space is added
 		/// horizontally.</summary>
 		/// <param name="space">Physical space to shift the layout by.</param>
+		[Obsolete("Use UI.HSpace or UI.VSpace, removing in v0.4")]
 		public static void Space (float space)
 			=> NativeAPI.ui_space(space);
 

@@ -52,5 +52,7 @@
 		internal const string spriteBackspace  = "sk/ui/backspace";
 		internal const string spriteShift      = "sk/ui/shift";
 		internal const string spriteClose      = "sk/ui/close";
+		internal const string spriteList       = "sk/ui/list";
+		internal const string spriteGrid       = "sk/ui/grid";
 	}
 }

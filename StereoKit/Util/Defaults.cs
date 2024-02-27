@@ -245,6 +245,12 @@
 		/// <summary>This is a 64x64 image of a square aspect X, with rounded
 		/// edge. It's used to indicate a 'close' icon.</summary>
 		public static Sprite SpriteClose { get; private set; }
+		/// <summary>3 horizontal bars, indicating either a 'hamburger' menu,
+		/// or a list of items.</summary>
+		public static Sprite SpriteList { get; private set; }
+		/// <summary>A 3x3 grid of squares, indicating a grid of items.
+		/// </summary>
+		public static Sprite SpriteGrid { get; private set; }
 
 		/// <summary>The default font used by StereoKit's text. This varies
 		/// from platform to platform, but is typically a sans-serif general
@@ -305,6 +311,8 @@
 			SpriteBackspace  = Sprite.Find(DefaultIds.spriteBackspace);
 			SpriteShift      = Sprite.Find(DefaultIds.spriteShift);
 			SpriteClose      = Sprite.Find(DefaultIds.spriteClose);
+			SpriteList       = Sprite.Find(DefaultIds.spriteList);
+			SpriteGrid       = Sprite.Find(DefaultIds.spriteGrid);
 		}
 
 		internal static void Shutdown()
@@ -358,6 +366,8 @@
 			SpriteBackspace  = null;
 			SpriteShift      = null;
 			SpriteClose      = null;
+			SpriteList       = null;
+			SpriteGrid       = null;
 		}
 	}
 }
