@@ -43,7 +43,7 @@ namespace StereoKit {
 			IntPtr fontInst = NativeAPI.font_find(fontId);
 			if (fontInst == IntPtr.Zero)
 			{
-				Log.Write(LogLevel.Warning, "Couldn't find a font named {0}", fontId);
+				Log.Warn($"Couldn't find a font named {fontId}");
 				return null;
 			}
 			return new Font(fontInst);

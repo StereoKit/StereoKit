@@ -257,7 +257,7 @@ namespace StereoKit
 		{
 			if (Format != TexFormat.R32)
 			{
-				Log.Err($"Can't set a {Format} format texture from Color data!", Format);
+				Log.Err($"Can't set a {Format} format texture from Color data!");
 				return;
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);

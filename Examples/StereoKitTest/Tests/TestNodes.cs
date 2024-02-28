@@ -36,7 +36,7 @@ class TestNodes : ITest
 		/// or contents.
 		Log.Info("Iterate nodes:");
 		foreach (ModelNode node in model.Nodes)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals
@@ -45,7 +45,7 @@ class TestNodes : ITest
 		/// data attached to it!
 		Log.Info("Iterate visuals:");
 		foreach (ModelNode node in model.Visuals)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals Model.Nodes
