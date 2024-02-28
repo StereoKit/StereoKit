@@ -118,7 +118,7 @@ void ui_core_hands_step() {
 
 		// Poke
 		interactor_update(skui_hand_interactors[i*3 + 0],
-			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : skui_interactors[i].capsule_end_world, hand->fingers[1][4].position, hand->fingers[1][4].radius,
+			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : skui_interactors[i*3 + 0].capsule_end_world, hand->fingers[1][4].position, hand->fingers[1][4].radius,
 			hand->fingers[1][4].position, hand->palm.orientation, hand->fingers[1][4].position,
 			button_state_inactive, hand->tracked_state);
 
