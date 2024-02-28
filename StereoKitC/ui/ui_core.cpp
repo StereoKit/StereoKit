@@ -621,6 +621,7 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 		render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
 
 	bool32_t result = bounds_capsule_intersect(box, actor->capsule_start, actor->capsule_end, actor->capsule_radius, out_at);
+	if (actor->type == interactor_type_point) *out_at = actor->capsule_end;
 	if (result) {
 		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, actor->capsule_start);
 	}
