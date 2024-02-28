@@ -50,19 +50,11 @@ namespace StereoKit
 		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
 			=> NativeAPI.platform_keyboard_show(show, inputType);
 
-		/// <summary>Request or hide a soft keyboard for the user to type on.
-		/// StereoKit will surface OS provided soft keyboards where available,
-		/// and use a fallback keyboard when not. On systems with physical
-		/// keyboards, soft keyboards generally will not be shown if the user
-		/// has interacted with their physical keyboard recently.</summary>
-		/// <param name="show">Tells whether or not to open or close the soft
-		/// keyboard.</param>
-		/// <param name="inputType">Soft keyboards can change layout to
-		/// optimize for the type of text that's required. StereoKit will
-		/// request the soft keyboard layout that most closely represents the
-		/// TextContext provided.</param>
-		public static bool KeyboardSwitch(TextContext keyboardType, string[] keyboardLayout)
-			=> NativeAPI.platform_keyboard_switch(keyboardType, keyboardLayout, keyboardLayout.Length);
+		/// <summary>Replace the default keyboard type with a custom layout.</summary>
+		/// <param name="keyboardType">Type of keyboard.</param>
+		/// <param name="keyboardLayout">Custom keyboard layout to replace the defualt layout.</param>
+		public static bool KeyboardSetLayout(TextContext keyboardType, string[] keyboardLayout)
+			=> NativeAPI.platform_keyboard_set_layout(keyboardType, keyboardLayout, keyboardLayout.Length);
 		#endregion
 
 		#region File Picker

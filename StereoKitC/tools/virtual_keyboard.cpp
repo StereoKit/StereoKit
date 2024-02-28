@@ -109,12 +109,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 	keyboard_visit_return_idx = -1;
 
 	// Get the right layout for this text context
-	switch (type) {
-	case text_context_text:  keyboard_active_root = text_context_text;   break;
-	case text_context_number:keyboard_active_root = text_context_number; break;
-	case text_context_uri:   keyboard_active_root = text_context_uri;    break;
-	default:                 keyboard_active_root = text_context_text;   break;
-	}
+	keyboard_active_root = type;
 	keyboard_active_idx = 0;
 }
 
@@ -148,7 +143,7 @@ Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80
 Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\n-13-3
 spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	virtualkeyboard_switch(text_context_text, layouts, 2);
+	platform_keyboard_set_layout(text_context_text, layouts, 2);
 	////// URI keyboard //////
 	layouts[0] =
 R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|---2|spr:sk/ui/close----close
@@ -162,7 +157,7 @@ Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80
 Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\n-13-3|.net-.net--4
 spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
-	virtualkeyboard_switch(text_context_uri, layouts, 2);
+	platform_keyboard_set_layout(text_context_uri, layouts, 2);
 	////// Numeric keyboard //////
 	layouts[0] =
 R"(7|8|9|spr:sk/ui/backspace-\b
@@ -170,7 +165,7 @@ R"(7|8|9|spr:sk/ui/backspace-\b
 1|2|3
 0|.|Return-\n--4-close|)";
 	layouts[1] = nullptr;
-	virtualkeyboard_switch(text_context_number, layouts, 1);
+	platform_keyboard_set_layout(text_context_number, layouts, 1);
 	// Mobile friendly design. This needs touch selection functionality for Input
 	// elements before it can be shipped.
 	/*layout =
@@ -197,7 +192,7 @@ spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\n--4|)";
 
 ///////////////////////////////////////////
 
-bool virtualkeyboard_switch(text_context_ keyboard_type, char** keyboard_layouts, int layouts_num) {
+bool virtualkeyboard_set_layout(text_context_ keyboard_type, char** keyboard_layouts, int layouts_num) {
 	keylayout_info_t layer = {};
 	array_t<keylayout_info_t> keyboard_layers = {};
 	for (int i = 0; i < layouts_num; i++) {
@@ -209,16 +204,13 @@ bool virtualkeyboard_switch(text_context_ keyboard_type, char** keyboard_layouts
 		}
 	}
 
-	if (keyboard_layers.count != 0) {
-		switch (keyboard_type) {
-			case text_context_text:  keyboards[0] = keyboard_layers;;   break;
-			case text_context_number: keyboards[1] = keyboard_layers;; break;
-			case text_context_uri:    keyboards[2] = keyboard_layers;;    break;
-			default:                 keyboards[0] = keyboard_layers;;   break;
-		}
-		return true;
+	if (keyboard_layers.count != 0 && keyboard_type >= 0 && keyboard_type < 4) {
+		keyboards[keyboard_type] = keyboard_layers;
 	}
-	return false;
+	else {
+		return false;
+	}
+	return true;
 }
 
 ///////////////////////////////////////////
