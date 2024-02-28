@@ -3,7 +3,7 @@
     <a href="https://github.com/StereoKit/StereoKit/branches"><img src="https://img.shields.io/github/last-commit/StereoKit/StereoKit/develop" /></a>
     <a href="https://tldrlegal.com/license/mit-license"><img src="https://img.shields.io/github/license/StereoKit/StereoKit" /></a>
     <a href="https://www.nuget.org/packages/StereoKit/"><img src="https://img.shields.io/nuget/v/StereoKit" /></a>
-    <a href="https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates"><img src="https://img.shields.io/visual-studio-marketplace/i/NickKlingensmith.StereoKitTemplates" /></a>
+    <a href="https://www.nuget.org/packages/StereoKit/"><img src="https://img.shields.io/nuget/dt/StereoKit" /></a>
 </p>
 
 StereoKit is an easy-to-use open source mixed reality library for building HoloLens and VR applications with C# and OpenXR! Inspired by libraries like XNA and Processing, StereoKit is meant to be fun to use and easy to develop with, yet still quite capable of creating professional and business ready software.
