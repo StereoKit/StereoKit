@@ -207,60 +207,12 @@ void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &
 
 ///////////////////////////////////////////
 
-vec3 matrix_mul_point(const matrix &transform, const vec3 &point) {
-	XMMATRIX mat;
-	math_matrix_to_fast(transform, &mat);
-	return math_fast_to_vec3( XMVector3Transform(math_vec3_to_fast(point), mat) );
-}
-
-///////////////////////////////////////////
-
-vec4 matrix_mul_point4(const matrix &transform, const vec4 &point) {
-	XMMATRIX mat;
-	math_matrix_to_fast(transform, &mat);
-	return math_fast_to_vec4( XMVector4Transform(math_vec4_to_fast(point), mat) );
-}
-
-///////////////////////////////////////////
-
-vec3 matrix_mul_direction(const matrix &transform, const vec3 &direction) {
-	XMMATRIX mat;
-	math_matrix_to_fast(transform, &mat);
-	return math_fast_to_vec3( XMVector3TransformNormal(math_vec3_to_fast(direction), mat) );
-}
 
 ///////////////////////////////////////////
 
 vec3 matrix_mul_direction(const XMMATRIX &transform, const vec3 &direction) {
 	return math_fast_to_vec3( XMVector3TransformNormal(math_vec3_to_fast(direction), transform) );
 }
-
-///////////////////////////////////////////
-
-quat matrix_mul_rotation(const matrix& transform, const quat& orientation) {
-	XMVECTOR pos, scale, rot;
-	XMMATRIX mat;
-	math_matrix_to_fast(transform, &mat);
-	XMMatrixDecompose(&scale, &rot, &pos, mat);
-	XMVECTOR orient = math_quat_to_fast(orientation);
-	return math_fast_to_quat(XMQuaternionMultiply(orient, rot));
-}
-
-///////////////////////////////////////////
-
-pose_t matrix_mul_pose(const matrix& transform, const pose_t& pose) {
-	XMVECTOR pos, scale, rot;
-	XMMATRIX mat;
-	math_matrix_to_fast(transform, &mat);
-	XMMatrixDecompose(&scale, &rot, &pos, mat);
-	XMVECTOR orient = math_quat_to_fast(pose.orientation);
-	return pose_t{
-		math_fast_to_vec3(XMVector3Transform(math_vec3_to_fast(pose.position), mat)),
-		math_fast_to_quat(XMQuaternionMultiply(orient, rot)) };
-}
-
-///////////////////////////////////////////
-
 vec3 matrix_transform_pt(matrix transform, vec3 point) {
 	XMMATRIX mat;
 	math_matrix_to_fast(transform, &mat);

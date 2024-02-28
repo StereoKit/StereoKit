@@ -146,7 +146,7 @@ void ui_core_update() {
 ///////////////////////////////////////////
 
 template<typename C>
-button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
+button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
 	uint64_t      id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
@@ -178,59 +178,8 @@ button_state_ ui_volumei_at_g(const C *id, bounds_t bounds, ui_confirm_ interact
 	if (out_opt_focus_state != nullptr) *out_opt_focus_state = focus;
 	return result;
 }
-button_state_ ui_volumei_at   (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volumei_at_g<char    >(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
-button_state_ ui_volumei_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volumei_at_g<char16_t>(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
-
-///////////////////////////////////////////
-
-template<typename C>
-bool32_t ui_volume_at_g(const C *id, bounds_t bounds) {
-	uint64_t id_hash = ui_stack_hash(id);
-	bool     result  = false;
-
-	skui_last_element = id_hash;
-
-	for (int32_t i = 0; i < handed_max; i++) {
-		bool     was_focused = skui_hand[i].focused_prev == id_hash;
-		bounds_t size        = bounds;
-		if (was_focused) {
-			size.dimensions = bounds.dimensions + vec3_one*skui_settings.padding;
-		}
-
-		bool          in_box = skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, size);
-		button_state_ state  = ui_focus_set(i, id_hash, in_box, 0);
-		if (state & button_state_just_active)
-			result = true;
-	}
-
-	return result;
-}
-bool32_t ui_volume_at   (const char     *id, bounds_t bounds) { return ui_volume_at_g<char    >(id, bounds); }
-bool32_t ui_volume_at_16(const char16_t *id, bounds_t bounds) { return ui_volume_at_g<char16_t>(id, bounds); }
-
-///////////////////////////////////////////
-
-// TODO: Has no Id, might be good to move this over to ui_focus/active_set around v0.4
-button_state_ ui_interact_volume_at(bounds_t bounds, handed_ &out_hand) {
-	button_state_ result  = button_state_inactive;
-
-	for (int32_t i = 0; i < handed_max; i++) {
-		bool     was_active  = skui_hand[i].active_prev  != 0;
-		bool     was_focused = skui_hand[i].focused_prev != 0 || was_active;
-		if (was_active || was_focused)
-			continue;
-
-		if (skui_hand[i].tracked && ui_in_box(skui_hand[i].finger, skui_hand[i].finger_prev, skui_finger_radius, bounds)) {
-			button_state_ state = input_hand((handed_)i)->pinch_state;
-			if (state != button_state_inactive) {
-				result = state;
-				out_hand = (handed_)i;
-			}
-		}
-	}
-
-	return result;
-}
+button_state_ ui_volume_at   (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char    >(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
+button_state_ ui_volume_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char16_t>(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
 
 ///////////////////////////////////////////
 
@@ -741,14 +690,6 @@ int32_t ui_last_focused_hand(uint64_t for_el_id) {
 
 bool32_t ui_is_interacting(handed_ hand) {
 	return skui_hand[hand].active_prev != 0 || skui_hand[hand].focused_prev != 0;
-}
-
-///////////////////////////////////////////
-
-button_state_ ui_last_element_hand_used(handed_ hand) {
-	return button_make_state(
-		skui_hand[hand].active_prev == skui_last_element || skui_hand[hand].focused_prev_prev == skui_last_element,
-		skui_hand[hand].active      == skui_last_element || skui_hand[hand].focused_prev      == skui_last_element);
 }
 
 ///////////////////////////////////////////

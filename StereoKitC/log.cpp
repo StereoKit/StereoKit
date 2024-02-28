@@ -289,22 +289,7 @@ void log_clear_any_fail_reason() {
 
 ///////////////////////////////////////////
 
-void _log_call_nodata(void* context, log_ level, const char* text) {
-	((void(*)(log_, const char*))context)(level, text);
-}
-void log_subscribe(void (*log_callback)(log_ level, const char* text)) {
-	log_subscribe_data(_log_call_nodata, (void*)log_callback);
-}
-
-///////////////////////////////////////////
-
-void log_unsubscribe(void (*log_callback)(log_ level, const char* text)) {
-	log_unsubscribe_data(_log_call_nodata, (void*)log_callback);
-}
-
-///////////////////////////////////////////
-
-void log_subscribe_data(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
+void log_subscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
 	log_callback_t item = {};
 	item.callback = log_callback;
 	item.context  = context;
@@ -313,7 +298,7 @@ void log_subscribe_data(void (*log_callback)(void* context, log_ level, const ch
 
 ///////////////////////////////////////////
 
-void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
+void log_unsubscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
 	for (int32_t i = 0; i < log_listeners.count; i++) {
 		if (log_listeners[i].callback == log_callback &&
 			log_listeners[i].context  == context) {

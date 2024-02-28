@@ -414,7 +414,7 @@ void file_picker_update() {
 
 		// Show the current directory address bar!
 		vec3    address_bar_start = ui_layout_at();
-		float   max_width         = ui_area_remaining().x;
+		float   max_width         = ui_layout_remaining().x;
 		float   width             = 0;
 		int32_t start             = maxi(0, fp_path.fragments.count - 1);
 

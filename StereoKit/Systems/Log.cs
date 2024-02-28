@@ -145,7 +145,7 @@ namespace StereoKit
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
 			callbacks.Add(onLog, (IntPtr context, LogLevel level, string text) => onLog(level, text)); // This prevents the callback from getting GCed
-			NativeAPI.log_subscribe_data(callbacks[onLog], IntPtr.Zero);
+			NativeAPI.log_subscribe(callbacks[onLog], IntPtr.Zero);
 		}
 
 		/// <summary>If you subscribed to the log callback, you can
@@ -161,7 +161,7 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
-			NativeAPI.log_unsubscribe_data(callbacks[onLog], IntPtr.Zero);
+			NativeAPI.log_unsubscribe(callbacks[onLog], IntPtr.Zero);
 			callbacks.Remove(onLog);
 		}
 	}

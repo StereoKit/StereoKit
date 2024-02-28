@@ -14,6 +14,7 @@ void     sk_set_app_focus      (app_focus_ focus_state);
 ft_id_t  sk_main_thread        ();
 
 const sk_settings_t* sk_get_settings_ref();
+sk_settings_t*       sk_get_settings_ref_mut();
 system_info_t*       sk_get_info_ref();
 
 } // namespace sk

@@ -71,12 +71,6 @@ vec2 ui_layout_remaining() {
 
 ///////////////////////////////////////////
 
-vec2 ui_area_remaining() {
-	return ui_layout_remaining();
-}
-
-///////////////////////////////////////////
-
 vec3 ui_layout_at() {
 	return skui_layouts.last().offset;
 }
@@ -459,16 +453,6 @@ void ui_sameline() {
 	ui_layout_t *layout = &skui_layouts.last();
 	layout->offset      = layout->offset_prev;
 	layout->line        = layout->line_prev;
-}
-
-///////////////////////////////////////////
-
-void ui_space(float space) {
-	ui_layout_t *layout = &skui_layouts.last();
-	if (layout->offset.x == layout->offset_initial.x)
-		layout->offset.y -= space;
-	else
-		layout->offset.x -= space;
 }
 
 ///////////////////////////////////////////

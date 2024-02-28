@@ -82,8 +82,16 @@ namespace StereoKit
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out _, cullFaces);
+		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, out modelSpaceAt, out _);
+
+		/// <inheritdoc cref="Intersect(Mesh, out Ray)"/>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything? A good
+		/// default would be Cull.Back.</param>
+		public bool Intersect(Mesh mesh, Cull cullFaces, out Ray modelSpaceAt)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, out modelSpaceAt, out _);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -99,14 +107,16 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
-		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
+		/// <param name="outStartInds">The index of the first index of the
+		/// triangle that was hit</param>
 		/// <param name="cullFaces">How should intersection work with respect
 		/// to the direction the triangles are facing? Should we skip triangles
-		/// that are facing away from the ray, or don't skip anything?</param>
+		/// that are facing away from the ray, or don't skip anything? A good
+		/// default would be Cull.Back.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Mesh mesh, out Ray modelSpaceAt, out uint outStartInds, Cull cullFaces = Cull.Back)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, out modelSpaceAt, out outStartInds, cullFaces);
+		public bool Intersect(Mesh mesh, Cull cullFaces, out Ray modelSpaceAt, out uint outStartInds)
+			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, out modelSpaceAt, out outStartInds);
 
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
@@ -124,7 +134,7 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, out Ray intersection, out _, Cull.Back);
+			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, out Ray intersection, out _);
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -142,13 +152,18 @@ namespace StereoKit
 		/// space later. Direction is not guaranteed to be normalized, 
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
-		/// <param name="cullFaces">How should intersection work with respect
-		/// to the direction the triangles are facing? Should we skip triangles
-		/// that are facing away from the ray, or don't skip anything?</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Model model, out Ray modelSpaceAt, Cull cullFaces = Cull.Back)
-			=> NativeAPI.model_ray_intersect(model._inst, this, out modelSpaceAt, cullFaces);
+		public bool Intersect(Model model, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(model._inst, this, Cull.Back, out modelSpaceAt);
+
+		/// <inheritdoc cref="Intersect(Model, out Ray)"/>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything? A good
+		/// default would be Cull.Back.</param>
+		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt);
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's
