@@ -132,6 +132,7 @@ bool platform_set_mode(app_mode_ mode) {
 
 	platform_stop_mode();
 	local->mode = mode;
+	sk_get_settings_ref_mut()->mode = mode;
 
 	log_diagf("Starting a <~grn>%s<~clr> mode app", app_mode_str(local->mode));
 	switch (local->mode) {

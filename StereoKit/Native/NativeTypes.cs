@@ -11,10 +11,6 @@ namespace StereoKit
 		private IntPtr _appName;
 		private IntPtr _assetsFolder;
 
-		/// <summary>Which display type should we try to load? Default is 
-		/// `DisplayMode.MixedReality`.</summary>
-		[Obsolete("displayPreference will be removed in v0.4, use SKSettings.mode instead.")]
-		public DisplayMode  displayPreference;
 		/// <summary>Which operation mode should we use for this app? Default
 		/// is XR, and by default the app will fall back to Simulator if XR
 		/// fails or is unavailable.</summary>
@@ -65,11 +61,6 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headset. If
-		/// You don't want this, you can disable it with this setting!</summary>
-		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
-		private int _disableFlatscreenMRSim;
 		/// <summary>By default, StereoKit will open a desktop window for
 		/// keyboard input due to lack of XR-native keyboard APIs on many
 		/// platforms. If you don't want this, you can disable it with
@@ -163,8 +154,6 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 	public struct SystemInfo
 	{
-		/// <summary>The type of display this device has.</summary>
-		public Display displayType;
 		/// <summary>Width of the display surface, in pixels! For a stereo
 		/// display, this will be the width of a single eye.</summary>
 		public int displayWidth;

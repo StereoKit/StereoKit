@@ -443,12 +443,6 @@ void material_set_color(material_t material, const char *name, color128 value) {
 
 ///////////////////////////////////////////
 
-void material_set_vector(material_t material, const char *name, vec4 value) {
-	material_set_vector4(material, name, value);
-}
-
-///////////////////////////////////////////
-
 void material_set_vector4(material_t material, const char *name, vec4 value) {
 	vec4 *matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
 	if (matparam != nullptr) {

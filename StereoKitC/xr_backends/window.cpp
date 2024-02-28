@@ -51,6 +51,7 @@ bool window_init() {
 	device_data.display_blend     = display_blend_opaque;
 	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Window");
+	device_data.runtime           = string_copy("None");
 
 	world_origin_mode   = origin_mode_local;
 	world_origin_offset = { {0,0,0}, quat_identity };

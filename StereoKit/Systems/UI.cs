@@ -54,10 +54,6 @@ namespace StereoKit
 		/// stack, according to UI.Push/PopTextStyle.</summary>
 		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
 
-		/// <summary>Use LayoutRemaining, removing in v0.4</summary>
-		[Obsolete("Use LayoutRemaining, removing in v0.4")]
-		public static Vec2 AreaRemaining => NativeAPI.ui_area_remaining();
-
 		/// <summary>How much space is available on the current layout! This is
 		/// based on the current layout position, so X will give you the amount
 		/// remaining on the current line, and Y will give you distance to the
@@ -158,14 +154,6 @@ namespace StereoKit
 		/// previously added using LayoutPush, or LayoutPushCut.</summary>
 		public static void LayoutPop() => NativeAPI.ui_layout_pop();
 
-		/// <summary>Obsolete: Use LastElementHandActive, or
-		/// LastElementHandFocused, removing in v0.4.</summary>
-		/// <param name="hand">Which hand we're checking.</param>
-		/// <returns>A BtnState that indicated the hand was "just active" this
-		/// frame, is currently "active" or if it "just became inactive" this
-		/// frame.</returns>
-		[Obsolete("Use LastElementHandActive, or LastElementHandFocused, removing in v0.4")]
-		public static BtnState LastElementHandUsed(Handed hand) => NativeAPI.ui_last_element_hand_used(hand);
 		/// <summary>Tells if the hand was involved in the active state of the
 		/// most recently called UI element using an id. Active state is
 		/// frequently a single frame in the case of Buttons, but could be many
@@ -245,15 +233,6 @@ namespace StereoKit
 		/// <returns>The gamma space color for the theme color category in the
 		/// indicated state.</returns>
 		public static Color GetThemeColor(UIColor colorCategory, UIColorState colorState) => NativeAPI.ui_get_theme_color_state(colorCategory, colorState);
-		/// <summary>This overload is obsolete, and will be removed soon.
-		/// </summary>
-		/// <param name="colorCategory">The category of UI elements that are
-		/// affected by this theme color.</param>
-		/// <param name="colorGamma">Unused.</param>
-		/// <returns>The gamma space color for the theme color category in the
-		/// indicated state.</returns>
-		[Obsolete("To be removed in v0.4")]
-		public static Color GetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_get_theme_color(colorCategory);
 
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
@@ -285,11 +264,6 @@ namespace StereoKit
 		public static void LayoutArea(Vec3 start, Vec2 dimensions, bool addMargin = true)
 			=> NativeAPI.ui_layout_area(start, dimensions, addMargin);
 
-		/// <summary>Use LayoutReserve, removing in v0.4</summary>
-		[Obsolete("Use LayoutReserve, removing in v0.4")]
-		public static void ReserveBox(Vec2 size) 
-			=> NativeAPI.ui_layout_reserve(size, false, 0);
-
 		/// <summary>Moves the current layout position back to the end of the
 		/// line that just finished, so it can continue on the same line as the
 		/// last element!</summary>
@@ -302,13 +276,6 @@ namespace StereoKit
 		/// for that.</summary>
 		public static void NextLine()
 			=> NativeAPI.ui_nextline();
-
-		/// <summary>Adds some space! If we're at the start of a new line,
-		/// space is added vertically, otherwise, space is added
-		/// horizontally.</summary>
-		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space)
-			=> NativeAPI.ui_space(space);
 
 		/// <summary>Adds some vertical space to the current line! All UI
 		/// following elements on this line will be offset.</summary>
@@ -323,17 +290,6 @@ namespace StereoKit
 		public static void HSpace(float horizontalSpace)
 			=> NativeAPI.ui_hspace(horizontalSpace);
 
-		/// <summary>This Method is obsolete and will be removed soon. Please
-		/// use any other overload of this method.</summary>
-		/// <param name="id">An id for tracking element state. MUST be unique
-		/// within current hierarchy.</param>
-		/// <param name="bounds">Size and position of the volume, relative to
-		/// the current Hierarchy.</param>
-		/// <returns>True if a hand is in the volume, false if not.</returns>
-		[Obsolete("This overload will be removed in v0.4, prefer any other overload of this method.")]
-		public static bool VolumeAt(string id, Bounds bounds)
-			=> NativeAPI.ui_volume_at_16(id, bounds);
-
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
@@ -341,14 +297,14 @@ namespace StereoKit
 		/// <param name="focusState">The focus state tells if the element has
 		/// a hand inside of the volume that qualifies for focus.</param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, out focusState);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, out focusState);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
 		/// <summary>A volume for helping to build one handed interactions.
 		/// This checks for the presence of a hand inside the bounds, and if
 		/// found, return that hand along with activation and focus 
@@ -364,29 +320,7 @@ namespace StereoKit
 		/// <returns>Based on the interactType, this is a BtnState that tells
 		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
-
-		/// <summary>This method will be removed in v0.4, use UI.VolumeAt. 
-		/// 
-		/// This watches a volume of space for pinch interaction 
-		/// events! If a hand is inside the space indicated by the bounds,
-		/// this function will return that hand's pinch state, as well as
-		/// indicate which hand did it through the out parameter.
-		/// 
-		/// Note that since this only provides the hand's pinch state, it 
-		/// won't give you JustActive and JustInactive notifications for 
-		/// when the hand enters or leaves the volume.</summary>
-		/// <param name="bounds">A UI hierarchy space bounding volume.</param>
-		/// <param name="hand">This will be the last hand that provides a 
-		/// pinch state within this volume. That means that if both hands are
-		/// pinching in this volume, it will provide the Right hand.</param>
-		/// <returns>This will be the pinch state of the last hand that
-		/// provides a pinch state within this volume. That means that if
-		/// both hands are pinching in this volume, it will provide the pinch
-		/// state of the Right hand.</returns>
-		[Obsolete("This method will be removed in v0.4, use UI.VolumeAt.")]
-		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
-			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
 
 		/// <summary>This draws a line horizontally across the current
 		/// layout. Makes a good separator between sections of UI!</summary>

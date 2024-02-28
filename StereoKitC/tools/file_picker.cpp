@@ -414,7 +414,7 @@ void file_picker_update() {
 
 		// Show the current directory address bar!
 		vec3    address_bar_start = ui_layout_at();
-		float   max_width         = ui_area_remaining().x;
+		float   max_width         = ui_layout_remaining().x;
 		float   width             = 0;
 		int32_t start             = maxi(0, fp_path.fragments.count - 1);
 
@@ -426,20 +426,20 @@ void file_picker_update() {
 		// That's the fragment we'll start with
 		if (fp_path.fragments.count > 0) {
 			for (int32_t i = start; i >= 0; i--) {
-				float size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2);
-				if (width + size > max_width) {
+				float curr_size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2);
+				if (width + curr_size > max_width) {
 					break;
 				}
 				start = i;
-				width += size + gutter;
+				width += curr_size + gutter;
 			}
 		}
 		// Draw the fragment crumbs as clickable buttons
 		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{ max_width, line_height });
 		for (int32_t i = start; i < fp_path.fragments.count; i++) {
 			ui_push_idi(i);
-			vec2 size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
-			if (ui_button_sz(fp_path.fragments[i], size) && i < fp_path.fragments.count - 1) {
+			vec2 curr_size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
+			if (ui_button_sz(fp_path.fragments[i], curr_size) && i < fp_path.fragments.count - 1) {
 				char* new_path = string_copy(fp_path.folder);
 				for (int32_t p = i; p < fp_path.fragments.count - 1; p++)
 				{
@@ -494,7 +494,6 @@ void file_picker_update() {
 		const int32_t scroll_rows = 5;
 		const int32_t scroll_step = fp_list_mode ? scroll_rows : scroll_cols * scroll_rows;
 		float right  = (size.x + gutter) * scroll_cols;
-		float bottom = (size.y + gutter) * (scroll_rows - 1);
 
 		// Show a header with sorting options
 		if (fp_list_mode) {
@@ -580,7 +579,7 @@ void file_picker_update() {
 		ui_push_enabled(fp_list_mode
 			? fp_items.count >= scroll_rows
 			: fp_items.count >= scroll_rows * scroll_cols);
-		if (ui_vslider_at("scroll", fp_scroll_val, 0, maxi(0,fp_items.count-3), 0, file_grid_start - vec3{ right,0,0 }, vec2{ max_width - right, size.y * scroll_rows + ui_get_gutter() * (scroll_rows-1) })) {
+		if (ui_vslider_at("scroll", fp_scroll_val, 0, (float)maxi(0,fp_items.count-3), 0, file_grid_start - vec3{ right,0,0 }, vec2{ max_width - right, size.y * scroll_rows + ui_get_gutter() * (scroll_rows-1) })) {
 			fp_scroll_offset = fp_list_mode
 				? (int32_t)fp_scroll_val
 				: ((int32_t)fp_scroll_val / 3) * 3;

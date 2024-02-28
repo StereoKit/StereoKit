@@ -29,19 +29,16 @@ namespace sk {
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
 #define SK_SQRT2 1.41421356237f
-#define SK_FINGER_SOLIDS 1
 
 struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
 	pose_t      pose_prev[5][5];
-	solid_t     solids[SK_FINGER_SOLIDS];
 	material_t  material;
 	hand_mesh_t mesh;
 	vec3        pinch_pt_relative;
 	bool        visible;
 	bool        enabled;
-	bool        solid;
 	hand_sim_id_t pose_prev_id;
 	float         pose_prev_time;
 };
@@ -203,10 +200,19 @@ void input_hand_init() {
 	material_set_transparency(hand_mat, transparency_blend);
 
 	gradient_t color_grad = gradient_create();
-	gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
-	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
-	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
-	gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
+	// Snapdragon's implementation of XR_MSFT_hand_tracking_mesh does not work
+	// well with SK's implementation of UV generation just yet, so we set it to
+	// pure white for now instead. Users can always opt out of the extension if
+	// they prefer the fallback hand mesh.
+	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && backend_openxr_ext_enabled("XR_MSFT_hand_tracking_mesh")) {
+		gradient_add(color_grad, color128{ 1,1,1,1 }, 0.0f);
+		gradient_add(color_grad, color128{ 1,1,1,1 }, 1.0f);
+	} else {
+		gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
+		gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
+		gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
+		gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
+	}
 
 	color32 gradient[16 * 16];
 	for (int32_t y = 0; y < 16; y++) {
@@ -214,7 +220,7 @@ void input_hand_init() {
 	for (int32_t x = 0; x < 16; x++) {
 		gradient[x + y * 16] = col;
 	} }
-	gradient_release(color_grad);
+	gradient_destroy(color_grad);
 
 	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
 	tex_set_colors (gradient_tex, 16, 16, gradient);
@@ -225,7 +231,6 @@ void input_hand_init() {
 	// Initialize the hands!
 	for (int32_t i = 0; i < handed_max; i++) {
 		hand_state[i].visible   = true;
-		hand_state[i].solid     = true;
 		hand_state[i].material  = hand_mat;
 		hand_state[i].pose_prev_id = -1;
 		memcpy(hand_state[i].pose_prev, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
@@ -234,10 +239,6 @@ void input_hand_init() {
 		hand_state[i].info.palm.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
-
-		hand_state[i].solids[0] = solid_create(vec3_zero, quat_identity, solid_type_unaffected);
-		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
-		solid_set_enabled(hand_state[i].solids[0], false);
 
 		// Set up initial default hand pose, so we don't get any accidental pinch/grips on start
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
@@ -276,9 +277,6 @@ void input_hand_shutdown() {
 	}
 
 	for (int32_t i = 0; i < handed_max; i++) {
-		for (int32_t f = 0; f < SK_FINGER_SOLIDS; f++) {
-			solid_release(hand_state[i].solids[f]);
-		}
 		material_release(hand_state[i].material);
 		mesh_release    (hand_state[i].mesh.mesh);
 		sk_free(hand_state[i].mesh.inds);
@@ -335,14 +333,6 @@ void input_hand_update_poses(bool update_visuals) {
 			bool tracked = hand_state[i].info.tracked_state & button_state_active;
 			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active) {
 				render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
-			}
-
-			// Update hand physics
-			if (hand_state[i].solid) {
-				solid_set_enabled(hand_state[i].solids[0], tracked);
-				if (tracked) {
-					solid_move(hand_state[i].solids[0], hand_state[i].info.palm.position, hand_state[i].info.palm.orientation);
-				}
 			}
 		}
 	}
@@ -790,21 +780,6 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 	}
 
 	hand_state[hand].visible = visible;
-}
-
-///////////////////////////////////////////
-
-void input_hand_solid(handed_ hand, bool32_t solid) {
-	if (hand == handed_max) {
-		input_hand_solid(handed_left,  solid);
-		input_hand_solid(handed_right, solid);
-		return;
-	}
-
-	hand_state[hand].solid = solid;
-	for (int32_t i = 0; i < SK_FINGER_SOLIDS; i++) {
-		solid_set_enabled(hand_state[hand].solids[i], solid);
-	}
 }
 
 ///////////////////////////////////////////

@@ -393,7 +393,7 @@ bool _mesh_set_skin(mesh_t mesh, const bone_weight_t *bone_weights, uint32_t bon
 ///////////////////////////////////////////
 
 void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
-	if (bone_weight_count != bone_id_4_count || bone_weight_count != mesh->vert_count) {
+	if (bone_weight_count != bone_id_4_count || bone_weight_count != (int32_t)mesh->vert_count) {
 		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
 		return;
 	}
@@ -616,7 +616,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -694,7 +694,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);

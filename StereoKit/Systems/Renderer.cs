@@ -279,23 +279,6 @@ namespace StereoKit
 		/// resolution the same size as the screen's surface. It'll be saved as
 		/// a JPEG or PNG file depending on the filename extension provided.
 		/// </summary>
-		/// <param name="from">Viewpoint location.</param>
-		/// <param name="at">Direction the viewpoint is looking at.</param>
-		/// <param name="width">Size of the screenshot horizontally, in pixels.</param>
-		/// <param name="height">Size of the screenshot vertically, in pixels.</param>
-		/// <param name="filename">Filename to write the screenshot to! This
-		/// will be a PNG if the extension ends with (case insensitive)
-		/// ".png", and will be a 90 quality JPEG if it ends with anything
-		/// else.</param>
-		[Obsolete("For removal in v0.4. Use the overload that takes filename first.")]
-		public static void Screenshot(Vec3 from, Vec3 at, int width, int height, string filename)
-			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, 90);
-
-		/// <summary>Schedules a screenshot for the end of the frame! The view
-		/// will be rendered from the given position at the given point, with a
-		/// resolution the same size as the screen's surface. It'll be saved as
-		/// a JPEG or PNG file depending on the filename extension provided.
-		/// </summary>
 		/// <param name="filename">Filename to write the screenshot to! This
 		/// will be a PNG if the extension ends with (case insensitive)
 		/// ".png", and will be a 90 quality JPEG if it ends with anything
@@ -309,7 +292,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given pose, with a resolution the same
@@ -329,7 +312,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, int fileQuality, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), fileQuality, viewpoint, width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), fileQuality, viewpoint, width, height, fieldOfViewDegrees);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given pose, with a resolution the same
@@ -347,7 +330,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot_pose(NativeHelper.ToUtf8(filename), 90, viewpoint, width, height, fieldOfViewDegrees);
+			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), 90, viewpoint, width, height, fieldOfViewDegrees);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a

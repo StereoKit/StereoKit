@@ -101,14 +101,6 @@ $dependencies = @(
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
         @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\openxr\', "include\openxr\", $false, @('h')))
-    ), 
-    [Dependency]::new(
-        'reactphysics3d',
-        'https://github.com/DanielChappuis/reactphysics3d.git',
-        $null,
-        $null,
-        @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) )
     )
 )
 

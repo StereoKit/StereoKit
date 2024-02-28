@@ -210,7 +210,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out _, Cull.Back);
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out _);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -232,7 +232,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds, Cull.Back);
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out outStartInds);
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -251,7 +251,7 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, out _, Cull.Back);
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out Ray intersection, out _);
 			modelSpaceAt = intersection.position;
 			return result;
 		}

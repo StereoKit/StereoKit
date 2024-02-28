@@ -296,7 +296,7 @@ void virtualkeyboard_update() {
 
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
-	ui_push_idi((int32_t)keyboard_text_context);
+	ui_push_idi(keyboard_active_root+keyboard_active_idx);
 	ui_window_begin("SK/Keyboard", keyboard_pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
 
 	// Draw the keyboard
@@ -319,8 +319,8 @@ void virtualkeyboard_update() {
 		} else if (curr->special_key == skey_mod) {
 			uint64_t hash    = virtualkeyboard_hash(curr);
 			bool32_t toggled = false;
-			for (int32_t i = 0; i < keyboard_modifier_keys.count; i++) {
-				if (keyboard_modifier_keys[i] == hash) {
+			for (int32_t t = 0; t < keyboard_modifier_keys.count; t++) {
+				if (keyboard_modifier_keys[t] == hash) {
 					toggled = true;
 					break;
 				}
@@ -472,8 +472,8 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 				case 2: if (arg_len > 0) result[key_idx].key_event_type = (uint8_t)stref_to_i(arg_stref); break;
 				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
 				case 4: {
-					if      (stref_startswith(arg_stref, "go_"   )) { result[key_idx].special_key = skey_go;    result[key_idx].go_to = stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
-					else if (stref_startswith(arg_stref, "visit_")) { result[key_idx].special_key = skey_visit; result[key_idx].go_to = stref_to_i({ arg_stref.start+6, arg_stref.length - 6 }); }
+					if      (stref_startswith(arg_stref, "go_"   )) { result[key_idx].special_key = skey_go;    result[key_idx].go_to = (uint8_t)stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
+					else if (stref_startswith(arg_stref, "visit_")) { result[key_idx].special_key = skey_visit; result[key_idx].go_to = (uint8_t)stref_to_i({ arg_stref.start+6, arg_stref.length - 6 }); }
 					else if (stref_equals    (arg_stref, "close" )) { result[key_idx].special_key = skey_close; }
 					else if (stref_equals    (arg_stref, "mod"   )) { result[key_idx].special_key = skey_mod; }
 					else { result[key_idx].special_key = skey_none; }

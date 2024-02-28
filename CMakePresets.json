@@ -82,10 +82,7 @@
       "name":        "Uwp_x64_Release_Fast",
       "inherits":    "Uwp_x64_Release",
       "description": "Fast build for UWP x64",
-      "hidden":      false,
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "hidden":      false
     },
     {
       "name":         "Uwp_x86_Release",
@@ -121,10 +118,7 @@
       "name":        "Win32_x64_Release_Fast",
       "description": "Fast build for Win32 x64",
       "hidden":      false,
-      "inherits":    "Win32_x64_Release",
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "inherits":    "Win32_x64_Release"
     },
     {
       "name":        "Win32_x64_Debug",
@@ -180,10 +174,7 @@
       "name":        "Linux_x64_Release_Fast",
       "description": "Fast build for Linux x64",
       "hidden":      false,
-      "inherits":    "Linux_x64_Release",
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "inherits":    "Linux_x64_Release"
     },
     {
       "name":        "Linux_x64_Debug",
@@ -279,10 +270,7 @@
       "name":        "Android_Arm64_Release_Fast",
       "description": "Fast build for Android ARM64, used for CI compile verification",
       "inherits":    "Android_Arm64_Release",
-      "hidden":      false,
-      "cacheVariables": {
-          "SK_PHYSICS": "Off"
-      }
+      "hidden":      false
     },
     {
       "name":        "Android_x64_Release",

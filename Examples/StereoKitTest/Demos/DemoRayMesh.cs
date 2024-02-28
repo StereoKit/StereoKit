@@ -40,7 +40,7 @@ class DemoRayMesh : ITest
 
 		// Draw a sphere at the intersection point, if the ray intersects 
 		// with the mesh.
-		if (ray.Intersect(boxMesh, out Ray at, out uint index))
+		if (ray.Intersect(boxMesh, Cull.Back, out Ray at, out uint index))
 		{
 			sphereMesh.Draw(Default.Material, Matrix.TS(transform.Transform(at.position), 0.01f));
 			if (boxMesh.GetTriangle(index, out Vertex a, out Vertex b, out Vertex c))
