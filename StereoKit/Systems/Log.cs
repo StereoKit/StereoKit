@@ -82,20 +82,27 @@ namespace StereoKit
 		public static void Write(LogLevel level, string text)
 			=> NativeAPI.log_write(level, text);
 
+		/// <summary>Writes a formatted line to the log using a
+		/// LogLevel.Diagnostic severity level!</summary>
+		/// <param name="text">Formatted text with color tags! See the Log
+		/// class docs for guidance on color tags.</param>
+		public static void Diag(string text)
+			=> NativeAPI.log_write(LogLevel.Diagnostic, text);
+
 		/// <summary>Writes a formatted line to the log using a LogLevel.Info
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Info(string text, params object[] items)
-			=> Write(LogLevel.Info, text, items);
+			=> NativeAPI.log_write(LogLevel.Info, string.Format(text, items));
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Info
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Info(string text)
-			=> Write(LogLevel.Info, text);
+			=> NativeAPI.log_write(LogLevel.Info, text);
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Warn
 		/// severity level!</summary>
@@ -103,14 +110,14 @@ namespace StereoKit
 		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Warn(string text, params object[] items)
-			=> Write(LogLevel.Warning, text, items);
+			=> NativeAPI.log_write(LogLevel.Warning, string.Format(text, items));
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Warn
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Warn(string text)
-			=> Write(LogLevel.Warning, text);
+			=> NativeAPI.log_write(LogLevel.Warning, text);
 
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Error severity level!</summary>
@@ -118,14 +125,14 @@ namespace StereoKit
 		/// class docs for guidance on color tags.</param>
 		/// <param name="items">Format arguments.</param>
 		public static void Err(string text, params object[] items)
-			=> Write(LogLevel.Error, text, items);
+			=> NativeAPI.log_write(LogLevel.Error, string.Format(text, items));
 
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Error severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Err(string text)
-			=> Write(LogLevel.Error, text);
+			=> NativeAPI.log_write(LogLevel.Error, text);
 
 
 		/// <summary>Allows you to listen in on log events! Any callback
