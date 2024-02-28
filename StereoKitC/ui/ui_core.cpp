@@ -32,6 +32,7 @@ int32_t skui_input_mode = 2;
 int32_t skui_hand_interactors[6] = { -1, -1, -1, -1 };
 int32_t skui_mouse_interactor    = -1;
 int32_t skui_eye_interactors[2]  = { -1, -1 };
+float   skui_controller_trigger_last[2] = { 0, 0 };
 
 ///////////////////////////////////////////
 
@@ -144,13 +145,16 @@ void ui_core_hands_step() {
 void ui_core_controllers_step() {
 	input_hand_visible(handed_max, false);
 	for (int32_t i = 0; i < handed_max; i++) {
-		const pointer_t* pointer = input_get_pointer(input_hand_pointer_id[i]);
+		const controller_t *ctrl = input_controller((handed_)i);
 
 		// controller ray
 		interactor_update(skui_hand_interactors[i*3 + 2],
-			pointer->ray.pos, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
-			pointer->ray.pos, pointer->orientation, input_head()->position,
-			pointer->state,   pointer->tracked);
+			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100, 0.01f,
+			ctrl->aim.position, ctrl->aim.orientation, input_head()->position,
+			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
+			ctrl->tracked);
+
+		skui_controller_trigger_last[i] = ctrl->trigger;
 	}
 
 	ui_show_ray(skui_hand_interactors[2]);
