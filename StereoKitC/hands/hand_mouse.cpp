@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../systems/input.h"
@@ -88,7 +94,7 @@ void hand_mouse_update_frame() {
 		r_pressed = simulator_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
 	}
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
-	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);
+	pointer_cursor->state   = input_key(key_mouse_left);
 
 	quat hand_rot = (mouse_active_hand == handed_right
 		? quat_from_angles(40, 30, 90)

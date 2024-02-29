@@ -402,6 +402,12 @@ void input_hand_state_update(handed_ handedness) {
 
 ///////////////////////////////////////////
 
+bool input_hand_get_visible(handed_ hand) {
+	return hand_state[hand].visible;
+}
+
+///////////////////////////////////////////
+
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
 }
