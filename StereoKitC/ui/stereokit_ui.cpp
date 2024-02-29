@@ -644,8 +644,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	// Render the input UI
-	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
-	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, color_blend);
+	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
+	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
 
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
