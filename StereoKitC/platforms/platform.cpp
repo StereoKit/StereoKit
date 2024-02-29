@@ -263,6 +263,10 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	}
 }
 
+bool32_t platform_keyboard_set_layout(text_context_ keyboard_type, char** keyboard_text, int layouts_num) {
+	return virtualkeyboard_set_layout(keyboard_type, keyboard_text, layouts_num);
+}
+
 ///////////////////////////////////////////
 
 bool32_t platform_keyboard_visible() {
