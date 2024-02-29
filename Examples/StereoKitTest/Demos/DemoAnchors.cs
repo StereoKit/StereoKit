@@ -4,7 +4,7 @@ using StereoKit;
 class DemoAnchors : ITest
 {
 	string title       = "Anchors";
-	string description = "This demo uses UWP's Spatial APIs to add, remove, and load World Anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!";
+	string description = "This demo uses StereoKit's Anchor API to add, remove, and load spatial anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!";
 
 	List<Anchor> anchors   = new List<Anchor>();
 	Anchor       selected  = null;
@@ -30,6 +30,8 @@ class DemoAnchors : ITest
 		// Window for working with the anchors
 		UI.WindowBegin("Anchors", ref pose);
 
+		// Not all systems support anchors, or all features of anchors, so
+		// we're checking for that and displaying the info here!
 		UI.LayoutPushCut(UICut.Left, 0.1f);
 		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
 		UI.Label("Capabilities:");
@@ -65,7 +67,8 @@ class DemoAnchors : ITest
 
 		UI.WindowEnd();
 
-		// Show anchors, and do selection logic on them
+		// Show where all the anchors are located, and select them if the wand
+		// tip is within a certain radius.
 		foreach (var p in anchors)
 		{
 			Lines.AddAxis(p.Pose, 0.1f);
@@ -73,10 +76,11 @@ class DemoAnchors : ITest
 			if (p.Pose.position.InRadius(wandTip, 0.05f))
 				selected = p;
 		}
-		// Outline the selected anchor
+		// Outline the selected anchor.
 		if (selected != null)
 			Mesh.Cube.Draw(Material.UIBox, selected.Pose.ToMatrix(0.1f));
 
+		// Log to the console whenever a new anchor is discovered.
 		foreach (Anchor a in Anchor.NewAnchors)
 			Log.Info($"New anchor: {a.Name}");
 

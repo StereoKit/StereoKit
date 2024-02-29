@@ -17,6 +17,7 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
+#include "../hands/input_hand.h"
 #include "../platforms/platform.h"
 
 #include <limits.h>
@@ -147,6 +148,7 @@ struct render_state_t {
 
 	mesh_t                  sky_mesh;
 	material_t              sky_mat;
+	material_t              sky_mat_default;
 	bool32_t                sky_show;
 
 	material_t              last_material;
@@ -232,15 +234,17 @@ bool render_init() {
 	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
 	mesh_set_id  (local.sky_mesh, "sk/render/skybox_mesh");
 
+	// Create a default skybox material
 	shader_t shader_sky = shader_find(default_id_shader_sky);
-	local.sky_mat = material_create(shader_sky);
+	local.sky_mat_default = material_create(shader_sky);
+	material_set_id          (local.sky_mat_default, "sk/render/skybox_material");
+	material_set_queue_offset(local.sky_mat_default, 100);
+	material_set_depth_write (local.sky_mat_default, false);
+	material_set_depth_test  (local.sky_mat_default, depth_test_less_or_eq);
+	render_set_skymaterial(local.sky_mat_default);
 	shader_release(shader_sky);
 
-	material_set_id          (local.sky_mat, "sk/render/skybox_material");
-	material_set_queue_offset(local.sky_mat, 100);
-	material_set_depth_write (local.sky_mat, false);
-	material_set_depth_test  (local.sky_mat, depth_test_less_or_eq);
-
+	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 	render_set_skytex   (sky_cubemap);
 	render_set_skylight (sk_default_lighting);
@@ -274,6 +278,7 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
 	mesh_release           (local.sky_mesh);
 	mesh_release           (local.blit_quad);
@@ -537,6 +542,27 @@ tex_t render_get_skytex() {
 
 ///////////////////////////////////////////
 
+void render_set_skymaterial(material_t sky_material) {
+	// Don't allow null, fall back to the default sky material on null.
+	if (sky_material == nullptr) {
+		sky_material = local.sky_mat_default;
+	}
+
+	// Safe swap the material reference
+	material_addref(sky_material);
+	if (local.sky_mat != nullptr) material_release(local.sky_mat);
+	local.sky_mat = sky_material;
+}
+
+///////////////////////////////////////////
+
+material_t render_get_skymaterial(void) {
+	material_addref(local.sky_mat);
+	return local.sky_mat;
+}
+
+///////////////////////////////////////////
+
 void render_set_skylight(const spherical_harmonics_t &light_info) {
 	local.lighting_src = light_info;
 	sh_to_fast(light_info, local.lighting);
@@ -755,7 +781,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
-		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_hand_get_visible((handed_)i) 
+			? hand->fingers[1][4].position
+			: vec3{ 0,-1000,0 };
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
@@ -820,7 +848,7 @@ void render_check_screenshots() {
 
 		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_release(tex_add_zbuffer(render_capture_surface));
+		tex_add_zbuffer(render_capture_surface);
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -984,12 +1012,6 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
-	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
-}
-
-///////////////////////////////////////////
-
 struct screenshot_ctx_t {
 	char*   filename;
 	int32_t quality;
@@ -1008,7 +1030,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;

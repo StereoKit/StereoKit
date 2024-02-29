@@ -49,6 +49,8 @@ sprite_t        skui_arrow_down;
 sprite_t        skui_spr_close;
 sprite_t        skui_spr_backspace;
 sprite_t        skui_spr_shift;
+sprite_t        skui_spr_list;
+sprite_t        skui_spr_grid;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -58,7 +60,7 @@ sound_t         skui_snd_tick;
 
 mesh_t          skui_box_dbg;
 
-uint64_t        skui_anim_id[3];
+id_hash_t       skui_anim_id[3];
 float           skui_anim_time[3];
 
 ui_theme_color_t skui_palette[ui_color_max];
@@ -71,7 +73,7 @@ array_t<bool32_t>     skui_grab_aura_stack;
 sound_t       skui_active_sound_off        = nullptr;
 sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
-uint64_t      skui_active_sound_element_id = 0;
+id_hash_t     skui_active_sound_element_id = 0;
 
 ///////////////////////////////////////////
 
@@ -170,6 +172,35 @@ void ui_theming_init() {
 	}, 40);
 	skui_arrow_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
 		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+
+	skui_spr_list = sdf_create_sprite(ui_default_id_spr_list, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_box_round(pt + vec2{ 0, 20 }, vec2{30, 6}, 6 ),
+				sdf_box_round(pt + vec2{ 0, 0  }, vec2{30, 6}, 6 )),
+				sdf_box_round(pt + vec2{ 0,-20 }, vec2{30, 6}, 6 ))/32.0f;
+	}, 40);
+	skui_spr_grid = sdf_create_sprite(ui_default_id_spr_grid, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{-20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{-20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{-20,-20 }, vec2{6, 6}, 3 )),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{  0, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{  0, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{  0,-20 }, vec2{6, 6}, 3 ))),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{ 20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{ 20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{ 20,-20 }, vec2{6, 6}, 3 ))) / 32.0f;
 	}, 40);
 
 	skui_box_dbg  = mesh_find(default_id_mesh_cube);
@@ -271,6 +302,8 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_spr_backspace);  skui_spr_backspace  = nullptr;
 	sprite_release  (skui_spr_close);      skui_spr_close      = nullptr;
 	sprite_release  (skui_spr_shift);      skui_spr_shift      = nullptr;
+	sprite_release  (skui_spr_list);       skui_spr_list       = nullptr;
+	sprite_release  (skui_spr_grid);       skui_spr_grid       = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
 }
@@ -281,11 +314,8 @@ void ui_theming_update() {
 	if (skui_active_sound_element_id == 0) return;
 
 	// See if our current sound on/off pair is still from a valid ui element
-	for (int32_t i = 0; i < handed_max; i++) {
-		if (skui_hand[i].active_prev == skui_active_sound_element_id) {
-			return;
-		}
-	}
+	if (ui_id_active(skui_active_sound_element_id))
+		return;
 	// If the "on" sound instance is still playing, we don't want to stomp on
 	// it with the off sound
 	if (sound_inst_is_playing(skui_active_sound_inst))
@@ -424,7 +454,7 @@ void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
 
 ///////////////////////////////////////////
 
-void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
+void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at) {
 	sound_t snd_on  = ui_get_sound_on(element_visual);
 	sound_t snd_off = ui_get_sound_off(element_visual);
 
@@ -608,7 +638,7 @@ void ui_pop_tint() {
 // Animation                             //
 ///////////////////////////////////////////
 
-void ui_anim_start(uint64_t id, int32_t channel) {
+void ui_anim_start(id_hash_t id, int32_t channel) {
 	if (skui_anim_id[channel] != id) {
 		skui_anim_id[channel] = id;
 		skui_anim_time[channel] = time_totalf_unscaled();
@@ -617,7 +647,7 @@ void ui_anim_start(uint64_t id, int32_t channel) {
 
 ///////////////////////////////////////////
 
-bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
+bool ui_anim_has(id_hash_t id, int32_t channel, float duration) {
 	if (id == skui_anim_id[channel]) {
 		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
 			return true;
@@ -628,7 +658,7 @@ bool ui_anim_has(uint64_t id, int32_t channel, float duration) {
 
 ///////////////////////////////////////////
 
-float ui_anim_elapsed(uint64_t id, int32_t channel, float duration, float max) {
+float ui_anim_elapsed(id_hash_t id, int32_t channel, float duration, float max) {
 	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
 }
 

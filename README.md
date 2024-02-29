@@ -31,7 +31,6 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Flat screen MR simulator with input emulation for easy development
 - Builds your application to device in seconds, not minutes
 - Runtime asset loading and cross-platform file picking
-- Physics
 - [Documentation](https://stereokit.net/) generated directly from the source code, including screenshots
 
 ## Platform Support
@@ -92,7 +91,6 @@ SK.Run(() => {
 Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
 
 - [OpenXR](https://www.khronos.org/openxr/)
-- [ReactPhysics3D](https://www.reactphysics3d.com/) - Physics.
 - [cgltf](https://github.com/jkuhlmann/cgltf) - Gltf format support.
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - Image and font format support.
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.

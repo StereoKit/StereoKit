@@ -24,7 +24,7 @@ Open StereoKit.sln and _unload_ these projects
 - StereoKitTest_Xamarin
 - StereoKitCTest_Android
 
-Set StereoKitTest as the startup project, set the platform to x64, and you should be able to build it and run! On the first build, StereoKit will also clone and build `openxr_loader` as well as `ReactPhysics3D` using a [powershell script](https://github.com/maluoi/StereoKit/blob/master/Tools/Update-OpenXR.ps1) and cmake, so this will take some extra time.
+Set StereoKitTest as the startup project, set the platform to x64, and you should be able to build it and run! On the first build, StereoKit will also clone and build `openxr_loader` using a [powershell script](https://github.com/maluoi/StereoKit/blob/master/Tools/Update-OpenXR.ps1) and cmake, so this will take some extra time.
 
 ## I want to modify code (Android)
 

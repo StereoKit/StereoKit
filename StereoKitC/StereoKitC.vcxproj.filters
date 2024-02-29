@@ -10,9 +10,6 @@
     <ClCompile Include="systems\input.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="systems\physics.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\render.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
     </ClCompile>
     <ClCompile Include="systems\line_drawer.cpp">
       <Filter>systems</Filter>
-    </ClCompile>
-    <ClCompile Include="intersect.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="color.cpp">
       <Filter>src</Filter>
@@ -263,9 +257,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="systems\input.h">
-      <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\physics.h">
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\render.h">

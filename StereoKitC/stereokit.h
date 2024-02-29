@@ -7,8 +7,8 @@
 #pragma once
 
 #define SK_VERSION_MAJOR 0
-#define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 9
+#define SK_VERSION_MINOR 4
+#define SK_VERSION_PATCH 0
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -177,33 +177,6 @@ typedef enum depth_mode_ {
 	  stencil support right now though (v0.3).*/
 	depth_mode_stencil,
 } depth_mode_;
-
-// TODO: remove this in v0.4
-/*This describes the type of display tech used on a Mixed
-  Reality device. This will be replaced by `DisplayBlend` in v0.4.*/
-typedef enum display_ {
-	/*Default value, when using this as a search type, it will
-	  fall back to default behavior which defers to platform
-	  preference.*/
-	display_none                  = 0,
-	/*This display is opaque, with no view into the real world!
-	  This is equivalent to a VR headset, or a PC screen.*/
-	display_opaque                = 1 << 0,
-	/*This display is transparent, and adds light on top of
-	  the real world. This is equivalent to a HoloLens type of device.*/
-	display_additive              = 1 << 1,
-	/*This is a physically opaque display, but with a camera
-	  passthrough displaying the world behind it anyhow. This would be
-	  like a Varjo XR-1, or phone-camera based AR.*/
-	display_blend                 = 1 << 2,
-	/*Use Display.Blend instead, to be removed in v0.4*/
-	display_passthrough           = 1 << 2,
-	/*This matches either transparent display type! Additive
-	  or Blend. For use when you just want to see the world behind your
-	  application.*/
-	display_any_transparent       = display_additive | display_blend,
-} display_;
-SK_MakeFlag(display_);
 
 /*This describes the way the display's content blends with
   whatever is behind it. VR headsets are normally Opaque, but some VR
@@ -403,7 +376,6 @@ typedef enum memory_ {
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
-	display_mode_  display_preference;
 	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
@@ -415,7 +387,6 @@ typedef struct sk_settings_t {
 	int32_t        flatscreen_pos_y;
 	int32_t        flatscreen_width;
 	int32_t        flatscreen_height;
-	bool32_t       disable_flatscreen_mr_sim;
 	bool32_t       disable_desktop_input_window;
 	bool32_t       disable_unfocused_sleep;
 	float          render_scaling;
@@ -427,8 +398,8 @@ typedef struct sk_settings_t {
 	void          *android_activity; // jobject
 } sk_settings_t;
 
+// TODO: v0.4, see if this can be removed
 typedef struct system_info_t {
-	display_       display_type;
 	int32_t        display_width;
 	int32_t        display_height;
 	bool32_t       spatial_bridge_present;
@@ -508,22 +479,12 @@ SK_API int32_t          device_display_get_height (void);
 SK_API fov_info_t       device_display_get_fov    (void);
 SK_API device_tracking_ device_get_tracking       (void);
 SK_API const char*      device_get_name           (void);
+SK_API const char*      device_get_runtime        (void);
 SK_API const char*      device_get_gpu            (void);
 SK_API bool32_t         device_has_eye_gaze       (void);
 SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
-
-// TODO: remove `get` and `elapsed` in v0.4
-SK_API SK_DEPRECATED double        time_get_raw          (void);
-SK_API SK_DEPRECATED float         time_getf_unscaled    (void);
-SK_API SK_DEPRECATED double        time_get_unscaled     (void);
-SK_API SK_DEPRECATED float         time_getf             (void);
-SK_API SK_DEPRECATED double        time_get              (void);
-SK_API SK_DEPRECATED float         time_elapsedf_unscaled(void);
-SK_API SK_DEPRECATED double        time_elapsed_unscaled (void);
-SK_API SK_DEPRECATED float         time_elapsedf         (void);
-SK_API SK_DEPRECATED double        time_elapsed          (void);
 
 SK_API double        time_total_raw        (void);
 SK_API float         time_totalf_unscaled  (void);
@@ -559,16 +520,6 @@ SK_API void     pose_matrix_out           (const sk_ref(pose_t) pose, sk_ref(mat
 SK_API void     matrix_inverse            (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
 SK_API matrix   matrix_invert             (const sk_ref(matrix) a);
 SK_API void     matrix_mul                (const sk_ref(matrix) a, const sk_ref(matrix) b, sk_ref(matrix) out_matrix);
-// Deprecated, use matrix_transform_pt. Removing in v0.4
-SK_API SK_DEPRECATED vec3     matrix_mul_point     (const sk_ref(matrix) transform, const sk_ref(vec3) point);
-// Deprecated, use matrix_transform_pt4. Removing in v0.4
-SK_API SK_DEPRECATED vec4     matrix_mul_point4    (const sk_ref(matrix) transform, const sk_ref(vec4) point);
-// Deprecated, use matrix_transform_dir. Removing in v0.4
-SK_API SK_DEPRECATED vec3     matrix_mul_direction (const sk_ref(matrix) transform, const sk_ref(vec3) direction);
-// Deprecated, use matrix_transform_quat. Removing in v0.4
-SK_API SK_DEPRECATED quat     matrix_mul_rotation  (const sk_ref(matrix) transform, const sk_ref(quat) orientation);
-// Deprecated, use matrix_transform_pose. Removing in v0.4
-SK_API SK_DEPRECATED pose_t   matrix_mul_pose      (const sk_ref(matrix) transform, const sk_ref(pose_t) pose);
 SK_API vec3     matrix_transform_pt       (matrix transform, vec3 point);
 SK_API vec4     matrix_transform_pt4      (matrix transform, vec4 point);
 SK_API vec3     matrix_transform_dir      (matrix transform, vec3 direction);
@@ -747,7 +698,6 @@ SK_DeclarePrivateType(material_buffer_t);
 SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
-SK_DeclarePrivateType(solid_t);
 SK_DeclarePrivateType(anchor_t);
 
 ///////////////////////////////////////////
@@ -765,7 +715,7 @@ SK_API void       gradient_remove     (gradient_t gradient, int32_t index);
 SK_API int32_t    gradient_count      (gradient_t gradient);
 SK_API color128   gradient_get        (gradient_t gradient, float at);
 SK_API color32    gradient_get32      (gradient_t gradient, float at);
-SK_API void       gradient_release    (gradient_t gradient); // TODO v0.4, consider renaming this to _destroy, no reference counting happens here!
+SK_API void       gradient_destroy    (gradient_t gradient);
 
 ///////////////////////////////////////////
 
@@ -839,10 +789,9 @@ SK_API bounds_t    mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t    mesh_has_skin        (mesh_t mesh);
 SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
 SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
-// TODO: in 0.4 move cull_mode parameter up to directly after out_pt (both functions)
-SK_API bool32_t    mesh_ray_intersect   (mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
-SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
-SK_API bool32_t    mesh_get_triangle    (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
+SK_API bool32_t    mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t    mesh_get_triangle     (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
 
 SK_API mesh_t      mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0), bool32_t double_sided sk_default(false));
 SK_API mesh_t      mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t spokes sk_default(16), bool32_t double_sided sk_default(false));
@@ -1061,12 +1010,10 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
-// TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
-SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
+SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
-// TODO: For v0.4, combine these two functions
-SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size);
-SK_API void         tex_get_data_mip        (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level);
+SK_API tex_t        tex_get_zbuffer         (tex_t texture);
+SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
@@ -1195,10 +1142,6 @@ typedef enum material_param_ {
 	material_param_vector3 = 4,
 	/*A 4 component vector composed of floating point values.*/
 	material_param_vector4 = 5,
-	/*obsolete: Replaced by MaterialParam.Vector4
-	  A 4 component vector composed of floating point values.
-	  TODO: Remove in v0.4*/
-	material_param_vector = 5,
 	/*A 4x4 matrix of floats.*/
 	material_param_matrix = 6,
 	/*Texture information!*/
@@ -1249,7 +1192,6 @@ SK_API void              material_set_vector2     (material_t material, const ch
 SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);
 SK_API void              material_set_color       (material_t material, const char *name, color128 color_gamma);
 SK_API void              material_set_vector4     (material_t material, const char *name, vec4     value);
-SK_API void              material_set_vector      (material_t material, const char *name, vec4     value); // TODO: Remove in v0.4
 SK_API void              material_set_int         (material_t material, const char *name, int32_t  value);
 SK_API void              material_set_int2        (material_t material, const char *name, int32_t  value1, int32_t value2);
 SK_API void              material_set_int3        (material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3);
@@ -1380,41 +1322,6 @@ SK_API void          text_style_set_char_height    (text_style_t style, float he
 
 ///////////////////////////////////////////
 
-/*This describes the behavior of a 'Solid' physics object! The
-  physics engine will apply forces differently based on this type.*/
-typedef enum solid_type_ {
-	/*This object behaves like a normal physical object, it'll
-	  fall, get pushed around, and generally be susceptible to physical
-	  forces! This is a 'Dynamic' body in physics simulation terms.*/
-	solid_type_normal = 0,
-	/*Immovable objects are always stationary! They have
-	  infinite mass, zero velocity, and can't collide with Immovable of
-	  Unaffected types.*/
-	solid_type_immovable,
-	/*Unaffected objects have infinite mass, but can have a
-	  velocity! They'll move under their own forces, but nothing in the
-	  simulation will affect them. They don't collide with Immovable or
-	  Unaffected types.*/
-	solid_type_unaffected,
-} solid_type_;
-
-SK_API solid_t       solid_create                  (const sk_ref(vec3) position, const sk_ref(quat) rotation, solid_type_ type sk_default(solid_type_normal));
-SK_API void          solid_release                 (solid_t solid);
-SK_API void          solid_set_id                  (const solid_t solid, const char *id);
-SK_API const char*   solid_get_id                  (const solid_t solid);
-SK_API void          solid_add_sphere              (solid_t solid, float diameter sk_default(1), float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_add_box                 (solid_t solid, const sk_ref(vec3) dimensions,float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_add_capsule             (solid_t solid, float diameter, float height, float kilograms sk_default(1), const vec3 *offset sk_default(nullptr));
-SK_API void          solid_set_type                (solid_t solid, solid_type_ type);
-SK_API void          solid_set_enabled             (solid_t solid, bool32_t enabled);
-SK_API void          solid_move                    (solid_t solid, const sk_ref(vec3) position, const sk_ref(quat) rotation);
-SK_API void          solid_teleport                (solid_t solid, const sk_ref(vec3) position, const sk_ref(quat) rotation);
-SK_API void          solid_set_velocity            (solid_t solid, const sk_ref(vec3) meters_per_second);
-SK_API void          solid_set_velocity_ang        (solid_t solid, const sk_ref(vec3) radians_per_second);
-SK_API void          solid_get_pose                (const solid_t solid, sk_ref(pose_t) out_pose);
-
-///////////////////////////////////////////
-
 typedef int32_t model_node_id;
 
 /*Describes how an animation is played back, and what to do when
@@ -1448,10 +1355,9 @@ SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_recalculate_bounds_exact(model_t model);
 SK_API void          model_set_bounds              (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t      model_get_bounds              (model_t model);
-SK_API bool32_t      model_ray_intersect           (model_t model, ray_t model_space_ray, ray_t* out_pt, cull_ cull_mode sk_default(cull_back));
-SK_API bool32_t      model_ray_intersect_bvh       (model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode sk_default(cull_back));
-// TODO: in 0.4 move cull_mode parameter up to directly after out_pt
-SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh sk_default(nullptr), matrix *out_matrix sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr), cull_ cull_mode sk_default(cull_back));
+SK_API bool32_t      model_ray_intersect             (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
+SK_API bool32_t      model_ray_intersect_bvh         (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
+SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, mesh_t *out_mesh sk_default(nullptr), matrix *out_matrix sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr));
 
 SK_API void          model_step_anim               (model_t model);
 SK_API bool32_t      model_play_anim               (model_t model, const char *animation_name, anim_mode_ mode);
@@ -1466,20 +1372,6 @@ SK_API float         model_anim_active_time        (model_t model);
 SK_API float         model_anim_active_completion  (model_t model);
 SK_API const char*   model_anim_get_name           (model_t model, int32_t index);
 SK_API float         model_anim_get_duration       (model_t model, int32_t index);
-
-// TODO: this whole section gets removed in v0.4, prefer the model_node api
-SK_API const char*   model_get_name                (model_t model, int32_t subset);
-SK_API material_t    model_get_material            (model_t model, int32_t subset);
-SK_API mesh_t        model_get_mesh                (model_t model, int32_t subset);
-SK_API matrix        model_get_transform           (model_t model, int32_t subset);
-SK_API void          model_set_material            (model_t model, int32_t subset, material_t material);
-SK_API void          model_set_mesh                (model_t model, int32_t subset, mesh_t mesh);
-SK_API void          model_set_transform           (model_t model, int32_t subset, const sk_ref(matrix) transform);
-SK_API void          model_remove_subset           (model_t model, int32_t subset);
-SK_API int32_t       model_add_named_subset        (model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
-SK_API int32_t       model_add_subset              (model_t model, mesh_t mesh, material_t material, const sk_ref(matrix) transform);
-SK_API int32_t       model_subset_count            (model_t model);
-
 
 SK_API model_node_id model_node_add                (model_t model,                       const char *name, matrix model_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
 SK_API model_node_id model_node_add_child          (model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh sk_default(nullptr), material_t material sk_default(nullptr), bool32_t solid sk_default(true));
@@ -1546,8 +1438,7 @@ SK_API float       sprite_get_aspect (sprite_t sprite);
 SK_API int32_t     sprite_get_width  (sprite_t sprite);
 SK_API int32_t     sprite_get_height (sprite_t sprite);
 SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void        sprite_draw       (sprite_t sprite, const sk_ref(matrix) transform, color32 color sk_default({255,255,255,255}));
-SK_API void        sprite_draw_at    (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw       (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 
@@ -1607,6 +1498,8 @@ SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     (void);
+SK_API void                  render_set_skymaterial(material_t sky_material);
+SK_API material_t            render_get_skymaterial(void);
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
 SK_API spherical_harmonics_t render_get_skylight   (void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
@@ -1627,9 +1520,7 @@ SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t ma
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
-//TODO: for v0.4, replace render_screenshot with render_screenshot_pose
-SK_API void                  render_screenshot     (const char *file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float field_of_view_degrees);
-SK_API void                  render_screenshot_pose(const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
+SK_API void                  render_screenshot     (const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
@@ -2155,7 +2046,6 @@ SK_API char32_t              input_text_consume      (void);
 SK_API void                  input_text_reset        (void);
 SK_API void                  input_text_inject_char  (char32_t character);
 SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
 
 SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
@@ -2368,11 +2258,8 @@ SK_API void log_writef     (log_ level, const char *text, ...);
 SK_API void log_write      (log_ level, const char* text);
 SK_API void log_set_filter (log_ level);
 SK_API void log_set_colors (log_colors_ colors);
-// TODO: v0.4, replace these with the _data versions
-SK_API void log_subscribe       (void (*log_callback)(log_ level, const char *text));
-SK_API void log_unsubscribe     (void (*log_callback)(log_ level, const char *text));
-SK_API void log_subscribe_data  (void (*log_callback)(void* context, log_ level, const char *text), void *context);
-SK_API void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const char *text), void *context);
+SK_API void log_subscribe  (void (*log_callback)(void* context, log_ level, const char *text), void *context sk_default(nullptr));
+SK_API void log_unsubscribe(void (*log_callback)(void* context, log_ level, const char *text), void *context sk_default(nullptr));
 
 ///////////////////////////////////////////
 

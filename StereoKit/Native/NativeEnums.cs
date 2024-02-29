@@ -71,33 +71,6 @@ namespace StereoKit
 		Stencil,
 	}
 
-	/// <summary>TODO: remove this in v0.4
-	/// This describes the type of display tech used on a Mixed
-	/// Reality device. This will be replaced by `DisplayBlend` in v0.4.</summary>
-	[Flags]
-	public enum Display {
-		/// <summary>Default value, when using this as a search type, it will
-		/// fall back to default behavior which defers to platform
-		/// preference.</summary>
-		None         = 0,
-		/// <summary>This display is opaque, with no view into the real world!
-		/// This is equivalent to a VR headset, or a PC screen.</summary>
-		Opaque       = 1 << 0,
-		/// <summary>This display is transparent, and adds light on top of
-		/// the real world. This is equivalent to a HoloLens type of device.</summary>
-		Additive     = 1 << 1,
-		/// <summary>This is a physically opaque display, but with a camera
-		/// passthrough displaying the world behind it anyhow. This would be
-		/// like a Varjo XR-1, or phone-camera based AR.</summary>
-		Blend        = 1 << 2,
-		/// <summary>Use Display.Blend instead, to be removed in v0.4</summary>
-		Passthrough  = 1 << 2,
-		/// <summary>This matches either transparent display type! Additive
-		/// or Blend. For use when you just want to see the world behind your
-		/// application.</summary>
-		AnyTransparent = Additive | Blend,
-	}
-
 	/// <summary>This describes the way the display's content blends with
 	/// whatever is behind it. VR headsets are normally Opaque, but some VR
 	/// headsets provide passthrough video, and can support Opaque as well as
@@ -609,11 +582,6 @@ namespace StereoKit
 		Vector3      = 4,
 		/// <summary>A 4 component vector composed of floating point values.</summary>
 		Vector4      = 5,
-
-		/// <summary>A 4 component vector composed of floating point values.
-		/// TODO: Remove in v0.4</summary>
-		[Obsolete("Replaced by MaterialParam.Vector4")]
-		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix       = 6,
 		/// <summary>Texture information!</summary>
@@ -701,24 +669,6 @@ namespace StereoKit
 		/// <summary>Start on the right of the X axis, and bottom on the Y
 		/// axis.This is a combination of XRight and YBottom.</summary>
 		BottomRight  = XRight | YBottom,
-	}
-
-	/// <summary>This describes the behavior of a 'Solid' physics object! The
-	/// physics engine will apply forces differently based on this type.</summary>
-	public enum SolidType {
-		/// <summary>This object behaves like a normal physical object, it'll
-		/// fall, get pushed around, and generally be susceptible to physical
-		/// forces! This is a 'Dynamic' body in physics simulation terms.</summary>
-		Normal       = 0,
-		/// <summary>Immovable objects are always stationary! They have
-		/// infinite mass, zero velocity, and can't collide with Immovable of
-		/// Unaffected types.</summary>
-		Immovable,
-		/// <summary>Unaffected objects have infinite mass, but can have a
-		/// velocity! They'll move under their own forces, but nothing in the
-		/// simulation will affect them. They don't collide with Immovable or
-		/// Unaffected types.</summary>
-		Unaffected,
 	}
 
 	/// <summary>Describes how an animation is played back, and what to do when

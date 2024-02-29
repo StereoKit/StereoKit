@@ -89,9 +89,7 @@ model_t model_copy(model_t model) {
 
 model_t model_create_mesh(mesh_t mesh, material_t material) {
 	model_t result = model_create();
-
-	model_add_subset(result, mesh, material, matrix_identity);
-
+	model_node_add(result, nullptr, matrix_identity, mesh, material, true);
 	return result;
 }
 
@@ -234,107 +232,6 @@ void model_recalculate_bounds_exact(model_t model) {
 
 ///////////////////////////////////////////
 
-const char *model_get_name(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
-	return model_node_get_name(model, model->visuals[subset].node);
-}
-
-///////////////////////////////////////////
-
-material_t model_get_material(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
-	material_addref(model->visuals[subset].material);
-	return model->visuals[subset].material;
-}
-
-///////////////////////////////////////////
-
-mesh_t model_get_mesh(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
-	mesh_addref(model->visuals[subset].mesh);
-	return model->visuals[subset].mesh;
-}
-
-///////////////////////////////////////////
-
-matrix model_get_transform(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
-	return model->visuals[subset].transform_model;
-}
-
-///////////////////////////////////////////
-
-void model_set_material(model_t model, int32_t subset, material_t material) {
-	assert(subset < model->visuals.count);
-	assert(material != nullptr);
-
-	assets_safeswap_ref(
-		(asset_header_t**)&model->visuals[subset].material,
-		(asset_header_t* )material);
-}
-
-///////////////////////////////////////////
-
-void model_set_mesh(model_t model, int32_t subset, mesh_t mesh) {
-	assert(subset < model->visuals.count);
-	assert(mesh != nullptr);
-
-	assets_safeswap_ref(
-		(asset_header_t**)&model->visuals[subset].mesh,
-		(asset_header_t* )mesh);
-
-	model->bounds_dirty = true;
-}
-
-///////////////////////////////////////////
-
-void model_set_transform(model_t model, int32_t subset, const matrix &transform) {
-	assert(subset < model->visuals.count);
-	model_node_set_transform_model(model, model->visuals[subset].node, transform);
-}
-
-///////////////////////////////////////////
-
-int32_t model_subset_count(model_t model) {
-	return model->visuals.count;
-}
-
-///////////////////////////////////////////
-
-int32_t model_add_named_subset(model_t model, const char *name, mesh_t mesh, material_t material, const sk_ref(matrix) transform) {
-	assert(model    != nullptr);
-	assert(mesh     != nullptr);
-	assert(material != nullptr);
-
-	model_node_id id = model_node_add(model, name, transform, mesh, material);
-	return model->nodes[id].visual;
-}
-
-///////////////////////////////////////////
-
-int32_t model_add_subset(model_t model, mesh_t mesh, material_t material, const matrix &transform) {
-	model_node_id id = model_node_add(model, nullptr, transform, mesh, material);
-	return model->nodes[id].visual;
-}
-
-///////////////////////////////////////////
-
-void model_remove_subset(model_t model, int32_t subset) {
-	assert(subset < model->visuals.count);
-
-	model->nodes[model->visuals[subset].node].visual = -1;
-	mesh_release    (model->visuals[subset].mesh);
-	material_release(model->visuals[subset].material);
-	model->visuals.remove(subset);
-
-	for (int32_t i = 0; i < model->nodes.count; i++) {
-		if (model->nodes[i].visual > subset)
-			model->nodes[i].visual--;
-	}
-}
-
-///////////////////////////////////////////
-
 void model_addref(model_t model) {
 	assets_addref(&model->header);
 }
@@ -377,7 +274,7 @@ bounds_t model_get_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
+bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -392,7 +289,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
+		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, cull_mode, &at, nullptr)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;
@@ -405,7 +302,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
+bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -420,7 +317,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 		matrix inverse   = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
-		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, cull_mode, &at, nullptr)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;
@@ -434,7 +331,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 ///////////////////////////////////////////
 
 // Same as model_ray_intersect_bvh, but returns mesh, mesh transform and start index if intersection found
-bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -450,7 +347,7 @@ bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, 
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
 		uint32_t local_start_inds;
-		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds, cull_mode)) {
+		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, cull_mode , &at, &local_start_inds)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
 			if (d < closest) {
 				closest = d;

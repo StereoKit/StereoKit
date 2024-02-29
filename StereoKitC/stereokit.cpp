@@ -14,7 +14,6 @@
 
 #include "systems/render.h"
 #include "systems/input.h"
-#include "systems/physics.h"
 #include "systems/system.h"
 #include "systems/text.h"
 #include "systems/audio.h"
@@ -104,17 +103,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
 	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
-
-	// display_preference is obsolete, so we'll fill in `mode` based on it, if
-	// mode hasn't been specified.
-	if (local.settings.mode == app_mode_none) {
-		if      (local.settings.display_preference == display_mode_mixedreality) local.settings.mode = app_mode_xr;
-		else if (local.settings.display_preference == display_mode_none        ) local.settings.mode = app_mode_window;
-		else if (local.settings.display_preference == display_mode_flatscreen  )
-			local.settings.mode = local.settings.disable_flatscreen_mr_sim
-				? app_mode_window
-				: app_mode_simulator;
-	}
+	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
@@ -167,17 +156,9 @@ bool32_t sk_init(sk_settings_t settings) {
 	sys_ui_late.func_step = ui_step_late;
 	systems_add(&sys_ui_late);
 
-	system_t sys_physics = { "Physics" };
-	system_set_initialize_deps(sys_physics, "Defaults");
-	system_set_step_deps      (sys_physics, "Input", "FrameBegin");
-	sys_physics.func_initialize = physics_init;
-	sys_physics.func_step       = physics_step;
-	sys_physics.func_shutdown   = physics_shutdown;
-	systems_add(&sys_physics);
-
 	system_t sys_renderer = { "Renderer" };
 	system_set_initialize_deps(sys_renderer, "Platform", "Defaults");
-	system_set_step_deps      (sys_renderer, "Physics", "FrameBegin");
+	system_set_step_deps      (sys_renderer, "FrameBegin");
 	sys_renderer.func_initialize = render_init;
 	sys_renderer.func_step       = render_step;
 	sys_renderer.func_shutdown   = render_shutdown;
@@ -253,7 +234,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_anim);
 
 	system_t sys_app = { "App" };
-	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI");
+	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Renderer", "UI");
 	sys_app.func_step = sk_app_step;
 	systems_add(&sys_app);
 
@@ -529,20 +510,16 @@ system_info_t sk_system_info() {
 	result.display_width        = device_display_get_width ();
 	result.display_height       = device_display_get_height();
 	result.eye_tracking_present = device_has_eye_gaze      ();
-	switch (device_display_get_blend()) {
-		case display_blend_none:            result.display_type = display_none;            break;
-		case display_blend_opaque:          result.display_type = display_opaque;          break;
-		case display_blend_additive:        result.display_type = display_additive;        break;
-		case display_blend_blend:           result.display_type = display_blend;           break;
-		case display_blend_any_transparent: result.display_type = display_any_transparent; break;
-		default: result.display_type = display_none; break;
-	}
 	return result;
 }
 
 ///////////////////////////////////////////
 
 const sk_settings_t* sk_get_settings_ref() { return &local.settings; }
+
+///////////////////////////////////////////
+
+sk_settings_t* sk_get_settings_ref_mut() { return &local.settings; }
 
 ///////////////////////////////////////////
 
@@ -581,15 +558,6 @@ display_mode_ sk_active_display_mode() {
 
 ///////////////////////////////////////////
 
-double time_get_raw          (){ return time_total_raw      (); }
-float  time_getf_unscaled    (){ return time_totalf_unscaled(); };
-double time_get_unscaled     (){ return time_total_unscaled (); };
-float  time_getf             (){ return time_totalf         (); };
-double time_get              (){ return time_total          (); };
-float  time_elapsedf_unscaled(){ return time_stepf_unscaled (); };
-double time_elapsed_unscaled (){ return time_step_unscaled  (); };
-float  time_elapsedf         (){ return time_stepf          (); };
-double time_elapsed          (){ return time_step           (); };
 double time_total_raw        (){ return stm_sec(stm_now());    }
 float  time_totalf_unscaled  (){ return local.timevf_us;       };
 double time_total_unscaled   (){ return local.timev_us;        };
@@ -623,7 +591,6 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	local.timev_stepf    = (float)local.timev_step;
 	local.timevf_us      = (float)local.timev_us;
 	local.timevf         = (float)local.timev;
-	physics_sim_time  = local.timev;
 }
 
 } // namespace sk

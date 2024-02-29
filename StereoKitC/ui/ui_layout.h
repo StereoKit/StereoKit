@@ -34,8 +34,8 @@ struct ui_layout_t {
 
 extern ui_settings_t skui_settings;
 
-void ui_layout_init    ();
-void ui_layout_shutdown();
+void         ui_layout_init               ();
+void         ui_layout_shutdown           ();
 
 ui_window_id ui_layout_curr_window        ();
 ui_layout_t* ui_layout_curr               ();
@@ -44,7 +44,7 @@ void         ui_layout_reserve_vertical_sz(vec2 size, bool32_t add_padding, vec3
 void         ui_layout_window             (ui_window_id window, vec3 start, vec2 dimensions, bool32_t add_margin);
 void         ui_override_recent_layout    (vec3 start, vec2 size);
 
-ui_window_t *ui_window_get        (ui_window_id window);
-ui_window_id ui_window_find_or_add(uint64_t hash, vec2 size);
+ui_window_t *ui_window_get                (ui_window_id window);
+ui_window_id ui_window_find_or_add        (id_hash_t hash, vec2 size);
 
 }

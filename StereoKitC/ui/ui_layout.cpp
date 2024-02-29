@@ -71,12 +71,6 @@ vec2 ui_layout_remaining() {
 
 ///////////////////////////////////////////
 
-vec2 ui_area_remaining() {
-	return ui_layout_remaining();
-}
-
-///////////////////////////////////////////
-
 vec3 ui_layout_at() {
 	return skui_layouts.last().offset;
 }
@@ -463,16 +457,6 @@ void ui_sameline() {
 
 ///////////////////////////////////////////
 
-void ui_space(float space) {
-	ui_layout_t *layout = &skui_layouts.last();
-	if (layout->offset.x == layout->offset_initial.x)
-		layout->offset.y -= space;
-	else
-		layout->offset.x -= space;
-}
-
-///////////////////////////////////////////
-
 void ui_hspace(float horizontal_space) {
 	skui_layouts.last().offset.x -= horizontal_space;
 }
@@ -558,7 +542,7 @@ ui_window_t* ui_window_get(ui_window_id window) {
 
 ///////////////////////////////////////////
 
-ui_window_id ui_window_find_or_add(uint64_t hash, vec2 size) {
+ui_window_id ui_window_find_or_add(id_hash_t hash, vec2 size) {
 	for (int32_t i = 0; i < skui_windows.count; i++) {
 		if (skui_windows[i].hash == hash) {
 			return i;

@@ -30,8 +30,15 @@ inline float math_ease_smooth   (float a, float b, float t) { t = 1-t; return a 
 // swing - rotation around axis that is perpendicular to "direction" vector
 void quat_decompose_swing_twist(quat rotation, vec3 direction, quat *out_swing, quat *out_twist);
 
-vec3  bounds_corner (const bounds_t &bounds, int32_t index8);
-float bounds_sdf    (bounds_t bounds, vec3 point);
-vec3  math_cubemap_corner(int i);
+bool32_t bounds_ray_intersect_dist(bounds_t bounds, ray_t ray, float* out_distance);
+bool32_t bounds_capsule_intersect (bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3* out_at);
+vec3     bounds_corner            (bounds_t bounds, int32_t index8);
+float    bounds_sdf               (bounds_t bounds, vec3 point);
+float    bounds_sdf_manhattan     (bounds_t bounds, vec3 sample_point);
+
+float line_closest_point_tdist     (vec3 line_start, vec3 line_end, vec3 point);
+void  line_line_closest_point_tdist(vec3 line_start, vec3 line_end, vec3 other_line_start, vec3 other_line_end, vec3* out_line_at, vec3* out_other_line_at);
+
+vec3 math_cubemap_corner(int i);
 
 } // namespace sk

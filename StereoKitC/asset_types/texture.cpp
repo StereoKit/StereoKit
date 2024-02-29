@@ -280,9 +280,9 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 	size_t   size         = (size_t)tex->width*(size_t)tex->height*tex_format_size(equirect->format);
 	tex_set_colors(face, tex->width, tex->height, nullptr);
 	for (int32_t i = 0; i < 6; i++) {
-		material_set_vector(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
-		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
-		material_set_vector(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
+		material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
+		material_set_vector4(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
+		material_set_vector4(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
 
 		face_data[i] = sk_malloc(size);
 
@@ -665,10 +665,10 @@ void tex_update_label(tex_t texture) {
 
 ///////////////////////////////////////////
 
-tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
+void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	if (!(texture->type & tex_type_rendertarget)) {
 		log_err(tex_msg_requires_rendertarget);
-		return nullptr;
+		return;
 	}
 
 	char id[64];
@@ -678,9 +678,6 @@ tex_t tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
-	
-	tex_addref(texture->depth_buffer);
-	return texture->depth_buffer;
 }
 
 ///////////////////////////////////////////
@@ -700,7 +697,16 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 
 	if (texture->depth_buffer != nullptr) tex_release(texture->depth_buffer);
 	texture->depth_buffer = depth_texture;
+}
 
+///////////////////////////////////////////
+
+tex_t tex_get_zbuffer(tex_t texture) {
+	if (texture->depth_buffer == nullptr)
+		return nullptr;
+
+	tex_addref(texture->depth_buffer);
+	return texture->depth_buffer;
 }
 
 ///////////////////////////////////////////
@@ -1163,13 +1169,7 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 
 ///////////////////////////////////////////
 
-void tex_get_data(tex_t texture, void *out_data, size_t out_data_size) {
-	tex_get_data_mip(texture, out_data, out_data_size, 0);
-}
-
-///////////////////////////////////////////
-
-void tex_get_data_mip(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
+void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
 	if (mip_level > tex_get_mips(texture)) {
 		log_warn("Cannot retrieve invalid mip-level!");
 		return;
@@ -1298,7 +1298,7 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 
 	sk_free(color_data);
 	if (gradient_linear == nullptr)
-		gradient_release(grad);
+		gradient_destroy(grad);
 
 	return result;
 }

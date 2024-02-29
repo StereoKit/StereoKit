@@ -32,6 +32,12 @@
 		/// is the same as systemName from XrSystemProperties. The simulator 
 		/// will say "Simulator".</summary>
 		public static string Name => NativeHelper.FromUtf8(NativeAPI.device_get_name());
+		/// <summary>This is the name of the OpenXR runtime that powers the
+		/// current device! This can help you determine which implementation
+		/// quirks to expect based on the codebase used. On the simulator, this
+		/// will be "Simulator", and in other non-XR modes this will be "None".
+		/// </summary>
+		public static string Runtime => NativeHelper.FromUtf8(NativeAPI.device_get_runtime());
 		/// <summary>The reported name of the GPU, this will differ between D3D
 		/// and GL.</summary>
 		public static string GPU => NativeHelper.FromUtf8(NativeAPI.device_get_gpu());

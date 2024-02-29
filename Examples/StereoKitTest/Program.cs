@@ -84,6 +84,7 @@ class Program
 		SK.PreLoadLibrary();
 
 		SK.AddStepper<PassthroughFBExt>();
+		SK.AddStepper<ControllerStepper>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
 		logWindow = SK.AddStepper<LogWindow>();
 		logWindow.Enabled = false;
@@ -155,7 +156,7 @@ class Program
 		/// :End:
 
 		// If we can't see the world, we'll draw a floor!
-		if (SK.System.displayType == Display.Opaque)
+		if (Device.DisplayBlend == DisplayBlend.Opaque)
 			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
 
 		// Skip selection window if we're in test mode

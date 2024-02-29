@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.7" LANGUAGES CXX C)
+project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
@@ -36,7 +36,6 @@ set(SK_BUILD_OPENXR_LOADER          ON  CACHE BOOL "Build the openxr_loader targ
 set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. This forces projects here to build with multi-threading (/MP)")
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
-set(SK_PHYSICS                      ON  CACHE BOOL "Enable physics.")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
@@ -97,7 +96,6 @@ if (ANDROID)
 elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
-  set(SK_PHYSICS OFF)
   set(SK_BUILD_SHARED_LIBS OFF)
   add_definitions("-D_XM_NO_INTRINSICS_")
   set(SK_LINKER_FLAGS 
@@ -137,13 +135,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
   add_definitions("-DWINDOWS_UWP")
 endif()
 
-if(NOT SK_PHYSICS)
-  message("-- Building without physics!")
-  add_definitions("-DSK_PHYSICS_PASSTHROUGH")
-else()
-  message("-- Building with physics!")
-endif()
-
 # On Android, shared lib SK has a JNI_OnLoad, which can conflict with dev
 # provided JNI_OnLoad in apps that consume SK as a static library.
 if (SK_BUILD_SHARED_LIBS)
@@ -159,27 +150,12 @@ endif()
 # See: https://github.com/cpm-cmake/CPM.cmake
 include("cmake/CPM.cmake")
 
-#### ReactPhysics3D - https://www.reactphysics3d.com/ ####
-if(SK_PHYSICS)
-  set(reactphysics_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch)
-  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME reactphysics3d # 0.9.1
-    GITHUB_REPOSITORY DanielChappuis/reactphysics3d
-    GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0
-    EXCLUDE_FROM_ALL YES
-  )
-  # Something in reactphysics3d seems to require -fPIC
-  set_property(TARGET reactphysics3d PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-  set(PHYSICS_LIB reactphysics3d)
-endif()
-
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.0.30
+    NAME openxr_loader # 1.0.34
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG 55224479ab13db8ebc8ab1e3d49197bce6201b0b
+    GIT_TAG 288d3a7ebc1ad959f62d51da75baa3d27438c499
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
@@ -252,7 +228,6 @@ set(SK_SRC_CODE
   StereoKitC/device.h
   StereoKitC/hierarchy.h
   StereoKitC/hierarchy.cpp
-  StereoKitC/intersect.cpp
   StereoKitC/log.h
   StereoKitC/log.cpp
   StereoKitC/rect_atlas.h
@@ -346,8 +321,6 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input_keyboard.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
-  StereoKitC/systems/physics.h
-  StereoKitC/systems/physics.cpp
   StereoKitC/systems/render.h
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_pipeline.h
@@ -528,11 +501,6 @@ if (SK_BUILD_OPENXR_LOADER)
   target_compile_options(openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
   target_link_options   (openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 endif()
-if (SK_PHYSICS)
-  target_compile_options(reactphysics3d PRIVATE ${SK_WARNING_FLAG})
-  target_compile_options(reactphysics3d PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
-  target_link_options   (reactphysics3d PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
-endif()
 target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
 target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
@@ -673,9 +641,6 @@ endif()
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
   add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
-  if(SK_PHYSICS)
-    target_compile_options(reactphysics3d PRIVATE "/MP")
-  endif()
   target_compile_options(openxr_loader PRIVATE "/MP")
   target_compile_options(StereoKitC PRIVATE "/MP")
 endif()

@@ -94,10 +94,10 @@ void demo_mic_update() {
 		float    scale = 0.1f + 0.1f*mic_intensity;
 		color128 color = { 1,1,1, fmaxf(0.1f,mic_intensity) };
 		render_add_mesh(mic_visual_mesh, mic_visual_mat, matrix_trs({0,0,-0.5f}, quat_identity, vec3_one*scale), color);
-		sprite_draw_at (mic_sprite, matrix_ts({ 0,0,-0.5f }, vec3_one*0.06f), text_align_center);
+		sprite_draw    (mic_sprite, matrix_ts({ 0,0,-0.5f }, vec3_one*0.06f), text_align_center);
 	} else {
 		render_add_mesh(mic_visual_mesh, mic_visual_mat, matrix_trs({0,0,-0.5f}, quat_identity, vec3_one*0.1f), { 1,0,0, 0.1f });
-		sprite_draw_at (mic_sprite, matrix_ts({ 0,0,-0.5f }, vec3_one*0.06f), text_align_center);
+		sprite_draw    (mic_sprite, matrix_ts({ 0,0,-0.5f }, vec3_one*0.06f), text_align_center);
 	}
 }
 
