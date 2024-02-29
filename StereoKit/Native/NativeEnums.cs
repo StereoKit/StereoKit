@@ -753,13 +753,13 @@ namespace StereoKit
 	public enum TextContext {
 		/// <summary>General text editing, this is the most common type of text, and would
 		/// result in a 'standard' keyboard layout.</summary>
-		Text         = 1,
+		Text         = 0,
 		/// <summary>Numbers and numerical values.</summary>
-		Number       = 2,
+		Number       = 1,
 		/// <summary>This text specifically represents some kind of URL/URI address.</summary>
-		Uri          = 10,
+		Uri          = 2,
 		/// <summary>This is a password, and should not be visible when typed!</summary>
-		Password     = 18,
+		Password     = 3,
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a

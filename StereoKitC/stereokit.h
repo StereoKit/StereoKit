@@ -1609,13 +1609,13 @@ typedef enum picker_mode_ {
 typedef enum text_context_ {
 	/*General text editing, this is the most common type of text, and would
 	  result in a 'standard' keyboard layout.*/
-	text_context_text = 1,
+	text_context_text = 0,
 	/*Numbers and numerical values.*/
-	text_context_number = 2,
+	text_context_number = 1,
 	/*This text specifically represents some kind of URL/URI address.*/
-	text_context_uri = 10,
+	text_context_uri = 2,
 	/*This is a password, and should not be visible when typed!*/
-	text_context_password = 18,
+	text_context_password = 3,
 
 } text_context_;
 SK_MakeFlag(text_context_);
@@ -1632,6 +1632,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
+SK_API bool32_t platform_keyboard_set_layout(text_context_ type, char** keyboard_layout, int layouts_num);
 
 ///////////////////////////////////////////
 
