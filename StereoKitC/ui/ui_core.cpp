@@ -485,17 +485,26 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 							// a better experience than facing the user.
 							dest_rot = quat_from_angles(0, 180, 0) * input_head()->orientation;
 						} else {
-							vec3  world_pt            = hierarchy_to_world_point(actor->interaction_pt_pivot);
-							vec3  world_head          = input_head()->position + vec3{0,-0.12f,0};
-							float head_xz_lerp        = fminf(1, vec2_distance_sq({ world_head.x, world_head.z }, { world_pt.x, world_pt.z }) / 0.1f);
-							vec3  world_handle_center = hierarchy_to_world_point(handle_bounds.center);
+							// We can't use the head position directly, it's
+							// more of a device position that matches the
+							// center of the eyes, and not the center of the
+							// head.
+							const float head_center_dist = 5    * cm2m; // Quarter head length (20cm front to back)
+							const float head_height      = 7.5f * cm2m; // Almost quarter head height (25cm top to bottom)
+							vec3 eye_center  = input_head()->position;
+							vec3 head_center = eye_center  + input_head()->orientation * vec3{0, 0, head_center_dist};
+							vec3 face_point  = head_center + vec3{0, -head_height, 0};
 
 							// Previously, facing happened from a point
 							// influenced by the hand-grip position:
 							// vec3 world_handle_center = { handle_pose.position.x, local_pt[i].y, handle_pose.position.z };
+							vec3 world_handle_center = hierarchy_to_world_point(handle_bounds.center);
+							vec3 world_pt            = hierarchy_to_world_point(actor->interaction_pt_pivot);
+
+							float head_xz_lerp = fminf(1, vec2_distance_sq({ face_point.x, face_point.z }, { world_pt.x, world_pt.z }) / 0.1f);
 							vec3  look_from    = vec3_lerp(world_pt, world_handle_center, head_xz_lerp);
 
-							dest_rot = quat_lookat_up(look_from, world_head, vec3_up);
+							dest_rot = quat_lookat_up(look_from, face_point, vec3_up);
 						}
 					} break;
 					case ui_move_pos_only: { dest_rot = actor->interaction_pt_orientation; } break;
