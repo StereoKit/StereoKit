@@ -292,7 +292,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	}
 	
 	if (out_button_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_button, id, actor->capsule_end_world);
+		ui_play_sound_on_off(ui_vis_button, id, ui_layout_last().center);
 
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
