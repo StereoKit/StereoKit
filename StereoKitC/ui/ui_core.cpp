@@ -115,6 +115,8 @@ void ui_show_ray(int32_t interactor, float *ref_length) {
 	line_add_listv(pts, ct);
 }
 
+///////////////////////////////////////////
+
 void ui_core_hands_step() {
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t*    hand    = input_hand       ((handed_)i);
@@ -133,19 +135,23 @@ void ui_core_hands_step() {
 			hand->pinch_state, hand->tracked_state);
 
 		// Hand ray
-		float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12,0});
-		float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
-		interactor_update(skui_hand_interactors[i*3 + 2],
-			pointer->ray.pos + pointer->ray.dir * ray_dist, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
-			pointer->ray.pos,  pointer->orientation, input_head()->position + vec3{0,-0.12,0},
-			hand->pinch_state, pointer->tracked);
+		if (ui_far_interact_enabled()) {
+			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12,0});
+			float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
+			interactor_update(skui_hand_interactors[i*3 + 2],
+				pointer->ray.pos + pointer->ray.dir * ray_dist, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
+				pointer->ray.pos,  pointer->orientation, input_head()->position + vec3{0,-0.12,0},
+				hand->pinch_state, pointer->tracked);
+			ui_show_ray(skui_hand_interactors[i*3 + 2], &skui_ray_length[i]);
+		}
 	}
-
-	ui_show_ray(skui_hand_interactors[2], &skui_ray_length[0]);
-	ui_show_ray(skui_hand_interactors[5], &skui_ray_length[1]);
 }
 
+///////////////////////////////////////////
+
 void ui_core_controllers_step() {
+	if (ui_far_interact_enabled() == false) return;
+
 	for (int32_t i = 0; i < handed_max; i++) {
 		const controller_t *ctrl = input_controller((handed_)i);
 
@@ -155,15 +161,16 @@ void ui_core_controllers_step() {
 			ctrl->aim.position, ctrl->aim.orientation, input_head()->position,
 			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
-
 		skui_controller_trigger_last[i] = ctrl->trigger;
+		ui_show_ray(skui_hand_interactors[i*3 + 2], nullptr);
 	}
-
-	ui_show_ray(skui_hand_interactors[2], nullptr);
-	ui_show_ray(skui_hand_interactors[5], nullptr);
 }
 
+///////////////////////////////////////////
+
 void ui_core_mouse_step() {
+	if (ui_far_interact_enabled() == false) return;
+
 	const pose_t*  head = input_head();
 	const mouse_t* m    = input_mouse();
 	ray_t ray;
@@ -175,6 +182,8 @@ void ui_core_mouse_step() {
 		end, quat_lookat(ray.pos, end), end,
 		input_key(key_mouse_left), button_make_state(skui_interactors[skui_mouse_interactor].tracked & button_state_active, tracked));
 }
+
+///////////////////////////////////////////
 
 void ui_core_update() {
 	const matrix *to_local = hierarchy_to_local();
