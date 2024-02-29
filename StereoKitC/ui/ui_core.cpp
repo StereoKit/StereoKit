@@ -29,10 +29,11 @@ array_t<id_hash_t>*  skui_preserve_keyboard_ids_read;
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_write;
 
 int32_t skui_input_mode = 2;
-int32_t skui_hand_interactors[6] = { -1, -1, -1, -1 };
-int32_t skui_mouse_interactor    = -1;
-int32_t skui_eye_interactors[2]  = { -1, -1 };
+int32_t skui_hand_interactors[6]        = { -1, -1, -1, -1 };
+int32_t skui_mouse_interactor           = -1;
+int32_t skui_eye_interactors[2]         = { -1, -1 };
 float   skui_controller_trigger_last[2] = { 0, 0 };
+float   skui_ray_length[2]              = { 0, 0 };
 
 ///////////////////////////////////////////
 
@@ -84,17 +85,24 @@ void ui_core_shutdown() {
 
 ///////////////////////////////////////////
 
-void ui_show_ray(int32_t interactor) {
+void ui_show_ray(int32_t interactor, float *ref_length) {
 	interactor_t* actor = &skui_interactors[interactor];
 	if ((actor->tracked & button_state_active) == 0) return;
 
 	float length         = 0.5f;
-	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->capsule_start_world);
+	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->position);
 	vec3  centered_dir   = uncentered_dir;
 	if (actor->focused_prev != 0) {
-		length       = vec3_distance (actor->focus_center_world, actor->capsule_start_world);
-		centered_dir = vec3_normalize(actor->focus_center_world - actor->capsule_start_world);
+		length       = vec3_distance (actor->focus_center_world,  actor->position);
+		centered_dir = vec3_normalize(actor->focus_center_world - actor->position);
 	}
+	if (ref_length != nullptr) {
+		*ref_length = math_lerp(*ref_length, actor->focused_prev == 0 ? 0: length, 16.0f * time_stepf_unscaled());
+		length = *ref_length;
+	}
+	if (length < 0.001f) return;
+
+	float width_mod = fminf(1,length/0.06f);
 
 	const int32_t ct = 20;
 	line_point_t pts[ct];
@@ -105,8 +113,8 @@ void ui_show_ray(int32_t interactor) {
 
 		float pct_i = 1 - pct;
 		float curve = sin(pct_i * pct_i * 3.14159f);
-		float width = 0.002f + curve * 0.0015f;
-		pts[i] = line_point_t{ actor->capsule_start_world + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*255) } };
+		float width = (0.002f + curve * 0.0015f) * width_mod;
+		pts[i] = line_point_t{ actor->position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*width_mod*255) } };
 	}
 	line_add_listv(pts, ct);
 }
@@ -138,8 +146,8 @@ void ui_core_hands_step() {
 			hand->pinch_state, pointer->tracked);
 	}
 
-	ui_show_ray(skui_hand_interactors[2]);
-	ui_show_ray(skui_hand_interactors[5]);
+	ui_show_ray(skui_hand_interactors[2], &skui_ray_length[0]);
+	ui_show_ray(skui_hand_interactors[5], &skui_ray_length[1]);
 }
 
 void ui_core_controllers_step() {
@@ -157,8 +165,8 @@ void ui_core_controllers_step() {
 		skui_controller_trigger_last[i] = ctrl->trigger;
 	}
 
-	ui_show_ray(skui_hand_interactors[2]);
-	ui_show_ray(skui_hand_interactors[5]);
+	ui_show_ray(skui_hand_interactors[2], nullptr);
+	ui_show_ray(skui_hand_interactors[5], nullptr);
 }
 
 void ui_core_mouse_step() {
