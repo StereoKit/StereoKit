@@ -10,7 +10,7 @@ internal class DemoLaserPointer : ITest
 
 	public void Initialize()
 	{
-		SK.RemoveStepper<HandMenuRadial>();
+		//SK.RemoveStepper<HandMenuRadial>();
 	}
 
 	public void Shutdown()
@@ -31,6 +31,15 @@ internal class DemoLaserPointer : ITest
 
 class ControllerStepper : IStepper
 {
+	enum Mode
+	{
+		None,
+		Mouse,
+		Hand,
+		Controller,
+	}
+
+	Mode  mode = Mode.Hand;
 	Model controllerL;
 	Model controllerR;
 
@@ -47,9 +56,33 @@ class ControllerStepper : IStepper
 	{
 	}
 
+	void SetMode(Mode nextMode)
+	{
+		if (mode == nextMode) return;
+
+		switch(mode)
+		{
+			case Mode.Mouse: break;
+			case Mode.Hand: Input.HandVisible(Handed.Max, false); break;
+			case Mode.Controller: break;
+		}
+		mode = nextMode;
+
+		switch (mode)
+		{
+			case Mode.Mouse: break;
+			case Mode.Hand: Input.HandVisible(Handed.Max, true); break;
+			case Mode.Controller: break;
+		}
+	}
+
 	public void Step()
 	{
-		if (Input.HandSource(Handed.Left) != HandSource.Articulated)
+		if      (Device.DisplayType == DisplayType.Flatscreen)            SetMode(Mode.Mouse);
+		else if (Input.HandSource(Handed.Left) == HandSource.Articulated) SetMode(Mode.Hand);
+		else                                                              SetMode(Mode.Controller);
+
+		if (mode == Mode.Controller)
 		{
 			Controller l = Input.Controller(Handed.Left);
 			if (l.tracked.IsActive())

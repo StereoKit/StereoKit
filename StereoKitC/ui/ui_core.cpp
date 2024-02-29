@@ -28,10 +28,9 @@ array_t<id_hash_t>   skui_preserve_keyboard_ids[2];
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_read;
 array_t<id_hash_t>*  skui_preserve_keyboard_ids_write;
 
-int32_t skui_input_mode = 2;
+int32_t skui_input_mode                 = 2;
 int32_t skui_hand_interactors[6]        = { -1, -1, -1, -1 };
 int32_t skui_mouse_interactor           = -1;
-int32_t skui_eye_interactors[2]         = { -1, -1 };
 float   skui_controller_trigger_last[2] = { 0, 0 };
 float   skui_ray_length[2]              = { 0, 0 };
 
@@ -61,9 +60,6 @@ void ui_core_init() {
 	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
 
 	skui_mouse_interactor    = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
-
-	skui_eye_interactors[0]  = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
-	skui_eye_interactors[1]  = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
 
 	skui_input_mode = device_display_get_type() == display_type_flatscreen
 		? 2  // Mouse
@@ -120,7 +116,6 @@ void ui_show_ray(int32_t interactor, float *ref_length) {
 }
 
 void ui_core_hands_step() {
-	input_hand_visible(handed_max, true);
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t*    hand    = input_hand       ((handed_)i);
 		const pointer_t* pointer = input_get_pointer(input_hand_pointer_id[i]);
@@ -151,7 +146,6 @@ void ui_core_hands_step() {
 }
 
 void ui_core_controllers_step() {
-	input_hand_visible(handed_max, false);
 	for (int32_t i = 0; i < handed_max; i++) {
 		const controller_t *ctrl = input_controller((handed_)i);
 
@@ -170,7 +164,6 @@ void ui_core_controllers_step() {
 }
 
 void ui_core_mouse_step() {
-	input_hand_visible(handed_max, false);
 	const pose_t*  head = input_head();
 	const mouse_t* m    = input_mouse();
 	ray_t ray;
@@ -181,8 +174,6 @@ void ui_core_mouse_step() {
 		ray.pos, end, 0.005f,
 		end, quat_lookat(ray.pos, end), end,
 		input_key(key_mouse_left), button_make_state(skui_interactors[skui_mouse_interactor].tracked & button_state_active, tracked));
-
-	//ui_show_ray(skui_mouse_interactor);
 }
 
 void ui_core_update() {
@@ -205,24 +196,6 @@ void ui_core_update() {
 
 		skui_interactors[i].tracked     = button_state_inactive;
 		skui_interactors[i].pinch_state = button_state_inactive;
-		// draw hand rays
-		//skui_interactor[i].ray_visibility = math_lerp(skui_interactor[i].ray_visibility,
-		//	was_ray_enabled && ui_far_interact_enabled() && skui_interactor[i].ray_enabled && !skui_interactor[i].ray_discard ? 1.0f : 0.0f,
-		//	20.0f * time_stepf_unscaled());
-
-		/*if (skui_interactors[i].focused_prev != 0) skui_interactors[i].ray_visibility = 0;
-		if (skui_interactors[i].ray_visibility > 0.004f) {
-			ray_t       r     = input_get_pointer(input_hand_pointer_id[i])->ray;
-			const float scale = 2;
-			line_point_t points[5] = {
-				line_point_t{r.pos+r.dir*(0.07f              ), 0.001f,  color32{255,255,255,0}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.01f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 60 )}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.02f*scale), 0.0020f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 80)}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.07f*scale), 0.0015f, color32{255,255,255,(uint8_t)(skui_interactors[i].ray_visibility * 25 )}},
-				line_point_t{r.pos+r.dir*(0.07f + 0.11f*scale), 0.001f,  color32{255,255,255,0}} };
-			line_add_listv(points, 5);
-		}
-		skui_interactors[i].ray_discard = false;*/
 	}
 
 	// auto-switch between hands and controllers
