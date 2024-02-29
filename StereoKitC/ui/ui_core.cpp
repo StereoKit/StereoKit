@@ -53,10 +53,10 @@ void ui_core_init() {
 	skui_id_stack.add({ HASH_FNV64_START });
 
 	skui_hand_interactors[0] = interactor_create(interactor_type_point, interactor_event_poke);
-	skui_hand_interactors[1] = interactor_create(interactor_type_line,  interactor_event_pinch);
+	skui_hand_interactors[1] = interactor_create(interactor_type_point, interactor_event_pinch);
 	skui_hand_interactors[2] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
 	skui_hand_interactors[3] = interactor_create(interactor_type_point, interactor_event_poke);
-	skui_hand_interactors[4] = interactor_create(interactor_type_line,  interactor_event_pinch);
+	skui_hand_interactors[4] = interactor_create(interactor_type_point,  interactor_event_pinch);
 	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
 
 	skui_mouse_interactor    = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch));
@@ -621,7 +621,7 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 		render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
 
 	bool32_t result = bounds_capsule_intersect(box, actor->capsule_start, actor->capsule_end, actor->capsule_radius, out_at);
-	if (actor->type == interactor_type_point) *out_at = actor->capsule_end;
+	if (actor->type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->position);
 	if (result) {
 		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, actor->capsule_start);
 	}
