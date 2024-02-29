@@ -17,6 +17,7 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
+#include "../hands/input_hand.h"
 #include "../platforms/platform.h"
 
 #include <limits.h>
@@ -780,7 +781,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
-		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_hand_get_visible((handed_)i) 
+			? hand->fingers[1][4].position
+			: vec3{ 0,-1000,0 };
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
