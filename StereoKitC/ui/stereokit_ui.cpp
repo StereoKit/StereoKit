@@ -342,7 +342,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
-	return state & button_state_just_active;
+	return state & button_state_just_inactive;
 }
 
 bool32_t ui_button_img_at   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) { return ui_button_img_at_g<char    >(text, image, image_layout, window_relative_pos, size, image_tint); }
@@ -409,7 +409,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	if (state & button_state_just_active) {
+	if (state & button_state_just_inactive) {
 		pressed = pressed ? false : true;
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
@@ -418,7 +418,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
-	return state & button_state_just_active;
+	return state & button_state_just_inactive;
 }
 bool32_t ui_toggle_img_at   (const char*     text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char    >(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
 bool32_t ui_toggle_img_at   (const char16_t* text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char16_t>(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
@@ -491,7 +491,7 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
 	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
 
-	return state & button_state_just_active;
+	return state & button_state_just_inactive;
 }
 bool32_t ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char    >(text, image, window_relative_pos, diameter); }
 bool32_t ui_button_round_at   (const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char16_t>(text, image, window_relative_pos, diameter); }
@@ -558,7 +558,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	button_state_ state, focus;
 	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &interactor);
 
-	if (state & button_state_just_active) {
+	if (state & button_state_just_inactive) {
 		platform_keyboard_show(true,type);
 		skui_input_blink  = time_totalf_unscaled();
 		skui_input_target = id_hash;
