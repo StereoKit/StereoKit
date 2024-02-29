@@ -256,7 +256,7 @@ void hand_oxra_update_joints() {
 		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 		pose_t point_pose = {
 			ray_joint,
-			quat_lookat(shoulder, ray_joint) };
+			quat_lookat_up(shoulder, ray_joint, inp_hand->palm.orientation*vec3_up) };
 		pointer->ray.pos     = point_pose.position;
 		pointer->ray.dir     = point_pose.orientation * vec3_forward;
 		pointer->orientation = point_pose.orientation;
