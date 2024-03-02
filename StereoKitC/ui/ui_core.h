@@ -71,7 +71,6 @@ void             interactor_plate_1h        (id_hash_t id, interactor_event_ eve
 bool32_t         _ui_handle_begin           (id_hash_t id, pose_t& handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures);
 void             ui_slider_behavior         (id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step, vec3 window_relative_pos, vec2 size, vec2 button_size, ui_confirm_ confirm_method, vec2* out_button_center, float* out_finger_offset, button_state_* out_focus_state, button_state_* out_active_state, int32_t* out_interactor);
 
-bool32_t         ui_is_enabled              ();
 bool32_t         ui_id_focused              (id_hash_t id);
 button_state_    ui_id_focus_state          (id_hash_t id);
 bool32_t         ui_id_active               (id_hash_t id);
