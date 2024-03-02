@@ -54,6 +54,10 @@ namespace StereoKit
 		/// stack, according to UI.Push/PopTextStyle.</summary>
 		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
 
+		/// <summary>This returns the current state of the UI's enabled status
+		/// stack, set by `UI.Push/PopEnabled`.</summary>
+		public static bool Enabled => NativeAPI.ui_is_enabled();
+
 		/// <summary>How much space is available on the current layout! This is
 		/// based on the current layout position, so X will give you the amount
 		/// remaining on the current line, and Y will give you distance to the
@@ -1272,12 +1276,13 @@ namespace StereoKit
 		/// <summary>All UI between PushEnabled and its matching PopEnabled
 		/// will set the UI to an enabled or disabled state, allowing or
 		/// preventing interaction with specific elements. The default state is
-		/// true. This currently doesn't have any visual effect, so you may
-		/// wish to pair it with a PushTint.</summary>
+		/// true.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
 		/// interactable?</param>
-		public static void PushEnabled(bool enabled)
-			=> NativeAPI.ui_push_enabled(enabled);
+		/// <param name="ignoreParent">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		public static void PushEnabled(bool enabled, bool ignoreParent = false)
+			=> NativeAPI.ui_push_enabled(enabled, ignoreParent);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>

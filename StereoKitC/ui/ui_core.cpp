@@ -984,8 +984,10 @@ void ui_pop_id() {
 
 ///////////////////////////////////////////
 
-void ui_push_enabled(bool32_t enabled) {
-	skui_enabled_stack.add(enabled);
+void ui_push_enabled(bool32_t enabled, bool32_t ignore_parent) {
+	skui_enabled_stack.add(ignore_parent == true
+		? enabled
+		: (enabled == true && ui_is_enabled() == true));
 }
 
 ///////////////////////////////////////////
@@ -1001,7 +1003,9 @@ void ui_pop_enabled() {
 ///////////////////////////////////////////
 
 bool32_t ui_is_enabled() {
-	return skui_enabled_stack.last();
+	return skui_enabled_stack.count == 0
+		? true
+		: skui_enabled_stack.last();
 }
 
 ///////////////////////////////////////////
