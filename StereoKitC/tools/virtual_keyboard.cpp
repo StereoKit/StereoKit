@@ -12,6 +12,7 @@
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
+#include "../platforms/platform.h"
 
 namespace sk {
 
