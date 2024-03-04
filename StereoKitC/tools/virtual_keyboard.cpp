@@ -1,7 +1,7 @@
 ﻿/* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "virtual_keyboard.h"
@@ -26,16 +26,16 @@ typedef enum skey_ {
 } skey_;
 
 typedef struct keylayout_key_t {
-	const char*  clicked_text;
+	char* clicked_text;
 	union {
-		const char* display_text;
-		sprite_t    display_sprite;
+		char*    display_text;
+		sprite_t display_sprite;
 	};
-	uint8_t      width;
-	uint8_t      key_event_type;
-	uint8_t      special_key;
-	uint8_t      is_sprite;
-	uint8_t      go_to;
+	uint8_t width;
+	uint8_t key_event_type;
+	uint8_t special_key;
+	uint8_t is_sprite;
+	uint8_t go_to;
 } keylayout_key_t;
 
 typedef struct keylayout_info_t {
@@ -54,76 +54,21 @@ int32_t                   keyboard_visit_return_idx = -1;
 text_context_             keyboard_text_context     = text_context_text;
 
 array_t<keylayout_info_t> keyboards[4];
-text_context_             keyboard_active_root                = text_context_text;
-int32_t                   keyboard_active_idx                 = 0;
+text_context_             keyboard_active_root      = text_context_text;
+int32_t                   keyboard_active_idx       = 0;
 
 ///////////////////////////////////////////
 
-bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, keylayout_info_t* out_layout);
-void virtualkeyboard_go_to       (int32_t layout_idx);
-
-///////////////////////////////////////////
-
-uint64_t virtualkeyboard_hash(const keylayout_key_t* key) {
-	return key->is_sprite
-		? (uint64_t)key->display_sprite
-		: (key->display_text != nullptr
-			? hash_fnv64_string(key->display_text)
-			: 0);
-}
-
-///////////////////////////////////////////
-
-void virtualkeyboard_reset_modifiers() {
-	const keylayout_info_t* keyboard = &keyboards[keyboard_active_root][keyboard_active_idx];
-
-
-	for (int32_t i = keyboard_modifier_keys.count-1; i >= 0; i-=1) {
-		for (int32_t k = 0; k < keyboard->key_ct; k+=1) {
-			keylayout_key_t *key = &keyboard->keys[k];
-			uint64_t hash = virtualkeyboard_hash(key);
-			if (hash == keyboard_modifier_keys[i]) {
-				if (key->key_event_type != key_none) input_key_inject_release((key_)key->key_event_type);
-				break;
-			}
-		}
-	}
-	keyboard_modifier_keys.clear();
-}
-
-///////////////////////////////////////////
-
-void virtualkeyboard_open(bool32_t open, text_context_ type) {
-	if (open == keyboard_open && type == keyboard_text_context) return;
-
-	// Position the keyboard in front of the user if this just opened
-	if (open && !keyboard_open) {
-		keyboard_pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
-	}
-
-	// Reset the keyboard to its default state
-	virtualkeyboard_reset_modifiers();
-
-	keyboard_text_context     = type;
-	keyboard_open             = open;
-	keyboard_visit_return_idx = -1;
-
-	// Get the right layout for this text context
-	keyboard_active_root = type;
-	keyboard_active_idx = 0;
-}
-
-///////////////////////////////////////////
-
-bool virtualkeyboard_get_open() {
-	return keyboard_open;
-}
+bool virtualkeyboard_parse_layout  (const char* text_start, int32_t text_length, keylayout_info_t* out_layout);
+void virtualkeyboard_release_layout(keylayout_info_t* ref_layout);
+void virtualkeyboard_go_to         (int32_t layout_idx);
 
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	keylayout_info_t layer  = {};
-	char**      layouts = new char*[2];
+	keylayout_info_t layer   = {};
+	char**           layouts = new char*[2];
+	memset(keyboards, 0, sizeof(keyboards));
 
 	// These keyboards use VK codes for parity with the previous ones. Until
 	// the new smaller mobile keyboard ships, we'll just stick with that, but
@@ -160,6 +105,7 @@ Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:
 spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	platform_keyboard_set_layout(text_context_uri, layouts, 2);
+
 	////// Numeric keyboard //////
 	layouts[0] =
 R"(7|8|9|spr:sk/ui/backspace-\b
@@ -168,6 +114,7 @@ R"(7|8|9|spr:sk/ui/backspace-\b
 0|.|Return-\n--4-close|)";
 	layouts[1] = nullptr;
 	platform_keyboard_set_layout(text_context_number, layouts, 1);
+
 	// Mobile friendly design. This needs touch selection functionality for Input
 	// elements before it can be shipped.
 	/*layout =
@@ -188,28 +135,100 @@ R"(1|2|3|4|5|6|7|8|9|0
 spr:sk/ui/shift---3-go_0|*|=|+|#|%|'|"|spr:sk/ui/backspace-\b--3
 spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\n--4|)";
 	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);*/
+
 	keyboard_active_root = text_context_text;
 	keyboard_active_idx  = 0;
 }
 
 ///////////////////////////////////////////
 
+void virtualkeyboard_shutdown() {
+	for (int32_t k = 0; k < _countof(keyboards); k++) {
+		for (int32_t y = 0; y < keyboards[k].count; y++)
+			virtualkeyboard_release_layout(&keyboards[k][y]);
+		keyboards[k].free();
+	}
+	keyboard_pressed_keys .free();
+	keyboard_modifier_keys.free();
+}
+
+///////////////////////////////////////////
+
+uint64_t virtualkeyboard_hash(const keylayout_key_t* key) {
+	return key->is_sprite
+		? (uint64_t)key->display_sprite
+		: (key->display_text != nullptr
+			? hash_fnv64_string(key->display_text)
+			: 0);
+}
+
+///////////////////////////////////////////
+
+void virtualkeyboard_reset_modifiers() {
+	const keylayout_info_t* keyboard = &keyboards[keyboard_active_root][keyboard_active_idx];
+
+	for (int32_t i = keyboard_modifier_keys.count-1; i >= 0; i-=1) {
+		for (int32_t k = 0; k < keyboard->key_ct; k+=1) {
+			keylayout_key_t *key = &keyboard->keys[k];
+			uint64_t hash = virtualkeyboard_hash(key);
+			if (hash == keyboard_modifier_keys[i]) {
+				if (key->key_event_type != key_none) input_key_inject_release((key_)key->key_event_type);
+				break;
+			}
+		}
+	}
+	keyboard_modifier_keys.clear();
+}
+
+///////////////////////////////////////////
+
+void virtualkeyboard_open(bool32_t open, text_context_ type) {
+	if (open == keyboard_open && type == keyboard_text_context) return;
+
+	// Position the keyboard in front of the user if this just opened
+	if (open && !keyboard_open) {
+		keyboard_pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
+	}
+
+	// Reset the keyboard to its default state
+	virtualkeyboard_reset_modifiers();
+
+	keyboard_text_context     = type;
+	keyboard_open             = open;
+	keyboard_visit_return_idx = -1;
+
+	// Get the right layout for this text context
+	keyboard_active_root = type;
+	keyboard_active_idx  = 0;
+}
+
+///////////////////////////////////////////
+
+bool virtualkeyboard_get_open() {
+	return keyboard_open;
+}
+
+///////////////////////////////////////////
+
 bool virtualkeyboard_set_layout(text_context_ keyboard_type, char** keyboard_layouts, int layouts_num) {
-	keylayout_info_t layer = {};
+	keylayout_info_t          layer           = {};
 	array_t<keylayout_info_t> keyboard_layers = {};
 	for (int i = 0; i < layouts_num; i++) {
 		if (virtualkeyboard_parse_layout(*(keyboard_layouts + i), (int32_t)strlen(*(keyboard_layouts + i)), &layer)) {
 			keyboard_layers.add(layer);
-		}
-		else {
+		} else {
+			keyboard_layers.free();
 			return false;
 		}
 	}
 
 	if (keyboard_layers.count != 0 && keyboard_type >= 0 && keyboard_type < 4) {
+		for (int32_t i = 0; i<keyboards[keyboard_type].count; i+=1)
+			virtualkeyboard_release_layout(&keyboards[keyboard_type][i]);
+		keyboards[keyboard_type].free();
 		keyboards[keyboard_type] = keyboard_layers;
-	}
-	else {
+	} else {
+		keyboard_layers.free();
 		return false;
 	}
 	return true;
@@ -293,7 +312,7 @@ bool _key_toggle(const keylayout_key_t* key, bool32_t *toggle, vec2 size) {
 
 ///////////////////////////////////////////
 
-void virtualkeyboard_update() {
+void virtualkeyboard_step() {
 	if (!keyboard_open) return;
 	const keylayout_info_t* keyboard = &keyboards[keyboard_active_root][keyboard_active_idx];
 
@@ -483,7 +502,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 				} break;
 				case 1: result[key_idx].clicked_text = arg_len > 0 ? stref_copy(arg_stref) : nullptr; break;
 				case 2: if (arg_len > 0) result[key_idx].key_event_type = (uint8_t)stref_to_i(arg_stref); break;
-				case 3: if (arg_len > 0) result[key_idx].width = (uint8_t)stref_to_i(arg_stref); break;
+				case 3: if (arg_len > 0) result[key_idx].width          = (uint8_t)stref_to_i(arg_stref); break;
 				case 4: {
 					if      (stref_startswith(arg_stref, "go_"   )) { result[key_idx].special_key = skey_go;    result[key_idx].go_to = (uint8_t)stref_to_i({ arg_stref.start+3, arg_stref.length - 3 }); }
 					else if (stref_startswith(arg_stref, "visit_")) { result[key_idx].special_key = skey_visit; result[key_idx].go_to = (uint8_t)stref_to_i({ arg_stref.start+6, arg_stref.length - 6 }); }
@@ -513,7 +532,20 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 		out_layout->width_cells   += result[i].width;
 		out_layout->width_gutters += 1 + (int32_t)(result[i].width / 2.0f - 0.5f);
 	}
+	free(escape_text);
 	return true;
 }
 
+///////////////////////////////////////////
+
+void virtualkeyboard_release_layout(keylayout_info_t* ref_layout) {
+	for (int32_t i = 0; i < ref_layout->key_ct; i++) {
+		if (ref_layout->keys[i].clicked_text != ref_layout->keys[i].display_text) sk_free(ref_layout->keys[i].clicked_text);
+		if (ref_layout->keys[i].is_sprite) sprite_release(ref_layout->keys[i].display_sprite);
+		else                               sk_free       (ref_layout->keys[i].display_text);
+	}
+	sk_free(ref_layout->keys);
+	*ref_layout = {};
 }
+
+} // namespace sk

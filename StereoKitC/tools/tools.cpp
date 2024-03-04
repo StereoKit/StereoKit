@@ -16,12 +16,13 @@ bool tools_init() {
 
 void tools_step() {
 	file_picker_update();
-	virtualkeyboard_update();
+	virtualkeyboard_step();
 }
 
 ///////////////////////////////////////////
 
 void tools_shutdown() {
+	virtualkeyboard_shutdown();
 	file_picker_shutdown();
 }
 
