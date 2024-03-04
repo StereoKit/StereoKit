@@ -17,11 +17,6 @@
 	/// a different one.</summary>
 	public interface IStepper
 	{
-		/// <summary>Is this IStepper enabled? When false, StereoKit will not
-		/// call Step. This can be a good way to temporarily disable the
-		/// IStepper without removing or shutting it down.</summary>
-		bool Enabled { get; }
-
 		/// <summary>This is called by StereoKit at the start of the next
 		/// frame, and on the main thread. This happens before StereoKit's main
 		/// `Step` callback, and always after `SK.Initialize`.</summary>
