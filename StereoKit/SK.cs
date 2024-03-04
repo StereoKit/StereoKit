@@ -223,14 +223,9 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			try {
-				while (Step())
-					if (onStep != null) onStep();
-			} catch {
-				if (onShutdown != null) onShutdown();
-				Shutdown();
-				throw;
-			}
+			while (Step())
+				if (onStep != null) onStep();
+
 			if (onShutdown != null) onShutdown();
 			Shutdown();
 		}
