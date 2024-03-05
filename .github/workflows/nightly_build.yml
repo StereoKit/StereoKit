@@ -61,10 +61,10 @@ jobs:
         $lastCommitTimestamp = [DateTime]::Parse($commits[0].commit.committer.date).ToUniversalTime()
         Write-Output "Last commit was $lastCommitTimestamp, $([math]::Round(($now - $lastCommitTimestamp).TotalHours,1)) hours ago."
 
-        if ($lastRunTimestamp -lt $lastCommitTimestamp -and $env:SKIP_TIME_CHECK -eq 'true') {
+        if ($env:SKIP_TIME_CHECK -eq 'true') {
             Write-Output "Requesting a new build! (ignoring last build attempt)"
             Write-Output "shouldBuild=true" >> $env:GITHUB_OUTPUT
-        } elseif ($lastRunTimestamp -lt $lastCommitTimestamp -and ($now - $lastRunTimestamp).TotalDays -gt 0.95) {
+        } elseif ($lastRunTimestamp -lt $lastCommitTimestamp) {
             Write-Output "Requesting a new build!"
             Write-Output "shouldBuild=true" >> $env:GITHUB_OUTPUT
         } else {
