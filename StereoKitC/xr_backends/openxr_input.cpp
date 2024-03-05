@@ -20,7 +20,15 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-struct xrc_actions_t {
+struct xrc_profile_info_t {
+	const char* name;
+	XrPath      profile;
+	pose_t      offset[2];
+};
+
+struct XrRLPath {
+	XrPath left;
+	XrPath right;
 };
 
 XrActionSet xrc_action_set;
@@ -42,19 +50,20 @@ XrSpace     xrc_space_grip         [2] = {};
 XrSpace     xrc_space_palm         [2] = {};
 XrSpace     xr_gaze_space              = {};
 
-int32_t    xr_eyes_pointer;
+int32_t       xr_eyes_pointer;
 button_state_ xr_tracked_state = button_state_inactive;
 
-struct xrc_profile_info_t {
-	const char *name;
-	XrPath      profile;
-	quat        offset_rot[2];
-	vec3        offset_pos[2];
-};
 array_t<xrc_profile_info_t> xrc_profile_offsets = {};
 XrPath                      xrc_active_profile[2] = { 0xFFFFFFFF, 0xFFFFFFFF };
 
+///////////////////////////////////////////
+
 void oxri_set_profile(handed_ hand, XrPath profile);
+
+XrRLPath _bind_paths  (const char* name);
+void     _bind        (array_t<XrActionSuggestedBinding>* arr, XrAction action, XrPath   path);
+void     _bind_rl     (array_t<XrActionSuggestedBinding>* arr, XrAction action, XrRLPath rlpath);
+bool     _bind_suggest(const char* profile_name, const array_t<XrActionSuggestedBinding> binding_arr, pose_t palm_left_offset, pose_t palm_right_offset, xrc_profile_info_t* out_profile);
 
 ///////////////////////////////////////////
 
@@ -223,70 +232,26 @@ bool oxri_init() {
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
 	// preferences. For example, if the runtime allows you to remap buttons, or provides input
 	// accessibility settings.
-	XrPath path_pose_palm    [2];
-	XrPath path_pose_aim     [2];
-	XrPath path_pose_grip    [2];
-	XrPath path_trigger_val  [2];
-	XrPath path_select_val   [2];
-	XrPath path_select_click [2];
-	XrPath path_squeeze_val  [2];
-	XrPath path_squeeze_click[2];
-	XrPath path_stick_xy     [2];
-	XrPath path_stick_click  [2];
-	XrPath path_system_click [2];
-	XrPath path_menu_click   [2];
-	XrPath path_back_click   [2];
-	XrPath path_pinch_val    [2];
-	XrPath path_grasp_val    [2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/grip/pose",      &path_pose_grip[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/grip/pose",     &path_pose_grip[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/aim/pose",       &path_pose_aim[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/aim/pose",      &path_pose_aim[1]);
-	
-	xrStringToPath(xr_instance, "/user/hand/left/input/select/value",   &path_select_val[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/select/value",  &path_select_val[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/select/click",   &path_select_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/select/click",  &path_select_click[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/trigger/value",  &path_trigger_val[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/trigger/value", &path_trigger_val[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/value",  &path_squeeze_val[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/value", &path_squeeze_val[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/squeeze/click",  &path_squeeze_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/squeeze/click", &path_squeeze_click[1]);
+	XrRLPath path_pose_aim      = _bind_paths("aim/pose");
+	XrRLPath path_pose_grip     = _bind_paths("grip/pose");
+	XrRLPath path_trigger_val   = _bind_paths("trigger/value");
+	XrRLPath path_select_val    = _bind_paths("select/value");
+	XrRLPath path_select_click  = _bind_paths("select/click");
+	XrRLPath path_squeeze_val   = _bind_paths("squeeze/value");
+	XrRLPath path_squeeze_click = _bind_paths("squeeze/click");
+	XrRLPath path_stick_xy      = _bind_paths("thumbstick");
+	XrRLPath path_stick_click   = _bind_paths("thumbstick/click");
+	XrRLPath path_system_click  = _bind_paths("system/click");
+	XrRLPath path_menu_click    = _bind_paths("menu/click");
+	XrRLPath path_back_click    = _bind_paths("back/click");
+	XrRLPath path_btn_x         = _bind_paths("x/click");
+	XrRLPath path_btn_y         = _bind_paths("y/click");
+	XrRLPath path_btn_a         = _bind_paths("a/click");
+	XrRLPath path_btn_b         = _bind_paths("b/click");
 
-	xrStringToPath(xr_instance, "/user/hand/left/input/thumbstick",        &path_stick_xy[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/thumbstick",       &path_stick_xy[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/thumbstick/click",  &path_stick_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/thumbstick/click", &path_stick_click[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/menu/click",        &path_menu_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/menu/click",       &path_menu_click[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/back/click",        &path_back_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/back/click",       &path_back_click[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/system/click",      &path_system_click[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/system/click",     &path_system_click[1]);
-
-	xrStringToPath(xr_instance, "/user/hand/left/input/pinch_ext/value",  &path_pinch_val[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/pinch_ext/value", &path_pinch_val[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/grasp_ext/value",  &path_grasp_val[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/grasp_ext/value", &path_grasp_val[1]);
-
-	XrPath path_btn_x[2];
-	XrPath path_btn_y[2];
-	XrPath path_btn_a[2];
-	XrPath path_btn_b[2];
-	xrStringToPath(xr_instance, "/user/hand/left/input/x/click",  &path_btn_x[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/x/click", &path_btn_x[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/y/click",  &path_btn_y[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/y/click", &path_btn_y[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/a/click",  &path_btn_a[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/a/click", &path_btn_a[1]);
-	xrStringToPath(xr_instance, "/user/hand/left/input/b/click",  &path_btn_b[0]);
-	xrStringToPath(xr_instance, "/user/hand/right/input/b/click", &path_btn_b[1]);
-
-	if (xr_ext_available.EXT_palm_pose) {
-		xrStringToPath(xr_instance, "/user/hand/left/input/palm_ext/pose",  &path_pose_palm[0]);
-		xrStringToPath(xr_instance, "/user/hand/right/input/palm_ext/pose", &path_pose_palm[1]);
-	}
+	XrRLPath path_pinch_val     = _bind_paths("pinch_ext/value");
+	XrRLPath path_grasp_val     = _bind_paths("grasp_ext/value");
+	XrRLPath path_pose_palm     = _bind_paths("palm_ext/pose");
 
 	// OpenXR's ideal situation is that you provide bindings for the
 	// controllers that you know and use. Runtimes are then supposed to remap
@@ -296,353 +261,187 @@ bool oxri_init() {
 	// Here, we provide bindings for as many controllers as possible, so that
 	// runtimes don't have the opportunity to drop the ball.
 
-	array_t<XrActionSuggestedBinding> binding_arr = {};
+
+	xrc_profile_info_t                bind_info = {};
+	array_t<XrActionSuggestedBinding> bind_arr  = {};
 
 	// microsoft/motion_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_microsoft_mixed_reality_motion_controller_profile
 	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip    [0] }, { xrc_action_pose_grip,   path_pose_grip    [1] },
-			{ xrc_action_pose_aim,   path_pose_aim     [0] }, { xrc_action_pose_aim,    path_pose_aim     [1] },
-			{ xrc_action_trigger,    path_trigger_val  [0] }, { xrc_action_trigger,     path_trigger_val  [1] },
-			{ xrc_action_grip,       path_squeeze_click[0] }, { xrc_action_grip,        path_squeeze_click[1] },
-			{ xrc_action_stick_xy,   path_stick_xy     [0] }, { xrc_action_stick_xy,    path_stick_xy     [1] },
-			{ xrc_action_stick_click,path_stick_click  [0] }, { xrc_action_stick_click, path_stick_click  [1] },
-			{ xrc_action_menu,       path_menu_click   [0] }, { xrc_action_menu,        path_menu_click   [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip    );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim     );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_trigger_val  );
+		_bind_rl(&bind_arr, xrc_action_grip,        path_squeeze_click);
+		_bind_rl(&bind_arr, xrc_action_stick_xy,    path_stick_xy     );
+		_bind_rl(&bind_arr, xrc_action_stick_click, path_stick_click  );
+		_bind_rl(&bind_arr, xrc_action_menu,        path_menu_click   );
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/microsoft/motion_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for WMR vs. HoloLens controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "microsoft/motion_controller";
-			if (device_display_get_blend() == display_blend_opaque) {
-				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
-				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
-				info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
-				info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
-			} else {
-				info.offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
-				info.offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
-				info.offset_pos[handed_left ] = { 0, 0.005f, 0 };
-				info.offset_pos[handed_right] = { 0, 0.005f, 0 };
-			}
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset = device_display_get_blend() == display_blend_opaque
+			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
+			: pose_t{ {0,      0.005f, 0     }, quat_from_angles(-68, 0, 0) };
+		if (_bind_suggest("microsoft/motion_controller", bind_arr, palm_offset, palm_offset, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// hp/mixed_reality_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hp_mixed_reality_controller
 	if (xr_ext_available.EXT_hp_mixed_reality_controller) {
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
-			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
-			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu_click [0] }, { xrc_action_menu,        path_menu_click [1] },
-			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
-			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip  );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim   );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_trigger_val);
+		_bind_rl(&bind_arr, xrc_action_grip,        path_squeeze_val);
+		_bind_rl(&bind_arr, xrc_action_stick_xy,    path_stick_xy   );
+		_bind_rl(&bind_arr, xrc_action_stick_click, path_stick_click);
+		_bind_rl(&bind_arr, xrc_action_menu,        path_menu_click );
+		_bind_rl(&bind_arr, xrc_action_x1,          {path_btn_x.left, path_btn_a.right});
+		_bind_rl(&bind_arr, xrc_action_x2,          {path_btn_y.left, path_btn_b.right});
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/hp/mixed_reality_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for WMR vs. HoloLens controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "hp/mixed_reality_controller";
-			if (device_display_get_blend() == display_blend_opaque) {
-				info.offset_rot[handed_left ] = quat_from_angles(-45, 0, 0);
-				info.offset_rot[handed_right] = quat_from_angles(-45, 0, 0);
-				info.offset_pos[handed_left ] = { 0.01f, -0.01f, 0.015f };
-				info.offset_pos[handed_right] = { 0.01f, -0.01f, 0.015f };
-			} else {
-				info.offset_rot[handed_left ] = quat_from_angles(-68, 0, 0);
-				info.offset_rot[handed_right] = quat_from_angles(-68, 0, 0);
-				info.offset_pos[handed_left ] = { 0, 0.005f, 0 };
-				info.offset_pos[handed_right] = { 0, 0.005f, 0 };
-			}
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset = device_display_get_blend() == display_blend_opaque
+			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
+			: pose_t{ {0,      0.005f, 0     }, quat_from_angles(-68, 0, 0) };
+		if (_bind_suggest("hp/mixed_reality_controller", bind_arr, palm_offset, palm_offset, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
-	// microsoft/hand_interaction
+	// ext/hand_interaction_ext
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
 	if (xr_ext_available.EXT_hand_interaction) {
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip[0] }, { xrc_action_pose_grip,   path_pose_grip[1] },
-			{ xrc_action_pose_aim,   path_pose_aim [0] }, { xrc_action_pose_aim,    path_pose_aim [1] },
-			{ xrc_action_trigger,    path_pinch_val[0] }, { xrc_action_trigger,     path_pinch_val[1] },
-			{ xrc_action_grip,       path_grasp_val[0] }, { xrc_action_grip,        path_grasp_val[1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip, path_pose_grip);
+		_bind_rl(&bind_arr, xrc_action_pose_aim,  path_pose_aim );
+		_bind_rl(&bind_arr, xrc_action_trigger,   path_pinch_val);
+		_bind_rl(&bind_arr, xrc_action_grip,      path_grasp_val);
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/ext/hand_interaction_ext", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "ext/hand_interaction_ext";
-			info.offset_rot[handed_left ] = quat_identity;
-			info.offset_rot[handed_right] = quat_identity;
-			info.offset_pos[handed_left ] = vec3_zero;
-			info.offset_pos[handed_right] = vec3_zero;
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		if (_bind_suggest("ext/hand_interaction_ext", bind_arr, pose_identity, pose_identity, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// Bytedance PICO Neo3
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
-	if (xr_ext_available.BD_controller_interaction)
-	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
-			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
-			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu_click [0] }, { xrc_action_menu,        path_menu_click [1] },
-			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
-			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+	if (xr_ext_available.BD_controller_interaction) {
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,  path_pose_grip  );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,   path_pose_aim   );
+		_bind_rl(&bind_arr, xrc_action_trigger,    path_trigger_val);
+		_bind_rl(&bind_arr, xrc_action_grip,       path_squeeze_val);
+		_bind_rl(&bind_arr, xrc_action_stick_xy,   path_stick_xy   );
+		_bind_rl(&bind_arr, xrc_action_stick_click,path_stick_click);
+		_bind_rl(&bind_arr, xrc_action_menu,       path_menu_click );
+		_bind_rl(&bind_arr, xrc_action_x1,         {path_btn_x.left, path_btn_a.right});
+		_bind_rl(&bind_arr, xrc_action_x2,         {path_btn_y.left, path_btn_b.right});
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/bytedance/pico_neo3_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for PICO Neo3 controllers (untested, assume same as pico 4)
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "bytedance/pico_neo3_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
-			info.offset_pos[handed_left ] = { -0.03f, 0.01f, 0.00f };
-			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		if (_bind_suggest("bytedance/pico_neo3_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// Bytedance Pico 4
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 	// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 	// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
-	if (xr_ext_available.BD_controller_interaction)
-	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
-			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
-			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu_click [0] },
-			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
-			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+	if (xr_ext_available.BD_controller_interaction) {
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,  path_pose_grip  );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,   path_pose_aim   );
+		_bind_rl(&bind_arr, xrc_action_trigger,    path_trigger_val);
+		_bind_rl(&bind_arr, xrc_action_grip,       path_squeeze_val);
+		_bind_rl(&bind_arr, xrc_action_stick_xy,   path_stick_xy   );
+		_bind_rl(&bind_arr, xrc_action_stick_click,path_stick_click);
+		_bind   (&bind_arr, xrc_action_menu,       path_menu_click.left);
+		_bind_rl(&bind_arr, xrc_action_x1,         {path_btn_x.left, path_btn_a.right});
+		_bind_rl(&bind_arr, xrc_action_x2,         {path_btn_y.left, path_btn_b.right});
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/bytedance/pico4_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for pico 4 controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "bytedance/pico4_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
-			info.offset_pos[handed_left ] = { -0.03f, 0.01f, 0.00f };
-			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		if (_bind_suggest("bytedance/pico4_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// htc/vive_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_htc_vive_controller_profile
 	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip    [0] }, { xrc_action_pose_grip,   path_pose_grip    [1] },
-			{ xrc_action_pose_aim,   path_pose_aim     [0] }, { xrc_action_pose_aim,    path_pose_aim     [1] },
-			{ xrc_action_trigger,    path_trigger_val  [0] }, { xrc_action_trigger,     path_trigger_val  [1] },
-			{ xrc_action_grip,       path_squeeze_click[0] }, { xrc_action_grip,        path_squeeze_click[1] },
-			{ xrc_action_menu,       path_menu_click   [0] }, { xrc_action_menu,        path_menu_click   [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip    );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim     );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_trigger_val  );
+		_bind_rl(&bind_arr, xrc_action_grip,        path_squeeze_click);
+		_bind_rl(&bind_arr, xrc_action_menu,        path_menu_click   );
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/htc/vive_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for HTC Vive controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "htc/vive_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
-			info.offset_pos[handed_left ] = {-0.035f, -0.00f, 0.00f };
-			info.offset_pos[handed_right] = {0.035f, -0.00f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset_left  = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
+		pose_t palm_offset_right = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
+		if (_bind_suggest("htc/vive_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// valve/index_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_valve_index_controller_profile
 	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip   [0] }, { xrc_action_pose_grip,   path_pose_grip   [1] },
-			{ xrc_action_pose_aim,   path_pose_aim    [0] }, { xrc_action_pose_aim,    path_pose_aim    [1] },
-			{ xrc_action_trigger,    path_trigger_val [0] }, { xrc_action_trigger,     path_trigger_val [1] },
-			{ xrc_action_grip,       path_squeeze_val [0] }, { xrc_action_grip,        path_squeeze_val [1] },
-			{ xrc_action_stick_xy,   path_stick_xy    [0] }, { xrc_action_stick_xy,    path_stick_xy    [1] },
-			{ xrc_action_stick_click,path_stick_click [0] }, { xrc_action_stick_click, path_stick_click [1] },
-			{ xrc_action_menu,       path_system_click[0] }, { xrc_action_menu,        path_system_click[1] },
-			{ xrc_action_x1,         path_btn_a       [0] }, { xrc_action_x1,          path_btn_a       [1] },
-			{ xrc_action_x2,         path_btn_b       [0] }, { xrc_action_x2,          path_btn_b       [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip   );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim    );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_trigger_val );
+		_bind_rl(&bind_arr, xrc_action_grip,        path_squeeze_val );
+		_bind_rl(&bind_arr, xrc_action_stick_xy,    path_stick_xy    );
+		_bind_rl(&bind_arr, xrc_action_stick_click, path_stick_click );
+		_bind_rl(&bind_arr, xrc_action_menu,        path_system_click);
+		_bind_rl(&bind_arr, xrc_action_x1,          path_btn_a       );
+		_bind_rl(&bind_arr, xrc_action_x2,          path_btn_b       );
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/valve/index_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for Valve Index controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "valve/index_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-40, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-40, 0, 0);
-			info.offset_pos[handed_left ] = {-0.035f, -0.00f, 0.00f };
-			info.offset_pos[handed_right] = { 0.035f, -0.00f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset_left  = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
+		pose_t palm_offset_right = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
+		if (_bind_suggest("valve/index_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 
 	// oculus/touch_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_oculus_touch_controller_profile
 	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip,  path_pose_grip  [0] }, { xrc_action_pose_grip,   path_pose_grip  [1] },
-			{ xrc_action_pose_aim,   path_pose_aim   [0] }, { xrc_action_pose_aim,    path_pose_aim   [1] },
-			{ xrc_action_trigger,    path_trigger_val[0] }, { xrc_action_trigger,     path_trigger_val[1] },
-			{ xrc_action_grip,       path_squeeze_val[0] }, { xrc_action_grip,        path_squeeze_val[1] },
-			{ xrc_action_stick_xy,   path_stick_xy   [0] }, { xrc_action_stick_xy,    path_stick_xy   [1] },
-			{ xrc_action_stick_click,path_stick_click[0] }, { xrc_action_stick_click, path_stick_click[1] },
-			{ xrc_action_menu,       path_menu_click [0] },
-			{ xrc_action_x1,         path_btn_x      [0] }, { xrc_action_x1,          path_btn_a      [1] },
-			{ xrc_action_x2,         path_btn_y      [0] }, { xrc_action_x2,          path_btn_b      [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip  );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim   );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_trigger_val);
+		_bind_rl(&bind_arr, xrc_action_grip,        path_squeeze_val);
+		_bind_rl(&bind_arr, xrc_action_stick_xy,    path_stick_xy   );
+		_bind_rl(&bind_arr, xrc_action_stick_click, path_stick_click);
+		_bind   (&bind_arr, xrc_action_menu,        path_menu_click.left);
+		_bind_rl(&bind_arr, xrc_action_x1,          {path_btn_x.left, path_btn_a.right} );
+		_bind_rl(&bind_arr, xrc_action_x2,          {path_btn_y.left, path_btn_b.right} );
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/oculus/touch_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			// Orientation fix for oculus touch controllers
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "oculus/touch_controller";
-			info.offset_rot[handed_left ] = quat_from_angles(-80, 0, 0);
-			info.offset_rot[handed_right] = quat_from_angles(-80, 0, 0);
-			info.offset_pos[handed_left ] = {-0.03f, 0.01f, 0.00f };
-			info.offset_pos[handed_right] = { 0.03f, 0.01f, 0.00f };
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		if (_bind_suggest("oculus/touch_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
+	bind_arr.clear();
 
 #if !defined(SK_OS_ANDROID)
 	// khr/simple_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_khronos_simple_controller_profile
 	{
-		XrActionSuggestedBinding bindings[] = {
-			{ xrc_action_pose_grip, path_pose_grip   [0] }, { xrc_action_pose_grip, path_pose_grip   [1] },
-			{ xrc_action_pose_aim,  path_pose_aim    [0] }, { xrc_action_pose_aim,  path_pose_aim    [1] },
-			{ xrc_action_trigger,   path_select_click[0] }, { xrc_action_trigger,   path_select_click[1] },
-			{ xrc_action_menu,      path_menu_click  [0] }, { xrc_action_menu,      path_menu_click  [1] },
-		};
-		binding_arr.add_range(bindings, _countof(bindings));
-		if (xr_ext_available.EXT_palm_pose) {
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[0] });
-			binding_arr.add({ xrc_action_pose_palm, path_pose_palm[1] });
-		}
+		bind_arr.clear();
+		_bind_rl(&bind_arr, xrc_action_pose_grip,   path_pose_grip    );
+		_bind_rl(&bind_arr, xrc_action_pose_aim,    path_pose_aim     );
+		_bind_rl(&bind_arr, xrc_action_trigger,     path_select_click );
+		_bind_rl(&bind_arr, xrc_action_menu,        path_menu_click   );
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, xrc_action_pose_palm, path_pose_palm);
 
-		xrStringToPath(xr_instance, "/interaction_profiles/khr/simple_controller", &profile_path);
-		suggested_binds.interactionProfile     = profile_path;
-		suggested_binds.suggestedBindings      = binding_arr.data;
-		suggested_binds.countSuggestedBindings = binding_arr.count;
-		if (XR_SUCCEEDED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-			xrc_profile_info_t info;
-			info.profile = profile_path;
-			info.name    = "khr/simple_controller";
-			info.offset_rot[handed_left ] = quat_identity;
-			info.offset_rot[handed_right] = quat_identity;
-			info.offset_pos[handed_left ] = vec3_zero;
-			info.offset_pos[handed_right] = vec3_zero;
-			xrc_profile_offsets.add(info);
-		}
-		binding_arr.clear();
+		if (_bind_suggest("khr/simple_controller", bind_arr, pose_identity, pose_identity, &bind_info))
+			xrc_profile_offsets.add(bind_info);
 	}
 #endif
 
-	binding_arr.free();
+	bind_arr.free();
 
 	// Create frames of reference for the pose actions
 	for (int32_t i = 0; i < 2; i++) {
@@ -924,8 +723,8 @@ void oxri_set_profile(handed_ hand, XrPath profile) {
 	xrc_active_profile[hand] = profile;
 	for (int32_t i = 0; i < xrc_profile_offsets.count; i++) {
 		if (xrc_profile_offsets[i].profile == profile) {
-			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset_pos[hand];
-			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset_rot[hand];
+			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset[hand].position;
+			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset[hand].orientation;
 			log_diagf("Switched %s controller profile to %s", hand == handed_left ? "left" : "right", xrc_profile_offsets[i].name);
 			break;
 		}
@@ -946,6 +745,65 @@ void oxri_update_interaction_profile() {
 		if (active_profile.interactionProfile != xrc_active_profile[h])
 			oxri_set_profile((handed_)h, active_profile.interactionProfile);
 	}
+}
+
+///////////////////////////////////////////
+
+XrRLPath _bind_paths(const char* name)
+{
+	XrRLPath result = {};
+	char     buffer[256];
+	snprintf(buffer, sizeof(buffer), "/user/hand/%s/input/%s", "left", name);
+	XrResult xr = xrStringToPath(xr_instance, buffer, &result.left);
+	if (XR_FAILED(xr)) {
+		log_infof("xrStringToPath failed for '%s': [%s]", buffer, openxr_string(xr));
+	}
+	snprintf(buffer, sizeof(buffer), "/user/hand/%s/input/%s", "right", name);
+	xr = xrStringToPath(xr_instance, buffer, &result.right);
+	if (XR_FAILED(xr)) {
+		log_infof("xrStringToPath failed for '%s': [%s]", buffer, openxr_string(xr));
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
+void _bind_rl(array_t<XrActionSuggestedBinding>* arr, XrAction action, XrRLPath rlpath) {
+	arr->add({ action, rlpath.left });
+	arr->add({ action, rlpath.right });
+}
+
+///////////////////////////////////////////
+
+void _bind(array_t<XrActionSuggestedBinding>* arr, XrAction action, XrPath path) {
+	arr->add({ action, path });
+}
+
+///////////////////////////////////////////
+
+bool _bind_suggest(const char *profile_name, const array_t<XrActionSuggestedBinding> binding_arr, pose_t palm_left_offset, pose_t palm_right_offset, xrc_profile_info_t *out_profile) {
+	*out_profile = {};
+	log_diagf("Suggesting bindings for %s", profile_name);
+
+	XrPath interaction_path;
+	char   buffer[256];
+	snprintf(buffer, sizeof(buffer), "/interaction_profiles/%s", profile_name);
+	xrStringToPath(xr_instance, buffer, &interaction_path);
+
+	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+	suggested_binds.interactionProfile     = interaction_path;
+	suggested_binds.suggestedBindings      = binding_arr.data;
+	suggested_binds.countSuggestedBindings = binding_arr.count;
+	if (XR_FAILED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds)))
+		return false;
+
+	out_profile->profile              = interaction_path;
+	out_profile->name                 = profile_name;
+	out_profile->offset[handed_left ] = palm_left_offset;
+	out_profile->offset[handed_right] = palm_right_offset;
+
+	log_diagf("%s was valid", profile_name);
+	return true;
 }
 
 } // namespace sk
