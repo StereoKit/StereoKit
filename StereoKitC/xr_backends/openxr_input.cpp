@@ -60,6 +60,7 @@ button_state_ xr_tracked_state = button_state_inactive;
 
 array_t<xrc_profile_info_t> xrc_profile_offsets = {};
 XrPath                      xrc_active_profile[2] = { 0xFFFFFFFF, 0xFFFFFFFF };
+pose_t                      xrc_active_offset [2];
 
 ///////////////////////////////////////////
 
@@ -75,10 +76,8 @@ bool     _make_action   (const char* action_name, const char* display_name, XrAc
 ///////////////////////////////////////////
 
 bool oxri_init() {
-	xrc_offset_pos[0] = vec3_zero;
-	xrc_offset_pos[1] = vec3_zero;
-	xrc_offset_rot[0] = quat_identity;
-	xrc_offset_rot[1] = quat_identity;
+	xrc_active_offset[0] = pose_identity;
+	xrc_active_offset[1] = pose_identity;
 
 	xr_eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
 
@@ -503,8 +502,8 @@ void oxri_update_poses() {
 				}
 			}
 		} else {
-			input_controllers[hand].palm.orientation = xrc_offset_rot[hand] * input_controllers[hand].pose.orientation;
-			input_controllers[hand].palm.position    = input_controllers[hand].pose.position + input_controllers[hand].palm.orientation * xrc_offset_pos[hand];
+			input_controllers[hand].palm.orientation = xrc_active_offset[hand].orientation * input_controllers[hand].pose.orientation;
+			input_controllers[hand].palm.position    = input_controllers[hand].pose.position + input_controllers[hand].palm.orientation * xrc_active_offset[hand].position;
 		}
 
 		// Controller aim pose
@@ -620,8 +619,7 @@ void oxri_set_profile(handed_ hand, XrPath profile) {
 	xrc_active_profile[hand] = profile;
 	for (int32_t i = 0; i < xrc_profile_offsets.count; i++) {
 		if (xrc_profile_offsets[i].profile == profile) {
-			xrc_offset_pos[hand] = xrc_profile_offsets[i].offset[hand].position;
-			xrc_offset_rot[hand] = xrc_profile_offsets[i].offset[hand].orientation;
+			xrc_active_offset[hand] = xrc_profile_offsets[i].offset[hand];
 			log_diagf("Switched %s controller profile to %s", hand == handed_left ? "left" : "right", xrc_profile_offsets[i].name);
 			break;
 		}
