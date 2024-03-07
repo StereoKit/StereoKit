@@ -293,6 +293,13 @@ void sk_quit() {
 
 ///////////////////////////////////////////
 
+void sk_quit_reason(const char* error) {
+	log_infof("StereoKit is shuttingdown due to %s", error);
+	local.running = false;
+}
+
+///////////////////////////////////////////
+
 void sk_first_step() {
 	local.app_system->profile_start_duration = stm_since(local.app_init_time);
 

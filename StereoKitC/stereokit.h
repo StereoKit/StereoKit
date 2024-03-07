@@ -416,6 +416,7 @@ SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
 SK_API void          sk_quit               (void);
+SK_API void          sk_quit_reason        (const char* error);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
