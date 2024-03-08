@@ -108,8 +108,9 @@ bool oxri_init() {
 	if (!_make_action_rl("menu",        "Menu",        XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_menu       )) return false;
 	if (!_make_action_rl("button_x1",   "Button X1",   XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_x1         )) return false;
 	if (!_make_action_rl("button_x2",   "Button X2",   XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_x2         )) return false;
-	if (!_make_action_rl("palm_pose",   "Palm Pose",   XR_ACTION_TYPE_POSE_INPUT,     local.hand_subaction, &local.action_palm_pose  )) return false;
-	if (!_make_action   ("eye_gaze",    "Eye Gaze",    XR_ACTION_TYPE_POSE_INPUT,                         &local.action_eyes       )) return false;
+
+	if (xr_ext_available.EXT_palm_pose && !_make_action_rl("palm_pose", "Palm Pose", XR_ACTION_TYPE_POSE_INPUT, local.hand_subaction, &local.action_palm_pose)) return false;
+	if (device_has_eye_gaze()          && !_make_action   ("eye_gaze",  "Eye Gaze",  XR_ACTION_TYPE_POSE_INPUT,                       &local.action_eyes     )) return false;
 
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
@@ -132,9 +133,9 @@ bool oxri_init() {
 	XrRLPath path_a_click       = _bind_paths("a/click");
 	XrRLPath path_b_click       = _bind_paths("b/click");
 
-	XrRLPath path_pinch_val     = _bind_paths("pinch_ext/value");
-	XrRLPath path_grasp_val     = _bind_paths("grasp_ext/value");
-	XrRLPath path_palm_pose     = _bind_paths("palm_ext/pose");
+	XrRLPath path_pinch_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("pinch_ext/value") : XrRLPath{};
+	XrRLPath path_grasp_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("grasp_ext/value") : XrRLPath{};
+	XrRLPath path_palm_pose     = xr_ext_available.EXT_palm_pose        ? _bind_paths("palm_ext/pose"  ) : XrRLPath{};
 
 	// OpenXR's ideal situation is that you provide bindings for the
 	// controllers that you know and use. Runtimes are then supposed to remap
@@ -306,7 +307,6 @@ bool oxri_init() {
 		if (_bind_suggest("oculus/touch_controller", bind_arr, palm_offset_left, palm_offset_right, &bind_info))
 			local.profiles.add(bind_info);
 	}
-	bind_arr.clear();
 
 #if !defined(SK_OS_ANDROID)
 	// khr/simple_controller
