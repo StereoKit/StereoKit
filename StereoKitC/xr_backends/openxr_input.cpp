@@ -74,8 +74,8 @@ XrRLPath _bind_paths    (const char* name);
 void     _bind          (array_t<XrActionSuggestedBinding>* arr, XrAction action, XrPath   path);
 void     _bind_rl       (array_t<XrActionSuggestedBinding>* arr, XrAction action, XrRLPath rlpath);
 bool     _bind_suggest  (const char* profile_name, const array_t<XrActionSuggestedBinding> binding_arr, pose_t palm_left_offset, pose_t palm_right_offset, xrc_profile_info_t* out_profile);
-bool     _make_action_rl(const char* action_name, const char* display_name, XrActionType type, XrRLPath subaction_path, XrAction *out_action);
-bool     _make_action   (const char* action_name, const char* display_name, XrActionType type, XrAction *out_action);
+bool     _make_action_rl(const char* action_name, const char* display_name, XrActionType type, XrRLPath* in_subaction_path, XrAction *out_action);
+bool     _make_action   (const char* action_name, const char* display_name, XrActionType type, XrAction* out_action);
 
 ///////////////////////////////////////////
 
@@ -99,18 +99,18 @@ bool oxri_init() {
 	xrStringToPath(xr_instance, "/user/hand/left",  &local.hand_subaction.left);
 	xrStringToPath(xr_instance, "/user/hand/right", &local.hand_subaction.right);
 
-	if (!_make_action_rl("grip_pose",   "Grip Pose",   XR_ACTION_TYPE_POSE_INPUT,     local.hand_subaction, &local.action_grip_pose  )) return false;
-	if (!_make_action_rl("aim_pose",    "Aim Pose",    XR_ACTION_TYPE_POSE_INPUT,     local.hand_subaction, &local.action_aim_pose   )) return false;
-	if (!_make_action_rl("trigger",     "Trigger",     XR_ACTION_TYPE_FLOAT_INPUT,    local.hand_subaction, &local.action_trigger    )) return false;
-	if (!_make_action_rl("grip",        "Grip",        XR_ACTION_TYPE_FLOAT_INPUT,    local.hand_subaction, &local.action_grip       )) return false;
-	if (!_make_action_rl("stick_xy",    "Stick XY",    XR_ACTION_TYPE_VECTOR2F_INPUT, local.hand_subaction, &local.action_stick_xy   )) return false;
-	if (!_make_action_rl("stick_click", "Stick Click", XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_stick_click)) return false;
-	if (!_make_action_rl("menu",        "Menu",        XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_menu       )) return false;
-	if (!_make_action_rl("button_x1",   "Button X1",   XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_x1         )) return false;
-	if (!_make_action_rl("button_x2",   "Button X2",   XR_ACTION_TYPE_BOOLEAN_INPUT,  local.hand_subaction, &local.action_x2         )) return false;
+	if (!_make_action_rl("grip_pose",   "Grip Pose",   XR_ACTION_TYPE_POSE_INPUT,     &local.hand_subaction, &local.action_grip_pose  )) return false;
+	if (!_make_action_rl("aim_pose",    "Aim Pose",    XR_ACTION_TYPE_POSE_INPUT,     &local.hand_subaction, &local.action_aim_pose   )) return false;
+	if (!_make_action_rl("trigger",     "Trigger",     XR_ACTION_TYPE_FLOAT_INPUT,    &local.hand_subaction, &local.action_trigger    )) return false;
+	if (!_make_action_rl("grip",        "Grip",        XR_ACTION_TYPE_FLOAT_INPUT,    &local.hand_subaction, &local.action_grip       )) return false;
+	if (!_make_action_rl("stick_xy",    "Stick XY",    XR_ACTION_TYPE_VECTOR2F_INPUT, &local.hand_subaction, &local.action_stick_xy   )) return false;
+	if (!_make_action_rl("stick_click", "Stick Click", XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_stick_click)) return false;
+	if (!_make_action_rl("menu",        "Menu",        XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_menu       )) return false;
+	if (!_make_action_rl("button_x1",   "Button X1",   XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_x1         )) return false;
+	if (!_make_action_rl("button_x2",   "Button X2",   XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_x2         )) return false;
 
-	if (xr_ext_available.EXT_palm_pose && !_make_action_rl("palm_pose", "Palm Pose", XR_ACTION_TYPE_POSE_INPUT, local.hand_subaction, &local.action_palm_pose)) return false;
-	if (device_has_eye_gaze()          && !_make_action   ("eye_gaze",  "Eye Gaze",  XR_ACTION_TYPE_POSE_INPUT,                       &local.action_eyes     )) return false;
+	if (xr_ext_available.EXT_palm_pose && !_make_action_rl("palm_pose", "Palm Pose", XR_ACTION_TYPE_POSE_INPUT, &local.hand_subaction, &local.action_palm_pose)) return false;
+	if (device_has_eye_gaze()          && !_make_action   ("eye_gaze",  "Eye Gaze",  XR_ACTION_TYPE_POSE_INPUT,                        &local.action_eyes     )) return false;
 
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
@@ -727,9 +727,8 @@ bool _make_action_arr(const char* action_name, const char* display_name, XrActio
 
 ///////////////////////////////////////////
 
-bool _make_action_rl(const char* action_name, const char* display_name, XrActionType type, XrRLPath subaction_path, XrAction *out_action) {
-	XrPath paths[2] = { subaction_path.left, subaction_path.right };
-	return _make_action_arr(action_name, display_name, type, paths, 2, out_action);
+bool _make_action_rl(const char* action_name, const char* display_name, XrActionType type, XrRLPath *in_subaction_path, XrAction *out_action) {
+	return _make_action_arr(action_name, display_name, type, in_subaction_path->paths, 2, out_action);
 }
 
 ///////////////////////////////////////////
