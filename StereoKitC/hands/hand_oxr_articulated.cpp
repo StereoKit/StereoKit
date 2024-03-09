@@ -5,6 +5,7 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_input.h"
 #include "../xr_backends/openxr_extensions.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
@@ -251,15 +252,25 @@ void hand_oxra_update_joints() {
 		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
-		// Create pointers for the hands
-		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
-		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
-		pose_t point_pose = {
-			ray_joint,
-			quat_lookat_up(shoulder, ray_joint, inp_hand->palm.orientation*vec3_up) };
-		pointer->ray.pos     = point_pose.position;
-		pointer->ray.dir     = point_pose.orientation * vec3_forward;
-		pointer->orientation = point_pose.orientation;
+		if (xr_ext_available.EXT_hand_interaction) {
+			const controller_t *controller = input_controller((handed_)h);
+			pointer->ray.pos     = controller->aim.position;
+			pointer->ray.dir     = controller->aim.orientation * vec3_forward;
+			pointer->orientation = controller->aim.orientation;
+			pointer->tracked     = button_make_state((pointer->tracked & button_state_active) > 0, xrc_aim_ready[h]);
+			pointer->state       = button_make_state((pointer->state   & button_state_active) > 0, controller->trigger >= 1);
+			//log_infof("aim ready: %s, aim pos: %.2f %.2f %.2f, aim dir: %.2f %.2f %.2f %.2f", xrc_aim_ready[h]?"true":"fals", pointer->ray.pos.x, pointer->ray.pos.y, pointer->ray.pos.z, pointer->orientation.x, pointer->orientation.y, pointer->orientation.z, pointer->orientation.w);
+		} else {
+			// Create pointers for the hands
+			vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
+			vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+			pose_t point_pose = {
+				ray_joint,
+				quat_lookat_up(shoulder, ray_joint, inp_hand->palm.orientation*vec3_up) };
+			pointer->ray.pos     = point_pose.position;
+			pointer->ray.dir     = point_pose.orientation * vec3_forward;
+			pointer->orientation = point_pose.orientation;
+		}
 	}
 
 	if (!hands_active) {

@@ -42,6 +42,7 @@ struct xrc_state_t {
 	XrAction    action_grip_pose;
 	XrAction    action_palm_pose;
 	XrAction    action_aim_pose;
+	XrAction    action_aim_ready;
 	XrAction    action_trigger;
 	XrAction    action_grip;
 	XrAction    action_stick_xy;
@@ -65,6 +66,7 @@ struct xrc_state_t {
 static xrc_state_t local = {};
 
 XrSpace xr_gaze_space = {};
+bool    xrc_aim_ready[2];
 
 ///////////////////////////////////////////
 
@@ -101,6 +103,7 @@ bool oxri_init() {
 
 	if (!_make_action_rl("grip_pose",   "Grip Pose",   XR_ACTION_TYPE_POSE_INPUT,     &local.hand_subaction, &local.action_grip_pose  )) return false;
 	if (!_make_action_rl("aim_pose",    "Aim Pose",    XR_ACTION_TYPE_POSE_INPUT,     &local.hand_subaction, &local.action_aim_pose   )) return false;
+	if (!_make_action_rl("aim_ready",   "Aim Ready",   XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_aim_ready  )) return false;
 	if (!_make_action_rl("trigger",     "Trigger",     XR_ACTION_TYPE_FLOAT_INPUT,    &local.hand_subaction, &local.action_trigger    )) return false;
 	if (!_make_action_rl("grip",        "Grip",        XR_ACTION_TYPE_FLOAT_INPUT,    &local.hand_subaction, &local.action_grip       )) return false;
 	if (!_make_action_rl("stick_xy",    "Stick XY",    XR_ACTION_TYPE_VECTOR2F_INPUT, &local.hand_subaction, &local.action_stick_xy   )) return false;
@@ -133,7 +136,8 @@ bool oxri_init() {
 	XrRLPath path_a_click       = _bind_paths("a/click");
 	XrRLPath path_b_click       = _bind_paths("b/click");
 
-	XrRLPath path_pinch_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("pinch_ext/value") : XrRLPath{};
+	XrRLPath path_aim_val       = xr_ext_available.EXT_hand_interaction ? _bind_paths("aim_activate_ext/value")     : XrRLPath{};
+	XrRLPath path_aim_ready     = xr_ext_available.EXT_hand_interaction ? _bind_paths("aim_activate_ext/ready_ext") : XrRLPath{};
 	XrRLPath path_grasp_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("grasp_ext/value") : XrRLPath{};
 	XrRLPath path_palm_pose     = xr_ext_available.EXT_palm_pose        ? _bind_paths("palm_ext/pose"  ) : XrRLPath{};
 
@@ -197,7 +201,8 @@ bool oxri_init() {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose, path_grip_pose);
 		_bind_rl(&bind_arr, local.action_aim_pose,  path_aim_pose );
-		_bind_rl(&bind_arr, local.action_trigger,   path_pinch_val);
+		_bind_rl(&bind_arr, local.action_trigger,   path_aim_val);
+		_bind_rl(&bind_arr, local.action_aim_ready, path_aim_ready);
 		_bind_rl(&bind_arr, local.action_grip,      path_grasp_val);
 		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
@@ -607,6 +612,14 @@ void oxri_update_frame() {
 		xrGetActionStateBoolean(xr_session, &get_info, &state_x2);
 		input_controllers[hand].x1 = button_make_state(input_controllers[hand].x1 & button_state_active, state_x1.currentState);
 		input_controllers[hand].x2 = button_make_state(input_controllers[hand].x2 & button_state_active, state_x2.currentState);
+
+		// Aim ready
+		if (local.action_aim_ready != XR_NULL_HANDLE) {
+			XrActionStateBoolean state_aim_ready = { XR_TYPE_ACTION_STATE_BOOLEAN };
+			get_info.action = local.action_aim_ready;
+			xrGetActionStateBoolean(xr_session, &get_info, &state_aim_ready);
+			xrc_aim_ready[hand] = state_aim_ready.currentState;
+		}
 	}
 	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
 
