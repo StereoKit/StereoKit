@@ -639,13 +639,9 @@ void oxri_set_profile(handed_ hand, XrPath profile) {
 ///////////////////////////////////////////
 
 void oxri_update_interaction_profile() {
-	XrPath path[2];
-	xrStringToPath(xr_instance, "/user/hand/left",  &path[handed_left]);
-	xrStringToPath(xr_instance, "/user/hand/right", &path[handed_right]);
-
 	XrInteractionProfileState active_profile = { XR_TYPE_INTERACTION_PROFILE_STATE };
 	for (int32_t h = 0; h < handed_max; h++) {
-		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, path[h], &active_profile)))
+		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, local.hand_subaction.paths[h], &active_profile)))
 			continue;
 		if (active_profile.interactionProfile != local.active_profile[h])
 			oxri_set_profile((handed_)h, active_profile.interactionProfile);
