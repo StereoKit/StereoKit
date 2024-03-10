@@ -100,12 +100,12 @@ namespace StereoKit.Framework
 			_type  = type;
 			_inst  = instance;
 			_items = type.GetMembers(flags)
-				.Where (m => m is FieldInfo || m is PropertyInfo)
+				.Where (m => m is FieldInfo || (m is PropertyInfo pi && pi.GetGetMethod() != null))
 				.Where (m =>
-					showPrivate ||
-					(m is FieldInfo    fi && fi.IsPublic) ||
-					(m is PropertyInfo pi && pi.GetGetMethod() != null) ||
+					showPrivate || m.GetCustomAttribute<ShowAttribute>() != null ||
+					(m is FieldInfo fi && fi.IsPublic) ||
 					m.GetCustomAttributes().Any(a => a is InspectorTypeAttribute || a is InspectorExtraAttribute))
+				.Where(m => m.GetCustomAttribute<HideAttribute>() == null)
 				.Select(m => new Item {
 					info       = new InspectorMember(m),
 					typeAttribute = m.GetCustomAttributes()
