@@ -22,20 +22,20 @@ namespace StereoKit.Framework
 			public void Draw(InspectorMember info, object inst)
 			{
 				float value;
-				if      (info.MemberType == typeof(int    )) { value = info.GetValue<int  >(inst); if (step == 0) step = 1; }
-				else if (info.MemberType == typeof(long   )) { value = info.GetValue<long >(inst); if (step == 0) step = 1; }
-				else if (info.MemberType == typeof(float  )) value = info.GetValue<float>(inst);
-				else if (info.MemberType == typeof(decimal)) value = (float)info.GetValue<decimal>(inst);
+				if      (info.MemberType == typeof(int   )) { value = info.GetValue<int  >(inst); if (step == 0) step = 1; }
+				else if (info.MemberType == typeof(long  )) { value = info.GetValue<long >(inst); if (step == 0) step = 1; }
+				else if (info.MemberType == typeof(float )) value =        info.GetValue<float >(inst);
+				else if (info.MemberType == typeof(double)) value = (float)info.GetValue<double>(inst);
 				else { UI.Label($"{info.info.Name}: doesn't support slider", false); return; }
 
 				UI.Label($"{info.info.Name}:", new Vec2(Inspector.LabelWidth,0), false);
 				UI.SameLine();
 				UI.Label($"{value:0.####}", false);
 				if (UI.HSlider(info.info.Name, ref value, min, max, step)) {
-					if      (info.MemberType == typeof(int    )) info.SetValue<int    >(inst, (int    )value);
-					else if (info.MemberType == typeof(long   )) info.SetValue<long   >(inst, (long   )value);
-					else if (info.MemberType == typeof(float  )) info.SetValue<float  >(inst,          value);
-					else if (info.MemberType == typeof(decimal)) info.SetValue<decimal>(inst, (decimal)value);
+					if      (info.MemberType == typeof(int   )) info.SetValue<int   >(inst, (int   )value);
+					else if (info.MemberType == typeof(long  )) info.SetValue<long  >(inst, (long  )value);
+					else if (info.MemberType == typeof(float )) info.SetValue<float >(inst,         value);
+					else if (info.MemberType == typeof(double)) info.SetValue<double>(inst, (double)value);
 				}
 			}
 		}

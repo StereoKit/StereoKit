@@ -93,6 +93,11 @@ namespace StereoKit.Framework
 			UI.PopId();
 		}
 
+		static bool ValidMember(MemberInfo m, bool showPrivate)
+			=>  (m is FieldInfo || (m is PropertyInfo pi && pi.GetGetMethod() != null)) &&
+				(m.GetCustomAttribute<HideAttribute>() == null) &&
+				(showPrivate || m.GetCustomAttribute<ShowAttribute>() != null || (m is FieldInfo fi && fi.IsPublic) || m.GetCustomAttributes().Any(a => a is InspectorTypeAttribute || a is InspectorExtraAttribute));
+
 		void SetObject(Type type, object instance, bool showPrivate)
 		{
 			BindingFlags flags = (instance == null ? BindingFlags.Static : BindingFlags.Instance) | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
@@ -100,14 +105,9 @@ namespace StereoKit.Framework
 			_type  = type;
 			_inst  = instance;
 			_items = type.GetMembers(flags)
-				.Where (m => m is FieldInfo || (m is PropertyInfo pi && pi.GetGetMethod() != null))
-				.Where (m =>
-					showPrivate || m.GetCustomAttribute<ShowAttribute>() != null ||
-					(m is FieldInfo fi && fi.IsPublic) ||
-					m.GetCustomAttributes().Any(a => a is InspectorTypeAttribute || a is InspectorExtraAttribute))
-				.Where(m => m.GetCustomAttribute<HideAttribute>() == null)
+				.Where (m => ValidMember(m, showPrivate))
 				.Select(m => new Item {
-					info       = new InspectorMember(m),
+					info          = new InspectorMember(m),
 					typeAttribute = m.GetCustomAttributes()
 						.Where (a => a is InspectorTypeAttribute)
 						.Select(a => (InspectorTypeAttribute)a)
