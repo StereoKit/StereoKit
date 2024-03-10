@@ -43,6 +43,7 @@ namespace StereoKit.Framework
 
 		///////////////////////////////////////////
 
+		[MatchType(typeof(Pose), priority = 2)]
 		public class PoseAttribute : Attribute, InspectorTypeAttribute
 		{
 			bool   enabled;
@@ -73,11 +74,11 @@ namespace StereoKit.Framework
 					Mesh.Cube.Draw(Material.UIBox, Matrix.TS(bounds.center, bounds.dimensions)*value.ToMatrix());
 				}
 			}
-			public static int Match(Type type) => type == typeof(Pose) ? 1 : 0;
 		}
 
 		///////////////////////////////////////////
-		
+
+		[MatchType(typeof(Model), priority = 2)]
 		internal class ModelDefaultAttribute : Attribute, InspectorTypeAttribute
 		{
 			public void Draw(InspectorMember info, object inst)
@@ -90,11 +91,11 @@ namespace StereoKit.Framework
 				UI.Model(info.GetValue<Model>(inst), new Vec2(0, UI.LineHeight-UI.Settings.padding*2));
 				
 			}
-			public static int Match(Type type) => type == typeof(Model) ? 10 : 0;
 		}
 
 		///////////////////////////////////////////
 
+		[MatchType(typeof(Material), priority = 2)]
 		internal class MaterialDefaultAttribute : Attribute, InspectorTypeAttribute
 		{
 			public void Draw(InspectorMember info, object inst)
@@ -105,7 +106,6 @@ namespace StereoKit.Framework
 				Mesh.Sphere.Draw(info.GetValue<Material>(inst), Matrix.TS(b.center, b.dimensions.y));
 				
 			}
-			public static int Match(Type type) => type == typeof(Material) ? 10 : 0;
 		}
 
 		///////////////////////////////////////////
@@ -125,6 +125,7 @@ namespace StereoKit.Framework
 
 		///////////////////////////////////////////
 
+		[MatchType(typeof(bool), priority = 2)]
 		internal class ToggleDefaultAttribute : Attribute, InspectorTypeAttribute
 		{
 			public void Draw(InspectorMember info, object inst)
@@ -135,11 +136,11 @@ namespace StereoKit.Framework
 				if (UI.Toggle(info.info.Name, ref value))
 					info.SetValue(inst, value);
 			}
-			public static int Match(Type type) => type == typeof(bool) ? 10 : 0;
 		}
 
 		///////////////////////////////////////////
 
+		[MatchType(typeof(string), priority = 2)]
 		internal class InputDefaultAttribute : Attribute, InspectorTypeAttribute
 		{
 			public void Draw(InspectorMember info, object inst)
@@ -151,20 +152,45 @@ namespace StereoKit.Framework
 				if (UI.Input(info.info.Name, ref value, new Vec2(UI.LayoutRemaining.x > LabelWidth * 2 ? 0 : LabelWidth * 2, 0)))
 					info.SetValue(inst, value);
 			}
-			public static int Match(Type type) => type == typeof(string) ? 10 : 0;
 		}
 
 		///////////////////////////////////////////
 
+		[MatchType(types = null, priority = 1)]
 		internal class AnyDefaultAttribute : Attribute, InspectorTypeAttribute
 		{
 			public void Draw(InspectorMember info, object inst)
 			{
 				UI.Label($"{info.info.Name}:", new Vec2(Inspector.LabelWidth, 0), false);
 				UI.SameLine();
-				UI.Label($"{info.GetValue<object>(inst)}");
+				if (info.MemberType.IsPrimitive) {
+					UI.Label($"{info.GetValue<object>(inst)}");
+				} else {
+					UI.Label($"{info.GetValue<object>(inst)}", new Vec2(UI.LayoutRemaining.x-(UI.LineHeight+UI.Settings.gutter),0));
+					UI.SameLine();
+					if (UI.ButtonImg("Visit", Sprite.ArrowRight, UIBtnLayout.CenterNoText))
+						Inspector.Show(info.GetValue<object>(inst));
+				}
 			}
-			public static int Match(Type type) => 1;
+		}
+
+		///////////////////////////////////////////
+		
+		public class MatchTypeAttribute : Attribute
+		{
+			public Type[] types;
+			public int    priority = 10;
+
+			public MatchTypeAttribute(params Type[] types)
+			{
+				this.types = types;
+			}
+
+			public int Match(Type type)
+			{
+				if (types == null) return 1;
+				return Array.IndexOf(types, type) >= 0 ? priority : 0;
+			}
 		}
 	}
 }
