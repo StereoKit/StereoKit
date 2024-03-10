@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -32,7 +31,9 @@ namespace StereoKit.Framework
 			if      (info is FieldInfo    field) field.SetValue(inst, value);
 			else if (info is PropertyInfo prop ) prop .SetValue(inst, value);
 		}
-		public Type MemberType => info is FieldInfo field ? field.FieldType : (info is PropertyInfo prop ? prop.PropertyType : null);
+		public Type MemberType => MemberInfoType(info);
+
+		public static Type MemberInfoType(MemberInfo mi) => mi is FieldInfo field ? field.FieldType : (mi is PropertyInfo prop ? prop.PropertyType : null);
 	}
 
 	public partial class Inspector : IStepper
@@ -43,21 +44,30 @@ namespace StereoKit.Framework
 			public InspectorMember           info;
 			public InspectorTypeAttribute    typeAttribute;
 			public InspectorExtraAttribute[] extraAttributes;
+			public bool                      readOnly;
+		}
+		struct TypeAttribute
+		{
+			public Type       type;
+			public MethodInfo match;
 		}
 
-		Type       _type;
-		object     _inst;
-		List<Item> _items;
-		Pose       _pose;
-		List<Type> _defaultInspectorAttributes = new List<Type>();
+		Type            _type;
+		object          _inst;
+		Item[]          _items;
+		Pose            _pose;
+		TypeAttribute[] _defaultTypeAttrs;
 
 		public Inspector()
 		{
 			// Find all InspectorAttribute Types in the assembly that have a Match method
-			_defaultInspectorAttributes = AppDomain.CurrentDomain.GetAssemblies()
+			string       matchFn    = "Match";
+			BindingFlags matchFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+			_defaultTypeAttrs = AppDomain.CurrentDomain.GetAssemblies()
 				.SelectMany(a => a.GetTypes())
-				.Where     (t => typeof(InspectorTypeAttribute).IsAssignableFrom(t) && t.GetMethod("Match", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) != null)
-				.ToList();
+				.Where     (t => typeof(InspectorTypeAttribute).IsAssignableFrom(t) && t.GetMethod(matchFn, matchFlags) != null)
+				.Select    (t => new TypeAttribute { type = t, match = t.GetMethod(matchFn, matchFlags) })
+				.ToArray   ();
 		}
 
 		bool IStepper.Initialize()
@@ -74,17 +84,17 @@ namespace StereoKit.Framework
 		{
 			UI.PushId("SK Inspector");
 			UI.WindowBegin(_type == null ? "Inspector" : _type.Name, ref _pose);
-			if (_items == null || _items.Count == 0) UI.Label("No object selected!");
+			if      (_type         == null) UI.Label("No type selected!");
+			else if (_items.Length == 0   ) UI.Label("No inspectable fields!");
 			else
 			{
-				int i = 1;
-				foreach (Item item in _items)
+				for (int i=0; i<_items.Length; i+=1)
 				{
-					UI.PushId(i++);
-					UI.PushEnabled(item.info.info is PropertyInfo pi && pi.CanWrite || item.info.info is FieldInfo);
-					foreach (var extra in item.extraAttributes)
+					UI.PushId(i);
+					UI.PushEnabled(_items[i].readOnly == false);
+					foreach (var extra in _items[i].extraAttributes)
 						extra.Draw(_inst);
-					item.typeAttribute?.Draw(item.info, _inst);
+					_items[i].typeAttribute?.Draw(_items[i].info, _inst);
 					UI.PopEnabled();
 					UI.PopId();
 				}
@@ -94,9 +104,29 @@ namespace StereoKit.Framework
 		}
 
 		static bool ValidMember(MemberInfo m, bool showPrivate)
-			=>  (m is FieldInfo || (m is PropertyInfo pi && pi.GetGetMethod() != null)) &&
+			=>  (m is FieldInfo || (m is PropertyInfo pi && pi.GetGetMethod(true) != null)) &&
 				(m.GetCustomAttribute<HideAttribute>() == null) &&
-				(showPrivate || m.GetCustomAttribute<ShowAttribute>() != null || (m is FieldInfo fi && fi.IsPublic) || m.GetCustomAttributes().Any(a => a is InspectorTypeAttribute || a is InspectorExtraAttribute));
+				(showPrivate || m.GetCustomAttribute<ShowAttribute>() != null || (m is FieldInfo fi && fi.IsPublic) || (m is PropertyInfo p && p.GetGetMethod(false) != null) || m.GetCustomAttributes().Any(a => a is InspectorTypeAttribute || a is InspectorExtraAttribute));
+
+		static InspectorTypeAttribute GetMatchingTypeAttr(TypeAttribute[] from, Type type)
+		{
+			// Find the best matching attribute
+			object[] args    = new object[] { type };
+			int      max     = 0;
+			Type     maxType = null;
+			foreach (TypeAttribute t in from)
+			{
+				int currMax = (int)t.match.Invoke(null, args);
+				if (max < currMax)
+				{
+					max = currMax;
+					maxType = t.type;
+				}
+			}
+			return maxType != null
+				? (InspectorTypeAttribute)Activator.CreateInstance(maxType) 
+				: null;
+		}
 
 		void SetObject(Type type, object instance, bool showPrivate)
 		{
@@ -104,54 +134,26 @@ namespace StereoKit.Framework
 
 			_type  = type;
 			_inst  = instance;
-			_items = type.GetMembers(flags)
+			_items = type
+				.GetMembers(flags)
 				.Where (m => ValidMember(m, showPrivate))
 				.Select(m => new Item {
 					info          = new InspectorMember(m),
-					typeAttribute = m.GetCustomAttributes()
+					readOnly      = m is PropertyInfo pi && pi.CanWrite == false,
+					typeAttribute = m
+						.GetCustomAttributes()
 						.Where (a => a is InspectorTypeAttribute)
 						.Select(a => (InspectorTypeAttribute)a)
-						.FirstOrDefault(),
-					extraAttributes = m.GetCustomAttributes()
+						.FirstOrDefault()
+						?? GetMatchingTypeAttr(_defaultTypeAttrs, InspectorMember.MemberInfoType(m)),
+					extraAttributes = m
+						.GetCustomAttributes()
 						.Where  (a => a is InspectorExtraAttribute)
 						.Select (a => (InspectorExtraAttribute)a)
-						.ToArray()
+						.ToArray(),
 					})
-				.ToList();
-
-			// If there are no attributes, try to see if one of the defaults
-			// match it.
-			for (int i = 0; i < _items.Count; i++)
-			{
-				if (_items[i].typeAttribute != null) continue;
-
-				// Find the best matching default attribute
-				object[] args    = new object[] { _items[i].info.MemberType };
-				int      max     = 0;
-				Type     maxType = null;
-				foreach (Type t in _defaultInspectorAttributes)
-				{
-					int currMax = (int)t.GetMethod("Match", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).Invoke(null, args);
-					if (max < currMax)
-					{
-						max = currMax;
-						maxType = t;
-					}
-				}
-
-				// If we found a match, create an instance of it, otherwise
-				// remove the whole item from the list.
-				if (maxType != null)
-				{
-					Item item = _items[i];
-					item.typeAttribute = (InspectorTypeAttribute)Activator.CreateInstance(maxType);
-					_items[i] = item;
-				}
-				else
-				{
-					_items.RemoveAt(i); i--;
-				}
-			}
+				.Where  (i => i.typeAttribute != null)
+				.ToArray();
 		}
 
 		public static void Show(object target,       bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().SetObject(target?.GetType(), target, showPrivate);

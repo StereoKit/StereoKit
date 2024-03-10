@@ -30,7 +30,8 @@ namespace StereoKit.Framework
 
 				UI.Label($"{info.info.Name}:", new Vec2(Inspector.LabelWidth,0), false);
 				UI.SameLine();
-				UI.Label($"{value:0.####}", false);
+				UI.Label($"{value:0.###}", new Vec2(0.03f,0), false);
+				UI.SameLine();
 				if (UI.HSlider(info.info.Name, ref value, min, max, step)) {
 					if      (info.MemberType == typeof(int   )) info.SetValue<int   >(inst, (int   )value);
 					else if (info.MemberType == typeof(long  )) info.SetValue<long  >(inst, (long  )value);
@@ -129,6 +130,8 @@ namespace StereoKit.Framework
 			public void Draw(InspectorMember info, object inst)
 			{
 				bool value = info.GetValue<bool>(inst);
+				UI.Label($"{info.info.Name}:", new Vec2(LabelWidth, 0), false);
+				UI.SameLine();
 				if (UI.Toggle(info.info.Name, ref value))
 					info.SetValue(inst, value);
 			}
