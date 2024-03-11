@@ -939,13 +939,17 @@ void ui_window_end() {
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
 	// Focus animation
+	const float delay = 0.2f;
 	button_state_ focus_state = ui_id_focus_state(win->hash);
-	if (focus_state & button_state_just_active)   ui_anim_start(win->hash, 0);
-	if (focus_state & button_state_just_inactive) ui_anim_start(win->hash, 1);
+	if (focus_state & button_state_just_active) ui_anim_start(win->hash, 0);
+	if (focus_state & button_state_just_inactive) {
+		if (ui_anim_elapsed_total(win->hash, 0) > delay) ui_anim_start(win->hash, 1);
+		ui_anim_cancel(win->hash, 0);
+	}
 
 	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(win->hash, 0, skui_anim_focus_duration)) {
-		focus = math_ease_smooth(0, 1, ui_anim_elapsed(win->hash, 0, skui_anim_focus_duration));
+	if (ui_anim_has(win->hash, 0, delay + skui_anim_focus_duration)) {
+		focus = math_ease_smooth(0, 1, math_clamp((ui_anim_elapsed_total(win->hash, 0)-delay)/ skui_anim_focus_duration, 0, 1));
 	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
 		focus = math_ease_smooth(1, 0, ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration));
 	}
