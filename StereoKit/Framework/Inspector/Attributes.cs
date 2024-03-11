@@ -169,7 +169,7 @@ namespace StereoKit.Framework
 					UI.Label($"{info.GetValue<object>(inst)}", new Vec2(UI.LayoutRemaining.x-(UI.LineHeight+UI.Settings.gutter),0));
 					UI.SameLine();
 					if (UI.ButtonImg("Visit", Sprite.ArrowRight, UIBtnLayout.CenterNoText))
-						Inspector.Show(info.GetValue<object>(inst));
+						Inspector.Push(info.GetValue<object>(inst));
 				}
 			}
 		}

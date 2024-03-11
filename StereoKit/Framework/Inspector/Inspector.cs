@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 
@@ -61,7 +62,7 @@ namespace StereoKit.Framework
 
 	public partial class Inspector : IStepper
 	{
-		public static float LabelWidth = 0.06f;
+		public static float LabelWidth => UI.LineHeight * 3;
 		
 		struct TypeAttribute
 		{
@@ -69,13 +70,18 @@ namespace StereoKit.Framework
 			public MatchTypeAttribute matcher;
 		}
 
-		Type            _type;
-		object          _inst;
+		struct StackItem
+		{
+			public Type       type;
+			public object     inst;
+			public IInspector inspector;
+		}
+
 		Pose            _pose;
 		TypeAttribute[] _defaultTypeAttrs;
 		Type[]          _inspectorTypes;
 
-		IInspector      _activeInspector;
+		List<StackItem> _inspectionStack = new List<StackItem>();
 
 		public Inspector()
 		{
@@ -107,9 +113,25 @@ namespace StereoKit.Framework
 		void IStepper.Step()
 		{
 			UI.PushId("SK Inspector");
-			UI.WindowBegin(_type == null ? "Inspector" : _type.Name, ref _pose);
-			if (_type == null) UI.Label("No type selected!");
-			_activeInspector?.Draw();
+			if (_inspectionStack.Count > 0)
+			{
+				StackItem item = _inspectionStack[_inspectionStack.Count-1];
+				UI.WindowBegin("Inspector", ref _pose);
+
+				string parentName = _inspectionStack.Count > 1
+					? _inspectionStack[_inspectionStack.Count-2].type.Name 
+					: "Root";
+				if (UI.ButtonImg(parentName, Sprite.ArrowLeft))
+					_inspectionStack.RemoveAt(_inspectionStack.Count-1);
+				UI.SameLine();
+				UI.Label(item.type.Name);
+				UI.HSeparator();
+
+				item.inspector.Draw();
+			} else {
+				UI.WindowBegin("Inspector", ref _pose);
+				UI.Label("No type selected!");
+			}
 			UI.WindowEnd();
 			UI.PopId();
 		}
@@ -167,8 +189,15 @@ namespace StereoKit.Framework
 
 		void SetObject(Type type, object instance, bool showPrivate)
 		{
-			_type  = type;
-			_inst  = instance;
+			_inspectionStack.Clear();
+			PushObject(type, instance, showPrivate);
+		}
+
+		void PushObject(Type type, object instance, bool showPrivate)
+		{
+			StackItem item = new StackItem();
+			item.type  = type;
+			item.inst  = instance;
 
 			Type inspectorMatch         = null;
 			int  inspectorMatchPriority = int.MinValue;
@@ -182,12 +211,16 @@ namespace StereoKit.Framework
 					inspectorMatch         = inspector;
 				}
 			}
-			_activeInspector = Activator.CreateInstance(inspectorMatch) as IInspector;
-			_activeInspector.Initialize(type, instance, GetInspectableItems(type, showPrivate, instance == null ? BindingFlags.Static : BindingFlags.Instance, _defaultTypeAttrs));
+			item.inspector = Activator.CreateInstance(inspectorMatch) as IInspector;
+			item.inspector.Initialize(type, instance, GetInspectableItems(type, showPrivate, instance == null ? BindingFlags.Static : BindingFlags.Instance, _defaultTypeAttrs));
+
+			_inspectionStack.Add(item);
 		}
 
-		public static void Show(object target,       bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().SetObject(target?.GetType(), target, showPrivate);
-		public static void Show(Type   staticTarget, bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().SetObject(staticTarget,      null,   showPrivate);
+		public static void Show(object target,       bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().SetObject (target?.GetType(), target, showPrivate);
+		public static void Show(Type   staticTarget, bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().SetObject (staticTarget,      null,   showPrivate);
+		public static void Push(object target,       bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().PushObject(target?.GetType(), target, showPrivate);
+		public static void Push(Type   staticTarget, bool showPrivate = false) => SK.GetOrCreateStepper<Inspector>().PushObject(staticTarget,      null,   showPrivate);
 
 	}
 }
