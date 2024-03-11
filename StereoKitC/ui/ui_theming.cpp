@@ -647,6 +647,15 @@ void ui_anim_start(id_hash_t id, int32_t channel) {
 
 ///////////////////////////////////////////
 
+void ui_anim_cancel(id_hash_t id, int32_t channel) {
+	if (skui_anim_id[channel] == id) {
+		skui_anim_id[channel] = 0;
+		skui_anim_time[channel] = 0;
+	}
+}
+
+///////////////////////////////////////////
+
 bool ui_anim_has(id_hash_t id, int32_t channel, float duration) {
 	if (id == skui_anim_id[channel]) {
 		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
@@ -660,6 +669,12 @@ bool ui_anim_has(id_hash_t id, int32_t channel, float duration) {
 
 float ui_anim_elapsed(id_hash_t id, int32_t channel, float duration, float max) {
 	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
+}
+
+///////////////////////////////////////////
+
+float ui_anim_elapsed_total(id_hash_t id, int32_t channel) {
+	return skui_anim_id[channel] == id ? (time_totalf_unscaled() - skui_anim_time[channel]) : 0;
 }
 
 ///////////////////////////////////////////
