@@ -410,13 +410,31 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
+/* Provides a reason on why StereoKit has quit.*/
+typedef enum quit_reason_ {
+	/*Default state when SK has not quit.*/
+	quit_reason_none,
+	/*User has selected to quit.*/
+	quit_reason_user,
+	/*XR Runtime Error XR_ERROR_SESSION_LOST*/
+	quit_reason_xr_session_lost,
+	/*XR Runtime Error XR_SESSION_STATE_EXITING*/
+	quit_reason_xr_session_state_exiting,
+	/*XR Runtime Error XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING*/
+	quit_reason_xr_type_event_data_instance_loss_pending,
+	/*Simulator Runtime Error SIMULATOR_EVENT_CLOSE*/
+	quit_reason_simulator_event_close,
+	/*Platform Runtime Error PLATFORM_EVENT_CLOSE*/
+	quit_reason_platform_event_close,
+} quit_reason_;
+
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
 SK_API void          sk_quit               (void);
-SK_API void          sk_quit_reason        (const char* error);
+SK_API void          sk_quit_reason        (quit_reason_ quit_reason);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -427,6 +445,7 @@ SK_API system_info_t sk_system_info        (void);
 SK_API const char   *sk_version_name       (void);
 SK_API uint64_t      sk_version_id         (void);
 SK_API app_focus_    sk_app_focus          (void);
+SK_API quit_reason_  sk_get_quit_reason    (void);
 
 ///////////////////////////////////////////
 

@@ -29,5 +29,9 @@ class DemoWelcome : ITest
 
 	public void Shutdown()
 	{
+		if (SK.QuitReason != QuitReason.None)
+		{
+			Log.Info("QuitReason is " + SK.QuitReason);
+		}
 	}
 }

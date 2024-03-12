@@ -261,6 +261,24 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>Provides a reason on why StereoKit has quit.</summary>
+	public enum QuitReason {
+		/// <summary>Default state when SK has not quit.</summary>
+		None,
+		/// <summary>User has selected to quit.</summary>
+		User,
+		/// <summary>XR Runtime Error XR_ERROR_SESSION_LOST</summary>
+		XrSessionLost,
+		/// <summary>XR Runtime Error XR_SESSION_STATE_EXITING</summary>
+		XrSessionStateExiting,
+		/// <summary>XR Runtime Error XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING</summary>
+		XrTypeEventDataInstanceLossPending,
+		/// <summary>Simulator Runtime Error SIMULATOR_EVENT_CLOSE</summary>
+		SimulatorEventClose,
+		/// <summary>Platform Runtime Error SIMULATOR_EVENT_CLOSE</summary>
+		PlatformEventClose,
+	}
+
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen

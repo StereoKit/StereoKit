@@ -44,8 +44,8 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 	const void* XR_MAY_ALIAS    next;
 } XrBaseHeader;
 
-#define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof(message, openxr_string(xr_call_result)); if (xr_call_result == -17) {sk_quit_reason(openxr_string(xr_call_result));}return false;}}
-#define xr_check2(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result));if (xr_call_result == -17) {sk_quit_reason(openxr_string(xr_call_result));} return false;}}
+#define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof(message, openxr_string(xr_call_result)); return false;}}
+#define xr_check2(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
 namespace sk {

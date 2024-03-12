@@ -49,6 +49,10 @@ namespace StereoKit
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
+		/// <summary> This tells the reason why StereoKit has quit and 
+		/// developer can take appropriate action to debug.</summary>
+		public static QuitReason QuitReason => NativeAPI.sk_get_quit_reason();
+
 		/// <summary>On Android systems, this must be assigned right away,
 		/// before _any_ access to SK methods. When using Xamarin.Essentials or
 		/// Microsoft.Maui.Essentials, this will be done automatically. This

@@ -699,8 +699,11 @@ bool openxr_render_frame() {
 		secondary_states.viewConfigurationStates = xr_display_2nd_states.data;
 		frame_state.next = &secondary_states;
 	}
-	xr_check2(xrWaitFrame(xr_session, &wait_info, &frame_state),
-		"xrWaitFrame");
+	XrResult xrWaitFrameResult = xrWaitFrame(xr_session, &wait_info, &frame_state);
+	if (xrWaitFrameResult == -17/* XR_ERROR_SESSION_LOST */) {
+		sk_quit_reason(quit_reason_xr_session_lost);
+	}
+	xr_check2(xrWaitFrameResult, "xrWaitFrame");
 
 	// Don't track sync time, start the frame timer after xrWaitFrame
 	xr_render_sys->profile_frame_start = stm_now();

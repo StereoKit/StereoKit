@@ -63,6 +63,7 @@ struct sk_state_t {
 	uint64_t  app_init_time;
 	system_t *app_system;
 	int32_t   app_system_idx;
+	quit_reason_  quit_reason;
 };
 static sk_state_t local;
 
@@ -82,6 +83,7 @@ bool32_t sk_step_end  ();
 bool32_t sk_init(sk_settings_t settings) {
 	local = {};
 	local.timev_scale = 1;
+	local.quit_reason = quit_reason_none;
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
@@ -293,9 +295,9 @@ void sk_quit() {
 
 ///////////////////////////////////////////
 
-void sk_quit_reason(const char* error) {
-	log_infof("StereoKit is shuttingdown due to %s", error);
-	local.running = false;
+void sk_quit_reason(quit_reason_ quit_reason) {
+	local.quit_reason = quit_reason;
+	sk_quit();
 }
 
 ///////////////////////////////////////////
@@ -494,6 +496,10 @@ uint64_t sk_version_id() { return SK_VERSION_ID; }
 ///////////////////////////////////////////
 
 app_focus_ sk_app_focus() { return local.focus; }
+
+///////////////////////////////////////////
+
+quit_reason_ sk_get_quit_reason() { return local.quit_reason; }
 
 ///////////////////////////////////////////
 
