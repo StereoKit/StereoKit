@@ -46,7 +46,7 @@ void          input_hand_refresh_system ();
 void          input_hand_update_meshes  ();
 void          input_hand_update_poses   (bool update_visuals);
 hand_joint_t* input_hand_get_pose_buffer(handed_ hand);
-hand_mesh_t*  input_hand_mesh_data      (handed_ handedness);
+void          input_hand_set_mesh_data  (handed_ handedness, hand_mesh_t* mesh_data);
 void          input_hand_sim            (handed_ handedness, bool center_on_finger,  vec3 hand_pos, quat orientation, bool tracked);
 void          input_hand_sim_poses      (handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation);
 void          input_hand_state_update   (handed_ handedness);

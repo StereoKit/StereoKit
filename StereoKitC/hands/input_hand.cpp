@@ -37,7 +37,7 @@ struct hand_state_t {
 	pose_t      pose_prev[5][5];
 	solid_t     solids[SK_FINGER_SOLIDS];
 	material_t  material;
-	hand_mesh_t mesh;
+	mesh_t      active_mesh;
 	vec3        pinch_pt_relative;
 	bool        visible;
 	bool        enabled;
@@ -118,6 +118,8 @@ hand_system_t hand_sources[] = { // In order of priority
 };
 int32_t             hand_system = -1;
 hand_state_t        hand_state[2] = {};
+hand_mesh_t         hand_fallback_mesh[2];
+hand_mesh_t*        hand_active_mesh[2];
 float               hand_size_update = 0;
 int32_t             input_hand_pointer_id[handed_max] = {-1, -1};
 array_t<hand_sim_t> hand_sim_poses   = {};
@@ -289,9 +291,9 @@ void input_hand_shutdown() {
 			solid_release(hand_state[i].solids[f]);
 		}
 		material_release(hand_state[i].material);
-		mesh_release    (hand_state[i].mesh.mesh);
-		sk_free(hand_state[i].mesh.inds);
-		sk_free(hand_state[i].mesh.verts);
+		mesh_release    (hand_fallback_mesh[i].mesh);
+		sk_free(hand_fallback_mesh[i].inds);
+		sk_free(hand_fallback_mesh[i].verts);
 	}
 	hand_sim_poses.free();
 }
@@ -342,8 +344,8 @@ void input_hand_update_poses(bool update_visuals) {
 		for (int32_t i = 0; i < handed_max; i++) {
 			// Update hand meshes, and draw 'em
 			bool tracked = hand_state[i].info.tracked_state & button_state_active;
-			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active) {
-				render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
+			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active && hand_active_mesh[i] != nullptr) {
+				render_add_mesh(hand_active_mesh[i]->mesh, hand_state[i].material, hand_active_mesh[i]->root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
 			}
 
 			// Update hand physics
@@ -427,8 +429,8 @@ hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 
 ///////////////////////////////////////////
 
-hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
-	return &hand_state[handedness].mesh;
+void input_hand_set_mesh_data(handed_ handedness, hand_mesh_t *mesh_data) {
+	hand_active_mesh[handedness] = mesh_data;
 }
 
 ///////////////////////////////////////////
@@ -629,7 +631,7 @@ const vec3 sincos_norm[] = {
 const float texcoord_v[SK_FINGERJOINTS + 1] = { 1, 1-0.44f, 1-0.69f, 1-0.85f, 1-0.96f, 1-0.99f };
 
 void input_hand_update_mesh(handed_ hand) {
-	hand_mesh_t &data = hand_state[hand].mesh;
+	hand_mesh_t &data = hand_fallback_mesh[hand];
 
 	const int32_t ring_count  = _countof(sincos);
 	const int32_t slice_count = SK_FINGERJOINTS + 1;
@@ -787,6 +789,8 @@ void input_hand_update_mesh(handed_ hand) {
 
 	// And update the mesh vertices!
 	mesh_set_verts(data.mesh, data.verts, data.vert_count);
+
+	input_hand_set_mesh_data(hand, &hand_fallback_mesh[hand]);
 }
 
 ///////////////////////////////////////////
