@@ -388,7 +388,7 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 			
 			if (step.x != 0 || step.y != 0) {
 				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
+				ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out_button_center->x, out_button_center->y, window_relative_pos.z }));
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -398,7 +398,7 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 				int32_t new_quantize = (int32_t)(new_percent.x * click_steps + 0.5f) + (int32_t)(new_percent.y * click_steps + 0.5f) * 7000;
 
 				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
+					ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out_button_center->x, out_button_center->y, window_relative_pos.z }));
 				}
 			}
 		}
