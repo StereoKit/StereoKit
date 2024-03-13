@@ -416,16 +416,10 @@ typedef enum quit_reason_ {
 	quit_reason_none,
 	/*User has selected to quit.*/
 	quit_reason_user,
-	/*XR Runtime Error XR_ERROR_SESSION_LOST*/
-	quit_reason_xr_session_lost,
-	/*XR Runtime Error XR_SESSION_STATE_EXITING*/
-	quit_reason_xr_session_state_exiting,
-	/*XR Runtime Error XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING*/
-	quit_reason_xr_type_event_data_instance_loss_pending,
-	/*Simulator Runtime Error SIMULATOR_EVENT_CLOSE*/
-	quit_reason_simulator_event_close,
-	/*Platform Runtime Error PLATFORM_EVENT_CLOSE*/
-	quit_reason_platform_event_close,
+	/* Runtime Error SESSION_LOST*/
+	quit_reason_session_lost,
+	/* Runtime Error SYSTEM_CLOSE*/
+	quit_reason_system_close,
 } quit_reason_;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);

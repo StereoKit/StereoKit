@@ -700,8 +700,8 @@ bool openxr_render_frame() {
 		frame_state.next = &secondary_states;
 	}
 	XrResult xrWaitFrameResult = xrWaitFrame(xr_session, &wait_info, &frame_state);
-	if (xrWaitFrameResult == -17/* XR_ERROR_SESSION_LOST */) {
-		sk_quit_reason(quit_reason_xr_session_lost);
+	if (xrWaitFrameResult == XR_ERROR_SESSION_LOST) {
+		sk_quit_reason(quit_reason_session_lost);
 	}
 	xr_check2(xrWaitFrameResult, "xrWaitFrame");
 
