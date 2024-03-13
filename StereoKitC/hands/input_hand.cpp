@@ -334,7 +334,6 @@ void input_hand_update_poses(bool update_visuals) {
 			// Update hand meshes, and draw 'em
 			bool tracked = hand_state[i].info.tracked_state & button_state_active;
 			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active && hand_active_mesh[i] != nullptr) {
-				log_infof("Rendering hand mesh %d", (int32_t)time_frame());
 				render_add_mesh(hand_active_mesh[i]->mesh, hand_state[i].material, hand_active_mesh[i]->root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
 			}
 		}
@@ -778,7 +777,6 @@ void input_hand_update_mesh(handed_ hand) {
 	// And update the mesh vertices!
 	mesh_set_verts(data.mesh, data.verts, data.vert_count);
 
-	log_infof("Set fallback hand! %d", (int32_t)time_frame());
 	input_hand_set_mesh_data(hand, &hand_fallback_mesh[hand]);
 }
 
