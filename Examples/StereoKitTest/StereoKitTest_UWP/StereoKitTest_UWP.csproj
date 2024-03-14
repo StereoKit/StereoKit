@@ -107,12 +107,10 @@
     <SKCMakePreset Condition="'$(Platform)' == 'ARM'"  >Uwp_Arm32_$(Configuration)</SKCMakePreset>
     <SKCMakePreset Condition="'$(Platform)' == 'ARM64'">Uwp_Arm64_$(Configuration)</SKCMakePreset>
     <SKCMakePreset Condition="'$(Platform)' == 'x64'"  >Uwp_x64_$(Configuration)</SKCMakePreset>
-    <!--Unlike the other projects, this seems to invoke from the bin
-        folder, and $(ProjectDir) doesn't work.-->
-    <PreBuildEvent>cd ..\..\..\ &amp; cmake --preset $(SKCMakePreset) &amp; cmake --build --preset $(SKCMakePreset)</PreBuildEvent>
+    <PreBuildEvent>cd $(ProjectDir)..\..\..\ &amp; cmake --preset $(SKCMakePreset) &amp; cmake --build --preset $(SKCMakePreset)</PreBuildEvent>
   </PropertyGroup>
   <Target Name="SKTestRebuildUWP" AfterTargets="Clean">
-    <RemoveDir Directories="..\..\..\bin\intermediate\UWP_$(Platform)_$(Configuration)" />
+    <RemoveDir Directories="$(ProjectDir)..\..\..\bin\intermediate\UWP_$(Platform)_$(Configuration)" />
   </Target>
   <Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
     <Message Importance="high" Text="=========$(Platform)" />
