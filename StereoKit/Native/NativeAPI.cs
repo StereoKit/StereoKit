@@ -16,7 +16,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_set_window_xam(IntPtr window);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_shutdown_unsafe();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_quit();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_quit(QuitReason quitReason = QuitReason.User);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool        sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void        sk_run([MarshalAs(UnmanagedType.FunctionPtr)] Action app_update, [MarshalAs(UnmanagedType.FunctionPtr)] Action app_shutdown);
@@ -27,6 +27,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AppFocus    sk_app_focus();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern QuitReason    sk_get_quit_reason();
 
 		///////////////////////////////////////////
 
