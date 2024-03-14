@@ -414,11 +414,11 @@ typedef struct system_info_t {
 typedef enum quit_reason_ {
 	/*Default state when SK has not quit.*/
 	quit_reason_none,
-	/*User has selected to quit.*/
+	/*User has selected to quit the application using application controls.*/
 	quit_reason_user,
 	/* Runtime Error SESSION_LOST*/
 	quit_reason_session_lost,
-	/* Runtime Error SYSTEM_CLOSE*/
+	/* User has closed the application from outside of the application.*/
 	quit_reason_system_close,
 } quit_reason_;
 
@@ -427,8 +427,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (void);
-SK_API void          sk_quit_reason        (quit_reason_ quit_reason);
+SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);

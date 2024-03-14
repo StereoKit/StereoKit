@@ -185,9 +185,9 @@ namespace StereoKit
 		/// <summary>Lets StereoKit know it should quit! It'll finish the
 		/// current frame, and after that Step will return that it wants to
 		/// exit.</summary>
-		public static void Quit()
+		public static void Quit(QuitReason quitReason = QuitReason.User)
 		{
-			NativeAPI.sk_quit();
+			NativeAPI.sk_quit(quitReason);
 		}
 
 		/// <summary> Steps all StereoKit systems, and inserts user code via

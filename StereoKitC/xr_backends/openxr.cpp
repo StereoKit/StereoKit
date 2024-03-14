@@ -947,7 +947,7 @@ bool openxr_poll_events() {
 				XrResult xresult = xrBeginSession(xr_session, &begin_info);
 				if (XR_FAILED(xresult)) {
 					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
-					sk_quit_reason(quit_reason_session_lost);
+					sk_quit(quit_reason_session_lost);
 					result = false;
 				}
 
@@ -961,11 +961,11 @@ bool openxr_poll_events() {
 				log_diag("OpenXR session begin.");
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break;
-			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; result = false; break;
-			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
-			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_quit_reason(quit_reason_session_lost); result = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_quit_reason(quit_reason_session_lost); result = false; break;
+			case XR_SESSION_STATE_STOPPING    : xrEndSession(xr_session); xr_running = false; result = false; break;
+			case XR_SESSION_STATE_VISIBLE     : break; // In this case, we can't recieve input. For now pretend it's not happening.
+			case XR_SESSION_STATE_FOCUSED     : break; // This is probably the normal case, so everything can continue!
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost); result = false; break;
+			case XR_SESSION_STATE_EXITING     : sk_quit(quit_reason_session_lost); result = false; break;
 			default: break;
 			}
 		} break;
@@ -975,9 +975,9 @@ bool openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit_reason(quit_reason_session_lost); result = false; break;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING         : sk_quit(quit_reason_session_lost); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
-			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+			XrEventDataReferenceSpaceChangePending *pending   = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 
 			// Update the main app space. In particular, some fallback spaces
 			// may require recalculation.

@@ -265,18 +265,12 @@ namespace StereoKit
 	public enum QuitReason {
 		/// <summary>Default state when SK has not quit.</summary>
 		None,
-		/// <summary>User has selected to quit.</summary>
+		/// <summary>User has selected to quit the application using application controls.</summary>
 		User,
-		/// <summary>XR Runtime Error XR_ERROR_SESSION_LOST</summary>
-		XrSessionLost,
-		/// <summary>XR Runtime Error XR_SESSION_STATE_EXITING</summary>
-		XrSessionStateExiting,
-		/// <summary>XR Runtime Error XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING</summary>
-		XrTypeEventDataInstanceLossPending,
-		/// <summary>Simulator Runtime Error SIMULATOR_EVENT_CLOSE</summary>
-		SimulatorEventClose,
-		/// <summary>Platform Runtime Error SIMULATOR_EVENT_CLOSE</summary>
-		PlatformEventClose,
+		/// <summary>Runtime Error SESSION_LOST</summary>
+		SessionLost,
+		/// <summary>User has closed the application from outside of the application.</summary>
+		SystemClose,
 	}
 
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
