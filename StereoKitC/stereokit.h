@@ -410,12 +410,24 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
+/* Provides a reason on why StereoKit has quit.*/
+typedef enum quit_reason_ {
+	/*Default state when SK has not quit.*/
+	quit_reason_none,
+	/*User has selected to quit the application using application controls.*/
+	quit_reason_user,
+	/* Runtime Error SESSION_LOST*/
+	quit_reason_session_lost,
+	/* User has closed the application from outside of the application.*/
+	quit_reason_system_close,
+} quit_reason_;
+
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (void);
+SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -426,6 +438,7 @@ SK_API system_info_t sk_system_info        (void);
 SK_API const char   *sk_version_name       (void);
 SK_API uint64_t      sk_version_id         (void);
 SK_API app_focus_    sk_app_focus          (void);
+SK_API quit_reason_  sk_get_quit_reason    (void);
 
 ///////////////////////////////////////////
 
