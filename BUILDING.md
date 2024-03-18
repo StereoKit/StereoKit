@@ -24,7 +24,7 @@ Open StereoKit.sln and _unload_ these projects
 - StereoKitTest_Xamarin
 - StereoKitCTest_Android
 
-Set StereoKitTest as the startup project, set the platform to x64, and you should be able to build it and run! On the first build, StereoKit will also clone and build `openxr_loader` as well as `ReactPhysics3D` using a [powershell script](https://github.com/maluoi/StereoKit/blob/master/Tools/Update-OpenXR.ps1) and cmake, so this will take some extra time.
+Set StereoKitTest as the startup project, set the platform to x64, and you should be able to build it and run! On the first build, StereoKit will also clone and build `openxr_loader` as well as `ReactPhysics3D` using a [powershell script](https://github.com/maluoi/StereoKit/blob/master/tools/Update-Dependencies.ps1) and cmake, so this will take some extra time.
 
 ## I want to modify code (Android)
 
@@ -78,4 +78,4 @@ dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTes
 
 ## I want to build the whole NuGet package
 
-The NuGet package build pipeline requires all the setup steps from above first! After that, you just need to run the [build powershell script](https://github.com/maluoi/StereoKit/blob/master/Build-Nuget.ps1). This script will build all binary variants, run tests, and track some statistics.
+The NuGet package build pipeline requires all the setup steps from above first! After that, you just need to run the [build powershell script](https://github.com/maluoi/StereoKit/blob/master/tools/Build-Nuget.ps1). This script will build all binary variants, run tests, and track some statistics.
