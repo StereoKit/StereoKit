@@ -110,7 +110,7 @@
     <PreBuildEvent>cd $(ProjectDir)..\..\..\ &amp; cmake --preset $(SKCMakePreset) &amp; cmake --build --preset $(SKCMakePreset)</PreBuildEvent>
   </PropertyGroup>
   <Target Name="SKTestRebuildUWP" AfterTargets="Clean">
-    <RemoveDir Directories="$(ProjectDir)..\..\..\bin\intermediate\UWP_$(Platform)_$(Configuration)" />
+    <RemoveDir Directories="$(ProjectDir)..\..\..\bin\intermediate\UWP_$(Platform)" />
   </Target>
   <Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
     <Message Importance="high" Text="=========$(Platform)" />
