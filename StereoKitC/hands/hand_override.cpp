@@ -48,7 +48,7 @@ void hand_override_update_frame() {
 
 void hand_override_update_poses(bool update_visuals) {
 	if (update_visuals)
-		input_hand_update_meshes();
+		input_hand_update_fallback_meshes();
 }
 
 ///////////////////////////////////////////
