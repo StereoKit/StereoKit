@@ -29,7 +29,9 @@ class DemoUITearsheet : ITest
 
 	Pose   buttonWindowPose = new Pose(0.45f,0,0);
 	bool[] toggles          = new bool[10];
+	bool[] disabledToggles  = new bool[10];
 	int    radio            = 0;
+	int    disabledRadio    = 0;
 	void ShowButtonWindow()
 	{
 		UI.WindowBegin("Buttons", ref buttonWindowPose);
@@ -173,6 +175,36 @@ class DemoUITearsheet : ITest
 		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
 		UI.WindowEnd();
 	}
+	Pose disabledUIElementsWindowPose = new Pose(-0.85f, 0, 0);
+	void ShowDisabledUIElementsWindow()
+	{
+		UI.WindowBegin("Disabled UI Elements", ref disabledUIElementsWindowPose);
+		UI.PushEnabled(false);
+
+		Unique(() => UI.Button("UI.Button"));
+
+		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.Center));
+		UI.SameLine();
+		Unique(() => UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.CenterNoText));
+
+		UI.Label("DisabledLabel");
+		Sprite logoSprite = Sprite.FromFile("StereoKitWide.png", SpriteType.Single);
+		UI.Image(logoSprite, new Vec2(8, 0) * U.cm);
+
+		Unique(() => UI.Toggle("UI.Toggle", ref disabledToggles[0]));
+		UI.SameLine();
+		Unique(() => UI.Toggle("UI.Toggle", ref toggles[2], sprToggleOff, sprToggleOn));
+
+		
+		Unique(() => { if (UI.Radio("UI.DisRadio", disabledRadio == 0)) disabledRadio = 0; });
+		UI.SameLine();
+		Unique(() => { if (UI.Radio("UI.DisRadio", disabledRadio == 1)) disabledRadio = 1; });
+		UI.SameLine();
+		Unique(() => { if (UI.Radio("UI.DisRadio", disabledRadio == 2)) disabledRadio = 2; });
+
+		UI.PopEnabled();
+		UI.WindowEnd();
+	}
 
 	public void Step()
 	{
@@ -182,6 +214,7 @@ class DemoUITearsheet : ITest
 		ShowSliderWindow();
 		ShowTextWindow  ();
 		ShowLayouts     ();
+		ShowDisabledUIElementsWindow();
 
 		Vec3 off  = new Vec3(0, -0.2f, 0);
 		Vec3 at   = Hierarchy.ToWorld(Vec3.Zero + off);
