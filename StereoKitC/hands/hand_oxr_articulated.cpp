@@ -300,7 +300,7 @@ void hand_oxra_update_poses(bool update_visuals) {
 
 	if (update_visuals) {
 		if (xr_has_hand_meshes) hand_oxra_update_system_meshes();
-		else                    input_hand_update_meshes();
+		else                    input_hand_update_fallback_meshes();
 	}
 }
 
@@ -337,6 +337,9 @@ struct hand_tri_t {
 
 void hand_oxra_update_system_meshes() {
 	for (int32_t h = 0; h < handed_max; h++) {
+		if (input_hand_should_update_mesh((handed_)h) == false)
+			continue;
+
 		hand_mesh_t* hand_mesh = &oxra_ext_mesh[h];
 
 		XrHandMeshUpdateInfoMSFT info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
