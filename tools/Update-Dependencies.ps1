@@ -16,7 +16,7 @@ function FormatPath { param([string]$path)
     if ($script:plat -eq 'UWP') {
         $archplat = "$($script:arch)_UWP"
     }
-    return $path.Replace('[arch]',$script:arch).Replace('[config]', $config).Replace('[archplat]', $archplat)
+    return $path.Replace('[arch]',$script:arch).Replace('[config]', $config).Replace('[archplat]', $archplat).Replace('[libfolder]', $script:libOut)
 }
 
 ######## FolderCopy ########
@@ -37,7 +37,7 @@ class FolderCopy {
 
     [void] Execute() {
         $sourceFinal = FormatPath($this.Source)
-        $destFinal   = "$PSScriptRoot\$script:libOut\$(FormatPath($this.Dest))"
+        $destFinal   = "$PSScriptRoot\$(FormatPath($this.Dest))"
         Write-Host "Copy from $sourceFinal to $destFinal"
 
         New-Item -ItemType Directory -Path $destFinal -Force
@@ -67,22 +67,24 @@ class Dependency {
     [string]$Repository
     [string]$Tag
     [string]$Version
-    [string]$Patch
+    [string]$VerifyFile
     [System.Collections.ArrayList]$Copies = @()
     [System.Collections.ArrayList]$CmakeOptions = @()
     [bool]$NeedsBuilt
 
-    Dependency([string]$n, [string]$repo, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
+    Dependency([string]$n, [string]$repo, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies, [string]$verifyFile) {
         $this.Name = $n
         $this.Repository = $repo
         $this.Tag = ""
         $this.Copies = $copies
-        $this.Patch = $patch
         $this.CmakeOptions = $options
         $this.NeedsBuilt = $false
+        $this.VerifyFile = $verifyFile
     }
 
     [string] Path() {
+        if ($this.VerifyFile -ne '' -and $null -ne $this.VerifyFile) {return $this.VerifyFile}
+
         if ($script:plat -eq 'Win32') {return "$PSScriptRoot\$script:libOut\bin\$script:arch\$script:config\$($this.Name).lib"}
         else                          {return "$PSScriptRoot\$script:libOut\bin\$($script:arch)_UWP\$script:config\$($this.Name).lib"}
     }
@@ -97,10 +99,17 @@ $dependencies = @(
     [Dependency]::new(
         'openxr_loader', 
         'https://github.com/KhronosGroup/OpenXR-SDK.git',
-        $null, 
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
         @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\include\openxr\', "include\openxr\", $false, @('h')))
+            [FolderCopy]::new('..\include\openxr\', "[libfolder]\include\openxr\", $false, @('h'))),
+        $null
+    )
+    [Dependency]::new(
+        'sk_gpu', 
+        'https://github.com/StereoKit/sk_gpu/releases/download/v[version]/sk_gpu.v[version].zip',
+        @(), 
+        @([FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null)),
+        'skshaderc\win32_x64\skshaderc.exe'
     )
 )
 
@@ -210,23 +219,36 @@ foreach($dep in $dependencies) {
     #Skip this item if it doesn't need built
     if (!$dep.NeedsBuilt) {continue}
 
-    # Make sure the repository is cloned and pointing to the right version
+    # Check if the repository ends with .git or .zip
     $folderName = "$gitCache\$($dep.Name)"
-    if (!(Test-Path -Path $folderName)) {
-        & git clone $dep.Repository "$folderName"
-    }
-    Push-Location -Path $folderName
-    & git fetch
-    & git clean -fd
-    & git reset --hard
-    & git checkout "$($dep.Tag)"
+    if ($dep.Repository.EndsWith('.git')) {
+        # Make sure the repository is cloned and pointing to the right version
+        if (!(Test-Path -Path $folderName)) {
+            & git clone $dep.Repository "$folderName"
+        }
+        Push-Location -Path $folderName
+        & git fetch
+        & git clean -fd
+        & git reset --hard
+        & git checkout "$($dep.Tag)"
 
-    Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
+        Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
+    } else {
+        # if the folder exists, we need to delete it
+        if (Test-Path -Path $folderName) {
+            Remove-Item -Path $folderName -Recurse -Force -Confirm:$false
+        }
+        New-Item -Path $folderName -ItemType "directory" | Out-Null
 
-    if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
-        Write-Host "Applying patch: $($dep.Patch)"
-        & git apply "$PSScriptRoot\$($dep.Patch)"
-    }
+        # Download the zip file and extract it
+        $zipName = "$folderName\$($dep.Name).zip"
+        $url = $dep.Repository.Replace('[version]', $dep.Version)
+        Invoke-WebRequest -Uri $url -OutFile $zipName
+        Expand-Archive -Path $zipName -DestinationPath $folderName -Force
+
+        Write-Host "Downloaded $($dep.Name) at $($dep.Version)"
+        Push-Location -Path $folderName
+    } 
 
     # Make a build folder for the current build options
     $buildFolder = "build_$($arch)_$($plat)_$($config)"

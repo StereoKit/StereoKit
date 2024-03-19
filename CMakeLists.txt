@@ -19,6 +19,7 @@
 #     loaders.
 
 cmake_minimum_required(VERSION 3.10)
+cmake_policy(SET CMP0135 NEW) # use the current timestamp for extracted files
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -165,6 +166,13 @@ if (SK_BUILD_OPENXR_LOADER)
   set(OPENXR_LIB openxr_loader)
 endif()
 
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME sk_gpu # 2024.3.18
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.18/sk_gpu.v2024.3.18.zip
+  OPTIONS
+  "SKG_HEADER OFF"
+)
+
 ###########################################
 ## Shader Compiler                       ##
 ###########################################
@@ -188,30 +196,29 @@ set(SK_SRC_SHADERS_HLSL
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
-set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
-foreach(SHADER ${SK_SRC_SHADERS_HLSL})
-  if (WIN32)
-    set(SK_SHADER_TARGETS "x")
-  elseif(ANDROID)
-    set(SK_SHADER_TARGETS "e")
-  elseif(EMSCRIPTEN)
-    set(SK_SHADER_TARGETS "w")
-  elseif(UNIX)
-    set(SK_SHADER_TARGETS "e")
-  endif()
 
-  # Hide shader compile metadata unless we're in verbose mode
-  set(SK_SHADER_VERBOSITY "-si")
-  if(CMAKE_VERBOSE_MAKEFILE)
-    set(SK_SHADER_VERBOSITY "")
-  endif()
+if (WIN32)
+  set(SK_SHADER_TARGETS "x")
+elseif(ANDROID)
+  set(SK_SHADER_TARGETS "e")
+elseif(EMSCRIPTEN)
+  set(SK_SHADER_TARGETS "w")
+elseif(UNIX)
+  set(SK_SHADER_TARGETS "e")
+endif()
 
-  get_filename_component(SHADER_NAME ${SHADER} NAME)
-  add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h
-    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
-  list(APPEND SK_SRC_SHADERS_H ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h)
-endforeach(SHADER)
+# Hide shader compile metadata unless we're in verbose mode
+#set(SK_SHADER_VERBOSITY "-si")
+if(CMAKE_VERBOSE_MAKEFILE)
+  set(SK_SHADER_VERBOSITY "")
+endif()
+
+  #get_filename_component(SHADER_NAME ${SHADER} NAME)
+  #add_custom_command(
+  #  OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h
+  #  COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
+  #list(APPEND SK_SRC_SHADERS_H ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h)
+
 
 ###########################################
 ## StereoKitC                            ##
@@ -482,8 +489,11 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
   PUBLIC
+    sk_gpu
     ${ANDROID_LIBS}
 )
+
+skshaderc_compile_headers(StereoKitC "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/" SK_SRC_SHADERS_H ${SK_SRC_SHADERS_HLSL})
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -621,6 +631,10 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  skshaderc_compile_headers(StereoKitCTest "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include" SK_TEST_SRC_SHADERS_H
+    Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 
