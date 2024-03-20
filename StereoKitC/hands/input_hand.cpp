@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -134,18 +134,6 @@ const hand_t *input_hand(handed_ hand) {
 
 hand_source_ input_hand_source(handed_) {
 	return hand_sources[hand_system].source;
-}
-
-///////////////////////////////////////////
-
-const controller_t *input_controller(handed_ hand) {
-	return &input_controllers[hand];
-}
-
-///////////////////////////////////////////
-
-button_state_ input_controller_menu() {
-	return input_controller_menubtn;
 }
 
 ///////////////////////////////////////////
@@ -489,20 +477,6 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
 }
 
-///////////////////////////////////////////
-
-bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) {
-	*out_amount = 0;
-	switch (key) {
-	case controller_key_trigger: if (input_controllers[hand].trigger > 0.1f) { *out_amount = input_controllers[hand].trigger; return true; } else { return false; }
-	case controller_key_grip:    if (input_controllers[hand].grip    > 0.1f) { *out_amount = input_controllers[hand].grip;    return true; } else { return false; }
-	case controller_key_menu:  return (input_controller_menubtn & button_state_active) > 0;
-	case controller_key_stick: return (input_controllers[hand].stick_click & button_state_active) > 0;
-	case controller_key_x1:    return (input_controllers[hand].x1 & button_state_active) > 0;
-	case controller_key_x2:    return (input_controllers[hand].x2 & button_state_active) > 0;
-	default: return false;
-	}
-}
 ///////////////////////////////////////////
 
 void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked) {

@@ -43,7 +43,8 @@ void hand_mouse_shutdown() {
 
 bool hand_mouse_update_position() {
 	ray_t ray = {};
-	if (input_mouse_data.available && ray_from_mouse(input_mouse_data.pos, ray)) {
+	const mouse_t *mouse = input_mouse();
+	if (mouse->available && ray_from_mouse(mouse->pos, ray)) {
 		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
 
 		vec3 hand_pos     = ray.pos + ray.dir * (0.6f + mouse_hand_scroll * 0.00025f);
@@ -86,7 +87,7 @@ void hand_mouse_update_frame() {
 	bool was_l_pressed = hand->pinch_state   & button_state_active;
 	bool was_r_pressed = hand->grip_state    & button_state_active;
 
-	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
+	mouse_hand_scroll = mouse_hand_scroll + (input_mouse()->scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
 
 	bool hand_tracked = hand_mouse_update_position();
 	if (hand_tracked) {

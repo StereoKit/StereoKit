@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
@@ -753,7 +759,8 @@ void oxri_update_poses() {
 
 	// Get input from whatever controllers may be present
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
-		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
+		controller_t*        controller = input_controller_ref((handed_)hand);
+		XrActionStateGetInfo get_info   = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
 		//// Pose actions
@@ -779,15 +786,15 @@ void oxri_update_poses() {
 			if (valid_pos) {
 				vec3 local_pos;
 				memcpy(&local_pos, &space_location.pose.position, sizeof(vec3));
-				input_controllers[hand].pose.position = root * local_pos;
+				controller->pose.position = root * local_pos;
 			}
 			if (valid_rot) {
 				quat local_rot;
 				memcpy(&local_rot, &space_location.pose.orientation, sizeof(quat));
-				input_controllers[hand].pose.orientation = local_rot * root_q;
+				controller->pose.orientation = local_rot * root_q;
 			}
-			input_controllers[hand].tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
-			input_controllers[hand].tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
+			controller->tracked_pos = tracked_pos ? track_state_known : (valid_pos ? track_state_inferred : track_state_lost);
+			controller->tracked_rot = tracked_rot ? track_state_known : (valid_rot ? track_state_inferred : track_state_lost);
 		}
 
 		// Get the palm position from either the extension, or our previous
@@ -799,16 +806,16 @@ void oxri_update_poses() {
 				pose_t local_palm;
 				if (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
 					memcpy(&local_palm.position, &space_location.pose.position, sizeof(vec3));
-					input_controllers[hand].palm.position = root * local_palm.position;
+					controller->palm.position = root * local_palm.position;
 				}
 				if (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) {
 					memcpy(&local_palm.orientation, &space_location.pose.orientation, sizeof(quat));
-					input_controllers[hand].palm.orientation = local_palm.orientation * root_q;
+					controller->palm.orientation = local_palm.orientation * root_q;
 				}
 			}
 		} else {
-			input_controllers[hand].palm.orientation = xrc_offset_rot[hand] * input_controllers[hand].pose.orientation;
-			input_controllers[hand].palm.position    = input_controllers[hand].pose.position + input_controllers[hand].palm.orientation * xrc_offset_pos[hand];
+			controller->palm.orientation = xrc_offset_rot[hand] * controller->pose.orientation;
+			controller->palm.position    = controller->pose.position + controller->palm.orientation * xrc_offset_pos[hand];
 		}
 
 		// Controller aim pose
@@ -817,7 +824,7 @@ void oxri_update_poses() {
 		xrGetActionStatePose(xr_session, &get_info, &state_aim);
 		pose_t local_aim;
 		openxr_get_space(xrc_space_aim[hand], &local_aim);
-		input_controllers[hand].aim = { root * local_aim.position, local_aim.orientation * root_q };
+		controller->aim = { root * local_aim.position, local_aim.orientation * root_q };
 	}
 
 	// eye input
@@ -848,15 +855,16 @@ void oxri_update_frame() {
 	// Get input from whatever controllers may be present
 	bool menu_button = false;
 	for (uint32_t hand = 0; hand < handed_max; hand++) {
-		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
+		controller_t*        controller = input_controller_ref((handed_)hand);
+		XrActionStateGetInfo get_info   = { XR_TYPE_ACTION_STATE_GET_INFO };
 		get_info.subactionPath = xrc_hand_subaction_path[hand];
 
 		//// Pose actions
 
-		input_controllers[hand].tracked = button_make_state(
-			input_controllers[hand].tracked & button_state_active,
-			(input_controllers[hand].tracked_pos != track_state_lost ||
-			 input_controllers[hand].tracked_rot != track_state_lost));
+		controller->tracked = button_make_state(
+			controller->tracked & button_state_active,
+			(controller->tracked_pos != track_state_lost ||
+			 controller->tracked_rot != track_state_lost));
 
 		//// Float actions
 
@@ -864,20 +872,20 @@ void oxri_update_frame() {
 		XrActionStateFloat state_trigger = { XR_TYPE_ACTION_STATE_FLOAT };
 		get_info.action = xrc_action_trigger;
 		xrGetActionStateFloat(xr_session, &get_info, &state_trigger);
-		input_controllers[hand].trigger = state_trigger.currentState;
+		controller->trigger = state_trigger.currentState;
 
 		// Grip button
 		XrActionStateFloat state_grip_btn = { XR_TYPE_ACTION_STATE_FLOAT };
 		get_info.action = xrc_action_grip;
 		xrGetActionStateFloat(xr_session, &get_info, &state_grip_btn);
-		input_controllers[hand].grip = state_grip_btn.currentState;
+		controller->grip = state_grip_btn.currentState;
 
 		// Analog stick X and Y
 		XrActionStateVector2f grip_stick_xy = { XR_TYPE_ACTION_STATE_VECTOR2F };
 		get_info.action = xrc_action_stick_xy;
 		xrGetActionStateVector2f(xr_session, &get_info, &grip_stick_xy);
-		input_controllers[hand].stick.x = -grip_stick_xy.currentState.x;
-		input_controllers[hand].stick.y =  grip_stick_xy.currentState.y;
+		controller->stick.x = -grip_stick_xy.currentState.x;
+		controller->stick.y =  grip_stick_xy.currentState.y;
 
 		//// Bool actions
 
@@ -891,7 +899,7 @@ void oxri_update_frame() {
 		XrActionStateBoolean state_stick_click = { XR_TYPE_ACTION_STATE_BOOLEAN };
 		get_info.action = xrc_action_stick_click;
 		xrGetActionStateBoolean(xr_session, &get_info, &state_stick_click);
-		input_controllers[hand].stick_click = button_make_state(input_controllers[hand].stick_click & button_state_active, state_stick_click.currentState);
+		controller->stick_click = button_make_state(controller->stick_click & button_state_active, state_stick_click.currentState);
 
 		// Button x1 and x2
 		XrActionStateBoolean state_x1 = { XR_TYPE_ACTION_STATE_BOOLEAN };
@@ -900,10 +908,10 @@ void oxri_update_frame() {
 		xrGetActionStateBoolean(xr_session, &get_info, &state_x1);
 		get_info.action = xrc_action_x2;
 		xrGetActionStateBoolean(xr_session, &get_info, &state_x2);
-		input_controllers[hand].x1 = button_make_state(input_controllers[hand].x1 & button_state_active, state_x1.currentState);
-		input_controllers[hand].x2 = button_make_state(input_controllers[hand].x2 & button_state_active, state_x2.currentState);
+		controller->x1 = button_make_state(controller->x1 & button_state_active, state_x1.currentState);
+		controller->x2 = button_make_state(controller->x2 & button_state_active, state_x2.currentState);
 	}
-	input_controller_menubtn = button_make_state(input_controller_menubtn & button_state_active, menu_button);
+	input_controller_menu_set(button_make_state(input_controller_menu() & button_state_active, menu_button));
 
 	// eye input
 	if (device_has_eye_gaze()) {
@@ -913,8 +921,8 @@ void oxri_update_frame() {
 		action_info.action = xrc_action_eyes;
 		xrGetActionStatePose(xr_session, &action_info, &action_pose);
 
-		input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, action_pose.isActive);
-		pointer->tracked = input_eyes_track_state;
+		input_eyes_tracked_set(button_make_state(input_eyes_tracked() & button_state_active, action_pose.isActive));
+		pointer->tracked = input_eyes_tracked();
 	}
 }
 
