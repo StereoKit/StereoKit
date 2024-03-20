@@ -11,6 +11,7 @@
 
 		<SKAssetFolder>..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
 
 		<NoWarn>CS1587</NoWarn>
 	</PropertyGroup>

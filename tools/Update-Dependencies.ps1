@@ -6,7 +6,8 @@ param(
     [ValidateSet('Release','Debug')]
     [string]$config = 'Release',
     [string]$gitCache = 'C:\Temp\StereoKitBuild',
-    [string]$libOut = '..\StereoKitC\lib'
+    [string]$libOut = '..\StereoKitC\lib',
+    [string]$onlyDep = ''
 )
 
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
@@ -131,6 +132,8 @@ $dependencyVersions = ConvertFrom-StringData -String $depsFile
 # Check each dependency to see if it needs to be built
 $dependenciesDirty = $false
 foreach($dep in $dependencies) { # NAME\s*$($dep.Name)\s*#\s*([\d.]*)
+    if ($onlyDep -ne '' -and $dep.Name -ne $onlyDep) {continue}
+
     $tag            = $sourceFile | Select-String -Pattern "(?s)NAME\s*$($dep.Name).*?GIT_TAG\s*(\w*)" | %{$_.Matches.Groups[1].Value}
     $desiredVersion = $sourceFile | Select-String -Pattern "NAME\s*$($dep.Name)\s*#\s*([\d.]*)" | %{$_.Matches.Groups[1].Value}
     $currentVersion = $dependencyVersions[$dep.Key()]
@@ -234,19 +237,32 @@ foreach($dep in $dependencies) {
 
         Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
     } else {
-        # if the folder exists, we need to delete it
-        if (Test-Path -Path $folderName) {
-            Remove-Item -Path $folderName -Recurse -Force -Confirm:$false
+        $zipName = "$folderName\$($dep.Name).$(($dep.Version)).zip"
+
+        if (!(Test-Path -Path $zipName)) {
+            Write-Host "Downloading $($dep.Name) $($dep.Version)"
+            # if the folder exists, we need to delete it
+            if (Test-Path -Path $folderName) {
+                Remove-Item -Path $folderName -Recurse -Force -Confirm:$false
+            }
+            New-Item -Path $folderName -ItemType "directory" | Out-Null
+
+            # Download the zip file and extract it
+            $url = $dep.Repository.Replace('[version]', $dep.Version)
+            Invoke-WebRequest -Uri $url -OutFile $zipName
+            Expand-Archive -Path $zipName -DestinationPath $folderName -Force
+
+            # Touch all the files to make sure they have the current time,
+            # which is apparently not guaranteed when unzipping.
+            foreach ($file in (Get-ChildItem -Path $folderName -Recurse -File)) {
+                $currentTime = Get-Date
+                $file.LastWriteTime  = $currentTime
+                $file.CreationTime   = $currentTime
+                $file.LastAccessTime = $currentTime
+            }
+
+            Write-Host "Downloaded finished"
         }
-        New-Item -Path $folderName -ItemType "directory" | Out-Null
-
-        # Download the zip file and extract it
-        $zipName = "$folderName\$($dep.Name).zip"
-        $url = $dep.Repository.Replace('[version]', $dep.Version)
-        Invoke-WebRequest -Uri $url -OutFile $zipName
-        Expand-Archive -Path $zipName -DestinationPath $folderName -Force
-
-        Write-Host "Downloaded $($dep.Name) at $($dep.Version)"
         Push-Location -Path $folderName
     } 
 

@@ -55,8 +55,9 @@
 	<PropertyGroup>
 		<!--Unlike the other projects, this seems to invoke from the bin
 		    folder, and $(ProjectDir) doesn't work.-->
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent>cd ..\..\..\..\..\..\ &amp; powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "tools\Update-Dependencies.ps1" -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">$(PreBuildEvent) &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">$(PreBuildEvent) &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
 	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
 		<RemoveDir Condition="'$(TestBuildMode)'=='ARM64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
