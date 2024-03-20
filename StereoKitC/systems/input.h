@@ -10,10 +10,12 @@
 
 namespace sk {
 
-extern pose_t input_head_pose_world;
-extern pose_t input_head_pose_local;
-extern pose_t input_eyes_pose_world;
-extern pose_t input_eyes_pose_local;
+enum input_render_mode_ {
+	input_render_none,
+	input_render_hand_fallback,
+	input_render_hand_ext,
+	input_render_controller_model,
+};
 
 bool          input_init               ();
 void          input_shutdown           ();
@@ -37,5 +39,11 @@ inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 		result |= button_state_just_active;
 	return result;
 }
+
+extern pose_t input_head_pose_world;
+extern pose_t input_head_pose_local;
+extern pose_t input_eyes_pose_world;
+extern pose_t input_eyes_pose_local;
+
 
 } // namespace sk

@@ -307,6 +307,8 @@ set(SK_SRC_UTILS
   StereoKitC/utils/random.cpp)
 
 set(SK_SRC_SYSTEMS
+  StereoKitC/systems/_stereokit_systems.h
+  StereoKitC/systems/_stereokit_systems.cpp
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
   StereoKitC/systems/bbox.h
