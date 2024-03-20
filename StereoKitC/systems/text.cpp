@@ -447,7 +447,7 @@ void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, 
 
 ///
 
-void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, XMMATRIX tr, vec3 normal, vec3 up, vec3 right) {
+void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, const XMMATRIX &tr, vec3 normal, vec3 up, vec3 right) {
 	float x_max = x - char_info->x0 * style_data.char_height;
 	float x_min = x - char_info->x1 * style_data.char_height;
 	float y_max = y + char_info->y0 * style_data.char_height;
