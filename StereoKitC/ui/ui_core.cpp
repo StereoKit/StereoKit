@@ -126,15 +126,9 @@ void ui_core_hands_step() {
 		const pointer_t*    pointer    = input_get_pointer(input_hand_pointer_id[i]);
 		const controller_t* controller = input_controller ((handed_)i);
 
-		button_state_ pinch_state = pointer->state;// hand->pinch_state;
+		button_state_ pinch_state = pointer->state;
 		button_state_ track_state = pointer->tracked;
 		pose_t        aim_ray     = pose_t{pointer->ray.pos, pointer->orientation};
-		/*if (xr_ext_available.EXT_hand_interaction) {
-			pinch_state = button_make_state(prev_pinch[i] < 0.2f, controller->trigger < 0.2f);
-			aim_ray     = controller->aim;
-			track_state = hand->tracked_state;// controller->tracked;
-			prev_pinch[i] = controller->trigger;
-		}*/
 		vec3 aim_pos = aim_ray.position;
 		vec3 aim_dir = aim_ray.orientation * vec3_forward;
 
