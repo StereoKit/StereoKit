@@ -6,6 +6,12 @@
 /// Here are a list of small demos that illustrate how
 /// certain parts of StereoKit works!
 ///
+/// ## [Anchors](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAnchors.cs)
+/// 
+/// This demo uses StereoKit's Anchor API to add, remove, and load spatial anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!
+///
+/// ![Anchors]({{site.screen_url}}/Demos/Anchors.jpg)
+///
 /// ## [Asset Enumeration](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAssets.cs)
 /// 
 /// If you need to take a peek at what's currently loaded, StereoKit has a couple tools in the Assets class!
@@ -27,6 +33,12 @@
 /// The Device class contains a number of interesting bits of data about the device it's running on! Most of this is just information, but there's a few properties that can also be modified.
 ///
 /// ![Device]({{site.screen_url}}/Demos/Device.jpg)
+///
+/// ## [Disabled UI Elements](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoDisabledUI.cs)
+/// 
+/// UI elements are interactive and usually have actions associated with them. Some usecase requires elements to be disabled and Stereokit supports disabled elements and doesn't trigger the corresponding action associated with the elements on interaction.
+///
+/// ![Disabled UI Elements]({{site.screen_url}}/Demos/DisabledUIElements.jpg)
 ///
 /// ## [Eye Tracking](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoEyes.cs)
 /// 
