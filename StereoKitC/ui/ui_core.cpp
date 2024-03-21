@@ -7,6 +7,7 @@
 #include "../systems/input.h"
 #include "../hands/input_hand.h"
 #include "../sk_math.h"
+#include "../xr_backends/openxr_extensions.h"
 
 #include <float.h>
 
@@ -118,9 +119,18 @@ void ui_show_ray(int32_t interactor, float *ref_length) {
 ///////////////////////////////////////////
 
 void ui_core_hands_step() {
+	static float prev_pinch[2] = { 1, 1 };
+
 	for (int32_t i = 0; i < handed_max; i++) {
-		const hand_t*    hand    = input_hand       ((handed_)i);
-		const pointer_t* pointer = input_get_pointer(input_hand_pointer_id[i]);
+		const hand_t*       hand       = input_hand       ((handed_)i);
+		const pointer_t*    pointer    = input_get_pointer(input_hand_pointer_id[i]);
+		const controller_t* controller = input_controller ((handed_)i);
+
+		button_state_ pinch_state = pointer->state;
+		button_state_ track_state = pointer->tracked;
+		pose_t        aim_ray     = pose_t{pointer->ray.pos, pointer->orientation};
+		vec3 aim_pos = aim_ray.position;
+		vec3 aim_dir = aim_ray.orientation * vec3_forward;
 
 		// Poke
 		interactor_update(skui_hand_interactors[i*3 + 0],
@@ -132,16 +142,16 @@ void ui_core_hands_step() {
 		interactor_update(skui_hand_interactors[i*3 + 1],
 			hand->fingers[0][4].position, hand->fingers[1][4].position, hand->fingers[1][4].radius,
 			hand->pinch_pt,    hand->palm.orientation, hand->pinch_pt,
-			hand->pinch_state, hand->tracked_state);
+			pinch_state,       track_state);
 
 		// Hand ray
 		if (ui_far_interact_enabled()) {
 			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12,0});
 			float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
 			interactor_update(skui_hand_interactors[i*3 + 2],
-				pointer->ray.pos + pointer->ray.dir * ray_dist, pointer->ray.pos + pointer->ray.dir * 100, 0.01f,
-				pointer->ray.pos,  pointer->orientation, input_head()->position + vec3{0,-0.12,0},
-				hand->pinch_state, pointer->tracked);
+				aim_pos + aim_dir * ray_dist, aim_pos + aim_dir * 100, 0.01f,
+				aim_pos,  aim_ray.orientation, input_head()->position + vec3{0,-0.12,0},
+				pinch_state, track_state);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], &skui_ray_length[i]);
 		}
 	}

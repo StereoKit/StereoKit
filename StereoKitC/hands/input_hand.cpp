@@ -316,6 +316,11 @@ void input_hand_state_update(handed_ handedness) {
 			hand.pinch_pt = matrix_transform_pt(from_relative, hand_state[handedness].pinch_pt_relative);
 		}
 	}
+
+	pointer_t* pointer = input_get_pointer(input_hand_pointer_id[handedness]);
+	pointer->state = button_make_state(
+		(pointer->state & button_state_active) != 0,
+		((pointer->tracked & button_state_active) != 0) && ((hand.pinch_state & button_state_active) != 0));
 }
 
 ///////////////////////////////////////////
