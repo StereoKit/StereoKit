@@ -7,6 +7,7 @@
 #include "../stereokit.h"
 #include "input.h"
 #include "input_keyboard.h"
+#include "input_render.h"
 #include "../hands/input_hand.h"
 #include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
@@ -41,6 +42,7 @@ pose_t input_eyes_pose_world;
 ///////////////////////////////////////////
 
 void input_mouse_update();
+void input_hand_update_fallback_meshes(hand_mesh_t hand_mesh_2[]);
 
 ///////////////////////////////////////////
 
@@ -54,12 +56,14 @@ bool input_init() {
 	input_keyboard_initialize();
 	input_hand_init();
 	input_mouse_update();
+	input_render_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void input_shutdown() {
+	input_render_shutdown();
 	input_keyboard_shutdown();
 	local.pointers .free();
 	local.listeners.free();
@@ -73,6 +77,14 @@ void input_step() {
 	input_mouse_update();
 	input_keyboard_update();
 	input_hand_update();
+	input_render_step();
+}
+
+///////////////////////////////////////////
+
+void input_step_late() {
+	input_update_poses();
+	input_render_step_late();
 }
 
 ///////////////////////////////////////////
@@ -142,12 +154,12 @@ void input_fire_event(input_source_ source, button_state_ input_event, const poi
 
 ///////////////////////////////////////////
 
-void input_update_poses(bool update_visuals) {
+void input_update_poses() {
 #if defined(SK_XR_OPENXR)
 	if (backend_xr_get_type() == backend_xr_type_openxr)
 		oxri_update_poses();
 #endif
-	input_hand_update_poses(update_visuals);
+	input_hand_update_poses();
 }
 
 ///////////////////////////////////////////
@@ -251,4 +263,4 @@ void input_mouse_override_pos(vec2 override_pos) {
 	local.mouse_data.pos = { override_pos.x, override_pos.y };
 }
 
-} // namespace sk {
+} // namespace sk

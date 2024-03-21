@@ -4,8 +4,6 @@
  * Copyright (c) 2024 Qualcomm Technologies, Inc.
  */
 
-#pragma once
-
 #include "_stereokit_systems.h"
 #include "../stereokit.h"
 #include "../_stereokit.h"

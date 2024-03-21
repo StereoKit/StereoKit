@@ -10,18 +10,12 @@
 
 namespace sk {
 
-enum input_render_mode_ {
-	input_render_none,
-	input_render_hand_fallback,
-	input_render_hand_ext,
-	input_render_controller_model,
-};
-
 bool          input_init               ();
 void          input_shutdown           ();
 void          input_step               ();
+void          input_step_late          ();
 
-void          input_update_poses       (bool update_visuals);
+void          input_update_poses       ();
 void          input_mouse_override_pos (vec2 override_pos);
 controller_t* input_controller_ref     (handed_ handed);
 void          input_controller_menu_set(button_state_ state);

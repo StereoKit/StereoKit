@@ -78,6 +78,7 @@ bool window_init() {
 	case platform_win_type_existing: {
 		local->window = platform_win_get_existing(platform_surface_swapchain);
 	} break;
+	default: return false;
 	}
 
 	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
@@ -144,7 +145,7 @@ void window_step_begin() {
 ///////////////////////////////////////////
 
 void window_step_end() {
-	input_update_poses(true);
+	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());
 	matrix proj = render_get_projection_matrix();

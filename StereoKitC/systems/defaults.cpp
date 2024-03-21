@@ -135,8 +135,10 @@ bool defaults_init() {
 		sk_default_tex_flat  == nullptr ||
 		sk_default_tex_rough == nullptr ||
 		sk_default_tex_devtex== nullptr ||
-		sk_default_tex_error == nullptr)
+		sk_default_tex_error == nullptr) {
+		log_warn("Failed to create default textures!");
 		return false;
+	}
 
 	tex_set_loading_fallback(sk_default_tex_devtex);
 	tex_set_error_fallback  (sk_default_tex_error);
@@ -220,8 +222,10 @@ bool defaults_init() {
 		sk_default_shader_ui_quadrant == nullptr ||
 		sk_default_shader_ui_aura     == nullptr ||
 		sk_default_shader_sky         == nullptr ||
-		sk_default_shader_lines       == nullptr)
+		sk_default_shader_lines       == nullptr) {
+		log_warn("Failed to create default shaders!");
 		return false;
+	}
 
 	shader_set_id(sk_default_shader,             default_id_shader);
 	shader_set_id(sk_default_shader_blit,        default_id_shader_blit);
@@ -261,8 +265,10 @@ bool defaults_init() {
 		sk_default_material_ui          == nullptr ||
 		sk_default_material_ui_box      == nullptr ||
 		sk_default_material_ui_quadrant == nullptr ||
-		sk_default_material_ui_aura     == nullptr)
+		sk_default_material_ui_aura     == nullptr) {
+		log_warn("Failed to create default materials!");
 		return false;
+	}
 
 	material_set_id(sk_default_material,             default_id_material);
 	material_set_id(sk_default_material_pbr,         default_id_material_pbr);
@@ -285,8 +291,10 @@ bool defaults_init() {
 
 	// Text!
 	sk_default_font = platform_default_font();
-	if (sk_default_font == nullptr)
+	if (sk_default_font == nullptr) {
+		log_warn("Failed to create default font!");
 		return false;
+	}
 	font_set_id(sk_default_font, default_id_font);
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
 

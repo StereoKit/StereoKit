@@ -89,6 +89,7 @@ bool simulator_init() {
 	case platform_win_type_existing: {
 		sim_window = platform_win_get_existing(platform_surface_swapchain);
 	} break;
+	default: return false;
 	}
 
 	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
@@ -215,7 +216,7 @@ void simulator_step_begin() {
 
 void simulator_step_end() {
 	anchors_step_end();
-	input_update_poses(true);
+	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());
 	matrix proj = render_get_projection_matrix();

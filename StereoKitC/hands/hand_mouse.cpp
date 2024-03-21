@@ -110,16 +110,13 @@ void hand_mouse_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_mouse_update_poses(bool update_visuals) {
+void hand_mouse_update_poses() {
 	hand_mouse_update_position();
 	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
 	quat       hand_rot       = (mouse_active_hand == handed_right
 		? quat_from_angles(40, 30, 90)
 		: quat_from_angles(40,-30,-90)) * pointer_cursor->orientation;
 	input_hand_sim_poses(mouse_active_hand, true, pointer_cursor->ray.pos, hand_rot);
-
-	if (update_visuals)
-		input_hand_update_fallback_meshes();
 }
 
 }

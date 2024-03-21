@@ -34,7 +34,6 @@ struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
 	pose_t      pose_prev[5][5];
-	material_t  material;
 	mesh_t      active_mesh;
 	vec3        pinch_pt_relative;
 	bool        visible;
@@ -61,7 +60,7 @@ typedef struct hand_system_t {
 	void (*shutdown)();
 	void (*update_inactive)();
 	void (*update_frame)();
-	void (*update_poses)(bool update_visuals);
+	void (*update_poses)();
 } hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
@@ -73,7 +72,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_shutdown,
 		nullptr,
 		hand_override_update_frame,
-		hand_override_update_poses },
+		nullptr },
 #if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
 		hand_source_articulated,
@@ -111,12 +110,10 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {},
 		nullptr,
 		[]() {},
-		[](bool) {} },
+		[]() {} },
 };
 int32_t             hand_system = -1;
 hand_state_t        hand_state[2] = {};
-hand_mesh_t         hand_fallback_mesh[2];
-hand_mesh_t*        hand_active_mesh[2];
 float               hand_size_update = 0;
 int32_t             input_hand_pointer_id[handed_max] = {-1, -1};
 array_t<hand_sim_t> hand_sim_poses   = {};
@@ -185,47 +182,12 @@ void input_hand_init() {
 	input_hand_sim_pose_add(input_pose_point,   controller_key_grip,    controller_key_none, key_mouse_right);
 	input_hand_sim_pose_add(input_pose_fist,    controller_key_trigger, controller_key_grip, key_mouse_left, key_mouse_right);
 
-	material_t hand_mat = material_copy_id(default_id_material);
-	material_set_id          (hand_mat, default_id_material_hand);
-	material_set_transparency(hand_mat, transparency_blend);
-
-	gradient_t color_grad = gradient_create();
-	// Snapdragon's implementation of XR_MSFT_hand_tracking_mesh does not work
-	// well with SK's implementation of UV generation just yet, so we set it to
-	// pure white for now instead. Users can always opt out of the extension if
-	// they prefer the fallback hand mesh.
-	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && backend_openxr_ext_enabled("XR_MSFT_hand_tracking_mesh")) {
-		gradient_add(color_grad, color128{ 1,1,1,1 }, 0.0f);
-		gradient_add(color_grad, color128{ 1,1,1,1 }, 1.0f);
-	} else {
-		gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
-		gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
-		gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
-		gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
-	}
-
-	color32 gradient[16 * 16];
-	for (int32_t y = 0; y < 16; y++) {
-		color32 col = gradient_get32(color_grad, 1-y/15.f);
-	for (int32_t x = 0; x < 16; x++) {
-		gradient[x + y * 16] = col;
-	} }
-	gradient_destroy(color_grad);
-
-	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
-	tex_set_colors (gradient_tex, 16, 16, gradient);
-	tex_set_address(gradient_tex, tex_address_clamp);
-	material_set_texture     (hand_mat, "diffuse", gradient_tex);
-	material_set_queue_offset(hand_mat, 10);
-
 	// Initialize the hands!
 	for (int32_t i = 0; i < handed_max; i++) {
-		hand_state[i].visible   = true;
-		hand_state[i].material  = hand_mat;
+		hand_state[i].visible      = true;
 		hand_state[i].pose_prev_id = -1;
 		memcpy(hand_state[i].pose_prev,  input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
-		material_addref(hand_state[i].material);
 		hand_state[i].info.palm.orientation = quat_identity;
 		hand_state[i].info.handedness       = (handed_)i;
 
@@ -245,18 +207,7 @@ void input_hand_init() {
 			hand.fingers[f][j].orientation = rot;
 			hand.fingers[f][j].radius      = hand_joint_size[f*5+j];
 		} }
-
-		// Set up the hand mesh
-		hand_fallback_mesh[i].root_transform = matrix_identity;
-		hand_fallback_mesh[i].mesh = mesh_create();
-		mesh_set_keep_data(hand_fallback_mesh[i].mesh, false);
-		mesh_set_id       (hand_fallback_mesh[i].mesh, i == handed_left
-			? default_id_mesh_lefthand
-			: default_id_mesh_righthand);
 	}
-
-	tex_release(gradient_tex);
-	material_release(hand_mat);
 
 	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].init();
@@ -270,13 +221,6 @@ void input_hand_init() {
 void input_hand_shutdown() {
 	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].shutdown();
-	}
-
-	for (int32_t i = 0; i < handed_max; i++) {
-		material_release(hand_state[i].material);
-		mesh_release    (hand_fallback_mesh[i].mesh);
-		sk_free(hand_fallback_mesh[i].inds);
-		sk_free(hand_fallback_mesh[i].verts);
 	}
 	hand_sim_poses.free();
 }
@@ -319,32 +263,9 @@ void input_hand_update() {
 
 ///////////////////////////////////////////
 
-void input_hand_update_poses(bool update_visuals) {
-	if (hand_system >= 0)
-		hand_sources[hand_system].update_poses(update_visuals);
-
-	if (update_visuals) {
-		for (int32_t i = 0; i < handed_max; i++) {
-			// Update hand meshes, and draw 'em
-			bool tracked = hand_state[i].info.tracked_state & button_state_active;
-			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active && hand_active_mesh[i] != nullptr) {
-				render_add_mesh(hand_active_mesh[i]->mesh, hand_state[i].material, hand_active_mesh[i]->root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
-			}
-		}
-	}
-}
-
-///////////////////////////////////////////
-
-void input_hand_update_fallback_meshes() {
-	for (int32_t i = 0; i < handed_max; i++) {
-		if (input_hand_should_update_mesh((handed_)i) == false)
-			continue;
-
-		// Update hand meshes, and draw 'em
-		input_gen_fallback_mesh (hand_state[i].info.fingers, hand_fallback_mesh[i].mesh, &hand_fallback_mesh[i].verts, &hand_fallback_mesh[i].inds);
-		input_hand_set_mesh_data((handed_)i, &hand_fallback_mesh[i]);
-	}
+void input_hand_update_poses() {
+	if (hand_system >= 0 && hand_sources[hand_system].update_poses)
+		hand_sources[hand_system].update_poses();
 }
 
 ///////////////////////////////////////////
@@ -405,21 +326,8 @@ bool input_hand_get_visible(handed_ hand) {
 
 ///////////////////////////////////////////
 
-bool input_hand_should_update_mesh(handed_ handed) {
-	const hand_state_t* hand = &hand_state[handed];
-	return !(hand->visible == false || hand->material == nullptr || (hand->info.tracked_state & button_state_active) == 0);
-}
-
-///////////////////////////////////////////
-
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
-}
-
-///////////////////////////////////////////
-
-void input_hand_set_mesh_data(handed_ handedness, hand_mesh_t *mesh_data) {
-	hand_active_mesh[handedness] = mesh_data;
 }
 
 ///////////////////////////////////////////
@@ -774,23 +682,6 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 	}
 
 	hand_state[hand].visible = visible;
-}
-
-///////////////////////////////////////////
-
-void input_hand_material(handed_ hand, material_t material) {
-	if (hand == handed_max) {
-		input_hand_material(handed_left,  material);
-		input_hand_material(handed_right, material);
-		return;
-	}
-
-	material_release(hand_state[hand].material);
-	
-	if (material != nullptr)
-		material_addref(material);
-
-	hand_state[hand].material = material;
 }
 
 } // namespace sk

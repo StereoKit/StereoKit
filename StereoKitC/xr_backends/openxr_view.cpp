@@ -315,6 +315,7 @@ bool openxr_views_create() {
 			xr_displays_2nd      .add(display);
 			xr_display_2nd_states.add(state);
 		} break;
+		default:break;
 		}
 	}
 	sk_free(types);
@@ -736,7 +737,7 @@ bool openxr_render_frame() {
 
 	// Execute any code that's dependent on the predicted time, such as
 	// updating the location of controller models.
-	input_update_poses(true);
+	input_step_late();
 
 	// If there's nothing to render, we may want to totally skip all projection
 	// layers entirely.

@@ -321,6 +321,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input.cpp
   StereoKitC/systems/input_keyboard.h
   StereoKitC/systems/input_keyboard.cpp
+  StereoKitC/systems/input_render.h
+  StereoKitC/systems/input_render.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
   StereoKitC/systems/render.h

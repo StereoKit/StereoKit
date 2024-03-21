@@ -501,7 +501,7 @@ void render_set_cam_root(const matrix &cam_root) {
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
 
 	world_refresh_transforms();
-	input_update_poses(false);
+	input_update_poses();
 }
 
 ///////////////////////////////////////////

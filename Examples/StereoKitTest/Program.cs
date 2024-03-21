@@ -84,7 +84,7 @@ class Program
 		SK.PreLoadLibrary();
 
 		SK.AddStepper<PassthroughFBExt>();
-		SK.AddStepper<ControllerStepper>();
+		//SK.AddStepper<ControllerStepper>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
 		logWindow = SK.AddStepper<LogWindow>();
 		logWindow.Enabled = false;

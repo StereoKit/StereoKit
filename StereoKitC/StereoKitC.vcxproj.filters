@@ -244,6 +244,9 @@
     <ClCompile Include="systems\_stereokit_systems.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="systems\input_render.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -509,6 +512,9 @@
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\_stereokit_systems.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\input_render.h">
       <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
