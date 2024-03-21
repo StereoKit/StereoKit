@@ -16,11 +16,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-quat xrc_offset_rot[2];
-vec3 xrc_offset_pos[2];
-
-///////////////////////////////////////////
-
 bool hand_oxrc_available() {
 	return sk_active_display_mode() == display_mode_mixedreality 
 		&& xr_session != XR_NULL_HANDLE;

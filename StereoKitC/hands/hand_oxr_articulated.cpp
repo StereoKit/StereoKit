@@ -5,6 +5,7 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/openxr_input.h"
 #include "../xr_backends/openxr_extensions.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
@@ -203,8 +204,6 @@ void hand_oxra_update_joints() {
 
 	bool hands_active = false;
 	for (int32_t h = 0; h < handed_max; h++) {
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
-
 		XrHandJointsLocateInfoEXT locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
 		locate_info.time      = xr_time;
 		locate_info.baseSpace = xr_app_space;
@@ -226,7 +225,6 @@ void hand_oxra_update_joints() {
 			(locations.jointLocations[1 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
 		hand_t *inp_hand     = (hand_t*)input_hand((handed_)h);
 		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, valid_joints);
-		pointer->tracked = inp_hand->tracked_state;
 
 		// If both hands aren't active at all, we'll want to to switch back
 		// to controllers.
@@ -258,6 +256,9 @@ void hand_oxra_update_joints() {
 		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 
+		// Update the hand pointer
+		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
+
 		// Create pointers for the hands
 		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
 		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
@@ -267,6 +268,16 @@ void hand_oxra_update_joints() {
 		pointer->ray.pos     = point_pose.position;
 		pointer->ray.dir     = point_pose.orientation * vec3_forward;
 		pointer->orientation = point_pose.orientation;
+
+		// The pointer should be tracked when the hand is tracked and in a
+		// "ready pose" (facing the same general direction as the user). It
+		// should remain tracked if it was activated, even if it's no longer in
+		// a ready pose.
+		bool was_tracked  = (pointer ->tracked       & button_state_active) > 0;
+		bool is_active    = (pointer ->state         & button_state_active) > 0;
+		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
+		bool is_facing    = vec3_dot(vec3_normalize(pointer->ray.pos - input_head()->position), inp_hand->palm.orientation * vec3_forward) > 0.25f;
+		pointer->tracked = button_make_state(was_tracked, hand_tracked && (is_active || is_facing));
 	}
 
 	if (!hands_active) {
