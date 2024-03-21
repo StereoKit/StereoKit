@@ -63,6 +63,7 @@ struct sk_state_t {
 	uint64_t  app_init_time;
 	system_t *app_system;
 	int32_t   app_system_idx;
+	quit_reason_ quit_reason;
 };
 static sk_state_t local;
 
@@ -82,6 +83,7 @@ bool32_t sk_step_end  ();
 bool32_t sk_init(sk_settings_t settings) {
 	local = {};
 	local.timev_scale = 1;
+	local.quit_reason = quit_reason_none;
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
@@ -273,9 +275,11 @@ void sk_shutdown_unsafe(void) {
 	systems_shutdown();
 	sk_mem_log_allocations();
 	log_clear_subscribers();
+	quit_reason_ local_quit_reason = local.quit_reason;
 
 	local = {};
 	local.disallow_user_shutdown = true;
+	local.quit_reason = local_quit_reason;
 }
 
 ///////////////////////////////////////////
@@ -287,7 +291,8 @@ void sk_app_step() {
 
 ///////////////////////////////////////////
 
-void sk_quit() {
+void sk_quit(quit_reason_ quit_reason) {
+	local.quit_reason = quit_reason;
 	local.running = false;
 }
 
@@ -487,6 +492,12 @@ uint64_t sk_version_id() { return SK_VERSION_ID; }
 ///////////////////////////////////////////
 
 app_focus_ sk_app_focus() { return local.focus; }
+
+///////////////////////////////////////////
+
+quit_reason_ sk_get_quit_reason() { 
+	return local.quit_reason;
+}
 
 ///////////////////////////////////////////
 

@@ -623,6 +623,13 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
 	float d   = 0;
 	ray_t ray = { line_start, line_end - line_start };
+
+	// If the direction is too small, we can get inf/NaN's, so we treat it as a point.
+	if (vec3_magnitude_sq(ray.dir) < 0.0001f) {
+		*out_at = ray.pos;
+		return bounds_point_contains({ bounds.center, bounds.dimensions + vec3_one*(radius*2) }, ray.pos);
+	} 
+	
 	if (bounds_ray_intersect_dist(bounds, ray, &d) && d <= 1) {
 		*out_at = line_start + (line_end - line_start) * d;
 		return true;

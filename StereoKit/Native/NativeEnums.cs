@@ -261,6 +261,18 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>Provides a reason on why StereoKit has quit.</summary>
+	public enum QuitReason {
+		/// <summary>Default state when SK has not quit.</summary>
+		None,
+		/// <summary>User has selected to quit the application using application controls.</summary>
+		User,
+		/// <summary>Runtime Error SESSION_LOST</summary>
+		SessionLost,
+		/// <summary>User has closed the application from outside of the application.</summary>
+		SystemClose,
+	}
+
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen

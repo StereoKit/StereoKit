@@ -27,6 +27,7 @@ bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
 XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
 float            oxra_hand_joint_scale = 1;
+hand_mesh_t      oxra_ext_mesh[2];
 
 ///////////////////////////////////////////
 
@@ -119,7 +120,9 @@ void hand_oxra_init() {
 
 		// Initialize hand mesh trackers
 		for (int32_t h = 0; h < handed_max; h++) {
-			hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+			hand_mesh_t *hand_mesh = &oxra_ext_mesh[h];
+			hand_mesh->mesh = mesh_create();
+			mesh_set_keep_data(hand_mesh->mesh, false);
 
 			// Allocate memory for OpenXR to store hand mesh data in.
 			oxra_mesh_src[h].indexBuffer.indexCapacityInput   = properties_handmesh.maxHandMeshIndexCount;
@@ -164,6 +167,10 @@ void hand_oxra_shutdown() {
 		if (oxra_hand_space[h] != XR_NULL_HANDLE) xrDestroySpace(oxra_hand_space[h]);
 		sk_free(oxra_mesh_src[h].indexBuffer.indices);
 		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
+
+		mesh_release(oxra_ext_mesh[h].mesh);
+		sk_free(oxra_ext_mesh[h].inds);
+		sk_free(oxra_ext_mesh[h].verts);
 	}
 
 	oxra_hand_joint_scale = 1;
@@ -304,7 +311,7 @@ void hand_oxra_update_poses(bool update_visuals) {
 
 	if (update_visuals) {
 		if (xr_has_hand_meshes) hand_oxra_update_system_meshes();
-		else                    input_hand_update_meshes();
+		else                    input_hand_update_fallback_meshes();
 	}
 }
 
@@ -341,7 +348,10 @@ struct hand_tri_t {
 
 void hand_oxra_update_system_meshes() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+		if (input_hand_should_update_mesh((handed_)h) == false)
+			continue;
+
+		hand_mesh_t* hand_mesh = &oxra_ext_mesh[h];
 
 		XrHandMeshUpdateInfoMSFT info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
 		info.handPoseType = XR_HAND_POSE_TYPE_TRACKED_MSFT;
@@ -404,6 +414,8 @@ void hand_oxra_update_system_meshes() {
 			}
 			oxra_mesh_dirty[h] = false;
 		}
+
+		input_hand_set_mesh_data((handed_)h, hand_mesh);
 	}
 }
 

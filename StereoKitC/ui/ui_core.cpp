@@ -317,7 +317,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	}
 	
 	if (out_button_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_button, id, ui_layout_last().center);
+		ui_play_sound_on_off(ui_vis_button, id, hierarchy_to_world_point(ui_layout_last().center));
 
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
@@ -404,7 +404,7 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 			
 			if (step.x != 0 || step.y != 0) {
 				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
+				ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out_button_center->x, out_button_center->y, window_relative_pos.z }));
 			} else {
 				// If no user specified step, then we'll do a set number of
 				// clicks across the whole bar.
@@ -414,7 +414,7 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 				int32_t new_quantize = (int32_t)(new_percent.x * click_steps + 0.5f) + (int32_t)(new_percent.y * click_steps + 0.5f) * 7000;
 
 				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, skui_interactors[*out_interactor].capsule_end_world);
+					ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out_button_center->x, out_button_center->y, window_relative_pos.z }));
 				}
 			}
 		}
@@ -685,7 +685,7 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		float         priority = 0;
 		vec3          interact_at;
 		bool          in_box   = interactor_check_box(actor, bounds, &interact_at, &priority);
-		button_state_ focus    = interactor_set_focus(actor, id, in_box || was_active, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
+		button_state_ focus    = interactor_set_focus(actor, id, in_box || (actor->type != interactor_type_point && was_active), priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
 		if (focus != button_state_inactive) {
 			*out_interactor           = i;
 			*out_focus_state          = focus;
