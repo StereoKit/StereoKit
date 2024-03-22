@@ -4,6 +4,8 @@
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
 #include "../asset_types/texture_.h"
+#include "../libraries/default_controller_l.h"
+#include "../libraries/default_controller_r.h"
 
 #include <string.h>
 
@@ -54,6 +56,8 @@ sound_t      sk_default_click;
 sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
+model_t      sk_default_controller_l;
+model_t      sk_default_controller_r;
 
 const spherical_harmonics_t sk_default_lighting = { {
 	{ 0.74f,  0.74f,  0.73f},
@@ -342,6 +346,11 @@ bool defaults_init() {
 	sound_set_id(sk_default_grab,    default_id_sound_grab);
 	sound_set_id(sk_default_ungrab,  default_id_sound_ungrab);
 
+	sk_default_controller_l = model_create_mem("sk::default_controller_l.glb", default_controller_l_glb, sizeof(default_controller_l_glb));
+	sk_default_controller_r = model_create_mem("sk::default_controller_r.glb", default_controller_r_glb, sizeof(default_controller_r_glb));
+	model_set_id(sk_default_controller_l, default_id_model_controller_l);
+	model_set_id(sk_default_controller_r, default_id_model_controller_r);
+
 	return true;
 }
 
@@ -351,6 +360,8 @@ void defaults_shutdown() {
 	tex_set_error_fallback  (nullptr);
 	tex_set_loading_fallback(nullptr);
 
+	model_release   (sk_default_controller_l);
+	model_release   (sk_default_controller_r);
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	sound_release   (sk_default_grab);

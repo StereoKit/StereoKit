@@ -2367,6 +2367,8 @@ SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";
 SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
+SK_CONST char *default_id_model_controller_l   = "default/model_controller_l";
+SK_CONST char *default_id_model_controller_r   = "default/model_controller_r";
 
 #ifdef __cplusplus
 } // namespace sk

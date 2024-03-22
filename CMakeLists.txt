@@ -1,8 +1,9 @@
+# SPDX-License-Identifier: MIT
 # Copyright 2021, Collabora, Ltd.
 # Copyright Moses Turner, 2021.
-# Copyright Nick Klingensmith, 2021.
+# Copyright (c) 2021-2024 Nick Klingensmith
+# Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 # Many thanks to Ryan Pavlik for showing the way
-# SPDX-License-Identifier: MIT
 
 # This build file has the following options
 # - SK_MULTITHREAD_BUILD_BY_DEFAULT
@@ -273,6 +274,8 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/default_controller_l.h
+  StereoKitC/libraries/default_controller_r.h
   StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h

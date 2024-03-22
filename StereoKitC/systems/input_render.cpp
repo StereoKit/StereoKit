@@ -128,7 +128,7 @@ void input_render_step_late() {
 		} else if (source == hand_source_simulated) {
 			const controller_t* control = input_controller((handed_)i);
 			if ((control->tracked & button_state_active) != 0) {
-				render_add_mesh(sk_default_cube, sk_default_material, matrix_trs(control->pose.position, control->pose.orientation, {0.03f,0.08f,0.03f}), color128{ 1,1,1,1 });
+				render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(control->pose.position, control->pose.orientation));
 			}
 		} else if (source == hand_source_overridden) {
 			const hand_t* hand = input_hand((handed_)i);

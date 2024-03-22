@@ -517,6 +517,12 @@
     <ClInclude Include="systems\input_render.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\default_controller_r.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\default_controller_l.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
