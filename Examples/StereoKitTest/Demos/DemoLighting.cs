@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 using StereoKit;
 using System;
@@ -19,9 +19,9 @@ enum LightMode
 	Image,
 }
 
-class DemoSky : ITest
+class DemoLighting : ITest
 {
-	string title       = "Sky Editor";
+	string title       = "Lighting Editor";
 	string description = "";
 
 	static List<Light> lights         = new List<Light>();
@@ -93,8 +93,10 @@ class DemoSky : ITest
 		UI.Handle("Preview", ref previewPose, previewModel.Bounds*0.1f);
 		previewModel.Draw(previewPose.ToMatrix(0.1f));
 
-		Hierarchy.Push(lightToolPose.ToMatrix());
-		lightMesh.Draw(lightProbeMat, Matrix.TS(Vec3.Zero, 0.04f));
+		UI.Handle("Light Tool", ref lightToolPose, new Bounds(Vec3.One * 0.12f));
+		Hierarchy.Push(Matrix.T(lightToolPose.position));
+		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
+		DrawSH(Renderer.SkyLight, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)
 		{ 
 			bool needsUpdate = false;
@@ -112,6 +114,29 @@ class DemoSky : ITest
 		}
 
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.08f), V.XYZ(.7f, .3f, 0.1f)));
+	}
+
+	static void DrawSH(SphericalHarmonics sh, float min, float max, int sampleCount = 512, float sampleSize = 0.001f)
+	{
+		float range = max - min;
+		float phi   = (float)(Math.PI * (3.0f - Math.Sqrt(5)));
+		float y, r, theta;
+
+		for (int i = 0; i < sampleCount; i++)
+		{
+			y     = 1 - (i / (float)(sampleCount - 1)) * 2;  // y goes from 1 to -1
+			r     = (float)Math.Sqrt(1 - y * y);             // radius at y
+			theta = phi * i;                                 // golden angle increment
+
+			Vec3 dir = new Vec3((float)Math.Cos(theta) * r, y, (float)Math.Sin(theta) * r);
+			Color c = sh.Sample(dir);
+
+			// Get intensity as grayscale, would be better as some perceptual
+			// brightness.
+			float intensity = c.r * 0.3f + c.g * 0.59f + c.b * 0.11f;
+
+			Mesh.Cube.Draw(Material.Unlit, Matrix.TS(dir * (min + range * intensity), sampleSize), c);
+		}
 	}
 
 	bool LightHandle(int i)
