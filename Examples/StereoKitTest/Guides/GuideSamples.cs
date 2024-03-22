@@ -34,12 +34,6 @@
 ///
 /// ![Device]({{site.screen_url}}/Demos/Device.jpg)
 ///
-/// ## [Disabled UI Elements](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoDisabledUI.cs)
-/// 
-/// UI elements are interactive and usually have actions associated with them. Some usecase requires elements to be disabled and Stereokit supports disabled elements and doesn't trigger the corresponding action associated with the elements on interaction.
-///
-/// ![Disabled UI Elements]({{site.screen_url}}/Demos/DisabledUIElements.jpg)
-///
 /// ## [Eye Tracking](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoEyes.cs)
 /// 
 /// If the hardware supports it, and permissions are granted, eye tracking is as simple as grabbing Input.Eyes!
