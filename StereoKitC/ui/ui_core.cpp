@@ -142,7 +142,7 @@ void ui_core_hands_step() {
 		interactor_update(skui_hand_interactors[i*3 + 1],
 			hand->fingers[0][4].position, hand->fingers[1][4].position, hand->fingers[1][4].radius,
 			hand->pinch_pt,    hand->palm.orientation, hand->pinch_pt,
-			pinch_state,       track_state);
+			hand->pinch_state, hand->tracked_state);
 
 		// Hand ray
 		if (ui_far_interact_enabled()) {
