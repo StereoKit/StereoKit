@@ -37,6 +37,8 @@ extern font_t       sk_default_font;
 extern text_style_t sk_default_text_style;
 extern sound_t      sk_default_click;
 extern sound_t      sk_default_unclick;
+extern model_t      sk_default_controller_l;
+extern model_t      sk_default_controller_r;
 
 extern const spherical_harmonics_t sk_default_lighting;
 

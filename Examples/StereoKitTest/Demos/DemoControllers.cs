@@ -28,7 +28,7 @@ class DemoControllers : ITest
 		ShowController(Handed.Right);
 		ShowController(Handed.Left);
 
-		UI.WindowBegin("Controller Info", ref windowPose, new Vec2(0.3f,0));
+		UI.WindowBegin("Controller Info", ref windowPose, new Vec2(0.4f,0));
 		if (UI.Radio("Left",  activeHand == Handed.Left )) activeHand = Handed.Left;
 		UI.SameLine();
 		if (UI.Radio("Right", activeHand == Handed.Right)) activeHand = Handed.Right;

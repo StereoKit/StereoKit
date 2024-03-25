@@ -2048,6 +2048,8 @@ SK_API void                  input_hand_override     (handed_ hand, const hand_j
 SK_API hand_source_          input_hand_source       (handed_ hand);
 SK_API const controller_t*   input_controller        (handed_ hand);
 SK_API button_state_         input_controller_menu   (void);
+SK_API void                  input_controller_model_set(handed_ hand, model_t model);
+SK_API model_t               input_controller_model_get(handed_ hand);
 SK_API const pose_t*         input_head              (void);
 SK_API const pose_t*         input_eyes              (void);
 SK_API button_state_         input_eyes_tracked      (void);
@@ -2367,6 +2369,8 @@ SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";
 SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
+SK_CONST char *default_id_model_controller_l   = "default/model_controller_l";
+SK_CONST char *default_id_model_controller_r   = "default/model_controller_r";
 
 #ifdef __cplusplus
 } // namespace sk
