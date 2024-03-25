@@ -46,7 +46,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	float3 normal = normalize(mul(input.norm, (float3x3) world_mat));
 	o.pos   = mul(world, sk_viewproj[o.view_id]);
 	o.world = world.xyz;
-	o.color = lerp(color, sk_inst[id].color, input.color.a) * sk_lighting(normal);
+	o.color = lerp(color.rgb, sk_inst[id].color.rgb, input.color.a) * sk_lighting(normal);
 	return o;
 }
 
