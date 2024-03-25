@@ -147,7 +147,7 @@ void ui_core_hands_step() {
 		// Hand ray
 		if (ui_far_interact_enabled()) {
 			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
-			float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
+			float ray_dist  = math_lerp(0.35f, 0.20f, math_saturate((hand_dist-0.1f) / 0.4f));
 			interactor_update(skui_hand_interactors[i*3 + 2],
 				aim_pos + aim_dir * ray_dist, aim_pos + aim_dir * 100, 0.01f,
 				aim_pos,  aim_ray.orientation, input_head()->position + vec3{0,-0.12f,0},
