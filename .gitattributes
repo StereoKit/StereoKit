@@ -1,3 +1,17 @@
 StereoKitC/libraries/* linguist-vendored
 StereoKitC/lib/** linguist-vendored
 Tools/** -linguist-detectable
+
+* text=auto
+
+*.sln text eol=crlf
+*.bat text eol=crlf
+*.sh text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.glb binary
+*.gltf binary
+*.exe binary
+*.ttf binary
