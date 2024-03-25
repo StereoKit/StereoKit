@@ -101,7 +101,7 @@ $dependencies = @(
         'openxr_loader', 
         'https://github.com/KhronosGroup/OpenXR-SDK.git',
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
-        @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+        @(  [FolderCopy]::new('src\loader\[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\openxr\', "[libfolder]\include\openxr\", $false, @('h'))),
         $null
     )
