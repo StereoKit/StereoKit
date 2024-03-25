@@ -803,9 +803,9 @@ void line_line_closest_point_tdist(vec3 line_start, vec3 line_end, vec3 other_li
 	float denom = v21 * v21 - v22 * v11;
 
 	float s, t;
-	if (fabsf(denom) < 1e-6) {
+	if (fabsf(denom) < 1e-6f) {
 		s = 0.;
-		t = (v11 * s - v21_1) / (v21 != 0 ? v21 : 1e-6); // Avoid division by zero
+		t = (v11 * s - v21_1) / (v21 != 0 ? v21 : 1e-6f); // Avoid division by zero
 	} else {
 		s = ( v21_2 * v21 - v22 * v21_1) / denom;
 		t = (-v21_1 * v21 + v11 * v21_2) / denom;

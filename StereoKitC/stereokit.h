@@ -1645,7 +1645,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
-SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, char** keyboard_layout, int layouts_num);
+SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** keyboard_layout, int layouts_num);
 
 ///////////////////////////////////////////
 

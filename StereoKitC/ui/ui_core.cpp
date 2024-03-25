@@ -109,7 +109,7 @@ void ui_show_ray(int32_t interactor, float *ref_length) {
 		float d     = pct * length;
 
 		float pct_i = 1 - pct;
-		float curve = sin(pct_i * pct_i * 3.14159f);
+		float curve = sinf(pct_i * pct_i * 3.14159f);
 		float width = (0.002f + curve * 0.0015f) * width_mod;
 		pts[i] = line_point_t{ actor->position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*width_mod*255) } };
 	}
@@ -146,11 +146,11 @@ void ui_core_hands_step() {
 
 		// Hand ray
 		if (ui_far_interact_enabled()) {
-			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12,0});
+			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
 			float ray_dist  = math_lerp(0.35f, 0.15f, math_saturate((hand_dist-0.1f) / 0.4f));
 			interactor_update(skui_hand_interactors[i*3 + 2],
 				aim_pos + aim_dir * ray_dist, aim_pos + aim_dir * 100, 0.01f,
-				aim_pos,  aim_ray.orientation, input_head()->position + vec3{0,-0.12,0},
+				aim_pos,  aim_ray.orientation, input_head()->position + vec3{0,-0.12f,0},
 				pinch_state, track_state);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], &skui_ray_length[i]);
 		}
@@ -995,9 +995,9 @@ void ui_pop_id() {
 ///////////////////////////////////////////
 
 void ui_push_enabled(bool32_t enabled, bool32_t ignore_parent) {
-	skui_enabled_stack.add(ignore_parent == true
+	skui_enabled_stack.add(ignore_parent
 		? enabled
-		: (enabled == true && ui_is_enabled() == true));
+		: ((bool)enabled == true) && ((bool)ui_is_enabled() == true));
 }
 
 ///////////////////////////////////////////
