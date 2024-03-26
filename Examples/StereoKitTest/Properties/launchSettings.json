@@ -2,6 +2,7 @@
   "profiles": {
     "StereoKitTest": {
       "commandName": "Project",
+      "commandLineArgs": "-start TestDisabledUI -test",
       "nativeDebugging": true
     },
     "StereoKitTest Tests": {
