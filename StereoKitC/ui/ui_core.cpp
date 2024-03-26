@@ -33,7 +33,8 @@ int32_t skui_input_mode                 = 2;
 int32_t skui_hand_interactors[6]        = { -1, -1, -1, -1 };
 int32_t skui_mouse_interactor           = -1;
 float   skui_controller_trigger_last[2] = { 0, 0 };
-float   skui_ray_length[2]              = { 0, 0 };
+float   skui_ray_active[2]              = { 0, 0 };
+float   skui_ray_visible[2]             = { 0, 0 };
 
 ///////////////////////////////////////////
 
@@ -82,36 +83,51 @@ void ui_core_shutdown() {
 
 ///////////////////////////////////////////
 
-void ui_show_ray(int32_t interactor, float *ref_length) {
+void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_visible_amt, float *ref_active_amt) {
 	interactor_t* actor = &skui_interactors[interactor];
 	if ((actor->tracked & button_state_active) == 0) return;
 
-	float length         = 0.5f;
+	bool  actor_visible = hide_inactive == false || actor->focused_prev != 0;
+	float visibility    = 1;
+	if (ref_visible_amt != nullptr) {
+		*ref_visible_amt = math_lerp(*ref_visible_amt, actor_visible ? 1 : 0, 16.0f * time_stepf_unscaled());
+		visibility = *ref_visible_amt;
+	}
+	if (visibility < 0.001f) return;
+
+	float active = 0;
+	if (ref_active_amt != nullptr) {
+		*ref_active_amt = math_lerp(*ref_active_amt, actor->active_prev != 0 ? 1 : 0, 16.0f * time_stepf_unscaled());
+		active = *ref_active_amt;
+	}
+
+	float length         = 0.35f;
 	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->position);
 	vec3  centered_dir   = uncentered_dir;
 	if (actor->focused_prev != 0) {
-		length       = vec3_distance (actor->focus_center_world,  actor->position);
-		centered_dir = vec3_normalize(actor->focus_center_world - actor->position);
+		vec3 pt = actor->focus_center_world;
+		length       = vec3_distance (pt,  actor->position);
+		centered_dir = vec3_normalize(pt - actor->position);
 	}
-	if (ref_length != nullptr) {
-		*ref_length = math_lerp(*ref_length, actor->focused_prev == 0 ? 0: length, 16.0f * time_stepf_unscaled());
-		length = *ref_length;
-	}
-	if (length < 0.001f) return;
+	length = math_lerp(0.35f, length, visibility);
+	length = fmaxf(0, length - skip);
 
-	float width_mod = fminf(1,length/0.06f);
+	float alpha = 0.35f + active * 0.65f;
+	if (hide_inactive) alpha *= visibility;
 
 	const int32_t ct = 20;
 	line_point_t pts[ct];
 	for (int32_t i = 0; i < ct; i += 1) {
 		float pct   = (float)i / (float)(ct - 1);
-		float blend = pct * pct;
-		float d     = pct * length;
-
+		float blend = pct * pct * 0.2f;
+		float d     = skip + pct * length;
+		
 		float pct_i = 1 - pct;
-		float curve = sinf(pct_i * pct_i * 3.14159f);
-		float width = (0.002f + curve * 0.0015f) * width_mod;
-		pts[i] = line_point_t{ actor->position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*width_mod*255) } };
+		float curve = math_lerp(
+			sinf(pct_i * pct_i * 3.14159f),
+			fminf(1,sinf(pct * pct * 3.14159f)*1.5f), active);
+		float width = (0.0015f + curve * 0.002f) * visibility;
+		pts[i] = line_point_t{ actor->position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*alpha*255) } };
 	}
 	line_add_listv(pts, ct);
 }
@@ -152,7 +168,7 @@ void ui_core_hands_step() {
 				aim_pos + aim_dir * ray_dist, aim_pos + aim_dir * 100, 0.01f,
 				aim_pos,  aim_ray.orientation, input_head()->position + vec3{0,-0.12f,0},
 				pinch_state, track_state);
-			ui_show_ray(skui_hand_interactors[i*3 + 2], &skui_ray_length[i]);
+			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
 		}
 	}
 }
@@ -167,12 +183,12 @@ void ui_core_controllers_step() {
 
 		// controller ray
 		interactor_update(skui_hand_interactors[i*3 + 2],
-			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100, 0.01f,
+			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100, 0.005f,
 			ctrl->aim.position, ctrl->aim.orientation, input_head()->position,
 			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
 		skui_controller_trigger_last[i] = ctrl->trigger;
-		ui_show_ray(skui_hand_interactors[i*3 + 2], nullptr);
+		ui_show_ray(skui_hand_interactors[i*3 + 2], 0, false, &skui_ray_visible[i], &skui_ray_active[i]);
 	}
 }
 
@@ -301,7 +317,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 			out_finger_offset = -(interaction_at.z + actor->capsule_radius) - window_relative_pos.z;
 			pressed = out_finger_offset < button_activation_depth;
 		} else {
-			pressed = actor->pinch_state & button_state_active;
+			pressed = (actor->pinch_state & button_state_active) && actor->focused_prev == id;
 			if (pressed) out_finger_offset = 0;
 		}
 		out_finger_offset = fminf(fmaxf(2 * mm2m, out_finger_offset), button_depth);
