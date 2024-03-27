@@ -567,8 +567,10 @@ bool openxr_init() {
 	// Wait for the session to start before we do anything more with the 
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
-	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN)
+	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
+		platform_sleep(9);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
+	}
 	// Blank frames should only be submitted when the session is READY
 	while (xr_session_state == XR_SESSION_STATE_READY) {
 		openxr_blank_frame();
@@ -902,6 +904,8 @@ void openxr_step_end() {
 
 	if (xr_running)
 		openxr_render_frame();
+	else
+		platform_sleep(9);
 
 	xr_extension_structs_clear();
 	render_clear();
