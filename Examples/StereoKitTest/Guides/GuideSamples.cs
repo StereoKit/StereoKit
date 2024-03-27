@@ -6,6 +6,12 @@
 /// Here are a list of small demos that illustrate how
 /// certain parts of StereoKit works!
 ///
+/// ## [Anchors](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAnchors.cs)
+/// 
+/// This demo uses StereoKit's Anchor API to add, remove, and load spatial anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!
+///
+/// ![Anchors]({{site.screen_url}}/Demos/Anchors.jpg)
+///
 /// ## [Asset Enumeration](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAssets.cs)
 /// 
 /// If you need to take a peek at what's currently loaded, StereoKit has a couple tools in the Assets class!

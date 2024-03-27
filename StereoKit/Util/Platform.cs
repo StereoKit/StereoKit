@@ -53,6 +53,7 @@ namespace StereoKit
 		/// <summary>Replace the default keyboard type with a custom layout.</summary>
 		/// <param name="keyboardType">Type of keyboard.</param>
 		/// <param name="keyboardLayout">Custom keyboard layout to replace the defualt layout.</param>
+		/// <returns>True if keyboard type was swapped with the provided layout.</returns>
 		public static bool KeyboardSetLayout(TextContext keyboardType, string[] keyboardLayout)
 			=> NativeAPI.platform_keyboard_set_layout(keyboardType, keyboardLayout, keyboardLayout.Length);
 		#endregion
