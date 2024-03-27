@@ -1,7 +1,5 @@
 #include "stereokit.hlsli"
 
-//--name = sk/skybox
-
 struct vsIn {
 	float4 pos : SV_Position;
 };
@@ -15,16 +13,10 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
 	o.view_id = id % sk_view_count;
 	id        = id / sk_view_count;
-	o.pos     = float4(input.pos.xy, 0.99999, 1);
+	o.pos     = float4(input.pos.xy, 1, 1);
 
-	float4   proj_inv       = mul(o.pos, sk_proj_inv[o.view_id]);
-	float4x4 v              = sk_view[o.view_id];
-	float4x4 transpose_view = float4x4(
-		v._11, v._21, v._31, v._41,
-		v._12, v._22, v._32, v._42,
-		v._13, v._23, v._33, v._43,
-		v._14, v._24, v._34, v._44 );
-	o.norm = mul(float4(proj_inv.xyz, 0), transpose_view).xyz;
+	float4 proj_inv = mul(o.pos, sk_proj_inv[o.view_id]);
+	o.norm = mul(float4(proj_inv.xyz, 0), transpose(sk_view[o.view_id])).xyz;
 	return o;
 }
 

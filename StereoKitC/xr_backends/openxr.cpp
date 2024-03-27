@@ -7,7 +7,7 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #if defined(SK_XR_OPENXR)
 
@@ -26,11 +26,6 @@
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
-#include "../hands/input_hand.h"
-#include "../platforms/android.h"
-#include "../platforms/linux.h"
-#include "../platforms/uwp.h"
-#include "../platforms/win32.h"
 #include "../asset_types/anchor.h"
 
 #include <openxr/openxr.h>
@@ -186,8 +181,8 @@ bool openxr_create_system() {
 		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
 
 	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
-	init_android.applicationVM      = android_vm;
-	init_android.applicationContext = android_activity;
+	init_android.applicationVM      = backend_android_get_java_vm ();
+	init_android.applicationContext = backend_android_get_activity();
 	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
 		log_fail_reasonf(90, log_warning, "Failed to initialize OpenXR loader");
 		return false;
@@ -228,8 +223,8 @@ bool openxr_create_system() {
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #if defined(SK_OS_ANDROID)
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
-	create_android.applicationVM       = android_vm;
-	create_android.applicationActivity = android_activity;
+	create_android.applicationVM       = backend_android_get_java_vm ();
+	create_android.applicationActivity = backend_android_get_activity();
 	create_info.next = (void*)&create_android;
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
@@ -252,15 +247,12 @@ bool openxr_create_system() {
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
 		"xrGetInstanceProperties failed [%s]");
 
+	device_data.runtime = string_copy(inst_properties.runtimeName);
 	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
 		inst_properties.runtimeName,
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 		XR_VERSION_MINOR(inst_properties.runtimeVersion),
 		XR_VERSION_PATCH(inst_properties.runtimeVersion));
-
-	if (strstr(inst_properties.runtimeName, "Snapdragon") != nullptr) {
-		xr_ext_available.MSFT_hand_tracking_mesh = false; // Hand mesh doesn't currently show up, needs investigation
-	}
 
 	// Create links to the extension functions
 	xr_extensions = xrCreateExtensionTable(xr_instance);
@@ -350,6 +342,8 @@ XrTime openxr_acquire_time() {
 bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
+
+	device_data.display_type = display_type_stereo;
 
 	// A number of other items also use the xr_time, so lets get this ready
 	// right away.
@@ -506,8 +500,8 @@ bool openxr_init() {
 
 		// The Leap hand tracking layer seems to supercede the built-in extensions.
 		if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-			if (strcmp(inst_properties.runtimeName, "Windows Mixed Reality Runtime") == 0 ||
-				strcmp(inst_properties.runtimeName, "SteamVR/OpenXR") == 0) {
+			if (strcmp(device_get_runtime(), "Windows Mixed Reality Runtime") == 0 ||
+				strcmp(device_get_runtime(), "SteamVR/OpenXR") == 0) {
 				log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
 				xr_has_articulated_hands = false;
 				xr_has_hand_meshes       = false;
@@ -573,8 +567,10 @@ bool openxr_init() {
 	// Wait for the session to start before we do anything more with the 
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
-	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN)
+	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
+		platform_sleep(9);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
+	}
 	// Blank frames should only be submitted when the session is READY
 	while (xr_session_state == XR_SESSION_STATE_READY) {
 		openxr_blank_frame();
@@ -896,7 +892,8 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	if (xr_running)
 		openxr_poll_actions();
-
+	input_step();
+	
 	anchors_step_begin();
 }
 
@@ -907,6 +904,8 @@ void openxr_step_end() {
 
 	if (xr_running)
 		openxr_render_frame();
+	else
+		platform_sleep(9);
 
 	xr_extension_structs_clear();
 	render_clear();
@@ -938,15 +937,23 @@ bool openxr_poll_events() {
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
 				begin_info.primaryViewConfigurationType = XR_PRIMARY_CONFIG;
 
-				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
-				if (xr_display_types.count > 1) {
-					secondary.next                          = nullptr;
-					secondary.viewConfigurationCount        = xr_display_types.count-1;
-					secondary.enabledViewConfigurationTypes = &xr_display_types[1];
+				// If the XR_MSFT_first_person_observer extension is present,
+				// we may have a secondary display we need to enable. This is
+				// typically the HoloLens video recording or streaming feature.
+				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary      = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
+				XrViewConfigurationType                          secondary_type = XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
+				if (xr_ext_available.MSFT_first_person_observer && xr_view_type_valid(secondary_type)) {
+					secondary.viewConfigurationCount        = 1;
+					secondary.enabledViewConfigurationTypes = &secondary_type;
 					begin_info.next = &secondary;
 				}
 
-				xrBeginSession(xr_session, &begin_info);
+				XrResult xresult = xrBeginSession(xr_session, &begin_info);
+				if (XR_FAILED(xresult)) {
+					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
+					sk_quit(quit_reason_session_lost);
+					result = false;
+				}
 
 				// FoV normally updates right before drawing, but we need it to
 				// be available as soon as the session begins, for apps that
@@ -958,11 +965,11 @@ bool openxr_poll_events() {
 				log_diag("OpenXR session begin.");
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break;
-			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; result = false; break;
-			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
-			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(); result = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_quit(); result = false; break;
+			case XR_SESSION_STATE_STOPPING    : xrEndSession(xr_session); xr_running = false; result = false; break;
+			case XR_SESSION_STATE_VISIBLE     : break; // In this case, we can't recieve input. For now pretend it's not happening.
+			case XR_SESSION_STATE_FOCUSED     : break; // This is probably the normal case, so everything can continue!
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost); result = false; break;
+			case XR_SESSION_STATE_EXITING     : sk_quit(quit_reason_session_lost); result = false; break;
 			default: break;
 			}
 		} break;
@@ -972,9 +979,9 @@ bool openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit(); result = false; break;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING         : sk_quit(quit_reason_session_lost); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
-			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+			XrEventDataReferenceSpaceChangePending *pending   = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 
 			// Update the main app space. In particular, some fallback spaces
 			// may require recalculation.

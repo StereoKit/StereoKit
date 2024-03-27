@@ -41,10 +41,10 @@
 		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so" />
 		<None
 			Visible="false"
-			Condition="'$(OS)'!='Windows_NT' and Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.sym')"
+			Condition="'$(OS)'!='Windows_NT' and Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so.dbg')"
 			CopyToOutputDirectory="PreserveNewest"
-			Link="runtimes\linux-x64\native\libStereoKitC.sym"
-			Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.sym" />
+			Link="runtimes\linux-x64\native\libStereoKitC.so.dbg"
+			Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so.dbg" />
 	</ItemGroup>
 
 	<!-- Error out if StereoKitC hasn't successfully built! -->

@@ -1,20 +1,20 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2023 Nick Klingensmith
+ * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_layout.h"
 #include "ui_theming.h"
 #include "ui_core.h"
 #include "../stereokit_ui.h"
-#include "../_stereokit_ui.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
-#include "../systems/input.h"
-#include "../systems/input_keyboard.h"
-#include "../platforms/platform_utils.h"
-#include "../hands/input_hand.h"
-#include "../libraries/ferr_hash.h"
+#include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 
 #include <math.h>
-#include <float.h>
 
 ///////////////////////////////////////////
 
@@ -23,16 +23,19 @@ namespace sk {
 bool32_t skui_enable_far_interact;
 ui_move_ skui_system_move_type;
 
-uint64_t skui_input_target;
-int32_t  skui_input_carat;
-int32_t  skui_input_carat_end;
-float    skui_input_blink;
+id_hash_t skui_input_target;
+bool32_t  skui_input_target_confirmed;
+int32_t   skui_input_carat;
+int32_t   skui_input_carat_end;
+float     skui_input_blink;
 
 // Button activation animations all use the same values
 const float    skui_anim_duration  = 0.2f;
 const float    skui_anim_overshoot = 10;
+const float    skui_anim_focus_duration = 0.1f;
 const float    skui_pressed_depth  = 0.4f;
 const color128 skui_color_border   = { 1,1,1,1 };
+const float    skui_aura_radius    = 0.02f;
 
 ///////////////////////////////////////////
 
@@ -69,12 +72,19 @@ void ui_step() {
 	ui_theming_update();
 
 	ui_push_surface(pose_identity);
+
+	skui_input_target_confirmed = false;
 }
 
 ///////////////////////////////////////////
 
 void ui_step_late() {
 	ui_pop_surface();
+
+	// If the active input target was not confirmed to exist, we should drop
+	// input focus.
+	if (skui_input_target_confirmed == false && skui_input_target != 0)
+		skui_input_target = 0;
 
 	//if (skui_layers                 .count != 0) log_errf("ui: Mismatching number of %s calls!", "Begin/End");
 	//if (skui_id_stack               .count != 1) log_errf("ui: Mismatching number of %s calls!", "id push/pop");
@@ -129,7 +139,7 @@ void ui_hseparator() {
 	vec2 size;
 	ui_layout_reserve_sz({ 0, text_style_get_char_height(ui_get_text_style())*0.4f }, false, &pos, &size);
 
-	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, ui_color_primary, 0);
+	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
 }
 
 ///////////////////////////////////////////
@@ -222,15 +232,13 @@ void ui_image(sprite_t image, vec2 size) {
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw_at(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
 }
 
 ///////////////////////////////////////////
-
 template<typename C>
-void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset) {
+void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset, color128 image_tint) {
 	float pad2       = skui_settings.padding * 2;
-	float pad2gutter = pad2 + skui_settings.gutter;
 	float depth      = finger_offset + 2 * mm2m;
 	vec3  image_at   = {};
 	float image_size;
@@ -281,10 +289,10 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	}
 
 	if (image_size>0 && image) {
-		color128 final_color = skui_tint;
+		color128 final_color = image_tint;
 		if (!ui_is_enabled()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 	
-		sprite_draw_at(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
+		sprite_draw(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
 	}
 	if (image_layout != ui_btn_layout_center_no_text)
 		ui_text_in(text, text_align, text_layout, text_fit_squeeze, text_at, text_size);
@@ -310,58 +318,66 @@ vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_lay
 }
 
 ///////////////////////////////////////////
-
 template<typename C>
 bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
+	return ui_button_img_at_g(text, image, image_layout, window_relative_pos, size, skui_tint);
+}
+
+template<typename C>
+bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) {
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
-	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
-	return state & button_state_just_active;
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
+	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
+
+	return state & button_state_just_inactive;
 }
-bool32_t ui_button_img_at   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char    >(text, image, image_layout, window_relative_pos, size); }
-bool32_t ui_button_img_at   (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
-bool32_t ui_button_img_at_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size); }
+
+bool32_t ui_button_img_at   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) { return ui_button_img_at_g<char    >(text, image, image_layout, window_relative_pos, size, image_tint); }
+bool32_t ui_button_img_at   (const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size, image_tint); }
+bool32_t ui_button_img_at_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size, color128 image_tint) { return ui_button_img_at_g<char16_t>(text, image, image_layout, window_relative_pos, size, image_tint); }
 
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_layout) {
+bool32_t ui_button_img_g(const C *text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) {
 	vec3 final_pos;
 	vec2 final_size;
 	vec2 size = _ui_button_img_size(text, image, image_layout);
 
 	ui_layout_reserve_sz(size, true, &final_pos, &final_size);
-	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size, image_tint);
 }
-bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char    >(text, image, image_layout); }
-bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout) { return ui_button_img_g<char16_t>(text, image, image_layout); }
+bool32_t ui_button_img   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_g<char    >(text, image, image_layout, image_tint); }
+bool32_t ui_button_img_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, color128 image_tint) { return ui_button_img_g<char16_t>(text, image, image_layout, image_tint); }
 
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) {
+bool32_t ui_button_img_sz_g(const C *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint) {
 	vec3 final_pos;
 	vec2 final_size;
 
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
-	return ui_button_img_at(text, image, image_layout, final_pos, final_size);
+	return ui_button_img_at(text, image, image_layout, final_pos, final_size, image_tint);
 }
-bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char    >(text, image, image_layout, size); }
-bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size); }
+bool32_t ui_button_img_sz   (const char     *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint /*= color128{ 1,1,1,1 }*/) { return ui_button_img_sz_g<char    >(text, image, image_layout, size, image_tint); }
+bool32_t ui_button_img_sz_16(const char16_t *text, sprite_t image, ui_btn_layout_ image_layout, vec2 size, color128 image_tint) { return ui_button_img_sz_g<char16_t>(text, image, image_layout, size, image_tint); }
 
 ///////////////////////////////////////////
 
@@ -383,29 +399,32 @@ bool32_t ui_button_16(const char16_t *text) { return ui_button_img_16(text, null
 
 template<typename C>
 bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) {
-	uint64_t      id = ui_stack_hash(text);
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	if (state & button_state_just_active) {
+	if (state & button_state_just_inactive) {
 		pressed = pressed ? false : true;
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-	float activation = 1 - (finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_color_common, fmaxf(activation, color_blend));
-	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset);
 
-	return state & button_state_just_active;
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
+	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
+	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
+
+	return state & button_state_just_inactive;
 }
 bool32_t ui_toggle_img_at   (const char*     text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char    >(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
 bool32_t ui_toggle_img_at   (const char16_t* text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char16_t>(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
@@ -458,27 +477,29 @@ bool32_t ui_toggle_sz_16(const char16_t* text, bool32_t& pressed, vec2 size) { r
 
 template<typename C>
 bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relative_pos, float diameter) {
-	uint64_t      id = ui_stack_hash(text);
+	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
-		ui_anim_start(id);
+		ui_anim_start(id, 0);
 	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = 1-(finger_offset / skui_settings.depth);
-	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_color_common, fmaxf(activation, color_blend));
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
+	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, fmaxf(activation, color_blend));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
-	sprite_draw_at(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
 
-	return state & button_state_just_active;
+	return state & button_state_just_inactive;
 }
 bool32_t ui_button_round_at   (const char     *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char    >(text, image, window_relative_pos, diameter); }
 bool32_t ui_button_round_at   (const char16_t *text, sprite_t image, vec3 window_relative_pos, float diameter) { return ui_button_round_at_g<char16_t>(text, image, window_relative_pos, diameter); }
@@ -535,17 +556,17 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 
-	uint64_t id_hash  = ui_stack_hash(id);
-	bool     result   = false;
-	vec3     box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
+	id_hash_t id_hash  = ui_stack_hash(id);
+	bool      result   = false;
+	vec3      box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
 
 	// Find out if the user is trying to focus this UI element
 	float         finger_offset;
-	int32_t       hand;
+	int32_t       interactor;
 	button_state_ state, focus;
-	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &hand);
+	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &interactor);
 
-	if (state & button_state_just_active) {
+	if (state & button_state_just_inactive) {
 		platform_keyboard_show(true,type);
 		skui_input_blink  = time_totalf_unscaled();
 		skui_input_target = id_hash;
@@ -553,10 +574,10 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	if (state & button_state_just_active)
-		ui_anim_start(id_hash);
+		ui_anim_start(id_hash, 0);
 	float color_blend = skui_input_target == id_hash ? 1.0f : 0.0f;
-	if (ui_anim_has(id_hash, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id_hash, skui_anim_duration);
+	if (ui_anim_has(id_hash, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id_hash, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
@@ -631,14 +652,16 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	// Render the input UI
-	vec2 text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
-	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_color_common, color_blend);
+	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
+	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
+	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
 
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
 	if (type == text_context_password) {
 		size_t len          = utf_charlen(buffer);
-		C*     password_txt = (C*)alloca(sizeof(C) * (len + 1));
+		C*     password_txt = sk_stack_alloc_t(C, len + 1);
 		for (size_t i = 0; i < len; i++)
 			password_txt[i] = '*';
 		password_txt[len] = '\0';
@@ -647,6 +670,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// If the input is focused, display text selection information
 	if (skui_input_target == id_hash) {
+		// Confirm that the input target still exists
+		skui_input_target_confirmed = true;
+
 		// Advance the displayed text if it's off the right side of the input
 		text_style_t style = ui_get_text_style();
 
@@ -674,7 +700,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 		// Show a blinking text carat
 		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
-			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, ui_color_text, 0);
+			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, 0);
 		}
 	}
 
@@ -711,17 +737,17 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	float bar_length = math_saturate(percent) * size.x;
 	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
-		ui_draw_el(ui_vis_slider_line,
+		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_inactive,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
-			ui_color_common, focus);
+			focus);
 		hierarchy_pop();
 		return;
 	} else if (bar_length >= size.x-min_size.x) {
-		ui_draw_el(ui_vis_slider_line,
+		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_active,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
-			ui_color_primary, focus);
+			focus);
 		hierarchy_pop();
 		return;
 	}
@@ -730,18 +756,18 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	ui_draw_el(ui_vis_slider_line_active,
 		vec3{ 0,          bar_y,      0 },
 		vec3{ bar_length, bar_height, bar_depth },
-		ui_color_primary, focus);
+		focus);
 	ui_draw_el(ui_vis_slider_line_inactive,
 		vec3{        - bar_length, bar_y,      0 },
 		vec3{ size.x - bar_length, bar_height, bar_depth },
-		ui_color_common, focus);
+		focus);
 	hierarchy_pop();
 }
 
 ///////////////////////////////////////////
 
 void ui_progress_bar_at(float percent, vec3 start_pos, vec2 size) {
-	ui_progress_bar_at_ex(percent, start_pos, size, 1, false);
+	ui_progress_bar_at_ex(percent, start_pos, size, 0, false);
 }
 
 ///////////////////////////////////////////
@@ -756,272 +782,104 @@ void ui_progress_bar(float percent, float width) {
 
 ///////////////////////////////////////////
 
-template<typename C, typename N>
-bool32_t ui_slider_at_g(bool vertical, const C *id_text, N &value, N min, N max, N step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
-	uint64_t id     = ui_stack_hash(id_text);
-	bool     result = false;
+template<typename C>
+bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+	id_hash_t id = ui_stack_hash(id_text);
 
-	const float snap_scale = 1;
-	const float snap_dist  = 7*cm2m;
-
-	float size_min = vertical ? size.x : size.y;
-
-	// Find sizes of slider elements
-	float percent      = (float)((value - min) / (max - min));
-	float button_depth = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
-	float rule_size    = fmaxf(skui_settings.padding, size_min / 6.f);
-	vec2  button_size  = confirm_method == ui_confirm_push
+	float button_depth  = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
+	float size_min    = vertical ? size.x : size.y;
+	float rule_size   = fmaxf(skui_settings.padding, size_min / 6.f);
+	vec2  button_size = confirm_method == ui_confirm_push
 		? vec2{ size_min / 2, size_min / 2 }
 		: (vertical
 			? vec2{ size_min, size_min / 4 }
-			: vec2{ size_min / 4, size_min } );
+			: vec2{ size_min / 4, size_min });
 
-	// Activation bounds sizing
-	float activation_plane = button_depth + skui_finger_radius;
+	button_state_ active_state;
+	button_state_ focus_state;
+	int32_t       interactor;
+	vec2          button_center;
+	float         finger_offset;
+	float         old_value = value;
 
-	// Set up for getting the state of the sliders.
-	button_state_ focus_state   = button_state_inactive;
-	button_state_ button_state  = button_state_inactive;
-	float         finger_offset = button_depth;
-	float         finger_at     = 0;
-	int32_t       hand          = -1;
-	if (confirm_method == ui_confirm_push) {
-		vec3  activation_start = vertical
-			? window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2) + button_size.x / 2.0f, percent * -(size.y-button_size.y) + button_size.y/2.0f, -activation_plane }
-			: window_relative_pos + vec3{ percent * -(size.x-button_size.x) + button_size.x/2.0f, -(size.y/2 - button_size.y/2) + button_size.y/2.0f, -activation_plane };
-		vec3  activation_size = vec3{ button_size.x*2, button_size.y*2, 0.0001f };
-		vec3  sustain_size    = vec3{ size.x + 2*skui_finger_radius, size.y + 2*skui_finger_radius, activation_plane + 6*skui_finger_radius  };
-		vec3  sustain_start   = window_relative_pos + vec3{ skui_finger_radius, skui_finger_radius, -activation_plane + sustain_size.z };
+	vec2 vmin, vmax, vstep, vval;
+	if (vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
+	else          { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
+	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &focus_state, &active_state, &interactor);
+	value = vertical ? vval.y : vval.x;
 
-		ui_box_interaction_1h_poke(id,
-			activation_start, activation_size,
-			sustain_start,    sustain_size,
-			&focus_state, &hand);
-
-		// Here, we allow for pressing or pinching of the button to activate
-		// the slider!
-		if (hand != -1) {
-			const hand_t* h     = input_hand((handed_)hand);
-			button_state_ pinch = h->pinch_state;
-
-			finger_offset = -skui_hand[hand].finger.z - window_relative_pos.z;
-			bool pressed  = finger_offset < button_depth / 2;
-			finger_offset = fminf(fmaxf(2 * mm2m, finger_offset), button_depth);
-
-			button_state = ui_active_set(hand, id, pinch & button_state_active || pressed);
-			// Focus can get lost if the user is dragging outside the box, so set
-			// it to focused if it's still active.
-			focus_state = ui_focus_set(hand, id, pinch & button_state_active || focus_state & button_state_active, 0);
-
-			finger_at = vertical ? skui_hand[hand].finger.y : skui_hand[hand].finger.x;
-		}
-	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		vec3 activation_start;
-		vec3 activation_size;
-		if (vertical) {
-			activation_start = window_relative_pos + vec3{ -(size.x / 2 - button_size.x / 2), percent * -(size.y - button_size.y) + button_size.y, button_depth };
-			activation_size  = vec3{ button_size.x, button_size.y * 3, button_depth * 2 };
-		} else {
-			activation_start = window_relative_pos + vec3{ percent * -(size.x - button_size.x) + button_size.x, -(size.y / 2 - button_size.y / 2), button_depth };
-			activation_size  = vec3{ button_size.x * 3, button_size.y, button_depth * 2 };
-		}
-
-		ui_box_interaction_1h_pinch(id,
-			activation_start, activation_size,
-			activation_start, activation_size,
-			&focus_state, &hand);
-
-		// Pinch confirm uses a handle that the user must pinch, in order to
-		// drag it around the slider.
-		if (hand != -1) {
-			const hand_t *h     = input_hand((handed_)hand);
-			button_state_ pinch = h->pinch_state;
-			button_state = ui_active_set(hand, id, pinch & button_state_active);
-			// Focus can get lost if the user is dragging outside the box, so set
-			// it to focused if it's still active.
-			focus_state = ui_focus_set(hand, id, button_state & button_state_active || focus_state & button_state_active, 0);
-			vec3    pinch_local = hierarchy_to_local_point(h->pinch_pt);
-			int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-			finger_at = vertical ? pinch_local.y : pinch_local.x;
-
-			if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-				finger_at = finger_at / (1 + scale_step * snap_scale);
-			}
-		}
-	}
-
-	if (button_state & button_state_active) {
-		float pos_in_slider = vertical
-			? (float)fmin(1, fmax(0, ((window_relative_pos.y-button_size.y/2)-finger_at) / (size.y-button_size.y)))
-			: (float)fmin(1, fmax(0, ((window_relative_pos.x-button_size.x/2)-finger_at) / (size.x-button_size.x)));
-		N new_val = (N)min + (N)pos_in_slider*(N)(max-min);
-		if (step != 0) {
-			new_val = min + ((int)(((new_val - min) / step) + (N)0.5)) * step;
-		}
-		result  = value != new_val;
-		percent = (float)((new_val - min) / (max - min));
-
-		// Play tick sound as the value updates
-		if (result) {
-			
-			if (step != 0) {
-				// Play on every change if there's a user specified step value
-				ui_play_sound(ui_vis_slider_line, skui_hand[hand].finger_world);
-			} else {
-				// If no user specified step, then we'll do a set number of
-				// clicks across the whole bar.
-				const int32_t click_steps = 10;
-
-				float   old_percent  = (float)((value - min) / (max - min));
-				int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
-				int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
-
-				if (old_quantize != new_quantize) {
-					ui_play_sound(ui_vis_slider_line, skui_hand[hand].finger_world);
-				}
-			}
-		}
-
-		// Do this down here so we can calculate old_percent above
-		value = new_val;
-	}
-
-	if (button_state & button_state_just_active)
-		ui_anim_start(id);
+	if (active_state & button_state_just_active)
+		ui_anim_start(id, 0);
 	float color_blend = focus_state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, skui_anim_duration);
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
 	// Draw the UI
-	float x           = window_relative_pos.x;
-	float y           = window_relative_pos.y;
-	float slide_x_rel = 0;
-	float slide_y_rel = 0;
-	if (vertical) {
-		slide_x_rel = (size.x - button_size.x) / 2;
-		slide_y_rel = (float)(percent * (size.y - button_size.y));
-	} else {
-		slide_x_rel = (float)(percent * (size.x - button_size.x));
-		slide_y_rel = (size.y - button_size.y) / 2;
-	}
-
+	float percent = (value - min) / (max - min);
 	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend, vertical);
-
-	if (confirm_method == ui_confirm_push) {
-		ui_draw_el(ui_vis_slider_push,
-			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
-			vec3{button_size.x, button_size.y, fmaxf(finger_offset,rule_size*skui_pressed_depth +mm2m)},
-			ui_color_primary, color_blend);
-	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
-		ui_draw_el(ui_vis_slider_pinch,
-			vec3{x - slide_x_rel, y - slide_y_rel, window_relative_pos.z},
-			vec3{button_size.x, button_size.y, button_depth},
-			ui_color_primary, color_blend);
-
-		vec3 pinch_local = hand < 0
-			? vec3_zero
-			: hierarchy_to_local_point(input_hand((handed_)hand)->pinch_pt);
-		int32_t scale_step  = (int32_t)((-pinch_local.z-activation_plane) / snap_dist);
-		if (confirm_method == ui_confirm_variable_pinch && button_state & button_state_active && scale_step > 0) {
-			float scale     = 1 + scale_step * snap_scale;
-			float z         = -activation_plane - (scale_step * snap_dist) + button_depth/2;
-			float scaled_at = vertical
-				? y+size.y*(scale-1)*0.5f
-				: x+size.x*(scale-1)*0.5f;
-			
-			if (vertical) {
-				float connector_x = (x-slide_x_rel) - size_min * 0.5f;
-				line_add({ connector_x, y,        window_relative_pos.z}, { connector_x, scaled_at,              window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-				line_add({ connector_x, y-size.y, window_relative_pos.z}, { connector_x, scaled_at-size.y*scale, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			} else {
-				float connector_y = (y-slide_y_rel) - size_min * 0.5f;
-				line_add({ x,        connector_y, window_relative_pos.z}, { scaled_at,              connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-				line_add({ x-size.x, connector_y, window_relative_pos.z}, { scaled_at-size.x*scale, connector_y, window_relative_pos.z + z}, {255,255,255,0}, {255,255,255,255}, rule_size*0.5f);
-			}
-
-			if (vertical) {
-				ui_progress_bar_at_ex(percent,
-					vec3{ x-slide_x_rel, scaled_at, window_relative_pos.z + z },
-					vec2{ size.x, size.y*scale },
-					color_blend, vertical);
-			} else {
-				ui_progress_bar_at_ex(percent,
-					vec3{ scaled_at, y-slide_y_rel, window_relative_pos.z + z },
-					vec2{ size.x*scale, size.y },
-					color_blend, vertical);
-			}
-			ui_draw_el(ui_vis_slider_pinch,
-				vertical
-					? vec3{ x - slide_x_rel, scaled_at - slide_y_rel * scale, window_relative_pos.z + z }
-					: vec3{ scaled_at - slide_x_rel * scale, y - slide_y_rel, window_relative_pos.z + z },
-				vec3{ button_size.x, button_size.y, button_depth },
-				ui_color_primary, color_blend);
-		}
-	}
+	ui_draw_el(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
+		vec3{ button_center.x+button_size.x/2, button_center.y+button_size.y/2, window_relative_pos.z },
+		vec3{ button_size.x, button_size.y, fmaxf(finger_offset,rule_size * skui_pressed_depth + mm2m) },
+		color_blend);
 	
-	if (hand >= 0 && hand < 2) {
-		if (button_state & button_state_just_active)
-			ui_play_sound_on_off(ui_vis_slider_pinch, id, skui_hand[hand].finger_world);
-	}
+	if (active_state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ button_center.x, button_center.y,0 }));
 
-	if      (notify_on == ui_notify_change)   return result;
-	else if (notify_on == ui_notify_finalize) return button_state & button_state_just_inactive;
-	else                                      return result;
+	if (notify_on == ui_notify_finalize) return active_state & button_state_just_inactive;
+	else                                 return old_value != value;
 }
-bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_hslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    >(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_hslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(false, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
-bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    , float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_hslider_at_f64_16(const char16_t* id_text, double& value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    >(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_hslider_at_f64_16(const char16_t* id_text, double& value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(false, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
 
-bool32_t ui_vslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    , float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_vslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
-bool32_t ui_vslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t, float>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    >(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at       (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
+bool32_t ui_vslider_at_16    (const char16_t *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char16_t>(true, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }
 
-bool32_t ui_vslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    , float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_vslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
-bool32_t ui_vslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t, float>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64   (const char     *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char    >(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64   (const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
+bool32_t ui_vslider_at_f64_16(const char16_t *id_text, double &value, double min, double max, double step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_at_g<char16_t>(true, id_text, tmp, (float)min, (float)max, (float)step, window_relative_pos, size, confirm_method, notify_on); value = tmp; return result;}
 
 ///////////////////////////////////////////
 
-template<typename C, typename N>
-bool32_t ui_slider_g(bool vertical, const C *name, N &value, N min, N max, N step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
+template<typename C>
+bool32_t ui_slider_g(bool vertical, const C *name, float &value, float min, float max, float step, float width, ui_confirm_ confirm_method, ui_notify_ notify_on) {
 	vec3 final_pos;
 	vec2 final_size;
-	if (vertical) ui_layout_reserve_vertical_sz({width, 0}, false, &final_pos, &final_size);
+	if (vertical) ui_layout_reserve_vertical_sz({0, width}, false, &final_pos, &final_size);
 	else          ui_layout_reserve_sz         ({width, 0}, false, &final_pos, &final_size);
 
-	return ui_slider_at_g<C, N>(vertical, name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
+	return ui_slider_at_g<C>(vertical, name, value, min, max, step, final_pos, final_size, confirm_method, notify_on);
 }
 
-bool32_t ui_hslider       (const char     *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider       (const char     *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char    >(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t>(false, name, value, min, max, step, width, confirm_method, notify_on); }
 
-bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
-bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(false, name, value, min, max, step, width, confirm_method, notify_on); }
+bool32_t ui_hslider_f64   (const char     *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char    >(false, name, tmp, (float)min, (float)max, (float)step, width, confirm_method, notify_on); value = tmp; return result; }
+bool32_t ui_hslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float width,  ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char16_t>(false, name, tmp, (float)min, (float)max, (float)step, width, confirm_method, notify_on); value = tmp; return result; }
 
-bool32_t ui_vslider       (const char     *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, float >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider       (const char     *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char    >(true,  name, value, min, max, step, height, confirm_method, notify_on); }
+bool32_t ui_vslider_16    (const char16_t *name, float  &value, float  min, float  max, float  step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
 
-bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char,     double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-bool32_t ui_vslider_f64_16(const char16_t *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_g<char16_t, double>(true,  name, value, min, max, step, height, confirm_method, notify_on); }
-
-///////////////////////////////////////////
-
+bool32_t ui_vslider_f64   (const char     *name, double &value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char    >(true, name, tmp, (float)min, (float)max, (float)step, height, confirm_method, notify_on); value = tmp; return result; }
+bool32_t ui_vslider_f64_16(const char16_t* name, double& value, double min, double max, double step, float height, ui_confirm_ confirm_method, ui_notify_ notify_on) { float tmp = (float)value; bool32_t result = ui_slider_g<char16_t>(true, name, tmp, (float)min, (float)max, (float)step, height, confirm_method, notify_on); value = tmp; return result; }
 
 ///////////////////////////////////////////
 
 template<typename C>
 void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	uint64_t     hash   = ui_push_id(text);
+	id_hash_t    hash   = ui_push_id(text);
 	ui_window_id win_id = ui_window_find_or_add(hash, window_size);
 	ui_window_t* win    = ui_window_get(win_id);
 	win->age  = 0;
 	win->type = window_type;
+	win->move = move_type;
 	
 	// figure out the size of it, based on its window type
 	vec3 box_start = {}, box_size = {};
@@ -1029,7 +887,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		float line = ui_line_height();
 		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
 		box_size  = vec3{ win->prev_size.x, line, skui_settings.depth*2 };
-	} 
+	}
 	if (win->type & ui_win_body || win->type & ui_win_empty) {
 		box_start.z  = skui_settings.depth/2;
 		box_start.y -= win->prev_size.y / 2;
@@ -1037,10 +895,18 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_size.y  += win->prev_size.y;
 		box_size.z   = skui_settings.depth * 2;
 	}
+	// Expand the volume a bit if we're using a grab aura
+	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
+		box_size .x += skui_aura_radius*2;
+		box_size .y += skui_aura_radius*2;
+	}
+	// Add a little extra depth to the box, so that it's easier to grab
+	box_start.z += 0.01f;
+	box_size .z += 0.02f;
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
-	ui_layout_push_win(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
+	ui_layout_window(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
 
 	// draw label
 	if (win->type & ui_win_head) {
@@ -1068,27 +934,54 @@ void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui
 ///////////////////////////////////////////
 
 void ui_window_end() {
-	ui_window_id win_id = ui_layout_curr_window();
-	ui_window_t* win    = ui_window_get(win_id);
-	ui_layout_pop();
+	ui_window_id win_id      = ui_layout_curr_window();
+	ui_window_t* win         = ui_window_get(win_id);
+	float        line_height = ui_line_height();
+
+	ui_handle_end();
+	hierarchy_push(pose_matrix(win->pose));
+
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
 
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
-	float line_height = ui_line_height();
+	// Focus animation
+	const float delay = 0.2f;
+	button_state_ focus_state = ui_id_focus_state(win->hash);
+	if (focus_state & button_state_just_active) ui_anim_start(win->hash, 0);
+	if (focus_state & button_state_just_inactive) {
+		if (ui_anim_elapsed_total(win->hash, 0) > delay) ui_anim_start(win->hash, 1);
+		ui_anim_cancel(win->hash, 0);
+	}
+
+	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
+	if (ui_anim_has(win->hash, 0, delay + skui_anim_focus_duration)) {
+		focus = math_ease_smooth(0, 1, math_clamp((ui_anim_elapsed_total(win->hash, 0)-delay)/ skui_anim_focus_duration, 0, 1));
+	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
+		focus = math_ease_smooth(1, 0, ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration));
+	}
+
+	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
+		vec3 aura_start = vec3{ start.x+skui_aura_radius,  start.y+skui_aura_radius,  start.z };
+		vec3 aura_size  = vec3{ size .x+skui_aura_radius*2,size .y+skui_aura_radius*2,size .z };
+		if (win->type & ui_win_head) { aura_start.y += line_height; aura_size.y += line_height; }
+		ui_draw_el(ui_vis_aura, aura_start, aura_size, focus);
+	}
+
 	if (win->type & ui_win_head) {
-		float color_blend = 0;
-		if (ui_id_focused(win->hash))
-			color_blend = 1;
-		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, ui_color_primary, color_blend);
+		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
 	}
 	if (win->type & ui_win_body) {
-		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, ui_color_background, 0);
+		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);
 	}
-	ui_handle_end();
+	hierarchy_pop();
 	ui_pop_id();
+
+	// Store this as the most recent layout
+	if (win->type & ui_win_head) { start.y += line_height; size.y += line_height; }
+	ui_override_recent_layout(start, { size.x, size.y });
 }
 
 ///////////////////////////////////////////
@@ -1102,7 +995,7 @@ void ui_panel_at(vec3 start, vec2 size, ui_pad_ padding) {
 		start_offset = { gutter,  gutter,  0 };
 		size_offset  = { gutter2, gutter2, 0 };
 	}
-	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, ui_color_complement, 0);
+	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, 0);
 }
 
 } // namespace sk

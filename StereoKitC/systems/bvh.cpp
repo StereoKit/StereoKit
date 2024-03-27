@@ -356,7 +356,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     const double t0 = time_get_raw();
 #endif
 
-    mesh_bvh_t *bvh = sk_calloc_t(mesh_bvh_t, 1);
+    mesh_bvh_t *bvh = sk_malloc_zero_t(mesh_bvh_t, 1);
 
     // A restriction during BVH construction is that we don't want to touch the
     // underlying vertex and index arrays in the passed mesh. So we need to keep some local

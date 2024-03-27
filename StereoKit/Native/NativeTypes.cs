@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -12,9 +11,10 @@ namespace StereoKit
 		private IntPtr _appName;
 		private IntPtr _assetsFolder;
 
-		/// <summary>Which display type should we try to load? Default is 
-		/// `DisplayMode.MixedReality`.</summary>
-		public DisplayMode  displayPreference;
+		/// <summary>Which operation mode should we use for this app? Default
+		/// is XR, and by default the app will fall back to Simulator if XR
+		/// fails or is unavailable.</summary>
+		public AppMode      mode;
 		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
@@ -61,11 +61,6 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headset. If
-		/// You don't want this, you can disable it with this setting!</summary>
-		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
-		private int _disableFlatscreenMRSim;
 		/// <summary>By default, StereoKit will open a desktop window for
 		/// keyboard input due to lack of XR-native keyboard APIs on many
 		/// platforms. If you don't want this, you can disable it with
@@ -159,8 +154,6 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 	public struct SystemInfo
 	{
-		/// <summary>The type of display this device has.</summary>
-		public Display displayType;
 		/// <summary>Width of the display surface, in pixels! For a stereo
 		/// display, this will be the width of a single eye.</summary>
 		public int displayWidth;
@@ -458,8 +451,10 @@ namespace StereoKit
 	/// <summary>A callback for when log events occur.</summary>
 	/// <param name="level">The level of severity of this log event.</param>
 	/// <param name="text">The text contents of the log event.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
@@ -674,6 +669,9 @@ namespace StereoKit
 		/// <summary>Refers to the text position indicator carat on text input
 		/// elements.</summary>
 		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.
+		/// </summary>
+		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
@@ -683,9 +681,12 @@ namespace StereoKit
 	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>The default category, used to indicate that no category
+		/// has been selected.</summary>
+		None = 0,
 		/// <summary>This is the main accent color used by window headers,
 		/// separators, etc.</summary>
-		Primary = 0,
+		Primary,
 		/// <summary>This is a background sort of color that should generally
 		/// be dark. Used by window bodies and backgrounds of certain elements.
 		/// </summary>
@@ -775,6 +776,55 @@ namespace StereoKit
 		/// layout. This will work for layouts that are fixed sized, but not
 		/// layouts that auto-size on the Y axis!</summary>
 		Bottom,
+	}
+
+	/// <summary>For elements that contain corners, this bit flag allows you to
+	/// specify which corners.</summary>
+	public enum UICorner
+	{
+		/// <summary> No corners at all. </summary>
+		None        = 0,
+		/// <summary>The top right corner.</summary>
+		TopRight    = 1 << 1,
+		/// <summary>The top left corner.</summary>
+		TopLeft     = 1 << 0,
+		/// <summary>The bottom left corner.</summary>
+		BottomLeft  = 1 << 3,
+		/// <summary>The bottom right corner.</summary>
+		BottomRight = 1 << 2,
+		/// <summary>All corners.</summary>
+		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
+		/// <summary>The top left and top right corners.</summary>
+		Top    = TopLeft    | TopRight,
+		/// <summary>The bottom left and bottom right corners.</summary>
+		Bottom = BottomLeft | BottomRight,
+		/// <summary>The top left and bottom left corners.</summary>
+		Left   = TopLeft    | BottomLeft,
+		/// <summary>The top right and bottom right corners.</summary>
+		Right  = TopRight   | BottomRight,
+	}
+
+	/// <summary>A point on a lathe for a mesh generation algorithm. This is the
+	/// 'silhouette' of the mesh, or the shape the mesh would take if you spun
+	/// this line of points in a cylinder.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UILathePt
+	{
+		/// <summary>Lathe point 'location', where 'x' is a percentage of the
+		/// lathe radius alnong the current surface normal, and Y is the
+		/// absolute Z axis value.</summary>
+		public Vec2 pt;
+		/// <summary>The lathe normal point, which will be rotated along the
+		/// surface of the mesh.</summary>
+		public Vec2 normal;
+		/// <summary>Vertex color of the current lathe vertex.</summary>
+		public Color32 color;
+		/// <summary>Will there be triangles connecting this lathe point to the
+		/// next in the list, or is this a jump without triangles?</summary>
+		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		/// <summary>Should the triangles attaching this point to the next be
+		/// ordered backwards?</summary>
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
 	}
 
 	/// <summary>Id of a simulated hand pose, for use with

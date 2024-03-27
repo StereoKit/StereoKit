@@ -12,12 +12,12 @@ class Program
 {
 	static string startTest = "welcome";
 	static SKSettings settings = new SKSettings {
-		appName           = "StereoKit C#",
-		assetsFolder      = "Assets",
-		blendPreference   = DisplayBlend.AnyTransparent,
-		displayPreference = DisplayMode.MixedReality,
-		logFilter         = LogLevel.Diagnostic,
-		//origin            = OriginMode.Floor,
+		appName         = "StereoKit C#",
+		assetsFolder    = "Assets",
+		blendPreference = DisplayBlend.AnyTransparent,
+		mode            = AppMode.XR,
+		logFilter       = LogLevel.Diagnostic,
+		//origin          = OriginMode.Floor,
 	};
 
 	static Model  floorMesh;
@@ -58,6 +58,7 @@ class Program
 
 	static void Main(string[] args)
 	{
+		bool headless         = Array.IndexOf(args, "-headless") != -1;
 		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
 		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
 		if (Array.IndexOf(args, "-screenfolder") != -1)
@@ -74,7 +75,7 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			settings.displayPreference     = DisplayMode.Flatscreen;
+			settings.mode                  = headless ? AppMode.Offscreen : AppMode.Simulator;
 			settings.disableUnfocusedSleep = true;
 		}
 
@@ -95,9 +96,13 @@ class Program
 
 		Init();
 
-		SK.Run(Step);
+		SK.Run(Step, Tests.Shutdown);
 
-		Tests.Shutdown();
+		if (SK.QuitReason != QuitReason.None)
+		{
+			Log.Info("QuitReason is " + SK.QuitReason);
+		}
+
 	}
 
 	static void Init()
@@ -156,7 +161,7 @@ class Program
 		/// :End:
 
 		// If we can't see the world, we'll draw a floor!
-		if (SK.System.displayType == Display.Opaque)
+		if (Device.DisplayBlend == DisplayBlend.Opaque)
 			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
 
 		// Skip selection window if we're in test mode

@@ -35,7 +35,7 @@
       "inherits":     "Uwp_Debug",
       "hidden":       false,
       "architecture": "x64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_x64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_x64"
     },
     {
       "name":         "Uwp_x86_Debug",
@@ -43,7 +43,7 @@
       "inherits":     "Uwp_Debug",
       "hidden":       false,
       "architecture": "Win32",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_x86"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_x86"
     },
     {
       "name":         "Uwp_Arm32_Debug",
@@ -51,7 +51,7 @@
       "inherits":     "Uwp_Debug",
       "hidden":       false,
       "architecture": "ARM",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_ARM"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM"
     },
     {
       "name":         "Uwp_Arm64_Debug",
@@ -59,7 +59,7 @@
       "inherits":     "Uwp_Debug",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_ARM64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM64"
     },
     {
       "name":        "Uwp_Release",
@@ -76,16 +76,13 @@
       "inherits":     "Uwp_Release",
       "hidden":       false,
       "architecture": "x64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_x64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_x64"
     },
     {
       "name":        "Uwp_x64_Release_Fast",
       "inherits":    "Uwp_x64_Release",
       "description": "Fast build for UWP x64",
-      "hidden":      false,
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "hidden":      false
     },
     {
       "name":         "Uwp_x86_Release",
@@ -93,7 +90,7 @@
       "inherits":     "Uwp_Release",
       "hidden":       false,
       "architecture": "Win32",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_x86"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_x86"
     },
     {
       "name":         "Uwp_Arm32_Release",
@@ -101,7 +98,7 @@
       "inherits":     "Uwp_Release",
       "hidden":       false,
       "architecture": "ARM",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_ARM"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM"
     },
     {
       "name":         "Uwp_Arm64_Release",
@@ -109,42 +106,39 @@
       "inherits":     "Uwp_Release",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/UWP_ARM64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM64"
     },
     {
       "name":        "Win32_x64_Release",
       "description": "Release build for Win32 x64",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Win32_x64"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64"
     },
     {
       "name":        "Win32_x64_Release_Fast",
       "description": "Fast build for Win32 x64",
       "hidden":      false,
-      "inherits":    "Win32_x64_Release",
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "inherits":    "Win32_x64_Release"
     },
     {
       "name":        "Win32_x64_Debug",
       "description": "Debug build for Win32 x64",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Win32_x64"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64"
     },
     {
       "name":         "Win32_Arm64_Debug",
       "description":  "Debug build for Win32 Arm64",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/Win32_Arm64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64"
     },
     {
       "name":         "Win32_Arm64_Release",
       "description":  "Release build for Win32 Arm64",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/cmake/Win32_Arm64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64"
     },
     {
       "name":        "Linux",
@@ -171,7 +165,7 @@
       "description": "Release build for Linux x64",
       "hidden":      false,
       "inherits":    "Linux",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Linux_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -180,17 +174,14 @@
       "name":        "Linux_x64_Release_Fast",
       "description": "Fast build for Linux x64",
       "hidden":      false,
-      "inherits":    "Linux_x64_Release",
-      "cacheVariables": {
-        "SK_PHYSICS": "Off"
-      }
+      "inherits":    "Linux_x64_Release"
     },
     {
       "name":        "Linux_x64_Debug",
       "description": "Debug build for Linux x64",
       "hidden":      false,
       "inherits":    "Linux",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Linux_x64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -200,7 +191,7 @@
       "description": "Release build for Linux Arm64",
       "hidden":      false,
       "inherits":    "Linux",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Linux_ARM64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_ARM64_Release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE":       "Release",
         "CMAKE_AR":               "/usr/bin/aarch64-linux-gnu-ar",
@@ -222,7 +213,7 @@
       "description": "Debug build for Linux Arm64",
       "hidden":      false,
       "inherits":    "Linux",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Linux_Arm64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE":       "Debug",
         "CMAKE_LINKER":           "aarch64-linux-gnu-ld",
@@ -242,7 +233,7 @@
       "generator":   "Ninja",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME":    "Android",
-        "CMAKE_TOOLCHAIN_FILE": "$env{NDK}/build/cmake/android.toolchain.cmake",
+        "CMAKE_ANDROID_NDK":    "$env{NDK}",
         "ANDROID_PLATFORM":     "android-32",
         "CMAKE_SYSTEM_VERSION": "32",
         "DYNAMIC_LOADER":       "ON",
@@ -254,7 +245,7 @@
       "description": "Debug build for Android ARM64",
       "inherits":    "Android",
       "hidden":      false,
-      "binaryDir": "${sourceDir}/bin/intermediate/cmake/Android_ARM64_Debug",
+      "binaryDir": "${sourceDir}/bin/intermediate/Android_ARM64_Debug",
       "cacheVariables": {
           "CMAKE_BUILD_TYPE":       "Debug",
           "ANDROID_ABI":            "arm64-v8a",
@@ -267,7 +258,7 @@
       "description": "Release build for Android ARM64",
       "inherits":    "Android",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Android_ARM64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Release",
       "cacheVariables": {
           "CMAKE_BUILD_TYPE":       "Release",
           "ANDROID_ABI":            "arm64-v8a",
@@ -279,17 +270,14 @@
       "name":        "Android_Arm64_Release_Fast",
       "description": "Fast build for Android ARM64, used for CI compile verification",
       "inherits":    "Android_Arm64_Release",
-      "hidden":      false,
-      "cacheVariables": {
-          "SK_PHYSICS": "Off"
-      }
+      "hidden":      false
     },
     {
       "name":        "Android_x64_Release",
       "description": "Release build for Android x64",
       "inherits":    "Android",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Android_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Release",
       "cacheVariables": {
           "CMAKE_BUILD_TYPE":       "Release",
           "ANDROID_ABI":            "x86_64",
@@ -302,17 +290,28 @@
       "description": "Debug build for Android x64",
       "inherits":    "Android",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Android_x64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Debug",
       "cacheVariables": {
           "CMAKE_BUILD_TYPE":       "Debug",
           "ANDROID_ABI":            "x86_64",
           "CMAKE_ANDROID_ARCH_ABI": "x86_64",
           "SK_DYNAMIC_OPENXR":      "ON"
       }
+    },
+    {
+      "name":        "Web_Release",
+      "description": "Build for Web",
+      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Web_Release",
+      "generator":   "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":              "Release",
+        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
+      }
     }
   ],
   "buildPresets": [
-      { "name":"Uwp_ч64_Debug",              "configuration":"Debug",   "configurePreset":"Uwp_x64_Debug",              "jobs":24 },
+      { "name":"Uwp_x64_Debug",              "configuration":"Debug",   "configurePreset":"Uwp_x64_Debug",              "jobs":24 },
       { "name":"Uwp_x64_Release",            "configuration":"Release", "configurePreset":"Uwp_x64_Release",            "jobs":24 },
       { "name":"Uwp_x64_Release_Fast",       "configuration":"Release", "configurePreset":"Uwp_x64_Release_Fast",       "jobs":24 },
       { "name":"Uwp_Arm32_Debug",            "configuration":"Debug",   "configurePreset":"Uwp_Arm32_Debug",            "jobs":24 },
@@ -333,6 +332,7 @@
       { "name":"Linux_x64_Release",          "configuration":"Release", "configurePreset":"Linux_x64_Release",          "jobs":24 },
       { "name":"Linux_x64_Release_Fast",     "configuration":"Release", "configurePreset":"Linux_x64_Release_Fast",     "jobs":24 },
       { "name":"Linux_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"Linux_Arm64_Debug",          "jobs":24 },
-      { "name":"Linux_Arm64_Release",        "configuration":"Release", "configurePreset":"Linux_Arm64_Release",        "jobs":24 }
+      { "name":"Linux_Arm64_Release",        "configuration":"Release", "configurePreset":"Linux_Arm64_Release",        "jobs":24 },
+      { "name":"Web_Release",                "configuration":"Release", "configurePreset":"Web_Release",                "jobs":16 }
   ]
 }

@@ -1,7 +1,7 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "libraries/sk_gpu.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 namespace sk {
 
@@ -19,8 +19,9 @@ backend_xr_type_ backend_xr_get_type() {
 		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
 #endif
 	} else {
-		if (sk_get_settings_ref()->disable_flatscreen_mr_sim) return backend_xr_type_none;
-		else                                                  return backend_xr_type_simulator;
+		return sk_get_settings_ref()->mode == app_mode_simulator
+			? backend_xr_type_simulator
+			: backend_xr_type_none;
 	}
 }
 
@@ -80,7 +81,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -89,7 +90,7 @@ void backend_openxr_ext_request(const char *extension_name) {
 ///////////////////////////////////////////
 
 void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_use_minimum_exts must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -98,7 +99,7 @@ void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 ///////////////////////////////////////////
 
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
 		return;
 	}

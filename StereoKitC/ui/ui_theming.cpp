@@ -1,9 +1,11 @@
+#include "ui_theming.h"
 #include "ui_core.h"
 #include "ui_layout.h"
 
 #include "../libraries/array.h"
 #include "../utils/sdf.h"
 #include "../sk_math.h"
+#include "../platforms/platform.h"
 
 #include <float.h>
 
@@ -15,6 +17,9 @@ struct ui_el_visual_t {
 	mesh_t     mesh;
 	material_t material;
 	vec2       min_size;
+	sound_t    snd_activate;
+	sound_t    snd_deactivate;
+	ui_color_  color_category;
 };
 
 struct ui_theme_color_t {
@@ -28,18 +33,8 @@ struct ui_theme_color_t {
 font_t          skui_font;
 
 ui_el_visual_t  skui_visuals[ui_vis_max];
-mesh_t          skui_box_top;
-mesh_t          skui_box_bot;
-mesh_t          skui_box;
-vec2            skui_box_min;
-mesh_t          skui_small_left;
-mesh_t          skui_small_right;
-mesh_t          skui_small;
-vec2            skui_small_min;
-mesh_t          skui_cylinder;
 
 material_t      skui_mat;
-material_t      skui_mat_quad;
 material_t      skui_mat_dbg;
 material_t      skui_font_mat;
 
@@ -47,6 +42,15 @@ sprite_t        skui_toggle_off;
 sprite_t        skui_toggle_on;
 sprite_t        skui_radio_off;
 sprite_t        skui_radio_on;
+sprite_t        skui_arrow_left;
+sprite_t        skui_arrow_right;
+sprite_t        skui_arrow_up;
+sprite_t        skui_arrow_down;
+sprite_t        skui_spr_close;
+sprite_t        skui_spr_backspace;
+sprite_t        skui_spr_shift;
+sprite_t        skui_spr_list;
+sprite_t        skui_spr_grid;
 
 sound_t         skui_snd_interact;
 sound_t         skui_snd_uninteract;
@@ -56,76 +60,76 @@ sound_t         skui_snd_tick;
 
 mesh_t          skui_box_dbg;
 
-uint64_t        skui_anim_id;
-float           skui_anim_time;
+id_hash_t       skui_anim_id[3];
+float           skui_anim_time[3];
 
 ui_theme_color_t skui_palette[ui_color_max];
 color128         skui_tint;
 
 array_t<text_style_t> skui_font_stack;
 array_t<color128>     skui_tint_stack;
+array_t<bool32_t>     skui_grab_aura_stack;
 
 sound_t       skui_active_sound_off        = nullptr;
 sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
-uint64_t      skui_active_sound_element_id = 0;
+id_hash_t     skui_active_sound_element_id = 0;
 
 ///////////////////////////////////////////
 
-void ui_default_mesh     (mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices);
-void ui_default_mesh_half(mesh_t* mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start);
+void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
+void ui_default_aura_mesh (mesh_t* mesh, float diameter, float rounding, float shrink, int32_t quadrant_slices, int32_t tube_corners);
+void ui_theme_visuals_update ();
+void ui_theme_visuals_release();
+void ui_theme_visuals_assign ();
 
 ///////////////////////////////////////////
 
 void ui_theming_init() {
-	skui_anim_id    = 0;
-	skui_anim_time  = 0;
-	skui_tint       = { 1,1,1,1 };
-	skui_font_stack = {};
-	skui_tint_stack = {};
-	memset(skui_visuals, 0, sizeof(skui_visuals));
+	skui_tint            = { 1,1,1,1 };
+	skui_font_stack      = {};
+	skui_tint_stack      = {};
+	skui_grab_aura_stack = {};
+	memset(skui_visuals,   0, sizeof(skui_visuals));
+	memset(skui_palette,   0, sizeof(skui_palette));
+	memset(skui_anim_id,   0, sizeof(skui_anim_id));
+	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
 	ui_set_color(color_hsv(0.07f, 0.5f, 0.75f, 1));
 
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add( text_make_style_mat(skui_font, 10*mm2m, skui_font_mat, color_to_gamma( skui_palette[ui_color_text].normal )) );
+	skui_font_stack.add(text_make_style_mat(skui_font, 10 * mm2m, skui_font_mat, {1,1,1,1}));
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
 	ui_settings_t settings = {};
 	ui_settings(settings);
 
-	ui_default_mesh(&skui_cylinder, false, 1, 4 * cm2m, 5);
-	mesh_set_id(skui_box_bot, "sk/ui/cylinder_mesh");
-
 	// Create default sprites for the toggles
 
 	// #defines because we can't capture anything in these lambdas D:
 	#define OUTER_RADIUS 31
 	#define RING_WIDTH 8
+	#define RADIUS (OUTER_RADIUS - RING_WIDTH)
 	#define INNER_RADIUS (OUTER_RADIUS - RING_WIDTH*2)
 
-	tex_t toggle_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_on = sdf_create_sprite(ui_default_id_spr_toggle_on, 64, 64, [](vec2 pt) {
 		return
 			sdf_union(
-				sdf_box(pt, INNER_RADIUS),
+				sdf_box(pt, {INNER_RADIUS, INNER_RADIUS}),
 				sdf_subtract(
-					sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-					sdf_box_round(pt, OUTER_RADIUS, 8)))/32.0f;
+					sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+					sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8)))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_on, tex_address_clamp);
-	tex_set_id     (toggle_tex_on, "sk/ui/toggle_on_tex");
-	tex_t toggle_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_toggle_off = sdf_create_sprite(ui_default_id_spr_toggle_off, 64, 64, [](vec2 pt) {
 		return
 			sdf_subtract(
-				sdf_box_round(pt, OUTER_RADIUS - RING_WIDTH, 4),
-				sdf_box_round(pt, OUTER_RADIUS, 8))/32.0f;
+				sdf_box_round(pt, {RADIUS, RADIUS}, 4),
+				sdf_box_round(pt, {OUTER_RADIUS,OUTER_RADIUS}, 8))/32.0f;
 	}, 40);
-	tex_set_address(toggle_tex_off, tex_address_clamp);
-	tex_set_id     (toggle_tex_off, "sk/ui/toggle_off_tex");
-	tex_t radio_tex_on = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_on = sdf_create_sprite(ui_default_id_spr_radio_on, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return
 			sdf_union(
@@ -134,26 +138,81 @@ void ui_theming_init() {
 					dist - (OUTER_RADIUS - RING_WIDTH),
 					dist - OUTER_RADIUS)) / 32.0f;
 	}, 40);
-	tex_set_address(radio_tex_on, tex_address_clamp);
-	tex_set_id     (radio_tex_on, "sk/ui/radio_on_tex");
-	tex_t radio_tex_off = sdf_create_tex(64, 64, [](vec2 pt) {
+	skui_radio_off = sdf_create_sprite(ui_default_id_spr_radio_off, 64, 64, [](vec2 pt) {
 		float dist = vec2_magnitude(pt);
 		return sdf_subtract(dist - (OUTER_RADIUS - RING_WIDTH), dist - OUTER_RADIUS)/32.0f;
 	}, 40);
-	tex_set_address(radio_tex_off, tex_address_clamp);
-	tex_set_id     (radio_tex_off, "sk/ui/radio_off_tex");
-	skui_toggle_on  = sprite_create(toggle_tex_on,  sprite_type_single);
-	skui_toggle_off = sprite_create(toggle_tex_off, sprite_type_single);
-	skui_radio_on   = sprite_create(radio_tex_on,   sprite_type_single);
-	skui_radio_off  = sprite_create(radio_tex_off,  sprite_type_single);
-	sprite_set_id(skui_toggle_on,  ui_default_id_toggle_on_spr);
-	sprite_set_id(skui_toggle_off, ui_default_id_toggle_off_spr);
-	sprite_set_id(skui_radio_on,   ui_default_id_radio_on_spr);
-	sprite_set_id(skui_radio_off,  ui_default_id_radio_off_spr);
-	tex_release(toggle_tex_on);
-	tex_release(toggle_tex_off);
-	tex_release(radio_tex_on);
-	tex_release(radio_tex_off);
+
+	// Create some sprites for common UI icons
+	skui_spr_backspace = sdf_create_sprite(ui_default_id_spr_backspace, 96, 64, [](vec2 pt) {
+		return
+			sdf_subtract(
+				sdf_rounded_x(pt - vec2{3.5f,0}, 20, 3.5f),
+				sdf_union(
+					sdf_box    (pt - vec2{10, 0}, {20,20})-7,
+					sdf_diamond(pt + vec2{10, 0}, {20,20})-7)) / 40.0f;
+	}, 40);
+	skui_spr_shift = sdf_create_sprite(ui_default_id_spr_shift, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+				sdf_triangle(pt + vec2{0,24}, {24,20}) - 4,
+				sdf_box(pt + vec2{0,-6}, {6, 12}) - 7) / 40.0f;
+	}, 40);
+	skui_spr_close = sdf_create_sprite(ui_default_id_spr_close, 64, 64, [](vec2 pt) {
+		return sdf_rounded_x(pt, 36, 7) / 40.0f;
+	}, 40);
+	skui_arrow_left = sdf_create_sprite(ui_default_id_spr_arrow_left, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_right = sdf_create_sprite(ui_default_id_spr_arrow_right, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.y, -pt.x + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_up = sdf_create_sprite(ui_default_id_spr_arrow_up, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+	skui_arrow_down = sdf_create_sprite(ui_default_id_spr_arrow_down, 64, 64, [](vec2 pt) {
+		return (sdf_triangle({ pt.x, -pt.y + 24 }, {26,44}) - 4) / 40.0f;
+	}, 40);
+
+	skui_spr_list = sdf_create_sprite(ui_default_id_spr_list, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_box_round(pt + vec2{ 0, 20 }, vec2{30, 6}, 6 ),
+				sdf_box_round(pt + vec2{ 0, 0  }, vec2{30, 6}, 6 )),
+				sdf_box_round(pt + vec2{ 0,-20 }, vec2{30, 6}, 6 ))/32.0f;
+	}, 40);
+	skui_spr_grid = sdf_create_sprite(ui_default_id_spr_grid, 64, 64, [](vec2 pt) {
+		return
+			sdf_union(
+			sdf_union(
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{-20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{-20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{-20,-20 }, vec2{6, 6}, 3 )),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{  0, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{  0, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{  0,-20 }, vec2{6, 6}, 3 ))),
+				sdf_union(
+				sdf_union(
+					sdf_box_round(pt + vec2{ 20, 20 }, vec2{6, 6}, 3 ),
+					sdf_box_round(pt + vec2{ 20, 0  }, vec2{6, 6}, 3 )),
+					sdf_box_round(pt + vec2{ 20,-20 }, vec2{6, 6}, 3 ))) / 32.0f;
+	}, 40);
+
+	skui_box_dbg  = mesh_find(default_id_mesh_cube);
+	skui_mat_dbg  = material_copy_id(default_id_material);
+	material_set_transparency(skui_mat_dbg, transparency_add);
+	material_set_color       (skui_mat_dbg, "color", { .3f,.3f,.3f,.3f });
+	material_set_depth_write (skui_mat_dbg, false);
+	material_set_depth_test  (skui_mat_dbg, depth_test_always);
+	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
+
+	skui_mat = material_copy_id(default_id_material_ui);
+	material_set_id(skui_mat, "sk/ui/default_mat");
 
 	// Create a sound for the HSlider
 	skui_snd_tick = sound_generate([](float t){
@@ -165,48 +224,59 @@ void ui_theming_init() {
 	}, .03f);
 	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
-	skui_box_dbg  = mesh_find(default_id_mesh_cube);
-	skui_mat_dbg  = material_copy_id(default_id_material_ui);
-	material_set_transparency(skui_mat_dbg, transparency_add);
-	material_set_color       (skui_mat_dbg, "color", { .5f,.5f,.5f,1 });
-	material_set_depth_write (skui_mat_dbg, false);
-	material_set_depth_test  (skui_mat_dbg, depth_test_always);
-	material_set_id          (skui_mat_dbg, "sk/ui/debug_mat");
-
 	skui_snd_interact   = sound_find(default_id_sound_click);
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
 
-	skui_mat = material_copy_id(default_id_material_ui);
-	material_set_bool(skui_mat, "ui_tint", true);
-	material_set_id  (skui_mat, "sk/ui/default_mat");
-	skui_mat_quad = material_find(default_id_material_ui_quadrant);
+	ui_theme_visuals_assign();
 
-	ui_set_element_visual(ui_vis_default,              skui_box,         skui_mat_quad, skui_box_min);
-	ui_set_element_visual(ui_vis_window_head,          skui_box_top,     nullptr);
-	ui_set_element_visual(ui_vis_window_body,          skui_box_bot,     nullptr);
-	ui_set_element_visual(ui_vis_separator,            skui_box_dbg,     skui_mat);
-	ui_set_element_visual(ui_vis_carat,                skui_box_dbg,     skui_mat);
-	ui_set_element_visual(ui_vis_button_round,         skui_cylinder,    skui_mat);
-	ui_set_element_visual(ui_vis_slider_line,          skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_line_active,   skui_small_left,  skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_line_inactive, skui_small_right, skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_pinch,         skui_small,       skui_mat_quad, skui_small_min);
-	ui_set_element_visual(ui_vis_slider_push,          skui_small,       skui_mat_quad, skui_small_min);
+	ui_set_element_color(ui_vis_none,                 ui_color_common);
+	ui_set_element_color(ui_vis_default,              ui_color_common);
+	ui_set_element_color(ui_vis_window_head,          ui_color_primary);
+	ui_set_element_color(ui_vis_window_head_only,     ui_color_primary);
+	ui_set_element_color(ui_vis_window_body,          ui_color_background);
+	ui_set_element_color(ui_vis_window_body_only,     ui_color_background);
+	ui_set_element_color(ui_vis_separator,            ui_color_primary);
+	ui_set_element_color(ui_vis_slider_line,          ui_color_common);
+	ui_set_element_color(ui_vis_slider_line_active,   ui_color_primary);
+	ui_set_element_color(ui_vis_slider_line_inactive, ui_color_common);
+	ui_set_element_color(ui_vis_slider_pinch,         ui_color_primary);
+	ui_set_element_color(ui_vis_slider_push,          ui_color_primary);
+	ui_set_element_color(ui_vis_aura,                 ui_color_text);
+	ui_set_element_color(ui_vis_panel,                ui_color_complement);
+	ui_set_element_color(ui_vis_handle,               ui_color_primary);
+	ui_set_element_color(ui_vis_button,               ui_color_common);
+	ui_set_element_color(ui_vis_toggle,               ui_color_common);
+	ui_set_element_color(ui_vis_button_round,         ui_color_common);
+	ui_set_element_color(ui_vis_input,                ui_color_common);
+	ui_set_element_color(ui_vis_carat,                ui_color_text);
+
+	ui_set_element_sound(ui_vis_default,              skui_snd_interact, skui_snd_uninteract);
+	ui_set_element_sound(ui_vis_handle,               skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body,          skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head,          skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_body_only,     skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_window_head_only,     skui_snd_grab,     skui_snd_ungrab);
+	ui_set_element_sound(ui_vis_slider_line,          skui_snd_tick,     skui_snd_tick);
 }
 
 ///////////////////////////////////////////
 
 void ui_theming_shutdown() {
-	skui_font_stack.free();
-	skui_tint_stack.free();
+	skui_font_stack     .free();
+	skui_tint_stack     .free();
+	skui_grab_aura_stack.free();
 
 	for (int32_t i = 0; i < ui_vis_max; i++) {
 		mesh_release    (skui_visuals[i].mesh);
 		material_release(skui_visuals[i].material);
+		sound_release   (skui_visuals[i].snd_activate);
+		sound_release   (skui_visuals[i].snd_deactivate);
 		skui_visuals[i] = {};
 	}
+
+	ui_theme_visuals_release();
 
 	sound_release   (skui_active_sound_off); skui_active_sound_off = nullptr;
 	sound_release   (skui_snd_interact);     skui_snd_interact     = nullptr;
@@ -215,17 +285,9 @@ void ui_theming_shutdown() {
 	sound_release   (skui_snd_ungrab);       skui_snd_ungrab       = nullptr;
 	sound_release   (skui_snd_tick);         skui_snd_tick         = nullptr;
 
-	mesh_release    (skui_box);            skui_box            = nullptr;
-	mesh_release    (skui_box_top);        skui_box_top        = nullptr;
-	mesh_release    (skui_box_bot);        skui_box_bot        = nullptr;
-	mesh_release    (skui_small);          skui_small          = nullptr;
-	mesh_release    (skui_small_left);     skui_small_left     = nullptr;
-	mesh_release    (skui_small_right);    skui_small_right    = nullptr;
-	mesh_release    (skui_cylinder);       skui_cylinder       = nullptr;
 	mesh_release    (skui_box_dbg);        skui_box_dbg        = nullptr;
 
 	material_release(skui_mat);            skui_mat            = nullptr;
-	material_release(skui_mat_quad);       skui_mat_quad       = nullptr;
 	material_release(skui_mat_dbg);        skui_mat_dbg        = nullptr;
 	material_release(skui_font_mat);       skui_font_mat       = nullptr;
 
@@ -233,6 +295,15 @@ void ui_theming_shutdown() {
 	sprite_release  (skui_toggle_on);      skui_toggle_on      = nullptr;
 	sprite_release  (skui_radio_off);      skui_radio_off      = nullptr;
 	sprite_release  (skui_radio_on);       skui_radio_on       = nullptr;
+	sprite_release  (skui_arrow_left);     skui_arrow_left     = nullptr;
+	sprite_release  (skui_arrow_right);    skui_arrow_right    = nullptr;
+	sprite_release  (skui_arrow_up);       skui_arrow_up       = nullptr;
+	sprite_release  (skui_arrow_down);     skui_arrow_down     = nullptr;
+	sprite_release  (skui_spr_backspace);  skui_spr_backspace  = nullptr;
+	sprite_release  (skui_spr_close);      skui_spr_close      = nullptr;
+	sprite_release  (skui_spr_shift);      skui_spr_shift      = nullptr;
+	sprite_release  (skui_spr_list);       skui_spr_list       = nullptr;
+	sprite_release  (skui_spr_grid);       skui_spr_grid       = nullptr;
 
 	font_release    (skui_font);           skui_font           = nullptr;
 }
@@ -243,12 +314,8 @@ void ui_theming_update() {
 	if (skui_active_sound_element_id == 0) return;
 
 	// See if our current sound on/off pair is still from a valid ui element
-	bool found_active = false;
-	for (int32_t i = 0; i < handed_max; i++) {
-		if (skui_hand[i].active_prev == skui_active_sound_element_id) {
-			return;
-		}
-	}
+	if (ui_id_active(skui_active_sound_element_id))
+		return;
 	// If the "on" sound instance is still playing, we don't want to stomp on
 	// it with the off sound
 	if (sound_inst_is_playing(skui_active_sound_inst))
@@ -269,17 +336,34 @@ void ui_theming_update() {
 ///////////////////////////////////////////
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
-	ui_el_visual_t visual = {};
+	ui_el_visual_t *vis = &skui_visuals[element_visual];
 
-	if (mesh                                  != nullptr) mesh_addref     (mesh);
-	if (material                              != nullptr) material_addref (material);
-	if (skui_visuals[element_visual].mesh     != nullptr) mesh_release    (skui_visuals[element_visual].mesh);
-	if (skui_visuals[element_visual].material != nullptr) material_release(skui_visuals[element_visual].material);
+	if (mesh          != nullptr) mesh_addref     (mesh);
+	if (material      != nullptr) material_addref (material);
+	if (vis->mesh     != nullptr) mesh_release    (vis->mesh);
+	if (vis->material != nullptr) material_release(vis->material);
 
-	visual.mesh     = mesh;
-	visual.material = material;
-	visual.min_size = min_size;
-	skui_visuals[element_visual] = visual;
+	vis->mesh     = mesh;
+	vis->material = material;
+	vis->min_size = min_size;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_color(ui_vis_ element, ui_color_ color_category) {
+	skui_visuals[element].color_category = color_category;
+}
+
+///////////////////////////////////////////
+
+void ui_set_element_sound(ui_vis_ element, sound_t activate, sound_t deactivate) {
+	if (activate   != nullptr) sound_addref(activate);
+	if (deactivate != nullptr) sound_addref(deactivate);
+	if (skui_visuals[element].snd_activate   != nullptr) sound_release(skui_visuals[element].snd_activate);
+	if (skui_visuals[element].snd_deactivate != nullptr) sound_release(skui_visuals[element].snd_deactivate);
+
+	skui_visuals[element].snd_activate   = activate;
+	skui_visuals[element].snd_deactivate = deactivate;
 }
 
 ///////////////////////////////////////////
@@ -308,40 +392,71 @@ material_t ui_get_material(ui_vis_ element_visual) {
 
 ///////////////////////////////////////////
 
-void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, ui_color_ color, float focus) {
-	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
-	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
-	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
-
-	vec3   pos = start - size / 2;
-	matrix mx  = matrix_ts(pos, size);
-
-	color128 final_color = ui_is_enabled()
-		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
-		: skui_palette[color].disabled;
-	final_color = final_color * skui_tint;
-
-	render_add_mesh(ui_get_mesh(element_visual), ui_get_material(element_visual), mx, final_color);
+ui_color_ ui_get_color(ui_vis_ element_visual) {
+	ui_color_ category = skui_visuals[element_visual].color_category;
+	return category != ui_color_none
+		? category
+		: skui_visuals[ui_vis_default].color_category;
 }
 
 ///////////////////////////////////////////
 
-void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) {
-	sound_t snd_on  = nullptr;
-	sound_t snd_off = nullptr;
+sound_t ui_get_sound_on(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_activate
+		? skui_visuals[element_visual].snd_activate
+		: skui_visuals[ui_vis_default].snd_activate;
+}
 
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd_on = skui_snd_grab;
-		snd_off= skui_snd_ungrab;
-	} else {
-		snd_on = skui_snd_interact;
-		snd_off= skui_snd_uninteract;
-	}
+///////////////////////////////////////////
+
+sound_t ui_get_sound_off(ui_vis_ element_visual) {
+	return skui_visuals[element_visual].snd_deactivate
+		? skui_visuals[element_visual].snd_deactivate
+		: skui_visuals[ui_vis_default].snd_deactivate;
+}
+
+///////////////////////////////////////////
+
+color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
+	ui_color_ color       = ui_get_color(element_visual);
+	color128  final_color = ui_is_enabled()
+		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
+		: skui_palette[color].disabled;
+	final_color   = final_color * skui_tint;
+	final_color.a = focus;
+
+	return final_color;
+}
+
+///////////////////////////////////////////
+
+void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
+	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
+	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
+	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
+
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_color, focus));
+}
+
+///////////////////////////////////////////
+
+void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
+	render_add_mesh(
+		ui_get_mesh    (element_visual),
+		ui_get_material(element_visual),
+		matrix_ts(start - size / 2, size),
+		ui_get_el_color(element_visual, focus));
+}
+
+///////////////////////////////////////////
+
+void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at) {
+	sound_t snd_on  = ui_get_sound_on(element_visual);
+	sound_t snd_off = ui_get_sound_off(element_visual);
 
 	if (snd_off) sound_addref(snd_off);
 	sound_release(skui_active_sound_off);
@@ -357,44 +472,14 @@ void ui_play_sound_on_off(ui_vis_ element_visual, uint64_t element_id, vec3 at) 
 ///////////////////////////////////////////
 
 void ui_play_sound_on(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = nullptr;
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd = skui_snd_grab;
-	} else {
-		snd = skui_snd_interact;
-	}
-
+	sound_t snd = ui_get_sound_on(element_visual);
 	if (snd) sound_play(snd, at, 1);
 }
 
 ///////////////////////////////////////////
 
 void ui_play_sound_off(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = nullptr;
-	// This pattern is until we add sounds to theming
-	if (element_visual == ui_vis_handle           ||
-		element_visual == ui_vis_window_body      ||
-		element_visual == ui_vis_window_body_only ||
-		element_visual == ui_vis_window_head      ||
-		element_visual == ui_vis_window_head_only) {
-		snd = skui_snd_ungrab;
-	} else {
-		snd = skui_snd_uninteract;
-	}
-
-	if (snd) sound_play(snd, at, 1);
-}
-
-///////////////////////////////////////////
-
-void ui_play_sound(ui_vis_ element_visual, vec3 at) {
-	sound_t snd = skui_snd_tick;
-
+	sound_t snd = ui_get_sound_off(element_visual);
 	if (snd) sound_play(snd, at, 1);
 }
 
@@ -420,35 +505,14 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.depth            == 0) settings.depth   = 10 * mm2m;
 	if (settings.gutter           == 0) settings.gutter  = 10 * mm2m;
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
-	if (settings.margin           == 0) settings.margin = settings.padding;
+	if (settings.margin           == 0) settings.margin  = settings.padding;
 	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
 
 	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
 	skui_settings = settings;
 
 	if (rebuild_meshes) {
-		int32_t slices  = 4;//  settings.rounding > 20 * mm2m ? 4 : 3;
-		bool    set_ids = skui_box == nullptr;
-		ui_default_mesh     (&skui_box,       true, settings.rounding*2, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_box_top,   true, settings.rounding*2,       1.25f*mm2m, slices, 0);
-		ui_default_mesh_half(&skui_box_bot,   true, settings.rounding*2,       1.25f*mm2m, slices, 180 * deg2rad);
-
-		float small = fminf(ui_line_height() / 3.0f, settings.rounding);
-		ui_default_mesh     (&skui_small,       true, small, 1.25f*mm2m, slices);
-		ui_default_mesh_half(&skui_small_left,  true, small, 1.25f*mm2m, slices, 270 * deg2rad);
-		ui_default_mesh_half(&skui_small_right, true, small, 1.25f*mm2m, slices, 90  * deg2rad);
-
-		skui_box_min   = vec2{ settings.padding, settings.padding } / 2;
-		skui_small_min = vec2{ small, small } / 2;
-
-		if (set_ids) {
-			mesh_set_id(skui_box,         "sk/ui/box_mesh");
-			mesh_set_id(skui_box_top,     "sk/ui/box_mesh_top");
-			mesh_set_id(skui_box_bot,     "sk/ui/box_mesh_bot");
-			mesh_set_id(skui_small,       "sk/ui/small_mesh");
-			mesh_set_id(skui_small_left,  "sk/ui/small_mesh_left");
-			mesh_set_id(skui_small_right, "sk/ui/small_mesh_right");
-		}
+		ui_theme_visuals_update();
 	}
 }
 
@@ -462,7 +526,7 @@ void ui_set_color(color128 color) {
 	ui_set_theme_color(ui_color_primary,    color);                                                     // Primary color: Headers, separators, etc.
 	ui_set_theme_color(ui_color_background, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.45f, color.a) ); // Dark color: body and backgrounds
 	ui_set_theme_color(ui_color_common,     color_hsv(hsv.x, hsv.y * 0.075f, hsv.z * 0.65f, color.a) ); // Primary element color: buttons, sliders, etc.
-	ui_set_theme_color(ui_color_complement, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.42f, color.a) ); // Complement color: unused so far?
+	ui_set_theme_color(ui_color_complement, color_hsv(hsv.x, hsv.y * 0.2f,   hsv.z * 0.35f, color.a) ); // Complement color: unused so far?
 	ui_set_theme_color(ui_color_text,       color128{1, 1, 1, 1});                                      // Text color
 }
 
@@ -508,6 +572,30 @@ color128 ui_get_theme_color(ui_color_ color_type) {
 // Style stack                           //
 ///////////////////////////////////////////
 
+void ui_push_grab_aura(bool32_t enabled) {
+	skui_grab_aura_stack.add(enabled);
+}
+
+///////////////////////////////////////////
+
+void ui_pop_grab_aura() {
+	if (skui_grab_aura_stack.count == 0) {
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "grab aura");
+		return;
+	}
+	skui_grab_aura_stack.pop();
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_grab_aura_enabled() {
+	return skui_grab_aura_stack.count > 0
+		? skui_grab_aura_stack.last()
+		: true;
+}
+
+///////////////////////////////////////////
+
 void ui_push_text_style(text_style_t style) {
 	skui_font_stack.add(style);
 }
@@ -550,28 +638,43 @@ void ui_pop_tint() {
 // Animation                             //
 ///////////////////////////////////////////
 
-void ui_anim_start(uint64_t id) {
-	if (skui_anim_id != id) {
-		skui_anim_id = id;
-		skui_anim_time = time_totalf_unscaled();
+void ui_anim_start(id_hash_t id, int32_t channel) {
+	if (skui_anim_id[channel] != id) {
+		skui_anim_id[channel] = id;
+		skui_anim_time[channel] = time_totalf_unscaled();
 	}
 }
 
 ///////////////////////////////////////////
 
-bool ui_anim_has(uint64_t id, float duration) {
-	if (id == skui_anim_id) {
-		if ((time_totalf_unscaled() - skui_anim_time) < duration)
+void ui_anim_cancel(id_hash_t id, int32_t channel) {
+	if (skui_anim_id[channel] == id) {
+		skui_anim_id[channel] = 0;
+		skui_anim_time[channel] = 0;
+	}
+}
+
+///////////////////////////////////////////
+
+bool ui_anim_has(id_hash_t id, int32_t channel, float duration) {
+	if (id == skui_anim_id[channel]) {
+		if ((time_totalf_unscaled() - skui_anim_time[channel]) < duration)
 			return true;
-		skui_anim_id = 0;
+		skui_anim_id[channel] = 0;
 	}
 	return false;
 }
 
 ///////////////////////////////////////////
 
-float ui_anim_elapsed(uint64_t id, float duration, float max) {
-	return skui_anim_id == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time) / duration) : 0;
+float ui_anim_elapsed(id_hash_t id, int32_t channel, float duration, float max) {
+	return skui_anim_id[channel] == id ? fminf(max, (time_totalf_unscaled() - skui_anim_time[channel]) / duration) : 0;
+}
+
+///////////////////////////////////////////
+
+float ui_anim_elapsed_total(id_hash_t id, int32_t channel) {
+	return skui_anim_id[channel] == id ? (time_totalf_unscaled() - skui_anim_time[channel]) : 0;
 }
 
 ///////////////////////////////////////////
@@ -634,72 +737,56 @@ void ui_quadrant_size_mesh(mesh_t ref_mesh, float overflow) {
 
 ///////////////////////////////////////////
 
-void ui_default_mesh(mesh_t *mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices) {
+void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius, float shrink, int32_t quadrant_slices, int32_t tube_corners) {
 	if (*mesh == nullptr) {
 		*mesh = mesh_create();
 	}
-	
-	float radius = diameter / 2;
 
-	vind_t  subd       = (vind_t)quadrant_slices*4;
-	int     vert_count = subd * 5 + 2;
-	int     ind_count  = subd * 18;
+	int32_t vert_count = quadrant_slices * tube_corners * 4;
+	int32_t ind_count  = quadrant_slices * tube_corners * 6 * 4;
 	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
 	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
 
-	vind_t ind = 0;
+	vind_t ind    = 0;
+	vind_t steps  = quadrant_slices * 4;
+	float  radius = tube_diameter / 2;
+	for (vind_t i = 0; i < steps; i++) {
+		vind_t off  = i * tube_corners;
+		vind_t offn = ((i + 1) % steps) * tube_corners;
 
-	for (vind_t i = 0; i < subd; i++) {
-		float u = 0, v = 0;
+		// Manual quadrantification, due to our perfect corners
+		int32_t quad = i / quadrant_slices;
+		float   quad_pct = (i - quad * quadrant_slices) / (float)(quadrant_slices - 1);
 
-		float ang = ((float)i / subd + (0.5f/subd)) *(float)MATH_PI * 2;
-		float x = cosf(ang);
-		float y = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0,0,0.5f};
-		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) - vec3{0,0,0.5f};
+		vec2 uv = {};
+		if      (quad == 0) uv = vec2{  1, 1 };
+		else if (quad == 1) uv = vec2{ -1, 1 };
+		else if (quad == 2) uv = vec2{ -1,-1 };
+		else if (quad == 3) uv = vec2{  1,-1 }; 
+		vec3 quad_off = vec3{ uv.x, uv.y,0 } * -(corner_radius+shrink);
 
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
+		float corner_ang  = (quad+quad_pct) * MATH_PI * 0.5f;
+		vec3  corner_norm = vec3{ cosf(corner_ang), sinf(corner_ang), 0 };
+		vec3  corner_pt   = quad_off + corner_norm * corner_radius;
 
-		vind_t in = (i + 1) % subd;
-		// Top slice
-		inds[ind++] = i  * 5 + 3;
-		inds[ind++] = in * 5 + 3;
-		inds[ind++] = subd * 5;
-		// Bottom slice
-		inds[ind++] = subd * 5+1;
-		inds[ind++] = in * 5 + 4;
-		inds[ind++] = i  * 5 + 4;
+		for (vind_t c = 0; c < (vind_t)tube_corners; c++) {
+			float tube_ang  = ((float)c / tube_corners) * MATH_PI * 2;
+			float tube_x    = cosf(tube_ang);
+			float tube_y    = sinf(tube_ang);
+			vec3  tube_norm = vec3_normalize( vec3{ corner_norm.x * tube_x, corner_norm.y * tube_x, tube_y } );
+			vec3  tube_pt   = corner_pt + tube_norm*radius;
 
-		// Now edge strip quad bottom
-		inds[ind++] = in * 5+1;
-		inds[ind++] = in * 5;
-		inds[ind++] = i  * 5;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5;
-		// And edge strip quad top
-		inds[ind++] = in * 5+2;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = i  * 5+2;
-		inds[ind++] = in * 5+2;
-		inds[ind++] = i  * 5+1;
+			verts[off + c] = { tube_pt, tube_norm, uv, {255,255,255,255} };
+
+			vind_t cn   = (c + 1) % tube_corners;
+			inds[ind++] = off  + c;
+			inds[ind++] = offn + c;
+			inds[ind++] = offn + cn;
+			inds[ind++] = off  + c;
+			inds[ind++] = offn + cn;
+			inds[ind++] = off  + cn;
+		}
 	}
-
-	// center points for the circle
-	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
-	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	if (quadrantify)
-		ui_quadrant_size_verts(verts, vert_count, 0);
-
 	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
 
 	sk_free(verts);
@@ -708,116 +795,338 @@ void ui_default_mesh(mesh_t *mesh, bool quadrantify, float diameter, float round
 
 ///////////////////////////////////////////
 
-void ui_default_mesh_half(mesh_t *mesh, bool quadrantify, float diameter, float rounding, int32_t quadrant_slices, float angle_start) {
-	if (*mesh == nullptr) {
-		*mesh = mesh_create();
+uint32_t _lathe_corner_root_index(uint32_t corner, ui_corner_ rounded_corners, uint32_t corner_resolution, uint32_t lathe_points, uint32_t lathe_step) {
+	uint32_t roundedCount = (uint32_t)(
+		(corner > 0 && (rounded_corners & ui_corner_top_left    ) != 0 ? 1 : 0) +
+		(corner > 1 && (rounded_corners & ui_corner_top_right   ) != 0 ? 1 : 0) +
+		(corner > 2 && (rounded_corners & ui_corner_bottom_right) != 0 ? 1 : 0) +
+		(corner > 3 && (rounded_corners & ui_corner_bottom_left ) != 0 ? 1 : 0));
+	uint32_t sharpCount = corner-roundedCount;
+	return (roundedCount * corner_resolution + sharpCount) * lathe_step + corner * (lathe_points - lathe_step);
+}
+
+///////////////////////////////////////////
+
+void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+	float     angle_step = 90 / (float)(corner_resolution - 1);
+	uint32_t  lathe_step = 0;
+	for (size_t i = 0; i < lathe_pt_count; i++)
+		if (lathe_pts[i].pt.x != 0) lathe_step += 1;
+	uint32_t  lathe_roots = lathe_pt_count - lathe_step;
+
+	array_t<vert_t> verts = {};
+	array_t<vind_t> inds  = {};
+	vind_t  curr_inds[6];
+	int32_t curr_ind_ct = 0;
+
+	for (uint32_t c = 0; c < 4; c++) {
+		uint32_t idx_root_curr = _lathe_corner_root_index( c,      rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t idx_root_next = _lathe_corner_root_index((c+1)%4, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+
+		bool rounded      = (rounded_corners & (ui_corner_)(1 << (int32_t)c)) != 0;
+		bool rounded_next = (rounded_corners & (ui_corner_)(1 << (int32_t)((c + 1) % 4))) != 0;
+		bool rounded_prev = (rounded_corners & (ui_corner_)(1 << (int32_t)((c+3)%4))) != 0;
+		// 1,1   -1,1   -1,-1   1,-1
+		float u = c == 0 || c == 3 ? 1.f : -1.f;
+		float v = c == 0 || c == 1 ? 1.f : -1.f;
+
+		vec3     offset       = { -u * corner_radius, -v * corner_radius, 0 };
+		uint32_t corner_count = corner_resolution;
+		float    angle_start  = c * 90.f;
+		float    curr_radius  = corner_radius;
+		if (delete_flat_sides && rounded == false && (rounded_next == false || rounded_prev == false)) {
+			corner_count = 1;
+			if (rounded_prev == true) {
+				float ang = (angle_start + 90) * deg2rad;
+				offset += vec3{cosf(ang), sinf(ang), 0} * corner_radius;
+			} else if (rounded_prev == false) {
+				float ang = angle_start * deg2rad;
+				offset += vec3{ cosf(ang), sinf(ang), 0 } * corner_radius;
+				angle_start += 90;
+			}
+		} else if (rounded == false) {
+			curr_radius  *= 1.41421356237f; // sqrt of 2
+			corner_count  = 1;
+			angle_start  += 45;
+		}
+
+		for (uint32_t s = 0; s < corner_count; s++) {
+			float ang = (angle_start + s*angle_step) * deg2rad;
+			vec2  dir = vec2{ cosf(ang), sinf(ang) };
+
+			int32_t p_ct = -1;
+			for (uint32_t p = 0; p < (uint32_t)lathe_pt_count; p++) {
+				ui_lathe_pt_t lp = lathe_pts[p];
+				vert_t        vert;
+				vert.col  = lp.color;
+				vert.uv   = { u, v };
+				vert.norm = { lp.normal.x * dir.x, lp.normal.x * dir.y, lp.normal.y * -1 };
+				vert.pos  = vec3{ lp.pt.x * dir.x * curr_radius, lp.pt.x * dir.y * curr_radius, lp.pt.y } + offset;
+
+				bool is_root = lp.pt.x == 0;
+				if (is_root == false || s==0) // If it's a root vert, it only needs added once
+					verts.add(vert);
+
+				if (is_root == false) p_ct += 1;
+
+				if (lp.connect_next == false || p+1 == (uint32_t)lathe_pt_count || (s+1==corner_count && delete_flat_sides && rounded == false && rounded_next == false)) continue;
+
+				bool     top_is_root   = lathe_pts[p + 1].pt.x == 0;
+				bool     next_corner   = s + 1 >= corner_count;
+				uint32_t next_root_idx = next_corner ? idx_root_next : idx_root_curr;
+				uint32_t curr_bot = is_root     || s == 0      ? idx_root_curr + p   : idx_root_curr +  s   *lathe_step + lathe_roots + p_ct;
+				uint32_t next_bot = is_root     || next_corner ? next_root_idx + p   : next_root_idx + (s+1)*lathe_step + lathe_roots + p_ct;
+				uint32_t curr_top = top_is_root || s == 0      ? idx_root_curr + p+1 : idx_root_curr +  s   *lathe_step + lathe_roots + p_ct+1;
+				uint32_t next_top = top_is_root || next_corner ? next_root_idx + p+1 : next_root_idx + (s+1)*lathe_step + lathe_roots + p_ct+1;
+
+				if (is_root && !top_is_root && !next_corner) {
+					curr_inds[0] = next_top;
+					curr_inds[1] = curr_top;
+					curr_inds[2] = curr_bot;
+					curr_ind_ct = 3;
+				} else if (!is_root && top_is_root && !next_corner) {
+					curr_inds[2] = next_bot;
+					curr_inds[1] = curr_bot;
+					curr_inds[0] = curr_top;
+					curr_ind_ct = 3;
+				} else {
+					curr_inds[0] = next_top;
+					curr_inds[1] = curr_top;
+					curr_inds[2] = curr_bot;
+
+					curr_inds[3] = next_bot;
+					curr_inds[4] = next_top;
+					curr_inds[5] = curr_bot;
+					curr_ind_ct = 6;
+				}
+				// add the indices, forwards or backwards depending on if this should be flipped
+				if (lp.flip_face == false) inds.add_range(curr_inds, curr_ind_ct);
+				else for (int32_t i = curr_ind_ct-1; i >= 0; i--) inds.add(curr_inds[i]);
+			}
+		}
 	}
 
-	float radius = diameter / 2;
-
-	vind_t  subd       = (vind_t)quadrant_slices*2 + 2;
-	int     vert_count = subd * 5 + 2;
-	int     ind_count  = subd * 18 - 12;
-	vert_t *verts      = sk_malloc_t(vert_t, vert_count);
-	vind_t *inds       = sk_malloc_t(vind_t, ind_count );
-
-	for (vind_t i = 0; i < subd-2; i++) {
-		float u = 0, v = 0;
-
-		float ang = angle_start + ((float)i / (subd-2) + (0.5f / (subd-2))) * (MATH_PI);
-		float x = cosf(ang);
-		float y = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 top_pos = normal*(radius-rounding) + vec3{0, 0, 0.5f};
-		vec3 ctr_pos = normal*radius;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0, 0,-0.5f};
-
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {u,v}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {u,v}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {u,v}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {u,v}, {255,255,255,255} };
-	}
-	// Top half
+	// Center quad
 	{
-		int32_t i   = subd - 2;
-		float   ang = angle_start + MATH_PI;
-		float   x   = cosf(ang);
-		float   y   = sinf(ang);
-		vec3 normal  = {x,y,0};
-		vec3 up      = vec3{-y,x,0 } * radius;
-		vec3 top_pos = normal*(radius-rounding) + vec3{0,0, 0.5f} + up;
-		vec3 ctr_pos = normal*radius                         + up;
-		vec3 bot_pos = normal*(radius-rounding) + vec3{0,0,-0.5f} + up;
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step);
 
-		i   = subd - 1;
-		ang = angle_start;
-		x   = cosf(ang);
-		y   = sinf(ang);
-		normal  = {x,y,0};
-		top_pos = normal*(radius-rounding) + vec3{0,0, 0.5f} + up;
-		ctr_pos = normal*radius                         + up;
-		bot_pos = normal*(radius-rounding) + vec3{0,0,-0.5f} + up;
-		// strip first
-		verts[i * 5  ] = { top_pos,  vec3_normalize(normal+vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		verts[i * 5+1] = { ctr_pos,  normal,                             {0,0}, {255,255,255,0} };
-		verts[i * 5+2] = { bot_pos,  vec3_normalize(normal-vec3{0,0,2}), {0,0}, {255,255,255,0} };
-		// now circular faces
-		verts[i * 5+3] = { top_pos,  {0,0, 1},    {0,0}, {255,255,255,255} };
-		verts[i * 5+4] = { bot_pos,  {0,0,-1},    {0,0}, {255,255,255,255} };
+		inds.add(tl_f); inds.add(tr_f); inds.add(br_f);
+		inds.add(tl_f); inds.add(br_f); inds.add(bl_f);
 	}
 
-	vind_t ind = 0;
-	for (vind_t i = 0; i < subd; i++) {
-		vind_t in = (i + 1) % subd;
-		// Top slice
-		inds[ind++] = i  * 5 + 3;
-		inds[ind++] = in * 5 + 3;
-		inds[ind++] = subd * 5;
-		// Bottom slice
-		inds[ind++] = subd * 5+1;
-		inds[ind++] = in * 5 + 4;
-		inds[ind++] = i  * 5 + 4;
+	if (lathe_pts[lathe_pt_count-1].connect_next) {
+		uint32_t tr_f = _lathe_corner_root_index(0, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t tl_f = _lathe_corner_root_index(1, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t bl_f = _lathe_corner_root_index(2, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
+		uint32_t br_f = _lathe_corner_root_index(3, rounded_corners, corner_resolution, (uint32_t)lathe_pt_count, lathe_step) + (uint32_t)(lathe_pt_count-1);
 
-		if (i == subd - 2) continue;
+		curr_inds[0] = br_f;
+		curr_inds[1] = tr_f;
+		curr_inds[2] = tl_f;
+		curr_inds[3] = bl_f;
+		curr_inds[4] = br_f;
+		curr_inds[5] = tl_f;
+		curr_ind_ct = 6;
 
-		// Now edge strip quad bottom
-		inds[ind++] = in * 5+1;
-		inds[ind++] = in * 5;
-		inds[ind++] = i  * 5;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5;
-		// And edge strip quad top
-		inds[ind++] = in * 5+2;
-		inds[ind++] = in * 5+1;
-		inds[ind++] = i  * 5+1;
-		inds[ind++] = i  * 5+2;
-		inds[ind++] = in * 5+2;
-		inds[ind++] = i  * 5+1;
+		// add the indices, forwards or backwards depending on if this should be flipped
+		if (lathe_pts[lathe_pt_count - 1].flip_face == false) inds.add_range(curr_inds, curr_ind_ct);
+		else for (int32_t i = curr_ind_ct - 1; i >= 0; i--) inds.add(curr_inds[i]);
 	}
 
-	// center points for the circle
-	verts[subd*5]   = { {0,0, .5f}, {0,0, 1}, {0,0}, {255,255,255,255} };
-	verts[subd*5+1] = { {0,0,-.5f}, {0,0,-1}, {0,0}, {255,255,255,255} };
-	if (quadrantify)
-		ui_quadrant_size_verts(verts, vert_count, 0);
-
-	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
-
-	sk_free(verts);
-	sk_free(inds);
+	if (*mesh == nullptr)
+		*mesh = mesh_create();
+	mesh_set_data(*mesh, verts.data, verts.count, inds.data, inds.count);
+	verts.free();
+	inds .free();
 }
 
 ///////////////////////////////////////////
+
+mesh_t ui_gen_quadrant_mesh(ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+	mesh_t result = nullptr;
+	_ui_gen_quadrant_mesh(&result, rounded_corners, corner_radius, corner_resolution, delete_flat_sides, lathe_pts, lathe_pt_count);
+	return result;
+}
+
+///////////////////////////////////////////
+
+mesh_t theme_mesh_button       = nullptr;
+mesh_t theme_mesh_input        = nullptr;
+mesh_t theme_mesh_plane        = nullptr;
+mesh_t theme_mesh_panel        = nullptr;
+mesh_t theme_mesh_panel_top    = nullptr;
+mesh_t theme_mesh_panel_bot    = nullptr;
+mesh_t theme_mesh_slider       = nullptr;
+mesh_t theme_mesh_slider_left  = nullptr;
+mesh_t theme_mesh_slider_right = nullptr;
+mesh_t theme_mesh_slider_pinch = nullptr;
+mesh_t theme_mesh_slider_push  = nullptr;
+mesh_t theme_mesh_separator    = nullptr;
+mesh_t theme_mesh_aura         = nullptr;
+mesh_t theme_mesh_carat        = nullptr;
+
+material_t theme_mat_opaque        = nullptr;
+material_t theme_mat_opaque_same_z = nullptr;
+material_t theme_mat_transparent   = nullptr;
+material_t theme_mat_aura          = nullptr;
+material_t theme_mat_carat         = nullptr;
+
+void ui_theme_visuals_update() {
+	color32 white        = {255,255,255,255};
+	color32 black        = {0,0,0,0};
+	color32 gray         = {200, 200, 200, 255};
+	color32 shadow_center = {0, 0, 0, 200};
+	color32 shadow_edge   = {0, 0, 0, 50 };
+	const ui_lathe_pt_t lathe_button[] = {
+		{ {0,    -0.5f},  {0, 1}, white,         true  },
+		{ {0.95f,-0.5f},  {0, 1}, white,         true  },
+		{ {1,    -0.45f}, {1, 0}, white,         true  },
+		{ {1,    -0.1f},  {1, 0}, white,         false },
+		{ {1.2f,  0.49f}, {0, 1}, black,         true, true },
+		{ {0.0f,  0.49f}, {0, 1}, shadow_center, true, true } };
+	const ui_lathe_pt_t lathe_input[] = {
+		{ {0,    -0.1f }, { 0, 1}, gray,          true  },
+		{ {0.8f, -0.1f }, { 0, 1}, gray,          false },
+		{ {0.8f, -0.1f }, {-1, 0}, gray,          true  },
+		{ {0.8f, -0.5f }, {-1, 0}, white,         false },
+		{ {0.8f, -0.5f }, { 0, 1}, white,         true  },
+		{ {0.95f,-0.5f }, { 0, 1}, white,         true  },
+		{ {1,    -0.45f}, { 1, 0}, white,         true  },
+		{ {1,    -0.1f }, { 1, 0}, white,         false },
+		{ {1.2f,  0.49f}, { 0, 1}, black,         true, true },
+		{ {0,     0.49f}, { 0, 1}, shadow_center, true, true }, };
+	const ui_lathe_pt_t lathe_plane[] = {
+		{ {0, 0}, {0, 1}, white, true  },
+		{ {1, 0}, {0, 1}, white, false } };
+	const ui_lathe_pt_t lathe_panel[] = {
+		{ {0, -0.5f}, {0, 1}, white, true  },
+		{ {1, -0.5f}, {0, 1}, white, false },
+		{ {1, -0.5f}, {1, 0}, white, true  },
+		{ {1,  0.5f}, {1, 0}, white, false },
+		{ {1,  0.5f}, {0,-1}, white, true  },
+		{ {0,  0.5f}, {0,-1}, white, true  } };
+	const ui_lathe_pt_t lathe_slider[] = {
+		{ {0,    -0.5f},  {0, 1}, white,       true  },
+		{ {1,    -0.5f},  {0, 1}, white,       false },
+		{ {1,    -0.5f},  {1, 0}, white,       true  },
+		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
+		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
+	const ui_lathe_pt_t lathe_slider_btn[] = {
+		{ {0,    -0.5f},  {0, 1}, white,       true  },
+		{ {0.8f, -0.5f},  {0, 1}, white,       true  },
+		{ {1,    -0.4f},  {1, 0}, white,       true  },
+		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
+		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
+
+	bool needs_id = theme_mesh_button == nullptr;
+
+	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all,    skui_settings.rounding, 8, false, lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_input,  _countof(lathe_input ));
+	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all,    skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, lathe_plane, _countof(lathe_plane));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
+
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, lathe_slider_btn, _countof(lathe_slider_btn));
+
+	float aura_mesh_radius = skui_aura_radius * 0.75f;
+	ui_default_aura_mesh(&theme_mesh_aura, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
+
+	if (theme_mesh_carat == nullptr) theme_mesh_carat = mesh_find(default_id_mesh_cube);
+
+	if (theme_mat_transparent == nullptr) {
+		theme_mat_transparent = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_transparent, "sk/ui/mat_transparent");
+		material_set_transparency(theme_mat_transparent, transparency_blend);
+		material_set_depth_test  (theme_mat_transparent, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_transparent, -20);
+
+		theme_mat_opaque = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque");
+
+		theme_mat_opaque_same_z = material_copy_id(default_id_material_ui_quadrant);
+		material_set_id          (theme_mat_opaque_same_z, "sk/ui/mat_opaque_same_z");
+		material_set_depth_test  (theme_mat_opaque_same_z, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_opaque_same_z, -10);
+
+		theme_mat_aura  = material_find(default_id_material_ui_aura);
+		theme_mat_carat = material_find(default_id_material_unlit);
+	}
+
+	if (needs_id) {
+		mesh_set_id(theme_mesh_button,       "sk/ui/mesh_button");
+		mesh_set_id(theme_mesh_input,        "sk/ui/mesh_input");
+		mesh_set_id(theme_mesh_plane,        "sk/ui/mesh_plane");
+		mesh_set_id(theme_mesh_panel,        "sk/ui/mesh_panel");
+		mesh_set_id(theme_mesh_panel_top,    "sk/ui/mesh_panel_top");
+		mesh_set_id(theme_mesh_panel_bot,    "sk/ui/mesh_panel_bot");
+		mesh_set_id(theme_mesh_slider,       "sk/ui/mesh_slider");
+		mesh_set_id(theme_mesh_slider_left,  "sk/ui/mesh_slider_left");
+		mesh_set_id(theme_mesh_slider_right, "sk/ui/mesh_slider_right");
+		mesh_set_id(theme_mesh_slider_pinch, "sk/ui/mesh_slider_pinch");
+		mesh_set_id(theme_mesh_slider_push,  "sk/ui/mesh_slider_push");
+		mesh_set_id(theme_mesh_separator,    "sk/ui/mesh_separator");
+	}
+}
+
+///////////////////////////////////////////
+
+void ui_theme_visuals_assign() {
+	ui_set_element_visual(ui_vis_default,              theme_mesh_panel,        theme_mat_opaque);
+	ui_set_element_visual(ui_vis_button,               theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_toggle,               theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_input,                theme_mesh_input,        theme_mat_transparent);
+	ui_set_element_visual(ui_vis_panel,                theme_mesh_plane,        theme_mat_opaque_same_z);
+	ui_set_element_visual(ui_vis_window_head,          theme_mesh_panel_top,    theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_body,          theme_mesh_panel_bot,    theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_body_only,     theme_mesh_panel,        theme_mat_opaque);
+	ui_set_element_visual(ui_vis_window_head_only,     theme_mesh_panel,        theme_mat_opaque);
+	ui_set_element_visual(ui_vis_slider_line,          theme_mesh_slider,       theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_line_active,   theme_mesh_slider_left,  theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_line_inactive, theme_mesh_slider_right, theme_mat_transparent, {skui_settings.rounding * 0.35f, skui_settings.rounding * 0.35f});
+	ui_set_element_visual(ui_vis_slider_pinch,         theme_mesh_slider_pinch, theme_mat_transparent);
+	ui_set_element_visual(ui_vis_slider_push,          theme_mesh_slider_push,  theme_mat_transparent);
+	ui_set_element_visual(ui_vis_separator,            theme_mesh_separator,    theme_mat_transparent);
+	ui_set_element_visual(ui_vis_aura,                 theme_mesh_aura,         theme_mat_aura);
+	ui_set_element_visual(ui_vis_carat,                theme_mesh_carat,        theme_mat_carat);
+}
+
+///////////////////////////////////////////
+
+void ui_theme_visuals_release() {
+	mesh_release(theme_mesh_button      ); theme_mesh_button       = nullptr;
+	mesh_release(theme_mesh_input       ); theme_mesh_input        = nullptr;
+	mesh_release(theme_mesh_plane       ); theme_mesh_plane        = nullptr;
+	mesh_release(theme_mesh_panel       ); theme_mesh_panel        = nullptr;
+	mesh_release(theme_mesh_panel_top   ); theme_mesh_panel_top    = nullptr;
+	mesh_release(theme_mesh_panel_bot   ); theme_mesh_panel_bot    = nullptr;
+	mesh_release(theme_mesh_slider      ); theme_mesh_slider       = nullptr;
+	mesh_release(theme_mesh_slider_left ); theme_mesh_slider_left  = nullptr;
+	mesh_release(theme_mesh_slider_right); theme_mesh_slider_right = nullptr;
+	mesh_release(theme_mesh_slider_pinch); theme_mesh_slider_pinch = nullptr;
+	mesh_release(theme_mesh_slider_push ); theme_mesh_slider_push  = nullptr;
+	mesh_release(theme_mesh_separator   ); theme_mesh_separator    = nullptr;
+	mesh_release(theme_mesh_aura        ); theme_mesh_aura         = nullptr;
+	mesh_release(theme_mesh_carat       ); theme_mesh_carat        = nullptr;
+
+	material_release(theme_mat_opaque       ); theme_mat_opaque        = nullptr;
+	material_release(theme_mat_opaque_same_z); theme_mat_opaque_same_z = nullptr;
+	material_release(theme_mat_transparent  ); theme_mat_transparent   = nullptr;
+	material_release(theme_mat_aura         ); theme_mat_aura          = nullptr;
+	material_release(theme_mat_carat        ); theme_mat_carat         = nullptr;
+}
 
 }

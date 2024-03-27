@@ -23,6 +23,29 @@ namespace StereoKit
 		None         = 2,
 	}
 
+	/// <summary>Specifies a type of display mode StereoKit uses, like
+	/// Mixed Reality headset display vs. a PC display, or even just
+	/// rendering to an offscreen surface, or not rendering at all!</summary>
+	public enum AppMode {
+		/// <summary>No mode has been specified, default behavior will be used. StereoKit will
+		/// pick XR in this case.</summary>
+		None         = 0,
+		/// <summary>Creates an OpenXR or WebXR instance, and drives display/input through
+		/// that.</summary>
+		XR,
+		/// <summary>Creates a flat window, and simulates some XR functionality. Great for
+		/// development and debugging.</summary>
+		Simulator,
+		/// <summary>Creates a flat window and displays to that, but doesn't simulate XR at
+		/// all. You will need to control your own camera here. This can be useful
+		/// if using StereoKit for non-XR 3D applications.</summary>
+		Window,
+		/// <summary>No display at all! StereoKit won't even render to a texture unless
+		/// requested to. This may be good for running tests on a server, or doing
+		/// graphics related tool or CLI work.</summary>
+		Offscreen,
+	}
+
 	/// <summary>This is used to determine what kind of depth buffer
 	/// StereoKit uses!</summary>
 	public enum DepthMode {
@@ -46,33 +69,6 @@ namespace StereoKit
 		/// stencil can open up some nice options! StereoKit has limited
 		/// stencil support right now though (v0.3).</summary>
 		Stencil,
-	}
-
-	/// <summary>TODO: remove this in v0.4
-	/// This describes the type of display tech used on a Mixed
-	/// Reality device. This will be replaced by `DisplayBlend` in v0.4.</summary>
-	[Flags]
-	public enum Display {
-		/// <summary>Default value, when using this as a search type, it will
-		/// fall back to default behavior which defers to platform
-		/// preference.</summary>
-		None         = 0,
-		/// <summary>This display is opaque, with no view into the real world!
-		/// This is equivalent to a VR headset, or a PC screen.</summary>
-		Opaque       = 1 << 0,
-		/// <summary>This display is transparent, and adds light on top of
-		/// the real world. This is equivalent to a HoloLens type of device.</summary>
-		Additive     = 1 << 1,
-		/// <summary>This is a physically opaque display, but with a camera
-		/// passthrough displaying the world behind it anyhow. This would be
-		/// like a Varjo XR-1, or phone-camera based AR.</summary>
-		Blend        = 1 << 2,
-		/// <summary>Use Display.Blend instead, to be removed in v0.4</summary>
-		Passthrough  = 1 << 2,
-		/// <summary>This matches either transparent display type! Additive
-		/// or Blend. For use when you just want to see the world behind your
-		/// application.</summary>
-		AnyTransparent = Additive | Blend,
 	}
 
 	/// <summary>This describes the way the display's content blends with
@@ -265,6 +261,18 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>Provides a reason on why StereoKit has quit.</summary>
+	public enum QuitReason {
+		/// <summary>Default state when SK has not quit.</summary>
+		None,
+		/// <summary>User has selected to quit the application using application controls.</summary>
+		User,
+		/// <summary>Runtime Error SESSION_LOST</summary>
+		SessionLost,
+		/// <summary>User has closed the application from outside of the application.</summary>
+		SystemClose,
+	}
+
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
@@ -417,28 +425,49 @@ namespace StereoKit
 		R8           = 11,
 		/// <summary>A single channel of data, with 16 bits per-pixel! This
 		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. Values in the shader are always 0.0-1.0.</summary>
+		/// information in it. Values in the shader are always 0.0-1.0.
+		/// TODO: remove during major version update, prefer s, f, or u
+		/// postfixed versions of this format, this item is the same as
+		/// r16u.</summary>
 		R16          = 12,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The u postfix indicates that the raw color data
+		/// is stored as an unsigned 16 bit integer, which is then normalized
+		/// into the 0, 1 floating point range on the GPU.</summary>
+		R16u         = R16,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The s postfix indicates that the raw color
+		/// data is stored as a signed 16 bit integer, which is then
+		/// normalized into the -1, +1 floating point range on the GPU.</summary>
+		R16s         = 13,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The f postfix indicates that the raw color
+		/// data is stored as 16 bit floats, which may be tricky to work with
+		/// in most languages.</summary>
+		R16f         = 14,
 		/// <summary>A single channel of data, with 32 bits per-pixel! This
 		/// basically treats each pixel as a generic float, so you can do all
 		/// sorts of strange and interesting things with this.</summary>
-		R32          = 13,
+		R32          = 15,
 		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
 		/// to store stencil information! Stencil data can be used for things
 		/// like clipping effects, deferred rendering, or shadow effects.</summary>
-		DepthStencil = 14,
+		DepthStencil = 16,
 		/// <summary>32 bits of data per depth value! This is pretty detailed,
 		/// and is excellent for experiences that have a very far view
 		/// distance.</summary>
-		Depth32      = 15,
+		Depth32      = 17,
 		/// <summary>16 bits of depth is not a lot, but it can be enough if
 		/// your far clipping plane is pretty close. If you're seeing lots of
 		/// flickering where two objects overlap, you either need to bring
 		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Depth16      = 16,
+		Depth16      = 18,
 		/// <summary>A double channel of data that supports 8 bits for the red
 		/// channel and 8 bits for the green channel.</summary>
-		R8g8         = 17,
+		R8g8         = 19,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more
@@ -565,11 +594,6 @@ namespace StereoKit
 		Vector3      = 4,
 		/// <summary>A 4 component vector composed of floating point values.</summary>
 		Vector4      = 5,
-
-		/// <summary>A 4 component vector composed of floating point values.
-		/// TODO: Remove in v0.4</summary>
-		[Obsolete("Replaced by MaterialParam.Vector4")]
-		Vector       = 5,
 		/// <summary>A 4x4 matrix of floats.</summary>
 		Matrix       = 6,
 		/// <summary>Texture information!</summary>
@@ -659,24 +683,6 @@ namespace StereoKit
 		BottomRight  = XRight | YBottom,
 	}
 
-	/// <summary>This describes the behavior of a 'Solid' physics object! The
-	/// physics engine will apply forces differently based on this type.</summary>
-	public enum SolidType {
-		/// <summary>This object behaves like a normal physical object, it'll
-		/// fall, get pushed around, and generally be susceptible to physical
-		/// forces! This is a 'Dynamic' body in physics simulation terms.</summary>
-		Normal       = 0,
-		/// <summary>Immovable objects are always stationary! They have
-		/// infinite mass, zero velocity, and can't collide with Immovable of
-		/// Unaffected types.</summary>
-		Immovable,
-		/// <summary>Unaffected objects have infinite mass, but can have a
-		/// velocity! They'll move under their own forces, but nothing in the
-		/// simulation will affect them. They don't collide with Immovable or
-		/// Unaffected types.</summary>
-		Unaffected,
-	}
-
 	/// <summary>Describes how an animation is played back, and what to do when
 	/// the animation hits the end.</summary>
 	public enum AnimMode {
@@ -759,13 +765,13 @@ namespace StereoKit
 	public enum TextContext {
 		/// <summary>General text editing, this is the most common type of text, and would
 		/// result in a 'standard' keyboard layout.</summary>
-		Text         = 1,
+		Text         = 0,
 		/// <summary>Numbers and numerical values.</summary>
-		Number       = 2,
+		Number       = 1,
 		/// <summary>This text specifically represents some kind of URL/URI address.</summary>
-		Uri          = 10,
+		Uri          = 2,
 		/// <summary>This is a password, and should not be visible when typed!</summary>
-		Password     = 18,
+		Password     = 3,
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a
@@ -1101,10 +1107,17 @@ namespace StereoKit
 		Menu,
 	}
 
-	/// <summary>////////////////////////////////////////</summary>
+	/// <summary>This is a bit flag that describes what an anchoring system is capable of
+	/// doing.</summary>
 	[Flags]
 	public enum AnchorCaps {
+		/// <summary>This anchor system can store/persist anchors across sessions. Anchors
+		/// must still be explicitly marked as persistent.</summary>
 		Storable     = 1 << 0,
+		/// <summary>This anchor system will provide extra accuracy in locating the Anchor, so
+		/// if the SLAM/6dof tracking drifts over time or distance, the anchor may
+		/// remain fixed in the correct physical space, instead of drifting with the
+		/// virtual content.</summary>
 		Stability    = 1 << 1,
 	}
 

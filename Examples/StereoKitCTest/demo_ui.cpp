@@ -50,10 +50,10 @@ void demo_ui_update() {
 	ui_label("Last Element Focus");
 	static float val3 = 0.5f;
 	ui_hslider("slider3", val3, 0, 1, 0.2f, 0, ui_confirm_pinch);
-	if (ui_last_element_hand_used(handed_left ) & button_state_active) ui_label("Left!");
-	if (ui_last_element_hand_used(handed_right) & button_state_active) ui_label("Right!");
-	if (ui_last_element_focused  (            ) & button_state_active) ui_label("Focused!");
-	if (ui_last_element_active   (            ) & button_state_active) ui_label("Active!");
+	if (ui_last_element_hand_focused(handed_left ) & button_state_active) ui_label("Left!");
+	if (ui_last_element_hand_focused(handed_right) & button_state_active) ui_label("Right!");
+	if (ui_last_element_focused     (            ) & button_state_active) ui_label("Focused!");
+	if (ui_last_element_active      (            ) & button_state_active) ui_label("Active!");
 	ui_panel_end();
 	
 	if (ui_button("Press me!")) {

@@ -37,20 +37,18 @@ struct hand_mesh_t {
 
 extern int32_t input_hand_pointer_id[handed_max];
 
-hand_system_ input_hand_get_system();
-void input_hand_refresh_system();
+void input_hand_init    ();
+void input_hand_shutdown();
+void input_hand_update  ();
 
-void input_hand_init        ();
-void input_hand_shutdown    ();
-void input_hand_update      ();
-void input_hand_update_poses(bool update_visuals);
-
-void input_hand_update_meshes();
-hand_joint_t *input_hand_get_pose_buffer(handed_ hand);
-hand_mesh_t *input_hand_mesh_data(handed_ handedness);
-void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
-void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation);
-void input_hand_state_update(handed_ handedness);
-void input_hand_make_solid();
+hand_system_  input_hand_get_system        ();
+void          input_hand_refresh_system    ();
+void          input_hand_update_poses      ();
+bool          input_hand_get_visible       (handed_ hand);
+hand_joint_t* input_hand_get_pose_buffer   (handed_ hand);
+void          input_hand_sim               (handed_ handedness, bool center_on_finger,  vec3 hand_pos, quat orientation, bool tracked);
+void          input_hand_sim_poses         (handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation);
+void          input_hand_state_update      (handed_ handedness);
+void          input_gen_fallback_mesh      (const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
 
 } // namespace sk

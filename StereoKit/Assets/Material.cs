@@ -275,7 +275,7 @@ namespace StereoKit
 				case bool    v:    SetBool   (parameterName, v); break;
 				case Matrix  m:    SetMatrix (parameterName, m); break;
 				case Tex     t:    SetTexture(parameterName, t); break;
-				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
+				default: Log.Err($"Invalid material parameter type: {value.GetType()}"); break;
 			}
 		} }
 		/// <summary>This array accessor allows for easy access to the more
@@ -301,7 +301,7 @@ namespace StereoKit
 				case MatParamName.RoughnessAmount: return "roughness";
 				case MatParamName.TexScale:        return "tex_scale";
 				case MatParamName.ClipCutoff:      return "cutoff";
-				default: Log.Err("Unimplemented Material Parameter Name! " + parameter); return "";
+				default: Log.Err($"Unimplemented Material Parameter Name! {parameter}"); return "";
 			}
 		}
 

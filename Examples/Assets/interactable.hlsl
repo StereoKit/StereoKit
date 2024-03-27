@@ -20,8 +20,8 @@ struct psIn {
 	float4 pos       : SV_POSITION;
 	float3 world_pos : TEXCOORD0;
 	float3 model_pos : TEXCOORD1;
-	float3 normal    : NORMAL0;
-	float4 color     : COLOR0;
+	half3  normal    : NORMAL0;
+	half4  color     : COLOR0;
 	uint view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -44,28 +44,32 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return o;
 }
 
-float surface_color(float2 xy) {
-	xy = fmod(xy, grid_size) / grid_size;
-	return 1-saturate((distance(xy, float2(0.5,0.5)) - dot_percent) * 10);
-}
-
 float triplanar_dots(float3 normal, float3 position) {
-	float3 n = abs(normal);
-	float3 p = abs(position);
-	return (n.x > n.y && n.x > n.z) * surface_color(p.yz) +
-	       (n.y > n.x && n.y > n.z) * surface_color(p.xz) +
-	       (n.z > n.x && n.z > n.y) * surface_color(p.xy);
-}
-
-float finger_distance(float3 world_pos) {
-	return min(
-	    distance(sk_fingertip[0].xyz, world_pos),
-	    distance(sk_fingertip[1].xyz, world_pos));
+	// Calculate the largest axis, and invert it. So a (0.8,0.2,0.2) will
+	// become a (0,1,1)
+	float3 n       = abs(normal);
+	float  largest = max(n.x, max(n.y, n.z));
+	float3 blend   = n != largest.xxx;
+	
+	// This can allow for smoother transitions between planes, but uses a high
+	// value 'pow' call
+	//float3 blend = pow(abs(normal), 100);
+	//blend = 1 - blend/dot(blend, 1);
+	
+	// Find our position in the grid
+	float3 cell_pos = fmod(abs(position), grid_size) / grid_size - 0.5;
+	
+	// Get the dot intensity by finding the distance on our blend axes in the
+	// grid cell.
+	return 1 - saturate((length(blend * cell_pos) - dot_percent) * 10);
 }
 
 float4 ps(psIn input) : SV_TARGET {
+	float dist = sk_finger_distance(input.world_pos);
+	if (dist > show_radius) discard;
+	
 	float dots     = triplanar_dots(input.normal, input.model_pos);
-	float dist_pct = saturate(finger_distance(input.world_pos)/show_radius);
+	float dist_pct = saturate(dist/show_radius);
 	float ring     = pow(dist_pct, 22) * saturate((0.99-dist_pct) * 10);
-	return input.color * (1-dist_pct) * dots + ring; 
+	return input.color * (1-dist_pct) * dots + ring;
 }

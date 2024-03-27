@@ -26,7 +26,7 @@ void demo_lines_init() {
 	shader_t ui_shader = shader_find(default_id_shader_ui);
 	line_palette_model = model_create_file("Palette.glb", ui_shader);
 	line_window_pose   = { { 0.3f, 0, -0.3f}, quat_lookat(vec3_zero, {-1,0,1}) };
-	line_palette_pose  = { {-0.3f, 0, -0.3f}, quat_lookat(vec3_zero, { 1,0,1}) };
+	line_palette_pose  = { {-0.3f, 0, -0.3f}, quat_lookat(vec3_zero, { 1,-1,1}) };
 
 	line_hand_mat = material_find(default_id_material_hand);
 
@@ -43,26 +43,35 @@ void demo_lines_set_color(color128 color)
 
 ///////////////////////////////////////////
 
+bool swatch_button(const char* id, vec2 c, vec2 size) {
+	float offset;
+	button_state_ state= button_state_inactive, focus=button_state_inactive;
+	ui_button_behavior(vec3{ c.x+size.x/2.0f, c.y+ size.y/2.0f, 0}, size, ui_stack_hash(id),
+		offset, state, focus);
+	return (state & button_state_just_inactive) != 0;
+}
+
+///////////////////////////////////////////
+
 void demo_lines_palette()
 {
 	ui_handle_begin("PaletteMenu", line_palette_pose, model_get_bounds( line_palette_model ), false);
 	render_add_model(line_palette_model, matrix_identity);
+	ui_push_surface({ {}, quat_from_angles(90,0,0) });
 
-	pose_t p = { vec3_zero, quat_from_angles(90, 0, 0) };
-	ui_handle_begin("LineSlider", p, {}, true);
 	ui_hslider_at("Size", line_size, 0.001f, 0.02f, 0, vec3{ 6,-1,0 } *cm2m, vec2{ 8, 2 } *cm2m);
 	line_add(vec3{ 6, 1, -1 } *cm2m, vec3{ -2,1,-1 } *cm2m, line_color, line_color, line_size);
-	ui_handle_end();
-
-	if (ui_volume_at("White", bounds_t{vec3{4, 0, 7} * cm2m, vec3{4,2,4} * cm2m}))
+	
+	if (swatch_button("White", vec2{4,  7} * cm2m, vec2{4,4} * cm2m))
 		demo_lines_set_color({1,1,1,1});
-	if (ui_volume_at("Red",   bounds_t{vec3{9, 0, 3} * cm2m, vec3{4,2,4} * cm2m}))
+	if (swatch_button("Red",   vec2{9,  3} * cm2m, vec2{4,4} * cm2m))
 		demo_lines_set_color({1,0,0,1});
-	if (ui_volume_at("Green", bounds_t{vec3{9, 0,-3} * cm2m, vec3{4,2,4} * cm2m}))
+	if (swatch_button("Green", vec2{9, -3} * cm2m, vec2{4,4} * cm2m))
 		demo_lines_set_color({0,1,0,1});
-	if (ui_volume_at("Blue",  bounds_t{vec3{3, 0,-6} * cm2m, vec3{4,2,4} * cm2m}))
+	if (swatch_button("Blue",  vec2{3, -6} * cm2m, vec2{4,4} * cm2m))
 		demo_lines_set_color({0,0,1,1});
 
+	ui_pop_surface();
 	ui_handle_end();
 }
 

@@ -174,7 +174,7 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 	mesh_t mesh = mesh_find(id);
 
 	if (mesh) {
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material);
 	} else {
 		array_t<vert_t> verts = {};
 		array_t<vind_t> faces = {};
@@ -191,7 +191,7 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 		mesh_set_id  (mesh, id);
 		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material);
 
 		verts.free();
 		faces.free();

@@ -49,6 +49,12 @@ namespace StereoKit
 		/// TextContext provided.</param>
 		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
 			=> NativeAPI.platform_keyboard_show(show, inputType);
+
+		/// <summary>Replace the default keyboard type with a custom layout.</summary>
+		/// <param name="keyboardType">Type of keyboard.</param>
+		/// <param name="keyboardLayout">Custom keyboard layout to replace the defualt layout.</param>
+		public static bool KeyboardSetLayout(TextContext keyboardType, string[] keyboardLayout)
+			=> NativeAPI.platform_keyboard_set_layout(keyboardType, keyboardLayout, keyboardLayout.Length);
 		#endregion
 
 		#region File Picker

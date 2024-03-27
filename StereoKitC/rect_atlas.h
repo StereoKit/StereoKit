@@ -5,15 +5,15 @@
 
 ///////////////////////////////////////////
 
-typedef struct recti_t {
+typedef struct rect_area_t {
 	int32_t x, y, w, h;
-} recti_t;
+} rect_t;
 
 typedef struct rect_atlas_t {
-	array_t<recti_t> free_space;
-	array_t<recti_t> packed;
-	int32_t          w, h;
-	int32_t          used_area;
+	array_t<rect_area_t> free_space;
+	array_t<rect_area_t> packed;
+	int32_t              w, h;
+	int32_t              used_area;
 } rect_atlas_t;
 
 ///////////////////////////////////////////

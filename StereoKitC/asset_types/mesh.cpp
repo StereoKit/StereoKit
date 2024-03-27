@@ -322,27 +322,63 @@ bounds_t mesh_get_bounds(mesh_t mesh) {
 }
 
 bool32_t mesh_has_skin(mesh_t mesh) {
-	return mesh->skin_data.bone_ids != nullptr;
+	return mesh->skin_data.bone_data != nullptr;
 }
 
 ///////////////////////////////////////////
 
-bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_count, const vec4 *bone_weights, uint32_t bone_weight_count, int32_t bone_count) {
+void _mesh_set_weights(mesh_t mesh, const uint16_t* bone_ids_4, int32_t bone_id_4_count, const vec4* bone_weights, int32_t bone_weight_count) {
+	for (int32_t i = 0; i < bone_weight_count; i++) {
+		// Convert the weights to 8-bit integers, for a more memory efficient
+		// representation. This will also ensure the weights are normalized.
+		float   multiplier = 255.0f / (bone_weights[i].x + bone_weights[i].y + bone_weights[i].z + bone_weights[i].w);
+		uint8_t weight[4]  = {
+			(uint8_t)fminf(255, roundf(bone_weights[i].x * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].y * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].z * multiplier)),
+			(uint8_t)fminf(255, roundf(bone_weights[i].w * multiplier)) 
+		};
+
+		// A small percentage of the time, the weights will add up to 254 or
+		// 256, which will cause artifacts when skinning. This code certifies
+		// that the weights always add up to 255.
+		int32_t sum = weight[0] + weight[1] + weight[2] + weight[3];
+		if      (sum < 255) weight[0] += (uint8_t)(255 - sum);
+		else if (sum > 255) {
+			// Remove weights from the last item first. This loop will almost
+			// certainly execute only once.
+			while (sum > 255) {
+				if      (weight[3] > 0) { weight[3]--; sum--; }
+				else if (weight[2] > 0) { weight[2]--; sum--; }
+				else if (weight[1] > 0) { weight[1]--; sum--; }
+				else if (weight[0] > 0) { weight[0]--; sum--; }
+			}
+		}
+
+		mesh->skin_data.bone_data[i].weight[0] = weight[0];
+		mesh->skin_data.bone_data[i].weight[1] = weight[1];
+		mesh->skin_data.bone_data[i].weight[2] = weight[2];
+		mesh->skin_data.bone_data[i].weight[3] = weight[3];
+		mesh->skin_data.bone_data[i].bone_id[0] = bone_ids_4[i * 4 + 0];
+		mesh->skin_data.bone_data[i].bone_id[1] = bone_ids_4[i * 4 + 1];
+		mesh->skin_data.bone_data[i].bone_id[2] = bone_ids_4[i * 4 + 2];
+		mesh->skin_data.bone_data[i].bone_id[3] = bone_ids_4[i * 4 + 3];
+	}
+}
+
+///////////////////////////////////////////
+
+bool _mesh_set_skin(mesh_t mesh, const bone_weight_t *bone_weights, uint32_t bone_weight_count, int32_t bone_count) {
 	if (mesh->discard_data) {
 		log_err("mesh_set_skin: can't work with a mesh that doesn't keep data, ensure mesh_get_keep_data() is true");
 		return false;
 	}
-	if (bone_weight_count != bone_id_4_count || bone_weight_count != mesh->vert_count) {
-		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
-		return false;
-	}
 
-	mesh->skin_data.bone_ids                = sk_malloc_t(uint16_t, bone_id_4_count * 4);
-	mesh->skin_data.weights                 = sk_malloc_t(vec4,     bone_weight_count);
-	mesh->skin_data.deformed_verts          = sk_malloc_t(vert_t,   mesh->vert_count);
-	memcpy(mesh->skin_data.bone_ids,       bone_ids_4,   sizeof(uint16_t) * bone_id_4_count * 4);
-	memcpy(mesh->skin_data.weights,        bone_weights, sizeof(vec4)     * bone_weight_count);
-	memcpy(mesh->skin_data.deformed_verts, mesh->verts,  sizeof(vert_t)   * mesh->vert_count);
+	mesh->skin_data.bone_data      = sk_malloc_t(bone_weight_t, bone_weight_count);
+	mesh->skin_data.deformed_verts = sk_malloc_t(vert_t,        mesh->vert_count);
+	memcpy(mesh->skin_data.deformed_verts, mesh->verts, sizeof(vert_t) * mesh->vert_count);
+	if (bone_weights != nullptr)
+		memcpy(mesh->skin_data.bone_data, bone_weights, sizeof(bone_weight_t) * bone_weight_count);
 
 	mesh->skin_data.bone_inverse_transforms = sk_malloc_t(matrix, bone_count);
 	mesh->skin_data.bone_transforms         = sk_malloc_t(matrix, bone_count);
@@ -357,7 +393,13 @@ bool _mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, uint32_t bone_id_4_
 ///////////////////////////////////////////
 
 void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
-	if (_mesh_set_skin(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count, bone_count)) {
+	if (bone_weight_count != bone_id_4_count || bone_weight_count != (int32_t)mesh->vert_count) {
+		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
+		return;
+	}
+
+	if (_mesh_set_skin(mesh, nullptr, bone_weight_count, bone_count)) {
+		_mesh_set_weights(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count);
 		for (int32_t i = 0; i < bone_count; i++) {
 			mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(bone_resting_transforms[i]);
 		}
@@ -366,8 +408,8 @@ void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_co
 
 ///////////////////////////////////////////
 
-void mesh_set_skin_inv(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms_inverted, int32_t bone_count) {
-	if (_mesh_set_skin(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count, bone_count)) {
+void mesh_set_skin_inv(mesh_t mesh, const bone_weight_t* bone_weights, uint32_t bone_weight_count, const matrix *bone_resting_transforms_inverted, int32_t bone_count) {
+	if (_mesh_set_skin(mesh, bone_weights, bone_weight_count, bone_count)) {
 		memcpy(mesh->skin_data.bone_inverse_transforms, bone_resting_transforms_inverted, sizeof(matrix) * bone_count);
 	}
 }
@@ -384,39 +426,44 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);
+		XMVECTOR new_pos, new_norm;
 
-		const uint16_t *bones   = &mesh->skin_data.bone_ids[i*4];
-		const vec4      weights =  mesh->skin_data.weights [i];
+		const bone_weight_t *bone = &mesh->skin_data.bone_data[i];
 
-		XMMATRIX xm0      = XMLoadFloat4x4((XMFLOAT4X4 *)&mesh->skin_data.bone_transforms[bones[0]]);
-		XMVECTOR new_pos  =                XMVectorScale(XMVector3Transform      (pos,  xm0), weights.x);
-		XMVECTOR new_norm =                XMVectorScale(XMVector3TransformNormal(norm, xm0), weights.x);
-		if (weights.y != 0) {
-			XMMATRIX xm1 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[1]]);
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm1), weights.y), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm1), weights.y), new_norm);
+		{
+			float w = bone->weight[0] / 255.0f;
+			XMMATRIX xm0 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bone->bone_id[0]]);
+			new_pos      =             XMVectorScale(XMVector3Transform      (pos,  xm0), w);
+			new_norm     =             XMVectorScale(XMVector3TransformNormal(norm, xm0), w);
 		}
-		if (weights.z != 0) {
-			XMMATRIX xm2 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[2]]);
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm2), weights.z), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm2), weights.z), new_norm);
+		if (bone->weight[1] != 0) {
+			float w = bone->weight[1] / 255.0f;
+			XMMATRIX xm1 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bone->bone_id[1]]);
+			new_pos      = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm1), w), new_pos);
+			new_norm     = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm1), w), new_norm);
 		}
-		if (weights.w != 0) {
-			XMMATRIX xm3 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bones[3]]);
-			new_pos          = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm3), weights.w), new_pos);
-			new_norm         = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm3), weights.w), new_norm);
+		if (bone->weight[2] != 0) {
+			float w = bone->weight[2] / 255.0f;
+			XMMATRIX xm2 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bone->bone_id[2]]);
+			new_pos      = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm2), w), new_pos);
+			new_norm     = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm2), w), new_norm);
+		}
+		if (bone->weight[3] != 0) {
+			float w = bone->weight[3] / 255.0f;
+			XMMATRIX xm3 = XMLoadFloat4x4((XMFLOAT4X4*)&mesh->skin_data.bone_transforms[bone->bone_id[3]]);
+			new_pos      = XMVectorAdd(XMVectorScale(XMVector3Transform      (pos,  xm3), w), new_pos);
+			new_norm     = XMVectorAdd(XMVectorScale(XMVector3TransformNormal(norm, xm3), w), new_norm);
 		}
 		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].pos,  new_pos );
 		XMStoreFloat3((XMFLOAT3 *)&mesh->skin_data.deformed_verts[i].norm, new_norm);
 		min = XMVectorMin(min, new_pos);
 		max = XMVectorMax(max, new_pos);
 	}
-	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
-	
 	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
 	XMVECTOR dimensions = XMVectorSubtract(max, min);
 	mesh->bounds.center     = math_fast_to_vec3(center);
 	mesh->bounds.dimensions = math_fast_to_vec3(dimensions);
+	_mesh_set_verts(mesh, mesh->skin_data.deformed_verts, mesh->vert_count, false, false);
 }
 
 ///////////////////////////////////////////
@@ -487,7 +534,7 @@ mesh_t mesh_copy(mesh_t mesh) {
 		mesh_set_inds (result, mesh->inds,  mesh->ind_count);
 		mesh_set_verts(result, mesh->verts, mesh->vert_count, false);
 		if (mesh_has_skin(mesh))
-			mesh_set_skin_inv(result, mesh->skin_data.bone_ids, mesh->vert_count, mesh->skin_data.weights, mesh->vert_count, mesh->skin_data.bone_inverse_transforms, mesh->skin_data.bone_count);
+			mesh_set_skin_inv(result, mesh->skin_data.bone_data, mesh->vert_count, mesh->skin_data.bone_inverse_transforms, mesh->skin_data.bone_count);
 	}
 
 	return result;
@@ -552,11 +599,10 @@ void mesh_destroy(mesh_t mesh) {
 	if (mesh->bvh_data)
 		mesh_bvh_destroy(mesh->bvh_data);
 
-	sk_free(mesh->skin_data.bone_ids);
+	sk_free(mesh->skin_data.bone_data);
 	sk_free(mesh->skin_data.bone_inverse_transforms);
 	sk_free(mesh->skin_data.bone_transforms);
 	sk_free(mesh->skin_data.deformed_verts);
-	sk_free(mesh->skin_data.weights);
 
 	*mesh = {};
 }
@@ -570,7 +616,7 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
@@ -648,7 +694,7 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, u
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, ray_t *out_pt, uint32_t* out_start_inds, cull_ cull_mode) {
+bool32_t mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
 	vec3 result = {};
 
 	const mesh_bvh_t *bvh = mesh_get_bvh_data(mesh);

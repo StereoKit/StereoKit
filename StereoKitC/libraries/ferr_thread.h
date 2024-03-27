@@ -59,7 +59,7 @@ ft_id_t        ft_id_current         (void);
 
 ft_thread_t    ft_thread_create      (int32_t (*thread_func)(void *args), void *args);
 ft_thread_t    ft_thread_current     (void);
-void           fr_thread_name        (ft_thread_t thread, const char* name);
+void           ft_thread_name        (ft_thread_t thread, const char* name);
 
 void           ft_yield              (void);
 
@@ -309,7 +309,7 @@ ft_thread_t ft_thread_current() {
 
 ///////////////////////////////////////////
 
-void fr_thread_name(ft_thread_t thread, const char* name) {
+void ft_thread_name(ft_thread_t thread, const char* name) {
 #if defined(FT_WIN)
 	// convert to wchar_t
 	size_t   name_len  = strlen(name);

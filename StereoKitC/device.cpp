@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 #include "device.h"
 #include "stereokit.h"
 #include "sk_memory.h"
 #include "xr_backends/openxr_view.h"
-#include "xr_backends/openxr.h"
-#include "xr_backends/simulator.h"
 
 namespace sk {
 
@@ -12,12 +15,14 @@ device_data_t device_data = {};
 ///////////////////////////////////////////
 
 void device_data_init(device_data_t* data) {
+	*data = {};
 }
 
 ///////////////////////////////////////////
 
 void device_data_free(device_data_t* data) {
 	sk_free(data->name);
+	sk_free(data->runtime);
 	sk_free(data->gpu);
 	*data = {};
 }
@@ -90,6 +95,12 @@ device_tracking_ device_get_tracking() {
 
 const char* device_get_name() {
 	return device_data.name;
+}
+
+///////////////////////////////////////////
+
+const char* device_get_runtime() {
+	return device_data.runtime;
 }
 
 ///////////////////////////////////////////

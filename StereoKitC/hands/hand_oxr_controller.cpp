@@ -1,4 +1,4 @@
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "../stereokit.h"
@@ -13,11 +13,6 @@
 #include <stdlib.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-quat xrc_offset_rot[2];
-vec3 xrc_offset_pos[2];
 
 ///////////////////////////////////////////
 
@@ -57,7 +52,7 @@ void hand_oxrc_update_pose(bool animate) {
 			? controller->palm
 			: hand->palm;
 
-		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
+		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked);
 		else         input_hand_sim_poses((handed_)hand_id, false, hand_pose.position, hand_pose.orientation);
 	}
 }
@@ -101,10 +96,8 @@ void hand_oxrc_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_poses(bool update_visuals) {
+void hand_oxrc_update_poses() {
 	hand_oxrc_update_pose(false);
-	if (update_visuals)
-		input_hand_update_meshes();
 }
 
 }

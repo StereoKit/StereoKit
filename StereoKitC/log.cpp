@@ -3,10 +3,9 @@
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -14,8 +13,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-typedef void(*log_listener_t)(log_, const char *);
-array_t<log_listener_t> log_listeners = {};
+struct log_callback_t {
+	void(*callback)(void*, log_, const char*);
+	void* context;
+};
+array_t<log_callback_t> log_listeners = {};
 
 log_        log_filter = log_diagnostic;
 log_colors_ log_colors = log_colors_ansi;
@@ -146,7 +148,7 @@ void log_write(log_ level, const char *text) {
 	// Set up some memory if we have color tags we need to replace
 	char* replace_buffer = nullptr;
 	if (color_tags > 0)
-		replace_buffer = (char*)alloca(sizeof(char) * ((text_len - color_tags*7) + color_tags * 8 + 1));
+		replace_buffer = sk_stack_alloc_t(char, (text_len - color_tags*7) + color_tags * 8 + 1);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX)
 	const char* colored_text = text;
@@ -165,7 +167,7 @@ void log_write(log_ level, const char *text) {
 		plain_text = replace_buffer;
 	}
 	for (int32_t i = 0; i < log_listeners.count; i++) {
-		log_listeners[i](level, plain_text);
+		log_listeners[i].callback(log_listeners[i].context, level, plain_text);
 	}
 	platform_debug_output(level, plain_text);
 	if (level == log_error) platform_print_callstack();
@@ -287,19 +289,29 @@ void log_clear_any_fail_reason() {
 
 ///////////////////////////////////////////
 
-void log_subscribe(void (*on_log)(log_, const char*)) {
-	log_listeners.add(on_log);
+void log_subscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
+	log_callback_t item = {};
+	item.callback = log_callback;
+	item.context  = context;
+	log_listeners.add(item);
 }
 
 ///////////////////////////////////////////
 
-void log_unsubscribe(void (*on_log)(log_, const char*)) {
+void log_unsubscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
 	for (int32_t i = 0; i < log_listeners.count; i++) {
-		if (log_listeners[i] == on_log) {
+		if (log_listeners[i].callback == log_callback &&
+			log_listeners[i].context  == context) {
 			log_listeners.remove(i);
 			break;
 		}
 	}
+}
+
+///////////////////////////////////////////
+
+void log_clear_subscribers() {
+	log_listeners.free();
 }
 
 } // namespace sk

@@ -1,5 +1,9 @@
-﻿using System;
-using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using System.Collections.Generic;
 
 namespace StereoKit.Framework
 {
@@ -17,8 +21,9 @@ namespace StereoKit.Framework
 			uiQuadrantMaterial[MatParamName.ColorTint] = Color.Hex(0x777ae8ff);// Color.HSV(b.x,b.y*0.6f,b.z*1.4f);
 			Material uiGlassMaterial    = new Material(uiQuadrantShader);
 			uiGlassMaterial.Transparency = Transparency.Blend;
-			uiGlassMaterial.DepthWrite = false;
-			uiGlassMaterial.QueueOffset = -20;
+			uiGlassMaterial.DepthWrite   = false;
+			uiGlassMaterial.DepthTest    = DepthTest.LessOrEq;
+			uiGlassMaterial.QueueOffset  = -20;
 			uiGlassMaterial[MatParamName.ColorTint] = Color.White;
 
 			Mesh quadrantCube = Mesh.GenerateCube(Vec3.One);
@@ -26,16 +31,22 @@ namespace StereoKit.Framework
 
 			Mesh backplate      = BackplateMesh(.01f, 6);
 			Mesh backplateSmall = BackplateMesh(.004f, 6);
-			Mesh glassMesh      = GlassButtonMesh(.01f, 6);
+			Mesh glassMesh      = GlassButtonMesh(.01f, 6, 0.75f);
+			Mesh roundMesh      = GlassButtonMesh(UI.LineHeight/2, 6, 1.0f);
+			Mesh panelMesh      = GlassPanel(.01f, 6);
 			UI.SetElementVisual(UIVisual.Default,     backplate,      uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.WindowHead,  backplate,      uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.WindowBody,  backplate,      uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Separator,   quadrantCube,   uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderLine,  backplateSmall, uiQuadrantMaterial);
+			UI.SetElementVisual(UIVisual.SliderLineActive,   backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
+			UI.SetElementVisual(UIVisual.SliderLineInactive, backplateSmall, uiQuadrantMaterial, V.XY(0.008f, 0.008f));
 			UI.SetElementVisual(UIVisual.SliderPinch, backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.SliderPush,  backplateSmall, uiQuadrantMaterial);
 			UI.SetElementVisual(UIVisual.Button,      glassMesh,      uiGlassMaterial);
+			UI.SetElementVisual(UIVisual.ButtonRound, roundMesh,      uiGlassMaterial);
 			UI.SetElementVisual(UIVisual.Toggle,      glassMesh,      uiGlassMaterial);
+			UI.SetElementVisual(UIVisual.Panel,       panelMesh,      uiQuadrantMaterial);
 
 			UI.SetThemeColor(UIColor.Primary,    Color.HSV(b));
 			UI.SetThemeColor(UIColor.Background, Color.Hex(0x43499cff));//Color.HSV(b.x,b.y*0.8f,b.z));
@@ -330,94 +341,102 @@ namespace StereoKit.Framework
 			return mesh;
 		}
 
-		static Mesh GlassButtonMesh(float cornerRadius, int cornerResolution)
+		struct MeshData
 		{
-			Mesh mesh = new Mesh();
-	
-			float radius = cornerRadius;
+			public List<Vertex> verts;
+			public List<uint>   inds;
 
-			int      subd       = cornerResolution * 2;
-			uint     usubd      = (uint)subd;
-			int      vert_count = 4 * (subd + 2);
-			int      ind_count  = 4 * (cornerResolution * 6 + 6) + 12;
+			public static MeshData New() => new MeshData {
+				verts = new List<Vertex>(),
+				inds  = new List<uint>(),
+			};
+
+			public Mesh MakeMesh()
+			{
+				Mesh mesh = new Mesh();
+				mesh.SetData(verts.ToArray(), inds.ToArray());
+				return mesh;
+			}
+		}
+
+		static Mesh GlassButtonMesh(float cornerRadius, uint cornerResolution, float topRadiusScale)
+		{
+			MeshData data = MeshData.New();
+			AddRoundedPlane(ref data,  0.4f, cornerRadius, 1.0f,           cornerResolution, new Color32(255, 0, 255, 255), new Color32(255, 0, 255, 255));
+			AddRoundedPlane(ref data, -0.5f, cornerRadius, topRadiusScale, cornerResolution, new Color32(255, 255, 0, 255), new Color32(255, 255, 0, 0));
+			return data.MakeMesh();
+		}
+
+		static Mesh GlassPanel(float cornerRadius, uint cornerResolution)
+		{
+			MeshData data = MeshData.New();
+			AddRoundedPlane(ref data, 0, cornerRadius, 1, cornerResolution, new Color32(255, 0, 255, 255), new Color32(255, 0, 255, 255));
+			return data.MakeMesh();
+		}
+
+		static void AddRoundedPlane(ref MeshData data, float zOffset, float cornerRadius, float cornerScalePercent, uint cornerResolution, Color32 innerColor, Color32 outerColor)
+		{
+			uint     vert_count = 4 * cornerResolution + 4;
+			uint     ind_count  = 4 * (cornerResolution * 3 + 3) + 6;
 			Vertex[] verts      = new Vertex[vert_count];
 			uint[]   inds       = new uint  [ind_count];
+			uint     indStart   = (uint)data.verts.Count;
 
-			uint ind_f = (uint)(ind_count / 2);
 			uint ind_b = 0;
-			for (int c = 0; c < 4; c++)
+			for (uint c = 0; c < 4; c++)
 			{
 				float u = c == 0 || c == 3 ? 1 : -1;
 				float v = c == 0 || c == 1 ? 1 : -1;
-				Vec3 offset = V.XY0(-u*radius, -v*radius);
-				Vec3 offsetFront = V.XY0(-u*radius, -v*radius);
+				Vec3 offset  = V.XY0(-u*cornerRadius, -v*cornerRadius);
 
-				uint vert = (uint)(c * (usubd + 2));
-				verts[vert    ] = new Vertex(offset      + V.XYZ(0,0,0.4f), V.XYZ(0, 0,-1), V.XY(u, v), new Color32(255, 0, 255, 255));
-				verts[vert + 1] = new Vertex(offsetFront - V.XYZ(0,0,0.5f), V.XYZ(0, 0,-1), V.XY(u, v), new Color32(255, 255, 0, 255));
-				uint cornerBack  = vert;
-				uint cornerFront = vert+1;
+				// inner corner
+				uint innerCurr = c * (cornerResolution + 1);
+				verts[innerCurr] = new Vertex(offset + V.XYZ(0,0,zOffset), V.XYZ(0, 0,-1), V.XY(u, v), innerColor);
 
 				for (uint i = 0; i < cornerResolution; i++)
 				{
 					float ang = (c*90 + (i/(float)(cornerResolution-1))*90) * Units.deg2rad;
-					float x = SKMath.Cos(ang);
-					float y = SKMath.Sin(ang);
-					Vec3 normal   = V.XY0(x,y);
-					Vec3 backPos  = normal*radius + V.XYZ(0,0,0.4f);
-					Vec3 FrontPos = normal*radius*0.75f - V.XYZ(0,0,0.5f);
+					float x   = SKMath.Cos(ang);
+					float y   = SKMath.Sin(ang);
+					Vec3 normal  = V.XY0(x,y);
+					Vec3 edgePos = normal*cornerRadius*cornerScalePercent;
+					edgePos.z = zOffset;
 
-					uint i4   = vert+2 + i * 2;
-					uint i4_n = vert+2 + (i + 1) * 2;
-
-					// Front and back faces
-					verts[i4    ] = new Vertex(offset     +backPos,  V.XYZ(0, 0, -1), V.XY(u, v), new Color32(255, 0, 255, 255));
-					verts[i4 + 1] = new Vertex(offsetFront+FrontPos, V.XYZ(0, 0, -1), V.XY(u, v), new Color32(255, 255, 0, 0));
+					// rounded corner
+					uint outerCurr = innerCurr + 1 + i;
+					verts[outerCurr] = new Vertex(offset + edgePos, V.XYZ(0, 0, -1), V.XY(u, v), outerColor);
 
 					if (i+1 < cornerResolution)
 					{
-						// Back slice
-						inds[ind_b++] = cornerBack;  inds[ind_b++] = i4_n;     inds[ind_b++] = i4;
-						// Front slice
-						inds[ind_f++] = cornerFront; inds[ind_f++] = i4_n + 1; inds[ind_f++] = i4 + 1;
+						// Connect the triangle fan on the corner itself
+						uint outerNext = innerCurr + 1 + i + 1;
+						inds[ind_b++] = indStart + innerCurr; inds[ind_b++] = indStart + outerNext; inds[ind_b++] = indStart + outerCurr;
 					}
 					else
 					{
-						uint cornerBackNext = (uint)(((c + 1) % 4) * (usubd + 2)) ;
-						uint cornerFrontNext  = cornerBackNext + 1;
-						i4_n = cornerFrontNext + 1;
+						// Connect a quad to the next corner
+						uint innerNext = ((c+1)%4) * (cornerResolution+1);
+						uint outerNext = innerNext + 1;
 
-						// Back slice
-						inds[ind_b++] = cornerBack;     inds[ind_b++] = i4_n; inds[ind_b++] = i4;
-						inds[ind_b++] = cornerBackNext; inds[ind_b++] = i4_n; inds[ind_b++] = cornerBack;
-						// Front slice
-						inds[ind_f++] = cornerFront;     inds[ind_f++] = i4_n + 1; inds[ind_f++] = i4 + 1;
-						inds[ind_f++] = cornerFrontNext; inds[ind_f++] = i4_n + 1; inds[ind_f++] = cornerFront;
+						inds[ind_b++] = indStart + innerCurr; inds[ind_b++] = indStart + outerNext; inds[ind_b++] = indStart + outerCurr;
+						inds[ind_b++] = indStart + innerCurr; inds[ind_b++] = indStart + innerNext; inds[ind_b++] = indStart + outerNext;
 					}
 				}
 			}
 
-			// Center quad front and back
+			// Center quad
 			{
-				uint tr_f = 0;
-				uint tr_b = tr_f + 1;
-				uint tl_f = usubd + 2;
-				uint tl_b = tl_f + 1;
-				uint bl_f = 2 * (usubd + 2);
-				uint bl_b = bl_f + 1;
-				uint br_f = 3 * (usubd + 2);
-				uint br_b = br_f + 1;
+				uint tr_f = indStart + 0;
+				uint tl_f = indStart + cornerResolution + 1;
+				uint bl_f = indStart + 2 * (cornerResolution + 1);
+				uint br_f = indStart + 3 * (cornerResolution + 1);
 
 				inds[ind_b++] = tl_f; inds[ind_b++] = tr_f; inds[ind_b++] = br_f;
 				inds[ind_b++] = tl_f; inds[ind_b++] = br_f; inds[ind_b++] = bl_f;
-
-				inds[ind_f++] = tl_b; inds[ind_f++] = tr_b; inds[ind_f++] = br_b;
-				inds[ind_f++] = tl_b; inds[ind_f++] = br_b; inds[ind_f++] = bl_b;
 			}
 
-			mesh.SetVerts(verts);
-			mesh.SetInds(inds);
-			return mesh;
+			data.verts.AddRange(verts);
+			data.inds .AddRange(inds );
 		}
 	}
 }

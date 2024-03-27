@@ -2,7 +2,7 @@
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../utils/random.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 
 #include "../xr_backends/anchor_openxr_msft.h"
 #include "../xr_backends/anchor_stage.h"
@@ -93,8 +93,8 @@ void anchors_step_end() {
 char to_hex(uint32_t val, uint32_t byte_idx) {
 	uint32_t byte = (val >> (byte_idx * 4)) & 0xF;
 	return byte < 10
-		? '0' + byte
-		: 'A' + byte - 10;
+		? (char)('0' + byte)
+		: (char)('A' + byte - 10);
 }
 
 ///////////////////////////////////////////
@@ -239,6 +239,16 @@ const char *anchor_get_name(const anchor_t anchor) {
 
 button_state_ anchor_get_tracked(const anchor_t anchor) {
 	return anchor->tracked;
+}
+
+///////////////////////////////////////////
+
+bool32_t anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor) {
+#if !defined(SK_XR_OPENXR)
+	return false;
+#endif
+	if (anch_sys != anchor_system_openxr_msft) return false;
+	return anchor_oxr_get_perception_anchor(anchor, perception_spatial_anchor);
 }
 
 ///////////////////////////////////////////
