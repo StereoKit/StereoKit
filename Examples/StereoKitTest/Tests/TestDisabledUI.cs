@@ -57,68 +57,68 @@ class TestDisabledUI : ITest
 		if (UI.Button("UI.Button"))
 		{
 			controlsEnabled++;
-			Log.Info("Button was pressed.");
+			Log.Err("Button was pressed.");
 		}
 		if (UI.ButtonImg("UI.ButtonImg", sprSearch, UIBtnLayout.Left))
 		{
 			controlsEnabled++;
-			Log.Info("ButtonImg was pressed.");
+			Log.Err("ButtonImg was pressed.");
 		}
 		if (UI.ButtonImg("UI.ButtonImgNoText", sprSearch, UIBtnLayout.CenterNoText))
 		{
 			controlsEnabled++;
-			Log.Info("ButtonImgNoText was pressed.");
+			Log.Err("ButtonImgNoText was pressed.");
 		}
 		UI.Label("DisabledLabel");
 		UI.Image(sprSearch, new Vec2(2, 0) * U.cm);
 		if (UI.Toggle("UI.Toggle", ref disabledToggles[0]))
 		{
 			controlsEnabled++;
-			Log.Info("Toggle was toggled.");
+			Log.Err("Toggle was toggled.");
 		}
 		UI.SameLine();
 		if (UI.Toggle("UI.CustomImageToggle", ref disabledToggles[2], sprToggleOff, sprToggleOn))
 		{
 			controlsEnabled++;
-			Log.Info("CustomImageToggle was toggled.");
+			Log.Err("CustomImageToggle was toggled.");
 		}
 
 		if (UI.Radio("UI.DisRadio", disabledRadio == 0))
 		{
 			disabledRadio = 0;
 			controlsEnabled++;
-			Log.Info("Radio was modified.");
+			Log.Err("Radio was modified.");
 		}
 		UI.SameLine();
 		if (UI.Radio("UI.DisRadio1", disabledRadio == 1))
 		{
 			disabledRadio = 1;
 			controlsEnabled++;
-			Log.Info("Radio was modified.");
+			Log.Err("Radio was modified.");
 		}
 		UI.SameLine();
 		if (UI.Radio("UI.DisRadio2", disabledRadio == 2))
 		{
 			disabledRadio = 2;
 			controlsEnabled++;
-			Log.Info("Radio was modified.");
+			Log.Err("Radio was modified.");
 		}
 		if (UI.HSlider("Push", ref sliderPushValue, 0, 1, 0, 0.15f, UIConfirm.Push))
 		{
 			controlsEnabled++;
-			Log.Info("Horizontal slider was modified.");
+			Log.Err("Horizontal slider was modified.");
 		}
 		if (UI.Input("Input", ref textInput))
 		{
 			controlsEnabled++;
-			Log.Info("Text Input field value modified.");
+			Log.Err("Text Input field value modified.");
 		}
 		UI.ProgressBar(percent);
 		UI.Text("UI.Text", TextAlign.TopLeft);
 		if (UI.VSlider("UI.VSlider", ref vSliderVal, 0, 1, 0, 0.15f, UIConfirm.Push))
 		{
 			controlsEnabled++;
-			Log.Info("Vertical slider was modified.");
+			Log.Err("Vertical slider was modified.");
 		}
 
 		UI.PopEnabled();
