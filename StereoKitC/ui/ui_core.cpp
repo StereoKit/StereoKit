@@ -286,16 +286,13 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 		start, bounds.dimensions,
 		start, bounds.dimensions,
 		&focus, &interactor);
-	interactor_t *actor = interactor_get(interactor);
 
-	bool active = focus & button_state_active && !(focus & button_state_just_inactive);
-	if (interact_type != ui_confirm_push && interactor != -1) {
-		active = actor->pinch_state & button_state_active;
-		// Focus can get lost if the user is dragging outside the box, so set
-		// it to focused if it's still active.
-		focus = interactor_set_focus(actor, id_hash, active || focus & button_state_active, 0, bounds.center);
+	interactor_t *actor = interactor_get(interactor);
+	if (actor != nullptr) {
+		result = interactor_set_active(actor, id_hash, actor->type == interactor_type_point
+			? (bool32_t)((focus              & button_state_active) != 0)
+			: (bool32_t)((actor->pinch_state & button_state_active) != 0));
 	}
-	result = interactor_set_active(actor, id_hash, active);
 
 	if (out_opt_hand        != nullptr) *out_opt_hand        = (handed_)interactor;
 	if (out_opt_focus_state != nullptr) *out_opt_focus_state = focus;
@@ -756,7 +753,7 @@ void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_
 
 		button_state_ focus = interactor_set_focus(actor, id, in_box || (actor->type != interactor_type_point && was_active), priority, bounds.center);
 		if (focus != button_state_inactive) {
-			*out_interactor        = i;
+			*out_interactor  = i;
 			*out_focus_state = focus;
 		}
 	}
