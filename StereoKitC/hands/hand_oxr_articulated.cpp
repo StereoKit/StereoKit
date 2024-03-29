@@ -246,10 +246,13 @@ void hand_oxra_update_joints() {
 		// "ready pose" (facing the same general direction as the user). It
 		// should remain tracked if it was activated, even if it's no longer in
 		// a ready pose.
+		const float near_dist  = 0.2f;
+		const float hand_angle = 0.25f; // ~150 degrees
 		bool was_tracked  = (pointer ->tracked       & button_state_active) > 0;
 		bool is_active    = (pointer ->state         & button_state_active) > 0;
 		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
-		bool is_facing    = vec3_dot(vec3_normalize(pointer->ray.pos - input_head()->position), inp_hand->palm.orientation * vec3_forward) > 0.25f;
+		bool is_facing    = vec3_dot(vec3_normalize(pointer->ray.pos - head->position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
+		bool is_far       = vec2_distance_sq({pointer->ray.pos.x, pointer->ray.pos.z}, {head->position.x, head->position.z}) > (near_dist*near_dist);
 		pointer->tracked = button_make_state(was_tracked, hand_tracked && (is_active || is_facing));
 	}
 
