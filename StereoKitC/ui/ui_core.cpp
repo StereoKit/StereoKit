@@ -126,7 +126,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 		float curve = math_lerp(
 			sinf(pct_i * pct_i * 3.14159f),
 			fminf(1,sinf(pct * pct * 3.14159f)*1.5f), active);
-		float width = (0.0015f + curve * 0.002f) * visibility;
+		float width = (0.002f + curve * 0.003f) * visibility;
 		pts[i] = line_point_t{ actor->position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*alpha*255) } };
 	}
 	line_add_listv(pts, ct);
