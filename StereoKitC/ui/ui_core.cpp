@@ -945,23 +945,28 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_active() {
-	// TODO: needs interactor work
-	return button_make_state(
-		skui_interactors[handed_left].active_prev == skui_last_element || skui_interactors[handed_right].active_prev == skui_last_element,
-		skui_interactors[handed_left].active      == skui_last_element || skui_interactors[handed_right].active      == skui_last_element);
+	bool was_active = false;
+	bool is_active  = false;
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		was_active = was_active || (skui_interactors[i].active_prev == skui_last_element);
+		is_active  = is_active  || (skui_interactors[i].active      == skui_last_element);
+	}
+	return button_make_state(was_active, is_active);
 }
 
 ///////////////////////////////////////////
 
 button_state_ ui_last_element_focused() {
-	// TODO: needs interactor work
-
-	// Because focus can change at any point during the frame, we'll check
-	// against the last two frame's focus ids, which are set in stone after the
-	// frame ends.
-	return button_make_state(
-		skui_interactors[handed_left].focused_prev_prev == skui_last_element || skui_interactors[handed_right].focused_prev_prev == skui_last_element,
-		skui_interactors[handed_left].focused_prev      == skui_last_element || skui_interactors[handed_right].focused_prev      == skui_last_element);
+	bool was_focused = false;
+	bool is_focused  = false;
+	for (int32_t i = 0; i < skui_interactors.count; i++) {
+		// Because focus can change at any point during the frame, we'll check
+		// against the last two frame's focus ids, which are set in stone after the
+		// frame ends.
+		was_focused = was_focused || (skui_interactors[i].focused_prev_prev == skui_last_element);
+		is_focused  = is_focused  || (skui_interactors[i].focused_prev      == skui_last_element);
+	}
+	return button_make_state(was_focused, is_focused);
 }
 
 ///////////////////////////////////////////

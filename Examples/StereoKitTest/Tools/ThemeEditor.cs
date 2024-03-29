@@ -82,7 +82,7 @@ UI.SetThemeColor(UIColor.Text,       new Color({text.r      :0.000}f,{text.g    
 			initial      = Theme.FromCurrent();
 			active       = initial.Clone();
 			applied      = initial.Clone();
-			settingsPose = UI.PopupPose();
+			settingsPose = UI.PopupPose(new Vec3(0,0.1f,0));
 			return true;
 		}
 
