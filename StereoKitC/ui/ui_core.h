@@ -24,6 +24,7 @@ struct interactor_t {
 	vec3      capsule_start;
 	vec3      capsule_start_world;
 	float     capsule_radius;
+	float     min_distance;
 
 	button_state_ tracked;
 	button_state_ pinch_state;
@@ -86,6 +87,7 @@ bool32_t         interactor_check_box       (const interactor_t* interactor, bou
 
 int32_t          interactor_create          (interactor_type_ type, interactor_event_ events);
 void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked);
+void             interactor_min_distance_set(int32_t interactor, float min_distance);
 interactor_t*    interactor_get             (int32_t interactor);
 
 inline bounds_t  ui_size_box  (vec3 top_left, vec3 dimensions) { return { top_left - dimensions / 2, dimensions }; }
