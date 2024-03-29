@@ -341,7 +341,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 
 	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
@@ -654,7 +654,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	// Render the input UI
 	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
-	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
 
 	// Swap out for a string of asterisks to hide any password
