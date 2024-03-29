@@ -480,7 +480,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 				hand_attention_dist += 0.1f; // penalty to prefer non-handle elements
 
 				if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
-					ui_play_sound_on(ui_vis_handle, actor->capsule_end_world);
+					ui_play_sound_on(ui_vis_handle, hierarchy_to_world_point(at));
 
 					actor->active = id;
 					actor->interaction_start_position      = actor->position;
@@ -568,7 +568,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 
 					if (actor->pinch_state & button_state_just_inactive) {
 						actor->active = 0;
-						ui_play_sound_off(ui_vis_handle, actor->capsule_end_world);
+						ui_play_sound_off(ui_vis_handle, hierarchy_to_world_point(actor->interaction_pt_pivot));
 					}
 					ui_pop_surface();
 					ui_push_surface(handle_pose);
