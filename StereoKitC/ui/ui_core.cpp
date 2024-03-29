@@ -90,14 +90,14 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 	bool  actor_visible = hide_inactive == false || actor->focused_prev != 0;
 	float visibility    = 1;
 	if (ref_visible_amt != nullptr) {
-		*ref_visible_amt = math_lerp(*ref_visible_amt, actor_visible ? 1 : 0, 16.0f * time_stepf_unscaled());
+		*ref_visible_amt = math_lerp(*ref_visible_amt, actor_visible ? 1.f : 0.f, 16.0f * time_stepf_unscaled());
 		visibility = *ref_visible_amt;
 	}
 	if (visibility < 0.001f) return;
 
 	float active = 0;
 	if (ref_active_amt != nullptr) {
-		*ref_active_amt = math_lerp(*ref_active_amt, actor->active_prev != 0 ? 1 : 0, 16.0f * time_stepf_unscaled());
+		*ref_active_amt = math_lerp(*ref_active_amt, actor->active_prev != 0 ? 1.f : 0.f, 16.0f * time_stepf_unscaled());
 		active = *ref_active_amt;
 	}
 
