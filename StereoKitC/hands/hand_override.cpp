@@ -46,13 +46,6 @@ void hand_override_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_override_update_poses(bool update_visuals) {
-	if (update_visuals)
-		input_hand_update_fallback_meshes();
-}
-
-///////////////////////////////////////////
-
 void input_hand_override(handed_ hand, const hand_joint_t *hand_joints) {
 	override_hand[hand] = hand_joints != nullptr;
 	if (hand_joints != nullptr)

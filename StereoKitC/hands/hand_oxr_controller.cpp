@@ -96,10 +96,8 @@ void hand_oxrc_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_poses(bool update_visuals) {
+void hand_oxrc_update_poses() {
 	hand_oxrc_update_pose(false);
-	if (update_visuals)
-		input_hand_update_fallback_meshes();
 }
 
 }

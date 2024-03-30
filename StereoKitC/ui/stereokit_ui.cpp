@@ -328,7 +328,8 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
 		ui_anim_start(id, 0);
@@ -338,7 +339,9 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
@@ -399,7 +402,8 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
 		ui_anim_start(id, 0);
@@ -414,7 +418,9 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
@@ -474,7 +480,8 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	id_hash_t     id = ui_stack_hash(text);
 	float         finger_offset;
 	button_state_ state, focus;
-	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus);
+	int32_t       interactor;
+	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_active)
 		ui_anim_start(id, 0);
@@ -484,7 +491,8 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
 
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, fmaxf(activation, color_blend));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
@@ -645,7 +653,8 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 	// Render the input UI
 	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
-	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + ((focus & button_state_active) > 0 ? 0.5f : 0);
+	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
+	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
 
 	// Swap out for a string of asterisks to hide any password
@@ -796,7 +805,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	vec2 vmin, vmax, vstep, vval;
 	if (vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
 	else          { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
-	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &focus_state, &active_state, &interactor);
+	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, & button_center, & finger_offset, & focus_state, & active_state, & interactor);
 	value = vertical ? vval.y : vval.x;
 
 	if (active_state & button_state_just_active)

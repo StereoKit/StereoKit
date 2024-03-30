@@ -69,8 +69,8 @@ void virtualkeyboard_go_to         (int32_t layout_idx);
 ///////////////////////////////////////////
 
 void virtualkeyboard_initialize() {
-	keylayout_info_t layer   = {};
-	char**           layouts = new char*[2];
+	keylayout_info_t layer      = {};
+	const char*      layouts[2] = {};
 
 	local = {};
 	local.visit_return_idx = -1;
@@ -190,7 +190,7 @@ void virtualkeyboard_open(bool32_t open, text_context_ type) {
 
 	// Position the keyboard in front of the user if this just opened
 	if (open && !local.open) {
-		local.pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
+		local.pose = matrix_transform_pose(matrix_invert(render_get_cam_root()), ui_popup_pose({0,0,0}));
 	}
 
 	// Reset the keyboard to its default state
@@ -210,7 +210,7 @@ bool virtualkeyboard_get_open() {
 
 ///////////////////////////////////////////
 
-bool virtualkeyboard_set_layout(text_context_ keyboard_type, char** keyboard_layouts, int layouts_num) {
+bool virtualkeyboard_set_layout(text_context_ keyboard_type, const char** keyboard_layouts, int layouts_num) {
 	keylayout_info_t          layer           = {};
 	array_t<keylayout_info_t> keyboard_layers = {};
 

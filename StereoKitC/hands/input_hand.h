@@ -43,14 +43,12 @@ void input_hand_update  ();
 
 hand_system_  input_hand_get_system        ();
 void          input_hand_refresh_system    ();
-void          input_hand_update_fallback_meshes();
-void          input_hand_update_poses      (bool update_visuals);
+void          input_hand_update_poses      ();
 bool          input_hand_get_visible       (handed_ hand);
-bool          input_hand_should_update_mesh(handed_ hand);
 hand_joint_t* input_hand_get_pose_buffer   (handed_ hand);
-void          input_hand_set_mesh_data     (handed_ handedness, hand_mesh_t* mesh_data);
 void          input_hand_sim               (handed_ handedness, bool center_on_finger,  vec3 hand_pos, quat orientation, bool tracked);
 void          input_hand_sim_poses         (handed_ handedness, bool mouse_adjustments, vec3 hand_pos, quat orientation);
 void          input_hand_state_update      (handed_ handedness);
+void          input_gen_fallback_mesh      (const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
 
 } // namespace sk

@@ -51,7 +51,7 @@ void offscreen_step_begin() {
 ///////////////////////////////////////////
 
 void offscreen_step_end() {
-	input_update_poses(true);
+	input_step_late();
 
 	render_pipeline_draw();
 }

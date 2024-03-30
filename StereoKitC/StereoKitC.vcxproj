@@ -170,6 +170,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\input.cpp" />
     <ClCompile Include="systems\input_keyboard.cpp" />
+    <ClCompile Include="systems\input_render.cpp" />
     <ClCompile Include="systems\line_drawer.cpp" />
     <ClCompile Include="systems\render.cpp" />
     <ClCompile Include="systems\render_pipeline.cpp" />
@@ -177,6 +178,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
     <ClCompile Include="systems\world.cpp" />
+    <ClCompile Include="systems\_stereokit_systems.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\tools.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
@@ -223,6 +225,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\array.h" />
     <ClInclude Include="libraries\atomic_util.h" />
     <ClInclude Include="libraries\cgltf.h" />
+    <ClInclude Include="libraries\default_controller_l.h" />
+    <ClInclude Include="libraries\default_controller_r.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\ferr_thread.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
@@ -258,12 +262,14 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\input.h" />
     <ClInclude Include="systems\input_keyboard.h" />
+    <ClInclude Include="systems\input_render.h" />
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\render.h" />
     <ClInclude Include="systems\render_pipeline.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
+    <ClInclude Include="systems\_stereokit_systems.h" />
     <ClInclude Include="tools\file_picker.h" />
     <ClInclude Include="systems\world.h" />
     <ClInclude Include="tools\tools.h" />
