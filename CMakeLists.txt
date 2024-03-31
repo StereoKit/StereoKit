@@ -181,8 +181,8 @@ if (SK_BUILD_OPENXR_LOADER)
 endif()
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2023.3.31
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2023.3.31/sk_gpu.v2023.3.31.zip
+  NAME sk_gpu # 2024.3.31
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
   OPTIONS
   "SKG_HEADER OFF"
 )
