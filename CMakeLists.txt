@@ -181,8 +181,8 @@ if (SK_BUILD_OPENXR_LOADER)
 endif()
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.3.30
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.30/sk_gpu.v2024.3.30.zip
+  NAME sk_gpu # 2024.3.31
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
   OPTIONS
   "SKG_HEADER OFF"
 )
@@ -626,6 +626,7 @@ if (SK_BUILD_TESTS)
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/test_shaders
     "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
 
