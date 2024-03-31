@@ -187,6 +187,15 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   "SKG_HEADER OFF"
 )
 
+add_custom_target(diagnostic_pre_build ALL
+    COMMAND echo "Checking permissions before build..."
+    COMMAND ls -l /home/runner/work/StereoKit/StereoKit/.deps_cache/sk_gpu/ea0f99505c757fa3d60cfd64055250df0c733f8b/tools/linux_x64/skshaderc
+    COMMAND chmod +x /home/runner/work/StereoKit/StereoKit/.deps_cache/sk_gpu/ea0f99505c757fa3d60cfd64055250df0c733f8b/tools/linux_x64/skshaderc
+    COMMAND ls -l /home/runner/work/StereoKit/StereoKit/.deps_cache/sk_gpu/ea0f99505c757fa3d60cfd64055250df0c733f8b/tools/linux_x64/skshaderc
+    COMMAND df -h
+    COMMAND uname -a
+)
+
 ###########################################
 ## StereoKitC                            ##
 ###########################################
@@ -409,6 +418,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
+add_dependencies(StereoKitC diagnostic_pre_build)
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders
   "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
