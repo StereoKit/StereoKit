@@ -54,7 +54,7 @@
 			<SKPowershellExe Condition="!$([MSBuild]::IsOSUnixLike())">powershell.exe</SKPowershellExe>
 			<SKPowershellExe Condition="$([MSBuild]::IsOSUnixLike())">pwsh</SKPowershellExe>
 		</PropertyGroup>
-		<Exec Command="cd $([MSBuild]::NormalizePath('$(ProjectDir)..\..\')) &amp; $(SKPowershellExe) -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
+		<Exec Command="cd $([MSBuild]::NormalizePath('$(ProjectDir)..\..\')) &amp;&amp; $(SKPowershellExe) -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
 	</Target>
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->

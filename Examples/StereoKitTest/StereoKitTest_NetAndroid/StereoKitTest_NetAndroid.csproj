@@ -56,8 +56,8 @@
 		<!--Unlike the other projects, this seems to invoke from the bin
 		    folder, and $(ProjectDir) doesn't work.-->
 		<PreBuildEvent>cd ..\..\..\..\..\..\</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">$(PreBuildEvent) &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">$(PreBuildEvent) &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">$(PreBuildEvent) &amp;&amp; cmake --preset Android_Arm64_$(Configuration) &amp;&amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">$(PreBuildEvent) &amp;&amp; cmake --preset Android_x64_$(Configuration) &amp;&amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
 
 	<Target Name="SKCheckSKShaderC" BeforeTargets="StereoKit_ShaderBuild">
@@ -66,7 +66,7 @@
 			<SKPowershellExe Condition="!$([MSBuild]::IsOSUnixLike())">powershell.exe</SKPowershellExe>
 			<SKPowershellExe Condition="$([MSBuild]::IsOSUnixLike())">pwsh</SKPowershellExe>
 		</PropertyGroup>
-		<Exec Command="cd $([MSBuild]::NormalizePath('$(ProjectDir)..\..\..\')) &amp; $(SKPowershellExe) -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
+		<Exec Command="cd $([MSBuild]::NormalizePath('$(ProjectDir)..\..\..\')) &amp;&amp; $(SKPowershellExe) -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
 	</Target>
 
 	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
