@@ -54,9 +54,11 @@
 	<PropertyGroup>
 		<!--Unlike the other projects, this seems to invoke from the bin
 		    folder, and $(ProjectDir) doesn't work.-->
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent>cd ..\..\..\..\..\..\</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">$(PreBuildEvent) &amp;&amp; cmake --preset Android_Arm64_$(Configuration) &amp;&amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
+		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">$(PreBuildEvent) &amp;&amp; cmake --preset Android_x64_$(Configuration) &amp;&amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
+
 	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
 		<RemoveDir Condition="'$(TestBuildMode)'=='ARM64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
 		<RemoveDir Condition="'$(TestBuildMode)'=='x64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_x64_$(Configuration)" />

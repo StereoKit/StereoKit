@@ -110,8 +110,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     </PostBuildEvent>
     <PreBuildEvent>
       <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
-"$(ProjectDir)..\tools\skshaderc.exe" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$(ProjectDir)..\tools\include" -o "$(IntermediateOutputPath)shaders" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\Update-Dependencies.ps1'))" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
+"$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\skshaderc\win32_x64\skshaderc.exe'))" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\include'))" -o "$([MSBuild]::NormalizePath('$(IntermediateOutputPath)shaders'))" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
