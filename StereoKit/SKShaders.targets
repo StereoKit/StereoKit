@@ -15,8 +15,11 @@
 
 	<!-- Switch compiler binary depending on the platform -->
 	<PropertyGroup>
-		<SKShadercExe Condition="'$(OS)'=='Windows_NT'">skshaderc.exe</SKShadercExe>
-		<SKShadercExe Condition="'$(OS)'!='Windows_NT'">skshaderc</SKShadercExe>
+		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'X64'">x64</PlatformArch>
+		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'Arm64'">arm64</PlatformArch>
+		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">skshaderc\win32_$(PlatformArch)\skshaderc.exe</SKShadercExe>
+		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Linux'))"  >skshaderc/linux_$(PlatformArch)/skshaderc</SKShadercExe>
+		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('OSX'))"    >skshaderc/mac/skshaderc</SKShadercExe>
 		<SKAutoFindShaders Condition="'$(SKAutoFindShaders)' == ''">True</SKAutoFindShaders>
 	</PropertyGroup>
 

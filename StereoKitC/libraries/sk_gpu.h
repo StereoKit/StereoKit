@@ -150,19 +150,11 @@ typedef enum skg_tex_fmt_ {
 	skg_tex_fmt_r8g8,
 } skg_tex_fmt_;
 
-typedef enum skg_fmt_ {
-	skg_fmt_none,
-	skg_fmt_f32_1,    skg_fmt_f32_2,    skg_fmt_f32_3,    skg_fmt_f32_4,
-	skg_fmt_f16_1,    skg_fmt_f16_2,                      skg_fmt_f16_4,
-	skg_fmt_i32_1,    skg_fmt_i32_2,    skg_fmt_i32_3,    skg_fmt_i32_4,
-	skg_fmt_i16_1,    skg_fmt_i16_2,                      skg_fmt_i16_4,
-	skg_fmt_i8_1,     skg_fmt_i8_2,                       skg_fmt_i8_4,
-	skg_fmt_ui32_1,   skg_fmt_ui32_2,   skg_fmt_ui32_3,   skg_fmt_ui32_4,
-	skg_fmt_ui16_1,   skg_fmt_ui16_2,                     skg_fmt_ui16_4,
-	skg_fmt_ui8_1,    skg_fmt_ui8_2,                      skg_fmt_ui8_4,
-	skg_fmt_ui16_n_1, skg_fmt_ui16_n_2,                   skg_fmt_ui16_n_4,
-	skg_fmt_ui8_n_1,  skg_fmt_ui8_n_2,                    skg_fmt_ui8_n_4,
-} skg_fmt_;
+typedef enum skg_ind_fmt_ {
+	skg_ind_fmt_u32,
+	skg_ind_fmt_u16,
+	skg_ind_fmt_u8,
+} skg_ind_fmt_;
 
 typedef enum skg_el_semantic_ {
 	skg_el_semantic_none,
@@ -239,6 +231,45 @@ typedef struct {
 	float r, g, b, a;
 } skg_color128_t;
 
+typedef enum skg_fmt_ {
+	skg_fmt_none,
+	skg_fmt_f64,
+	skg_fmt_f32,
+	skg_fmt_f16,
+	skg_fmt_i32,
+	skg_fmt_i16,
+	skg_fmt_i8,
+	skg_fmt_i32_normalized,
+	skg_fmt_i16_normalized,
+	skg_fmt_i8_normalized,
+	skg_fmt_ui32,
+	skg_fmt_ui16,
+	skg_fmt_ui8,
+	skg_fmt_ui32_normalized,
+	skg_fmt_ui16_normalized,
+	skg_fmt_ui8_normalized,
+} skg_fmt_;
+
+typedef enum skg_semantic_ {
+	skg_semantic_none,
+	skg_semantic_position,
+	skg_semantic_texcoord,
+	skg_semantic_normal,
+	skg_semantic_binormal,
+	skg_semantic_tangent,
+	skg_semantic_color,
+	skg_semantic_psize,
+	skg_semantic_blendweight,
+	skg_semantic_blendindices,
+} skg_semantic_;
+
+typedef struct skg_vert_component_t {
+	skg_fmt_      format;
+	uint8_t       count;
+	skg_semantic_ semantic;
+	uint8_t       semantic_slot;
+} skg_vert_component_t;
+
 typedef struct skg_vert_t {
 	float         pos [3];
 	float         norm[3];
@@ -275,9 +306,16 @@ typedef struct skg_shader_buffer_t {
 typedef struct skg_shader_resource_t {
 	char       name [32];
 	uint64_t   name_hash;
-	char       extra[64];
+	char       value[64];
+	char       tags [64];
 	skg_bind_t bind;
 } skg_shader_resource_t;
+
+typedef struct skg_shader_ops_t {
+	int32_t total;
+	int32_t tex_read;
+	int32_t dynamic_flow;
+} skg_shader_ops_t;
 
 typedef struct skg_shader_meta_t {
 	char                   name[256];
@@ -287,6 +325,10 @@ typedef struct skg_shader_meta_t {
 	skg_shader_resource_t *resources;
 	int32_t                references;
 	int32_t                global_buffer_id;
+	skg_vert_component_t  *vertex_inputs;
+	int32_t                vertex_input_count;
+	skg_shader_ops_t       ops_vertex;
+	skg_shader_ops_t       ops_pixel;
 } skg_shader_meta_t;
 
 ///////////////////////////////////////////
@@ -332,8 +374,8 @@ typedef struct skg_computebuffer_t {
 } skg_computebuffer_t;
 
 typedef struct skg_mesh_t {
-	ID3D11Buffer *_ind_buffer;
-	ID3D11Buffer *_vert_buffer;
+	ID3D11Buffer* _ind_buffer;
+	ID3D11Buffer* _vert_buffer;
 } skg_mesh_t;
 
 typedef struct skg_shader_stage_t {
@@ -700,6 +742,7 @@ SKG_API bool                    skg_read_file                  (const char *file
 SKG_API uint64_t                skg_hash                       (const char *string);
 SKG_API uint32_t                skg_mip_count                  (int32_t width, int32_t height);
 SKG_API void                    skg_mip_dimensions             (int32_t width, int32_t height, int32_t mip_level, int32_t *out_width, int32_t *out_height);
+SKG_API int32_t                 skg_fmt_size                   (skg_fmt_ format);
 
 SKG_API skg_color32_t           skg_col_hsv32                  (float hue, float saturation, float value, float alpha);
 SKG_API skg_color128_t          skg_col_hsv128                 (float hue, float saturation, float value, float alpha);
@@ -787,7 +830,8 @@ ID3DUserDefinedAnnotation *d3d_annotate = nullptr;
 
 ///////////////////////////////////////////
 
-bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start, bool use_in_shader);
+bool        skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start, bool use_in_shader);
+DXGI_FORMAT skg_ind_to_dxgi  (skg_ind_fmt_ format);
 
 template <typename T>
 void skg_downsample_1(T *data, int32_t width, int32_t height, T **out_data, int32_t *out_width, int32_t *out_height);
@@ -1338,17 +1382,17 @@ void skg_mesh_name(skg_mesh_t* mesh, const char* name) {
 ///////////////////////////////////////////
 
 void skg_mesh_set_verts(skg_mesh_t *mesh, const skg_buffer_t *vert_buffer) {
-	if (mesh->_vert_buffer) mesh->_vert_buffer->Release();
+	if (vert_buffer && vert_buffer->_buffer) vert_buffer->_buffer->AddRef();
+	if (mesh->_vert_buffer)                  mesh->_vert_buffer->Release();
 	mesh->_vert_buffer = vert_buffer->_buffer;
-	if (mesh->_vert_buffer) mesh->_vert_buffer->AddRef();
 }
 
 ///////////////////////////////////////////
 
 void skg_mesh_set_inds(skg_mesh_t *mesh, const skg_buffer_t *ind_buffer) {
-	if (mesh->_ind_buffer) mesh->_ind_buffer->Release();
+	if (ind_buffer && ind_buffer->_buffer) ind_buffer->_buffer->AddRef();
+	if (mesh->_ind_buffer)                 mesh->_ind_buffer->Release();
 	mesh->_ind_buffer = ind_buffer->_buffer;
-	if (mesh->_ind_buffer) mesh->_ind_buffer->AddRef();
 }
 
 ///////////////////////////////////////////
@@ -2687,6 +2731,17 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 	}
 }
 
+///////////////////////////////////////////
+
+DXGI_FORMAT skg_ind_to_dxgi(skg_ind_fmt_ format) {
+	switch (format) {
+	case skg_ind_fmt_u32: return DXGI_FORMAT_R32_UINT;
+	case skg_ind_fmt_u16: return DXGI_FORMAT_R16_UINT;
+	case skg_ind_fmt_u8:  return DXGI_FORMAT_R8_UINT;
+	default: abort(); break;
+	}
+}
+
 #endif
 
 #ifdef SKG_OPENGL
@@ -2969,7 +3024,7 @@ const char *skg_semantic_to_d3d(skg_el_semantic_ semantic) {
 #define GL_UNSIGNED_SHORT 0x1403
 #define GL_INT 0x1404
 #define GL_UNSIGNED_INT 0x1405
-#define GL_UNSIGNED_INT_24_8 0x84FA;
+#define GL_UNSIGNED_INT_24_8 0x84FA
 #define GL_FLOAT 0x1406
 #define GL_HALF_FLOAT 0x140B
 #define GL_DOUBLE 0x140A
@@ -3630,11 +3685,20 @@ bool skg_capability(skg_cap_ capability) {
 #ifdef _SKG_GL_WEB
 		return false;
 #else
+	
+	// On some platforms, glPolygonMode is a function and not a function 
+	// pointer, so glPolygonMode != nullptr is trivially true, and Clang wants
+	// to warn us about that. This isn't an actual problem, so let's suppress
+	// that warning.
+#ifdef __clang__
 #pragma clang diagnostic push
-		// On some platforms, glPolygonMode is a function and not a function pointer, so glPolygonMode != nullptr is trivially true, and Clang wants to warn us about that. This isn't an actual problem, so let's suppress that warning.
 #pragma clang diagnostic ignored "-Wtautological-pointer-compare"
+#endif
 		return glPolygonMode != nullptr;
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
+
 #endif
 	default: return false;
 	}
@@ -4988,7 +5052,6 @@ uint32_t skg_tex_fmt_to_gl_type(skg_tex_fmt_ format) {
 }
 
 #endif
-
 #ifdef SKG_NULL
 ///////////////////////////////////////////
 // Null Implementation                   //
@@ -5020,7 +5083,7 @@ skg_shader_t skg_shader_create_manual(skg_shader_meta_t *meta, skg_shader_stage_
 // Common Code                           //
 ///////////////////////////////////////////
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -5521,7 +5584,7 @@ bool skg_shader_file_verify(const void *data, size_t size, uint16_t *out_version
 
 bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_t *out_file) {
 	uint16_t file_version = 0;
-	if (!skg_shader_file_verify(data, size, &file_version, nullptr, 0) || file_version != 2) {
+	if (!skg_shader_file_verify(data, size, &file_version, nullptr, 0) || file_version != 3) {
 		return false;
 	}
 	
@@ -5536,14 +5599,24 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 	*out_file->meta = {};
 	out_file->meta->global_buffer_id = -1;
 	skg_shader_meta_reference(out_file->meta);
-	memcpy( out_file->meta->name,            &bytes[at], sizeof(out_file->meta->name          )); at += sizeof(out_file->meta->name);
-	memcpy(&out_file->meta->buffer_count,    &bytes[at], sizeof(out_file->meta->buffer_count  )); at += sizeof(out_file->meta->buffer_count);
-	memcpy(&out_file->meta->resource_count,  &bytes[at], sizeof(out_file->meta->resource_count)); at += sizeof(out_file->meta->resource_count);
-	out_file->meta->buffers   = (skg_shader_buffer_t  *)malloc(sizeof(skg_shader_buffer_t  ) * out_file->meta->buffer_count  );
-	out_file->meta->resources = (skg_shader_resource_t*)malloc(sizeof(skg_shader_resource_t) * out_file->meta->resource_count);
-	if (out_file->meta->buffers == nullptr || out_file->meta->resources == nullptr) { skg_log(skg_log_critical, "Out of memory"); return false; }
-	memset(out_file->meta->buffers,   0, sizeof(skg_shader_buffer_t  ) * out_file->meta->buffer_count);
-	memset(out_file->meta->resources, 0, sizeof(skg_shader_resource_t) * out_file->meta->resource_count);
+	memcpy( out_file->meta->name,               &bytes[at], sizeof(out_file->meta->name              )); at += sizeof(out_file->meta->name);
+	memcpy(&out_file->meta->buffer_count,       &bytes[at], sizeof(out_file->meta->buffer_count      )); at += sizeof(out_file->meta->buffer_count);
+	memcpy(&out_file->meta->resource_count,     &bytes[at], sizeof(out_file->meta->resource_count    )); at += sizeof(out_file->meta->resource_count);
+	memcpy(&out_file->meta->vertex_input_count, &bytes[at], sizeof(out_file->meta->vertex_input_count)); at += sizeof(out_file->meta->vertex_input_count);
+	out_file->meta->buffers       = (skg_shader_buffer_t  *)malloc(sizeof(skg_shader_buffer_t  ) * out_file->meta->buffer_count);
+	out_file->meta->resources     = (skg_shader_resource_t*)malloc(sizeof(skg_shader_resource_t) * out_file->meta->resource_count);
+	out_file->meta->vertex_inputs = (skg_vert_component_t *)malloc(sizeof(skg_vert_component_t ) * out_file->meta->vertex_input_count);
+	if (out_file->meta->buffers == nullptr || out_file->meta->resources == nullptr || out_file->meta->vertex_inputs == nullptr) { skg_log(skg_log_critical, "Out of memory"); return false; }
+	memset(out_file->meta->buffers,       0, sizeof(skg_shader_buffer_t  ) * out_file->meta->buffer_count);
+	memset(out_file->meta->resources,     0, sizeof(skg_shader_resource_t) * out_file->meta->resource_count);
+	memset(out_file->meta->vertex_inputs, 0, sizeof(skg_vert_component_t ) * out_file->meta->vertex_input_count);
+
+	memcpy(&out_file->meta->ops_vertex.total,        &bytes[at], sizeof(out_file->meta->ops_vertex.total));        at += sizeof(out_file->meta->ops_vertex.total);
+	memcpy(&out_file->meta->ops_vertex.tex_read,     &bytes[at], sizeof(out_file->meta->ops_vertex.tex_read));     at += sizeof(out_file->meta->ops_vertex.tex_read);
+	memcpy(&out_file->meta->ops_vertex.dynamic_flow, &bytes[at], sizeof(out_file->meta->ops_vertex.dynamic_flow)); at += sizeof(out_file->meta->ops_vertex.dynamic_flow);
+	memcpy(&out_file->meta->ops_pixel.total,         &bytes[at], sizeof(out_file->meta->ops_pixel.total));         at += sizeof(out_file->meta->ops_pixel.total);
+	memcpy(&out_file->meta->ops_pixel.tex_read,      &bytes[at], sizeof(out_file->meta->ops_pixel.tex_read));      at += sizeof(out_file->meta->ops_pixel.tex_read);
+	memcpy(&out_file->meta->ops_pixel.dynamic_flow,  &bytes[at], sizeof(out_file->meta->ops_pixel.dynamic_flow));  at += sizeof(out_file->meta->ops_pixel.dynamic_flow);
 
 	for (uint32_t i = 0; i < out_file->meta->buffer_count; i++) {
 		skg_shader_buffer_t *buffer = &out_file->meta->buffers[i];
@@ -5579,10 +5652,18 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 			out_file->meta->global_buffer_id = i;
 	}
 
+	for (int32_t i = 0; i < out_file->meta->vertex_input_count; i++) {
+		skg_vert_component_t *com = &out_file->meta->vertex_inputs[i];
+		memcpy(&com->format,        &bytes[at], sizeof(com->format       )); at += sizeof(com->format);
+		memcpy(&com->semantic,      &bytes[at], sizeof(com->semantic     )); at += sizeof(com->semantic);
+		memcpy(&com->semantic_slot, &bytes[at], sizeof(com->semantic_slot)); at += sizeof(com->semantic_slot);
+	}
+
 	for (uint32_t i = 0; i < out_file->meta->resource_count; i++) {
 		skg_shader_resource_t *res = &out_file->meta->resources[i];
 		memcpy( res->name,  &bytes[at], sizeof(res->name )); at += sizeof(res->name );
-		memcpy( res->extra, &bytes[at], sizeof(res->extra)); at += sizeof(res->extra);
+		memcpy( res->value, &bytes[at], sizeof(res->value)); at += sizeof(res->value);
+		memcpy( res->tags,  &bytes[at], sizeof(res->tags )); at += sizeof(res->tags );
 		memcpy(&res->bind,  &bytes[at], sizeof(res->bind )); at += sizeof(res->bind );
 		res->name_hash = skg_hash(res->name);
 	}
@@ -5607,7 +5688,7 @@ bool skg_shader_file_load_memory(const void *data, size_t size, skg_shader_file_
 ///////////////////////////////////////////
 
 skg_shader_stage_t skg_shader_file_create_stage(const skg_shader_file_t *file, skg_stage_ stage) {
-	skg_shader_lang_ language;
+	skg_shader_lang_ language = skg_shader_lang_hlsl;
 #if defined(SKG_DIRECT3D11) || defined(SKG_DIRECT3D12)
 	language = skg_shader_lang_hlsl;
 #elif defined(SKG_OPENGL)
@@ -5714,6 +5795,7 @@ void skg_shader_meta_release(skg_shader_meta_t *meta) {
 		}
 		free(meta->buffers);
 		free(meta->resources);
+		free(meta->vertex_inputs);
 		*meta = {};
 	}
 }
@@ -5818,6 +5900,29 @@ uint32_t skg_tex_fmt_size(skg_tex_fmt_ format) {
 	case skg_tex_fmt_r32:           return sizeof(uint32_t);
 	case skg_tex_fmt_r8g8:          return sizeof(uint16_t);
 	default: return 0;
+	}
+}
+
+///////////////////////////////////////////
+
+int32_t skg_fmt_size(skg_fmt_ format) {
+	switch (format) {
+		case skg_fmt_f64: return 8;
+		case skg_fmt_i32:
+		case skg_fmt_ui32:
+		case skg_fmt_i32_normalized:
+		case skg_fmt_ui32_normalized:
+		case skg_fmt_f32: return 4;
+		case skg_fmt_i16:
+		case skg_fmt_ui16:
+		case skg_fmt_i16_normalized:
+		case skg_fmt_ui16_normalized:
+		case skg_fmt_f16: return 2;
+		case skg_fmt_i8:
+		case skg_fmt_ui8:
+		case skg_fmt_i8_normalized:
+		case skg_fmt_ui8_normalized: return 1;
+		default: return 0;
 	}
 }
 #endif // SKG_IMPL
