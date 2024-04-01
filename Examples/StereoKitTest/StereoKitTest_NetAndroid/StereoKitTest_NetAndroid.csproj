@@ -60,15 +60,6 @@
 		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">$(PreBuildEvent) &amp;&amp; cmake --preset Android_x64_$(Configuration) &amp;&amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
 	</PropertyGroup>
 
-	<Target Name="SKCheckSKShaderC" BeforeTargets="StereoKit_ShaderBuild">
-		<!--Make sure the shader compiler is available to us-->
-		<PropertyGroup>
-			<SKPowershellExe Condition="!$([MSBuild]::IsOSUnixLike())">powershell.exe</SKPowershellExe>
-			<SKPowershellExe Condition="$([MSBuild]::IsOSUnixLike())">pwsh</SKPowershellExe>
-		</PropertyGroup>
-		<Exec Command="cd $([MSBuild]::NormalizePath('$(ProjectDir)..\..\..\')) &amp;&amp; $(SKPowershellExe) -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
-	</Target>
-
 	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
 		<RemoveDir Condition="'$(TestBuildMode)'=='ARM64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
 		<RemoveDir Condition="'$(TestBuildMode)'=='x64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_x64_$(Configuration)" />
