@@ -247,6 +247,9 @@
     <ClCompile Include="systems\input_render.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\stb.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />

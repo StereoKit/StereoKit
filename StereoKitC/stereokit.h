@@ -1356,7 +1356,7 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, void *data, size_t data_size, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
