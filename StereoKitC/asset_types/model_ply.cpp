@@ -11,7 +11,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-bool modelfmt_ply(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
+bool modelfmt_ply(model_t model, const char *filename, const void *file_data, size_t file_length, shader_t shader) {
 	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
 	bool       result   = true;
 

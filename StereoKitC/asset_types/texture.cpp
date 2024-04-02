@@ -9,21 +9,8 @@
 #include "texture.h"
 #include "texture_.h"
 
-#pragma warning(push)
-#pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
-#define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
-#define STBI_MALLOC sk::sk_malloc
-#define STBI_REALLOC sk::sk_realloc
-#define STBI_FREE sk::_sk_free
-#if defined (_M_ARM)
-#define STBI_NEON
-#endif
-// Use of STB_IMAGE_STATIC seems to cause issues if stb_image is ever included
-// additional times, so this should be the only place it's ever included!
-#define STB_IMAGE_STATIC
 #include "../libraries/stb_image.h"
-#pragma warning(pop)
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
