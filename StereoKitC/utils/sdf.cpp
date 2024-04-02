@@ -29,7 +29,7 @@ float sdf_triangle(vec2 pt, vec2 size) {
 	vec2  base_pt     = pt - size * math_clamp(vec2_dot(pt, size) / vec2_dot(size, size), 0.f, 1.f);
 	vec2  ascend_pt   = pt - size * vec2{ math_clamp(pt.x / size.x, 0.f, 1.f), 1.f };
 
-	float orientation = size.y > 0 ? -1 : 1;
+	float orientation = size.y > 0 ? -1.0f : 1.0f;
 	vec2  closest     = vec2_min(
 		vec2{ vec2_dot(base_pt,   base_pt  ), orientation * (pt.x * size.y - pt.y * size.x) },
 		vec2{ vec2_dot(ascend_pt, ascend_pt), orientation * (pt.y - size.y) } );

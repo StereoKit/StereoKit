@@ -36,7 +36,7 @@ vind_t indexof(vec3 pt, vec3 normal, array_t<vert_t> *verts, hashmap_t<vec3, vin
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary_smooth(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
+bool modelfmt_stl_binary_smooth(const void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
 	stl_header_t *header = (stl_header_t *)file_data;
 	hashmap_t<vec3, vind_t> indmap = {};
 
@@ -53,7 +53,7 @@ bool modelfmt_stl_binary_smooth(void *file_data, size_t, array_t<vert_t> *verts,
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text_smooth(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
+bool modelfmt_stl_text_smooth(const void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
 	hashmap_t<vec3, vind_t> indmap = {};
 	
 	vec3    normal     = {};
@@ -98,7 +98,7 @@ bool modelfmt_stl_text_smooth(void *file_data, size_t, array_t<vert_t> *verts, a
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_binary_flat(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
+bool modelfmt_stl_binary_flat(const void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
 	stl_header_t   *header = (stl_header_t *)file_data;
 	stl_triangle_t *tris   = (stl_triangle_t *)(((uint8_t *)file_data) + sizeof(stl_header_t));
 
@@ -118,7 +118,7 @@ bool modelfmt_stl_binary_flat(void *file_data, size_t, array_t<vert_t> *verts, a
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl_text_flat(void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
+bool modelfmt_stl_text_flat(const void *file_data, size_t, array_t<vert_t> *verts, array_t<vind_t> *faces) {
 	vec3    normal     = {};
 	vec3    curr[4]    = {};
 	int32_t curr_count = 0;
@@ -165,7 +165,7 @@ bool modelfmt_stl_text_flat(void *file_data, size_t, array_t<vert_t> *verts, arr
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t file_length, shader_t shader) {
+bool modelfmt_stl(model_t model, const char *filename, const void *file_data, size_t file_length, shader_t shader) {
 	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
 	bool       result   = true;
 
@@ -174,7 +174,7 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 	mesh_t mesh = mesh_find(id);
 
 	if (mesh) {
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material);
 	} else {
 		array_t<vert_t> verts = {};
 		array_t<vind_t> faces = {};
@@ -191,7 +191,7 @@ bool modelfmt_stl(model_t model, const char *filename, void *file_data, size_t f
 		mesh_set_id  (mesh, id);
 		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material);
 
 		verts.free();
 		faces.free();

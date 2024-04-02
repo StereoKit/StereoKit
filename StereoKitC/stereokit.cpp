@@ -6,30 +6,22 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "_stereokit_ui.h"
+#include "sk_memory.h"
 #include "log.h"
 
+#include "systems/system.h"
+#include "systems/_stereokit_systems.h"
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
 #include "utils/random.h"
-
-#include "systems/render.h"
-#include "systems/input.h"
-#include "systems/physics.h"
-#include "systems/system.h"
-#include "systems/text.h"
-#include "systems/audio.h"
-#include "systems/sprite_drawer.h"
-#include "systems/line_drawer.h"
-#include "systems/world.h"
-#include "systems/defaults.h"
-#include "asset_types/animation.h"
-#include "platforms/_platform.h"
-#include "platforms/web.h"
-#include "tools/tools.h"
+#include "platforms/platform.h"
 
 #if defined(SK_OS_WEB)
 #include <emscripten/threading.h>
+#include "platforms/web.h"
 #endif
+
+#include <stdlib.h>
 
 ///////////////////////////////////////////
 
@@ -64,6 +56,12 @@ struct sk_state_t {
 	uint64_t  app_init_time;
 	system_t *app_system;
 	int32_t   app_system_idx;
+	quit_reason_ quit_reason;
+
+	void (*run_data_app_step)(void *);
+	void  *run_data_step_data;
+	void (*run_data_app_shutdown)(void *);
+	void  *run_data_shutdown_data;
 };
 static sk_state_t local;
 
@@ -74,7 +72,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 void     sk_step_timer();
-void     sk_app_step  ();
+void     sk_first_step();
 void     sk_step_begin();
 bool32_t sk_step_end  ();
 
@@ -83,6 +81,7 @@ bool32_t sk_step_end  ();
 bool32_t sk_init(sk_settings_t settings) {
 	local = {};
 	local.timev_scale = 1;
+	local.quit_reason = quit_reason_none;
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
@@ -104,17 +103,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
 	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
-
-	// display_preference is obsolete, so we'll fill in `mode` based on it, if
-	// mode hasn't been specified.
-	if (local.settings.mode == app_mode_none) {
-		if      (local.settings.display_preference == display_mode_mixedreality) local.settings.mode = app_mode_xr;
-		else if (local.settings.display_preference == display_mode_none        ) local.settings.mode = app_mode_window;
-		else if (local.settings.display_preference == display_mode_flatscreen  )
-			local.settings.mode = local.settings.disable_flatscreen_mr_sim
-				? app_mode_window
-				: app_mode_simulator;
-	}
+	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
@@ -131,133 +120,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	local.frame = 0;
 	rand_set_seed((uint32_t)stm_now());
 
-	// Platform related systems
-	system_t sys_platform         = { "Platform"    };
-	system_t sys_platform_begin   = { "FrameBegin"  };
-	system_t sys_platform_render  = { "FrameRender" };
-
-	system_set_step_deps(sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
-
-	sys_platform       .func_initialize = platform_init;
-	sys_platform       .func_shutdown   = platform_shutdown;
-	sys_platform_begin .func_step       = platform_step_begin;
-	sys_platform_render.func_step       = platform_step_end;
-
-	systems_add(&sys_platform);
-	systems_add(&sys_platform_begin);
-	systems_add(&sys_platform_render);
-
-	// Rest of the systems
-	system_t sys_defaults = { "Defaults" };
-	system_set_initialize_deps(sys_defaults, "Platform", "Assets");
-	sys_defaults.func_initialize = defaults_init;
-	sys_defaults.func_shutdown   = defaults_shutdown;
-	systems_add(&sys_defaults);
-
-	system_t sys_ui = { "UI" };
-	system_set_initialize_deps(sys_ui, "Defaults");
-	system_set_step_deps      (sys_ui, "Input", "FrameBegin");
-	sys_ui.func_initialize = ui_init;
-	sys_ui.func_step       = ui_step;
-	sys_ui.func_shutdown   = ui_shutdown;
-	systems_add(&sys_ui);
-
-	system_t sys_ui_late = { "UILate" };
-	system_set_step_deps(sys_ui_late, "App", "Tools");
-	sys_ui_late.func_step = ui_step_late;
-	systems_add(&sys_ui_late);
-
-	system_t sys_physics = { "Physics" };
-	system_set_initialize_deps(sys_physics, "Defaults");
-	system_set_step_deps      (sys_physics, "Input", "FrameBegin");
-	sys_physics.func_initialize = physics_init;
-	sys_physics.func_step       = physics_step;
-	sys_physics.func_shutdown   = physics_shutdown;
-	systems_add(&sys_physics);
-
-	system_t sys_renderer = { "Renderer" };
-	system_set_initialize_deps(sys_renderer, "Platform", "Defaults");
-	system_set_step_deps      (sys_renderer, "Physics", "FrameBegin");
-	sys_renderer.func_initialize = render_init;
-	sys_renderer.func_step       = render_step;
-	sys_renderer.func_shutdown   = render_shutdown;
-	systems_add(&sys_renderer);
-
-	system_t sys_assets = { "Assets" };
-	system_set_initialize_deps(sys_assets, "Platform");
-	system_set_step_deps      (sys_assets, "FrameRender");
-	sys_assets.func_initialize       = assets_init;
-	sys_assets.func_step             = assets_step;
-	sys_assets.func_shutdown         = assets_shutdown;
-	systems_add(&sys_assets);
-
-	system_t sys_audio = { "Audio" };
-	system_set_initialize_deps(sys_audio, "Platform");
-	system_set_step_deps      (sys_audio, "Platform");
-	sys_audio.func_initialize = audio_init;
-	sys_audio.func_step       = audio_step;
-	sys_audio.func_shutdown   = audio_shutdown;
-	systems_add(&sys_audio);
-
-	system_t sys_input = { "Input" };
-	system_set_initialize_deps(sys_input, "Platform", "Defaults");
-	system_set_step_deps      (sys_input, "FrameBegin");
-	sys_input.func_initialize = input_init;
-	//sys_input.func_step       = input_step; // Handled by the platform, not my fav solution
-	sys_input.func_shutdown   = input_shutdown;
-	systems_add(&sys_input);
-
-	system_t sys_text = { "Text" };
-	system_set_initialize_deps(sys_text, "Defaults");
-	system_set_step_deps      (sys_text, "App");
-	sys_text.func_step     = text_step;
-	sys_text.func_shutdown = text_shutdown;
-	systems_add(&sys_text);
-
-	system_t sys_sprite = { "Sprites" };
-	system_set_initialize_deps(sys_sprite, "Defaults");
-	system_set_step_deps      (sys_sprite, "App", "Tools");
-	sys_sprite.func_initialize = sprite_drawer_init;
-	sys_sprite.func_step       = sprite_drawer_step;
-	sys_sprite.func_shutdown   = sprite_drawer_shutdown;
-	systems_add(&sys_sprite);
-
-	system_t sys_lines = { "Lines" };
-	system_set_initialize_deps(sys_lines, "Defaults");
-	system_set_step_deps      (sys_lines, "App");
-	sys_lines.func_initialize = line_drawer_init;
-	sys_lines.func_step       = line_drawer_step;
-	sys_lines.func_shutdown   = line_drawer_shutdown;
-	systems_add(&sys_lines);
-
-	system_t sys_world = { "World" };
-	system_set_initialize_deps(sys_world, "Platform", "Defaults", "Renderer");
-	system_set_step_deps      (sys_world, "Platform", "App");
-	sys_world.func_initialize = world_init;
-	sys_world.func_step       = world_step;
-	sys_world.func_shutdown   = world_shutdown;
-	systems_add(&sys_world);
-
-	system_t sys_tools = { "Tools" };
-	system_set_initialize_deps(sys_tools, "Platform", "Defaults", "UI");
-	system_set_step_deps      (sys_tools, "App");
-	sys_tools.func_initialize = tools_init;
-	sys_tools.func_step       = tools_step;
-	sys_tools.func_shutdown   = tools_shutdown;
-	systems_add(&sys_tools);
-
-	system_t sys_anim = { "Animation" };
-	system_set_step_deps(sys_anim, "App");
-	sys_anim.func_step     = anim_step;
-	sys_anim.func_shutdown = anim_shutdown;
-	systems_add(&sys_anim);
-
-	system_t sys_app = { "App" };
-	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI");
-	sys_app.func_step = sk_app_step;
-	systems_add(&sys_app);
-
-	local.initialized = systems_initialize();
+	local.initialized = stereokit_systems_register();
 	if (!local.initialized) log_show_any_fail_reason();
 	else                    log_clear_any_fail_reason();
 
@@ -292,22 +155,29 @@ void sk_shutdown_unsafe(void) {
 	systems_shutdown();
 	sk_mem_log_allocations();
 	log_clear_subscribers();
+	quit_reason_ local_quit_reason = local.quit_reason;
 
 	local = {};
 	local.disallow_user_shutdown = true;
+	local.quit_reason = local_quit_reason;
 }
+
 
 ///////////////////////////////////////////
 
-void sk_app_step() {
-	if (local.app_step_func != nullptr)
-		local.app_step_func();
-}
+bool32_t sk_step(void (*app_step)(void)) {
+	if (local.has_stepped == false) {
+		sk_first_step();
+	} else {
+		bool run = sk_step_end();
+		if (run == false) return false;
+	}
 
-///////////////////////////////////////////
+	sk_step_begin();
+	if (app_step)
+		app_step();
 
-void sk_quit() {
-	local.running = false;
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -344,23 +214,6 @@ bool32_t sk_step_end() {
 
 ///////////////////////////////////////////
 
-bool32_t sk_step(void (*app_step)(void)) {
-	if (local.has_stepped == false) {
-		sk_first_step();
-	} else {
-		bool run = sk_step_end();
-		if (run == false) return false;
-	}
-
-	sk_step_begin();
-	if (app_step)
-		app_step();
-
-	return true;
-}
-
-///////////////////////////////////////////
-
 void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 	local.disallow_user_shutdown = true;
 
@@ -380,33 +233,43 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 ///////////////////////////////////////////
 
-void (*_sk_run_data_app_step)(void *);
-void  *_sk_run_data_step_data;
-void (*_sk_run_data_app_shutdown)(void *);
-void  *_sk_run_data_shutdown_data;
 void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data) {
-	_sk_run_data_app_step      = app_step;
-	_sk_run_data_step_data     = step_data;
-	_sk_run_data_app_shutdown  = app_shutdown;
-	_sk_run_data_shutdown_data = shutdown_data;
+	local.run_data_app_step      = app_step;
+	local.run_data_step_data     = step_data;
+	local.run_data_app_shutdown  = app_shutdown;
+	local.run_data_shutdown_data = shutdown_data;
 
 	local.disallow_user_shutdown = true;
 
 #if defined(SK_OS_WEB)
 	sk_first_step();
 	web_start_main_loop(
-		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); },
-		[]() { if (_sk_run_data_app_shutdown) _sk_run_data_app_shutdown(_sk_run_data_shutdown_data); });
+		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); },
+		[]() { if (local.run_data_app_shutdown) local.run_data_app_shutdown(local.run_data_shutdown_data); });
 #else
 	while (sk_step(
-		[]() { if (_sk_run_data_app_step    ) _sk_run_data_app_step    (_sk_run_data_step_data    ); }));
+		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); }));
 
-	if (_sk_run_data_app_shutdown)
-		_sk_run_data_app_shutdown(_sk_run_data_shutdown_data);
+	if (local.run_data_app_shutdown)
+		local.run_data_app_shutdown(local.run_data_shutdown_data);
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
 #endif
+}
+
+///////////////////////////////////////////
+
+void sk_app_step() {
+	if (local.app_step_func != nullptr)
+		local.app_step_func();
+}
+
+///////////////////////////////////////////
+
+void sk_quit(quit_reason_ quit_reason) {
+	local.quit_reason = quit_reason;
+	local.running = false;
 }
 
 ///////////////////////////////////////////
@@ -509,6 +372,12 @@ app_focus_ sk_app_focus() { return local.focus; }
 
 ///////////////////////////////////////////
 
+quit_reason_ sk_get_quit_reason() { 
+	return local.quit_reason;
+}
+
+///////////////////////////////////////////
+
 void sk_set_app_focus(app_focus_ focus_state) { local.focus = focus_state; }
 
 ///////////////////////////////////////////
@@ -529,20 +398,16 @@ system_info_t sk_system_info() {
 	result.display_width        = device_display_get_width ();
 	result.display_height       = device_display_get_height();
 	result.eye_tracking_present = device_has_eye_gaze      ();
-	switch (device_display_get_blend()) {
-		case display_blend_none:            result.display_type = display_none;            break;
-		case display_blend_opaque:          result.display_type = display_opaque;          break;
-		case display_blend_additive:        result.display_type = display_additive;        break;
-		case display_blend_blend:           result.display_type = display_blend;           break;
-		case display_blend_any_transparent: result.display_type = display_any_transparent; break;
-		default: result.display_type = display_none; break;
-	}
 	return result;
 }
 
 ///////////////////////////////////////////
 
 const sk_settings_t* sk_get_settings_ref() { return &local.settings; }
+
+///////////////////////////////////////////
+
+sk_settings_t* sk_get_settings_ref_mut() { return &local.settings; }
 
 ///////////////////////////////////////////
 
@@ -581,15 +446,6 @@ display_mode_ sk_active_display_mode() {
 
 ///////////////////////////////////////////
 
-double time_get_raw          (){ return time_total_raw      (); }
-float  time_getf_unscaled    (){ return time_totalf_unscaled(); };
-double time_get_unscaled     (){ return time_total_unscaled (); };
-float  time_getf             (){ return time_totalf         (); };
-double time_get              (){ return time_total          (); };
-float  time_elapsedf_unscaled(){ return time_stepf_unscaled (); };
-double time_elapsed_unscaled (){ return time_step_unscaled  (); };
-float  time_elapsedf         (){ return time_stepf          (); };
-double time_elapsed          (){ return time_step           (); };
 double time_total_raw        (){ return stm_sec(stm_now());    }
 float  time_totalf_unscaled  (){ return local.timevf_us;       };
 double time_total_unscaled   (){ return local.timev_us;        };
@@ -623,7 +479,6 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	local.timev_stepf    = (float)local.timev_step;
 	local.timevf_us      = (float)local.timev_us;
 	local.timevf         = (float)local.timev;
-	physics_sim_time  = local.timev;
 }
 
 } // namespace sk

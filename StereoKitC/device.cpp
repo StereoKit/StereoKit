@@ -22,6 +22,7 @@ void device_data_init(device_data_t* data) {
 
 void device_data_free(device_data_t* data) {
 	sk_free(data->name);
+	sk_free(data->runtime);
 	sk_free(data->gpu);
 	*data = {};
 }
@@ -94,6 +95,12 @@ device_tracking_ device_get_tracking() {
 
 const char* device_get_name() {
 	return device_data.name;
+}
+
+///////////////////////////////////////////
+
+const char* device_get_runtime() {
+	return device_data.runtime;
 }
 
 ///////////////////////////////////////////

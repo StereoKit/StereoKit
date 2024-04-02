@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../systems/input.h"
@@ -37,7 +43,8 @@ void hand_mouse_shutdown() {
 
 bool hand_mouse_update_position() {
 	ray_t ray = {};
-	if (input_mouse_data.available && ray_from_mouse(input_mouse_data.pos, ray)) {
+	const mouse_t *mouse = input_mouse();
+	if (mouse->available && ray_from_mouse(mouse->pos, ray)) {
 		quat pointer_rot = quat_lookat(vec3_zero, ray.dir);
 
 		vec3 hand_pos     = ray.pos + ray.dir * (0.6f + mouse_hand_scroll * 0.00025f);
@@ -80,7 +87,7 @@ void hand_mouse_update_frame() {
 	bool was_l_pressed = hand->pinch_state   & button_state_active;
 	bool was_r_pressed = hand->grip_state    & button_state_active;
 
-	mouse_hand_scroll = mouse_hand_scroll + (input_mouse_data.scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
+	mouse_hand_scroll = mouse_hand_scroll + (input_mouse()->scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
 
 	bool hand_tracked = hand_mouse_update_position();
 	if (hand_tracked) {
@@ -88,7 +95,7 @@ void hand_mouse_update_frame() {
 		r_pressed = simulator_is_simulating_movement() ? false : input_key(key_mouse_right) & button_state_active;
 	}
 	pointer_cursor->tracked = button_make_state(was_tracked, hand_tracked);
-	pointer_cursor->state   = button_make_state(was_l_pressed, l_pressed);
+	pointer_cursor->state   = input_key(key_mouse_left);
 
 	quat hand_rot = (mouse_active_hand == handed_right
 		? quat_from_angles(40, 30, 90)
@@ -103,16 +110,13 @@ void hand_mouse_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_mouse_update_poses(bool update_visuals) {
+void hand_mouse_update_poses() {
 	hand_mouse_update_position();
 	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
 	quat       hand_rot       = (mouse_active_hand == handed_right
 		? quat_from_angles(40, 30, 90)
 		: quat_from_angles(40,-30,-90)) * pointer_cursor->orientation;
 	input_hand_sim_poses(mouse_active_hand, true, pointer_cursor->ray.pos, hand_rot);
-
-	if (update_visuals)
-		input_hand_update_meshes();
 }
 
 }

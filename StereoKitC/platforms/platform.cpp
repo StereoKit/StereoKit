@@ -132,6 +132,7 @@ bool platform_set_mode(app_mode_ mode) {
 
 	platform_stop_mode();
 	local->mode = mode;
+	sk_get_settings_ref_mut()->mode = mode;
 
 	log_diagf("Starting a <~grn>%s<~clr> mode app", app_mode_str(local->mode));
 	switch (local->mode) {
@@ -261,6 +262,10 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 
 		virtualkeyboard_open(visible, type);
 	}
+}
+
+bool32_t platform_keyboard_set_layout(text_context_ keyboard_type, const char** keyboard_text, int layouts_num) {
+	return virtualkeyboard_set_layout(keyboard_type, keyboard_text, layouts_num);
 }
 
 ///////////////////////////////////////////

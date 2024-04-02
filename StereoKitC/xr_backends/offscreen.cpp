@@ -35,6 +35,7 @@ bool offscreen_init() {
 	device_data.display_blend     = display_blend_opaque;
 	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Offscreen");
+	device_data.runtime           = string_copy("None");
 
 	local = sk_malloc_zero_t(offscreen_backend_state_t, 1);
 
@@ -50,7 +51,7 @@ void offscreen_step_begin() {
 ///////////////////////////////////////////
 
 void offscreen_step_end() {
-	input_update_poses(true);
+	input_step_late();
 
 	render_pipeline_draw();
 }

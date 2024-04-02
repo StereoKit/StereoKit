@@ -28,14 +28,14 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
+bool modelfmt_obj(model_t model, const char *filename, const void *file_data, size_t, shader_t shader) {
 	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_find(id);
 
 	if (mesh) {
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material, true);
 
 		material_release(material);
 		mesh_release(mesh);
@@ -109,7 +109,7 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 	mesh_set_id  (mesh, id);
 	mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
-	model_add_subset(model, mesh, material, matrix_identity);
+	model_node_add(model, nullptr, matrix_identity, mesh, material, true);
 
 	material_release(material);
 	mesh_release(mesh);

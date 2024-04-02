@@ -33,6 +33,7 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShadercExe               : $(SKShadercExe)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderStandardInclude    : $(SKShaderStandardInclude)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoaderFolder       : $(SKOpenXRLoaderFolder)"/>

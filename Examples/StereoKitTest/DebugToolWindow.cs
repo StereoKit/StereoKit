@@ -107,7 +107,7 @@ class DebugToolWindow : IStepper
 		itemToolsSkeleton = new HandMenuItem("Skeleton",     Sprite.ToggleOff, () => skeleton = ToggleTool(skeleton) );
 		itemToolsTheme    = new HandMenuItem("Theme Editor", Sprite.ToggleOff, () => theme    = ToggleTool(theme) );
 		itemToolsCamera   = new HandMenuItem("Camera",       Sprite.ToggleOff, () => camera   = ToggleTool(camera, () => new RenderCamera(UI.PopupPose(), 1000, 1000)) );
-		itemToolsRuler    = new HandMenuItem("Ruler",        Sprite.ToggleOff, () => showRuler = !showRuler );
+		itemToolsRuler    = new HandMenuItem("Ruler",        Sprite.ToggleOff, () => {showRuler = !showRuler; rulerPose = UI.PopupPose();} );
 		itemRecordHead    = new HandMenuItem("Record Head",  Sprite.ToggleOff, () => ToggleRecordHead() );
 		itemRecordHand    = new HandMenuItem("Record Hand",  Sprite.ToggleOff, () => ToggleRecordHand() );
 
@@ -124,6 +124,7 @@ class DebugToolWindow : IStepper
 				itemToolsSkeleton,
 				itemToolsTheme,
 				itemToolsCamera,
+				itemToolsRuler,
 				new HandMenuItem("Back", null, null, HandMenuAction.Back)
 				),
 			new HandRadialLayer("Print",

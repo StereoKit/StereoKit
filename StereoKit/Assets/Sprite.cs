@@ -62,24 +62,6 @@ namespace StereoKit
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
-		/// <summary>Draw the sprite on a quad with the provided transform!
-		/// </summary>
-		/// <param name="transform">A Matrix describing a transform from 
-		/// model space to world space.</param>
-		/// <param name="color">Per-instance color data for this render item.
-		/// </param>
-		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
-		public void Draw(in Matrix transform, Color32 color) 
-			=> NativeAPI.sprite_draw(_inst, transform, color);
-
-		/// <summary>Draw the sprite on a quad with the provided transform!
-		/// </summary>
-		/// <param name="transform">A Matrix describing a transform from 
-		/// model space to world space.</param>
-		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
-		public void Draw(in Matrix transform)
-			=> NativeAPI.sprite_draw(_inst, transform, Color32.White);
-
 		/// <summary>Draws the sprite at the location specified by the
 		/// transform matrix. A sprite is always sized in model space as 1 x
 		/// Aspect meters on the x and y axes respectively, so scale
@@ -94,15 +76,14 @@ namespace StereoKit
 		/// you're specifying the transform of. The 'Anchor' point or
 		/// 'Origin' of the Sprite.</param>
 		public void Draw(in Matrix transform, TextAlign anchorPosition)
-			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, Color32.White);
-
+			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, Color32.White);
 
 		/// <inheritdoc cref="Draw(in Matrix, TextAlign)"/>
 		/// <param name="linearColor">Per-instance color data for this render
 		/// item. It is unmodified by StereoKit, and is generally interpreted
 		/// as linear.</param>
 		public void Draw(in Matrix transform, TextAlign anchorPosition, Color32 linearColor)
-			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, linearColor);
+			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, linearColor);
 
 		/// <summary>Finds a sprite that matches the given id! Check out the
 		/// DefaultIds static class for some built-in ids. Sprites will auto-id

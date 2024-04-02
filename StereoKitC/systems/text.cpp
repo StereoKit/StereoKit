@@ -432,20 +432,22 @@ void text_step_position(char32_t ch, const font_char_t *char_info, const C *next
 
 ///
 
-void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
-	float x_min = x - char_info->x0 * style_data.char_height;
-	float x_max = x - char_info->x1 * style_data.char_height;
-	float y_min = y + char_info->y0 * style_data.char_height;
-	float y_max = y + char_info->y1 * style_data.char_height;
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_min, off_z }), normal, vec2{ char_info->u0, char_info->v0 }, color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_min, off_z }), normal, vec2{ char_info->u1, char_info->v0 }, color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_max, y_max, off_z }), normal, vec2{ char_info->u1, char_info->v1 }, color };
-	buffer.verts[buffer.vert_count++] = { matrix_mul_point(tr, vec3{ x_min, y_max, off_z }), normal, vec2{ char_info->u0, char_info->v1 }, color };
+void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, vec3 base, vec3 normal, vec3 up, vec3 right) {
+	base -= normal * off_z;
+	vec3 x_min = base + (x - char_info->x0 * style_data.char_height) * right;
+	vec3 x_max = base + (x - char_info->x1 * style_data.char_height) * right;
+	vec3 y_min =        (y + char_info->y0 * style_data.char_height) * up;
+	vec3 y_max =        (y + char_info->y1 * style_data.char_height) * up;
+
+	buffer.verts[buffer.vert_count++] = { x_min + y_min, normal, vec2{ char_info->u0, char_info->v0 }, color };
+	buffer.verts[buffer.vert_count++] = { x_max + y_min, normal, vec2{ char_info->u1, char_info->v0 }, color };
+	buffer.verts[buffer.vert_count++] = { x_max + y_max, normal, vec2{ char_info->u1, char_info->v1 }, color };
+	buffer.verts[buffer.vert_count++] = { x_min + y_max, normal, vec2{ char_info->u0, char_info->v1 }, color };
 }
 
 ///
 
-void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, XMMATRIX &tr, const vec3 &normal) {
+void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, _text_style_t &style_data, color32 color, text_buffer_t &buffer, const XMMATRIX &tr, vec3 normal, vec3 up, vec3 right) {
 	float x_max = x - char_info->x0 * style_data.char_height;
 	float x_min = x - char_info->x1 * style_data.char_height;
 	float y_max = y + char_info->y0 * style_data.char_height;
@@ -550,6 +552,10 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 		step.bounds = step.bounds / scale;
 	}
 
+	vec3 up    = matrix_mul_direction(tr, vec3_up);
+	vec3 right = matrix_mul_direction(tr, vec3_right);
+	vec3 base  = matrix_mul_point    (tr, vec3_zero);
+
 	// Calculate the strlen and text height for verical centering
 	int32_t text_length = 0;
 	float   text_height = text_step_height<C, char_decode_b_T>(text, &text_length, step);
@@ -584,7 +590,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 		while(char_decode_b_T(text, &text, &c)) {
 			const font_char_t *char_info = font_get_glyph(step.style->font, c);
 			if (!text_is_space(c)) {
-				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal);
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal, up, right);
 			}
 			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 		}
@@ -592,7 +598,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 		while (char_decode_b_T(text, &text, &c)) {
 			const font_char_t* char_info = font_get_glyph(step.style->font, c);
 			if (!text_is_space(c)) {
-				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, tr, normal);
+				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, base, normal, up, right);
 			}
 			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
 		}

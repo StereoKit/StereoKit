@@ -10,9 +10,6 @@
     <ClCompile Include="systems\input.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="systems\physics.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\render.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
     </ClCompile>
     <ClCompile Include="systems\line_drawer.cpp">
       <Filter>systems</Filter>
-    </ClCompile>
-    <ClCompile Include="intersect.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="color.cpp">
       <Filter>src</Filter>
@@ -247,6 +241,15 @@
     <ClCompile Include="systems\render_pipeline.cpp">
       <Filter>systems</Filter>
     </ClCompile>
+    <ClCompile Include="systems\_stereokit_systems.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\input_render.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\stb.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -263,9 +266,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="systems\input.h">
-      <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\physics.h">
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\render.h">
@@ -513,6 +513,18 @@
     </ClInclude>
     <ClInclude Include="systems\render_pipeline.h">
       <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\_stereokit_systems.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\input_render.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\default_controller_r.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\default_controller_l.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

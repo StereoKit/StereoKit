@@ -73,7 +73,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -94,7 +94,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -110,8 +110,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     </PostBuildEvent>
     <PreBuildEvent>
       <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
-"$(ProjectDir)..\tools\skshaderc.exe" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$(ProjectDir)..\tools\include" -o "$(IntermediateOutputPath)shaders" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\Update-Dependencies.ps1'))" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
+"$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\skshaderc\win32_x64\skshaderc.exe'))" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\include'))" -o "$([MSBuild]::NormalizePath('$(IntermediateOutputPath)shaders'))" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -140,7 +140,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="hands\hand_oxr_controller.cpp" />
     <ClCompile Include="hands\input_hand.cpp" />
     <ClCompile Include="hierarchy.cpp" />
-    <ClCompile Include="intersect.cpp" />
     <ClCompile Include="libraries\cgltf.cpp" />
     <ClCompile Include="libraries\ferr_hash.cpp" />
     <ClCompile Include="libraries\ferr_thread.cpp" />
@@ -149,6 +148,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
+    <ClCompile Include="libraries\stb.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />
     <ClCompile Include="log.cpp" />
@@ -171,14 +171,15 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\defaults.cpp" />
     <ClCompile Include="systems\input.cpp" />
     <ClCompile Include="systems\input_keyboard.cpp" />
+    <ClCompile Include="systems\input_render.cpp" />
     <ClCompile Include="systems\line_drawer.cpp" />
-    <ClCompile Include="systems\physics.cpp" />
     <ClCompile Include="systems\render.cpp" />
     <ClCompile Include="systems\render_pipeline.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
     <ClCompile Include="systems\system.cpp" />
     <ClCompile Include="systems\text.cpp" />
     <ClCompile Include="systems\world.cpp" />
+    <ClCompile Include="systems\_stereokit_systems.cpp" />
     <ClCompile Include="tools\file_picker.cpp" />
     <ClCompile Include="tools\tools.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
@@ -225,6 +226,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\array.h" />
     <ClInclude Include="libraries\atomic_util.h" />
     <ClInclude Include="libraries\cgltf.h" />
+    <ClInclude Include="libraries\default_controller_l.h" />
+    <ClInclude Include="libraries\default_controller_r.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\ferr_thread.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
@@ -260,13 +263,14 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\defaults.h" />
     <ClInclude Include="systems\input.h" />
     <ClInclude Include="systems\input_keyboard.h" />
+    <ClInclude Include="systems\input_render.h" />
     <ClInclude Include="systems\line_drawer.h" />
-    <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\render.h" />
     <ClInclude Include="systems\render_pipeline.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
     <ClInclude Include="systems\text.h" />
+    <ClInclude Include="systems\_stereokit_systems.h" />
     <ClInclude Include="tools\file_picker.h" />
     <ClInclude Include="systems\world.h" />
     <ClInclude Include="tools\tools.h" />

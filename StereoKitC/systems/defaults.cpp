@@ -4,6 +4,8 @@
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
 #include "../asset_types/texture_.h"
+#include "../libraries/default_controller_l.h"
+#include "../libraries/default_controller_r.h"
 
 #include <string.h>
 
@@ -54,6 +56,8 @@ sound_t      sk_default_click;
 sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
+model_t      sk_default_controller_l;
+model_t      sk_default_controller_r;
 
 const spherical_harmonics_t sk_default_lighting = { {
 	{ 0.74f,  0.74f,  0.73f},
@@ -135,8 +139,10 @@ bool defaults_init() {
 		sk_default_tex_flat  == nullptr ||
 		sk_default_tex_rough == nullptr ||
 		sk_default_tex_devtex== nullptr ||
-		sk_default_tex_error == nullptr)
+		sk_default_tex_error == nullptr) {
+		log_warn("Failed to create default textures!");
 		return false;
+	}
 
 	tex_set_loading_fallback(sk_default_tex_devtex);
 	tex_set_error_fallback  (sk_default_tex_error);
@@ -220,8 +226,10 @@ bool defaults_init() {
 		sk_default_shader_ui_quadrant == nullptr ||
 		sk_default_shader_ui_aura     == nullptr ||
 		sk_default_shader_sky         == nullptr ||
-		sk_default_shader_lines       == nullptr)
+		sk_default_shader_lines       == nullptr) {
+		log_warn("Failed to create default shaders!");
 		return false;
+	}
 
 	shader_set_id(sk_default_shader,             default_id_shader);
 	shader_set_id(sk_default_shader_blit,        default_id_shader_blit);
@@ -261,8 +269,10 @@ bool defaults_init() {
 		sk_default_material_ui          == nullptr ||
 		sk_default_material_ui_box      == nullptr ||
 		sk_default_material_ui_quadrant == nullptr ||
-		sk_default_material_ui_aura     == nullptr)
+		sk_default_material_ui_aura     == nullptr) {
+		log_warn("Failed to create default materials!");
 		return false;
+	}
 
 	material_set_id(sk_default_material,             default_id_material);
 	material_set_id(sk_default_material_pbr,         default_id_material_pbr);
@@ -285,8 +295,10 @@ bool defaults_init() {
 
 	// Text!
 	sk_default_font = platform_default_font();
-	if (sk_default_font == nullptr)
+	if (sk_default_font == nullptr) {
+		log_warn("Failed to create default font!");
 		return false;
+	}
 	font_set_id(sk_default_font, default_id_font);
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
 
@@ -334,6 +346,11 @@ bool defaults_init() {
 	sound_set_id(sk_default_grab,    default_id_sound_grab);
 	sound_set_id(sk_default_ungrab,  default_id_sound_ungrab);
 
+	sk_default_controller_l = model_create_mem("sk::default_controller_l.glb", default_controller_l_glb, sizeof(default_controller_l_glb), sk_default_shader);
+	sk_default_controller_r = model_create_mem("sk::default_controller_r.glb", default_controller_r_glb, sizeof(default_controller_r_glb), sk_default_shader);
+	model_set_id(sk_default_controller_l, default_id_model_controller_l);
+	model_set_id(sk_default_controller_r, default_id_model_controller_r);
+
 	return true;
 }
 
@@ -343,6 +360,8 @@ void defaults_shutdown() {
 	tex_set_error_fallback  (nullptr);
 	tex_set_loading_fallback(nullptr);
 
+	model_release   (sk_default_controller_l);
+	model_release   (sk_default_controller_r);
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	sound_release   (sk_default_grab);

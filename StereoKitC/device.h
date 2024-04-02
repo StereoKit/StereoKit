@@ -18,6 +18,7 @@ struct device_data_t {
 	fov_info_t       display_fov;
 	device_tracking_ tracking;
 	char*            name;
+	char*            runtime;
 	char*            gpu;
 	bool32_t         has_eye_gaze;
 	bool32_t         has_hand_tracking;

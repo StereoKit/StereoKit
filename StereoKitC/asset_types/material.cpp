@@ -110,11 +110,11 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		shaderargs_tex_t *tex_arg     = &material->args.textures[i];
 		tex_t             default_tex = nullptr;
 
-		if      (string_eq(meta->resources[i].extra, "white")) default_tex = tex_find(default_id_tex);
-		else if (string_eq(meta->resources[i].extra, "black")) default_tex = tex_find(default_id_tex_black);
-		else if (string_eq(meta->resources[i].extra, "gray" )) default_tex = tex_find(default_id_tex_gray);
-		else if (string_eq(meta->resources[i].extra, "flat" )) default_tex = tex_find(default_id_tex_flat);
-		else if (string_eq(meta->resources[i].extra, "rough")) default_tex = tex_find(default_id_tex_rough);
+		if      (string_eq(meta->resources[i].value, "white")) default_tex = tex_find(default_id_tex);
+		else if (string_eq(meta->resources[i].value, "black")) default_tex = tex_find(default_id_tex_black);
+		else if (string_eq(meta->resources[i].value, "gray" )) default_tex = tex_find(default_id_tex_gray);
+		else if (string_eq(meta->resources[i].value, "flat" )) default_tex = tex_find(default_id_tex_flat);
+		else if (string_eq(meta->resources[i].value, "rough")) default_tex = tex_find(default_id_tex_rough);
 		else                                                   default_tex = tex_find(default_id_tex);
 		tex_arg->tex       = default_tex;
 		tex_arg->meta_hash = 0;
@@ -443,12 +443,6 @@ void material_set_color(material_t material, const char *name, color128 value) {
 
 ///////////////////////////////////////////
 
-void material_set_vector(material_t material, const char *name, vec4 value) {
-	material_set_vector4(material, name, value);
-}
-
-///////////////////////////////////////////
-
 void material_set_vector4(material_t material, const char *name, vec4 value) {
 	vec4 *matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
 	if (matparam != nullptr) {
@@ -605,11 +599,11 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 			// Assigning a null texture will crash the renderer, so we want to
 			// instead find the default texture for the material parameter.
 			if (value == nullptr) {
-				if      (string_eq(resource->extra, "white")) value = sk_default_tex;
-				else if (string_eq(resource->extra, "black")) value = sk_default_tex_black;
-				else if (string_eq(resource->extra, "gray" )) value = sk_default_tex_gray;
-				else if (string_eq(resource->extra, "flat" )) value = sk_default_tex_flat;
-				else if (string_eq(resource->extra, "rough")) value = sk_default_tex_rough;
+				if      (string_eq(resource->value, "white")) value = sk_default_tex;
+				else if (string_eq(resource->value, "black")) value = sk_default_tex_black;
+				else if (string_eq(resource->value, "gray" )) value = sk_default_tex_gray;
+				else if (string_eq(resource->value, "flat" )) value = sk_default_tex_flat;
+				else if (string_eq(resource->value, "rough")) value = sk_default_tex_rough;
 				else                                          value = sk_default_tex;
 			}
 

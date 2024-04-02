@@ -96,7 +96,7 @@ public static class Tests
 	}
 	public static void   SetDemoActive(int index)
 	{
-		Log.Write(LogLevel.Info, "Starting Scene: " + demoTests[index].Name);
+		Log.Info($"Starting Scene: {demoTests[index].Name}");
 		ActiveTest = demoTests[index];
 	}
 	public static void   SetTestActive(string name)
@@ -108,7 +108,7 @@ public static class Tests
 			else if (str.Contains(name)) return str.Length - name.Length;
 			else                         return 1000 + string.Compare(str, name);
 		}).First();
-		Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
+		Log.Info($"Starting Scene: {result.Name}");
 
 		sceneFrame = 0;
 		runFrames  = 2;
@@ -119,7 +119,7 @@ public static class Tests
 	{
 		if (!testFunction())
 		{
-			Log.Err("Test failed for {0}!", testFunction.Method.Name);
+			Log.Err($"Test failed for {testFunction.Method.Name}!");
 			Environment.Exit(-1);
 		}
 	}

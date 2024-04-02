@@ -184,11 +184,6 @@ namespace StereoKit
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
 		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
-		/// <summary>Does StereoKit register the hand with the physics
-		/// system? By default, this is true. Right now this is just a single
-		/// block collider, but later will involve per-joint colliders!
-		/// </summary>
-		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -388,6 +383,32 @@ namespace StereoKit
 		public static BtnState ControllerMenuButton
 			=> NativeAPI.input_controller_menu();
 
+		/// <summary>When StereoKit is rendering the input source, this allows
+		/// you to override the controller Model SK uses. The Model SK uses by
+		/// default may be provided from the OpenXR runtime depending on
+		/// extension support, but if not, SK does have a default Model.
+		/// Setting this to null will restore SK's default.</summary>
+		/// <param name="handed">The hand to assign the Model to.</param>
+		/// <param name="model">The Model to use to represent the controller.
+		/// Null is valid, and will restore SK's default model.</param>
+		public static void ControllerModelSet(Handed handed, Model model)
+			=> NativeAPI.input_controller_model_set(handed, model?._inst ?? IntPtr.Zero);
+
+		/// <summary>This retreives the Model currently in use by StereoKit to
+		/// represent the controller input source. By default, this will be a
+		/// Model provided by OpenXR, or SK's fallback Model. This will never
+		/// be null while SK is initialized.</summary>
+		/// <param name="handed">The hand of the controller Model to retreive.
+		/// </param>
+		/// <returns>The current controller Model. By default, his will be a
+		/// Model provided by OpenXR, or SK's fallback Model. This will never
+		/// be null while SK is initialized.</returns>
+		public static Model ControllerModelGet(Handed handed)
+		{
+			IntPtr model = NativeAPI.input_controller_model_get(handed);
+			return model == IntPtr.Zero ? null : new Model(model);
+		}
+
 		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
@@ -489,15 +510,6 @@ namespace StereoKit
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
 			=> NativeAPI.input_hand_visible(hand, visible);
-		/// <summary>Does StereoKit register the hand with the physics
-		/// system? By default, this is true. Right now this is just a single
-		/// block collider, but later will involve per-joint colliders!
-		/// </summary>
-		/// <param name="hand">If Handed.Max, this will set the value for 
-		/// both hands.</param>
-		/// <param name="solid">True? Physics! False? No physics.</param>
-		public static void HandSolid(Handed hand, bool solid)
-			=> NativeAPI.input_hand_solid(hand, solid);
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
@@ -505,7 +517,7 @@ namespace StereoKit
 		/// both hands.</param>
 		/// <param name="material">The new Material!</param>
 		public static void HandMaterial(Handed hand, Material material)
-			=> NativeAPI.input_hand_material(hand, material._inst);
+			=> NativeAPI.input_hand_material(hand, material?._inst ?? IntPtr.Zero);
 		/// <summary>Keyboard key state! On desktop this is super handy, but
 		/// even standalone MR devices can have bluetooth keyboards, or even
 		/// just holographic system keyboards!</summary>

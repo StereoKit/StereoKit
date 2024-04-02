@@ -17,20 +17,13 @@
 #include "../asset_types/model.h"
 #include "../asset_types/animation.h"
 #include "../systems/input.h"
+#include "../hands/input_hand.h"
 #include "../platforms/platform.h"
 
 #include <limits.h>
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6386 6385 )
-#if defined(_WIN32)
-#define __STDC_LIB_EXT1__
-#endif
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_STATIC
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
-#pragma warning(pop)
 
 using namespace DirectX;
 
@@ -500,7 +493,7 @@ void render_set_cam_root(const matrix &cam_root) {
 	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
 
 	world_refresh_transforms();
-	input_update_poses(false);
+	input_update_poses();
 }
 
 ///////////////////////////////////////////
@@ -780,7 +773,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
-		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_hand_get_visible((handed_)i) 
+			? hand->fingers[1][4].position
+			: vec3{ 0,-1000,0 };
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
@@ -845,7 +840,7 @@ void render_check_screenshots() {
 
 		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_release(tex_add_zbuffer(render_capture_surface));
+		tex_add_zbuffer(render_capture_surface);
 
 		// Setup to render the screenshot
 		skg_tex_target_bind(&render_capture_surface->tex);
@@ -1009,12 +1004,6 @@ void render_blit(tex_t to, material_t material) {
 
 ///////////////////////////////////////////
 
-void render_screenshot(const char* file_utf8, vec3 from_viewpt, vec3 at, int32_t width, int32_t height, float fov_degrees) {
-	render_screenshot_pose(file_utf8, 90, { from_viewpt, quat_lookat(from_viewpt, at) }, width, height, fov_degrees);
-}
-
-///////////////////////////////////////////
-
 struct screenshot_ctx_t {
 	char*   filename;
 	int32_t quality;
@@ -1033,7 +1022,7 @@ void render_save_to_file(color32* color_buffer, int width, int height, void* con
 
 ///////////////////////////////////////////
 
-void render_screenshot_pose(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
+void render_screenshot(const char* file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float fov_degrees) {
 	screenshot_ctx_t *ctx = sk_malloc_t(screenshot_ctx_t, 1);
 	ctx->filename = string_copy(file_utf8);
 	ctx->quality  = file_quality_100;
