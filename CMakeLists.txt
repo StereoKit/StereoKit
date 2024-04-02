@@ -269,6 +269,7 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stb_image.h
   StereoKitC/libraries/stb_image_write.h
   StereoKitC/libraries/stb_truetype.h
+  StereoKitC/libraries/stb.cpp
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
   StereoKitC/libraries/unicode.h

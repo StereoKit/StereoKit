@@ -22,16 +22,8 @@
 
 #include <limits.h>
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6386 6385 )
-#if defined(_WIN32)
-#define __STDC_LIB_EXT1__
-#endif
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_STATIC
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
-#pragma warning(pop)
 
 using namespace DirectX;
 
