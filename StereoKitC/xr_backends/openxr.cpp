@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(SK_OS_ANDROID)
+#include <unistd.h> // gettid
+#endif
+
 #if defined(SK_OS_ANDROID) || defined(SK_OS_LINUX)
 #include <time.h>
 #endif
@@ -431,6 +435,18 @@ bool openxr_init() {
 		openxr_cleanup();
 		return false;
 	}
+
+		// On Android, tell OpenXR what kind of thread this is. This can be
+	// important on Android systems so we don't get treated as a low priority
+	// thread by accident.
+#if defined(SK_OS_ANDROID)
+	if (xr_ext_available.KHR_android_thread_settings) {
+		// This may be redundant to do twice since both happen on the same
+		// thread? Most important one goes last just in case.
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR, gettid());
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR,    gettid());
+	}
+#endif
 
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
