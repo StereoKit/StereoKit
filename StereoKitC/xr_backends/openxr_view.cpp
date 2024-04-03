@@ -794,6 +794,14 @@ bool openxr_render_frame() {
 		}
 	}
 
+	// Execute any code that's dependent on the predicted time, such as
+	// updating the location of controller models.
+	// 
+	// Input can be costly to look at on some systems, so this happens _after_
+	// swapchains are acquired, so they're in close time proximity to
+	// xrWaitFrame. Theoretically better?
+	input_step_late();
+
 	render_pipeline_draw();
 
 	// Release the swapchains for all active displays
