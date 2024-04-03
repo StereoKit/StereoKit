@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(SK_OS_ANDROID)
+#include <unistd.h> // gettid
+#endif
+
 #if defined(SK_OS_ANDROID) || defined(SK_OS_LINUX)
 #include <time.h>
 #endif
@@ -432,6 +436,18 @@ bool openxr_init() {
 		return false;
 	}
 
+		// On Android, tell OpenXR what kind of thread this is. This can be
+	// important on Android systems so we don't get treated as a low priority
+	// thread by accident.
+#if defined(SK_OS_ANDROID)
+	if (xr_ext_available.KHR_android_thread_settings) {
+		// This may be redundant to do twice since both happen on the same
+		// thread? Most important one goes last just in case.
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR, gettid());
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR,    gettid());
+	}
+#endif
+
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
@@ -568,7 +584,7 @@ bool openxr_init() {
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
 	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
-		platform_sleep(9);
+		platform_sleep(33);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 	// Blank frames should only be submitted when the session is READY
@@ -902,10 +918,8 @@ void openxr_step_begin() {
 void openxr_step_end() {
 	anchors_step_end();
 
-	if (xr_running)
-		openxr_render_frame();
-	else
-		platform_sleep(9);
+	if (xr_running) { openxr_render_frame(); }
+	else            { platform_sleep(33);    }
 
 	xr_extension_structs_clear();
 	render_clear();

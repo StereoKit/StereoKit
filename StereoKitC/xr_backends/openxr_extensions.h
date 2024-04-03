@@ -153,7 +153,8 @@ namespace sk {
 
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
-	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
+	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID) \
+	_(KHR_android_thread_settings, EXT_AVAILABLE_ANDROID)
 
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
@@ -208,6 +209,11 @@ namespace sk {
 	_(xrTryGetPerceptionAnchorFromSpatialAnchorMSFT) \
 	_(xrGetAudioOutputDeviceGuidOculus)              \
 	_(xrGetAudioInputDeviceGuidOculus)
+#elif defined(SK_OS_ANDROID)
+#define FOR_EACH_PLATFORM_FUNCTION(_)  \
+	_(xrConvertTimespecTimeToTimeKHR ) \
+	_(xrConvertTimeToTimespecTimeKHR ) \
+	_(xrSetAndroidApplicationThreadKHR)
 #else
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
 	_(xrConvertTimespecTimeToTimeKHR ) \
