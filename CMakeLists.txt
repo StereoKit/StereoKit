@@ -303,6 +303,7 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
   StereoKitC/systems/render.h
+  StereoKitC/systems/render_.h
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_pipeline.h
   StereoKitC/systems/render_pipeline.cpp
