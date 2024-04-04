@@ -919,10 +919,9 @@ void openxr_step_end() {
 	anchors_step_end();
 
 	if (xr_running) { openxr_render_frame(); }
-	else            { platform_sleep(33);    }
+	else            { render_clear(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
-	render_clear();
 }
 
 ///////////////////////////////////////////

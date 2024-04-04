@@ -523,6 +523,15 @@
     <ClInclude Include="systems\render_pipeline.h">
       <Filter>systems</Filter>
     </ClInclude>
+    <ClInclude Include="systems\_stereokit_systems.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\input_render.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\render_.h">
+      <Filter>systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

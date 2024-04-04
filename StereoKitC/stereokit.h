@@ -763,6 +763,7 @@ SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
 SK_DeclarePrivateType(anchor_t);
+SK_DeclarePrivateType(render_list_t);
 
 ///////////////////////////////////////////
 
@@ -1652,6 +1653,16 @@ SK_API void                  render_screenshot_viewpoint(void (*render_on_screen
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
+SK_API render_list_t         render_get_primary_list();
+
+///////////////////////////////////////////
+
+SK_API render_list_t         render_list_create    ();
+SK_API void                  render_list_addref    (      render_list_t list);
+SK_API void                  render_list_release   (      render_list_t list);
+SK_API void                  render_list_clear     (      render_list_t list);
+SK_API int32_t               render_list_item_count(const render_list_t list);
+SK_API int32_t               render_list_prev_count(const render_list_t list);
 
 ///////////////////////////////////////////
 
@@ -2416,6 +2427,8 @@ typedef enum asset_type_ {
 	asset_type_solid,
 	/*An Anchor.*/
 	asset_type_anchor,
+	/*A RenderList*/
+	asset_type_render_list,
 } asset_type_;
 
 typedef void* asset_t;
