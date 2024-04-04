@@ -450,6 +450,16 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_primary_list();
+
+		///////////////////////////////////////////
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_list_create    ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_addref    (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_release   (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_clear     (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_item_count(IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_prev_count(IntPtr list);
 
 		///////////////////////////////////////////
 

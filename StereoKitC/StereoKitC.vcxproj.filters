@@ -526,6 +526,9 @@
     <ClInclude Include="libraries\default_controller_l.h">
       <Filter>libraries</Filter>
     </ClInclude>
+    <ClInclude Include="systems\render_.h">
+      <Filter>systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

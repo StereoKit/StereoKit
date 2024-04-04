@@ -257,6 +257,10 @@
 		/// purpose font, such as Segoe UI.</summary>
 		public static Font Font { get; private set; }
 
+		/// <summary>The default RenderList used by the Renderer for the
+		/// primary display surface.</summary>
+		public static RenderList RenderList { get; private set; }
+
 		internal static void Initialize()
 		{
 			Material           = Material.Find(DefaultIds.material);
@@ -313,6 +317,8 @@
 			SpriteClose      = Sprite.Find(DefaultIds.spriteClose);
 			SpriteList       = Sprite.Find(DefaultIds.spriteList);
 			SpriteGrid       = Sprite.Find(DefaultIds.spriteGrid);
+
+			RenderList = new RenderList(NativeAPI.render_get_primary_list());
 		}
 
 		internal static void Shutdown()
@@ -368,6 +374,8 @@
 			SpriteClose      = null;
 			SpriteList       = null;
 			SpriteGrid       = null;
+
+			RenderList = null;
 		}
 	}
 }
