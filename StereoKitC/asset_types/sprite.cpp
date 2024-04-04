@@ -27,6 +27,7 @@ struct spritemap_t {
 int32_t      sprite_index     = 0;
 spritemap_t *sprite_maps      = nullptr;
 int32_t      sprite_map_count = 0;
+bool         sprite_warning   = false;
 
 ///////////////////////////////////////////
 
@@ -71,7 +72,10 @@ material_t sprite_create_material(int index_id) {
 
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	if (type == sprite_type_atlased) {
-		log_diag("sprite_create: Atlased sprites not implemented yet! Switching to single.");
+		if (sprite_warning == false) {
+			sprite_warning = true;
+			log_diag("sprite_create: Atlased sprites not implemented yet! All atlased sprites will be switched to single.");
+		}
 		type = sprite_type_single;
 	}
 
