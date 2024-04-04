@@ -922,6 +922,18 @@ void openxr_step_end() {
 	else            { render_clear(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
+
+	// If the OpenXR state is idling, the device is likely in some sort of
+	// standby. Either way, the session isn't available, so there's little
+	// point in stepping the application. Instead, we block the thread and
+	// just poll OpenXR until we leave the state.
+	//
+	// This happens at the end of step_end so that the app still can receive a
+	// message about the app going into a hidden state.
+	while (xr_session_state == XR_SESSION_STATE_IDLE) {
+		platform_sleep(33);
+		openxr_poll_events();
+	}
 }
 
 ///////////////////////////////////////////
