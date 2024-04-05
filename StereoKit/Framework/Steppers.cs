@@ -92,7 +92,7 @@ namespace StereoKit.Framework
 						break;
 					case ActionType.Remove:
 						bool result = false;
-						lock (_stepperLock) _steppers.Remove(action.stepper);
+						lock (_stepperLock) result = _steppers.Remove(action.stepper);
 						if (result) action.stepper.Shutdown();
 						break;
 				}
