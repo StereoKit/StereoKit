@@ -92,7 +92,7 @@ class DemoAssets : ITest
 				case Sound    item: VisualizeSound   (item); break;
 			}
 			UI.PopId();
-			UI.Label(string.IsNullOrEmpty(asset.Id) ? "(null)" : asset.Id);
+			UI.Label(string.IsNullOrEmpty(asset.Id) ? "(null)" : asset.Id, V.XY(UI.LayoutRemaining.x, 0));
 		}
 		
 		UI.WindowEnd();
