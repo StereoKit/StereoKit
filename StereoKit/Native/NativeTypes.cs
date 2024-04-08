@@ -199,6 +199,10 @@ namespace StereoKit
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
 		private int _worldRaycastPresent;
+
+		/// <summary>Obsolete, please use Device.DisplayBlend</summary>
+		[Obsolete("Obsolete, please use Device.DisplayBlend", true)]
+		public DisplayBlend displayType { get; set; }
 	}
 
 	/*[StructLayout(LayoutKind.Sequential)]

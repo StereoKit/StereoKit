@@ -341,7 +341,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 
 	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
@@ -654,7 +654,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	// Render the input UI
 	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
-	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus > 0 ? 0.5f : 0);
+	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
 	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
 
 	// Swap out for a string of asterisks to hide any password
@@ -805,7 +805,7 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	vec2 vmin, vmax, vstep, vval;
 	if (vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
 	else          { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
-	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, confirm_method, &button_center, &finger_offset, &focus_state, &active_state, &interactor);
+	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, & button_center, & finger_offset, & focus_state, & active_state, & interactor);
 	value = vertical ? vval.y : vval.x;
 
 	if (active_state & button_state_just_active)

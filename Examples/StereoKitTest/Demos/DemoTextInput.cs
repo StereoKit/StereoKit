@@ -4,24 +4,30 @@
 // Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using System.Collections.Generic;
+using System.Linq;
 
 class DemoTextInput : ITest
 {
 	string title       = "Text Input";
 	string description = "";
-	Pose   windowPose  = Demo.contentPose.Pose;
-
-	string text     = "Edit me";
-	string textUri  = "https://stereokit.net";
-	string number   = "1";
-	string password = "123abc";
-
-	public void Initialize() { }
-	public void Shutdown  () { }
 
 	public void Step()
 	{
-		UI.WindowBegin("Text Input", ref windowPose);
+		ShowTextInputWindow();
+		ShowRawInputWindow();
+
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.19f), V.XYZ(.4f, .5f, 0)));
+	}
+
+	Pose   uiWinPose = Pose.Identity;
+	string text      = "Edit me";
+	string textUri   = "https://stereokit.net";
+	string number    = "1";
+	string password  = "123abc";
+	void ShowTextInputWindow()
+	{
+		UI.WindowBegin("Text Input", ref uiWinPose);
 
 		UI.Text("You can specify whether or not a UI element will hide an active soft keyboard upon interaction.");
 		UI.Button("Hides active soft keyboard");
@@ -65,7 +71,58 @@ class DemoTextInput : ITest
 		}
 
 		UI.WindowEnd();
-
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.19f), V.XYZ(.4f, .5f, 0)));
 	}
+
+	/// :CodeSample: Input.TextReset Input.TextConsume
+	/// ### Raw Text Input
+	// If you need to read text input directly from a soft or hard keyboard,
+	// these functions give you direct access to the stream of Unicode
+	// characters produced! These characters are language and keyboard layout
+	// sensitive, making these functions the correct ones for working with text
+	// content vs. the `Input.Key` functions, which are not language specific.
+	//
+	// Every frame, `Input.TextConsume` will have a list of new characters that
+	// have been pressed or submitted to the app. Reading them will "consume"
+	// them, making them unavailable to anything that comes after. If you need
+	// to bypass some earlier element consuming them, you can reset the current
+	// frame's consume queue with `Input.TextReset`.
+	Pose         rawWinPose = new Pose(0.3f,0,0);
+	List<string> uniChars   = new List<string>(Enumerable.Repeat("", 10));
+	void ShowRawInputWindow()
+	{
+		UI.WindowBegin("Raw keyboard code points:", ref rawWinPose);
+
+		// Reset the text input back to the start of the list, since any
+		// UI.Input before this will consume the characters first and we
+		// always want to show input on this window.
+		Input.TextReset();
+
+		while (true)
+		{
+			// Consume each new character, 0 marks the end of the list of new
+			// characters.
+			char c = Input.TextConsume();
+			if (c == 0) break;
+
+			// Insert the codepoint at the start of the list, and bump off any
+			// more than 10 items.
+			uniChars.Insert(0, $"{(int)c}");
+			if (uniChars.Count > 10)
+				uniChars.RemoveAt(uniChars.Count - 1);
+		}
+
+		// Show each character code as a label
+		for (int i = 0; i < uniChars.Count; i++)
+			UI.Label(uniChars[i]);
+
+		UI.WindowEnd();
+	}
+	/// :End:
+
+	public void Initialize()
+	{
+		rawWinPose = (Demo.contentPose * rawWinPose.ToMatrix()).Pose;
+		uiWinPose  = (Demo.contentPose * uiWinPose .ToMatrix()).Pose;
+	}
+	public void Shutdown() { }
 }

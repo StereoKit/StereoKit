@@ -15,7 +15,7 @@
 #include "../../StereoKitC/stereokit_ui.h"
 using namespace sk;
 
-#include "Shaders/blit.hlsl.h"
+#include "blit.hlsl.h"
 
 ///////////////////////////////////////////
 

@@ -1,13 +1,6 @@
 ﻿#include "font.h"
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6387 6011 6385 )
-#define STB_TRUETYPE_IMPLEMENTATION
-#define STBTT_malloc(x,y) sk::sk_malloc(x)
-#define STBTT_free(x,y) sk::_sk_free(x)
 #include "../libraries/stb_truetype.h"
-#pragma warning(pop)
-
 #include "../libraries/aileron_font_data.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"

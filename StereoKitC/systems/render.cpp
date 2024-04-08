@@ -1,4 +1,5 @@
 #include "render.h"
+#include "render_.h"
 #include "world.h"
 #include "defaults.h"
 #include "../_stereokit.h"
@@ -22,16 +23,8 @@
 
 #include <limits.h>
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6386 6385 )
-#if defined(_WIN32)
-#define __STDC_LIB_EXT1__
-#endif
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_STATIC
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
-#pragma warning(pop)
 
 using namespace DirectX;
 
@@ -39,22 +32,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-struct render_item_t {
-	XMMATRIX    transform;
-	color128    color;
-	uint64_t    sort_id;
-	mesh_t      mesh;
-	material_t  material;
-	int32_t     mesh_inds;
-	uint16_t    layer;
-};
-
-struct _render_list_t {
-	array_t<render_item_t> queue;
-	render_stats_t         stats;
-	render_list_state_     state;
-	bool                   prepped;
-};
 
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -155,10 +132,8 @@ struct render_state_t {
 	shader_t                last_shader;
 	mesh_t                  last_mesh;
 
-	array_t< render_list_t> list_stack;
-	array_t<_render_list_t> lists;
+	array_t<render_list_t>  list_stack;
 	render_list_t           list_active;
-
 };
 static render_state_t local = {};
 
@@ -198,12 +173,12 @@ bool render_init() {
 	local.ortho_far_clip        = 50.0f;
 	local.ortho_viewport_height = 1.0f;
 	local.clear_col             = color128{0,0,0,0};
-	local.list_primary          = -1;
+	local.list_primary          = nullptr;
 	local.scale                 = 1;
 	local.multisample           = 1;
 	local.primary_filter        = render_layer_all_first_person;
 	local.capture_filter        = render_layer_all_first_person;
-	local.list_active           = -1;
+	local.list_active           = nullptr;
 
 	local.shader_globals  = material_buffer_create(1, sizeof(local.global_buffer));
 	local.shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
@@ -265,10 +240,9 @@ bool render_init() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (int32_t i = 0; i < local.lists.count; i++) {
-		render_list_release(i);
-	}
-	local.lists          .free();
+	render_list_pop();
+	render_list_release(local.list_active);
+	render_list_release(local.list_primary);
 	local.list_stack     .free();
 	local.screenshot_list.free();
 	local.viewpoint_list .free();
@@ -483,6 +457,7 @@ matrix render_get_cam_final_inv() {
 ///////////////////////////////////////////
 
 render_list_t render_get_primary_list() {
+	render_list_addref(local.list_primary);
 	return local.list_primary;
 }
 
@@ -1089,7 +1064,7 @@ void render_set_material(material_t material) {
 	if (material == local.last_material)
 		return;
 	local.last_material = material;
-	local.lists[local.list_active].stats.swaps_material++;
+	local.list_active->stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
@@ -1173,38 +1148,56 @@ void render_get_device(void **device, void **context) {
 ///////////////////////////////////////////
 
 render_list_t render_list_create() {
-	int32_t id = local.lists.index_where(&_render_list_t::state, render_list_state_destroyed);
-	if (id == -1)
-		id = local.lists.add({});
-	return id;
+	render_list_t result = (render_list_t)assets_allocate(asset_type_render_list);
+	return result;
+}
+
+///////////////////////////////////////////
+
+void render_list_addref(render_list_t list) {
+	assets_addref(&list->header);
 }
 
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	local.lists[list].queue.free();
-	local.lists[list] = {};
-	local.lists[list].state = render_list_state_destroyed;
+	if (list == nullptr)
+		return;
+	assets_releaseref(&list->header);
+}
+
+///////////////////////////////////////////
+
+void render_list_destroy(render_list_t list) {
+	if (list == nullptr) return;
+	render_list_clear(list);
+	list->queue.free();
+	*list = {};
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
-	local.list_active = local.list_stack.add(list);
-	local.lists[list].state = render_list_state_used;
+	render_list_addref(list);
+	local.list_stack.add(list);
+
+	local.list_active = list;
 }
 
 ///////////////////////////////////////////
 
 void render_list_pop() {
+	render_list_release(local.list_stack[local.list_stack.count-1]);
 	local.list_stack.pop();
-	local.list_active = local.list_stack.count - 1;
+	local.list_active = local.list_stack.count > 0 
+		? local.list_stack[local.list_stack.count-1]
+		: nullptr;
 }
 
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	local.lists[local.list_active].queue.add(*item);
+	local.list_active->queue.add(*item);
 	assets_addref(&item->material->header);
 	assets_addref(&item->mesh->header);
 }
@@ -1212,7 +1205,7 @@ void render_list_add(const render_item_t *item) {
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	local.lists[list].queue.add(*item);
+	local.list_active->queue.add(*item);
 	assets_addref(&item->material->header);
 	assets_addref(&item->mesh->header);
 }
@@ -1239,15 +1232,14 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered; 
 		return;
 	}
-	render_list_prep(list_id);
+	render_list_prep(list);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
@@ -1289,8 +1281,7 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1299,7 +1290,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	}
 	// TODO: this isn't entirely optimal here, this would be best if sorted
 	// solely by the mesh id since we only have one single material.
-	render_list_prep(list_id);
+	render_list_prep(list);
 	material_check_dirty(override_material);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
@@ -1342,8 +1333,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 
 ///////////////////////////////////////////
 
-void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_prep(render_list_t list) {
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1363,20 +1353,27 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	for (int32_t i = 0; i < local.lists[list].queue.count; i++) {
-		assets_releaseref(&local.lists[list].queue[i].material->header);
-		assets_releaseref(&local.lists[list].queue[i].mesh->header);
+	list->prev_count = list->queue.count;
+	for (int32_t i = 0; i < list->queue.count; i++) {
+		assets_releaseref(&list->queue[i].material->header);
+		assets_releaseref(&list->queue[i].mesh    ->header);
 	}
-	local.lists[list].queue.clear();
-	local.lists[list].stats   = {};
-	local.lists[list].prepped = false;
-	local.lists[list].state   = render_list_state_empty;
+	list->queue.clear();
+	list->stats   = {};
+	list->prepped = false;
+	list->state   = render_list_state_empty;
 }
 
 ///////////////////////////////////////////
 
 int32_t render_list_item_count(render_list_t list) {
-	return local.lists[list].queue.count;
+	return list->queue.count;
+}
+
+///////////////////////////////////////////
+
+int32_t render_list_prev_count(render_list_t list) {
+	return list->prev_count;
 }
 
 ///////////////////////////////////////////

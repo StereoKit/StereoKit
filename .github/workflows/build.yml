@@ -220,6 +220,12 @@ jobs:
       with:
         name: binaries
         path: bin/distribute/
+
+    - name: Upload Tools
+      uses: actions/upload-artifact@v3
+      with:
+        name: tools
+        path: tools/skshaderc/
   
   ###########################################
 
@@ -241,6 +247,12 @@ jobs:
       with:
         name: binaries
         path: bin/distribute/
+
+    - name: Get Tools from Previous
+      uses: actions/download-artifact@v3
+      with:
+        name: tools
+        path: tools/skshaderc/
 
     - name: Set Version
       shell: pwsh
