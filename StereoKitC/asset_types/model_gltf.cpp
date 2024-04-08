@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "model.h"
@@ -11,7 +16,7 @@
 #include "../platforms/platform.h"
 #include "../libraries/cgltf.h"
 
-#include <meshoptimizer/meshoptimizer.h>
+#include "meshoptimizer/meshoptimizer.h"
 
 #include <stdio.h>
 
@@ -461,6 +466,23 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	if (!has_normals) {
 		mesh_calculate_normals(verts, vert_count, inds, (int32_t)ind_count);
 	}
+
+	/*uint32_t* remap = sk_malloc_t(uint32_t, vert_count);
+	size_t    final_vertex_count = meshopt_generateVertexRemap(remap, inds, ind_count, verts, vert_count, sizeof(vert_t));
+	vert_t*   final_verts        = sk_malloc_t(vert_t, final_vertex_count);
+
+	meshopt_remapIndexBuffer   (inds, inds, ind_count, &remap[0]);
+	meshopt_remapVertexBuffer  (final_verts, &verts[0], vert_count, sizeof(vert_t), &remap[0]);
+	meshopt_optimizeVertexCache(inds, inds, ind_count, final_vertex_count);
+	meshopt_optimizeOverdraw   (inds, inds, ind_count, &final_verts[0].pos.x, final_vertex_count, sizeof(vert_t), 1.05f);
+	meshopt_optimizeVertexFetch(final_verts, inds, ind_count, final_verts,    final_vertex_count, sizeof(vert_t));
+	
+	result = mesh_create();
+	mesh_set_data(result, final_verts, final_vertex_count, inds, (int32_t)ind_count);
+
+	sk_free(final_verts);
+	sk_free(remap);
+	*/
 
 	result = mesh_create();
 	mesh_set_data(result, verts, vert_count, inds, (int32_t)ind_count);
