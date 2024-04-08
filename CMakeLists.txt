@@ -181,8 +181,8 @@ if (SK_BUILD_OPENXR_LOADER)
 endif()
 
 #### meshoptimizer - https://github.com/zeux/meshoptimizer ####
-CPMAddPackage(
-  NAME meshoptimizer # v0.20
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME meshoptimizer # 0.20
   GITHUB_REPOSITORY zeux/meshoptimizer
   GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
 )
