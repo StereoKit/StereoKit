@@ -116,9 +116,9 @@ $dependencies = @(
         'meshoptimizer',
         'https://github.com/zeux/meshoptimizer.git',
         $null,
-        $null,
-        @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\src\*', "include\meshoptimizer\", $false, @('h')) )
+        @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\src\*', "[libfolder]\include\meshoptimizer\", $false, @('h')) ),
+        $null
     )
 )
 
