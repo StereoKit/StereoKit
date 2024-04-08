@@ -509,7 +509,7 @@ pose_t ui_popup_pose(vec3 shift) {
 		vec3 up    = rot * vec3_up;
 		vec3 right = rot * vec3_right;
 
-		const float away = 0.1f;   // Away from the panel
+		const float away =  0.1f;  // Away from the panel
 		const float down = -0.05f; // Down from the element;
 		result.position    = at + fwd * away + up * down;
 		result.orientation = quat_from_angles(25, 0, 0) * rot;
