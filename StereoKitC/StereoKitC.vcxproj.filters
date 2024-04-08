@@ -250,6 +250,9 @@
     <ClCompile Include="libraries\stb.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\sk_fontfile.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -528,6 +531,9 @@
     </ClInclude>
     <ClInclude Include="systems\render_.h">
       <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\sk_fontfile.h">
+      <Filter>libraries</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -264,6 +264,8 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/qoi.cpp
   StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
+  StereoKitC/libraries/sk_fontfile.h
+  StereoKitC/libraries/sk_fontfile.cpp
   StereoKitC/libraries/sokol_time.h
   StereoKitC/libraries/sokol_time.cpp
   StereoKitC/libraries/stb_image.h
