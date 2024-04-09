@@ -66,130 +66,85 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 
 	// Load the mesh's joint bindings and weights
 	for (size_t a = 0; a < p->attributes_count; a++) {
-		cgltf_attribute   *attr      = &p->attributes[a];
-		cgltf_buffer_view *buff      = attr->data->buffer_view;
-		size_t             offset    = buff->offset + attr->data->offset;
-		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
+		const cgltf_attribute*attr           = &p->attributes[a];
+		const cgltf_accessor* accessor       =  p->attributes[a].data;
+		const uint8_t*        source_buff    = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+		const int32_t         component_num  = cgltf_num_components  (accessor->type);
+		const int32_t         component_size = cgltf_component_size  (accessor->component_type);
 
 		if (attr->type == cgltf_attribute_type_joints && attr->index == 0) {
-			int32_t _components = 4;
-			if      (attr->data->type == cgltf_type_vec4  ) _components = 4;
-			else if (attr->data->type == cgltf_type_vec3  ) _components = 3;
-			else if (attr->data->type == cgltf_type_vec2  ) _components = 2;
-			else if (attr->data->type == cgltf_type_scalar) _components = 1;
-			const int32_t components = _components;
-
-			bone_id_ct = (int32_t)attr->data->count;
+			bone_id_ct = (int32_t)accessor->count;
 			bone_ids   = sk_malloc_t(uint16_t, (size_t)bone_id_ct * 4);
 			memset(bone_ids, 0, sizeof(uint16_t) * bone_id_ct * 4);
 
-			if (attr->data->is_sparse) {
+			if (accessor->is_sparse) {
 				log_errf("[%s] Sparse joints not implemented", filename);
-			} else if (attr->data->component_type == cgltf_component_type_r_8u){
-				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data[j];
-				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data[j*components];
-					bone_ids[j*4+1] = attr_data[j*components+1];
-				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data[j*components];
-					bone_ids[j*4+1] = attr_data[j*components+1];
-					bone_ids[j*4+2] = attr_data[j*components+2];
-				} else if (components == 4) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data[j*components];
-					bone_ids[j*4+1] = attr_data[j*components+1];
-					bone_ids[j*4+2] = attr_data[j*components+2];
-					bone_ids[j*4+3] = attr_data[j*components+3];
+			} else if (accessor->component_type == cgltf_component_type_r_16u) {
+				cgltf_size com_bytes = component_num * component_size;
+				for (cgltf_size i = 0; i < accessor->count; i++)
+					memcpy(&bone_ids[i * 4], &source_buff[i * accessor->stride], com_bytes);
+			} else if (accessor->component_type == cgltf_component_type_r_8u) {
+				for (cgltf_size i = 0; i < accessor->count; i++) {
+					uint8_t*  source = (uint8_t *)&source_buff[i * accessor->stride];
+					uint16_t* dest   =            &bone_ids   [i * 4];
+
+					for (int32_t c = 0; c < component_num; c++) dest[c] = source[c];
 				}
-			} else if (attr->data->component_type == cgltf_component_type_r_16u){
-				uint16_t *attr_data_16 = (uint16_t*)attr_data;
-				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_16[j];
-				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_16[j*components];
-					bone_ids[j*4+1] = attr_data_16[j*components+1];
-				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = attr_data_16[j*components];
-					bone_ids[j*4+1] = attr_data_16[j*components+1];
-					bone_ids[j*4+2] = attr_data_16[j*components+2];
-				} else if (components == 4) memcpy(bone_ids, attr_data_16, sizeof(uint16_t)*bone_id_ct*components);
-			} else if (attr->data->component_type == cgltf_component_type_r_32u){
-				uint32_t *attr_data_32 = (uint32_t*)attr_data;
-				if (components == 1) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = (uint16_t)attr_data_32[j];
-				} else if (components == 2) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
-					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
-				} else if (components == 3) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
-					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
-					bone_ids[j*4+2] = (uint16_t)attr_data_32[j*components+2];
-				} else if (components == 4) for (int32_t j = 0; j < bone_id_ct; j++) {
-					bone_ids[j*4  ] = (uint16_t)attr_data_32[j*components];
-					bone_ids[j*4+1] = (uint16_t)attr_data_32[j*components+1];
-					bone_ids[j*4+2] = (uint16_t)attr_data_32[j*components+2];
-					bone_ids[j*4+3] = (uint16_t)attr_data_32[j*components+3];
+			} else if (accessor->component_type == cgltf_component_type_r_32u){
+				for (cgltf_size i = 0; i < accessor->count; i++) {
+					uint32_t* source = (uint32_t*)&source_buff[i * accessor->stride];
+					uint16_t* dest   =            &bone_ids   [i * 4];
+
+					for (int32_t c = 0; c < component_num; c++) dest[c] = (uint16_t)source[c];
 				}
 			} else {
-				log_errf("[%s] joint format (%d) not implemented", filename, attr->data->component_type);
+				log_errf("[%s] joint format (%d) not implemented", filename, accessor->component_type);
 				sk_free(bone_ids);
 				bone_ids = nullptr;
 			}
 		} else if (attr->type == cgltf_attribute_type_weights && attr->index == 0) {
-			int32_t _components = 4;
-			if      (attr->data->type == cgltf_type_vec4  ) _components = 4;
-			else if (attr->data->type == cgltf_type_vec3  ) _components = 3;
-			else if (attr->data->type == cgltf_type_vec2  ) _components = 2;
-			else if (attr->data->type == cgltf_type_scalar) _components = 1;
-			const int32_t components = _components;
+			size_t       count  = cgltf_accessor_unpack_floats(accessor, nullptr, 0);
+			cgltf_float *floats = sk_malloc_t(cgltf_float, count);
+			cgltf_accessor_unpack_floats(attr->data, floats, count);
 
-			if (attr->data->component_type == cgltf_component_type_r_32f) {
-				size_t count = cgltf_accessor_unpack_floats(attr->data, nullptr, 0);
-				if (count != components * attr->data->count)
-					log_errf("[%s] mismatched weight count", filename); // Hostile asset?
-				cgltf_float *floats = sk_malloc_t(cgltf_float, count);
-				cgltf_accessor_unpack_floats(attr->data, floats, count);
+			weight_ct = (int32_t)attr->data->count;
+			weights   = sk_malloc_t(vec4, weight_ct);
+			memset(weights, 0, sizeof(vec4) *weight_ct);
 
-				weight_ct = (int32_t)attr->data->count;
-				weights   = sk_malloc_t(vec4, weight_ct);
-				memset(weights, 0, sizeof(vec4) *weight_ct);
-
-				if (components == 1) for (int32_t j = 0; j < weight_ct; j++) {
-					weights[j].x = 1; // one weight? Must be 1
-				} else if (components == 2) for (int32_t j = 0; j < weight_ct; j++) {
-					int32_t jc = j * components;
-					vec4   *w  = &weights[j];
-					w->x = floats[jc];
-					w->y = floats[jc+1];
-					float sum = 1/(w->x + w->y);
-					w->x = w->x * sum;
-					w->y = w->y * sum;
-				} else if (components == 3) for (int32_t j = 0; j < weight_ct; j++) {
-					int32_t jc = j * components;
-					vec4   *w  = &weights[j];
-					w->x = floats[jc];
-					w->y = floats[jc+1];
-					w->z = floats[jc+2];
-					float sum = 1/(w->x + w->y + w->z);
+			if (component_num == 1) for (int32_t j = 0; j < weight_ct; j++) {
+				weights[j].x = 1; // one weight? Must be 1
+			} else if (component_num == 2) for (int32_t j = 0; j < weight_ct; j++) {
+				int32_t jc = j * component_num;
+				vec4   *w  = &weights[j];
+				w->x = floats[jc];
+				w->y = floats[jc+1];
+				float sum = 1/(w->x + w->y);
+				w->x = w->x * sum;
+				w->y = w->y * sum;
+			} else if (component_num == 3) for (int32_t j = 0; j < weight_ct; j++) {
+				int32_t jc = j * component_num;
+				vec4   *w  = &weights[j];
+				w->x = floats[jc];
+				w->y = floats[jc+1];
+				w->z = floats[jc+2];
+				float sum = 1/(w->x + w->y + w->z);
+				w->x = w->x * sum;
+				w->y = w->y * sum;
+				w->z = w->z * sum;
+			}
+			if (component_num == 4) {
+				free(weights);
+				weights = (vec4*)floats;
+				for (int32_t j = 0; j < weight_ct; j++) {
+					vec4 *w   = &weights[j];
+					float sum = 1/(w->x + w->y + w->z + w->w);
 					w->x = w->x * sum;
 					w->y = w->y * sum;
 					w->z = w->z * sum;
-				}
-				if (components == 4) {
-					weights = (vec4*)floats;
-					for (int32_t j = 0; j < weight_ct; j++) {
-						vec4 *w   = &weights[j];
-						float sum = 1/(w->x + w->y + w->z + w->w);
-						w->x = w->x * sum;
-						w->y = w->y * sum;
-						w->z = w->z * sum;
-						w->w = w->w * sum;
-					}
-				} else {
-					sk_free(floats);
+					w->w = w->w * sum;
 				}
 			} else {
-				log_errf("[%s] weights format (%d) not implemented", filename, attr->data->component_type);
+				sk_free(floats);
 			}
 		}
 	}
@@ -264,8 +219,8 @@ void gltf_meshopt_decode(cgltf_data* gltf_data) {
 
 ///////////////////////////////////////////
 
-void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *accessor) {
-	uint8_t*       destination = ((uint8_t*)verts) + vert_offset;
+void gltf_view_to_vert_f(void* dest, size_t dest_step, size_t vert_offset, cgltf_accessor *accessor) {
+	uint8_t*       destination = ((uint8_t*)dest) + vert_offset;
 	const uint8_t* source_buff = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
 
 	int32_t component_num  = cgltf_num_components(accessor->type);
@@ -279,12 +234,12 @@ void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *acce
 	if (standard_path == false && accessor->component_type == cgltf_component_type_r_32f) {
 		cgltf_size com_bytes = component_num * component_size;
 		for (cgltf_size i = 0; i < accessor->count; i++)
-			memcpy(&destination[i * sizeof(vert_t)], &source_buff[i * accessor->stride], com_bytes);
+			memcpy(&destination[i * dest_step], &source_buff[i * accessor->stride], com_bytes);
 
 	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_16) {
 		for (cgltf_size i = 0; i < accessor->count; i++) {
 			int16_t* source = (int16_t*)&source_buff[i * accessor->stride];
-			float*   dest   = (float  *)&destination[i * sizeof(vert_t)];
+			float*   dest   = (float  *)&destination[i * dest_step];
 
 			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)INT16_MAX;
 			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
@@ -292,7 +247,7 @@ void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *acce
 	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_16u) {
 		for (cgltf_size i = 0; i < accessor->count; i++) {
 			uint16_t* source = (uint16_t*)&source_buff[i * accessor->stride];
-			float*    dest   = (float   *)&destination[i * sizeof(vert_t)];
+			float*    dest   = (float   *)&destination[i * dest_step];
 
 			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)UINT16_MAX;
 			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
@@ -300,7 +255,7 @@ void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *acce
 	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_8) {
 		for (cgltf_size i = 0; i < accessor->count; i++) {
 			int8_t* source = (int8_t*)&source_buff[i * accessor->stride];
-			float*  dest   = (float *)&destination[i * sizeof(vert_t)];
+			float*  dest   = (float *)&destination[i * dest_step];
 
 			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)INT8_MAX;
 			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
@@ -308,7 +263,7 @@ void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *acce
 	} else if (standard_path == false && accessor->component_type == cgltf_component_type_r_8u) {
 		for (cgltf_size i = 0; i < accessor->count; i++) {
 			uint8_t* source = (uint8_t*)&source_buff[i * accessor->stride];
-			float*   dest   = (float  *)&destination[i * sizeof(vert_t)];
+			float*   dest   = (float  *)&destination[i * dest_step];
 
 			if (accessor->normalized) for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c] / (float)UINT8_MAX;
 			else                      for (int32_t c = 0; c < component_num; c++) dest[c] = (float)source[c];
@@ -321,7 +276,7 @@ void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *acce
 
 		cgltf_size com_bytes = component_num * component_size;
 		for (cgltf_size i = 0; i < accessor->count; i++)
-			memcpy(&destination[i * sizeof(vert_t)], &floats[i * component_num], com_bytes);
+			memcpy(&destination[i * dest_step], &floats[i * component_num], com_bytes);
 		sk_free(floats);
 	}
 }
@@ -369,16 +324,16 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		if (attr->type == cgltf_attribute_type_position) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex position channels! Only one supported, the rest will be ignored.");
-			} else gltf_view_to_vert_f(verts, offsetof(vert_t, pos), attr->data);
+			} else gltf_view_to_vert_f(verts, sizeof(vert_t), offsetof(vert_t, pos), attr->data);
 		} else if (attr->type == cgltf_attribute_type_normal) {
 			has_normals = true;
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex normal channels! Only one supported, the rest will be ignored.");
-			} else gltf_view_to_vert_f(verts, offsetof(vert_t, norm), attr->data);
+			} else gltf_view_to_vert_f(verts, sizeof(vert_t), offsetof(vert_t, norm), attr->data);
 		} else if (attr->type == cgltf_attribute_type_texcoord) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many texture coordinate channels! Only one supported, the rest will be ignored.");
-			} else gltf_view_to_vert_f(verts, offsetof(vert_t, uv), attr->data);
+			} else gltf_view_to_vert_f(verts, sizeof(vert_t), offsetof(vert_t, uv), attr->data);
 		} else if (attr->type == cgltf_attribute_type_color) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex color channels! Only one supported, the rest will be ignored.");

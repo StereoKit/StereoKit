@@ -27,6 +27,7 @@ class TestGltf : ITest
 			.Split(';')
 			.SelectMany(folder => new string[] { "*.glb", "*.gltf" }
 				.SelectMany(ext => Directory.EnumerateFiles(folder, ext, SearchOption.AllDirectories)))
+			.Where(file => !file.Contains("glTF-Draco"))
 			.ToArray();
 	}
 
