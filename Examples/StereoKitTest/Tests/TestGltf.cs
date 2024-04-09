@@ -83,7 +83,7 @@ class TestGltf : ITest
 			_frameCounter += 1;
 			if (_frameCounter == 2 && Tests.GltfScreenshotRoot != null)
 			{
-				Tests.ScreenshotGltf(_files[_currFile-1].Replace('/', '_').Replace('\\', '_').Replace(':', '_') + ".jpg", 500, 500, V.XYZ(0, -0.25f, 1.0f), V.XYZ(0, -0.25f, 0));
+				Tests.ScreenshotGltf(_files[_currFile-1].Replace('/', '_').Replace('\\', '_').Replace(':', '_') + ".jpg", 1000, 1000, V.XYZ(0, -0.25f, 1.0f), V.XYZ(0, -0.25f, 0));
 			}
 			if (_frameCounter >= 4)
 			{
