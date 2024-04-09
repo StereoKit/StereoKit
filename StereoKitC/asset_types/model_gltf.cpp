@@ -266,9 +266,7 @@ void gltf_meshopt_decode(cgltf_data* gltf_data) {
 
 void gltf_view_to_vert_f(vert_t *verts, size_t vert_offset, cgltf_accessor *accessor) {
 	uint8_t*       destination = ((uint8_t*)verts) + vert_offset;
-	const uint8_t* source_buff = accessor->buffer_view->has_meshopt_compression
-		? (const uint8_t*)accessor->buffer_view->data
-		: cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+	const uint8_t* source_buff = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
 
 	int32_t component_num  = cgltf_num_components(accessor->type);
 	int32_t component_size = cgltf_component_size(accessor->component_type);
