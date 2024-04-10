@@ -16,7 +16,7 @@
 #include "../platforms/platform.h"
 #include "../libraries/cgltf.h"
 
-#include "meshoptimizer/meshoptimizer.h"
+#include <meshoptimizer.h>
 
 #include <stdio.h>
 
