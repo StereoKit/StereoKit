@@ -186,6 +186,7 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   GITHUB_REPOSITORY zeux/meshoptimizer
   GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
 )
+set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.3.31
