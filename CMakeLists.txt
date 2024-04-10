@@ -180,6 +180,14 @@ if (SK_BUILD_OPENXR_LOADER)
   set(OPENXR_LIB openxr_loader)
 endif()
 
+#### meshoptimizer - https://github.com/zeux/meshoptimizer ####
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME meshoptimizer # 0.20
+  GITHUB_REPOSITORY zeux/meshoptimizer
+  GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
+)
+set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.3.31
   URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
@@ -483,6 +491,7 @@ target_link_libraries( StereoKitC
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+    meshoptimizer
   PUBLIC
     sk_gpu
     ${ANDROID_LIBS}

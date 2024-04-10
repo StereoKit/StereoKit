@@ -112,6 +112,14 @@ $dependencies = @(
         @([FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null)),
         'skshaderc\win32_x64\skshaderc.exe'
     )
+    [Dependency]::new(
+        'meshoptimizer',
+        'https://github.com/zeux/meshoptimizer.git',
+        $null,
+        @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\src\*', "[libfolder]\include\meshoptimizer\", $false, @('h')) ),
+        $null
+    )
 )
 
 #####################################################
