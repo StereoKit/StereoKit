@@ -799,10 +799,10 @@ bool openxr_render_frame() {
 	// xrWaitFrame. Theoretically better?
 	input_step_late();
 
-	render_pipeline_draw();
-
-	// Release the swapchains for all active displays
 	if (render_displays) {
+		render_pipeline_draw();
+
+		// Release the swapchains for all active displays
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
