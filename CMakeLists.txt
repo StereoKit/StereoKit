@@ -188,6 +188,20 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
 )
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+#### basis_universal - https://github.com/BinomialLLC/basis_universal ####
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME basis_universal # 1.16.4
+  GITHUB_REPOSITORY BinomialLLC/basis_universal
+  GIT_TAG           900e40fb5d2502927360fe2f31762bdbb624455f
+  DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we need to build one here
+)
+if (basis_universal_ADDED)
+  add_library(basis_universal STATIC
+    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
+    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+  target_include_directories(basis_universal PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
+endif()
+
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.3.31
   URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
@@ -492,6 +506,7 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
+    basis_universal
   PUBLIC
     sk_gpu
     ${ANDROID_LIBS}

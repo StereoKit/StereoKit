@@ -49,13 +49,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\include\basisu;$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\include\basisu;$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -151,6 +151,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="libraries\stb.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />
+    <ClCompile Include="lib\include\basisu\basisu_transcoder.cpp" />
+    <ClCompile Include="lib\include\zstd\zstd.c" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\linux.cpp" />
