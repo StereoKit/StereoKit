@@ -789,6 +789,13 @@ bool openxr_render_frame() {
 			end_second.viewConfigurationLayersInfo = xr_display_2nd_layers.data;
 			backend_openxr_end_frame_chain(&end_second, sizeof(end_second));
 		}
+	} else {
+		// Disable all surfaces
+		for (int32_t i = 0; i < xr_displays.count; i++) {
+			swapchain_t* swapchain = &xr_displays[i].swapchain_color;
+			for (uint32_t s = 0; s < swapchain->backbuffer_views; s++)
+				render_pipeline_surface_set_enabled(swapchain->render_surfaces[s], false);
+		}
 	}
 
 	// Execute any code that's dependent on the predicted time, such as
@@ -799,10 +806,10 @@ bool openxr_render_frame() {
 	// xrWaitFrame. Theoretically better?
 	input_step_late();
 
-	if (render_displays) {
-		render_pipeline_draw();
+	render_pipeline_draw();
 
-		// Release the swapchains for all active displays
+	// Release the swapchains for all active displays
+	if (render_displays) {
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
