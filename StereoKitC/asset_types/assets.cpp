@@ -745,8 +745,6 @@ int32_t asset_thread(void *thread_inst_obj) {
 	thread->id      = ft_id_current();
 	thread->running = true;
 
-	ft_thread_name(ft_thread_current(), "StereoKit Assets");
-	 
 	ft_mutex_t wait_mtx = ft_mutex_create();
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
