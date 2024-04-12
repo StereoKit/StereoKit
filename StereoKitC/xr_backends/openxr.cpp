@@ -931,7 +931,7 @@ void openxr_step_end() {
 	// This happens at the end of step_end so that the app still can receive a
 	// message about the app going into a hidden state.
 	while (xr_session_state == XR_SESSION_STATE_IDLE) {
-		platform_sleep(33);
+		platform_sleep(100);
 		openxr_poll_events();
 	}
 }

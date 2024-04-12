@@ -88,7 +88,6 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
-	ft_thread_name(ft_thread_current(), "StereoKit Main");
 	if (local.settings.log_filter != log_none)
 		log_set_filter(local.settings.log_filter);
 
