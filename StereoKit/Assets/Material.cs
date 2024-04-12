@@ -71,7 +71,14 @@ namespace StereoKit
 		/// This is great for tiling textures!
 		/// 
 		/// This represents the float param 'tex_scale'.</summary>
+		[Obsolete("No longer present, use TexTransform instead.")]
 		TexScale,
+		/// <summary>Not necessarily present in all shaders, this transforms
+		/// the UV coordinates of the mesh, so that the texture can repeat and
+		/// scroll. XY components are offset, and ZW components are scale.
+		/// 
+		/// This represents the float param 'tex_trans'.</summary>
+		TexTransform,
 		/// <summary>In clip shaders, this is the cutoff value below which
 		/// pixels are discarded. Typically, the diffuse/albedo's alpha
 		/// component is sampled for comparison here.
@@ -299,7 +306,7 @@ namespace StereoKit
 				case MatParamName.NormalTex:       return "normal";
 				case MatParamName.OcclusionTex:    return "occlusion";
 				case MatParamName.RoughnessAmount: return "roughness";
-				case MatParamName.TexScale:        return "tex_scale";
+				case MatParamName.TexTransform:    return "tex_trans";
 				case MatParamName.ClipCutoff:      return "cutoff";
 				default: Log.Err($"Unimplemented Material Parameter Name! {parameter}"); return "";
 			}
