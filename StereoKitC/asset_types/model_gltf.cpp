@@ -555,6 +555,19 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 
 ///////////////////////////////////////////
 
+void gltf_set_material_transform(material_t material, const cgltf_texture_view *view) {
+	if (view->has_transform == false || material_has_param(material, "tex_trans", material_param_vector4) == false)
+		return;
+
+	material_set_vector4(material, "tex_trans", {
+		view->transform.offset[0],
+		view->transform.offset[1],
+		view->transform.scale[0],
+		view->transform.scale[1] });
+}
+
+///////////////////////////////////////////
+
 material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader, array_t<const char*> *warnings) {
 	// Check if we've already loaded this material
 	char id[512];
@@ -603,11 +616,11 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		return result;
 
 	cgltf_texture *tex = nullptr;
-	if (material->has_pbr_metallic_roughness) {
+	if (material->has_pbr_metallic_roughness) { 
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_metallic_roughness.base_color_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support loading multiple texture coordinate channels yet.");
-			if (material->pbr_metallic_roughness.base_color_texture.has_transform) material_set_float(result, "tex_scale", material->pbr_metallic_roughness.base_color_texture.transform.scale[0]);
+			gltf_set_material_transform(result, &material->pbr_metallic_roughness.base_color_texture);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -640,7 +653,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		tex = material->pbr_specular_glossiness.diffuse_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			if (material->pbr_specular_glossiness.diffuse_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-			if (material->pbr_specular_glossiness.diffuse_texture.has_transform) material_set_float(result, "tex_scale", material->pbr_metallic_roughness.base_color_texture.transform.scale[0]);
+			gltf_set_material_transform(result, &material->pbr_specular_glossiness.diffuse_texture);
 			tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 10);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -686,6 +699,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	tex = material->emissive_texture.texture;
 	if (tex != nullptr && material_has_param(result, "emission", material_param_texture)) {
 		if (material->emissive_texture.texcoord != 0) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
+		gltf_set_material_transform(result, &material->emissive_texture);
 		tex_t parse_tex = gltf_parsetexture(data, tex, filename, true, 12);
 		tex_set_fallback(parse_tex, sk_default_tex_black);
 		if (parse_tex != nullptr) {
