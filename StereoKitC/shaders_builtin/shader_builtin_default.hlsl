@@ -1,13 +1,11 @@
 #include "stereokit.hlsli"
 
-//--name = sk/default
-
 //--color:color = 1,1,1,1
-//--tex_scale   = 1
+//--tex_trans   = 0,0,1,1
 //--diffuse     = white
 
 float4       color;
-float        tex_scale;
+float4       tex_trans;
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -34,7 +32,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 
-	o.uv         = input.uv * tex_scale;
+	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
 	o.color      = color * input.col * sk_inst[id].color;
 	o.color.rgb *= sk_lighting(normal);
 	return o;

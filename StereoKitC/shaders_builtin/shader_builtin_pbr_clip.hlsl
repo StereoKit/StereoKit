@@ -1,18 +1,17 @@
 #include <stereokit.hlsli>
 #include <stereokit_pbr.hlsli>
 
-//--name = sk/default_pbr_clip
 //--color:color           = 1,1,1,1
 //--emission_factor:color = 0,0,0,0
+//--tex_trans             = 0,0,1,1
 //--metallic              = 0
 //--roughness             = 1
-//--tex_scale             = 1
 //--cutoff                = 0.5
 float4 color;
 float4 emission_factor;
+float4 tex_trans;
 float  metallic;
 float  roughness;
-float  tex_scale;
 float  cutoff;
 
 //--diffuse   = white
@@ -54,7 +53,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.pos   = mul(float4(o.world,  1), sk_viewproj[o.view_id]);
 
 	o.normal     = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
-	o.uv         = input.uv * tex_scale;
+	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
 	o.color      = input.color * sk_inst[id].color * color;
 	o.irradiance = sk_lighting(o.normal);
 	o.view_dir   = sk_camera_pos[o.view_id].xyz - o.world;
