@@ -85,7 +85,7 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 		// Read from file
 
 		char*    asset_filename = assets_file(data->file_names[i]);
-		bool32_t loaded         = platform_read_file(asset_filename, &data->file_data[i], &data->file_sizes[i]);
+		bool32_t loaded         = platform_read_file_direct(asset_filename, &data->file_data[i], &data->file_sizes[i]);
 		sk_free(asset_filename);
 		if (!loaded) {
 			log_warnf(tex_msg_load_failed, data->file_names[i]);
@@ -201,7 +201,7 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 	data->file_sizes = sk_malloc_t(size_t, data->file_count);
 
 	char*    asset_filename = assets_file(data->file_names[0]);
-	bool32_t loaded         = platform_read_file(asset_filename, &data->file_data[0], &data->file_sizes[0]);
+	bool32_t loaded         = platform_read_file_direct(asset_filename, &data->file_data[0], &data->file_sizes[0]);
 	sk_free(asset_filename);
 	if (!loaded) {
 		log_warnf(tex_msg_load_failed, data->file_names[0]);

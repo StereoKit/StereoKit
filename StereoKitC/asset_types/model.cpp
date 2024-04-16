@@ -129,7 +129,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 	void*    data;
 	size_t   length;
 	char*    asset_filename = assets_file(filename);
-	bool32_t loaded         = platform_read_file(asset_filename, &data, &length);
+	bool32_t loaded         = platform_read_file_direct(asset_filename, &data, &length);
 	sk_free(asset_filename);
 	if (!loaded) {
 		log_warnf("Model file failed to load: %s", filename);

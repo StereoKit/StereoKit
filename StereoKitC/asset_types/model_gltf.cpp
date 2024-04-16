@@ -866,7 +866,7 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 bool modelfmt_gltf(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader) {
 	cgltf_options options = {};
 	options.file.read = [](const struct cgltf_memory_options*, const struct cgltf_file_options*, const char* path, cgltf_size* size, void** data) {
-		return platform_read_file(path, data, size)
+		return platform_read_file_direct(path, data, size)
 			? cgltf_result_success
 			: cgltf_result_file_not_found;
 	};

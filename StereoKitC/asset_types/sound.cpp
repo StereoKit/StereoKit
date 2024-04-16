@@ -45,7 +45,7 @@ sound_t sound_create(const char *filename) {
 	void*    data;
 	size_t   length;
 	char*    sound_file = assets_file(filename);
-	bool32_t loaded     = platform_read_file(sound_file, &data, &length);
+	bool32_t loaded     = platform_read_file_direct(sound_file, &data, &length);
 	sk_free(sound_file);
 	if (!loaded) {
 		log_warnf("Sound file failed to load: %s", filename);

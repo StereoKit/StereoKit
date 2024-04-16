@@ -1649,6 +1649,7 @@ SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_d
 SK_API void     platform_file_picker_close  (void);
 SK_API bool32_t platform_file_picker_visible(void);
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
+SK_API bool32_t platform_read_file_direct   (const char *filename_utf8,  void **out_data, size_t* out_size);
 SK_API bool32_t platform_write_file         (const char *filename_utf8,  void *data, size_t size);
 SK_API bool32_t platform_write_file_text    (const char *filename_utf8,  const char* text_utf8);
 

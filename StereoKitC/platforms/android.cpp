@@ -244,7 +244,6 @@ void android_set_window_xam(void *window) {
 
 bool android_read_asset(const char* asset_name, void** out_data, size_t* out_size) {
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
-
 	AAsset *asset = AAssetManager_open(local.asset_manager, asset_name, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);
@@ -255,6 +254,7 @@ bool android_read_asset(const char* asset_name, void** out_data, size_t* out_siz
 		((uint8_t *)*out_data)[*out_size] = 0;
 		return true;
 	}
+	log_diagf(" ASSET_NOT_FOUND *************%s", asset_name);
 	return false;
 }
 
