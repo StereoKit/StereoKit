@@ -202,7 +202,7 @@ namespace StereoKit
 
 		/// <summary>Obsolete, please use Device.DisplayBlend</summary>
 		[Obsolete("Obsolete, please use Device.DisplayBlend", true)]
-		public DisplayBlend displayType { get; set; }
+		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
 
 	/*[StructLayout(LayoutKind.Sequential)]
