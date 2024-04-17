@@ -313,7 +313,6 @@ void  assets_shutdown_check() {
 ///////////////////////////////////////////
 
 char *assets_file(const char *file_name) {
-	log_diagf("assets_file ************* %s", file_name);
 	const sk_settings_t* settings = sk_get_settings_ref();
 
 	if (file_name == nullptr || settings->assets_folder == nullptr || settings->assets_folder[0] == '\0')

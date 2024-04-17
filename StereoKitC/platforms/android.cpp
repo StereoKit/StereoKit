@@ -254,7 +254,6 @@ bool android_read_asset(const char* asset_name, void** out_data, size_t* out_siz
 		((uint8_t *)*out_data)[*out_size] = 0;
 		return true;
 	}
-	log_diagf(" ASSET_NOT_FOUND *************%s", asset_name);
 	return false;
 }
 
