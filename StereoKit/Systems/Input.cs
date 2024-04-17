@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 using System;
 using System.Collections.Generic;
@@ -70,7 +70,13 @@ namespace StereoKit
 		/// (metacarpal) bone. For orientation, Forward is the direction the
 		/// flat of the palm is facing, "Iron Man" style. X+ is to the outside
 		/// of the right hand, and to the inside of the left hand. </summary>
-		public Pose         palm;
+		public Pose palm;
+		/// <summary>A pose an orientation representing where the hand is
+		/// pointing to. This may be provided by the OpenXR runtime, or be a
+		/// fallback provided by StereoKit. Typically this starts and the index
+		/// finger's primary knuckle, and points in the same direction as a
+		/// line drawn from the shoulder to the knuckle.</summary>
+		public Pose aim;
 		/// <summary>This is an approximation of where the center of a 
 		/// 'pinch' gesture occurs, and is used internally by StereoKit for
 		/// some tasks, such as UI. For simulated hands, this position will
@@ -91,6 +97,11 @@ namespace StereoKit
 		/// <summary>Is the hand making a grip gesture right now? Fingers
 		/// next to the palm.</summary>
 		public  BtnState    grip;
+		/// <summary>This is a filter state for when the hand is ready to
+		/// interact with something at a distance. This often factors into
+		/// account palm direction, as well as distance from the body, and the
+		/// current pinch and tracked state.</summary>
+		public BtnState     aimReady;
 		/// <summary>This is the size of the hand, calculated by measuring 
 		/// the length of the middle finger! This is calculated by adding the 
 		/// distances between each joint, then adding the joint radius of the

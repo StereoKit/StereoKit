@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_core.h"
 #include "ui_layout.h"
 #include "ui_theming.h"
@@ -119,7 +125,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 	line_point_t pts[ct];
 	for (int32_t i = 0; i < ct; i += 1) {
 		float pct   = (float)i / (float)(ct - 1);
-		float blend = pct * pct * pct * 0.4f;
+		float blend = pct * pct * pct * 0.3f;
 		float d     = skip + pct * length;
 		
 		float pct_i = 1 - pct;
@@ -138,15 +144,7 @@ void ui_core_hands_step() {
 	static float prev_pinch[2] = { 1, 1 };
 
 	for (int32_t i = 0; i < handed_max; i++) {
-		const hand_t*       hand       = input_hand       ((handed_)i);
-		const pointer_t*    pointer    = input_get_pointer(input_hand_pointer_id[i]);
-		const controller_t* controller = input_controller ((handed_)i);
-
-		button_state_ pinch_state = pointer->state;
-		button_state_ track_state = pointer->tracked;
-		pose_t        aim_ray     = pose_t{pointer->ray.pos, pointer->orientation};
-		vec3 aim_pos = aim_ray.position;
-		vec3 aim_dir = aim_ray.orientation * vec3_forward;
+		const hand_t* hand = input_hand((handed_)i);
 
 		// Poke
 		interactor_update(skui_hand_interactors[i*3 + 0],
@@ -165,9 +163,9 @@ void ui_core_hands_step() {
 			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
 			interactor_min_distance_set(skui_hand_interactors[i*3 + 2], math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (skui_hand_interactors[i*3 + 2],
-				aim_pos, aim_pos + aim_dir * 100, 0.01f,
-				aim_pos, aim_ray.orientation, input_head()->position + vec3{0,-0.12f,0},
-				pinch_state, track_state);
+				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100, 0.01f,
+				hand->aim.position, hand->aim.orientation, input_head()->position + vec3{0,-0.12f,0},
+				hand->pinch_state, hand->aim_ready);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
 		}
 	}
