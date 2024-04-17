@@ -217,6 +217,20 @@ bool oxri_init() {
 			local.profiles.add(bind_info);
 	}
 
+	// microsoft/hand_interaction
+	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
+	if (xr_ext_available.MSFT_hand_interaction) {
+		bind_arr.clear();
+		_bind_rl(&bind_arr, local.action_grip_pose, path_grip_pose);
+		_bind_rl(&bind_arr, local.action_aim_pose,  path_aim_pose);
+		_bind_rl(&bind_arr, local.action_trigger,   path_select_val);
+		_bind_rl(&bind_arr, local.action_grip,      path_squeeze_val);
+		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+
+		if (_bind_suggest("microsoft/hand_interaction", true, bind_arr, pose_identity, pose_identity, &bind_info))
+			local.profiles.add(bind_info);
+	}
+
 	// Bytedance PICO Neo3
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 	if (xr_ext_available.BD_controller_interaction) {
