@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  * Copyright (c) 2023 Austin Hale
  */
 
@@ -275,9 +275,9 @@ bool openxr_views_create() {
 
 	// Find all the valid view configurations
 	uint32_t count = 0;
-	xr_check2(xrEnumerateViewConfigurations(xr_instance, xr_system_id, 0, &count, nullptr), "xrEnumerateViewConfigurations");
+	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, 0, &count, nullptr), "xrEnumerateViewConfigurations");
 	XrViewConfigurationType *types = sk_malloc_t(XrViewConfigurationType, count);
-	xr_check2(xrEnumerateViewConfigurations(xr_instance, xr_system_id, count, &count, types), "xrEnumerateViewConfigurations");
+	xr_check(xrEnumerateViewConfigurations(xr_instance, xr_system_id, count, &count, types), "xrEnumerateViewConfigurations");
 
 	// Initialize each valid view configuration
 	for (uint32_t t = 0; t < count; t++) {
@@ -393,7 +393,7 @@ bool openxr_display_create(XrViewConfigurationType view_type, device_display_t *
 
 	// Now we need to find all the viewpoints we need to take care of! For a stereo headset, this should be 2.
 	// Similarly, for an AR phone, we'll need 1, and a VR cave could have 6, or even 12!
-	xr_check2(xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, view_type, 0, &out_display->view_cap, nullptr),
+	xr_check(xrEnumerateViewConfigurationViews(xr_instance, xr_system_id, view_type, 0, &out_display->view_cap, nullptr),
 		"xrEnumerateViewConfigurationViews");
 
 	// Extract information from the views we got
@@ -564,12 +564,12 @@ bool openxr_create_swapchain(swapchain_t *out_swapchain, XrViewConfigurationType
 		swapchain_info.next = &secondary;
 	}
 
-	xr_check2(xrCreateSwapchain(xr_session, &swapchain_info, &handle),
+	xr_check(xrCreateSwapchain(xr_session, &swapchain_info, &handle),
 		"xrCreateSwapchain");
 
 	// Find out how many textures were generated for the swapchain
 	uint32_t backbuffer_count = 0;
-	xr_check2(xrEnumerateSwapchainImages(handle, 0, &backbuffer_count, nullptr),
+	xr_check(xrEnumerateSwapchainImages(handle, 0, &backbuffer_count, nullptr),
 		"xrEnumerateSwapchainImages");
 
 	// We'll want to track our own information about the swapchain, so we can
@@ -586,7 +586,7 @@ bool openxr_create_swapchain(swapchain_t *out_swapchain, XrViewConfigurationType
 		out_swapchain->backbuffers[i] = { XR_TYPE_SWAPCHAIN_IMAGE };
 	}
 
-	xr_check2(xrEnumerateSwapchainImages(out_swapchain->handle, backbuffer_count, &backbuffer_count, (XrSwapchainImageBaseHeader *)out_swapchain->backbuffers),
+	xr_check(xrEnumerateSwapchainImages(out_swapchain->handle, backbuffer_count, &backbuffer_count, (XrSwapchainImageBaseHeader *)out_swapchain->backbuffers),
 		"xrEnumerateSwapchainImages");
 
 	return true;
@@ -648,10 +648,10 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 	// displays)
 	uint32_t                blend_count = 0;
 	XrEnvironmentBlendMode *blend_modes;
-	xr_check2(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, 0, &blend_count, nullptr),
+	xr_check(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, 0, &blend_count, nullptr),
 		"xrEnumerateEnvironmentBlendModes");
 	blend_modes = sk_malloc_t(XrEnvironmentBlendMode, blend_count);
-	xr_check2(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, blend_count, &blend_count, blend_modes),
+	xr_check(xrEnumerateEnvironmentBlendModes(xr_instance, xr_system_id, view_type, blend_count, &blend_count, blend_modes),
 		"xrEnumerateEnvironmentBlendModes");
 	
 	*out_blend = XR_ENVIRONMENT_BLEND_MODE_MAX_ENUM;
@@ -704,7 +704,7 @@ bool openxr_render_frame() {
 	if (xrWaitFrameResult == XR_ERROR_SESSION_LOST) {
 		sk_quit(quit_reason_session_lost);
 	}
-	xr_check2(xrWaitFrameResult, "xrWaitFrame");
+	xr_check(xrWaitFrameResult, "xrWaitFrame");
 
 	// Don't track sync time, start the frame timer after xrWaitFrame
 	xr_render_sys->profile_frame_start = stm_now();
@@ -729,7 +729,7 @@ bool openxr_render_frame() {
 	// interesting flags, like XR_SESSION_VISIBILITY_UNAVAILABLE, which means
 	// we could skip rendering this frame and call xrEndFrame right away.
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
-	xr_check2(xrBeginFrame(xr_session, &begin_info),
+	xr_check(xrBeginFrame(xr_session, &begin_info),
 		"xrBeginFrame");
 
 	// Timing also needs some work, may be best as some sort of anchor system
@@ -823,7 +823,7 @@ bool openxr_render_frame() {
 	end_info.layers               = composition_layers->data;
 	xr_chain_insert_extensions((XrBaseHeader*)&end_info, xr_end_frame_chain_bytes, xr_end_frame_chain_offset);
 
-	xr_check2(xrEndFrame(xr_session, &end_info),
+	xr_check(xrEndFrame(xr_session, &end_info),
 		"xrEndFrame");
 
 	return true;
@@ -862,7 +862,7 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 	locate_info.viewConfigurationType = display->type;
 	locate_info.displayTime           = at_time;
 	locate_info.space                 = xr_app_space;
-	xr_check2(xrLocateViews(xr_session, &locate_info, &view_state, display->view_cap, &view_count, display->view_xr),
+	xr_check(xrLocateViews(xr_session, &locate_info, &view_state, display->view_cap, &view_count, display->view_xr),
 		"xrLocateViews");
 
 	// And now we'll iterate through each viewpoint, and render it!
