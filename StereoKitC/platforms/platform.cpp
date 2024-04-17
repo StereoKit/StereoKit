@@ -361,7 +361,6 @@ char *platform_pop_path_new(const char *path) {
 bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
-	log_diagf("platform_read_file_direct ************* %s", filename);
 
 	char* slash_fix_filename = string_copy(filename);
 	char* curr               = slash_fix_filename;
@@ -376,7 +375,6 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 #if defined(SK_OS_ANDROID)
 
 	// Try and load using Android API first!
-	log_diagf("android ************* %s", slash_fix_filename);
 	if (android_read_asset(slash_fix_filename, out_data, out_size)) {
 		sk_free(slash_fix_filename);
 		return true;
