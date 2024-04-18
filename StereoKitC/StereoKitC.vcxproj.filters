@@ -619,6 +619,9 @@
     <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
+    <None Include="shaders_builtin\shader_builtin_lightmap.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debugger_vis.natvis" />
