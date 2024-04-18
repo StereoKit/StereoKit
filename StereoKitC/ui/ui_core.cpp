@@ -255,8 +255,8 @@ void ui_core_update() {
 	// auto-switch between hands and controllers
 	hand_source_ source = input_hand_source(handed_right);
 	if      (source == hand_source_articulated || source == hand_source_overridden)                   skui_input_mode = 0;
-	else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) skui_input_mode = 1;
-	else                                                                                              skui_input_mode = 2;
+	else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) skui_input_mode = 2;
+	else                                                                                              skui_input_mode = 1;
 
 	if      (skui_input_mode == 0) { ui_core_hands_step(); }
 	if      (skui_input_mode == 1) { ui_core_controllers_step(); }
