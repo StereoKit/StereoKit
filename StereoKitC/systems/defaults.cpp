@@ -31,6 +31,7 @@ shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_pbr_clip;
 shader_t     sk_default_shader_unlit;
 shader_t     sk_default_shader_unlit_clip;
+shader_t     sk_default_shader_lightmap;
 shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
@@ -189,6 +190,7 @@ bool defaults_init() {
 	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_clip_hlsl_zip ); sk_default_shader_unlit_clip  = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_lightmap_hlsl_zip   ); sk_default_shader_lightmap    = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_font_hlsl_zip       ); sk_default_shader_font        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_equirect_hlsl_zip   ); sk_default_shader_equirect    = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_hlsl_zip         ); sk_default_shader_ui          = shader_create_mem(data, size);
@@ -219,6 +221,7 @@ bool defaults_init() {
 		sk_default_shader_pbr_clip    == nullptr ||
 		sk_default_shader_unlit       == nullptr ||
 		sk_default_shader_unlit_clip  == nullptr ||
+		sk_default_shader_lightmap    == nullptr ||
 		sk_default_shader_font        == nullptr ||
 		sk_default_shader_equirect    == nullptr ||
 		sk_default_shader_ui          == nullptr ||
@@ -237,6 +240,7 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_pbr_clip,    default_id_shader_pbr_clip);
 	shader_set_id(sk_default_shader_unlit,       default_id_shader_unlit);
 	shader_set_id(sk_default_shader_unlit_clip,  default_id_shader_unlit_clip);
+	shader_set_id(sk_default_shader_lightmap,    default_id_shader_lightmap);
 	shader_set_id(sk_default_shader_font,        default_id_shader_font);
 	shader_set_id(sk_default_shader_equirect,    default_id_shader_equirect);
 	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
@@ -382,6 +386,7 @@ void defaults_shutdown() {
 	shader_release  (sk_default_shader_blit);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_unlit_clip);
+	shader_release  (sk_default_shader_lightmap);
 	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_ui);
