@@ -1774,11 +1774,13 @@ typedef struct hand_t {
 	hand_joint_t  fingers[5][5];
 	pose_t        wrist;
 	pose_t        palm;
+	pose_t        aim;
 	vec3          pinch_pt;
 	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
+	button_state_ aim_ready;
 	float         size;
 	float         pinch_activation;
 	float         grip_activation;
