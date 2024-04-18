@@ -165,7 +165,7 @@ XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFl
 	log_ level = log_diagnostic;
 	if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
 	else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
-	log_writef(level, "%s: %s", msg->functionName, msg->message);
+	log_writef(level, "[<~mag>xr<~clr>] %s: %s", msg->functionName, msg->message);
 
 	// Returning XR_TRUE here will force the calling function to fail
 	return (XrBool32)XR_FALSE;
@@ -274,7 +274,7 @@ bool openxr_create_system() {
 		XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
 	debug_info.messageSeverities =
-		XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		//XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;

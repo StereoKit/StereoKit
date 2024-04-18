@@ -89,9 +89,9 @@ bool platform_init() {
 #endif
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
-		case skg_log_info:     log_diagf("[<~mag>sk_gpu<~clr>] %s", text); break;
-		case skg_log_warning:  log_warnf("[<~mag>sk_gpu<~clr>] %s", text); break;
-		case skg_log_critical: log_errf ("[<~mag>sk_gpu<~clr>] %s", text); break;
+		case skg_log_info:     log_diagf("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skg_log_warning:  log_warnf("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skg_log_critical: log_errf ("[<~ylw>sk_gpu<~clr>] %s", text); break;
 		}
 	});
 	if (skg_init(settings->app_name, luid) <= 0) {
