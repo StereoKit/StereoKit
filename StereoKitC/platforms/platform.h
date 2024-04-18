@@ -149,6 +149,7 @@ char  *platform_push_path_ref     (char       *path, const char *directory);
 char  *platform_pop_path_ref      (char       *path);
 char  *platform_push_path_new     (const char *path, const char *directory);
 char  *platform_pop_path_new      (const char *path);
+bool32_t platform_read_file_direct(const char* filename_utf8, void** out_data, size_t* out_size);
 
 bool   platform_key_save_bytes    (const char* key, void* data,       int32_t data_size);
 bool   platform_key_load_bytes    (const char* key, void* ref_buffer, int32_t buffer_size);
