@@ -103,7 +103,7 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_UWP false
 #endif
-#if defined(SK__DEBUG)
+#if defined(SK_DEBUG)
 #define EXT_AVAILABLE_DEBUG true
 #else
 #define EXT_AVAILABLE_DEBUG false
