@@ -125,7 +125,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 	line_point_t pts[ct];
 	for (int32_t i = 0; i < ct; i += 1) {
 		float pct   = (float)i / (float)(ct - 1);
-		float blend = pct * pct * pct * 0.3f;
+		float blend = pct * pct * pct * 0.2f;
 		float d     = skip + pct * length;
 		
 		float pct_i = 1 - pct;
