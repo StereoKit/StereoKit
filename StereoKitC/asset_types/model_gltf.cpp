@@ -713,7 +713,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 	const char* param = is_lightmap ? "lightmap" : "occlusion";
 	if (tex != nullptr && material_has_param(result, param, material_param_texture)) {
 		if (material->occlusion_texture.texcoord != 0 && is_lightmap == false) gltf_add_warning(warnings, "StereoKit doesn't support multiple texture coordinate channels yet.");
-		tex_t parse_tex = gltf_parsetexture(data, tex, filename, false, 11, warnings);
+		tex_t parse_tex = gltf_parsetexture(data, tex, filename, is_lightmap ? true : false, 11, warnings);
 		if (parse_tex != nullptr) {
 			tex_set_fallback(parse_tex, sk_default_tex);
 			material_set_texture(result, param, parse_tex);
