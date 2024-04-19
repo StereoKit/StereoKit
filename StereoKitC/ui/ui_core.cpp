@@ -141,7 +141,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 ///////////////////////////////////////////
 
 void ui_core_hands_step() {
-	static float prev_pinch[2] = { 1, 1 };
+	static bool prev_active[2] = { false, false };
 
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
@@ -161,12 +161,23 @@ void ui_core_hands_step() {
 		// Hand ray
 		if (ui_far_interact_enabled()) {
 			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
+
+			// Pinches can only start when aim_ready, but should remain true
+			// as long as the pinch remains active
+			bool is_pinched   = (hand->pinch_state & button_state_active) > 0;
+			bool just_pinched = (hand->pinch_state & button_state_just_active) > 0;
+			bool aim_ready    = (hand->aim_ready   & button_state_active) > 0;
+			bool is_active    = (prev_active[i] && is_pinched) || (aim_ready && just_pinched);
+			button_state_ far_pinch_state = button_make_state(prev_active[i], is_active);
+			prev_active[i] = is_active;
+
 			interactor_min_distance_set(skui_hand_interactors[i*3 + 2], math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (skui_hand_interactors[i*3 + 2],
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100, 0.01f,
 				hand->aim.position, hand->aim.orientation, input_head()->position + vec3{0,-0.12f,0},
-				hand->pinch_state, hand->aim_ready);
+				far_pinch_state, hand->aim_ready);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
+
 		}
 	}
 }
