@@ -261,11 +261,12 @@ void hand_oxra_update_states() {
 		const pose_t* head = input_head();
 		const float near_dist  = 0.2f;
 		const float hand_angle = 0.25f; // ~150 degrees
-		bool is_active    = (inp_hand->pinch_state   & button_state_active) > 0;
+		bool is_pinched   = (inp_hand->pinch_state   & button_state_active) > 0;
 		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
 		bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head->position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
 		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head->position.x, head->position.z}) > (near_dist*near_dist);
-		inp_hand->aim_ready = button_make_state((inp_hand->aim_ready & button_state_active) > 0, hand_tracked && (is_active || is_facing));
+		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
+		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
 
 		// Update the hand pointer
 		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
