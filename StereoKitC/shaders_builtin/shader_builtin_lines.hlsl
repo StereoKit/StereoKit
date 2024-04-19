@@ -21,7 +21,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.view_id = id % sk_view_count;
 	id        = id / sk_view_count;
 
-	float  aspect   = sk_proj[o.view_id]._m11 / sk_proj[o.view_id]._m00;
+	float  aspect   = sk_aspect_ratio(o.view_id);
 	float4 pos      = mul(float4(input.pos.xyz, 1), sk_viewproj[o.view_id]);
 	float4 next     = mul(float4(input.next,    1), sk_viewproj[o.view_id]);
 	float2 proj_pos = pos .xy / pos .w;

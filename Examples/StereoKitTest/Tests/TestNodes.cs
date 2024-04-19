@@ -36,7 +36,7 @@ class TestNodes : ITest
 		/// or contents.
 		Log.Info("Iterate nodes:");
 		foreach (ModelNode node in model.Nodes)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals
@@ -45,7 +45,7 @@ class TestNodes : ITest
 		/// data attached to it!
 		Log.Info("Iterate visuals:");
 		foreach (ModelNode node in model.Visuals)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals Model.Nodes
@@ -94,6 +94,8 @@ class TestNodes : ITest
 		_surfaceNode = surfaceNode;
 
 		Tests.Test(TestEmptyVisuals);
+		Tests.Test(TestEmptyModel);
+		Tests.Test(TestNodeInfo);
 	}
 
 	bool TestEmptyVisuals()
@@ -101,6 +103,38 @@ class TestNodes : ITest
 		Model     model = new Model();
 		ModelNode node  = model.AddNode(null, Matrix.Identity);
 		return node.Mesh == null && node.Material == null;
+	}
+
+	bool TestEmptyModel()
+	{
+		Model model = new Model();
+		return
+			model.Nodes  .FirstOrDefault() == null &&
+			model.Visuals.FirstOrDefault() == null &&
+			model.RootNode                 == null;
+	}
+
+	bool TestNodeInfo()
+	{
+		Model model = new Model();
+		model.AddNode("Root", Matrix.Identity);
+		ModelNode n = model.AddNode("Child", Matrix.Identity, Mesh.Cube, Material.Default);
+		n.SetInfo("a", "data1");
+		n.SetInfo("b", "data2");
+		n.SetInfo("c", null);
+		n.SetInfo("d", "data3");
+
+		n.SetInfo("d", null);
+
+		Log.Info("Node Info Test:");
+		foreach (var i in n.Info)
+			Log.Info($"  {i.Key} - {i.Value}");
+
+		return n.GetInfo("a") == "data1"
+			&& n.GetInfo("b") == "data2"
+			&& n.GetInfo("c") == null
+			&& n.GetInfo("d") == null
+			&& n.GetInfo("e") == null;
 	}
 
 	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent
@@ -154,7 +188,7 @@ class TestNodes : ITest
 	/// :End:
 
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		UI.PushSurface(_modelPose);
 		_model.Draw(Matrix.Identity, new Color(0.5f, 0.5f, 0.5f));

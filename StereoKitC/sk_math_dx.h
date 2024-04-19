@@ -13,7 +13,7 @@
 
 namespace sk {
 	
-void matrix_mul(const matrix &a, const matrix &b, DirectX::XMMATRIX &out_matrix);
+void matrix_mul(matrix a, matrix b, DirectX::XMMATRIX &out_matrix);
 void matrix_mul(const matrix &a, const DirectX::XMMATRIX &b, DirectX::XMMATRIX &out_matrix);
 vec3 matrix_mul_direction(const DirectX::XMMATRIX &transform, const vec3 &direction);
 
@@ -75,6 +75,12 @@ inline void math_fast_to_matrix(const DirectX::XMMATRIX &mat, matrix *out_matrix
 
 inline vec3 matrix_mul_point(const DirectX::XMMATRIX &transform, vec3 point){
 	return math_fast_to_vec3( XMVector3Transform(math_vec3_to_fast(point), transform) );
+}
+
+///////////////////////////////////////////
+
+inline DirectX::XMVECTOR matrix_mul_pointx(const DirectX::XMMATRIX& transform, vec3 point) {
+	return XMVector3Transform(math_vec3_to_fast(point), transform);
 }
 
 ///////////////////////////////////////////

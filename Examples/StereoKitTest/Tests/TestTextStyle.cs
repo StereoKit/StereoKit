@@ -20,7 +20,7 @@ class TestTextStyle : ITest
 			Color.HSV(.33f,.5f,1));
 	}
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("Tests/TextStyle.jpg", 1, 400, 600, 90, V.XYZ(0, -0.15f, 0.25f), V.XYZ(0, -0.15f, 0));
 

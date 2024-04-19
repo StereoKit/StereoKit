@@ -36,5 +36,5 @@ class DocOcclusion : ITest
 
 	public void Initialize() => Start();
 	public void Shutdown() => Stop();
-	public void Update(){}
+	public void Step(){}
 }

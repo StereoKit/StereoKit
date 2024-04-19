@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-/// :CodeDoc: Guides 3 Using The Simulator
+/// :CodeDoc: Guides 5 Using The Simulator
 /// # Using the Simulator
 /// 
 /// As a developer, you can't realistically spend all of your development in
@@ -24,7 +24,8 @@
 /// - Left + Right - Hand animates to a closed fist.
 /// - Scroll Wheel - Moves the hand toward or away from the user.
 /// - Shift + Right - Mouse-look / rotate the head.
-/// - Left Alt - [Eye tracking](({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Left Alt - [Eye tracking]({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Ctrl + Shift - Switch between controlling left hand, right hand, or no hand.
 /// 
 /// To move around in space, you'll find controls that should be familiar to
 /// those that play first-person games! Hold Left Shift to enable this.
@@ -59,12 +60,9 @@ class GuideUsingTheSimulator : ITest
 		SKSettings settings = new SKSettings {
 			appName                = "Flatscreen Simulator",
 			assetsFolder           = "Assets",
-			// This tells StereoKit to always start in a 2D flatscreen
+			// This tells StereoKit to always start in a 2D simulator
 			// window, instead of an immersive MR environment.
-			displayPreference      = DisplayMode.Flatscreen,
-			// Setting this to true will disable all built-in MR simulator
-			// controls.
-			disableFlatscreenMRSim = false,
+			mode                   = AppMode.Simulator,
 			// Setting this to true will prevent StereoKit from creating the
 			// fallback simulator when OpenXR fails to initialize. This is
 			// important when shipping a final application to users.
@@ -106,7 +104,7 @@ class GuideUsingTheSimulator : ITest
 		Input.HandClearOverride(Handed.Right);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("HandOverride.jpg", 1, 600, 600, 45, new Vec3(0.055f, -0.047f, 0.047f), new Vec3(0.155f, -0.500f, -0.838f));
 	}

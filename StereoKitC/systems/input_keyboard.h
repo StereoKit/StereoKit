@@ -10,15 +10,13 @@ struct key_event_t {
 	char32_t      character;
 };
 
-void          input_keyboard_initialize    ();
-void          input_keyboard_shutdown      ();
-void          input_keyboard_suspend       (bool suspend);
-void          input_keyboard_update        ();
-void          input_keyboard_inject_press  (key_ key);
-void          input_keyboard_inject_release(key_ key);
-button_state_ input_keyboard_get           (key_ key);
-void          input_text_inject_char       (char32_t character);
+void          input_keyboard_initialize();
+void          input_keyboard_shutdown  ();
+void          input_keyboard_suspend   (bool suspend);
+void          input_keyboard_update    ();
+button_state_ input_keyboard_get       (key_ key);
 
-extern float input_last_physical_keypress;
+float         input_get_last_physical_keypress_time();
+void          input_set_last_physical_keypress_time(float time);
 
 } // namespace sk

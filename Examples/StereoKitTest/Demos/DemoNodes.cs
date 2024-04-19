@@ -1,15 +1,18 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 
 class DemoNodes : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "ModelNode API lets...";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Model Nodes";
+	string description = "ModelNode API lets...";
 
 	Model radio     = Model.FromFile("Radio.glb");
-	Pose  radioPose = new Pose(0.5f, -0.25f, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose  radioPose = Demo.contentPose.Pose;
 	Pose  radioPowerPose;
 	Pose  radioSpeakerPose;
 	Pose  radioInterfacePose;
@@ -43,7 +46,7 @@ class DemoNodes : ITest
 		radioSoundInst = radioSound.Play(Vec3.Zero);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		UI.HandleBegin("Radio", ref radioPose, radio.Bounds);
 		{
@@ -79,8 +82,7 @@ class DemoNodes : ITest
 			radioSound.WriteSamples(radioSoundBuffer);
 		}
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.5f, .5f, .2f)));
 	}
 
 	void UpdateLine(LinePoint[] line, float freq)

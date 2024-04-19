@@ -1,7 +1,15 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DemoMaterial : ITest
 {
+	string title = "Materials";
+	string description = "";
+
 	Mesh meshSphere;
 
 	Material matDefault;
@@ -139,28 +147,25 @@ class DemoMaterial : ITest
 		/// :End:
 
 		matParameters = Material.Default.Copy();
-		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
-		matParameters[MatParamName.ColorTint ] = Color.HSV(0.6f, 0.7f, 1f);
-		matParameters[MatParamName.TexScale  ] = 2.0f;
+		matParameters[MatParamName.DiffuseTex  ] = Tex.FromFile("floor.png");
+		matParameters[MatParamName.ColorTint   ] = Color.HSV(0.6f, 0.7f, 1f);
+		matParameters[MatParamName.TexTransform] = new Vec4(0,0,2,2);
 	}
 
 	int showCount;
 	int showGrid = 3;
 	void ShowMaterial(Mesh mesh, Material material, string screenshotName, Vec3? from = null) 
 	{
-		float x = ((showCount % showGrid)-showGrid/2) * 0.2f;
-		float y = ((showCount / showGrid)-showGrid/2) * 0.2f;
+		float x = ((showCount % showGrid)-showGrid/2) * 0.16f;
+		float y = ((showCount / showGrid)-showGrid/2) * 0.16f;
 		showCount++;
 
-		if (Tests.IsTesting)
-			y = 10000 + y*100;
-
-		Vec3 at = new Vec3(x, y, -0.5f);
+		Vec3 at = Demo.contentPose.Transform(new Vec3(x, y-0.08f, 0));
 		mesh.Draw(material, Matrix.TS(at, 0.1f));
-		Tests.Screenshot(screenshotName, 400, 400, at + (from ?? new Vec3(0, 0, -0.08f)), at);
+		Tests.Screenshot(screenshotName, 0, 400, 400, 45, at + (from ?? new Vec3(0, 0, -0.16f)), at);
 	}
 
-	public void Update()
+	public void Step()
 	{
 		showCount=0;
 		ShowMaterial(meshSphere, matDefault,    "MaterialDefault.jpg");
@@ -172,8 +177,10 @@ class DemoMaterial : ITest
 		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");
-		ShowMaterial(Mesh.Cube,  matUIBox,      "MaterialUIBox.jpg", new Vec3( 0.07f, 0.07f, -0.08f));
-		ShowMaterial(Mesh.Cube,  matUI,         "MaterialUI.jpg",    new Vec3(-0.07f, 0.07f, -0.08f));
+		ShowMaterial(Mesh.Cube,  matUIBox,      "MaterialUIBox.jpg", new Vec3( 0.14f, 0.14f, -0.16f));
+		ShowMaterial(Mesh.Cube,  matUI,         "MaterialUI.jpg",    new Vec3(-0.14f, 0.14f, -0.16f));
+
+		Demo.ShowSummary(title, description, new Bounds(.5f, .7f, 0.2f));
 	}
 
 	public void Shutdown()

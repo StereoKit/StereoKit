@@ -12,9 +12,18 @@ namespace StereoKit
 	/// With this particular class, you can mostly just look at it. It doesn't
 	/// do a whole lot. Maybe you can swap out the shader code or something 
 	/// sometimes!</summary>
-	public class Shader
+	public class Shader : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.shader_get_id(_inst));
+			set => NativeAPI.shader_set_id(_inst, value);
+		}
 
 		/// <summary>The name of the shader, provided in the shader file 
 		/// itself. Not the filename or id.</summary>
@@ -26,6 +35,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty shader!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Shader()
 		{
 			if (_inst != IntPtr.Zero)

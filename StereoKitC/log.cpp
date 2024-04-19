@@ -3,10 +3,9 @@
 #include "log.h"
 #include "libraries/stref.h"
 #include "libraries/array.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -14,8 +13,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-typedef void(*log_listener_t)(log_, const char *);
-array_t<log_listener_t> log_listeners = {};
+struct log_callback_t {
+	void(*callback)(void*, log_, const char*);
+	void* context;
+};
+array_t<log_callback_t> log_listeners = {};
 
 log_        log_filter = log_diagnostic;
 log_colors_ log_colors = log_colors_ansi;
@@ -23,7 +25,7 @@ log_colors_ log_colors = log_colors_ansi;
 char       *log_fail_reason_str = nullptr;
 int32_t     log_fail_confidence = -1;
 
-const char *log_colorkeys_c[] = {
+const char *log_tags[] = {
 	"blk",
 	"BLK",
 	"red",
@@ -42,13 +44,10 @@ const char *log_colorkeys_c[] = {
 	"WHT",
 	"clr",
 };
-const char *log_colorkeys_none[]{
-	"   ",
-};
 
 #define LOG_C_CLEAR "\033[0;;0m"
 #define LOG_NONE_CLEAR ""
-const char *log_colorcodes_c[_countof(log_colorkeys_c)] = {
+const char *log_colorcodes[_countof(log_tags)] = {
 	"\033[0;30m",
 	"\033[1;30m",
 	"\033[0;31m",
@@ -67,134 +66,111 @@ const char *log_colorcodes_c[_countof(log_colorkeys_c)] = {
 	"\033[1;37m",
 	LOG_C_CLEAR,
 };
-const char *log_colorcodes_none[_countof(log_colorkeys_none)] = {
-	LOG_NONE_CLEAR,
-};
-
-const char **log_colorkeys [] = { log_colorkeys_c,  log_colorkeys_none  };
-const char **log_colorcodes[] = { log_colorcodes_c, log_colorcodes_none };
-const int    log_code_count[] = { _countof(log_colorkeys_c), _countof(log_colorkeys_none) };
-const int    log_code_size [] = { _countof(LOG_C_CLEAR),     _countof(LOG_NONE_CLEAR) };
 
 
 ///////////////////////////////////////////
 
-char *log_replace_colors(const char *text, const char **color_keys, const char **color_codes, int count, int code_size) {
-	// Looking for words that look like this:
-	// <~red>red text here<~clr>
-
-	const char *ch = text;
-	size_t len = strlen(text);
-
-	// Parse for memory allocation
-	int remove = 0;
-	int add    = 0;
-	int curr   = 0;
+int32_t log_count_color_tags(const char* ch, int32_t *out_len) {
+	*out_len = 0;
+	int32_t tags = 0;
+	int32_t curr = 0;
 	while (*ch != '\0') {
-		if (curr == 1 && *ch != '~') // make sure second character matches key
-			curr = 0;
+		// Looking for tags that look like this:
+		// <~red>red text here<~clr>
+		if      (             *ch == '<') curr  = 1;
+		else if (curr == 1 && *ch != '~') curr  = 0;
+		else if (curr == 5)             { curr  = 0; if (*ch == '>') tags += 1; }
+		else if (curr >  0)               curr += 1;
 
-		if (curr > 0) { // We're in a key
-			curr += 1;
-			if (*ch == '>') { // End of a key, make note
-				add += 1;
-				remove += curr;
-				curr = 0;
-			}
-		}
-		if (*ch == '<') curr = 1; // Start a color key
-
-		ch++;
+		ch       += 1;
+		*out_len += 1;
 	}
+	return tags;
+}
 
-	// No keys found, just use the original string!
-	if (add == 0)
-		return nullptr;
+///////////////////////////////////////////
 
+void log_replace_colors(const char *src, char *dest, const char **color_tags, const char **color_codes, int32_t count, int32_t code_size) {
 	// New string with new color values
-	char *result = sk_malloc_t(char, (len - remove) + (add * code_size));
-	char *at     = result;
-	ch   = text;
-	curr = 0;
-	char key[4] = "   ";
-	while (*ch != '\0') {
-		if (curr == 1 && *ch != '~') // make sure second character matches key
-			curr = 0;
-		if (curr > 0) { // We're in a key
-			curr += 1;
-
-			if (curr > 2 && curr < 6) { // text of key
-				key[curr - 3] = *ch;
-			}
-			if (*ch == '>') {
-				int key_id = count-1;
+	int32_t curr = 0;
+	while (*src != '\0') {
+		// Logic while in a tag
+		if      (             *src == '<') curr  = 1;
+		else if (curr == 1 && *src != '~') curr  = 0;
+		else if (curr == 5) {
+			curr = 0; 
+			if (*src == '>') {
+				int key_id = count - 1;
 				for (int i = 0; i < count; i++) {
-					if (string_eq(key, color_keys[i])) {
+					if (string_startswith(src-3, color_tags[i])) {
 						key_id = i;
 						break;
 					}
 				}
-				memcpy(at, color_codes[key_id], code_size-1);
-				at += code_size-1;
-				curr = 0;
-				ch++;
+				if (code_size != 0) memcpy(dest, color_codes[key_id], code_size);
+				dest += code_size;
+				src += 1;
 				continue;
 			}
 		}
-		if (*ch == '<') curr = 1; // Start a color key
+		else if (curr > 0) curr += 1;
 
-		// Copy the character as is
+		// Copy the character
 		if (curr == 0) {
-			*at = *ch;
-			at++;
+			*dest = *src;
+			dest += 1;
 		}
-		ch++;
+		src += 1;
 	}
-	*at = *ch;
-	return result;
+	*dest = *src;
 }
 
 ///////////////////////////////////////////
+
 void log_write(log_ level, const char *text) {
 	if (level < log_filter)
 		return;
 
-	const char *tag = "";
+	const char* tag   = "";
+	const char* color = "";
 	switch (level) {
-	case log_none:                                       return;
-	case log_diagnostic: tag = "<~blu>diagnostic<~clr>"; break;
-	case log_inform:     tag = "<~cyn>info<~clr>";       break;
-	case log_warning:    tag = "<~ylw>warning<~clr>";    break;
-	case log_error:      tag = "<~red>error<~clr>";      break;
-	default:
-		break;
+	case log_none: return;
+	case log_diagnostic: tag = "diagnostic"; color = log_colorcodes[8];  break;
+	case log_inform:     tag = "info";       color = log_colorcodes[12]; break;
+	case log_warning:    tag = "warning";    color = log_colorcodes[6];  break;
+	case log_error:      tag = "error";      color = log_colorcodes[2];  break;
+	default: break;
 	}
 
-	size_t len       = strlen(tag) + strlen(text) + 10;
-	char  *full_text = sk_malloc_t(char, len);
-	snprintf(full_text, len, "[SK %s] %s\n", tag, text);
+	int32_t text_len   = 0;
+	int32_t color_tags = log_colors == log_colors_ansi ? log_count_color_tags(text, &text_len) : 0;
 
-	char *colored_text = log_replace_colors(full_text, log_colorkeys[log_colors], log_colorcodes[log_colors], log_code_count[log_colors], log_code_size[log_colors]);
+	// Set up some memory if we have color tags we need to replace
+	char* replace_buffer = nullptr;
+	if (color_tags > 0)
+		replace_buffer = sk_stack_alloc_t(char, (text_len - color_tags*7) + color_tags * 8 + 1);
+
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX)
-	printf("%s", colored_text);
+	const char* colored_text = text;
+	if (color_tags > 0) {
+		log_replace_colors(text, replace_buffer, log_tags, log_colorcodes, _countof(log_tags), sizeof(LOG_C_CLEAR) - 1);
+		colored_text = replace_buffer;
+	}
+
+	printf("[SK %s%s" LOG_C_CLEAR "] %s\n", color, tag, colored_text);
 #endif
 
-	// OutputDebugStringA shows up in the VS output, and doesn't display colors at all
-	if (log_colors != log_colors_none) {
-		sk_free(colored_text);
-		colored_text = log_replace_colors(full_text, log_colorkeys[log_colors_none], log_colorcodes[log_colors_none], log_code_count[log_colors_none], log_code_size[log_colors_none]);
+	// The remaining outputs don't support colors
+	const char* plain_text = text;
+	if (color_tags > 0) {
+		log_replace_colors(text, replace_buffer, log_tags, nullptr, _countof(log_tags), 0);
+		plain_text = replace_buffer;
 	}
-	// Send the plain-text version out to the listeners as well
 	for (int32_t i = 0; i < log_listeners.count; i++) {
-		log_listeners[i](level, colored_text);
+		log_listeners[i].callback(log_listeners[i].context, level, plain_text);
 	}
-	platform_debug_output(level, colored_text);
-	sk_free(colored_text);
-
-	sk_free(full_text);
-
-	if (level == log_error)
-		platform_print_callstack();
+	platform_debug_output(level, plain_text);
+	if (level == log_error) platform_print_callstack();
 }
 
 ///////////////////////////////////////////
@@ -313,19 +289,29 @@ void log_clear_any_fail_reason() {
 
 ///////////////////////////////////////////
 
-void log_subscribe(void (*on_log)(log_, const char*)) {
-	log_listeners.add(on_log);
+void log_subscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
+	log_callback_t item = {};
+	item.callback = log_callback;
+	item.context  = context;
+	log_listeners.add(item);
 }
 
 ///////////////////////////////////////////
 
-void log_unsubscribe(void (*on_log)(log_, const char*)) {
+void log_unsubscribe(void (*log_callback)(void* context, log_ level, const char* text), void* context) {
 	for (int32_t i = 0; i < log_listeners.count; i++) {
-		if (log_listeners[i] == on_log) {
+		if (log_listeners[i].callback == log_callback &&
+			log_listeners[i].context  == context) {
 			log_listeners.remove(i);
 			break;
 		}
 	}
+}
+
+///////////////////////////////////////////
+
+void log_clear_subscribers() {
+	log_listeners.free();
 }
 
 } // namespace sk

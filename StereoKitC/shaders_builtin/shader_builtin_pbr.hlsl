@@ -1,22 +1,20 @@
 #include <stereokit.hlsli>
 #include <stereokit_pbr.hlsli>
 
-//--name = sk/default_pbr
 //--color:color           = 1,1,1,1
 //--emission_factor:color = 0,0,0,0
 //--metallic              = 0
 //--roughness             = 1
-//--tex_scale             = 1
+//--tex_trans             = 0,0,1,1
 float4 color;
 float4 emission_factor;
+float4 tex_trans;
 float  metallic;
 float  roughness;
-float  tex_scale;
 
 //--diffuse   = white
 //--emission  = white
 //--metal     = white
-//--normal    = flat
 //--occlusion = white
 Texture2D    diffuse     : register(t0);
 SamplerState diffuse_s   : register(s0);
@@ -24,10 +22,8 @@ Texture2D    emission    : register(t1);
 SamplerState emission_s  : register(s1);
 Texture2D    metal       : register(t2);
 SamplerState metal_s     : register(s2);
-Texture2D    normal      : register(t3);
-SamplerState normal_s    : register(s3);
-Texture2D    occlusion   : register(t4);
-SamplerState occlusion_s : register(s4);
+Texture2D    occlusion   : register(t3);
+SamplerState occlusion_s : register(s3);
 
 struct vsIn {
 	float4 pos     : SV_Position;
@@ -55,9 +51,9 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.pos   = mul(float4(o.world,  1), sk_viewproj[o.view_id]);
 
 	o.normal     = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
-	o.uv         = input.uv * tex_scale;
+	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
 	o.color      = input.color * sk_inst[id].color * color;
-	o.irradiance = Lighting(o.normal);
+	o.irradiance = sk_lighting(o.normal);
 	o.view_dir   = sk_camera_pos[o.view_id].xyz - o.world;
 	return o;
 }
@@ -71,7 +67,7 @@ float4 ps(psIn input) : SV_TARGET {
 	float metallic_final = metal_rough.y * metallic;
 	float rough_final    = metal_rough.x * roughness;
 
-	float4 color = skpbr_shade(albedo, input.irradiance, ao, metallic_final, rough_final, input.view_dir, input.normal);
+	float4 color = sk_pbr_shade(albedo, input.irradiance, ao, metallic_final, rough_final, input.view_dir, input.normal);
 	color.rgb += emissive;
 	return color;
 }

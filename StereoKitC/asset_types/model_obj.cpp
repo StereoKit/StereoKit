@@ -1,4 +1,5 @@
 #include "model.h"
+#include "mesh_.h"
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
 
@@ -9,30 +10,32 @@ namespace sk {
 ///////////////////////////////////////////
 
 int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, array_t<vec2> *uvs, hashmap_t<vert_t, vind_t> *indmap, array_t<vert_t> *mesh_verts) {
-	if (uvs  ->count == 0) uvs  ->add(vec2{ 0,0 }  );
-	if (norms->count == 0) norms->add(vec3{ 0,1,0 });
-	vert_t v = vert_t{ verts->get(iV - 1LL), norms->get(iN - 1LL), uvs->get(iT - 1LL), {255,255,255,255} };
+	vert_t v = vert_t{
+		iV <= verts->count ? verts->get(iV - 1) : vec3{0,0,0},
+		iN <= norms->count ? norms->get(iN - 1) : vec3{0,1,0},
+		iT <= uvs->count   ? uvs  ->get(iT - 1) : vec2{0,0},
+		{255,255,255,255} };
 
 	int32_t index = indmap->contains(v);
 	if (index < 0) {
 		index = mesh_verts->add(v);
-		indmap->add_or_set(v, (vind_t)index);
+		indmap->set(v, (vind_t)index);
 	} else {
-		index = indmap->items[index];
+		index = indmap->items[index].value;
 	}
 	return (int)index;
 }
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
+bool modelfmt_obj(model_t model, const char *filename, const void *file_data, size_t, shader_t shader) {
 	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_find(id);
 
 	if (mesh) {
-		model_add_subset(model, mesh, material, matrix_identity);
+		model_node_add(model, nullptr, matrix_identity, mesh, material, true);
 
 		material_release(material);
 		mesh_release(mesh);
@@ -99,11 +102,14 @@ bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, 
 		}
 	}
 
+	if (norms.count <= 0)
+		mesh_calculate_normals(&verts[0], verts.count, &faces[0], faces.count);
+
 	mesh = mesh_create();
 	mesh_set_id  (mesh, id);
 	mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
 
-	model_add_subset(model, mesh, material, matrix_identity);
+	model_node_add(model, nullptr, matrix_identity, mesh, material, true);
 
 	material_release(material);
 	mesh_release(mesh);

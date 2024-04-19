@@ -1,7 +1,7 @@
 #include "stereokit.h"
 #include "_stereokit.h"
 #include "libraries/sk_gpu.h"
-#include "platforms/platform_utils.h"
+#include "platforms/platform.h"
 
 namespace sk {
 
@@ -10,7 +10,7 @@ const char* backend_err_wrong_backend = "Backend functions only work with the co
 ///////////////////////////////////////////
 
 backend_xr_type_ backend_xr_get_type() {
-	if (sk_display_mode == display_mode_mixedreality) {
+	if (device_display_get_type() == display_type_stereo) {
 #if defined(SK_XR_OPENXR)
 		return backend_xr_type_openxr;
 #elif defined(SK_XR_WEBXR)
@@ -19,8 +19,9 @@ backend_xr_type_ backend_xr_get_type() {
 		log_err("Unimplemented XR backend code") // <-- Haha, see what I did there? No semicolon! :D
 #endif
 	} else {
-		if (sk_settings.disable_flatscreen_mr_sim) return backend_xr_type_none;
-		else                                       return backend_xr_type_simulator;
+		return sk_get_settings_ref()->mode == app_mode_simulator
+			? backend_xr_type_simulator
+			: backend_xr_type_none;
 	}
 }
 
@@ -87,7 +88,7 @@ int64_t backend_openxr_get_eyes_sample_time() {
 ///////////////////////////////////////////
 
 void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_ext_request must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -95,8 +96,17 @@ void backend_openxr_ext_request(const char *extension_name) {
 
 ///////////////////////////////////////////
 
+void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
+	if (sk_is_initialized()) {
+		log_err("backend_openxr_use_minimum_exts must be called BEFORE StereoKit initialization!");
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
-	if (sk_initialized) {
+	if (sk_is_initialized()) {
 		log_err("backend_openxr_add_callback_pre_session_create must be called BEFORE StereoKit initialization!");
 		return;
 	}
@@ -104,8 +114,25 @@ void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create
 
 ///////////////////////////////////////////
 
+void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
+	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
+	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
 void backend_openxr_composition_layer(void *XrCompositionLayerBaseHeader, int32_t layer_size, int32_t sort_order) {
 	log_err(backend_err_wrong_backend);
+}
+
+///////////////////////////////////////////
+
+void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
 }
 
 ///////////////////////////////////////////
@@ -184,6 +211,42 @@ void *backend_d3d11_get_d3d_context() {
 
 ///////////////////////////////////////////
 
+void* backend_d3d11_get_deferred_d3d_context() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d11_deferred_context;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* backend_d3d11_get_deferred_mtx() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_deferred_mtx;
+#endif
+}
+
+///////////////////////////////////////////
+
+uint32_t backend_d3d11_get_main_thread_id() {
+#if !defined(SKG_DIRECT3D11)
+	log_err(backend_err_wrong_backend);
+	return 0;
+#else
+	skg_platform_data_t platform = skg_get_platform_data();
+	return platform._d3d_main_thread_id;
+#endif
+}
+
+///////////////////////////////////////////
+
 void* backend_opengl_wgl_get_hdc() {
 #if !defined(_SKG_GL_LOAD_WGL)
 	log_err(backend_err_wrong_backend);
@@ -245,6 +308,16 @@ void* backend_opengl_egl_get_context(){
 	return nullptr;
 #else
 	return skg_get_platform_data()._egl_context;
+#endif
+}
+///////////////////////////////////////////
+
+void* backend_opengl_egl_get_config(){
+#if !defined(_SKG_GL_LOAD_EGL)
+	log_err(backend_err_wrong_backend);
+	return nullptr;
+#else
+	return skg_get_platform_data()._egl_config;
 #endif
 }
 

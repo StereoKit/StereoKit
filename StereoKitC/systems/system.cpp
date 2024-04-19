@@ -48,12 +48,21 @@ int32_t systems_find_id(const char *name) {
 
 ///////////////////////////////////////////
 
-system_t *systems_find(const char *name) {
+int32_t systems_find_idx(const char* name) {
 	for (int32_t i = 0; i < systems.count; i++) {
 		if (string_eq(name, systems[i].name))
-			return &systems[i];
+			return i;
 	}
-	return nullptr;
+	return -1;
+}
+
+///////////////////////////////////////////
+
+system_t *systems_find(const char *name) {
+	int32_t idx = systems_find_idx(name);
+	return idx == -1
+		? nullptr
+		: &systems[idx];
 }
 
 ///////////////////////////////////////////
@@ -65,13 +74,13 @@ bool systems_sort() {
 	// Turn dependency names into indices for update
 	sort_dependency_t *update_ids = sk_malloc_t(sort_dependency_t, systems.count);
 	for (int32_t i = 0; i < systems.count; i++) {
-		update_ids[i].count = systems[i].update_dependency_count;
-		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].update_dependency_count);
+		update_ids[i].count = systems[i].step_dependency_count;
+		update_ids[i].ids   = sk_malloc_t(int32_t, systems[i].step_dependency_count);
 
-		for (int32_t d = 0; d < systems[i].update_dependency_count; d++) {
-			update_ids[i].ids[d] = systems_find_id(systems[i].update_dependencies[d]);
+		for (int32_t d = 0; d < systems[i].step_dependency_count; d++) {
+			update_ids[i].ids[d] = systems_find_id(systems[i].step_dependencies[d]);
 			if (update_ids[i].ids[d] == -1) {
-				log_errf("Can't find system update dependency by the name of %s!", systems[i].update_dependencies[d]);
+				log_errf("Can't find system update dependency by the name of %s!", systems[i].step_dependencies[d]);
 				result = 1;
 			}
 		}
@@ -151,43 +160,62 @@ bool systems_initialize() {
 
 ///////////////////////////////////////////
 
-void systems_update() {
-	for (int32_t i = 0; i < systems.count; i++) {
-		if (systems[i].func_update != nullptr) {
-			// start timing
-			systems[i].profile_frame_start = stm_now();
+void system_execute(system_t *sys) {
+	if (sys == nullptr || sys->func_step == nullptr) return;
 
-			systems[i].func_update();
+	// start timing
+	sys->profile_frame_start = stm_now();
 
-			// end timing
-			if (systems[i].profile_frame_duration == 0)
-				systems[i].profile_frame_duration = stm_since(systems[i].profile_frame_start);
-			systems[i].profile_update_duration += systems[i].profile_frame_duration;
-			systems[i].profile_update_count    += 1;
-			systems[i].profile_frame_duration   = 0;
-		}
+	sys->func_step();
+
+	// end timing
+	if (sys->profile_frame_duration == 0)
+		sys->profile_frame_duration = stm_since(sys->profile_frame_start);
+	sys->profile_step_duration += sys->profile_frame_duration;
+	sys->profile_step_count    += 1;
+	sys->profile_frame_duration = 0;
+}
+
+///////////////////////////////////////////
+
+void systems_step() {
+	for (int32_t i = 0; i < systems.count; i++)
+		system_execute(&systems[i]);
+}
+
+///////////////////////////////////////////
+
+void systems_step_partial(system_run_ run_section, int32_t system_idx) {
+	int32_t start, end;
+	switch (run_section) {
+	case system_run_before: { start = 0;          end = system_idx;    } break;
+	case system_run_from:   { start = system_idx; end = systems.count; } break;
+	default:                { start = 0;          end = systems.count; } break;
 	}
+
+	for (int32_t i=start; i<end; i++)
+		system_execute(&systems[i]);
 }
 
 ///////////////////////////////////////////
 
 void systems_shutdown() {
 	for (int32_t i = systems.count-1; i >= 0; i--) {
-		int32_t index = system_init_order[i];
-		if (systems[index].func_shutdown != nullptr) {
-			// start timing
-			uint64_t start = stm_now();
+		system_t* sys = &systems[system_init_order[i]];
+		if (sys->func_shutdown == nullptr) continue;
 
-			systems[index].func_shutdown();
+		// start timing
+		uint64_t start = stm_now();
 
-			// end timing
-			systems[index].profile_shutdown_duration = stm_since(start);
-		}
+		sys->func_shutdown();
+
+		// end timing
+		sys->profile_shutdown_duration = stm_since(start);
 	}
 
 	log_info("Session Performance Report:");
 	log_info("<~BLK>______________________________________________________<~clr>");
-	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
+	log_info("<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>     <~YLW>Step <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
 	log_info("<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < systems.count; i++) {
 		char start_time   [24];
@@ -199,8 +227,8 @@ void systems_shutdown() {
 			snprintf(start_time, sizeof(start_time), "%s%8.2f<~BLK>ms", ms>500?"<~RED>":"", ms);
 		} else snprintf(start_time, sizeof(start_time), "          ");
 
-		if (systems[i].profile_update_duration != 0) {
-			double ms = stm_ms(systems[i].profile_update_duration / systems[i].profile_update_count);
+		if (systems[i].profile_step_duration != 0) {
+			double ms = stm_ms(systems[i].profile_step_duration / systems[i].profile_step_count);
 			// Exception for FramePresent, since it includes vsync time
 			snprintf(update_time, sizeof(update_time), "%s%6.3f<~BLK>ms", ms>8 && !string_eq(systems[i].name, "FramePresent") ? "<~RED>":"", ms);
 		} else snprintf(update_time, sizeof(update_time), "        ");

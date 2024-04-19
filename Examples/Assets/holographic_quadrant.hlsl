@@ -47,9 +47,9 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	o.inst_col       = sk_inst[id].color;
-	o.light_edge.rgb = Lighting(o.normal);
+	o.light_edge.rgb = sk_lighting(o.normal);
 	o.light_edge.a   = input.color.a;
-	o.alpha          = input.color.b > 0.5 ? 1 : (o.inst_col.a-1) * 0.5;
+	o.alpha          = input.color.b > 0.5 ? 1 : o.inst_col.a;
 	o.glow_mask      = input.color.g;
 	return o;
 }
@@ -69,21 +69,23 @@ float3 GetIridescence(uint view_id, float3 world_pos, float3 surface_normal) {
 }
 
 float4 ps(psIn input) : SV_TARGET {
-	FingerDist dist = FingerDistanceInfo(input.world.xyz, input.normal);
+	finger_dist_t dist = sk_finger_distance_info(input.world.xyz, input.normal);
 
 	const float ring_max_dist = 0.14;
 	const float ring_initial  = 0.006;
 	const float ring_grow     = 0.03;
+	const float ring_alpha    = 0.08;
 	float glow_amt    = saturate(dist.from_finger / ring_max_dist);
 	float glow_radius = ring_initial + glow_amt * ring_grow;
 	float glow        = saturate(1-(dist.on_plane / glow_radius)) * (1-glow_amt) * input.glow_mask;
+	float glow_alpha  = saturate(1-(dist.on_plane / ring_alpha)) * input.glow_mask;
 
 	float3 iridescence = GetIridescence(input.view_id, input.world.xyz, input.normal);
 	float  edge        = saturate((input.light_edge.a - 0.15) / fwidth(input.light_edge.a));
 
-	float4 col = lerp(color, input.inst_col, edge) * input.inst_col.a;
+	float4 col = lerp(color, input.inst_col, edge);
 	col.rgb = col.rgb * input.light_edge.rgb + iridescence*(0.2 + glow*8);
-	col.a = max(glow, input.alpha);
+	col.a = max(glow_alpha, input.alpha);
 
 	return col;
 }

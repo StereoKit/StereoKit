@@ -125,6 +125,20 @@ class TestMath : ITest
 		return true;
 	}
 
+	bool TestSphereContains()
+	{
+		Sphere sphere = new Sphere(V.XYZ(1,0,0), 1.0f);
+		if (!sphere.Contains(V.XYZ( 1.0f, 0.45f,0.0f))) return false;
+		if (!sphere.Contains(V.XYZ( 1.0f,-0.45f,0.0f))) return false;
+		if (!sphere.Contains(V.XYZ(1,0,0)))             return false;
+
+		if ( sphere.Contains(V.XYZ( 1.0f, 0.55f,0.0f))) return false;
+		if ( sphere.Contains(V.XYZ( 1.0f,-0.55f,0.0f))) return false;
+		if ( sphere.Contains(V.XYZ(1,0.55f,0)))         return false;
+
+		return true;
+	}
+
 	bool TestMatrixOrder()
 	{
 		// StereoKit is Row-Major, this test verifies that matrix
@@ -176,9 +190,10 @@ class TestMath : ITest
 		Tests.Test(TestVector2Angles);
 		Tests.Test(TestVector3Angles);
 		Tests.Test(TestQuaternionRotation);
+		Tests.Test(TestSphereContains);
 	}
 
 	public void Shutdown() { }
 
-	public void Update() { }
+	public void Step() { }
 }

@@ -24,6 +24,7 @@ struct model_node_t {
 	int32_t  child;
 	int32_t  sibling;
 	bool32_t solid;
+	dictionary_t<char*> info;
 };
 
 struct _model_t {
@@ -38,10 +39,10 @@ struct _model_t {
 	bool32_t                bounds_dirty;
 };
 
-bool modelfmt_obj (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_gltf(model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_stl (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_ply (model_t model, const char *filename, void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_obj (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_gltf(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_stl (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_ply (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
 void model_destroy(model_t model);
 
 } // namespace sk

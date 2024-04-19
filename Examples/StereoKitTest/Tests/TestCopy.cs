@@ -26,7 +26,7 @@ class TestCopy : ITest
 		_model2 = model2;
 	}
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		_model1.Draw(Matrix.T(-0.1f, 0, 0));
 		_model2.Draw(Matrix.T( 0.1f, 0, 0));

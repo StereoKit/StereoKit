@@ -1,0 +1,60 @@
+<VSTemplate Version="3.0.0" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005" Type="Project">
+  <TemplateData>
+    <Name>StereoKit Multi-target</Name>
+    <Description>A cross-platform starter template for Mixed Reality based on Maui's multi-targeting feature! Great for Windows, Linux, and Android based headsets.</Description>
+    <ProjectType>CSharp</ProjectType>
+    <ProjectSubType>
+    </ProjectSubType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>StereoKitProject</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+    <CreateInPlace>true</CreateInPlace>
+    <LanguageTag>csharp</LanguageTag>
+    <PlatformTag>Windows</PlatformTag>
+    <PlatformTag>Linux</PlatformTag>
+    <PlatformTag>Android</PlatformTag>
+    <ProjectTypeTag>MAUI</ProjectTypeTag>
+    <ProjectTypeTag>Desktop</ProjectTypeTag>
+    <ProjectTypeTag>Mobile</ProjectTypeTag>
+    <Icon>__TemplateIcon.png</Icon>
+    <PreviewImage>__PreviewImage.png</PreviewImage>
+  </TemplateData>
+  <TemplateContent>
+    <Project TargetFileName="SKTemplate_Maui.csproj" File="SKTemplate_Maui.csproj" ReplaceParameters="true">
+      <Folder Name="Assets" TargetFolderName="Assets">
+        <ProjectItem ReplaceParameters="true" TargetFileName="AboutAssets.txt">AboutAssets.txt</ProjectItem>
+        <ProjectItem ReplaceParameters="true" TargetFileName="floor.hlsl">floor.hlsl</ProjectItem>
+      </Folder>
+      <Folder Name="Platforms" TargetFolderName="Platforms">
+        <Folder Name="Android" TargetFolderName="Android">
+          <Folder Name="Resources" TargetFolderName="Resources">
+            <Folder Name="values" TargetFolderName="values">
+              <ProjectItem ReplaceParameters="true" TargetFileName="colors.xml">colors.xml</ProjectItem>
+            </Folder>
+          </Folder>
+          <ProjectItem ReplaceParameters="true" TargetFileName="AndroidManifest.xml">AndroidManifest.xml</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="MainActivity.cs">MainActivity.cs</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="MainApplication.cs">MainApplication.cs</ProjectItem>
+        </Folder>
+        <Folder Name="NetCore" TargetFolderName="NetCore">
+          <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
+        </Folder>
+        <Folder Name="Windows" TargetFolderName="Windows">
+          <ProjectItem ReplaceParameters="true" TargetFileName="app.manifest">app.manifest</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Package.appxmanifest">Package.appxmanifest</ProjectItem>
+          <ProjectItem ReplaceParameters="true" TargetFileName="Program.cs">Program.cs</ProjectItem>
+        </Folder>
+      </Folder>
+      <Folder Name="Resources" TargetFolderName="Resources">
+        <Folder Name="AppIcon" TargetFolderName="AppIcon">
+          <ProjectItem ReplaceParameters="false" TargetFileName="appicon.svg">appicon.svg</ProjectItem>
+          <ProjectItem ReplaceParameters="false" TargetFileName="appiconfg.svg">appiconfg.svg</ProjectItem>
+        </Folder>
+      </Folder>
+      <ProjectItem ReplaceParameters="true" TargetFileName="App.cs">App.cs</ProjectItem>
+    </Project>
+  </TemplateContent>
+</VSTemplate>

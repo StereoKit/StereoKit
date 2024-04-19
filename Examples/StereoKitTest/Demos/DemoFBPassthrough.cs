@@ -1,29 +1,36 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+using StereoKit;
+using StereoKit.Framework;
 
 class DemoFBPassthrough : ITest
 {
-	Pose   windowPose  = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1,0,1));
-
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "Passthrough AR!";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "FB Passthrough Extension";
+	string description = "Passthrough AR!";
 
-	public void Initialize() { }
+	Pose   windowPose  = Demo.contentPose.Pose;
+	PassthroughFBExt passthrough;
+
+	public void Initialize() { passthrough = SK.GetOrCreateStepper<PassthroughFBExt>(); }
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		UI.WindowBegin("Passthrough Settings", ref windowPose);
-		bool toggle = App.passthrough.EnabledPassthrough;
-		UI.Label(App.passthrough.Available
+		bool toggle = passthrough.Enabled;
+		UI.Label(passthrough.Available
 			? "Passthrough EXT available!"
 			: "No passthrough EXT available :(");
+		UI.PushEnabled(passthrough.Available);
 		if (UI.Toggle("Passthrough", ref toggle))
-			App.passthrough.EnabledPassthrough = toggle;
+			passthrough.Enabled = toggle;
+		UI.PopEnabled();
 		UI.WindowEnd();
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description, 
+			new Bounds(V.XY0(0, -0.03f), new Vec3(.3f, .15f, 0)));
 	}
 }

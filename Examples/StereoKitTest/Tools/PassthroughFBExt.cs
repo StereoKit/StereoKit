@@ -1,4 +1,18 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+// This requires an addition to the Android Manifest to work on quest:
+// <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="true" />
+// And adding this to the application section can also improve the passthrough
+// experience:
+// <meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual"/>
+//
+// To work on Quest+Link, you may need to enable beta features in the Oculus
+// app's settings.
+
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit.Framework
@@ -7,9 +21,7 @@ namespace StereoKit.Framework
 	{
 		bool extAvailable;
 		bool enabled;
-		bool enabledPassthrough;
 		bool enableOnInitialize;
-		bool passthroughRunning;
 		XrPassthroughFB      activePassthrough = new XrPassthroughFB();
 		XrPassthroughLayerFB activeLayer       = new XrPassthroughLayerFB();
 
@@ -17,12 +29,16 @@ namespace StereoKit.Framework
 		bool  oldSky;
 
 		public bool Available => extAvailable;
-		public bool Enabled { get => extAvailable && enabled; set => enabled = value; }
-		public bool EnabledPassthrough { get => enabledPassthrough; set {
-			if (Available && enabledPassthrough != value) {
-				enabledPassthrough = value;
-				if ( enabledPassthrough) StartPassthrough();
-				if (!enabledPassthrough) EndPassthrough();
+		public bool Enabled { get => enabled; set {
+			if (extAvailable == false || enabled == value) return;
+			if (value)
+			{
+				enabled = StartPassthrough();
+			}
+			else
+			{
+				PausePassthrough();
+				enabled = false;
 			}
 		} }
 
@@ -38,18 +54,17 @@ namespace StereoKit.Framework
 		public bool Initialize()
 		{
 			extAvailable =
-				Backend.XRType == BackendXRType.OpenXR &&
+				Backend.XRType == BackendXRType.OpenXR         &&
 				Backend.OpenXR.ExtEnabled("XR_FB_passthrough") &&
-				LoadBindings();
+				LoadBindings()                                 &&
+				InitPassthrough();
 
-			if (enableOnInitialize)
-				EnabledPassthrough = true;
 			return true;
 		}
 
 		public void Step()
 		{
-			if (!EnabledPassthrough) return;
+			if (Enabled == false) return;
 
 			XrCompositionLayerPassthroughFB layer = new XrCompositionLayerPassthroughFB(
 				XrCompositionLayerFlags.BLEND_TEXTURE_SOURCE_ALPHA_BIT, activeLayer);
@@ -58,40 +73,91 @@ namespace StereoKit.Framework
 
 		public void Shutdown()
 		{
-			EnabledPassthrough = false;
+			if (!Enabled) return;
+			Enabled = false;
+			DestroyPassthrough();
 		}
 
-		void StartPassthrough()
+		bool InitPassthrough()
 		{
-			if (!extAvailable) return;
-			if (passthroughRunning) return;
-			passthroughRunning = true;
-			
-			oldColor = Renderer.ClearColor;
-			oldSky   = Renderer.EnableSky;
+			XrPassthroughFlagsFB flags = enableOnInitialize
+				? XrPassthroughFlagsFB.IS_RUNNING_AT_CREATION_BIT_FB
+				: XrPassthroughFlagsFB.None;
 
 			XrResult result = xrCreatePassthroughFB(
 				Backend.OpenXR.Session,
-				new XrPassthroughCreateInfoFB(XrPassthroughFlagsFB.IS_RUNNING_AT_CREATION_BIT_FB),
+				new XrPassthroughCreateInfoFB(flags),
 				out activePassthrough);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrCreatePassthroughFB failed: {result}");
+				return false;
+			}
 
 			result = xrCreatePassthroughLayerFB(
 				Backend.OpenXR.Session,
-				new XrPassthroughLayerCreateInfoFB(activePassthrough, XrPassthroughFlagsFB.IS_RUNNING_AT_CREATION_BIT_FB, XrPassthroughLayerPurposeFB.RECONSTRUCTION_FB),
+				new XrPassthroughLayerCreateInfoFB(activePassthrough, flags, XrPassthroughLayerPurposeFB.RECONSTRUCTION_FB),
 				out activeLayer);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrCreatePassthroughLayerFB failed: {result}");
+				return false;
+			}
 
+			enabled  = enableOnInitialize;
+			StartSky();
+			return true;
+		}
+
+		void DestroyPassthrough()
+		{
+			xrDestroyPassthroughLayerFB(activeLayer);
+			xrDestroyPassthroughFB(activePassthrough);
+		}
+
+		bool StartPassthrough()
+		{
+			XrResult result = xrPassthroughStartFB(activePassthrough);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughStartFB failed: {result}");
+				return false;
+			}
+
+			result = xrPassthroughLayerResumeFB(activeLayer);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughLayerResumeFB failed: {result}");
+				return false;
+			}
+
+			StartSky();
+			return true;
+		}
+
+		void StartSky()
+		{
+			oldColor = Renderer.ClearColor;
+			oldSky   = Renderer.EnableSky;
 			Renderer.ClearColor = Color.BlackTransparent;
 			Renderer.EnableSky  = false;
 		}
 
-		void EndPassthrough()
+		void PausePassthrough()
 		{
-			if (!passthroughRunning) return;
-			passthroughRunning = false;
-			
-			xrPassthroughPauseFB       (activePassthrough);
-			xrDestroyPassthroughLayerFB(activeLayer);
-			xrDestroyPassthroughFB     (activePassthrough);
+			XrResult result = xrPassthroughLayerPauseFB(activeLayer);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughLayerPauseFB failed: {result}");
+				return;
+			}
+
+			result = xrPassthroughPauseFB(activePassthrough);
+			if (result != XrResult.Success)
+			{
+				Log.Err($"xrPassthroughPauseFB failed: {result}");
+				return;
+			}
 
 			Renderer.ClearColor = oldColor;
 			Renderer.EnableSky  = oldSky;
@@ -108,7 +174,8 @@ namespace StereoKit.Framework
 		enum XrPassthroughFlagsFB : UInt64
 		{
 			None = 0,
-			IS_RUNNING_AT_CREATION_BIT_FB = 0x00000001
+			IS_RUNNING_AT_CREATION_BIT_FB = 0x00000001,
+			LAYER_DEPTH_BIT_FB = 0x00000002
 		}
 		enum XrCompositionLayerFlags : UInt64
 		{
@@ -124,15 +191,16 @@ namespace StereoKit.Framework
 			TRACKED_KEYBOARD_HANDS_FB = 1000203001,
 			MAX_ENUM_FB = 0x7FFFFFFF,
 		}
-		enum XrResult : UInt32
+		enum XrResult : Int32
 		{
 			Success = 0,
 		}
 
 #pragma warning disable 0169 // handle is not "used", but required for interop
-		struct XrPassthroughFB      { ulong handle; }
-		struct XrPassthroughLayerFB { ulong handle; }
+		[StructLayout(LayoutKind.Sequential)] struct XrPassthroughFB      { ulong handle; }
+		[StructLayout(LayoutKind.Sequential)] struct XrPassthroughLayerFB { ulong handle; }
 #pragma warning restore 0169
+
 
 		[StructLayout(LayoutKind.Sequential)]
 		struct XrPassthroughCreateInfoFB

@@ -73,8 +73,8 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 	// Get the heirarchy based transform
 	XMMATRIX tr;
-	if (hierarchy_enabled) {
-		matrix_mul(hierarchy_stack.last().transform, at, tr);
+	if (hierarchy_use_top()) {
+		matrix_mul(hierarchy_top(), at, tr);
 	} else {
 		math_matrix_to_fast(at, &tr);
 	}
@@ -132,7 +132,7 @@ bool sprite_drawer_init() {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_update() {
+void sprite_drawer_step() {
 	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)

@@ -39,7 +39,7 @@ class TestHSliders : ITest
 		Tests.Test(TestPush);
 		Tests.Test(TestPinch);
 	}
-	public void Update()
+	public void Step()
 	{
 		if (anim.Playing)
 			Input.HandOverride(Handed.Right, anim.Current);

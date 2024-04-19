@@ -11,7 +11,7 @@ class DocUI : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		ShowWindowButton   ();
 		ShowWindowToggle   ();
@@ -19,6 +19,7 @@ class DocUI : ITest
 		ShowWindowSlider   ();
 		ShowWindowInput    ();
 		ShowWindowRadio    ();
+		ShowWindowEnabled  ();
 
 		Tests.Screenshot("UI/ButtonWindow.jpg",    1, 500, 400, 50, V.XYZ(.0f,-0.02f,-.2f), V.XYZ(.0f,-0.02f,0));
 		Tests.Screenshot("UI/ToggleWindow.jpg",    1, 500, 400, 50, V.XYZ(.3f,-0.04f,-.2f), V.XYZ(.3f,-0.04f,0));
@@ -26,6 +27,7 @@ class DocUI : ITest
 		Tests.Screenshot("UI/SliderWindow.jpg",    1, 500, 400, 45, V.XYZ(.9f,-0.02f,-.2f), V.XYZ(.9f,-0.02f,0));
 		Tests.Screenshot("UI/InputWindow.jpg",     1, 500, 400, 45, V.XYZ(1.2f,-0.02f,-.2f), V.XYZ(1.2f,-0.02f,0));
 		Tests.Screenshot("UI/RadioWindow.jpg",     1, 500, 500, 55, V.XYZ(1.5f,-0.06f,-.2f), V.XYZ(1.5f,-0.06f,0));
+		Tests.Screenshot("UI/EnabledWindow.jpg",   1, 500, 500, 55, V.XYZ(1.8f,-0.07f,-.2f), V.XYZ(1.8f,-0.07f,0));
 	}
 
 	/// :CodeSample: UI UI.Button UI.WindowBegin UI.WindowEnd
@@ -178,6 +180,50 @@ class DocUI : ITest
 		if (UI.Radio("Option 1", radioState == 1)) radioState = 1;
 		if (UI.Radio("Option 2", radioState == 2)) radioState = 2;
 		if (UI.Radio("Option 3", radioState == 3)) radioState = 3;
+
+		UI.WindowEnd();
+	}
+	/// :End:
+
+	/// :CodeSample: UI.PushEnabled UI.PopEnabled UI.Enabled
+	/// ### Enabling and Disabling UI Elements
+	/// 
+	/// ![A window with labels in various states of enablement]({{site.screen_url}}/UI/EnabledWindow.jpg)
+	/// 
+	/// UI.Push/PopEnabled allows you to enable and disable groups of UI
+	/// elements! This is a hierarchical stack, so by default, all PushEnabled
+	/// calls inherit the stack's state.
+	/// 
+	Pose windowPoseEnabled = new Pose(1.8f, 0, 0, Quat.Identity);
+	void ShowWindowEnabled()
+	{
+		UI.WindowBegin("Window Enabled", ref windowPoseEnabled);
+
+		// Default state of the enabled stack is true
+		UI.Label(UI.Enabled ? "Enabled" : "Disabled");
+
+		UI.PushEnabled(false);
+		{
+			// This label will be disabled
+			UI.Label(UI.Enabled?"Enabled":"Disabled");
+
+			UI.PushEnabled(true);
+			{
+				// This label inherits the state of the parent, so is therefore
+				// disabled
+				UI.Label(UI.Enabled?"Enabled":"Disabled");
+			}
+			UI.PopEnabled();
+
+			UI.PushEnabled(true, true);
+			{
+				// This label was enabled, overriding the parent, and so is
+				// enabled.
+				UI.Label(UI.Enabled ? "Enabled" : "Disabled");
+			}
+			UI.PopEnabled();
+		}
+		UI.PopEnabled();
 
 		UI.WindowEnd();
 	}

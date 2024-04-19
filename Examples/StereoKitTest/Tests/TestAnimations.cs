@@ -22,7 +22,7 @@ class TestAnimations : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		_anim1.AnimCompletion = Time.Totalf;
 		_anim2.AnimCompletion = Time.Totalf;

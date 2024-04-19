@@ -1,27 +1,21 @@
 #pragma once
 
 #include "stereokit.h"
+#include "libraries/ferr_thread.h"
 
 namespace sk {
 
-extern const char   *sk_app_name;
-extern sk_settings_t sk_settings;
-extern system_info_t sk_info;
-extern display_mode_ sk_display_mode;
-extern bool          sk_no_flatscreen_fallback;
+void     sk_assert_thread_valid();
+bool32_t sk_has_stepped        ();
+bool32_t sk_is_initialized     ();
+bool32_t sk_is_running         ();
+bool32_t sk_use_manual_pos     ();
+void     sk_set_app_focus      (app_focus_ focus_state);
+ft_id_t  sk_main_thread        ();
+void     sk_app_step           ();
 
-extern float    sk_timevf;
-extern double   sk_timev;
-extern double   sk_timev_elapsed;
-extern float    sk_timev_elapsedf;
-extern uint64_t sk_timev_raw;
-
-extern app_focus_ sk_focus;
-extern bool32_t   sk_running;
-extern bool32_t   sk_initialized;
-extern bool32_t   sk_first_step;
-
-void sk_update_timer();
-void sk_assert_thread_valid();
+const sk_settings_t* sk_get_settings_ref();
+sk_settings_t*       sk_get_settings_ref_mut();
+system_info_t*       sk_get_info_ref();
 
 } // namespace sk
