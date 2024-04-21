@@ -301,11 +301,12 @@
     {
       "name":        "Web_Release",
       "description": "Build for Web",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Web_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Web_Release",
       "generator":   "Ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE":              "Release",
-        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_BUILD_TYPE":              "Debug",
+        "CMAKE_CXX_FLAGS_DEBUG":         "-gsource-map -O0 --source-map-base https://localhost:57955/",
+        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }
     }

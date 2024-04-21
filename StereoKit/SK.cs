@@ -153,8 +153,8 @@ namespace StereoKit
 			Settings = settings;
 
 			// Get system information
-			if (result) { 
-				_system = NativeAPI.sk_system_info();
+			if (result) {
+				_system = default;// NativeAPI.sk_system_info();
 				Default.Initialize();
 			}
 

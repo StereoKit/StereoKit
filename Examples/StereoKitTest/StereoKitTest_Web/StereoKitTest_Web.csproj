@@ -1,22 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <WasmBuildNative>true</WasmBuildNative>
-    <EmccExtraLDFlags>-s FULL_ES3=1</EmccExtraLDFlags>
+	<WasmNativeStrip>false</WasmNativeStrip>
+	<!--<WasmEmitSymbolMap>true</WasmEmitSymbolMap>-->
+    <!--<WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>-->
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks> 
+	<EmccExtraLDFlags>-gsource-map -O0 -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccExtraLDFlags>
+    <!--<EmccExtraLDFlags>-s FULL_ES3=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1 </EmccExtraLDFlags>-->
+	<SKShaderStandardInclude>$(ProjectDir)..\tools\include</SKShaderStandardInclude>
+	<SKAssetFolder>$(ProjectDir)..\..\Assets</SKAssetFolder>
+	<SKAssetDestination>Assets</SKAssetDestination>
+	<SKShowDebugVars>true</SKShowDebugVars>
+    <Nullable>Enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.6" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.18" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.18" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
   <ItemGroup>
     <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/StereoKitC.a" />
+    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/WASM/wasm32/Debug/libStereoKitC.a" />
   </ItemGroup>
-  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
+  <!--<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />-->
 
   <ItemGroup>
     <Compile Include="..\*.cs" />
@@ -27,21 +36,73 @@
   </ItemGroup>
 
   <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <ItemGroup>
+  <!--<ItemGroup>
     <Content Include="..\..\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
     <SKShader Include="..\..\Assets\**\*.hlsl" BuildRoot="..\..\" BuildTo="Assets" />
-  </ItemGroup>
+  </ItemGroup>-->
+	<!--C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin-->
+	
+<!--
+dotnet_packs_dir=/usr/local/share/dotnet/packs
+dotnet_emscripten_prefix=Microsoft.NET.Runtime.Emscripten.2.0.23
+dotnet_rid=osx-x64
+dotnet_ver=6.0.0
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="cd $(SolutionDir)&#xD;&#xA;xmake f -p wasm -y -m $(ConfigurationName)&#xD;&#xA;xmake" />
+# set variables read by tools/emscripten/.emscripten
+export DOTNET_EMSCRIPTEN_LLVM_ROOT=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools/bin
+export DOTNET_EMSCRIPTEN_NODE_JS=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Node.${dotnet_rid}/${dotnet_ver}/tools/bin/node
+export DOTNET_EMSCRIPTEN_BINARYEN_ROOT=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools
+
+export PATH="${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools/emscripten:${PATH}"
+
+	$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))
+-->		
+  <Target Name="CleanNativeLib" BeforeTargets="BeforeClean">
+     <Exec Command='rmdir /s /q $(ProjectDir)..\..\..\bin'/>
+    
+  </Target>
+
+  <Target Name="BuildNativeLib" BeforeTargets="BeforeBuild">
+     <Exec Command='
+		   echo SETTING EMSCRIPTEN ENVIRONMENT
+		   SET DOTNET_EMSCRIPTEN_LLVM_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamBinPath)).TrimEnd("\"))
+		   SET DOTNET_EMSCRIPTEN_NODE_JS=$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe
+		   SET DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenSdkToolsPath)).TrimEnd("\"))
+		   SET EM_FROZEN_CACHE=0
+		   SET FROZEN_CACHE=False
+		   SET EM_CACHE=$([MSBuild]::NormalizeDirectory($(EmscriptenCacheSdkCacheDir)))
+		   echo %DOTNET_EMSCRIPTEN_LLVM_ROOT%
+		   echo %DOTNET_EMSCRIPTEN_NODE_JS%
+		   echo %DOTNET_EMSCRIPTEN_BINARYEN_ROOT%
+		   echo %EM_CACHE%
+		   echo SETTING CMAKE ENVIRONMENT
+		   SET CMAKEDIR=$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin).TrimEnd("\"))
+		   SET NINJADIR=%VSAPPIDDIR%\CommonExtensions\Microsoft\CMake\Ninja
+		   SET EMSDK=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)).TrimEnd("\"))
+		   SET EMSDK_NODE=%DOTNET_EMSCRIPTEN_NODE_JS%
+		   SET CMAKE_MAKE_PROGRAM=%NINJADIR%\ninja.exe
+		   SET PATH=%CMAKEDIR%;%NINJADIR%;%PATH%
+		   echo %CMAKEDIR%
+		   echo %EMSDK%
+		   echo %EMSDK_NODE%
+		   echo %LLVM_ROOT%
+		   cd $(ProjectDir)..\..\..\
+		   "%CMAKEDIR%\cmake" --preset Web_Release	  
+		   "%CMAKEDIR%\cmake" --build --preset Web_Release
+		   '/>
+    
   </Target>
 
 	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild">
+		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenUpstreamEmscriptenPath: $(EmscriptenUpstreamEmscriptenPath)" />
+		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenNodeToolsPath: $(EmscriptenNodeToolsPath)" />
 		<Message Importance="high" Text="[StereoKit NuGet] Framework: $(TargetFrameworkIdentifier), Platform: $(RuntimeIdentifier)" />
-		<Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK_PATH)" />
+		<Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK)" />
+	    <Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK_NODE)" />
 	</Target>
 </Project>
+
 

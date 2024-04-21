@@ -65,7 +65,7 @@
 				var canv = document.getElementById('canvas');
 				canv.width  = canv.offsetWidth;
 				canv.height = canv.offsetHeight;
-				_sk_web_canvas_resize(canv.width, canv.height);
+                //sk_web_canvas_resize(canv.width, canv.height);
 			}, 200);
 		}
 
@@ -73,7 +73,10 @@
 		canv.width  = canv.offsetWidth;
 		canv.height = canv.offsetHeight;
 		var Module = {
-			canvas: canv
+            canvas: canv,
+            onRuntimeInitialized: function () {
+                //Module._foobar(); // foobar was exported
+            }
 		};
 		window.addEventListener('resize', canvas_resize, false);
 	</script>
