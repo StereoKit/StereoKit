@@ -4950,16 +4950,27 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	case skg_tex_fmt_bgra32_linear: return GL_RGBA8;
 	case skg_tex_fmt_rg11b10:       return GL_R11F_G11F_B10F;
 	case skg_tex_fmt_rgb10a2:       return GL_RGB10_A2;
+#ifndef _SKG_GL_WEB
 	case skg_tex_fmt_rgba64u:       return GL_RGBA16;
 	case skg_tex_fmt_rgba64s:       return GL_RGBA16_SNORM;
+#else
+	case skg_tex_fmt_rgba64u:       return GL_RGBA16UI;
+	//case skg_tex_fmt_rgba64s:       return GL_RGBA16_SNORM;
+#endif
 	case skg_tex_fmt_rgba64f:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba128:       return GL_RGBA32F;
 	case skg_tex_fmt_depth16:       return GL_DEPTH_COMPONENT16;
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT32F;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH24_STENCIL8;
 	case skg_tex_fmt_r8:            return GL_R8;
+#ifndef _SKG_GL_WEB
 	case skg_tex_fmt_r16u:          return GL_R16;
 	case skg_tex_fmt_r16s:          return GL_R16_SNORM;
+#else
+	case skg_tex_fmt_r16u:          return GL_R16UI;
+	//case skg_tex_fmt_r16s:          return GL_R16_SNORM;
+#endif
+
 	case skg_tex_fmt_r16f:          return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
 	case skg_tex_fmt_r8g8:          return GL_RG8;
@@ -4975,17 +4986,27 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case GL_RGBA8:              return skg_tex_fmt_rgba32_linear;
 	case GL_R11F_G11F_B10F:     return skg_tex_fmt_rg11b10;
 	case GL_RGB10_A2:           return skg_tex_fmt_rgb10a2;
+#ifndef _SKG_GL_WEB
 	case GL_RGBA16:             return skg_tex_fmt_rgba64u;
 	case GL_RGBA16_SNORM:       return skg_tex_fmt_rgba64s;
+#else
+	case GL_RGBA16UI:             return skg_tex_fmt_rgba64u;
+	//case GL_RGBA16_SNORM:       return skg_tex_fmt_rgba64s;
+#endif
 	case GL_RGBA16F:            return skg_tex_fmt_rgba64f;
 	case GL_RGBA32F:            return skg_tex_fmt_rgba128;
 	case GL_DEPTH_COMPONENT16:  return skg_tex_fmt_depth16;
 	case GL_DEPTH_COMPONENT32F: return skg_tex_fmt_depth32;
 	case GL_DEPTH24_STENCIL8:   return skg_tex_fmt_depthstencil;
 	case GL_R8:                 return skg_tex_fmt_r8;
+#ifndef _SKG_GL_WEB
 	case GL_R16:                return skg_tex_fmt_r16u;
-	case GL_R16F:               return skg_tex_fmt_r16f;
 	case GL_R16_SNORM:          return skg_tex_fmt_r16s;
+#else
+	case GL_R16UI:                return skg_tex_fmt_r16u;
+	//case GL_R16_SNORM:          return skg_tex_fmt_r16s;
+#endif
+	case GL_R16F:               return skg_tex_fmt_r16f;
 	case GL_R32F:               return skg_tex_fmt_r32;
 	case GL_RG8:                return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;

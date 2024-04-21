@@ -264,23 +264,23 @@ origin_mode_ world_get_origin_mode() {
 	return world_origin_mode;
 }
 
-pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
-	return pose_identity;
-}
+// pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
+// 	return pose_identity;
+// }
 
-pose_t world_from_perception_anchor(void* perception_spatial_anchor) {
-	return pose_identity;
-}
+// pose_t world_from_perception_anchor(void* perception_spatial_anchor) {
+// 	return pose_identity;
+// }
 
-bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t* out_pose) {
-	*out_pose = pose_identity;
-	return false;
-}
+// bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t* out_pose) {
+// 	*out_pose = pose_identity;
+// 	return false;
+// }
 
-bool32_t world_try_from_perception_anchor(void* perception_spatial_anchor, pose_t* out_pose) {
-	*out_pose = pose_identity;
-	return false;
-}
+// bool32_t world_try_from_perception_anchor(void* perception_spatial_anchor, pose_t* out_pose) {
+// 	*out_pose = pose_identity;
+// 	return false;
+// }
 
 ///////////////////////////////////////////
 

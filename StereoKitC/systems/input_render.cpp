@@ -125,9 +125,12 @@ void input_render_step_late() {
 			const hand_t* hand = input_hand((handed_)i);
 			if ((hand->tracked_state & button_state_active) != 0 && local.hand_material[i] != nullptr) {
 				hand_mesh_t* hand_active_mesh = &local.hand_fallback_mesh[i];
+#if defined(SK_XR_OPENXR)
 				if (xr_has_hand_meshes) { hand_oxra_update_system_mesh   ((handed_)i, &local.hand_articulated_mesh  [i]); hand_active_mesh = &local.hand_articulated_mesh[i]; }
 				else                    { input_hand_update_fallback_mesh((handed_)i, &local.hand_fallback_mesh     [i]); hand_active_mesh = &local.hand_fallback_mesh   [i]; }
-
+#else
+				input_hand_update_fallback_mesh((handed_)i, &local.hand_fallback_mesh     [i]); hand_active_mesh = &local.hand_fallback_mesh   [i];
+#endif
 				render_add_mesh(hand_active_mesh->mesh, local.hand_material[i], hand_active_mesh->root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
 			}
 		} else if (source == hand_source_simulated) {
