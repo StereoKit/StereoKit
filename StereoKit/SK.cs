@@ -3,6 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace StereoKit
 {
@@ -234,19 +235,53 @@ namespace StereoKit
 			Shutdown();
 		}
 
-		/// <summary>This registers an instance of the `IStepper` type
-		/// provided. SK will hold onto it, Initialize it, Step it every frame,
-		/// and call Shutdown when the application ends. This is generally safe
-		/// to do before SK.Initialize is called, the constructor is called
-		/// right away, and Initialize is called right after SK.Initialize, or
-		/// at the start of the next frame before the next main Step callback
-		/// if SK is already initialized.</summary>
-		/// <param name="stepper">An instance of an IStepper object. Must not
-		/// be null.</param>
-		/// <typeparam name="T">An IStepper type.</typeparam>
-		/// <returns>Just for convenience, this returns the instance that was
-		/// just added.</returns>
-		public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
+        /// <summary>This passes application execution over to StereoKit.
+        /// This is differs from `SK.Run` in that it the execution loop is
+		/// run from the native code. This is especially useful for WASM
+		/// where the rendering loop is controlled by the browser. 
+		/// 
+		/// Once execution completes, or `SK.Quit` is called, it properly calls the
+        /// shutdown callback and shuts down StereoKit for you.
+        /// 
+        /// Using this method is important for compatibility with WASM and is
+        /// the preferred method of controlling the main loop, over 
+        /// `SK.Step`.</summary>
+        /// <param name="onStep">A callback where you put your application
+        /// code! This gets called between StereoKit systems, after frame
+        /// setup, but before render.</param>
+        /// <param name="onShutdown">A callback that gives you the
+        /// opportunity to shut things down while StereoKit is still active.
+        /// This is called after the last Step completes, and before
+        /// StereoKit shuts down.</param>
+        public static Task RunAsync(Action onStep = null, Action onShutdown = null)
+        {
+			var tcs = new TaskCompletionSource<bool>();
+			var onShutdownNative = new Action(() =>
+			{
+				onShutdown?.Invoke();
+                tcs.TrySetResult(true);
+            });
+
+			NativeAPI.sk_run(
+				NativeCallbacks.GetNativeCallback(onStep, nameof(NativeAPI.sk_run), "app_update"),
+				NativeCallbacks.GetNativeCallback(onShutdownNative, nameof(NativeAPI.sk_run), "app_shutdown"));
+
+            return tcs.Task;
+        }
+
+        /// <summary>This registers an instance of the `IStepper` type
+        /// provided. SK will hold onto it, Initialize it, Step it every frame,
+        /// and call Shutdown when the application ends. This is generally safe
+        /// to do before SK.Initialize is called, the constructor is called
+        /// right away, and Initialize is called right after SK.Initialize, or
+        /// at the start of the next frame before the next main Step callback
+        /// if SK is already initialized.</summary>
+        /// <param name="stepper">An instance of an IStepper object. Must not
+        /// be null.</param>
+        /// <typeparam name="T">An IStepper type.</typeparam>
+        /// <returns>Just for convenience, this returns the instance that was
+        /// just added.</returns>
+        public static T AddStepper<T>(T stepper) where T:IStepper => _steppers.Add(stepper);
 		/// <summary>This instantiates and registers an instance of the
 		/// `IStepper` type provided as the generic parameter. SK will hold
 		/// onto it, Initialize it, Step it every frame, and call Shutdown when

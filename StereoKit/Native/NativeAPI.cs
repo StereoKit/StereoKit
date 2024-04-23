@@ -6,7 +6,7 @@ namespace StereoKit
 {
 	internal static class NativeAPI
 	{
-		const string            dll  = "libStereoKitC";
+		const string            dll  = "StereoKitC";
 		const CharSet           cSet = CharSet.Ansi;
 		const CallingConvention call = CallingConvention.Cdecl;
 
