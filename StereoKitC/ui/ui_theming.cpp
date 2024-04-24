@@ -75,6 +75,10 @@ sound_inst_t  skui_active_sound_inst       = {};
 vec3          skui_active_sound_pos        = vec3_zero;
 id_hash_t     skui_active_sound_element_id = 0;
 
+const float    skui_anim_duration  = 0.2f;
+const float    skui_anim_overshoot = 10;
+const float    skui_anim_focus_duration = 0.1f;
+
 ///////////////////////////////////////////
 
 void _ui_gen_quadrant_mesh(mesh_t* mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
@@ -675,6 +679,39 @@ float ui_anim_elapsed(id_hash_t id, int32_t channel, float duration, float max) 
 
 float ui_anim_elapsed_total(id_hash_t id, int32_t channel) {
 	return skui_anim_id[channel] == id ? (time_totalf_unscaled() - skui_anim_time[channel]) : 0;
+}
+
+///////////////////////////////////////////
+
+float ui_get_anim_focus(id_hash_t id, button_state_ activation_state, float activation) {
+	if (activation_state & button_state_just_active)
+		ui_anim_start(id, 0);
+	float anim = activation_state & button_state_active ? 1.0f : 0.0f;
+	if (ui_anim_has(id, 0, skui_anim_duration)) {
+		float t = ui_anim_elapsed(id, 0, skui_anim_duration);
+		anim = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
+	}
+	return fmaxf(anim, activation);
+}
+
+///////////////////////////////////////////
+
+float ui_get_anim_focus_inout(id_hash_t id, button_state_ activation_state, float activation) {
+	const float delay = 0.2f;
+	if (activation_state & button_state_just_active) ui_anim_start(id, 0);
+	if (activation_state & button_state_just_inactive) {
+		float elapsed = ui_anim_elapsed_total(id, 0);
+		if (elapsed > delay || elapsed == 0) ui_anim_start(id, 1);
+		ui_anim_cancel(id, 0);
+	}
+
+	float anim = activation_state & button_state_active ? 1.0f : 0.0f;
+	if (ui_anim_has(id, 0, delay + skui_anim_focus_duration)) {
+		anim = math_ease_smooth(0, 1, math_clamp((ui_anim_elapsed_total(id, 0)-delay)/ skui_anim_focus_duration, 0, 1));
+	} else if (ui_anim_has(id, 1, skui_anim_focus_duration)) {
+		anim = math_ease_smooth(1, 0, ui_anim_elapsed(id, 1, skui_anim_focus_duration));
+	}
+	return anim;
 }
 
 ///////////////////////////////////////////
