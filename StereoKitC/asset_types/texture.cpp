@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
 #include "../stereokit.h"
 #include "../platforms/platform.h"
 #include "../libraries/ferr_hash.h"
@@ -500,7 +505,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->address_mode = tex_address_wrap;
 	result->sample_mode  = tex_sample_linear;
 	result->anisotropy   = 4;
-	result->header.state = asset_state_loaded_meta;
+	result->header.state = asset_state_none;
 
 	tex_set_fallback(result, tex_loading_texture);
 
