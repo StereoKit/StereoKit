@@ -1,16 +1,16 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 internal class TestTextures : ITest
 {
-	Tex      failedTex;
-	Material failedMat;
-
-	Tex      failedFallbackTex;
-	Material failedFallbackMat;
-
 	struct FormatTest
 	{
 		public TexFormat format;
@@ -21,17 +21,6 @@ internal class TestTextures : ITest
 
 	public void Initialize()
 	{
-		Log.Info("Expected texture load failure:");
-		failedTex = Tex.FromFile("file_that_doesnt_exist.png");
-		failedMat = Material.Default.Copy();
-		failedMat[MatParamName.DiffuseTex] = failedTex;
-
-		Log.Info("Expected texture load failure:");
-		failedFallbackTex = Tex.FromFile("file_that_doesnt_exist2.png");
-		failedFallbackTex.FallbackOverride = Tex.Black;
-		failedFallbackMat = Material.Default.Copy();
-		failedFallbackMat[MatParamName.DiffuseTex] = failedFallbackTex;
-
 		// 0x3C00 is a half float with value 1.0f
 		ulong  on64  = 0x3C00000000003C00;
 		ulong  off64 = 0x3C00000000000000;
@@ -66,6 +55,8 @@ internal class TestTextures : ITest
 
 		Tests.Test(CheckTextureFormats);
 		Tests.Test(CheckTextureRead);
+		Tests.Test(CheckBlankTex);
+		Tests.Test(CheckBlockingSize);
 
 		Tests.Screenshot("TexFormats.jpg", 0, 400, 400, 50, V.XYZ(0,-0.15f, 0), V.XYZ(0,-0.15f,-0.5f) );
 	}
@@ -141,11 +132,36 @@ internal class TestTextures : ITest
 		return true;
 	}
 
+	bool CheckBlankTex()
+	{
+		// A blank texture with no data on it should report a size of 0 and an
+		// asset state of none. This verifies those things, and checks to
+		// ensure Width/Height reads don't block in this case.
+
+		Tex blank = new Tex();
+		if (blank.Width != 0 || blank.Height != 0)
+			return false;
+		if (blank.AssetState != AssetState.None)
+			return false;
+		return true;
+	}
+
+	bool CheckBlockingSize()
+	{
+		// Tex.Width/Height will block execution and wait for texture metadata
+		// to become available. This just checks to make sure it properly
+		// surfaces the right value when it does.
+
+		// Use FromMem to prevent this from pulling an existing asset.
+		Tex tex = Tex.FromMemory(Platform.ReadFileBytes("test.png"));
+		if (tex.Width != 256 || tex.Height != 256)
+			return false;
+
+		return true;
+	}
+
 	public void Step()
 	{
-		Mesh.Cube.Draw(failedMat,         Matrix.TS(-0.1f, 0.2f, -0.5f, 0.1f));
-		Mesh.Cube.Draw(failedFallbackMat, Matrix.TS( 0.1f, 0.2f, -0.5f, 0.1f));
-
 		float s = 0.1f;
 		int w = 4;
 		for (int i = 0; i < testTextures.Count; i++)
