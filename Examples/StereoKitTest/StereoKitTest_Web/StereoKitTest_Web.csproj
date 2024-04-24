@@ -1,29 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <WasmBuildNative>true</WasmBuildNative>
 	<WasmNativeStrip>false</WasmNativeStrip>
-	<!--<WasmEmitSymbolMap>true</WasmEmitSymbolMap>-->
-    <!--<WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>-->
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks> 
-	<EmccExtraLDFlags>-gsource-map -O0 -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccExtraLDFlags>
-    <!--<EmccExtraLDFlags>-s FULL_ES3=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1 </EmccExtraLDFlags>-->
+	<WasmDebugLevel>1</WasmDebugLevel>
+	<WasmNativeDebugSymbols>true</WasmNativeDebugSymbols>
+	<WasmEmitSourceMap>true</WasmEmitSourceMap>
+	<WasmEmitSymbolMap>true</WasmEmitSymbolMap>
+	<WasmStripILAfterAOT>false</WasmStripILAfterAOT>
+    <WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>
+	<RunAOTCompilation>true</RunAOTCompilation>
+    <!--<RunAOTCompilationAfterBuild>true</RunAOTCompilationAfterBuild>-->
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<EmccCompileOptimizationFlag>-gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccCompileOptimizationFlag>
+	<EmccLinkOptimizationFlag>-gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sOFFSCREEN_FRAMEBUFFER -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccLinkOptimizationFlag>
+	<!--<EmccExtraLDFlags>-s FULL_ES3=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1 </EmccExtraLDFlags>-->
 	<SKShaderStandardInclude>$(ProjectDir)..\tools\include</SKShaderStandardInclude>
 	<SKAssetFolder>$(ProjectDir)..\..\Assets</SKAssetFolder>
 	<SKAssetDestination>Assets</SKAssetDestination>
 	<SKShowDebugVars>true</SKShowDebugVars>
     <Nullable>Enable</Nullable>
-  </PropertyGroup>
+  
+</PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.18" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.18" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.3" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
   <ItemGroup>
     <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/WASM/wasm32/Debug/libStereoKitC.a" />
+    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/WASM/wasm32/Debug/StereoKitC.a" />
   </ItemGroup>
   <!--<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />-->
 
@@ -36,13 +44,13 @@
   </ItemGroup>
 
   <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <!--<ItemGroup>
+  <ItemGroup>
     <Content Include="..\..\Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Link>wwwroot\Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
     <SKShader Include="..\..\Assets\**\*.hlsl" BuildRoot="..\..\" BuildTo="Assets" />
-  </ItemGroup>-->
+  </ItemGroup>
 	<!--C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin-->
 	
 <!--
@@ -60,8 +68,8 @@ export PATH="${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/$
 
 	$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))
 -->		
-  <Target Name="CleanNativeLib" BeforeTargets="BeforeClean">
-     <Exec Command='rmdir /s /q $(ProjectDir)..\..\..\bin'/>
+  <Target Name="CleanNativeLib" BeforeTargets="BeforeClean" Condition="false">
+     <Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin" />
     
   </Target>
 
@@ -93,9 +101,8 @@ export PATH="${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/$
 		   "%CMAKEDIR%\cmake" --preset Web_Release	  
 		   "%CMAKEDIR%\cmake" --build --preset Web_Release
 		   '/>
-    
-  </Target>
-
+	</Target>
+	  
 	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild">
 		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenUpstreamEmscriptenPath: $(EmscriptenUpstreamEmscriptenPath)" />
 		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenNodeToolsPath: $(EmscriptenNodeToolsPath)" />

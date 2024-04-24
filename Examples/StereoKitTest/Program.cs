@@ -2,9 +2,9 @@
 // The authors below grant copyright rights under the MIT license:
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
-
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using StereoKit;
 using StereoKit.Framework;
 
@@ -15,8 +15,11 @@ class Program
 		appName         = "StereoKit C#",
 		assetsFolder    = "Assets",
 		blendPreference = DisplayBlend.AnyTransparent,
-		mode            = AppMode.XR,
+		mode            = AppMode.Simulator,
 		logFilter       = LogLevel.Diagnostic,
+		renderMultisample = 1,
+		depthMode       = DepthMode.Stencil,
+		
 		//origin          = OriginMode.Floor,
 	};
 
@@ -56,13 +59,13 @@ class Program
 		}
 	}
 
-	static void Main(string[] args)
+	static async Task Main(string[] args)
 	{
-		bool headless         = Array.IndexOf(args, "-headless") != -1;
-		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
+		bool headless = Array.IndexOf(args, "-headless") != -1;
+		Tests.IsTesting = Array.IndexOf(args, "-test") != -1;
 		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
 		if (Array.IndexOf(args, "-screenfolder") != -1)
-			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
+			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder") + 1];
 		if (Array.IndexOf(args, "-gltf") != -1)
 			Tests.GltfFolders = args[Array.IndexOf(args, "-gltf") + 1];
 		if (Array.IndexOf(args, "-gltfscreenfolder") != -1)
@@ -75,7 +78,7 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			settings.mode                  = headless ? AppMode.Offscreen : AppMode.Simulator;
+			settings.mode = headless ? AppMode.Offscreen : AppMode.Simulator;
 			settings.disableUnfocusedSleep = true;
 		}
 
@@ -83,93 +86,102 @@ class Program
 		// initialization occurs.
 		SK.PreLoadLibrary();
 
-		SK.AddStepper<PassthroughFBExt>();
+		//SK.AddStepper<PassthroughFBExt>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
 		//logWindow = SK.AddStepper<LogWindow>();
 		//logWindow.Enabled = false;
+		Log.Info($"Using Platform:{Backend.Platform}");
+		Log.Info($"Using Graphics:{Backend.Graphics}");
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
 
 		Time.Scale = Tests.IsTesting ? 0 : 1;
-
+		Renderer.ClearColor = new Color(0, 0f, 1f, 0.5f);
 		Init();
 
-		SK.Run(Step, Tests.Shutdown);
+		// RunAsync() is needed so that single browswer thread dosn't get blocked by the 
+		// SK.Run() loop. This is only needed for the browser.
+		await SK.RunAsync(() => Step(), () => Tests.Shutdown());
 
 		if (SK.QuitReason != QuitReason.None)
 		{
 			Log.Info("QuitReason is " + SK.QuitReason);
 		}
-
 	}
 
-	static void Init()
+    static void Init()
 	{
-		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
+		Material floorMat = Material.Default;// new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
-		floorMat.SetVector("radius", new Vec4(5,10,0,0));
+		floorMat.SetVector("radius", new Vec4(5, 10, 0, 0));
 		floorMat.QueueOffset = -11;
 
-		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
-		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
+		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40, 40), Vec3.Up, Vec3.Forward), floorMat);
+		floorTr = Matrix.Identity;// Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
 
-		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
-		WindowDemoShow = true;
+		//powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
-		Tests.FindTests();
-		Tests.SetTestActive(startTest);
-		Tests.Initialize();
+		//WindowDemoShow = true;
 
-		for (int i = 0; i < Tests.DemoCount; i++)
-			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
+		//Tests.FindTests();
+		//Tests.SetTestActive(startTest);
+		//Tests.Initialize();
 
-		if (Tests.IsTesting)
-		{
-			UI.EnableFarInteract = false;
-		}
-		else
-		{
-			SK.AddStepper<DebugToolWindow>();
-		}
+		//for (int i = 0; i < Tests.DemoCount; i++)
+		//	demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
+
+		//if (Tests.IsTesting)
+		//{
+		//	UI.EnableFarInteract = false;
+		//}
+		//else
+		//{
+		//	SK.AddStepper<DebugToolWindow>();
+		//}
 	}
 
 	//////////////////////
 
 	static void Step()
 	{
-		CheckFocus();
+        Renderer.Add(floorMesh, floorTr, Color.White);
+        Mesh.Cube.Draw(Material.Default, Matrix.T(new Vec3(0, 0.5f, -1.5f))); //Matrix.TRS(new Vec3(0, 0, -1.5f), Quat.Identity, 0.1f));
+                                                                              //CheckFocus();
+        Mesh.Cube.Draw(Material.Default, Matrix.T(new Vec3(0, 0f, 1.5f)));
+        //Thread.Sleep(200); // give the runtime some time to think!
 
-		Tests.Update();
 
-		if (Input.Key(Key.Esc).IsJustActive())
-			SK.Quit();
+        //Tests.Update();
 
-		/// :CodeSample: Projection Renderer.Projection
-		/// ### Toggling the projection mode
-		/// Only in flatscreen apps, there is the option to change the main
-		/// camera's projection mode between perspective and orthographic.
-		if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
-			Input.Key(Key.P).IsJustActive())
-		{
-			Renderer.Projection = Renderer.Projection == Projection.Perspective
-				? Projection.Ortho
-				: Projection.Perspective;
-		}
-		/// :End:
+        //if (Input.Key(Key.Esc).IsJustActive())
+        //	SK.Quit();
 
-		// If we can't see the world, we'll draw a floor!
-		if (Device.DisplayBlend == DisplayBlend.Opaque)
-			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
+        ///// :CodeSample: Projection Renderer.Projection
+        ///// ### Toggling the projection mode
+        ///// Only in flatscreen apps, there is the option to change the main
+        ///// camera's projection mode between perspective and orthographic.
+        //if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
+        //	Input.Key(Key.P).IsJustActive())
+        //{
+        //	Renderer.Projection = Renderer.Projection == Projection.Perspective
+        //		? Projection.Ortho
+        //		: Projection.Perspective;
+        //}
+        ///// :End:
 
-		// Skip selection window if we're in test mode
-		if (Tests.IsTesting)
-			return;
+        //// If we can't see the world, we'll draw a floor!
+        //if (Device.DisplayBlend == DisplayBlend.Opaque)
+        //	Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
 
-		WindowDemoStep();
-	}
+        //// Skip selection window if we're in test mode
+        //if (Tests.IsTesting)
+        //	return;
+
+        //WindowDemoStep();
+    }
 
 	static void WindowDemoStep()
 	{

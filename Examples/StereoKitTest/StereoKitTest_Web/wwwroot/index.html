@@ -62,23 +62,26 @@
 		function canvas_resize() {
 			clearTimeout(resize_time);
 			resize_time = setTimeout(function () {
+                console.log("calling sk_web_canvas_resize");
 				var canv = document.getElementById('canvas');
 				canv.width  = canv.offsetWidth;
 				canv.height = canv.offsetHeight;
-                //sk_web_canvas_resize(canv.width, canv.height);
+                Module._sk_web_canvas_resize(canv.width, canv.height);
 			}, 200);
 		}
 
 		var canv = document.getElementById('canvas');
 		canv.width  = canv.offsetWidth;
 		canv.height = canv.offsetHeight;
+        
 		var Module = {
             canvas: canv,
             onRuntimeInitialized: function () {
-                //Module._foobar(); // foobar was exported
+				//Module._foobar(); // foobar was exported
+                window.addEventListener('resize', canvas_resize, false);
             }
 		};
-		window.addEventListener('resize', canvas_resize, false);
+		
 	</script>
 	<script src="_framework/blazor.webassembly.js"></script>
 </body>

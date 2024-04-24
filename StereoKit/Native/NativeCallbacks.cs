@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-    public static class NativeCallbacks
+    static class NativeCallbacks
     {
         static bool _isWeb = false;
         static ReadOnlyDictionary<string, CallbackInfo> _webCallbacks;
@@ -23,7 +23,7 @@ namespace StereoKit
             }
         }
 
-        public static TDelegate GetNativeCallback<TDelegate>(TDelegate action, [CallerMemberName] string nativeMethodName = "", string nativeArgName = null) where TDelegate : Delegate
+        internal static TDelegate GetNativeCallback<TDelegate>(TDelegate action, [CallerMemberName] string nativeMethodName = "", string nativeArgName = null) where TDelegate : Delegate
         {
             if (_isWeb)
             {
@@ -45,7 +45,7 @@ namespace StereoKit
             return action;
         }
 
-        static void InitWebCallbacks()
+        private static void InitWebCallbacks()
         {
             var webCallbacks = new Dictionary<string, CallbackInfo>();
             var methods = typeof(NativeCallbacks)
