@@ -232,7 +232,8 @@ void ui_image(sprite_t image, vec2 size) {
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw_at(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(final_pos - vec3{size.x / 2, size.y / 2, 2 * mm2m }, vec3{ scale, scale, 1 }),
+		text_align_center, ui_is_enabled() ? color32{255, 255, 255, 255} : color32{128, 128, 128, 255});
 }
 
 ///////////////////////////////////////////
