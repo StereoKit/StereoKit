@@ -458,7 +458,7 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
   set(SK_BIN_DEBUG_EXT ".so.dbg")
 
-  if (NOT EMSCRIPTEN)
+  if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS)
     set(SK_SEPARATE_DBG ON)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
@@ -501,7 +501,7 @@ target_link_libraries( StereoKitC
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-  set(SK_RELEASE_LINK    -Wl,--gc-sections -flto)
+  set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
   set(SK_WARNING_FLAG    -w)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy)
