@@ -109,13 +109,13 @@ dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTes
 
 ### Considerations for Blazor
 
-A Blazor WebAssembly application is essentially AOT compiled and then linked using emscripten to generate the wasm.
-The .NET StereoKit implementation uses PInvoke to call into the StereoKitC native lib. 
-
+A Blazor WebAssembly application is essentially AOT compiled and then linked using emscripten to generate the wasm. 
+The .NET StereoKit implementation uses PInvoke to call into the StereoKitC native lib, where most of the logic lives.
 As of .NET 7/8 the PInvoke wasm bindings is limited in it's ability to generate function signatures for wasm.
-.NET 9 adds support for structs returned by value and allows the bulk of the StereoKit native API to be used from .NET.
 
-An area that needs improvement is String or varargs when used in native to C#, until then the logging callback functions can not be used.
+Improved support for structs has been added in .NET 9 and most the StereoKit native API to be used from .NET 9. [Refer here for details](https://github.com/dotnet/runtime/pull/944460)
+
+An area that still needs improvement is String or varargs when used in native to C#, until then the logging callback functions can not be used.
 However, a workaround to explore could be to proxy the callback via Javascript.
 
 ## I want to build the whole NuGet package
