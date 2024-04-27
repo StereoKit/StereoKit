@@ -77,21 +77,19 @@ namespace StereoKit
             internal Delegate ManagedCallback { get; set; }
         }
 
-        [MonoPInvokeCallback(typeof(Action))]
-        private static void sk_step() => ProcessCallback();
-        [MonoPInvokeCallback(typeof(Action))]
-        private static void sk_run_app_update() => ProcessCallback();
-        [MonoPInvokeCallback(typeof(Action))]
-        private static void sk_run_app_shutdown() => ProcessCallback();
-        [MonoPInvokeCallback(typeof(RenderOnScreenshotCallback))]
-        private static void render_screenshot_capture(IntPtr data, int width, int height, IntPtr context) => ProcessCallback(nameof(render_screenshot_capture), data, width, height, context);
-        [MonoPInvokeCallback(typeof(RenderOnScreenshotCallback))]
-        private static void render_screenshot_viewpoint(IntPtr data, int width, int height, IntPtr context) => ProcessCallback(nameof(render_screenshot_viewpoint), data, width, height, context);
-        [MonoPInvokeCallback(typeof(AudioGenerator))]
-        private static float sound_generate(float time) => (float)ProcessCallback(nameof(sound_generate), time);
-        [MonoPInvokeCallback(typeof(PickerCallback))]
-        private static void platform_file_picker_sz(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length) => ProcessCallback(nameof(platform_file_picker_sz), callback_data, confirmed, filename, filename_length);
+        // Build will fail with Parameter types of pinvoke callback method 'System.Void log_subscribe(System.IntPtr, StereoKit.LogLevel, System.String)' needs to be blittable.
+        // This means Blazor does not yet support a string parameter in a PInvoke callback method.
+        //[MonoPInvokeCallback(typeof(LogCallbackData))] private static void log_subscribe(IntPtr context, LogLevel level, string text) => ProcessCallback(nameof(log_subscribe), context, level, string.Empty);
+        [MonoPInvokeCallback(typeof(Action))]  private static void sk_step() => ProcessCallback();
+        [MonoPInvokeCallback(typeof(Action))]  private static void sk_run_app_update() => ProcessCallback();
+        [MonoPInvokeCallback(typeof(Action))] private static void sk_run_app_shutdown() => ProcessCallback();
+        [MonoPInvokeCallback(typeof(RenderOnScreenshotCallback))] private static void render_screenshot_capture(IntPtr data, int width, int height, IntPtr context) => ProcessCallback(nameof(render_screenshot_capture), data, width, height, context);
+        [MonoPInvokeCallback(typeof(RenderOnScreenshotCallback))] private static void render_screenshot_viewpoint(IntPtr data, int width, int height, IntPtr context) => ProcessCallback(nameof(render_screenshot_viewpoint), data, width, height, context);
+        [MonoPInvokeCallback(typeof(AudioGenerator))]  private static float sound_generate(float time) => (float)ProcessCallback(nameof(sound_generate), time); 
+        [MonoPInvokeCallback(typeof(PickerCallback))]  private static void platform_file_picker_sz(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length) => ProcessCallback(nameof(platform_file_picker_sz), callback_data, confirmed, filename, filename_length);
 
+        
+        
         sealed class MonoPInvokeCallbackAttribute : Attribute
         {
             public Type CallbackType { get; private set; }

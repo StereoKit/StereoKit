@@ -1,39 +1,54 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <WasmBuildNative>true</WasmBuildNative>
-	<WasmNativeStrip>false</WasmNativeStrip>
-	<WasmDebugLevel>1</WasmDebugLevel>
-	<WasmNativeDebugSymbols>true</WasmNativeDebugSymbols>
-	<WasmEmitSourceMap>true</WasmEmitSourceMap>
-	<WasmEmitSymbolMap>true</WasmEmitSymbolMap>
-	<WasmStripILAfterAOT>false</WasmStripILAfterAOT>
-    <WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>
-	<RunAOTCompilation>true</RunAOTCompilation>
-    <!--<RunAOTCompilationAfterBuild>true</RunAOTCompilationAfterBuild>-->
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	<EmccCompileOptimizationFlag>-gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccCompileOptimizationFlag>
-	<EmccLinkOptimizationFlag>-gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sOFFSCREEN_FRAMEBUFFER -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccLinkOptimizationFlag>
-	<!--<EmccExtraLDFlags>-s FULL_ES3=1 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1 </EmccExtraLDFlags>-->
-	<SKShaderStandardInclude>$(ProjectDir)..\tools\include</SKShaderStandardInclude>
+    <TargetFramework>net9.0</TargetFramework>
+    <SKCopyAssets>true</SKCopyAssets>
 	<SKAssetFolder>$(ProjectDir)..\..\Assets</SKAssetFolder>
 	<SKAssetDestination>Assets</SKAssetDestination>
 	<SKShowDebugVars>true</SKShowDebugVars>
     <Nullable>Enable</Nullable>
-  
-</PropertyGroup>
+    <WasmBuildNative>true</WasmBuildNative>
+	<WasmNativeStrip>false</WasmNativeStrip>
+    <WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>
+    <EmccLinkOptimizationFlag>-sFULL_ES3=1</EmccLinkOptimizationFlag>
+  </PropertyGroup>
+    
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+	<WasmDebugLevel>1</WasmDebugLevel>
+	<WasmNativeDebugSymbols>true</WasmNativeDebugSymbols>
+	<WasmEmitSymbolMap>true</WasmEmitSymbolMap>
+    <EmccCompileOptimizationFlag>-gsource-map -O0 --emit-symbol-map -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2</EmccCompileOptimizationFlag>
+    <EmccLinkOptimizationFlag>$(EmccLinkOptimizationFlag) -gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sOFFSCREEN_FRAMEBUFFER -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccLinkOptimizationFlag>
+  </PropertyGroup>
+    
+  <!-- 
+  The below properties are used by the BuildStereoKitC.targets which will build the StereoKitC native lib.
+  Just setting <SKBuildStereoKitC>true</SKBuildStereoKitC> will default the other properties to the SDK included
+  in the dotnet WebAssembly workloads. However, the dotnet 9 seems to get stuck during the build step.
+  The Alternative is to set the properties to paths for a local emsdk installation (must not be greater then the workload version of 3.1.34)
+  -->
+  <!--
+  <PropertyGroup>
+    <SKBuildStereoKitC>true</SKBuildStereoKitC>
+    <SKCMake>C:\tools\CMake\bin\cmake</SKCMake>
+    <SKCMakeProgram>C:\tools\CMake\ninja\ninja.exe</SKCMakeProgram>
+    <SKCMakeToolchainFile>C:\tools\emsdk\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake</SKCMakeToolchainFile>
+    <SKCEmSdk>C:\tools\emsdk</SKCEmSdk>
+    <SKCEmSdkCache>C:\tools\emsdk\upstream\emscripten\cache</SKCEmSdkCache>
+    <SKCEmSdkNode>C:\tools\emsdk\node\16.20.0_64bit\bin\node.exe</SKCEmSdkNode>
+    <SKCEmSdkPython>C:\tools\emsdk\python\3.9.2-nuget_64bit\python.exe</SKCEmSdkPython>
+  </PropertyGroup>
+  -->
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0-preview.3.24172.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0-preview.3.24172.13" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
   <ItemGroup>
     <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/WASM/wasm32/Debug/StereoKitC.a" />
+    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/Browser/wasm32/$(Configuration)/StereoKitC.a" />
   </ItemGroup>
-  <!--<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />-->
 
   <ItemGroup>
     <Compile Include="..\*.cs" />
@@ -43,73 +58,18 @@
     <Compile Include="..\Docs\*.cs" />
   </ItemGroup>
 
-  <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <ItemGroup>
-    <Content Include="..\..\Assets\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>wwwroot\Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
-    <SKShader Include="..\..\Assets\**\*.hlsl" BuildRoot="..\..\" BuildTo="Assets" />
-  </ItemGroup>
-	<!--C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin-->
-	
-<!--
-dotnet_packs_dir=/usr/local/share/dotnet/packs
-dotnet_emscripten_prefix=Microsoft.NET.Runtime.Emscripten.2.0.23
-dotnet_rid=osx-x64
-dotnet_ver=6.0.0
-
-# set variables read by tools/emscripten/.emscripten
-export DOTNET_EMSCRIPTEN_LLVM_ROOT=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools/bin
-export DOTNET_EMSCRIPTEN_NODE_JS=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Node.${dotnet_rid}/${dotnet_ver}/tools/bin/node
-export DOTNET_EMSCRIPTEN_BINARYEN_ROOT=${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools
-
-export PATH="${dotnet_packs_dir}/${dotnet_emscripten_prefix}.Sdk.${dotnet_rid}/${dotnet_ver}/tools/emscripten:${PATH}"
-
-	$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))
--->		
-  <Target Name="CleanNativeLib" BeforeTargets="BeforeClean" Condition="false">
-     <Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin" />
-    
+  <!-- Use the emcc embed-file option to map and bundle Assets into the wasm file (Note: A production app should download assets from a server instead) -->
+  <Target Name="EmccIncludeSKAssets" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+      <SKCompiledShaderFolder>$([MSBuild]::NormalizePath($(IntermediateOutputPath)$(SKAssetDestination)))</SKCompiledShaderFolder>
+      <EmccLinkOptimizationFlag>$(EmccLinkOptimizationFlag) --embed-file "$(SKAssetFolder)"@/Assets --embed-file "$(SKCompiledShaderFolder)"@Assets</EmccLinkOptimizationFlag>
+    </PropertyGroup>
   </Target>
-
-  <Target Name="BuildNativeLib" BeforeTargets="BeforeBuild">
-     <Exec Command='
-		   echo SETTING EMSCRIPTEN ENVIRONMENT
-		   SET DOTNET_EMSCRIPTEN_LLVM_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamBinPath)).TrimEnd("\"))
-		   SET DOTNET_EMSCRIPTEN_NODE_JS=$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe
-		   SET DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenSdkToolsPath)).TrimEnd("\"))
-		   SET EM_FROZEN_CACHE=0
-		   SET FROZEN_CACHE=False
-		   SET EM_CACHE=$([MSBuild]::NormalizeDirectory($(EmscriptenCacheSdkCacheDir)))
-		   echo %DOTNET_EMSCRIPTEN_LLVM_ROOT%
-		   echo %DOTNET_EMSCRIPTEN_NODE_JS%
-		   echo %DOTNET_EMSCRIPTEN_BINARYEN_ROOT%
-		   echo %EM_CACHE%
-		   echo SETTING CMAKE ENVIRONMENT
-		   SET CMAKEDIR=$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin).TrimEnd("\"))
-		   SET NINJADIR=%VSAPPIDDIR%\CommonExtensions\Microsoft\CMake\Ninja
-		   SET EMSDK=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)).TrimEnd("\"))
-		   SET EMSDK_NODE=%DOTNET_EMSCRIPTEN_NODE_JS%
-		   SET CMAKE_MAKE_PROGRAM=%NINJADIR%\ninja.exe
-		   SET PATH=%CMAKEDIR%;%NINJADIR%;%PATH%
-		   echo %CMAKEDIR%
-		   echo %EMSDK%
-		   echo %EMSDK_NODE%
-		   echo %LLVM_ROOT%
-		   cd $(ProjectDir)..\..\..\
-		   "%CMAKEDIR%\cmake" --preset Web_Release	  
-		   "%CMAKEDIR%\cmake" --build --preset Web_Release
-		   '/>
-	</Target>
-	  
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild">
-		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenUpstreamEmscriptenPath: $(EmscriptenUpstreamEmscriptenPath)" />
-		<Message Importance="high" Text="[StereoKit NuGet] EmscriptenNodeToolsPath: $(EmscriptenNodeToolsPath)" />
-		<Message Importance="high" Text="[StereoKit NuGet] Framework: $(TargetFrameworkIdentifier), Platform: $(RuntimeIdentifier)" />
-		<Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK)" />
-	    <Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK_NODE)" />
-	</Target>
+ 
+  <Import Project="BuildStereoKitC.targets" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
+  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
 </Project>
 
 

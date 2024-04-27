@@ -155,7 +155,7 @@ namespace StereoKit
 
 			// Get system information
 			if (result) {
-				_system = default;// NativeAPI.sk_system_info();
+				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
 			}
 
@@ -228,46 +228,29 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			while (Step())
-				if (onStep != null) onStep();
-
-			if (onShutdown != null) onShutdown();
-			Shutdown();
-		}
-
-        /// <summary>This passes application execution over to StereoKit.
-        /// This is differs from `SK.Run` in that it the execution loop is
-		/// run from the native code. This is especially useful for WASM
-		/// where the rendering loop is controlled by the browser. 
-		/// 
-		/// Once execution completes, or `SK.Quit` is called, it properly calls the
-        /// shutdown callback and shuts down StereoKit for you.
-        /// 
-        /// Using this method is important for compatibility with WASM and is
-        /// the preferred method of controlling the main loop, over 
-        /// `SK.Step`.</summary>
-        /// <param name="onStep">A callback where you put your application
-        /// code! This gets called between StereoKit systems, after frame
-        /// setup, but before render.</param>
-        /// <param name="onShutdown">A callback that gives you the
-        /// opportunity to shut things down while StereoKit is still active.
-        /// This is called after the last Step completes, and before
-        /// StereoKit shuts down.</param>
-        public static Task RunAsync(Action onStep = null, Action onShutdown = null)
-        {
-			var tcs = new TaskCompletionSource<bool>();
-			var onShutdownNative = new Action(() =>
+			if (NativeLib.IsWebBackend)
 			{
-				onShutdown?.Invoke();
-                tcs.TrySetResult(true);
-            });
+                var onStepNative = new Action(() =>
+                {
+                    _steppers.Step();
+                    while (_mainThreadInvoke.TryDequeue(out Action a)) a();
 
-			NativeAPI.sk_run(
-				NativeCallbacks.GetNativeCallback(onStep, nameof(NativeAPI.sk_run), "app_update"),
-				NativeCallbacks.GetNativeCallback(onShutdownNative, nameof(NativeAPI.sk_run), "app_shutdown"));
+                    if (onStep != null) onStep();
+                });
 
-            return tcs.Task;
-        }
+                NativeAPI.sk_run(
+					NativeCallbacks.GetNativeCallback(onStepNative, nameof(NativeAPI.sk_run), "app_update"),
+					NativeCallbacks.GetNativeCallback(onShutdown, nameof(NativeAPI.sk_run), "app_shutdown"));
+            }
+			else
+			{
+				while (Step())
+					if (onStep != null) onStep();
+
+				if (onShutdown != null) onShutdown();
+				Shutdown();
+			}
+		}
 
         /// <summary>This registers an instance of the `IStepper` type
         /// provided. SK will hold onto it, Initialize it, Step it every frame,

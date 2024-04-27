@@ -54,13 +54,13 @@ bool stereokit_systems_register() {
 	system_set_initialize_deps(sys_ui, "Defaults");
 	system_set_step_deps      (sys_ui, "Input", "FrameBegin");
 	sys_ui.func_initialize = ui_init;
-	//sys_ui.func_step       = ui_step;
-	//sys_ui.func_shutdown   = ui_shutdown;
+	sys_ui.func_step       = ui_step;
+	sys_ui.func_shutdown   = ui_shutdown;
 	systems_add(&sys_ui);
 
 	system_t sys_ui_late = { "UILate" };
 	system_set_step_deps(sys_ui_late, "App", "Tools");
-	//sys_ui_late.func_step = ui_step_late;
+	sys_ui_late.func_step = ui_step_late;
 	systems_add(&sys_ui_late);
 
 	system_t sys_renderer = { "Renderer" };
