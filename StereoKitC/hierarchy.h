@@ -5,16 +5,15 @@
 
 namespace sk {
 
-struct hierarchy_item_t {
-	matrix transform;
-	matrix transform_inv;
-	bool32_t has_inverse;
-};
+
 
 ///////////////////////////////////////////
 
-extern array_t<hierarchy_item_t> hierarchy_stack;
-extern bool32_t                  hierarchy_enabled;
-extern bool32_t                  hierarchy_userenabled;
+void hierarchy_init    ();
+void hierarchy_shutdown();
+void hierarchy_step    ();
+
+matrix   hierarchy_top    ();
+bool32_t hierarchy_use_top();
 
 }

@@ -56,7 +56,6 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
-**/Properties/launchSettings.json
 
 # StyleCop
 StyleCopReport.xml
@@ -337,7 +336,8 @@ ASALocalRun/
 !**/Assets/**
 
 # Ignore dependency build related stuff
-Tools/deps_current.txt
+tools/deps_current.txt
+tools/skshaderc/**
 StereoKitC/lib/include/**
 StereoKitC/lib/bin/**
 # An exception for the Android loader
@@ -360,3 +360,7 @@ build_*/
 
 # Clangd cache
 .clangd/
+
+.deps_cache/
+
+**.DS_Store**

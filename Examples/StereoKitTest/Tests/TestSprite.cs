@@ -6,7 +6,7 @@ class TestSprite : ITest
 
 	public void Initialize() { }
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
 		Tests.Screenshot("Tests/SpriteAlign.jpg", 800, 300, 52, V.XYZ(0, 0, -0.20f), V.XYZ(0, 0, 0));
 

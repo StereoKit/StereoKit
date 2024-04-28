@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -53,9 +54,31 @@ namespace StereoKit
 		/// <returns>A System.Numerics compatible quaternion.</returns>
 		public static implicit operator Quaternion(Quat q) => q.q;
 
+		/// <summary>Gets a Quat representing the rotation from `a` to `b`.
+		/// </summary>
+		/// <param name="a">Starting Quat.</param>
+		/// <param name="b">Ending Quat.</param>
+		/// <returns>A rotation Quat from `a` to `b`.</returns>
 		public static Quat operator -(Quat a,  Quat b ) => NativeAPI.quat_difference(a, b);
+		/// <summary>This is the combination of rotations `a` and `b`. Note
+		/// that order matters here.</summary>
+		/// <param name="a">First Quat.</param>
+		/// <param name="b">Second Quat.</param>
+		/// <returns>A multiplication of the two Quats.</returns>
 		public static Quat operator *(Quat a,  Quat b ) => Quaternion.Multiply(a, b);
+		/// <summary>This rotates a point around the origin by the Quat.
+		/// </summary>
+		/// <param name="a">The rotation Quat.</param>
+		/// <param name="pt">The point that gets rotated around the origin.
+		/// </param>
+		/// <returns>A rotated point.</returns>
 		public static Vec3 operator *(Quat a,  Vec3 pt) => Vector3.Transform(pt, a.q);
+		/// <summary>This rotates a point around the origin by the Quat.
+		/// </summary>
+		/// <param name="a">The rotation Quat.</param>
+		/// <param name="pt">The point that gets rotated around the origin.
+		/// </param>
+		/// <returns>A rotated point.</returns>
 		public static Vec3 operator *(Vec3 pt, Quat a ) => Vector3.Transform(pt, a.q);
 
 		/// <summary>This is the 'multiply by one!' of the quaternion
@@ -83,6 +106,11 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public void Invert() => q = Quaternion.Inverse(q);
 
+		/// <summary>This rotates a point around the origin by the Quat.
+		/// </summary>
+		/// <param name="pt">The point that gets rotated around the origin.
+		/// </param>
+		/// <returns>A rotated point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public Vec3 Rotate(Vec3 pt) => Vector3.Transform(pt, q);
 
@@ -163,9 +191,39 @@ namespace StereoKit
 		/// <param name="b">Ending rotation.</param>
 		/// <returns>A rotation that will take a point from rotation a, to
 		/// rotation b.</returns>
+		[Obsolete("Replaced by Quat.Delta. Delta behaves the same, but is clearer.")]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Difference(Quat a, Quat b) 
 			=> NativeAPI.quat_difference(a, b);
+
+		/// <summary>Creates a quaternion that goes from one rotation to
+		/// another.</summary>
+		/// <param name="from">The origin rotation.</param>
+		/// <param name="to">And the target rotation!</param>
+		/// <returns>The quaternion between from and to.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Quat Delta(Quat from, Quat to)
+			=> NativeAPI.quat_difference(from, to);
+
+		/// <summary>Creates a rotation that goes from one direction to
+		/// another. Which is comes in handy when trying to roll
+		/// something around with position data.</summary> 
+		/// <param name="from">The origin direction.</param>
+		/// <param name="to">And the target direction!</param>
+		/// <returns>The quaternion between from and to.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Quat Delta(Vec3 from, Vec3 to) {
+			Vec3 vec = Vec3.Cross(from, to);
+			return new Quat(vec.x, vec.y, vec.z, 1 + Vec3.Dot(from, to)).Normalized;
+		}
+
+		/// <summary>Rotates a quaternion making it relative to another
+		/// rotation while preserving it's "Length"!</summary>
+		/// <param name="to">The relative quaternion.</param>
+		/// <returns>This quaternion made relative to another rotation.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Quat Relative(Quat to) => to.q * q * Quaternion.Inverse(to.q);
 
 		/// <summary>Creates a Roll/Pitch/Yaw rotation (applied in that
 		/// order) from the provided angles in degrees!</summary>
@@ -190,6 +248,12 @@ namespace StereoKit
 		public static Quat FromAngles(Vec3 pitchYawRollDeg) 
 			=> Quaternion.CreateFromYawPitchRoll(pitchYawRollDeg.y * Units.deg2rad, pitchYawRollDeg.x * Units.deg2rad, pitchYawRollDeg.z * Units.deg2rad);
 
+		/// <summary>This rotates a point around the origin by the Quat.
+		/// </summary>
+		/// <param name="q">The rotation Quat.</param>
+		/// <param name="pt">The point that gets rotated around the origin.
+		/// </param>
+		/// <returns>A rotated point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 Rotate(Quat q, Vec3 pt) 
 			=> Vector3.Transform(pt, q);

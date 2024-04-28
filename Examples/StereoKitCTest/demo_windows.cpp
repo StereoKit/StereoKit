@@ -1,5 +1,7 @@
 #if defined(_WIN32) && !defined(WINDOWS_UWP)
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "demo_windows.h"
 
@@ -80,7 +82,7 @@ void demo_windows_init() {
 		win.window   = hwnd;
 		win.material = material_copy_id(default_id_material_unlit);
 		win.texture  = tex_create();
-		win.pose     = pose_t{ vec3{0,0,-0.5f} + vec3{0.04f, 0.04f, -0.04f} *mirror_windows.size(), quat_lookat(vec3_zero, {0,0,1}) };
+		win.pose     = pose_t{ vec3{0,0,-0.5f} + vec3{0.04f, 0.04f, -0.04f} * (float)mirror_windows.size(), quat_lookat(vec3_zero, {0,0,1}) };
 		strncpy(win.name, text, sizeof(win.name));
 		tex_set_surface(win.texture, shared_tex, tex_type_image_nomips, format, 0, 0, 1);
 		tex_set_address(win.texture, tex_address_clamp);

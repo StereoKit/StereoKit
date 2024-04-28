@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Text;
 
 namespace StereoKit
@@ -16,11 +21,12 @@ namespace StereoKit
 	/// </summary>
 	public static class UI
 	{
-		/// <summary>UI sizing and layout settings. Set only for now</summary>
-		public static UISettings Settings { set { NativeAPI.ui_settings(value); } }
+		/// <summary>UI sizing and layout settings.</summary>
+		public static UISettings Settings { get => NativeAPI.ui_get_settings(); set { NativeAPI.ui_settings(value); } }
 
 		/// <summary>StereoKit will generate a color palette from this gamma
-		/// space color, and use it to skin the UI!</summary>
+		/// space color, and use it to skin the UI! To explicitly adjust
+		/// individual theme colors, see UI.SetThemeColor.</summary>
 		public static Color ColorScheme { set { NativeAPI.ui_set_color(value); } }
 
 		/// <summary>Shows or hides the collision volumes of the UI! This is
@@ -28,19 +34,29 @@ namespace StereoKit
 		/// collision issues.</summary>
 		public static bool ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
 
-		/// <summary>Enables or disables the far ray grab interaction for 
+		/// <summary>Enables or disables the far ray grab interaction for
 		/// Handle elements like the Windows. It can be enabled and disabled
 		/// for individual UI elements, and if this remains disabled at the
 		/// start of the next frame, then the hand ray indicators will not be
 		/// visible. This is enabled by default. </summary>
 		public static bool EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
 
-		/// <summary>This is the height of a single line of text with padding in the UI's layout system!</summary>
+		/// <summary>This is the UIMove that is provided to UI windows that
+		/// StereoKit itself manages, such as the fallback filepicker and
+		/// soft keyboard.</summary>
+		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
+
+		/// <summary>This is the height of a single line of text with padding
+		/// in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
 
-		/// <summary>Use LayoutRemaining, removing in v0.4</summary>
-		[Obsolete("Use LayoutRemaining, removing in v0.4")]
-		public static Vec2 AreaRemaining => NativeAPI.ui_area_remaining();
+		/// <summary>This returns the TextStyle that's on top of the UI's
+		/// stack, according to UI.Push/PopTextStyle.</summary>
+		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
+
+		/// <summary>This returns the current state of the UI's enabled status
+		/// stack, set by `UI.Push/PopEnabled`.</summary>
+		public static bool Enabled => NativeAPI.ui_is_enabled();
 
 		/// <summary>How much space is available on the current layout! This is
 		/// based on the current layout position, so X will give you the amount
@@ -76,25 +92,95 @@ namespace StereoKit
 		/// addition to increasing the dimensions, so that the bounds still
 		/// remain sitting on the surface of the UI.
 		/// 
-		/// This depth value will not be reflected in the bounds provided by 
+		/// This depth value will not be reflected in the bounds provided by
 		/// LayouLast.</param>
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
-			=> NativeAPI.ui_layout_reserve(size, addPadding ? 1 : 0, depth);
+			=> NativeAPI.ui_layout_reserve(size, addPadding, depth);
 
-		/// <summary>Tells if the hand was involved in the focus or active
-		/// state of the most recent UI element using an id.</summary>
+		/// <summary>Reserves a box of space for an item in the current UI
+		/// layout! If either size axis is zero, it will be auto-sized to fill
+		/// the current surface horizontally, and fill a single LineHeight
+		/// vertically. Returns the Hierarchy local bounds of the space that
+		/// was reserved, with a Z axis dimension of 0.</summary>
+		/// <param name="width">Width of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="height">Height of the layout box in Hierarchy local
+		/// meters.</param>
+		/// <param name="addPadding">If true, this will add the current padding
+		/// value to the total final dimensions of the space that is reserved.
+		/// </param>
+		/// <param name="depth">This allows you to quickly insert a depth into
+		/// the Bounds you're receiving. This will offset on the Z axis in
+		/// addition to increasing the dimensions, so that the bounds still
+		/// remain sitting on the surface of the UI.
+		/// 
+		/// This depth value will not be reflected in the bounds provided by
+		/// LayouLast.</param>
+		/// <returns>Returns the Hierarchy local bounds of the space that was
+		/// reserved, with a Z axis dimension of 0.</returns>
+		public static Bounds LayoutReserve(float width, float height, bool addPadding = false, float depth = 0)
+			=> NativeAPI.ui_layout_reserve(new Vec2(width, height), addPadding, depth);
+
+		/// <summary>This pushes a layout rect onto the layout stack. All UI
+		/// elements using the layout system will now exist inside this layout
+		/// area! Note that some UI elements such as Windows will already be
+		/// managing a layout of their own on the stack.</summary>
+		/// <param name="start">The top left position of the layout. Note that
+		/// Windows have their origin at the top center, the left side of a
+		/// window is X+, and content advances to the X- direction.</param>
+		/// <param name="dimensions">The total size of the layout area. A value
+		/// of zero means the layout will expand in that axis, but may prevent
+		/// certain types of layout "Cuts".</param>
+		/// <param name="addMargin">Adds a spacing margin to the interior of
+		/// the layout. Most of the time you won't need this, but may be useful
+		/// when working without a Window.</param>
+		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, addMargin);
+		/// <summary>This cuts off a portion of the current layout area, and
+		/// pushes that new area onto the layout stack. Left and Top cuts will
+		/// always work, but Right and Bottom cuts can only exist inside of a
+		/// parent layout with an explicit size, auto-resizing prevents these
+		/// cuts.
+		/// All UI elements using the layout system will now exist inside this
+		/// layout area! Note that some UI elements such as Windows will already be
+		/// managing a layout of their own on the stack.</summary>
+		/// <param name="cutTo">Which side of the current layout should the cut
+		/// happen to? Note that Right and Bottom will require explicit sizes
+		/// in the parent layout, not auto-sizes.</param>
+		/// <param name="sizeMeters">The size of the layout cut, in meters.
+		/// </param>
+		/// <param name="addMargin">Adds a spacing margin to the interior of
+		/// the layout. Most of the time you won't need this, but may be useful
+		/// when working without a Window.</param>
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin);
+		/// <summary>This removes a layout from the layout stack that was
+		/// previously added using LayoutPush, or LayoutPushCut.</summary>
+		public static void LayoutPop() => NativeAPI.ui_layout_pop();
+
+		/// <summary>Tells if the hand was involved in the active state of the
+		/// most recently called UI element using an id. Active state is
+		/// frequently a single frame in the case of Buttons, but could be many
+		/// in the case of Sliders or Handles.</summary>
 		/// <param name="hand">Which hand we're checking.</param>
 		/// <returns>A BtnState that indicated the hand was "just active" this
 		/// frame, is currently "active" or if it "just became inactive" this
 		/// frame.</returns>
-		public static BtnState LastElementHandUsed(Handed hand) => NativeAPI.ui_last_element_hand_used(hand);
-		/// <summary>Tells the Active state of the most recent UI element that
-		/// used an id.</summary>
+		public static BtnState LastElementHandActive(Handed hand) => NativeAPI.ui_last_element_hand_active(hand);
+		/// <summary>Tells if the hand was involved in the focus state of the
+		/// most recently called UI element using an id. Focus occurs when the
+		/// hand is in or near an element, in such a way that indicates the
+		/// user may be about to interact with it.</summary>
+		/// <param name="hand">Which hand we're checking.</param>
+		/// <returns>A BtnState that indicated the hand was "just focused" this
+		/// frame, is currently "focused" or if it "just became focused" this
+		/// frame.</returns>
+		public static BtnState LastElementHandFocused(Handed hand) => NativeAPI.ui_last_element_hand_focused(hand);
+		/// <summary>Tells the Active state of the most recently called UI
+		/// element that used an id.</summary>
 		public static BtnState LastElementActive => NativeAPI.ui_last_element_active();
-		/// <summary>Tells the Focused state of the most recent UI element that
-		/// used an id.</summary>
+		/// <summary>Tells the Focused state of the most recently called UI
+		/// element that used an id.</summary>
 		public static BtnState LastElementFocused => NativeAPI.ui_last_element_focused();
 
 		/// <summary>Tells if the user is currently interacting with a UI
@@ -106,10 +192,51 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.ui_is_interacting(hand);
 
-		public static void SetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_set_theme_color(colorType, colorGamma);
-		[Obsolete("To be removed in v0.4")]
-		public static Color GetThemeColor(UIColor colorType, Color colorGamma) => NativeAPI.ui_get_theme_color(colorType);
-		public static Color GetThemeColor(UIColor colorType) => NativeAPI.ui_get_theme_color(colorType);
+		/// <summary>This allows you to explicitly set a theme color, for finer
+		/// grained control over the UI appearance. Each theme type is still
+		/// used by many different UI elements. This will automatically
+		/// generate colors for different UI element states.</summary>
+		/// <param name="colorCategory">The category of UI elements that will
+		/// be affected by this theme color.</param>
+		/// <param name="colorGamma">The gamma corrected color that should be
+		/// applied to this theme color category in its normal resting state.
+		/// Active and disabled colors will be generated based on this color.
+		/// </param>
+		public static void SetThemeColor(UIColor colorCategory, Color colorGamma) => NativeAPI.ui_set_theme_color(colorCategory, colorGamma);
+		/// <summary>This allows you to explicitly set a theme color, for finer
+		/// grained control over the UI appearance. Each theme type is still
+		/// used by many different UI elements. This applies specifically to
+		/// one state of this color category, and does not modify the others.
+		/// </summary>
+		/// <param name="colorCategory">The category of UI elements that will
+		/// be affected by this theme color.</param>
+		/// <param name="colorState">The state of the UI element this color
+		/// should apply to.</param>
+		/// <param name="colorGamma">The gamma corrected color that should be
+		/// applied to this theme color category in the indicated state.
+		/// </param>
+		public static void SetThemeColor(UIColor colorCategory, UIColorState colorState, Color colorGamma) => NativeAPI.ui_set_theme_color_state(colorCategory, colorState, colorGamma);
+		/// <summary>This allows you to inspect the current normal color of the
+		/// theme color category! If you set the color with UI.ColorScheme,
+		/// this will be one of the generated colors, and not necessarily the
+		/// color that was provided there.</summary>
+		/// <param name="colorCategory">The category of UI elements that are
+		/// affected by this theme color.</param>
+		/// <returns>The gamma space color for the theme color category in its
+		/// normal state.</returns>
+		public static Color GetThemeColor(UIColor colorCategory) => NativeAPI.ui_get_theme_color(colorCategory);
+		/// <summary>This allows you to inspect the current color of the theme
+		/// color category in a specific state! If you set the color with
+		/// UI.ColorScheme, or without specifying a state, this may be a
+		/// generated color, and not necessarily the color that was provided
+		/// there.</summary>
+		/// <param name="colorCategory">The category of UI elements that are
+		/// affected by this theme color.</param>
+		/// <param name="colorState">The state of the UI element this color
+		/// applies to.</param>
+		/// <returns>The gamma space color for the theme color category in the
+		/// indicated state.</returns>
+		public static Color GetThemeColor(UIColor colorCategory, UIColorState colorState) => NativeAPI.ui_get_theme_color_state(colorCategory, colorState);
 
 		/// <summary>This will push a surface into SK's UI layout system. The
 		/// surface becomes part of the transform hierarchy, and SK creates a
@@ -138,37 +265,34 @@ namespace StereoKit
 		/// the current Hierarchy in local meters.</param>
 		/// <param name="dimensions">The size of the layout area from the top
 		/// left, in local meters.</param>
-		public static void LayoutArea(Vec3 start, Vec2 dimensions)
-			=> NativeAPI.ui_layout_area(start, dimensions);
-
-		/// <summary>Use LayoutReserve, removing in v0.4</summary>
-		[Obsolete("Use LayoutReserve, removing in v0.4")]
-		public static void ReserveBox(Vec2 size) 
-			=> NativeAPI.ui_layout_reserve(size);
+		public static void LayoutArea(Vec3 start, Vec2 dimensions, bool addMargin = true)
+			=> NativeAPI.ui_layout_area(start, dimensions, addMargin);
 
 		/// <summary>Moves the current layout position back to the end of the
 		/// line that just finished, so it can continue on the same line as the
 		/// last element!</summary>
-		public static void SameLine() 
+		public static void SameLine()
 			=> NativeAPI.ui_sameline();
 
 		/// <summary>This will advance the layout to the next line. If there's
 		/// nothing on the current line, it'll advance to the start of the next
 		/// on. But this won't have any affect on an empty line, try UI.Space
 		/// for that.</summary>
-		public static void NextLine() 
+		public static void NextLine()
 			=> NativeAPI.ui_nextline();
 
-		/// <summary>Adds some space! If we're at the start of a new line,
-		/// space is added vertically, otherwise, space is added
-		/// horizontally.</summary>
-		/// <param name="space">Physical space to shift the layout by.</param>
-		public static void Space (float space) 
-			=> NativeAPI.ui_space(space);
+		/// <summary>Adds some vertical space to the current line! All UI
+		/// following elements on this line will be offset.</summary>
+		/// <param name="verticalSpace">Space in meters to shift the layout by.
+		/// </param>
+		public static void VSpace(float verticalSpace)
+			=> NativeAPI.ui_vspace(verticalSpace);
 
-		[Obsolete("This overload will be removed in v0.4, prefer any other overload of this method.")]
-		public static bool VolumeAt(string id, Bounds bounds)
-			=> NativeAPI.ui_volume_at_16(id, bounds);
+		/// <summary>Adds some horizontal space to the current line!</summary>
+		/// <param name="horizontalSpace">Space in meters to shift the layout
+		/// by.</param>
+		public static void HSpace(float horizontalSpace)
+			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
@@ -177,14 +301,14 @@ namespace StereoKit
 		/// <param name="focusState">The focus state tells if the element has
 		/// a hand inside of the volume that qualifies for focus.</param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, out focusState);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, out focusState);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
 		/// <summary>A volume for helping to build one handed interactions.
 		/// This checks for the presence of a hand inside the bounds, and if
 		/// found, return that hand along with activation and focus 
@@ -200,29 +324,7 @@ namespace StereoKit
 		/// <returns>Based on the interactType, this is a BtnState that tells
 		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
-			=> NativeAPI.ui_volumei_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
-
-		/// <summary>This method will be removed in v0.4, use UI.VolumeAt. 
-		/// 
-		/// This watches a volume of space for pinch interaction 
-		/// events! If a hand is inside the space indicated by the bounds,
-		/// this function will return that hand's pinch state, as well as
-		/// indicate which hand did it through the out parameter.
-		/// 
-		/// Note that since this only provides the hand's pinch state, it 
-		/// won't give you JustActive and JustInactive notifications for 
-		/// when the hand enters or leaves the volume.</summary>
-		/// <param name="bounds">A UI hierarchy space bounding volume.</param>
-		/// <param name="hand">This will be the last hand that provides a 
-		/// pinch state within this volume. That means that if both hands are
-		/// pinching in this volume, it will provide the Right hand.</param>
-		/// <returns>This will be the pinch state of the last hand that
-		/// provides a pinch state within this volume. That means that if
-		/// both hands are pinching in this volume, it will provide the pinch
-		/// state of the Right hand.</returns>
-		[Obsolete("This method will be removed in v0.4, use UI.VolumeAt.")]
-		public static BtnState InteractVolume(Bounds bounds, out Handed hand)
-			=> NativeAPI.ui_interact_volume_at(bounds, out hand);
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
 
 		/// <summary>This draws a line horizontally across the current
 		/// layout. Makes a good separator between sections of UI!</summary>
@@ -237,7 +339,7 @@ namespace StereoKit
 		/// <param name="usePadding">Should padding be included for
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
-		public static void Label (string text, bool usePadding = true) 
+		public static void Label (string text, bool usePadding = true)
 			=> NativeAPI.ui_label_16(text, usePadding);
 
 		/// <summary>Adds some text to the layout, but this overload allows you
@@ -250,8 +352,11 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static void Label(string text, Vec2 size)
-			=> NativeAPI.ui_label_sz_16(text, size);
+		/// <param name="usePadding">Should padding be included for
+		/// positioning this text? Sometimes you just want un-padded text!
+		/// </param>
+		public static void Label(string text, Vec2 size, bool usePadding = true)
+			=> NativeAPI.ui_label_sz_16(text, size, usePadding);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -266,13 +371,53 @@ namespace StereoKit
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
 			=> NativeAPI.ui_text_16(text, textAlign);
 
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
+			=> NativeAPI.ui_text_sz_16(text, textAlign, fit, size);
+
+		/// <summary>Displays a large chunk of text on the current layout.
+		/// This can include new lines and spaces, and will properly wrap
+		/// once it fills the entire layout! Text uses the UI's current font
+		/// settings, which can be changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
+
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the
 		/// components is 0, it'll be automatically determined from the other
 		/// component and the image's aspect ratio.</param>
 		public static void Image (Sprite image, Vec2 size) 
-			=> NativeAPI.ui_image(image._inst, size);
+			=> NativeAPI.ui_image(image?._inst ?? IntPtr.Zero, size);
 
 		/// <summary>A pressable button! A button will expand to fit the text
 		/// provided to it, vertically and horizontally. Text is re-used as the
@@ -302,9 +447,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonAt(string text, Vec3 topLeftCorner, Vec2 size)
@@ -325,7 +468,26 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image._inst, imageLayout);
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1,1,1,1));
+
+		/// <summary>A pressable button accompanied by an image! The button
+		/// will expand to fit the text provided to it, horizontally. Text is
+		/// re-used as the id. Will return true only on the first frame it is
+		/// pressed! Image can be tinted by passing a custom color</summary>
+		/// <param name="text">Text to display on the button and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="image">This is the image that will be drawn along with
+		/// the text. See imageLayout for where the image gets drawn!</param>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, imageTint);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -333,7 +495,15 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1));
+
+		/// <inheritdoc cref="ButtonImg(string,Sprite,Color,UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, imageTint);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -348,13 +518,17 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image._inst, imageLayout, size);
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1, 1, 1, 1));
+
+		/// <inheritdoc cref="ButtonImgAt(string,Sprite,UIBtnLayout,Vec3,Vec2)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool ButtonImgAt(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint);
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
@@ -369,8 +543,16 @@ namespace StereoKit
 		/// </returns>
 		public static bool Radio(string text, bool active)
 		{
-			int iActive = active?1:0;
-			return NativeAPI.ui_toggle_16(text, ref iActive) && iActive>0;
+			// Android (only Android!) does something strange here in the most
+			// straightforward implementation of this code. There may be some
+			// issue with marshalling that prevents the ref value from
+			// resolving before the condition is tested?
+			//
+			// So, this doesn't work:
+			// NativeAPI.ui_toggle_img_16(text, ref active, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && active;
+
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool)"/>
@@ -380,8 +562,56 @@ namespace StereoKit
 		/// is UI.LineHeight.</param>
 		public static bool Radio(string text, bool active, Vec2 size)
 		{
-			int iActive = active ? 1 : 0;
-			return NativeAPI.ui_toggle_sz_16(text, ref iActive, size) && iActive>0;
+			bool value = active;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && !active;
+		}
+
+		/// <summary>A Radio is similar to a button, except you can specify if
+		/// it looks pressed or not regardless of interaction. This can be
+		/// useful for radio-like behavior! Check an enum for a value, and use
+		/// that as the 'active' state, Then switch to that enum value if Radio
+		/// returns true. This version allows you to override the images used
+		/// by the Radio.</summary>
+		/// <param name="text">Text to display on the Radio and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="active">Does this button look like it's pressed?</param>
+		/// <param name="imageOff">Image to use when the radio value is
+		/// false.</param>
+		/// <param name="imageOn">Image to use when the radio value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the radio. For example,
+		/// `UIBtnLayout.Left` will have the image on the left, and text on the
+		/// right.</param>
+		/// <returns>Will return true only on the first frame it is pressed!
+		/// </returns>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout) && !active;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec2 size)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_sz_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size) && !active;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && !active;
 		}
 
 		/// <summary>A pressable button! A button will expand to fit the text
@@ -396,7 +626,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)
-			=> NativeAPI.ui_button_round_16(id, image._inst, diameter);
+			=> NativeAPI.ui_button_round_16(id, image?._inst ?? IntPtr.Zero, diameter);
 
 		/// <summary>A variant of UI.ButtonRound that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -410,7 +640,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonRoundAt(string id, Sprite image, Vec3 topLeftCorner, float diameter)
-			=> NativeAPI.ui_button_round_at_16(id, image._inst, topLeftCorner, diameter);
+			=> NativeAPI.ui_button_round_at_16(id, image?._inst ?? IntPtr.Zero, topLeftCorner, diameter);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -425,15 +655,101 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle (string text, ref bool value)
-		{
-			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_16(text, ref iVal))
-			{
-				value = iVal>0?true:false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_16(text, ref value);
+
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> Toggle(text, ref value, image, image, imageLayout);
+
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout);
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec2 size)
+			=> Toggle(text, ref value, image, image, imageLayout, size);
+
+		/// <summary>A toggleable button! A button will expand to fit the
+		/// text provided to it, vertically and horizontally. Text is re-used 
+		/// as the id. Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!
+		/// </summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space. If an axis is left as zero, it will be auto-calculated. For
+		/// X this is the remaining width of the current layout, and for Y this
+		/// is UI.LineHeight.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
+			=> NativeAPI.ui_toggle_img_sz_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size);
 
 		/// <inheritdoc cref="Toggle(string, ref bool)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -441,44 +757,83 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool Toggle(string text, ref bool value, Vec2 size)
-		{
-			int iVal = value?1:0;
-			if (NativeAPI.ui_toggle_sz_16(text, ref iVal, size))
-			{
-				value = iVal>0?true:false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
 		/// <param name="text">Text to display on the Toggle and id for
 		/// tracking element state. MUST be unique within current hierarchy.
 		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool ToggleAt(string text, ref bool value, Vec3 topLeftCorner, Vec2 size)
-		{
-			int iVal = value ? 1 : 0;
-			if (NativeAPI.ui_toggle_at_16(text, ref iVal, topLeftCorner, size))
-			{
-				value = iVal > 0 ? true : false;
-				return true;
-			}
-			return false;
-		}
+			=> NativeAPI.ui_toggle_at_16(text, ref value, topLeftCorner, size);
 
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="image">Image to use for the button, this will be used
+		/// regardless of the toggle value.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+			=> ToggleAt(text, ref value, image, image, imageLayout, topLeftCorner, size);
+
+		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
+		/// and instead goes exactly where you put it.</summary>
+		/// <param name="text">Text to display on the Toggle and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="value">The current state of the toggle button! True 
+		/// means it's toggled on, and false means it's toggled off.</param>
+		/// <param name="toggleOff">Image to use when the toggle value is
+		/// false.</param>
+		/// <param name="toggleOn">Image to use when the toggle value is
+		/// true.</param>
+		/// <param name="imageLayout">This enum specifies how the text and
+		/// image should be laid out on the button. For example, `UIBtnLayout.Left`
+		/// will have the image on the left, and text on the right.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <returns>Will return true any time the toggle value changes, NOT
+		/// the toggle value itself!</returns>
+		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		=> NativeAPI.ui_toggle_img_at_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size);
+
+		/// <summary>This adds a non-interactive Model to the UI panel layout.
+		/// </summary>
+		/// <param name="model">The Model to use.</param>
 		public static void Model(Model model)
-			=> NativeAPI.ui_model(model._inst, Vec2.Zero, 0);
+			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, Vec2.Zero, 0);
+		/// <summary>This adds a non-interactive Model to the UI panel layout,
+		/// and allows you to specify its size.</summary>
+		/// <param name="model">The Model to use.</param>
+		/// <param name="uiSize">The size this element should take from the
+		/// layout.</param>
+		/// <param name="modelScale">0 will auto-scale the model to fit the
+		/// layout space, but you can specify a different scale in case you'd
+		/// like a different size.</param>
 		public static void Model(Model model, Vec2 uiSize, float modelScale = 0)
-			=> NativeAPI.ui_model(model._inst, uiSize, modelScale);
+			=> NativeAPI.ui_model(model?._inst ?? IntPtr.Zero, uiSize, modelScale);
 
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
@@ -525,9 +880,7 @@ namespace StereoKit
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size);
 
@@ -541,16 +894,19 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="width">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref float value, float min, float max, float step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push) 
-			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref float value, float min, float max, float step = 0, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
@@ -562,16 +918,19 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="width">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref double value, double min, double max, double step, float width = 0, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod);
+		public static bool HSlider(string id, ref double value, double min, double max, double step = 0, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -583,68 +942,172 @@ namespace StereoKit
 		/// of the slider.</param>
 		/// <param name="max">The maximum value the slider can set, right 
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
-		/// at min, and increments by step.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool HSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
-		/// <param name="value">The value that the slider will store slider 
+		/// <param name="value">The value that the slider will store slider
 		/// state in.</param>
-		/// <param name="min">The minimum value the slider can set, left side 
+		/// <param name="min">The minimum value the slider can set, left side
 		/// of the slider.</param>
-		/// <param name="max">The maximum value the slider can set, right 
+		/// <param name="max">The maximum value the slider can set, right
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to intervals of step. Starts 
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
+		/// <param name="height">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref float value, float min, float max, float step = 0, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+			=> NativeAPI.ui_vslider_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A vertical slider element! You can stick your finger
+		/// in it, and slide the value up and down.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
+		/// <param name="height">Physical height of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSlider(string id, ref double value, double min, double max, double step = 0, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_f64_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
+		/// <returns>Returns true any time the value changes.</returns>
+		public static bool VSliderAt(string id, ref float value, float min, float max, float step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+
+		/// <summary>A variant of UI.VSlider that doesn't use the layout
+		/// system, and instead goes exactly where you put it.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, top side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, bottom
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to intervals of step. Starts
 		/// at min, and increments by step.</param>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
-		/// space. If an axis is left as zero, it will be auto-calculated. For
-		/// X this is the remaining width of the current layout, and for Y this
-		/// is UI.LineHeight.</param>
+		/// space.</param>
 		/// <param name="confirmMethod">How should the slider be activated?
 		/// Push will be a push-button the user must press first, and pinch
 		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="notifyOn">Allows you to modify the behavior of the
+		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push)
-			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod);
+		public static bool VSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
+			=> NativeAPI.ui_vslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
 
-		/// <summary>This begins a new UI group with its own layout! Much 
-		/// like a window, except with a more flexible handle, and no header.
-		/// You can draw the handle, but it will have no text on it.
-		/// The pose value is always relative to the current hierarchy stack.
-		/// This call will also push the pose transform onto the hierarchy stack, so
-		/// any objects drawn up to the corresponding UI.HandleEnd() will get transformed 
-		/// by the handle pose. Returns true for every frame the user is grabbing the handle.</summary>
+		/// <summary>This begins a new UI group with its own layout! Much like
+		/// a window, except with a more flexible handle, and no header. You
+		/// can draw the handle, but it will have no text on it. The pose value
+		/// is always relative to the current hierarchy stack. This call will
+		/// also push the pose transform onto the hierarchy stack, so any
+		/// objects drawn up to the corresponding UI.HandleEnd() will get
+		/// transformed by the handle pose. Returns true for every frame the
+		/// user is grabbing the handle.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
-		/// <param name="pose">The pose state for the handle! The user will 
-		/// be able to grab this handle and move it around. The pose is relative
+		/// <param name="pose">The pose state for the handle! The user will be
+		/// able to grab this handle and move it around. The pose is relative
 		/// to the current hierarchy stack.</param>
-		/// <param name="handle">Size and location of the handle, relative to 
+		/// <param name="handle">Size and location of the handle, relative to
 		/// the pose.</param>
-		/// <param name="drawHandle">Should this function draw the handle 
+		/// <param name="drawHandle">Should this function draw the handle
 		/// visual for you, or will you draw that yourself?</param>
-		/// <param name="moveType">Describes how the handle will move when 
+		/// <param name="moveType">Describes how the handle will move when
 		/// dragged around.</param>
-		/// <returns>Returns true for every frame the user is grabbing the 
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
+		/// <returns>Returns true for every frame the user is grabbing the
 		/// handle.</returns>
-		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
-			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
+		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn. Pops the pose transform pushed
@@ -668,11 +1131,13 @@ namespace StereoKit
 		/// you, or will you draw that yourself?</param>
 		/// <param name="moveType">Describes how the handle will move when 
 		/// dragged around.</param>
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
 		/// <returns>Returns true for every frame the user is grabbing the 
 		/// handle.</returns>
-		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact)
+		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
 		{
-			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle?1:0, moveType);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -752,12 +1217,34 @@ namespace StereoKit
 		/// will NOT hide the keyboard. If false, interaction will hide the
 		/// keyboard.</param>
 		public static void PushPreserveKeyboard(bool preserveKeyboard)
-			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard?1:0);
+			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard);
 
 		/// <summary>This pops the keyboard presentation state to what it was
 		/// previously.</summary>
 		public static void PopPreserveKeyboard()
 			=> NativeAPI.ui_pop_preserve_keyboard();
+
+		/// <summary>This pushes an enabled status for grab auras onto the
+		/// stack. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab. MUST be matched
+		/// by a PopGrabAura call.</summary>
+		/// <param name="enabled">Is the grab aura enabled or not?</param>
+		public static void PushGrabAura(bool enabled)
+			=> NativeAPI.ui_push_grab_aura(enabled);
+
+		/// <summary>This removes an enabled status for grab auras from the
+		/// stack, returning it to the state before the previous PushGrabAura
+		/// call. Grab auras are an extra space and visual element that goes
+		/// around Window elements to make them easier to grab.</summary>
+		public static void PopGrabAura()
+			=> NativeAPI.ui_pop_grab_aura();
+
+		/// <summary>This retreives the top of the grab aura enablement stack,
+		/// in case you need to know if the current window will have an aura.
+		/// </summary>
+		/// <returns>The enabled value at the top of the stack.</returns>
+		public static bool GrabAuraEnabled()
+			=> NativeAPI.ui_grab_aura_enabled();
 
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
@@ -766,7 +1253,7 @@ namespace StereoKit
 		public static void PushTextStyle(TextStyle style) 
 			=> NativeAPI.ui_push_text_style(style);
 
-		/// <summary>Removes a TextStyle from the stack, and whatever was 
+		/// <summary>Removes a TextStyle from the stack, and whatever was
 		/// below will then be used as the GUI's primary font.</summary>
 		public static void PopTextStyle() 
 			=> NativeAPI.ui_pop_text_style();
@@ -789,12 +1276,13 @@ namespace StereoKit
 		/// <summary>All UI between PushEnabled and its matching PopEnabled
 		/// will set the UI to an enabled or disabled state, allowing or
 		/// preventing interaction with specific elements. The default state is
-		/// true. This currently doesn't have any visual effect, so you may
-		/// wish to pair it with a PushTint.</summary>
+		/// true.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
 		/// interactable?</param>
-		public static void PushEnabled(bool enabled)
-			=> NativeAPI.ui_push_enabled(enabled?1:0);
+		/// <param name="ignoreParent">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		public static void PushEnabled(bool enabled, bool ignoreParent = false)
+			=> NativeAPI.ui_push_enabled(enabled, ignoreParent);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>
@@ -806,7 +1294,7 @@ namespace StereoKit
 		/// <param name="start">The top left corner of the Panel element.</param>
 		/// <param name="size">The size of the Panel element, in hierarchy
 		/// local meters.</param>
-		/// <param name="padding">Only UIPad.Outsize has any affect here.
+		/// <param name="padding">Only UIPad.Outsize has any effect here.
 		/// UIPad.Inside will behave the same as UIPad.None.</param>
 		public static void PanelAt(Vec3 start, Vec2 size, UIPad padding = UIPad.Outside) => NativeAPI.ui_panel_at(start, size, padding);
 
@@ -822,7 +1310,7 @@ namespace StereoKit
 		public static void PanelEnd() => NativeAPI.ui_panel_end();
 
 		/// <summary>Override the visual assets attached to a particular UI
-		/// element. 
+		/// element.
 		/// 
 		/// Note that StereoKit's default UI assets use a type of quadrant
 		/// sizing that is implemented in the Material _and_ the Mesh. You
@@ -843,7 +1331,41 @@ namespace StereoKit
 		/// This lets UI elements to accommodate for this minimum size, and
 		/// behave somewhat more appropriately.</param>
 		public static void SetElementVisual(UIVisual visual, Mesh mesh, Material material = null, Vec2 minSize = default)
-			=> NativeAPI.ui_set_element_visual(visual, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, Vec2.Zero);
+			=> NativeAPI.ui_set_element_visual(visual, mesh?._inst ?? IntPtr.Zero, material?._inst ?? IntPtr.Zero, minSize);
+
+		/// <summary>This allows you to override the color category that a UI
+		/// element is assigned to.</summary>
+		/// <param name="visual">The UI element type to set the color category
+		/// of.</param>
+		/// <param name="colorCategory">The category of color to assign to this
+		/// UI element. Use UI.SetThemeColor in combination with this to assign
+		/// a specific color.</param>
+		public static void SetElementColor(UIVisual visual, UIColor colorCategory)
+			=> NativeAPI.ui_set_element_color(visual, colorCategory);
+
+		/// <summary>This sets the sound that a particulat UI element will make
+		/// when you interact with it. One sound when the interaction starts,
+		/// and one when it ends.</summary>
+		/// <param name="visual">The UI element to apply the sounds to.</param>
+		/// <param name="activate">The sound made when the interaction begins.
+		/// A null sound will fall back to the default sound.</param>
+		/// <param name="deactivate">The sound made when the interaction ends.
+		/// A null sound will fall back to the default sound.</param>
+		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
+			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
+
+		/// <summary>This creates a Pose that is friendly towards UI popup
+		/// windows, or windows that are created due to some type of user
+		/// interaction. The fallback file picker and soft keyboard both use
+		/// this function to position themselves!</summary>
+		/// <param name="shift">A positional shift from the default location,
+		/// this is useful to account for the height of the window, and center
+		/// or offset this pose. A value of [0,-0.1,0] may be a good starting
+		/// point.</param>
+		/// <returns>A pose between the UI or hand that is currently active,
+		/// and the user's head. Good for popup windows.</returns>
+		public static Pose PopupPose(Vec3 shift = default)
+			=> NativeAPI.ui_popup_pose(shift);
 
 		/// <summary>This will reposition the vertices to work well with
 		/// quadrant resizing shaders. The mesh should generally be centered
@@ -875,12 +1397,89 @@ namespace StereoKit
 		/// inside the "box", and a value of 1 means the geometry will start at
 		/// the boundary of the box and continue outside it.</param>
 		public static void QuadrantSizeMesh(ref Mesh mesh, float overflowPercent = 0)
-			=> NativeAPI.ui_quadrant_size_mesh(mesh._inst, overflowPercent);
+			=> NativeAPI.ui_quadrant_size_mesh(mesh?._inst ?? IntPtr.Zero, overflowPercent);
 
+		/// <summary>This generates a quadrantified mesh meant for UI buttons
+		/// by sweeping a lathe over the rounded corners of a rectangle! Note
+		/// that this mesh is quadrantified, so it requires special shaders to
+		/// draw properly!</summary>
+		/// <param name="roundedCorners">A bit-flag indicating which corners
+		/// should be rounded, and which should be sharp!</param>
+		/// <param name="cornerRadius">The radius of each rounded corner.</param>
+		/// <param name="cornerResolution">How many slices/verts go into each corner?
+		/// More is smoother, but more expensive to render.</param>
+		/// <param name="deleteFlatSides">If two adjacent corners are sharp, should
+		/// we skip connecting them with triangles? If this edge will always be
+		/// covered, then deleting these faces may save you some performance.</param>
+		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
+		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
+		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
+		{
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, lathePts, lathePts.Length);
+			return result != IntPtr.Zero ? new Mesh(result) : null;
+		}
+
+		/// <summary>This will hash the given text based id into a hash for use
+		/// with certain StereoKit UI functions. This includes the hash of the
+		/// current id stack.</summary>
+		/// <param name="id">Text to hash along with the current id stack.
+		/// </param>
+		/// <returns>An integer based hash id for use with SK UI.</returns>
 		public static ulong StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
+		/// <summary>This is the core functionality of StereoKit's buttons,
+		/// without any of the rendering parts! If you're trying to create your
+		/// own pressable UI elements, or do more extreme customization of the
+		/// look and feel of UI elements, then this function will provide a lot
+		/// of complex pressing functionality for you!</summary>
+		/// <param name="windowRelativePos">The layout position of the
+		/// pressable area.</param>
+		/// <param name="size">The size of the pressable area.</param>
+		/// <param name="id">The id for this pressable element to track its
+		/// state with.</param>
+		/// <param name="fingerOffset">This is the current distance of the
+		/// finger, within the pressable volume, from the bottom of the button.
+		/// </param>
+		/// <param name="buttonState">This is the current frame's "active"
+		/// state for the button.</param>
+		/// <param name="focusState">This is the current frame's "focus" state
+		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState);
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out _);
+
+		/// <inheritdoc cref="ButtonBehavior(Vec3, Vec2, string, out float, out BtnState, out BtnState)"/>
+		/// <param name="hand">Id of the hand that interacted with the button.
+		/// This will be -1 if no interaction has occurred.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out hand);
+
+		/// <summary>This is the core functionality of StereoKit's buttons,
+		/// without any of the rendering parts! If you're trying to create your
+		/// own pressable UI elements, or do more extreme customization of the
+		/// look and feel of UI elements, then this function will provide a lot
+		/// of complex pressing functionality for you!
+		/// This overload allows for customizing the depth of the button, which
+		/// otherwise would use UISettings.depth for its values.</summary>
+		/// <param name="windowRelativePos">The layout position of the
+		/// pressable area.</param>
+		/// <param name="size">The size of the pressable area.</param>
+		/// <param name="id">The id for this pressable element to track its
+		/// state with.</param>
+		/// <param name="buttonDepth">This is the z axis depth of the pressable
+		/// area.</param>
+		/// <param name="buttonActivationDepth">This is the depth at which the
+		/// button will activate. Normally this is 1/2 of buttonDepth.</param>
+		/// <param name="fingerOffset">This is the current distance of the
+		/// finger, within the pressable volume, from the bottom of the button.
+		/// </param>
+		/// <param name="buttonState">This is the current frame's "active"
+		/// state for the button.</param>
+		/// <param name="focusState">This is the current frame's "focus" state
+		/// for the button.</param>
+		/// <param name="hand">Id of the hand that interacted with the button.
+		/// This will be -1 if no interaction has occurred.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
+			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, out hand);
 	}
 }

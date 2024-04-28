@@ -14,9 +14,9 @@ struct _sound_inst_t {
 	float    volume;
 };
 
-bool audio_init     ();
-void audio_update   ();
-void audio_shutdown ();
+bool audio_init    ();
+void audio_step    ();
+void audio_shutdown();
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 void audio_set_default_device_in (const wchar_t *id);

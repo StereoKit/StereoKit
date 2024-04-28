@@ -42,7 +42,7 @@ class TestSingleChannelTextures : ITest
 	}
 
 	public void Shutdown() { }
-	public void Update() 
+	public void Step() 
 	{
 		Default.MeshCube.Draw(singleChannelTex, Matrix.TS(new Vec3(0,0,0.75f), 0.5f));
 		Tests.Screenshot("Tests/SingleChannelTextureR8.jpg", 600, 600, Vec3.Zero, -Vec3.Forward);

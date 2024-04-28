@@ -1,6 +1,6 @@
 ﻿interface ITest
 {
 	void Initialize();
-	void Update();
+	void Step();
 	void Shutdown();
 }

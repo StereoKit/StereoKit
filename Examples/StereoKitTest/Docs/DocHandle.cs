@@ -16,7 +16,7 @@ class DocHandle : ITest
 	Pose  handlePose = new Pose(0,0,0, Quat.Identity);
 	float scale      = .15f;
 
-	public void Step() {
+	public void StepHandle() {
 		UI.HandleBegin("Model Handle", ref handlePose, model.Bounds*scale);
 
 		model.Draw(Matrix.S(scale));
@@ -28,9 +28,9 @@ class DocHandle : ITest
 
 	public void Initialize() { }
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 	{
-		Step();
+		StepHandle();
 
 		Tests.Screenshot("HandleBox.jpg", 500, 500, 60, V.XYZ(.2f,.2f,-.4f), Vec3.Zero);
 	}

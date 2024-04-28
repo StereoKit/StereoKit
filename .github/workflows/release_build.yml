@@ -1,0 +1,39 @@
+name: Release Build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+  
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      major: ${{ steps.version.outputs.major }}
+      minor: ${{ steps.version.outputs.minor }}
+      patch: ${{ steps.version.outputs.patch }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Get the version
+      id: version
+      shell: pwsh
+      run: |
+        $currVersion = & tools/Get-Version.ps1
+        Write-Output "major=$($currVersion.major)" >> $env:GITHUB_OUTPUT
+        Write-Output "minor=$($currVersion.minor)" >> $env:GITHUB_OUTPUT
+        Write-Output "patch=$($currVersion.patch)" >> $env:GITHUB_OUTPUT
+
+  build:
+    needs: check
+    uses: ./.github/workflows/build.yml
+    with:
+      major: ${{ needs.check.outputs.major }}
+      minor: ${{ needs.check.outputs.minor }}
+      patch: ${{ needs.check.outputs.patch }}
+      commitChanges: true
+      upload: true
+      branch: ${{ github.head_ref || github.ref_name }} 
+    secrets: inherit

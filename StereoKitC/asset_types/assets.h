@@ -1,22 +1,9 @@
 #pragma once
 
-#include "../platforms/platform_utils.h" // SK_DEBUG
+#include "../platforms/platform.h" // SK_DEBUG
 #include <stdint.h>
 
 namespace sk {
-
-enum asset_type_ {
-	asset_type_none = 0,
-	asset_type_mesh,
-	asset_type_texture,
-	asset_type_shader,
-	asset_type_material,
-	asset_type_model,
-	asset_type_font,
-	asset_type_sprite,
-	asset_type_sound,
-	asset_type_solid,
-};
 
 struct asset_header_t {
 	asset_type_  type;
@@ -24,9 +11,7 @@ struct asset_header_t {
 	uint64_t     id;
 	uint64_t     index;
 	int32_t      refs;
-#if defined(SK_DEBUG)
 	char        *id_text;
-#endif
 };
 
 struct asset_job_t {
@@ -75,7 +60,7 @@ void  assets_safeswap_ref  (asset_header_t **asset_link, asset_header_t *asset);
 void  assets_shutdown_check();
 char *assets_file          (const char *file_name);
 bool  assets_init          ();
-void  assets_update        ();
+void  assets_step          ();
 void  assets_shutdown      ();
 void  assets_on_load       (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context);
 void  assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));

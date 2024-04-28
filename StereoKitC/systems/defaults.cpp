@@ -1,9 +1,11 @@
 #include "defaults.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
-#include "../libraries/stb_image.h"
+#include "../asset_types/texture_.h"
+#include "../libraries/default_controller_l.h"
+#include "../libraries/default_controller_r.h"
 
 #include <string.h>
 
@@ -29,11 +31,13 @@ shader_t     sk_default_shader_pbr;
 shader_t     sk_default_shader_pbr_clip;
 shader_t     sk_default_shader_unlit;
 shader_t     sk_default_shader_unlit_clip;
+shader_t     sk_default_shader_lightmap;
 shader_t     sk_default_shader_font;
 shader_t     sk_default_shader_equirect;
 shader_t     sk_default_shader_ui;
 shader_t     sk_default_shader_ui_box;
 shader_t     sk_default_shader_ui_quadrant;
+shader_t     sk_default_shader_ui_aura;
 shader_t     sk_default_shader_sky;
 shader_t     sk_default_shader_lines;
 material_t   sk_default_material;
@@ -46,12 +50,27 @@ material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
 material_t   sk_default_material_ui_box;
 material_t   sk_default_material_ui_quadrant;
+material_t   sk_default_material_ui_aura;
 font_t       sk_default_font;
 text_style_t sk_default_text_style;
 sound_t      sk_default_click;
 sound_t      sk_default_unclick;
 sound_t      sk_default_grab;
 sound_t      sk_default_ungrab;
+model_t      sk_default_controller_l;
+model_t      sk_default_controller_r;
+
+const spherical_harmonics_t sk_default_lighting = { {
+	{ 0.74f,  0.74f,  0.73f},
+	{ 0.24f,  0.25f,  0.26f},
+	{ 0.09f,  0.09f,  0.09f},
+	{ 0.05f,  0.05f,  0.06f},
+	{-0.01f, -0.01f, -0.01f},
+	{-0.03f, -0.03f, -0.03f},
+	{ 0.00f,  0.00f,  0.00f},
+	{-0.02f, -0.02f, -0.02f},
+	{ 0.04f,  0.04f,  0.04f},
+} };
 
 ///////////////////////////////////////////
 
@@ -80,7 +99,7 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	color32 line_color  = color_to_32(color_lab(lab.x * powf(0.8f,  contrast_boost), lab.y, lab.z, 1));
 	color32 line2_color = color_to_32(color_lab(lab.x * powf(0.75f, contrast_boost), lab.y, lab.z, 1));
 
-	color32 *data   = sk_malloc_t(color32, size * size);
+	color32 *data = sk_malloc_t(color32, size * size);
 	for (int32_t y = 0; y < size; y++) {
 		int ydist  = abs(slice_half    - ((y + slice_half   ) % slice_size));
 		int ydist2 = abs(slice_quarter - ((y + slice_quarter) % slice_half));
@@ -97,6 +116,8 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 	}
 
 	tex_set_colors(result, size, size, data);
+	sk_free(data);
+
 	return result;
 }
 
@@ -119,30 +140,19 @@ bool defaults_init() {
 		sk_default_tex_flat  == nullptr ||
 		sk_default_tex_rough == nullptr ||
 		sk_default_tex_devtex== nullptr ||
-		sk_default_tex_error == nullptr)
+		sk_default_tex_error == nullptr) {
+		log_warn("Failed to create default textures!");
 		return false;
+	}
 
 	tex_set_loading_fallback(sk_default_tex_devtex);
 	tex_set_error_fallback  (sk_default_tex_error);
 
 	// Cubemap
-	spherical_harmonics_t lighting = { {
-		{ 0.74f,  0.74f,  0.73f}, 
-		{ 0.24f,  0.25f,  0.26f}, 
-		{ 0.09f,  0.09f,  0.09f}, 
-		{ 0.05f,  0.05f,  0.06f}, 
-		{-0.01f, -0.01f, -0.01f}, 
-		{-0.03f, -0.03f, -0.03f}, 
-		{ 0.00f,  0.00f,  0.00f}, 
-		{-0.02f, -0.02f, -0.02f}, 
-		{ 0.04f,  0.04f,  0.04f}, 
-	} };
-	render_set_skylight(lighting);
+	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
-	render_set_skytex(sk_default_cubemap);
-	render_enable_skytex(true);
 
 	// Default quad mesh
 	sk_default_quad = mesh_create();
@@ -175,16 +185,18 @@ bool defaults_init() {
 	// Shaders
 	int32_t size = 0;
 	void*   data = nullptr;
-#define SHADER_DECODE(shader_mem) { sk_free(data); data = stbi_zlib_decode_malloc((const char*)shader_mem, sizeof(shader_mem), &size); }
+#define SHADER_DECODE(shader_mem) { sk_free(data); data = unzip_malloc(shader_mem, sizeof(shader_mem), &size); }
 	SHADER_DECODE(sks_shader_builtin_default_hlsl_zip    ); sk_default_shader             = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_blit_hlsl_zip       ); sk_default_shader_blit        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_hlsl_zip      ); sk_default_shader_unlit       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_unlit_clip_hlsl_zip ); sk_default_shader_unlit_clip  = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_lightmap_hlsl_zip   ); sk_default_shader_lightmap    = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_font_hlsl_zip       ); sk_default_shader_font        = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_equirect_hlsl_zip   ); sk_default_shader_equirect    = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_hlsl_zip         ); sk_default_shader_ui          = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_box_hlsl_zip     ); sk_default_shader_ui_box      = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_ui_quadrant_hlsl_zip); sk_default_shader_ui_quadrant = shader_create_mem(data, size);
+	SHADER_DECODE(sks_shader_builtin_ui_aura_hlsl_zip    ); sk_default_shader_ui_aura     = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_skybox_hlsl_zip     ); sk_default_shader_sky         = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_lines_hlsl_zip      ); sk_default_shader_lines       = shader_create_mem(data, size);
 	SHADER_DECODE(sks_shader_builtin_pbr_hlsl_zip        ); sk_default_shader_pbr         = shader_create_mem(data, size);
@@ -209,14 +221,18 @@ bool defaults_init() {
 		sk_default_shader_pbr_clip    == nullptr ||
 		sk_default_shader_unlit       == nullptr ||
 		sk_default_shader_unlit_clip  == nullptr ||
+		sk_default_shader_lightmap    == nullptr ||
 		sk_default_shader_font        == nullptr ||
 		sk_default_shader_equirect    == nullptr ||
 		sk_default_shader_ui          == nullptr ||
 		sk_default_shader_ui_box      == nullptr ||
 		sk_default_shader_ui_quadrant == nullptr ||
+		sk_default_shader_ui_aura     == nullptr ||
 		sk_default_shader_sky         == nullptr ||
-		sk_default_shader_lines       == nullptr)
+		sk_default_shader_lines       == nullptr) {
+		log_warn("Failed to create default shaders!");
 		return false;
+	}
 
 	shader_set_id(sk_default_shader,             default_id_shader);
 	shader_set_id(sk_default_shader_blit,        default_id_shader_blit);
@@ -224,11 +240,13 @@ bool defaults_init() {
 	shader_set_id(sk_default_shader_pbr_clip,    default_id_shader_pbr_clip);
 	shader_set_id(sk_default_shader_unlit,       default_id_shader_unlit);
 	shader_set_id(sk_default_shader_unlit_clip,  default_id_shader_unlit_clip);
+	shader_set_id(sk_default_shader_lightmap,    default_id_shader_lightmap);
 	shader_set_id(sk_default_shader_font,        default_id_shader_font);
 	shader_set_id(sk_default_shader_equirect,    default_id_shader_equirect);
 	shader_set_id(sk_default_shader_ui,          default_id_shader_ui);
 	shader_set_id(sk_default_shader_ui_box,      default_id_shader_ui_box);
 	shader_set_id(sk_default_shader_ui_quadrant, default_id_shader_ui_quadrant);
+	shader_set_id(sk_default_shader_ui_aura,     default_id_shader_ui_aura);
 	shader_set_id(sk_default_shader_sky,         default_id_shader_sky);
 	shader_set_id(sk_default_shader_lines,       default_id_shader_lines);
 
@@ -243,29 +261,34 @@ bool defaults_init() {
 	sk_default_material_ui          = material_create(sk_default_shader_ui);
 	sk_default_material_ui_box      = material_create(sk_default_shader_ui_box);
 	sk_default_material_ui_quadrant = material_create(sk_default_shader_ui_quadrant);
+	sk_default_material_ui_aura     = material_create(sk_default_shader_ui_aura);
 
-	if (sk_default_material          == nullptr ||
-		sk_default_material_pbr      == nullptr ||
-		sk_default_material_pbr_clip == nullptr ||
-		sk_default_material_unlit    == nullptr ||
-		sk_default_material_unlit_clip == nullptr ||
-		sk_default_material_equirect == nullptr ||
-		sk_default_material_font     == nullptr ||
-		sk_default_material_ui       == nullptr ||
-		sk_default_material_ui_box   == nullptr ||
-		sk_default_material_ui_quadrant == nullptr)
+	if (sk_default_material             == nullptr ||
+		sk_default_material_pbr         == nullptr ||
+		sk_default_material_pbr_clip    == nullptr ||
+		sk_default_material_unlit       == nullptr ||
+		sk_default_material_unlit_clip  == nullptr ||
+		sk_default_material_equirect    == nullptr ||
+		sk_default_material_font        == nullptr ||
+		sk_default_material_ui          == nullptr ||
+		sk_default_material_ui_box      == nullptr ||
+		sk_default_material_ui_quadrant == nullptr ||
+		sk_default_material_ui_aura     == nullptr) {
+		log_warn("Failed to create default materials!");
 		return false;
+	}
 
-	material_set_id(sk_default_material,          default_id_material);
-	material_set_id(sk_default_material_pbr,      default_id_material_pbr);
-	material_set_id(sk_default_material_pbr_clip, default_id_material_pbr_clip);
-	material_set_id(sk_default_material_unlit,    default_id_material_unlit);
-	material_set_id(sk_default_material_unlit_clip, default_id_material_unlit_clip);
-	material_set_id(sk_default_material_equirect, default_id_material_equirect);
-	material_set_id(sk_default_material_font,     default_id_material_font);
-	material_set_id(sk_default_material_ui,       default_id_material_ui);
-	material_set_id(sk_default_material_ui_box,   default_id_material_ui_box);
+	material_set_id(sk_default_material,             default_id_material);
+	material_set_id(sk_default_material_pbr,         default_id_material_pbr);
+	material_set_id(sk_default_material_pbr_clip,    default_id_material_pbr_clip);
+	material_set_id(sk_default_material_unlit,       default_id_material_unlit);
+	material_set_id(sk_default_material_unlit_clip,  default_id_material_unlit_clip);
+	material_set_id(sk_default_material_equirect,    default_id_material_equirect);
+	material_set_id(sk_default_material_font,        default_id_material_font);
+	material_set_id(sk_default_material_ui,          default_id_material_ui);
+	material_set_id(sk_default_material_ui_box,      default_id_material_ui_box);
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
+	material_set_id(sk_default_material_ui_aura,     default_id_material_ui_aura);
 
 	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
 	material_set_cull(sk_default_material_ui_box, cull_none);
@@ -276,8 +299,10 @@ bool defaults_init() {
 
 	// Text!
 	sk_default_font = platform_default_font();
-	if (sk_default_font == nullptr)
+	if (sk_default_font == nullptr) {
+		log_warn("Failed to create default font!");
 		return false;
+	}
 	font_set_id(sk_default_font, default_id_font);
 	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
 
@@ -288,9 +313,10 @@ bool defaults_init() {
 		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
 		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
 		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+		float silencer = fmaxf(0,fminf(1,(0.03f-t)*200));
 
-		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f;
-		}, .03f);
+		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f * silencer;
+		}, .08f);
 	sk_default_unclick = sound_generate([](float t){
 		float x = t / 0.03f;
 		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
@@ -324,6 +350,11 @@ bool defaults_init() {
 	sound_set_id(sk_default_grab,    default_id_sound_grab);
 	sound_set_id(sk_default_ungrab,  default_id_sound_ungrab);
 
+	sk_default_controller_l = model_create_mem("sk::default_controller_l.glb", default_controller_l_glb, sizeof(default_controller_l_glb), sk_default_shader);
+	sk_default_controller_r = model_create_mem("sk::default_controller_r.glb", default_controller_r_glb, sizeof(default_controller_r_glb), sk_default_shader);
+	model_set_id(sk_default_controller_l, default_id_model_controller_l);
+	model_set_id(sk_default_controller_r, default_id_model_controller_r);
+
 	return true;
 }
 
@@ -333,6 +364,8 @@ void defaults_shutdown() {
 	tex_set_error_fallback  (nullptr);
 	tex_set_loading_fallback(nullptr);
 
+	model_release   (sk_default_controller_l);
+	model_release   (sk_default_controller_r);
 	sound_release   (sk_default_click);
 	sound_release   (sk_default_unclick);
 	sound_release   (sk_default_grab);
@@ -348,15 +381,18 @@ void defaults_shutdown() {
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_box);
 	material_release(sk_default_material_ui_quadrant);
+	material_release(sk_default_material_ui_aura);
 	shader_release  (sk_default_shader);
 	shader_release  (sk_default_shader_blit);
 	shader_release  (sk_default_shader_unlit);
 	shader_release  (sk_default_shader_unlit_clip);
+	shader_release  (sk_default_shader_lightmap);
 	shader_release  (sk_default_shader_font);
 	shader_release  (sk_default_shader_equirect);
 	shader_release  (sk_default_shader_ui);
 	shader_release  (sk_default_shader_ui_box);
 	shader_release  (sk_default_shader_ui_quadrant);
+	shader_release  (sk_default_shader_ui_aura);
 	shader_release  (sk_default_shader_sky);
 	shader_release  (sk_default_shader_lines);
 	shader_release  (sk_default_shader_pbr);

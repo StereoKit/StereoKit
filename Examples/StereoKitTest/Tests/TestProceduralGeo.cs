@@ -7,6 +7,7 @@ class TestProceduralGeo : ITest
 	Mesh meshSphere      = null;
 	Mesh meshCylinder    = null;
 	Mesh meshPlane       = null;
+	Mesh meshCircle      = null;
 
 	Material material;
 	Material materialWire;
@@ -33,35 +34,42 @@ class TestProceduralGeo : ITest
 		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
-		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoRoundedCube.jpg)
+		/// ![Procedural Rounded Cube Mesh]({{site.screen_url}}/ProcGeoRoundedCube.jpg)
 		meshRoundedCube = Mesh.GenerateRoundedCube(Vec3.One, 0.05f);
 		/// :End:
 		/// :CodeSample: Mesh.GenerateSphere
 		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
-		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoSphere.jpg)
+		/// ![Procedural Sphere Mesh]({{site.screen_url}}/ProcGeoSphere.jpg)
 		meshSphere = Mesh.GenerateSphere(1);
 		/// :End:
 		/// :CodeSample: Mesh.GenerateCylinder
 		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
-		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoCylinder.jpg)
+		/// ![Procedural Cylinder Mesh]({{site.screen_url}}/ProcGeoCylinder.jpg)
 		meshCylinder = Mesh.GenerateCylinder(1, 1, Vec3.Up);
 		/// :End:
 		/// :CodeSample: Mesh.GeneratePlane
 		/// ### UV and Face layout
 		/// Here's a test image that illustrates how this mesh's geometry is
 		/// laid out.
-		/// ![Procedural Cube Mesh]({{site.screen_url}}/ProcGeoPlane.jpg)
+		/// ![Procedural Plane Mesh]({{site.screen_url}}/ProcGeoPlane.jpg)
 		meshPlane = Mesh.GeneratePlane(Vec2.One);
+		/// :End:
+		/// /// :CodeSample: Mesh.GenerateCircle
+		/// ### UV and Face layout
+		/// Here's a test image that illustrates how this mesh's geometry is
+		/// laid out.
+		/// ![Procedural Circle Mesh]({{site.screen_url}}/ProcGeoCircle.jpg)
+		meshCircle = Mesh.GenerateCircle(1);
 		/// :End:
 	}
 
 	public void Shutdown() { }
 
-	public void Update()
+	public void Step()
 	{
 		Vec3 at   = new Vec3(0,-10,0);
 		Vec3 from = new Vec3(1, 1, 1) * 0.7f;
@@ -89,5 +97,10 @@ class TestProceduralGeo : ITest
 		meshPlane.Draw(material, Matrix.T(at));
 		meshPlane.Draw(materialWire, Matrix.T(at));
 		Tests.Screenshot("ProcGeoPlane.jpg", 600, 600, at + from, at);
+
+		at += Vec3.Right * 100;
+		meshCircle.Draw(material, Matrix.T(at));
+		meshCircle.Draw(materialWire, Matrix.T(at));
+		Tests.Screenshot("ProcGeoCircle.jpg", 600, 600, at + from, at);
 	}
 }

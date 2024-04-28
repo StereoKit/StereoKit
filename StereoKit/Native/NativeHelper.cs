@@ -8,7 +8,7 @@ namespace StereoKit
 	{
 		public static string FromUtf8(IntPtr str, int strLength)
 		{
-			string result = string.Empty;
+			string result = null;
 			if (str != IntPtr.Zero)
 			{
 				byte[] filenameUtf8 = new byte[strLength];
@@ -20,7 +20,10 @@ namespace StereoKit
 			return result;
 		}
 
+		public static string FromUtf8(IntPtr str)
+			=> FromUtf8(str, Marshal.PtrToStringAnsi(str).Length);
+
 		public static byte[] ToUtf8(string str)
-			=> Encoding.UTF8.GetBytes(str + '\0');
+			=> str == null ? null : Encoding.UTF8.GetBytes(str + '\0');
 	}
 }

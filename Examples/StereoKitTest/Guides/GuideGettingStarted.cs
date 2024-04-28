@@ -1,46 +1,84 @@
 /// :CodeDoc: Guides 0 Getting Started
 /// # Getting Started with StereoKit
 /// 
-/// Here's a quick list of what you'll need to start developing with StereoKit:
+/// The minimum prerequisite for StereoKit is the .NET 7 SDK! You can use `dotnet --version` to check if this is already present.
 /// 
-/// - **[Visual Studio 2019 or 2022](https://visualstudio.microsoft.com/vs/) - Use these workloads:**
-///   - .NET Desktop development
-///   - Universal Windows Platform development (for HoloLens)
-///   - Mobile development with .Net (for Quest)
-/// - **[StereoKit's Visual Studio Template](https://marketplace.visualstudio.com/items?itemName=NickKlingensmith.StereoKitTemplates)**
-///   - Experienced users might directly use the [NuGet package](https://www.nuget.org/packages/StereoKit).
-/// - **Any OpenXR runtime**
-///   - A flatscreen fallback is available for development.
-/// - **Enable Developer Mode (for UWP/HoloLens)**
-///   - Windows Settings->Update and Security->For Developers->Developer Mode
+/// Open up your Terminal, and run the following:
+/// ```bash
+/// winget install Microsoft.DotNet.SDK.7
+/// # Restart the Terminal to refresh your Path variable
+/// ```
 /// 
-/// This short video goes through the pre-requisites for building StereoKit's
-/// hello world! You can find a [UWP/HoloLens specific version here](https://www.youtube.com/watch?v=U_7VNIcPQaM)
-/// as well.
-/// <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/lOYs8seoRpc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+/// > On _Linux_, many distros can do something like this:
+/// > `sudo apt-get install dotnet-sdk-7.0`
 /// 
-/// For Mac developers: while StereoKit's _simulator_ does not run on Mac OS,
-/// you can still deploy to standalone Android headsets such as Quest!
-/// [See here](https://www.youtube.com/watch?v=UMwTLecVATU) for a quick video
-/// by community member Raphael about how to do this with the experimental
-/// cross platform template.
+/// With the .NET SDK installed, setting up a StereoKit project is quite simple!
 /// 
-/// ## The Templates
+/// ```bash
+/// # Install the StereoKit templates!
+/// dotnet new install StereoKit.Templates
 /// 
-/// ![Create New Project]({{site.url}}/img/screenshots/VSNewProject.png)
+/// # Create a .NET Core based StereoKit project, and run it
+/// mkdir SKProjectName
+/// cd    SKProjectName
 /// 
-/// - **StereoKit .Net Core**
-///   - .Net Core is for desktop XR on Windows and Linux. It is simple, compiles quickly, and is the best option for most developers.
-/// - **StereoKit UWP**
-///   - UWP is for HoloLens 2, and can run on Windows desktop. UWP can be slower to compile, and is no longer receiving updates from the .Net team.
-/// - _[Cross Platform/Universal Template (in development)](https://github.com/StereoKit/SKTemplate-Universal)_
-///   - This is an early version still in project format. It works with .Net Core, UWP, and Xamarin(Android/Quest) all at once via a DLL shared between multiple platform specific projects.
-/// - **[Native C/C++ Template](https://github.com/StereoKit/SKTemplate-CMake)**
-///   - StereoKit does provide a C API, but experienced developers should only choose this if the benefits outweigh the lack of C API documentation.
+/// dotnet new sk-net
+/// dotnet run
 /// 
-/// For an overview of the initial code in the .Net Core and UWP templates,
-/// check out this video!
-/// <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/apcWlHNJ5kM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+/// # For hot-reloading code, try this instead of `run`
+/// dotnet watch
+/// ```
+/// 
+/// > **Native code developers** can check out [this guide]({{site.url}}/Pages/Guides/Getting-Started-Native.html) for using StereoKit from C/C++.
+/// 
+/// ## Tools and IDEs
+/// 
+/// Once you've installed the templates via `dotnet new install StereoKit.Templates`,
+/// you have your choice of tools! Visual Studio 2022 will recognize the
+/// StereoKit templates when creating a new project, and the Command Line
+/// workflow works well with VS Code and other editors. Visual Studio 2022 is
+/// the recommended tool for those targeting Android platforms.
+/// 
+/// - Get [**Visual Studio 2022** here](https://visualstudio.microsoft.com/vs/).
+/// - _Or_ get [VS Code here](https://code.visualstudio.com/).
+/// 
+/// StereoKit is OpenXR based, so will work in any environment that supports
+/// OpenXR! On PC, this means you'll want a desktop runtime such as SteamVR,
+/// Quest + Link, the Windows Mixed Reality Portal, or Monado. If no OpenXR
+/// runtime is found, StereoKit will provide a [nice Simulator]({{site.url}}Pages/Guides/Using-The-Simulator.html)
+/// that's great for development! Some runtimes, such as the Windows Mixed
+/// Reality Portal, also provide a simulator of their own, so you can test
+/// their runtime without a headset.
+/// 
+/// ## Android
+/// 
+/// To deploy to Android, you'll need to use StereoKit's multiplatform
+/// template! From Visual Studio 2022, you'll need to set the `SKProjectName_Android`
+/// sub-project as your Startup Project (Solution Explorer->Right click on SKProjectName_Android->Set as Startup Project),
+/// and then you'll have the option to deploy to any Android device connected
+/// to your machine.
+/// 
+/// From the command line, or VS Code, there's a few extra steps to deploy to
+/// Android.
+/// 
+/// ```bash
+/// mkdir SKAndroid
+/// cd    SKAndroid
+/// 
+/// dotnet new sk-multi
+/// 
+/// # Create an APK for Android
+/// dotnet publish -c Release Projects\Android\SKProjectName_Android.csproj
+/// 
+/// # Install to a connected Android device
+/// adb install Projects\Android\bin\Release\net7.0-android\publish\com.companyname.SKProjectName-Signed.apk
+/// 
+/// # Run the app on device
+/// adb shell monkey -p com.companyname.SKProjectName 1
+/// 
+/// # sk-multi projects can still be run as normal for fast iteration
+/// dotnet run
+/// ```
 /// 
 /// ## Minimum "Hello Cube" Application
 /// 
@@ -51,18 +89,10 @@
 /// 
 using StereoKit;
 
-class Program
-{
-	static void Main(string[] args)
-	{
-		SK.Initialize(new SKSettings{ appName = "Project" });
-
-		SK.Run(() =>
-		{
-			Mesh.Cube.Draw(Material.Default, Matrix.S(0.1f));
-		});
-	}
-}
+SK.Initialize();
+SK.Run(() => {
+	Mesh.Cube.Draw(Material.Default, Matrix.S(0.1f));
+});
 /// 
 /// ## Next Steps
 /// 

@@ -1,13 +1,16 @@
-﻿#if !WINDOWS_UWP
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2023 Nick Klingensmith
+// Copyright (c) 2023 Qualcomm Technologies, Inc.
+
+#if !WINDOWS_UWP
 using System.Collections.Generic;
 using StereoKit;
 
 class DemoRecordMic : ITest
 {
-	Matrix descPose    = Matrix.TR (-0.5f, 0, -0.5f, Quat.LookDir(1,0,1));
-	string description = "A common use case for the microphone would be to record a snippet of audio! This demo shows reading data from the Microphone, and using that to create a sound for playback.";
-	Matrix titlePose   = Matrix.TRS(V.XYZ(-0.5f, 0.05f, -0.5f), Quat.LookDir(1, 0, 1), 2);
 	string title       = "Record Mic";
+	string description = "A common use case for the microphone would be to record a snippet of audio! This demo shows reading data from the Microphone, and using that to create a sound for playback.";
 
 	/// :CodeSample: Microphone Microphone.Start Sound.ReadSamples Sound.FromSamples 
 	/// ### Recording Audio Snippets
@@ -20,7 +23,7 @@ class DemoRecordMic : ITest
 	List<float> recordedData    = new List<float>();
 	float[]     sampleBuffer    = null;
 	bool        recording       = false;
-	Pose        recordingWindow = new Pose(0.5f, 0, -0.5f, Quat.LookDir(-1, 0, 1));
+	Pose        recordingWindow = (Demo.contentPose * Matrix.T(-0.15f,0,0)).Pose;
 
 	void RecordAudio()
 	{
@@ -75,18 +78,17 @@ class DemoRecordMic : ITest
 
 	public void Initialize() => Tests.RunForFrames(2);
 	public void Shutdown() => Microphone.Stop();
-	public void Update()
+	public void Step()
 	{
 		ShowMicDeviceWindow();
 		RecordAudio();
 
-		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(-0.08f, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
+		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(0, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
 
-		Text.Add(title, titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.7f, .36f, 0.1f)));
 	}
 
-	Pose     micSelectPose   = new Pose(0.7f, 0, -0.3f, Quat.LookDir(-1, 0, 1));
+	Pose     micSelectPose   = (Demo.contentPose * Matrix.T(0.15f,0,0)).Pose;
 	string[] micDevices      = null;
 	string   micDeviceActive = null;
 	void ShowMicDeviceWindow()

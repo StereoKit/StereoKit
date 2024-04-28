@@ -23,7 +23,7 @@ namespace StereoKit
 		} }
 		/// <summary>Tells if the Microphone is currently recording audio.
 		/// </summary>
-		public static bool IsRecording { get => NativeAPI.mic_is_recording(); }
+		public static bool IsRecording => NativeAPI.mic_is_recording();
 
 		/// <summary>Constructs a list of valid Microphone devices attached
 		/// to the system. These names can be passed into Start to select

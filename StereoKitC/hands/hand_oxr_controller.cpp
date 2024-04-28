@@ -1,4 +1,10 @@
-#include "../platforms/platform_utils.h"
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
+#include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
 #include "../stereokit.h"
@@ -13,11 +19,6 @@
 #include <stdlib.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-quat xrc_offset_rot[2];
-vec3 xrc_offset_pos[2];
 
 ///////////////////////////////////////////
 
@@ -57,7 +58,7 @@ void hand_oxrc_update_pose(bool animate) {
 			? controller->palm
 			: hand->palm;
 
-		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked, controller->trigger > 0.5f, controller->grip > 0.5f);
+		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked);
 		else         input_hand_sim_poses((handed_)hand_id, false, hand_pose.position, hand_pose.orientation);
 	}
 }
@@ -70,9 +71,16 @@ void hand_oxrc_update_frame() {
 	// Now we'll get the current states of our actions, and store them for later use
 	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
 		const controller_t *controller = input_controller ((handed_)hand_id);
-		const hand_t       *hand       = input_hand       ((handed_)hand_id);
+		hand_t             *hand       = (hand_t*)input_hand((handed_)hand_id);
 		pointer_t          *pointer    = input_get_pointer(input_hand_pointer_id[hand_id]);
 		bool                tracked    = controller->tracked & button_state_active;
+
+		hand->pinch_state      = button_make_state((hand->pinch_state & button_state_active) > 0, controller->trigger >= 0.5f);
+		hand->grip_state       = button_make_state((hand->grip_state  & button_state_active) > 0, controller->grip    >= 0.5f);
+		hand->pinch_activation = fminf(1,controller->trigger/0.5f);
+		hand->grip_activation  = fminf(1,controller->grip   /0.5f);
+		hand->aim_ready = controller->tracked;
+		hand->aim       = controller->aim;
 
 		// Get event poses, and fire our own events for them
 		pointer->state = button_make_state(pointer->state & button_state_active, controller->trigger > 0.5f);
@@ -101,10 +109,8 @@ void hand_oxrc_update_frame() {
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_poses(bool update_visuals) {
+void hand_oxrc_update_poses() {
 	hand_oxrc_update_pose(false);
-	if (update_visuals)
-		input_hand_update_meshes();
 }
 
 }

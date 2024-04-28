@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -12,9 +11,10 @@ namespace StereoKit
 		private IntPtr _appName;
 		private IntPtr _assetsFolder;
 
-		/// <summary>Which display type should we try to load? Default is 
-		/// `DisplayMode.MixedReality`.</summary>
-		public DisplayMode  displayPreference;
+		/// <summary>Which operation mode should we use for this app? Default
+		/// is XR, and by default the app will fall back to Simulator if XR
+		/// fails or is unavailable.</summary>
+		public AppMode      mode;
 		/// <summary>What type of background blend mode do we prefer for this
 		/// application? Are you trying to build an Opaque/Immersive/VR app,
 		/// or would you like the display to be AnyTransparent, so the world 
@@ -61,11 +61,12 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
-		/// <summary>By default, StereoKit will simulate Mixed Reality input
-		/// so developers can test MR spaces without being in a headset. If
-		/// You don't want this, you can disable it with this setting!</summary>
-		public  bool disableFlatscreenMRSim { get { return _disableFlatscreenMRSim > 0; } set { _disableFlatscreenMRSim = value ? 1 : 0; } }
-		private int _disableFlatscreenMRSim;
+		/// <summary>By default, StereoKit will open a desktop window for
+		/// keyboard input due to lack of XR-native keyboard APIs on many
+		/// platforms. If you don't want this, you can disable it with
+		/// this setting!</summary>
+		public  bool disableDesktopInputWindow { get { return _disableDesktopInputWindow > 0; } set { _disableDesktopInputWindow = value ? 1 : 0; } }
+		private int _disableDesktopInputWindow;
 		/// <summary>By default, StereoKit will slow down when the
 		/// application is out of focus. This is useful for saving processing
 		/// power while the app is out-of-focus, but may not always be
@@ -74,7 +75,39 @@ namespace StereoKit
 		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
 		private int _disableUnfocusedSleep;
 
+		/// <summary>If you know in advance that you need this feature, this
+		/// setting allows you to set `Renderer.Scaling` before initialization.
+		/// This avoids creating and discarding a large and unnecessary
+		/// swapchain object. Default value is 1.</summary>
+		public float renderScaling;
+
+		/// <summary>If you know in advance that you need this feature, this
+		/// setting allows you to set `Renderer.Multisample` before
+		/// initialization. This avoids creating and discarding a large and
+		/// unnecessary swapchain object. Default value is 1.</summary>
+		public int renderMultisample;
+
+		/// <summary>Set the behavior of StereoKit's initial origin. Default
+		/// behavior is OriginMode.Local, which is the most universally
+		/// supported origin mode. Different origin modes have varying levels
+		/// of support on different XR runtimes, and StereoKit will provide
+		/// reasonable fallbacks for each. NOTE that when falling back,
+		/// StereoKit will use a different root origin mode plus an offset. You
+		/// can check World.OriginMode and World.OriginOffset to inspect what
+		/// StereoKit actually landed on.</summary>
+		public OriginMode origin;
+
+		/// <summary>If StereoKit has nothing to render for this frame, it
+		/// skips submitting a proojection layer to OpenXR entirely.</summary>
+		public bool omitEmptyFrames { get { return _omitEmptyFrames > 0; } set { _omitEmptyFrames = value ? 1 : 0; } }
+		private int _omitEmptyFrames;
+
+		/// <summary>A pointer to the JNI's JavaVM structure, only used for
+		/// Android applications. This is optional, even for Android.</summary>
 		public IntPtr androidJavaVm;
+		/// <summary>A JNI reference to an android.content.Context associated
+		/// with the application, only used for Android applications. Xamarin
+		/// and Maui apps will use the MainActivity.Handle for this.</summary>
 		public IntPtr androidActivity;
 
 		/// <summary>Name of the application, this shows up an the top of the
@@ -121,8 +154,6 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
 	public struct SystemInfo
 	{
-		/// <summary>The type of display this device has.</summary>
-		public Display displayType;
 		/// <summary>Width of the display surface, in pixels! For a stereo
 		/// display, this will be the width of a single eye.</summary>
 		public int displayWidth;
@@ -168,18 +199,36 @@ namespace StereoKit
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
 		private int _worldRaycastPresent;
+
+		/// <summary>Obsolete, please use Device.DisplayBlend</summary>
+		[Obsolete("Obsolete, please use Device.DisplayBlend", true)]
+		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
+
+	/*[StructLayout(LayoutKind.Sequential)]
+	public struct FovInfo
+	{
+		public float left;
+		public float right;
+		public float top;
+		public float bottom;
+	}*/
 
 	/// <summary>Visual properties and spacing of the UI system.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct UISettings
 	{
+		/// <summary>The margin is the space between a window and its contents.
+		/// In meters.</summary>
+		public float margin;
 		/// <summary>Spacing between an item and its parent, in meters.</summary>
 		public float padding;
 		/// <summary>Spacing between sibling items, in meters.</summary>
 		public float gutter;
 		/// <summary>The Z depth of 3D UI elements, in meters.</summary>
 		public float depth;
+		/// <summary>Radius of the UI element corners, in meters.</summary>
+		public float rounding;
 		/// <summary>How far up does the white back-border go on UI elements?
 		/// This is a 0-1 percentage of the depth value.</summary>
 		public float backplateDepth;
@@ -261,13 +310,29 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A pretty straightforward 2D rectangle, defined by the top left
+	/// corner of the rectangle, and its width/height.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Rect
 	{
+		/// <summary>The X axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float x;
+		/// <summary>The Y axis position of the top left corner of the
+		/// rectangle.</summary>
 		public float y;
+		/// <summary>The width of the rectangle.</summary>
 		public float width;
+		/// <summary>The height of the rectangle.</summary>
 		public float height;
+		/// <summary>Create a 2D rectangle, defined by the top left  corner of
+		/// the rectangle, and its width/height.</summary>
+		/// <param name="x">The X axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="y">The Y axis position of the top left corner of the
+		/// rectangle.</param>
+		/// <param name="width">The width of the rectangle.</param>
+		/// <param name="height">The height of the rectangle.</param>
 		public Rect(float x, float y, float width, float height)
 		{
 			this.x = x;
@@ -289,11 +354,11 @@ namespace StereoKit
 		/// <summary>The vertex color for the line at this position.</summary>
 		public Color32 color;
 
-		
-	}
-
-	public partial struct LinePoint
-	{
+		/// <summary>This creates and fills out a LinePoint.</summary>
+		/// <param name="point">The location of this point on a line.</param>
+		/// <param name="color">The Color for this line vertex.</param>
+		/// <param name="thickness">The thickness of the line at this vertex.
+		/// </param>
 		public LinePoint(Vec3 point, Color32 color, float thickness)
 		{
 			this.pt = point;
@@ -322,8 +387,14 @@ namespace StereoKit
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
 	}
 
+	/// <summary>The callback type for Input events.</summary>
+	/// <param name="source">What type of device is the source of the provided
+	/// pointer</param>
+	/// <param name="type">What type of event was this.</param>
+	/// <param name="pointer">Where was the input device at the time of the
+	/// input event?</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState type, IntPtr pointer);
+	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
 
 	/// <summary>Pointer is an abstraction of a number of different input 
 	/// sources, and a way to surface input events!</summary>
@@ -368,17 +439,53 @@ namespace StereoKit
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame? TODO: Units</summary>
 		public float scrollChange;
+		
+		/// <summary>Ray representing the position and orientation that the
+		/// current Input.Mouse.pos is pointing in.</summary>
+		public Ray Ray
+		{
+			get
+			{
+				NativeAPI.ray_from_mouse(pos, out Ray ray);
+				return ray;
+			}
+		}
 	}
 
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	/// <summary>A callback for when log events occur.</summary>
+	/// <param name="level">The level of severity of this log event.</param>
+	/// <param name="text">The text contents of the log event.</param>
 	public delegate void LogCallback(LogLevel level, string text);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void XRPollEventCallback(IntPtr context, IntPtr XrEventDataBuffer);
+
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate void RenderOnScreenshotCallback(IntPtr data, int width, int height, IntPtr context);
+
+	/// <summary>A callback for receiving the color data of a screenshot, instead
+	/// of saving it directly to a file.</summary>
+	/// <param name="data">The pointer to the color data. A fare warning that the
+	/// memory *will* be freed once this callback completes, so if you need to
+	/// reference this data elsewhere, be sure to store a copy of it!</param>
+	/// <param name="width">The width of the image.</param>
+	/// <param name="height">The height of the image.</param>
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	public delegate void ScreenshotCallback(IntPtr data, int width, int height);
+
+	/// <summary>A callback that generates a sound wave at a particular point
+	/// in time.</summary>
+	/// <param name="time">The time along the wavelength.</param>
+	/// <returns>The waveform position on the sound at this time.</returns>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float time);
 
@@ -451,11 +558,11 @@ namespace StereoKit
 		/// value. The Window will still be grab/movable. To prevent it from
 		/// being grabbable, combine with the UIMove.None option, or switch
 		/// to UI.Push/PopSurface.</summary>
-		Empty = 0,
+		Empty = 1 << 0,
 		/// <summary>Flag to include a head on the window.</summary>
-		Head = 1 << 0,
+		Head = 1 << 1,
 		/// <summary>Flag to include a body on the window.</summary>
-		Body = 1 << 1,
+		Body = 1 << 2,
 	}
 
 	/// <summary>Used with StereoKit's UI, and determines the interaction
@@ -477,6 +584,37 @@ namespace StereoKit
 		/// slider creates a scaled slider that lets you adjust the slider at a
 		/// more granular resolution.</summary>
 		VariablePinch
+	}
+
+	/// <summary>This is a bit flag that describes different types and
+	/// combinations of gestures used within the UI system.</summary>
+	[Flags]
+	public enum UIGesture
+	{
+		/// <summary>Default zero state, no gesture at all.</summary>
+		None = 0,
+		/// <summary>A pinching action, calculated by taking the distance
+		/// between the tip of the thumb and the index finger.</summary>
+		Pinch = 1 << 0,
+		/// <summary>A gripping or grasping motion meant to represent a full
+		/// hand grab. This is calculated using the distance between the root
+		/// and the tip of the ring finger.</summary>
+		Grip = 1 << 1,
+		/// <summary>This is a bit flag combination of both Pinch and Grip.
+		/// </summary>
+		PinchGrip = Pinch | Grip,
+	}
+
+	/// <summary>Determines when this UI function returns true.</summary>
+	public enum UINotify
+	{
+		/// <summary>This function returns true any time the values has 
+		/// changed!</summary>
+		Change,
+		/// <summary>This function returns true when the user has finished
+		/// interacting with it. This does not guarantee the value has changed.
+		/// </summary>
+		Finalize,
 	}
 
 	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
@@ -514,14 +652,30 @@ namespace StereoKit
 		/// <summary>Refers to UI.HSeparator element.</summary>
 		Separator,
 		/// <summary>Refers to the back line component of the UI.HSlider
-		/// element.</summary>
+		/// element for full lines.</summary>
 		SliderLine,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element for the active or "full" half of the line.</summary>
+		SliderLineActive,
+		/// <summary>Refers to the back line component of the UI.HSlider
+		/// element for the inactive or "empty" half of the line.</summary>
+		SliderLineInactive,
 		/// <summary>Refers to the push button component of the UI.HSlider
 		/// element when using UIConfirm.Push.</summary>
 		SliderPush,
 		/// <summary>Refers to the pinch button component of the UI.HSlider
 		/// element when using UIConfirm.Pinch.</summary>
 		SliderPinch,
+		/// <summary>Refers to UI.ButtonRound elements.</summary>
+		ButtonRound,
+		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
+		Panel,
+		/// <summary>Refers to the text position indicator carat on text input
+		/// elements.</summary>
+		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.
+		/// </summary>
+		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
@@ -531,9 +685,12 @@ namespace StereoKit
 	/// </summary>
 	public enum UIColor
 	{
+		/// <summary>The default category, used to indicate that no category
+		/// has been selected.</summary>
+		None = 0,
 		/// <summary>This is the main accent color used by window headers,
 		/// separators, etc.</summary>
-		Primary = 0,
+		Primary,
 		/// <summary>This is a background sort of color that should generally
 		/// be dark. Used by window bodies and backgrounds of certain elements.
 		/// </summary>
@@ -550,6 +707,19 @@ namespace StereoKit
 		/// <summary>A maximum enum value to allow for iterating through enum
 		/// values.</summary>
 		Max,
+	}
+
+	/// <summary>Indicates the state of a UI theme color.</summary>
+	public enum UIColorState
+	{
+		/// <summary>The UI element is in its normal resting state.</summary>
+		Normal,
+		/// <summary>The UI element has been activated fully by some type of
+		/// interaction.</summary>
+		Active,
+		/// <summary>The UI element is currently disabled, and cannot be used.
+		/// </summary>
+		Disabled
 	}
 
 	/// <summary>This specifies a particular padding mode for certain UI
@@ -574,6 +744,8 @@ namespace StereoKit
 	/// the text filling the remaining space.</summary>
 	public enum UIBtnLayout
 	{
+		/// <summary>Hide the image, and only show text.</summary>
+		None,
 		/// <summary>Image to the left, text to the right. Image will take up
 		/// no more than half the width.</summary>
 		Left,
@@ -586,5 +758,107 @@ namespace StereoKit
 		Center,
 		/// <summary>Same as `Center`, but omitting the text.</summary>
 		CenterNoText,
+	}
+
+	/// <summary>This describes how a layout should be cut up! Used with
+	/// `UI.LayoutPushCut`.</summary>
+	public enum UICut
+	{
+		/// <summary>This cuts a chunk from the left side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
+		Left,
+		/// <summary>This cuts a chunk from the right side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the X axis!</summary>
+		Right,
+		/// <summary>This cuts a chunk from the top side of the current
+		/// layout. This will work for layouts that are auto-sizing, and fixed
+		/// sized.</summary>
+		Top,
+		/// <summary>This cuts a chunk from the bottom side of the current
+		/// layout. This will work for layouts that are fixed sized, but not
+		/// layouts that auto-size on the Y axis!</summary>
+		Bottom,
+	}
+
+	/// <summary>For elements that contain corners, this bit flag allows you to
+	/// specify which corners.</summary>
+	public enum UICorner
+	{
+		/// <summary> No corners at all. </summary>
+		None        = 0,
+		/// <summary>The top right corner.</summary>
+		TopRight    = 1 << 1,
+		/// <summary>The top left corner.</summary>
+		TopLeft     = 1 << 0,
+		/// <summary>The bottom left corner.</summary>
+		BottomLeft  = 1 << 3,
+		/// <summary>The bottom right corner.</summary>
+		BottomRight = 1 << 2,
+		/// <summary>All corners.</summary>
+		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
+		/// <summary>The top left and top right corners.</summary>
+		Top    = TopLeft    | TopRight,
+		/// <summary>The bottom left and bottom right corners.</summary>
+		Bottom = BottomLeft | BottomRight,
+		/// <summary>The top left and bottom left corners.</summary>
+		Left   = TopLeft    | BottomLeft,
+		/// <summary>The top right and bottom right corners.</summary>
+		Right  = TopRight   | BottomRight,
+	}
+
+	/// <summary>A point on a lathe for a mesh generation algorithm. This is the
+	/// 'silhouette' of the mesh, or the shape the mesh would take if you spun
+	/// this line of points in a cylinder.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UILathePt
+	{
+		/// <summary>Lathe point 'location', where 'x' is a percentage of the
+		/// lathe radius alnong the current surface normal, and Y is the
+		/// absolute Z axis value.</summary>
+		public Vec2 pt;
+		/// <summary>The lathe normal point, which will be rotated along the
+		/// surface of the mesh.</summary>
+		public Vec2 normal;
+		/// <summary>Vertex color of the current lathe vertex.</summary>
+		public Color32 color;
+		/// <summary>Will there be triangles connecting this lathe point to the
+		/// next in the list, or is this a jump without triangles?</summary>
+		[MarshalAs(UnmanagedType.Bool)] public bool connectNext;
+		/// <summary>Should the triangles attaching this point to the next be
+		/// ordered backwards?</summary>
+		[MarshalAs(UnmanagedType.Bool)] public bool flipFace;
+	}
+
+	/// <summary>Id of a simulated hand pose, for use with
+	/// `Input.HandSimPoseRemove`</summary>
+	public struct HandSimId
+	{
+		private int id;
+		/// <summary>An id for testing emptiness.</summary>
+		public static HandSimId None { get { return new HandSimId { id = 0 }; } }
+		
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a == b</returns>
+		public static bool operator == (HandSimId a, HandSimId b) { return a.id == b.id; }
+		/// <summary>Compares the equality of two HandSimIds, nothing fancy
+		/// here.</summary>
+		/// <param name="a">First hand id.</param>
+		/// <param name="b">Second hand id.</param>
+		/// <returns>a != b</returns>
+		public static bool operator != (HandSimId a, HandSimId b) { return a.id != b.id; }
+		/// <summary>Same as ==</summary>
+		/// <param name="obj">Must be a HandSimId</param>
+		/// <returns>Equality.</returns>
+		public override bool Equals(object obj)
+			=> id.Equals(((HandSimId)obj).id);
+		/// <summary>Hash code of the id.</summary>
+		/// <returns>Hash code of the id.</returns>
+		public override int GetHashCode()
+			=> id.GetHashCode();
 	}
 }

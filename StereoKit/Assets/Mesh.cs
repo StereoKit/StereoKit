@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -18,9 +18,18 @@ namespace StereoKit
 	/// Mesh indices are stored as unsigned ints, so you can have a mesh with
 	/// a fudgeton of verts! 4 billion or so :)
 	/// </summary>
-	public class Mesh
+	public class Mesh : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managine your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.mesh_get_id(_inst));
+			set => NativeAPI.mesh_set_id(_inst, value);
+		}
 
 		/// <summary>This is a bounding box that encapsulates the Mesh! It's
 		/// used for collision, visibility testing, UI layout, and probably 
@@ -66,28 +75,64 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty mesh!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
-		/// <summary>Assigns the vertices for this Mesh! This will create a
-		/// vertex buffer object on the graphics card right away. If you're
-		/// calling this a second time, the buffer will be marked as dynamic
-		/// and re-allocated. If you're calling this a third time, the buffer
-		/// will only re-allocate if the buffer is too small, otherwise it 
-		/// just copies in the data!</summary>
+		/// <summary>Assigns the vertices and indices for this Mesh! This will
+		/// create a vertex buffer and index buffer object on the graphics
+		/// card. If you're calling this a second time, the buffers will be
+		/// marked as dynamic and re-allocated. If you're calling this a third
+		/// time, the buffer will only re-allocate if the buffer is too small,
+		/// otherwise it just copies in the data!
 		/// 
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
 		/// values.
-		/// <param name="verts">An array of vertices to add to the mesh.
+		/// 
+		/// Calling SetData is slightly more efficient than calling SetVerts
+		/// and SetInds separately.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
 		/// values.</param>
-		public void SetVerts(Vertex[] verts)
-			=>NativeAPI.mesh_set_verts(_inst, verts, verts.Length);
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. Since this does
+		/// require iterating through all the verts with some logic, there is
+		/// performance cost to doing this. If you're updating a mesh
+		/// frequently or need all the performance you can get, setting this to
+		/// false is a nice way to gain some speed!</param>
+		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds);
+
+		/// <summary>Assigns the vertices for this Mesh! This will create a
+		/// vertex buffer object on the graphics card. If you're
+		/// calling this a second time, the buffer will be marked as dynamic
+		/// and re-allocated. If you're calling this a third time, the buffer
+		/// will only re-allocate if the buffer is too small, otherwise it 
+		/// just copies in the data!
+		/// 
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values.</param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. Since this does
+		/// require iterating through all the verts with some logic, there is
+		/// performance cost to doing this. If you're updating a mesh
+		/// frequently or need all the performance you can get, setting this to
+		/// false is a nice way to gain some speed!</param>
+		public void SetVerts(Vertex[] vertices, bool calculateBounds = true)
+			=> NativeAPI.mesh_set_verts(_inst, vertices, vertices.Length, calculateBounds);
 
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
@@ -113,16 +158,16 @@ namespace StereoKit
 
 		/// <summary>Assigns the face indices for this Mesh! Faces are always
 		/// triangles, there are only ever three indices per face. This
-		/// function will create a index buffer object on the graphics card
-		/// right away. If you're calling this a second time, the buffer will
-		/// be marked as dynamic and re-allocated. If you're calling this a
-		/// third time, the buffer will only re-allocate if the buffer is too
-		/// small, otherwise it just copies in the data!</summary>
-		/// <param name="inds">A list of face indices, must be a multiple of
+		/// function will create a index buffer object on the graphics card. If
+		/// you're calling this a second time, the buffer will be marked as
+		/// dynamic and re-allocated. If you're calling this a third time, the
+		/// buffer will only re-allocate if the buffer is too small, otherwise
+		/// it just copies in the data!</summary>
+		/// <param name="indices">A list of face indices, must be a multiple of
 		/// 3. Each index represents a vertex from the array assigned using
 		/// SetVerts.</param>
-		public void SetInds (uint[] inds)
-			=>NativeAPI.mesh_set_inds(_inst, inds, inds.Length);
+		public void SetInds (uint[] indices)
+			=>NativeAPI.mesh_set_inds(_inst, indices, indices.Length);
 
 		/// <summary>This marshalls the Mesh's index data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing indices on the
@@ -146,9 +191,9 @@ namespace StereoKit
 			return result;
 		}
 
-		/// <summary>Checks the intersection point of this ray and a Mesh 
+		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
-		/// data will always return false. Ray must be in model space, 
+		/// data will always return false. Ray must be in model space,
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</summary>
@@ -159,17 +204,17 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, IntPtr.Zero) > 0;
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out _);
 
-		/// <summary>Checks the intersection point of this ray and a Mesh 
+		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
-		/// data will always return false. Ray must be in model space, 
+		/// data will always return false. Ray must be in model space,
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
 		/// into model space, see the example in the docs!</summary>
@@ -180,20 +225,33 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <param name="outStartInds">The index of the first index of the triangle that was hit</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
-		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt,out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt, out outStartInds) > 0;
+		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
+			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out outStartInds);
 
-		// TODO: Remove in v0.4
-		[Obsolete("Removing in v0.4, replace with the Mesh.Intersect overload with a Ray output.")]
+		/// <summary>Checks the intersection point of this ray and a Mesh
+		/// with collision data stored on the CPU. A mesh without collision
+		/// data will always return false. Ray must be in model space,
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</summary>
+		/// <param name="modelSpaceRay">Ray must be in model space, the
+		/// intersection point will be in model space too. You can use the
+		/// inverse of the mesh's world transform matrix to bring the ray
+		/// into model space, see the example in the docs!</param>
+		/// <param name="modelSpaceAt">The intersection point of the ray and
+		/// the mesh, if an intersection occurs. This is in model space, and
+		/// must be transformed back into world space later.</param>
+		/// <returns>True if an intersection occurs, false otherwise!
+		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, out Ray intersection, IntPtr.Zero) > 0;
+			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out Ray intersection, out _);
 			modelSpaceAt = intersection.position;
 			return result;
 		}
@@ -207,7 +265,7 @@ namespace StereoKit
 		/// <param name="c">The third vertex of the found triangle</param>
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
-			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c) == 1;
+			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c);
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
@@ -235,7 +293,7 @@ namespace StereoKit
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
-		/// coordinates start at 0,0 at the -X,-Z corer, and go to 1,1 at the
+		/// coordinates start at 0,0 at the -X,-Z corner, and go to 1,1 at the
 		/// +X,+Z corner!
 		/// 
 		/// NOTE: This generates a completely new Mesh asset on the GPU, and
@@ -247,9 +305,11 @@ namespace StereoKit
 		/// <param name="subdivisions">Use this to add extra slices of 
 		/// vertices across the plane. This can be useful for some types of
 		/// vertex-based effects!</param>
+		/// <param name="doubleSided">Should both sides of the plane be 
+		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
-		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions));
+		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided));
 
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
@@ -273,9 +333,58 @@ namespace StereoKit
 		/// <param name="subdivisions">Use this to add extra slices of 
 		/// vertices across the plane. This can be useful for some types of
 		/// vertex-based effects!</param>
+		/// <param name="doubleSided">Should both sides of the plane be 
+		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
-		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions));
+		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided));
+
+		/// <summary>Generates a circle on the XZ axis facing up that is 
+		/// pre-sized to the given diameter. UV coordinates correspond to a unit 
+		/// circle centered at 0.5, 0.5! That is, the right-most point on the 
+		/// circle has UV coordinates 1, 0.5 and the top-most point has UV 
+		/// coordinates 0.5, 1.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
+		/// <param name="diameter">The diameter of the circle in meters, or 
+		/// 2*radius. This is the full length from one side to the other.
+		/// </param>
+		/// <param name="spokes">How many vertices compose the circumference of 
+		/// the circle? Clamps to a minimum of 3. More is smoother, but less 
+		/// performant.</param>
+		/// <param name="doubleSided">Should both sides of the circle be 
+		/// rendered?</param>
+		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
+		public static Mesh GenerateCircle(float diameter, int spokes = 16, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided));
+
+		/// <summary>Generates a circle with an arbitrary orientation that is
+		/// pre-sized to the given diameter. UV coordinates start at the top 
+		/// left indicated with 'planeTopDirection' and correspond to a unit 
+		/// circle centered at 0.5, 0.5.
+		/// 
+		/// NOTE: This generates a completely new Mesh asset on the GPU, and
+		/// is best done during 'initialization' of your app/scene.</summary>
+		/// <param name="diameter">The diameter of the circle in meters, or 
+		/// 2*radius. This is the full length from one side to the other.
+		/// </param>
+		/// <param name="planeNormal">What is the normal of the surface this
+		/// circle is generated on?</param>
+		/// <param name="planeTopDirection">A normal defines the plane, but 
+		/// this is technically a rectangle on the 
+		/// plane. So which direction is up? It's important for UVs, but 
+		/// doesn't need to be exact. This function takes the planeNormal as
+		/// law, and uses this vector to find the right and up vectors via
+		/// cross-products.</param>
+		/// <param name="spokes">How many vertices compose the circumference of 
+		/// the circle? Clamps to a minimum of 3. More is smoother, but less 
+		/// performant.</param>
+		/// <param name="doubleSided">Should both sides of the circle be 
+		/// rendered?</param>
+		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
+		public static Mesh GenerateCircle(float diameter, Vec3 planeNormal, Vec3 planeTopDirection, int spokes = 16, bool doubleSided = false)
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided));
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,

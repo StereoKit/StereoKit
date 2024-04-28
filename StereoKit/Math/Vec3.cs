@@ -157,7 +157,7 @@ namespace StereoKit
 		/// from the current vector. Will not work properly if the vector has
 		/// a length of zero.</summary>
 		/// <returns>The normalized (length of 1) vector!</returns>
-		public Vec3 Normalized => v / v.Length();
+		public Vec3 Normalized => Vector3.Normalize(v);
 
 		/// <summary>The dot product is an extremely useful operation! One
 		/// major use is to determine how similar two vectors are. If the
@@ -187,7 +187,7 @@ namespace StereoKit
 		/// the vector has a length of zero.</summary>
 		/// <returns>The normalized (length of 1) vector!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public void Normalize() => v = v / v.Length();
+		public void Normalize() => v = Vector3.Normalize(v);
 
 		/// <summary>Checks if a point is within a certain radius of this one.
 		/// This is an easily readable shorthand of the squared distance check.
@@ -199,6 +199,15 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool InRadius(Vec3 pt, float radius)
 			=> (v - pt.v).LengthSquared() < radius * radius;
+
+		/// <summary>Creates a normalized delta vector that points out from
+		/// an origin point to a target point!</summary>
+		/// <param name="to">The target point.</param>
+		/// <param name="from">And the origin point!</param>
+		/// <returns>Direction from one point to another.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec3 Direction(Vec3 to, Vec3 from)
+			=> Vector3.Normalize(to.v - from.v);
 
 		/// <summary>Calculates the distance between two points in space!
 		/// Make sure they're in the same coordinate space! Uses a Sqrt, so

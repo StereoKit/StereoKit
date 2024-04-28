@@ -3,7 +3,28 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	public enum SpatialNodeType { Static, Dynamic }
+	/// <summary>For use with World.FromSpatialNode, this indicates the type of
+	/// node that's being bridged with OpenXR.</summary>
+	public enum SpatialNodeType 
+	{
+		/// <summary>Static spatial nodes track the pose of a fixed location in
+		/// the world relative to reference spaces. The tracking of static
+		/// nodes may slowly adjust the pose over time for better accuracy but
+		/// the pose is relatively stable in the short term, such as between
+		/// rendering frames. For example, a QR code tracking library can use a
+		/// static node to represent the location of the tracked QR code.
+		/// </summary>
+		Static,
+		/// <summary>Dynamic spatial nodes track the pose of a physical object
+		/// that moves continuously relative to reference spaces. The pose of
+		/// dynamic spatial nodes can be very different within the duration of
+		/// a rendering frame. It is important for the application to use the
+		/// correct timestamp to query the space location. For example, a color
+		/// camera mounted in front of a HMD is also tracked by the HMD so a
+		/// web camera library can use a dynamic node to represent the camera
+		/// location.</summary>
+		Dynamic
+	}
 
 	/// <summary>World contains information about the real world around the 
 	/// user. This includes things like play boundaries, scene understanding,
@@ -25,6 +46,35 @@ namespace StereoKit
 		/// Not all systems have a boundary, so be sure to check 
 		/// `World.HasBounds` first.</summary>
 		public static Pose BoundsPose => NativeAPI.world_get_bounds_pose();
+
+		/// <summary>The mode or "reference space" that StereoKit uses for
+		/// determining its base origin. This is determined by the initial
+		/// value provided in SKSettings.origin, as well as by support from the
+		/// underlying runtime. The mode reported here will _not_ necessarily
+		/// be the one requested in initialization, as fallbacks are
+		/// implemented using different available modes.</summary>
+		public static OriginMode OriginMode => NativeAPI.world_get_origin_mode();
+
+		/// <summary>This reports the status of the device's positional
+		/// tracking. If the room is too dark, or a hand is covering tracking
+		/// sensors, or some other similar 6dof tracking failure, this would
+		/// report as not tracked.
+		/// 
+		/// Note that this does not factor in the status of rotational
+		/// tracking. Rotation is typically done via gyroscopes/accelerometers,
+		/// which don't really fail the same way positional tracking system
+		/// can.</summary>
+		public static BtnState Tracked => NativeAPI.world_get_tracked();
+
+		/// <summary>This is relative to the base reference point and is NOT
+		/// in world space! The origin StereoKit uses is actually a base
+		/// reference point combined with an offset! You can use this to read
+		/// or set the offset from the OriginMode reference point. </summary>
+		public static Pose OriginOffset
+		{
+			get => NativeAPI.world_get_origin_offset();
+			set => NativeAPI.world_set_origin_offset(value);
+		}
 
 		/// <summary>What information should StereoKit use to determine when
 		/// the next world data refresh happens? See the `WorldRefresh` enum
@@ -66,10 +116,25 @@ namespace StereoKit
 		/// <returns>A Pose representing the current orientation of the
 		/// spatial node.</returns>
 		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime);
+			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime);
 
+		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
+		/// based on its current position and rotation! Check
+		/// SK.System.spatialBridgePresent to see if this is available to
+		/// use. Currently only on HoloLens, good for use with the Windows
+		/// QR code package.</summary>
+		/// <param name="spatialNodeGuid">A Windows Mirage spatial node GUID
+		/// acquired from a windows MR API call.</param>
+		/// <param name="pose">A resulting Pose representing the current
+		/// orientation of the spatial node.</param>
+		/// <param name="spatialNodeType">Type of spatial node to locate.</param>
+		/// <param name="qpcTime">A windows performance counter timestamp at
+		/// which the node should be located, obtained from another API or
+		/// with System.Diagnostics.Stopwatch.GetTimestamp().</param>
+		/// <returns>True if FromSpatialNode succeeded, and false if it failed.
+		/// </returns>
 		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic ? 1 : 0, qpcTime, out pose) > 0;
+			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime, out pose);
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
 		/// into SteroKit's coordinate system. This can be great for
@@ -90,12 +155,25 @@ namespace StereoKit
 			return result;
 		}
 
+		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
+		/// into SteroKit's coordinate system. This can be great for
+		/// interacting with some of the UWP spatial APIs such as WorldAnchors.
+		/// 
+		/// This method only works on UWP platforms, check 
+		/// SK.System.perceptionBridgePresent to see if this is available.
+		/// </summary>
+		/// <param name="perceptionSpatialAnchor">A valid
+		/// Windows.Perception.Spatial.SpatialAnchor.</param>
+		/// <param name="pose">A resulting Pose representing the current
+		/// orientation of the spatial node.</param>
+		/// <returns>A Pose representing the current orientation of the
+		/// SpatialAnchor.</returns>
 		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
-			int    result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
+			bool   result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
 			Marshal.Release(unknown);
-			return result>0;
+			return result;
 		}
 
 		/// <summary>World.RaycastEnabled must be set to true first! 

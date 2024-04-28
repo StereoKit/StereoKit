@@ -2,16 +2,27 @@
 
 namespace StereoKit
 {
-	/// <summary>A 32 bit color struct! This is often directly used by StereoKit data
-	/// structures, and so is often necessary for setting texture data, or mesh data.
-	/// Note that the Color type implicitly converts to Color32, so you can use the 
-	/// static methods there to create Color32 values!</summary>
+	/// <summary>A 32 bit color struct! This is often directly used by
+	/// StereoKit data structures, and so is often necessary for setting
+	/// texture data, or mesh data. Note that the Color type implicitly
+	/// converts to Color32, so you can use the static methods there to create
+	/// Color32 values!
+	/// 
+	/// It's generally best to avoid doing math on 32-bit color values, as they
+	/// lack the precision necessary to create results. It's best to think of
+	/// a Color32 as an optimized end stage format of a color.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Color32
 	{
 		/// <summary>Color components in the range of 0-255.</summary>
 		public byte r, g, b, a;
 
+		/// <summary>Constructs a 32-bit color from bytes! You may also be
+		/// interested in `Color32.Hex`.</summary>
+		/// <param name="r">Red channel.</param>
+		/// <param name="g">Green channel.</param>
+		/// <param name="b">Blue channel.</param>
+		/// <param name="a">Alpha channel.</param>
 		public Color32(byte r, byte g, byte b, byte a)
 		{
 			this.r = r;
@@ -214,14 +225,67 @@ namespace StereoKit
 		public Color ToGamma()
 			=> NativeAPI.color_to_gamma(this);
 
+		/// <summary>This will linearly blend between two different colors!
+		/// Best done on linear colors, rather than gamma corrected colors, but
+		/// will work either way. This will not clamp the percentage to the 0-1
+		/// range.</summary>
+		/// <param name="a">The first color, this will be the result if `t` is
+		/// 0.</param>
+		/// <param name="b">The second color, this will be the result if `t` is
+		/// 1.</param>
+		/// <param name="t">A percentage representing the blend between `a` and
+		/// `b`. This is _not_ clamped to the 0-1 range, and will result in
+		/// extrapolation outside this range.</param>
+		/// <returns>A blended color.</returns>
 		public static Color Lerp(Color a, Color b, float t) => new Color(SKMath.Lerp(a.r,b.r,t), SKMath.Lerp(a.g, b.g, t), SKMath.Lerp(a.b, b.b, t), SKMath.Lerp(a.a, b.a, t));
 
-		public static implicit operator Color32(Color c) 
+		/// <summary>This allows for implicit conversion to Color32. This does
+		/// _not_ convert from linear to gamma corrected, or clamp to 0-1
+		/// first.</summary>
+		/// <param name="c">A 128 bit color to crush down.</param>
+		/// <returns>A crushed down color.</returns>
+		public static implicit operator Color32(Color c)
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
-		public static Color operator *(Color a, float b) 
-			=> new Color(a.r * b, a.g * b, a.b * b, a.a * b);
-		public static Color operator *(Color a, Color b)
-			=> new Color(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a);
+		/// <summary>This will multiply a color linearly, including alpha. Best
+		/// done on a color in linear space. No clamping is applied.</summary>
+		/// <param name="a">The source color.</param>
+		/// <param name="b">The float to multiply by.</param>
+		/// <returns>A multiplied color.</returns>
+		public static Color operator *(Color a, float b) => new Color(a.r * b, a.g * b, a.b * b, a.a * b);
+		/// <summary>This will divide a color linearly, including alpha. Best
+		/// done on a color in linear space. No clamping is applied.</summary>
+		/// <param name="a">The source color.</param>
+		/// <param name="b">The float to divide by.</param>
+		/// <returns>A divided color.</returns>
+		public static Color operator /(Color a, float b) => new Color(a.r / b, a.g / b, a.b / b, a.a / b);
+		/// <summary>This will multiply a color component-wise against another
+		/// color, including alpha. Best done on colors in linear space. No
+		/// clamping is applied. </summary>
+		/// <param name="a">The first color.</param>
+		/// <param name="b">The second color.</param>
+		/// <returns>A multiplied color.</returns>
+		public static Color operator *(Color a, Color b) => new Color(a.r * b.r, a.g * b.g, a.b * b.b, a.a * b.a);
+		/// <summary>This will divide a color component-wise against another
+		/// color, including alpha. Best done on colors in linear space. No
+		/// clamping is applied.</summary>
+		/// <param name="a">The first color.</param>
+		/// <param name="b">The second color.</param>
+		/// <returns>A divided color.</returns>
+		public static Color operator /(Color a, Color b) => new Color(a.r / b.r, a.g / b.g, a.b / b.b, a.a / b.a);
+		/// <summary>This will add a color component-wise with another color,
+		/// including alpha. Best done on colors in linear space. No clamping
+		/// is applied.</summary>
+		/// <param name="a">The first color.</param>
+		/// <param name="b">The second color.</param>
+		/// <returns>An added color.</returns>
+		public static Color operator +(Color a, Color b) => new Color(a.r + b.r, a.g + b.g, a.b + b.b, a.a + b.a);
+		/// <summary>This will subtract color `b` component-wise from color
+		/// `a`, including alpha. Best done on colors in linear space. No
+		/// clamping is applied.</summary>
+		/// <param name="a">The first color.</param>
+		/// <param name="b">The second color.</param>
+		/// <returns>A color where b has been subtracted from a.</returns>
+		public static Color operator -(Color a, Color b) => new Color(a.r - b.r, a.g - b.g, a.b - b.b, a.a - b.a);
 
 		/// <summary>Mostly for debug purposes, this is a decent way to log or
 		/// inspect the color in debug mode. Looks like "[r, g, b, a]"
