@@ -30,9 +30,6 @@ int32_t   skui_input_carat_end;
 float     skui_input_blink;
 
 // Button activation animations all use the same values
-const float    skui_anim_duration  = 0.2f;
-const float    skui_anim_overshoot = 10;
-const float    skui_anim_focus_duration = 0.1f;
 const float    skui_pressed_depth  = 0.4f;
 const color128 skui_color_border   = { 1,1,1,1 };
 const float    skui_aura_radius    = 0.02f;
@@ -232,7 +229,8 @@ void ui_image(sprite_t image, vec2 size) {
 	vec2 final_size;
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
-	sprite_draw(image, matrix_ts(final_pos - vec3{size.x/2,size.y/2,2*mm2m }, vec3{ scale, scale, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(final_pos - vec3{size.x / 2, size.y / 2, 2 * mm2m }, vec3{ scale, scale, 1 }),
+		text_align_center, ui_is_enabled() ? color32{255, 255, 255, 255} : color32{128, 128, 128, 255});
 }
 
 ///////////////////////////////////////////
@@ -331,18 +329,9 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	int32_t       interactor;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
-	if (state & button_state_just_active)
-		ui_anim_start(id, 0);
-	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, 0, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
-		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
-	}
-
-
 	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
 	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
+	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_get_anim_focus(id, state, activation));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
 	return state & button_state_just_inactive;
@@ -405,23 +394,14 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	int32_t       interactor;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
-	if (state & button_state_just_active)
-		ui_anim_start(id, 0);
-	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, 0, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
-		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
-	}
-
 	if (state & button_state_just_inactive) {
 		pressed = pressed ? false : true;
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-
 	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
 	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(activation, color_blend));
+	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_get_anim_focus(id, state, activation));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
 	return state & button_state_just_inactive;
@@ -483,17 +463,9 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	int32_t       interactor;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus, &interactor);
 
-	if (state & button_state_just_active)
-		ui_anim_start(id, 0);
-	float color_blend = state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, 0, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
-		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
-	}
-
 	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
 	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, fmaxf(activation, color_blend));
+	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_get_anim_focus(id, state, activation));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
@@ -573,14 +545,6 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		skui_input_carat  = skui_input_carat_end = (int32_t)utf_charlen(buffer);
 	}
 
-	if (state & button_state_just_active)
-		ui_anim_start(id_hash, 0);
-	float color_blend = skui_input_target == id_hash ? 1.0f : 0.0f;
-	if (ui_anim_has(id_hash, 0, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id_hash, 0, skui_anim_duration);
-		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
-	}
-
 	// Unfocus this if the user starts interacting with something else
 	if (skui_input_target == id_hash && ui_keyboard_focus_lost(id_hash)) {
 		skui_input_target = 0;
@@ -620,7 +584,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 				skui_input_target = 0;
 				platform_keyboard_show(false, type);
 				result = true;
-			} else if (curr == 0x0A) { // Shift+Enter, linefeed
+			} else if (curr == 0x0A) { // Shift+Enter, linefeed 
 				add = '\n';
 			} else if (curr == 0x1B) { // Escape
 				skui_input_target = 0;
@@ -655,7 +619,7 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
 	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
 	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, fmaxf(color_blend, activation));
+	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_get_anim_focus(id_hash, state, activation));
 
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
@@ -808,21 +772,16 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, & button_center, & finger_offset, & focus_state, & active_state, & interactor);
 	value = vertical ? vval.y : vval.x;
 
-	if (active_state & button_state_just_active)
-		ui_anim_start(id, 0);
-	float color_blend = focus_state & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(id, 0, skui_anim_duration)) {
-		float t     = ui_anim_elapsed(id, 0, skui_anim_duration);
-		color_blend = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
-	}
-
 	// Draw the UI
-	float percent = (value - min) / (max - min);
-	ui_progress_bar_at_ex(percent, window_relative_pos, size, color_blend, vertical);
+	float percent    = (value - min) / (max - min);
+	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
+	float activation = has_focus ? 0.5f : 0;
+	float vis_focus  = ui_get_anim_focus(id, active_state, activation);
+	ui_progress_bar_at_ex(percent, window_relative_pos, size, vis_focus, vertical);
 	ui_draw_el(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
 		vec3{ button_center.x+button_size.x/2, button_center.y+button_size.y/2, window_relative_pos.z },
 		vec3{ button_size.x, button_size.y, fmaxf(finger_offset,rule_size * skui_pressed_depth + mm2m) },
-		color_blend);
+		vis_focus);
 	
 	if (active_state & button_state_just_active)
 		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ button_center.x, button_center.y,0 }));
@@ -947,22 +906,7 @@ void ui_window_end() {
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
-	// Focus animation
-	const float delay = 0.2f;
-	button_state_ focus_state = ui_id_focus_state(win->hash);
-	if (focus_state & button_state_just_active) ui_anim_start(win->hash, 0);
-	if (focus_state & button_state_just_inactive) {
-		if (ui_anim_elapsed_total(win->hash, 0) > delay) ui_anim_start(win->hash, 1);
-		ui_anim_cancel(win->hash, 0);
-	}
-
-	float focus = ui_id_focused(win->hash) & button_state_active ? 1.0f : 0.0f;
-	if (ui_anim_has(win->hash, 0, delay + skui_anim_focus_duration)) {
-		focus = math_ease_smooth(0, 1, math_clamp((ui_anim_elapsed_total(win->hash, 0)-delay)/ skui_anim_focus_duration, 0, 1));
-	} else if (ui_anim_has(win->hash, 1, skui_anim_focus_duration)) {
-		focus = math_ease_smooth(1, 0, ui_anim_elapsed(win->hash, 1, skui_anim_focus_duration));
-	}
-
+	float focus = ui_get_anim_focus_inout(win->hash, ui_id_focus_state(win->hash), 0);
 	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
 		vec3 aura_start = vec3{ start.x+skui_aura_radius,  start.y+skui_aura_radius,  start.z };
 		vec3 aura_size  = vec3{ size .x+skui_aura_radius*2,size .y+skui_aura_radius*2,size .z };

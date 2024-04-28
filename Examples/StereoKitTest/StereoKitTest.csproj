@@ -25,15 +25,12 @@
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_NetAndroid\**" />
 		<Compile Remove="StereoKitTest_UWP\**" />
-		<Compile Remove="StereoKitTest_Xamarin\**" />
 		<Compile Remove="StereoKitTest_Web\**" />
 		<EmbeddedResource Remove="StereoKitTest_NatAndroid\**" />
 		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
-		<EmbeddedResource Remove="StereoKitTest_Xamarin\**" />
 		<EmbeddedResource Remove="StereoKitTest_Web\**" />
 		<None Remove="StereoKitTest_NetAndroid\**" />
 		<None Remove="StereoKitTest_UWP\**" />
-		<None Remove="StereoKitTest_Xamarin\**" />
 		<None Remove="StereoKitTest_Web\**" />
 	</ItemGroup>
 	

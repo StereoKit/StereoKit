@@ -141,7 +141,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 ///////////////////////////////////////////
 
 void ui_core_hands_step() {
-	static float prev_pinch[2] = { 1, 1 };
+	static bool prev_active[2] = { false, false };
 
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
@@ -161,12 +161,23 @@ void ui_core_hands_step() {
 		// Hand ray
 		if (ui_far_interact_enabled()) {
 			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
+
+			// Pinches can only start when aim_ready, but should remain true
+			// as long as the pinch remains active
+			bool is_pinched   = (hand->pinch_state & button_state_active) > 0;
+			bool just_pinched = (hand->pinch_state & button_state_just_active) > 0;
+			bool aim_ready    = (hand->aim_ready   & button_state_active) > 0;
+			bool is_active    = (prev_active[i] && is_pinched) || (aim_ready && just_pinched);
+			button_state_ far_pinch_state = button_make_state(prev_active[i], is_active);
+			prev_active[i] = is_active;
+
 			interactor_min_distance_set(skui_hand_interactors[i*3 + 2], math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (skui_hand_interactors[i*3 + 2],
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100, 0.01f,
 				hand->aim.position, hand->aim.orientation, input_head()->position + vec3{0,-0.12f,0},
-				hand->pinch_state, hand->aim_ready);
+				far_pinch_state, hand->aim_ready);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
+
 		}
 	}
 }
@@ -318,15 +329,16 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	out_focus_state  = button_state_inactive;
 	int32_t interactor = -1;
 	vec3    interaction_at;
+	button_state_ focus_candidacy = button_state_inactive;
 
 	interactor_plate_1h(id, interactor_event_poke,
 		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, { size.x, size.y, button_depth },
-		&out_focus_state, &interactor, &interaction_at);
+		& focus_candidacy, &interactor, &interaction_at);
 	interactor_t* actor = interactor_get(interactor);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	out_finger_offset = button_depth;
-	if (out_focus_state & button_state_active) {
+	if (focus_candidacy & button_state_active) {
 		bool pressed;
 		if (actor->activation == interactor_activate_position) {
 			out_finger_offset = -(interaction_at.z + actor->capsule_radius) - window_relative_pos.z;
@@ -337,7 +349,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 		}
 		out_finger_offset = fminf(fmaxf(2 * mm2m, out_finger_offset), button_depth);
 		out_button_state  = interactor_set_active(actor, id, pressed);
-	} else if (out_focus_state & button_state_just_inactive) {
+	} else if (focus_candidacy & button_state_just_inactive) {
 		out_button_state = interactor_set_active(actor, id, false);
 	}
 	
@@ -677,9 +689,9 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 
 ///////////////////////////////////////////
 
-void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_state, int32_t *out_interactor, vec3 *out_interaction_at_local) {
+void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_candidacy, int32_t *out_interactor, vec3 *out_interaction_at_local) {
 	*out_interactor           = -1;
-	*out_focus_state          = button_state_inactive;
+	*out_focus_candidacy      = button_state_inactive;
 	*out_interaction_at_local = vec3_zero;
 
 	skui_last_element = id;
@@ -720,7 +732,7 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 		button_state_ focus    = interactor_set_focus(actor, id, in_box || (actor->activation == interactor_activate_state && was_active), priority, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
 		if (focus != button_state_inactive) {
 			*out_interactor           = i;
-			*out_focus_state          = focus;
+			*out_focus_candidacy      = focus;
 			*out_interaction_at_local = interact_at;
 		}
 	}
@@ -731,9 +743,9 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 
 ///////////////////////////////////////////
 
-void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_state, int32_t *out_interactor) {
-	*out_interactor  = -1;
-	*out_focus_state = button_state_inactive;
+void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_candidacy, int32_t *out_interactor) {
+	*out_interactor      = -1;
+	*out_focus_candidacy = button_state_inactive;
 	
 	skui_last_element = id;
 
@@ -758,8 +770,8 @@ void ui_box_interaction_1h(id_hash_t id, interactor_event_ event_mask, vec3 box_
 		bool  in_box = interactor_check_box(actor, bounds, &at, &priority);
 		button_state_ focus = interactor_set_focus(actor, id, in_box || (actor->activation == interactor_activate_state && was_active), priority, priority, bounds.center);
 		if (focus != button_state_inactive) {
-			*out_interactor  = i;
-			*out_focus_state = focus;
+			*out_interactor      = i;
+			*out_focus_candidacy = focus;
 		}
 	}
 

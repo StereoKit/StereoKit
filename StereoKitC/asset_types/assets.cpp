@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 #include "assets.h"
 #include "../_stereokit.h"
@@ -762,7 +762,10 @@ int32_t asset_thread(void *thread_inst_obj) {
 ///////////////////////////////////////////
 
 void assets_block_until(asset_header_t *asset, asset_state_ state) {
-	if (asset->state >= state || asset->state < 0)
+	// If we're past the required state already, drop out. asset_state_none and
+	// below (error states) means no loading is happening, so blocking will
+	// only put us in an infinite loop.
+	if (asset->state >= state || asset->state <= asset_state_none)
 		return;
 
 	ft_id_t curr_id = ft_id_current();
