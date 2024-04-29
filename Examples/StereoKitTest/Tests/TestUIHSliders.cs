@@ -1,7 +1,7 @@
 ﻿using StereoKit;
 using System;
 
-class TestHSliders : ITest
+class TestUIHSliders : ITest
 {
 	float pushValue  = 0;
 	float pinchValue = 0;
