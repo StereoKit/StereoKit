@@ -44,6 +44,6 @@ class TestUIButtonImg : ITest
 		UI.WindowEnd();
 
 		float y = UI.LayoutLast.center.y;
-		Tests.Screenshot("Tests/ButtonImg.jpg", 1, 400, 600, 90, V.XYZ(0, y, -0.3f), new Vec3(0, y, -0.5f));
+		Tests.Screenshot("UI/ButtonImg.jpg", 1, 400, 600, 90, V.XYZ(0, y, -0.3f), new Vec3(0, y, -0.5f));
 	}
 }
