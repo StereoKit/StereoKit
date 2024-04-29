@@ -549,6 +549,7 @@ elseif(WIN32)
   endif()
 elseif(EMSCRIPTEN)
   set(SK_ARCH "wasm32")
+  set_target_properties(StereoKitC PROPERTIES PREFIX "")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_SYSTEM_PROCESSOR)
     set(SK_ARCH ${CMAKE_SYSTEM_PROCESSOR})
@@ -637,6 +638,7 @@ if (SK_BUILD_TESTS)
     StereoKitC
   )
 
+
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
@@ -656,6 +658,12 @@ if (SK_BUILD_TESTS)
     TARGET StereoKitCTest
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
     COMMENT "Copy resources from ${source} => ${destination}")
+
+  if (EMSCRIPTEN)
+    target_link_options   (StereoKitCTest PRIVATE -gsource-map --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets@/Assets)
+    add_custom_command(TARGET StereoKitCTest
+      COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_build" "$<TARGET_FILE_DIR:StereoKitCTest>")
+  endif()
 endif()
 
 ###########################################

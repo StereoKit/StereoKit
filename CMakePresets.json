@@ -305,7 +305,7 @@
       "generator":   "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE":              "Release",
-        "CMAKE_CXX_FLAGS_DEBUG":         "-g -O0",
+        "CMAKE_CXX_FLAGS_RELEASE":         "-g -O0",
         "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }
@@ -317,7 +317,7 @@
       "generator":   "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE":              "Debug",
-        "CMAKE_CXX_FLAGS_DEBUG":         "-gsource-map -O0 --emit-symbol-map",
+        "CMAKE_CXX_FLAGS_DEBUG":         "-g -O0",
         "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }

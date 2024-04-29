@@ -100,6 +100,9 @@ emsdk activate 3.1.34
 cmake --preset Browser_Release
 cmake --build --preset Browser_Release
 
+# Run the native test app, this will start a server and open the default browser
+emrun bin/intermediate/Browser_Release/index.htm
+
 # To run the C# Blazor test app, you will need the .NET 9 Preview SDK installed and the Blazor workloads
 # Start the app with the below and then open a browser to: https://localhost:57955/
 dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTest_Web/StereoKitTest_Web.csproj
