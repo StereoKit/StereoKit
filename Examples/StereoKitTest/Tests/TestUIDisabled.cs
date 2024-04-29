@@ -1,7 +1,7 @@
 ﻿using System;
 using StereoKit;
 
-class TestDisabledUI : ITest
+class TestUIDisabled : ITest
 {
 	Sprite sprSearch = Sprite.FromFile("search.png");
 	Sprite sprToggleOn = Sprite.FromFile("mic_icon.png");

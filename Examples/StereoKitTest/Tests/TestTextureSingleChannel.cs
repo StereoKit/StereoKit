@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class TestSingleChannelTextures : ITest
+class TestTextureSingleChannel : ITest
 {
 	Material singleChannelTex = Default.Material.Copy();
 
