@@ -77,9 +77,9 @@
 
 	<ItemGroup>
 		<!--<None                 Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />-->
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so"                     CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so"     CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64\*.so"                                                             CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64\*.so"                                                         CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
 		
 		<!--<None                 Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />-->
 		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />

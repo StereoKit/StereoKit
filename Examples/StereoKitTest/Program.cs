@@ -18,8 +18,8 @@ class Program
 		blendPreference = DisplayBlend.AnyTransparent,
 		mode            = AppMode.XR,
 		logFilter       = LogLevel.Diagnostic,
-        //origin          = OriginMode.Floor,
-    };
+		//origin          = OriginMode.Floor,
+	};
 
 	static Model  floorMesh;
 	static Matrix floorTr;
@@ -59,11 +59,11 @@ class Program
 
 	static async Task Main(string[] args)
 	{
-		bool headless = Array.IndexOf(args, "-headless") != -1;
-		Tests.IsTesting = Array.IndexOf(args, "-test") != -1;
+		bool headless         = Array.IndexOf(args, "-headless") != -1;
+		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
 		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
 		if (Array.IndexOf(args, "-screenfolder") != -1)
-			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder") + 1];
+			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
 		if (Array.IndexOf(args, "-gltf") != -1)
 			Tests.GltfFolders = args[Array.IndexOf(args, "-gltf") + 1];
 		if (Array.IndexOf(args, "-gltfscreenfolder") != -1)
@@ -80,9 +80,9 @@ class Program
 			settings.disableUnfocusedSleep = true;
 		}
 
-        // Preload the StereoKit library for access to Time.Scale before
-        // initialization occurs.
-        SK.PreLoadLibrary();
+		// Preload the StereoKit library for access to Time.Scale before
+		// initialization occurs.
+		SK.PreLoadLibrary();
 
 		BackendPlatform backend = Backend.Platform;
 		if(backend != BackendPlatform.Web)
@@ -92,9 +92,6 @@ class Program
 			logWindow = SK.AddStepper<LogWindow>();
 			logWindow.Enabled = false;
 		}
-
-        Log.Info($"Using Platform:{backend}");
-		Log.Info($"Using Graphics:{Backend.Graphics}");
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
@@ -120,6 +117,7 @@ class Program
 		{
 			Log.Info("QuitReason is " + SK.QuitReason);
 		}
+
 	}
 
 	static void Init()
@@ -131,7 +129,6 @@ class Program
 
 		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
 		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
-
 
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
