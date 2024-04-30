@@ -441,10 +441,7 @@ bool openxr_init() {
 	// thread by accident.
 #if defined(SK_OS_ANDROID)
 	if (xr_ext_available.KHR_android_thread_settings) {
-		// This may be redundant to do twice since both happen on the same
-		// thread? Most important one goes last just in case.
-		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR, gettid());
-		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR,    gettid());
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
 	}
 #endif
 
@@ -930,10 +927,22 @@ void openxr_step_end() {
 	//
 	// This happens at the end of step_end so that the app still can receive a
 	// message about the app going into a hidden state.
-	//while (xr_session_state == XR_SESSION_STATE_IDLE) {
-	//	platform_sleep(100);
-	//	openxr_poll_events();
-	//}
+//	if (xr_session_state == XR_SESSION_STATE_IDLE) {
+//#if defined(SK_OS_ANDROID)
+//		if (xr_ext_available.KHR_android_thread_settings) {
+//			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
+//		}
+//#endif
+//		while (xr_session_state == XR_SESSION_STATE_IDLE) {
+//			platform_sleep(100);
+//			openxr_poll_events();
+//		}
+//#if defined(SK_OS_ANDROID)
+//		if (xr_ext_available.KHR_android_thread_settings) {
+//			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
+//		}
+//#endif
+//	}
 }
 
 ///////////////////////////////////////////
