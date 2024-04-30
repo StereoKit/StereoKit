@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -69,6 +69,9 @@
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/UWP/ARM64/Release/StereoKitC.pdb" PackagePath="runtimes/win10-arm64/nativeassets/uap10.0/" Condition="Exists('../bin/distribute/bin/UWP/ARM64/Release/StereoKitC.pdb')" />
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll" PackagePath="runtimes/win10-arm/nativeassets/uap10.0/" Condition="Exists('../bin/distribute/bin/UWP/ARM/Release/StereoKitC.dll')" />
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/UWP/ARM/Release/StereoKitC.pdb" PackagePath="runtimes/win10-arm/nativeassets/uap10.0/" Condition="Exists('../bin/distribute/bin/UWP/ARM/Release/StereoKitC.pdb')" />
+		
+		<!-- Browser Libraries -->
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Browser/wasm32/Release/StereoKitC.a" PackagePath="runtimes/browser-wasm/native/" Condition="Exists('../bin/distribute/bin/Browser/wasm32/Release/StereoKitC.a')" />
 
 		<!-- Shader compile tools -->
 		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_x64/skshaderc.exe" PackagePath="tools/skshaderc/win32_x64/" />

@@ -19,6 +19,7 @@
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKBuildPlatform>
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='windows'">CoreWindows</SKBuildPlatform>
 			<SKBuildPlatform Condition="'$(TargetPlatformIdentifier)'=='UAP'"                                      >UWP</SKBuildPlatform>
+			<SKBuildPlatform Condition="'$(RuntimeIdentifier)'=='browser-wasm'"                                    >Browser</SKBuildPlatform>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp'"  >Core</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"  >Mono</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
