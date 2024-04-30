@@ -413,6 +413,8 @@ tex_format_ render_preferred_depth_fmt() {
 	case depth_mode_balanced:
 #if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_ANDROID)
 		return tex_format_depth16;
+#elif defined(SK_OS_WEB)
+		return tex_format_depthstencil;
 #else
 		return tex_format_depth32;
 #endif

@@ -93,11 +93,6 @@ class Program
 			logWindow = SK.AddStepper<LogWindow>();
 			logWindow.Enabled = false;
 		}
-		else
-		{
-			// Browser currently only supports the 24bit depth mode
-			settings.depthMode = DepthMode.Stencil;
-        }
 
         Log.Info($"Using Platform:{backend}");
 		Log.Info($"Using Graphics:{Backend.Graphics}");
