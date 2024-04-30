@@ -728,7 +728,8 @@ void interactor_plate_1h(id_hash_t id, interactor_event_ event_mask, vec3 plate_
 
 		float         priority = 0;
 		vec3          interact_at;
-		bool          in_box   = interactor_check_box(actor, bounds, &interact_at, &priority);
+		bool          facing   = actor->type == interactor_type_line ? vec3_dot(actor->capsule_end - actor->capsule_start, vec3_forward) < 0 : true;
+		bool          in_box   = facing && interactor_check_box(actor, bounds, &interact_at, &priority);
 		button_state_ focus    = interactor_set_focus(actor, id, in_box || (actor->activation == interactor_activate_state && was_active), priority, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
 		if (focus != button_state_inactive) {
 			*out_interactor           = i;
