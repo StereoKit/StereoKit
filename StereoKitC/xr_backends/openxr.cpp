@@ -1074,7 +1074,7 @@ bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, X
 
 ///////////////////////////////////////////
 
-pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
+pose_t openxr_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
 		return pose_identity;
@@ -1091,7 +1091,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
 
 	if (XR_FAILED(xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space))) {
-		log_warn("world_from_spatial_graph: xrCreateSpatialGraphNodeSpaceMSFT call failed, maybe a bad spatial node?");
+		log_warn("openxr_from_spatial_graph: xrCreateSpatialGraphNodeSpaceMSFT call failed, maybe a bad spatial node?");
 		return pose_identity;
 	}
 
@@ -1106,7 +1106,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 
 	pose_t result = {};
 	if (!openxr_get_space(space, &result, time)) {
-		log_warn("world_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
+		log_warn("openxr_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
 		return pose_identity;
 	}
 	return result;
@@ -1114,7 +1114,7 @@ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dyna
 
 ///////////////////////////////////////////
 
-bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose) {
+bool32_t openxr_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose) {
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting spatial graph nodes!");
 		*out_pose = pose_identity;
@@ -1155,7 +1155,7 @@ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_
 
 ///////////////////////////////////////////
 
-pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
+pose_t openxr_from_perception_anchor(void *perception_spatial_anchor) {
 #if defined(SK_OS_WINDOWS_UWP)
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting perception anchors!");
@@ -1191,14 +1191,14 @@ pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 	return result;
 #else
-	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
+	log_warn("openxr_from_perception_anchor not available outside of Windows UWP!");
 	return pose_identity;
 #endif
 }
 
 ///////////////////////////////////////////
 
-bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_t *out_pose) {
+bool32_t openxr_try_from_perception_anchor(void *perception_spatial_anchor, pose_t *out_pose) {
 #if defined(SK_OS_WINDOWS_UWP)
 	if (!xr_session) {
 		log_warn("No OpenXR session available for converting perception anchors!");
@@ -1237,7 +1237,7 @@ bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_
 	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
 	return true;
 #else
-	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
+	log_warn("openxr_from_perception_anchor not available outside of Windows UWP!");
 	*out_pose = pose_identity;
 	return false;
 #endif

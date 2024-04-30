@@ -28,7 +28,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
+project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
@@ -364,6 +364,8 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/webxr.h
+  StereoKitC/xr_backends/webxr.cpp
   StereoKitC/xr_backends/xr.h
   StereoKitC/xr_backends/xr.cpp
   StereoKitC/xr_backends/simulator.h
