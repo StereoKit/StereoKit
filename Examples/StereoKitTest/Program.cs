@@ -2,10 +2,9 @@
 // The authors below grant copyright rights under the MIT license:
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
+
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using StereoKit;
 using StereoKit.Framework;
@@ -14,13 +13,13 @@ class Program
 {
 	static string startTest = "welcome";
 	static SKSettings settings = new SKSettings {
-        appName = "StereoKit C#",
-        assetsFolder = "Assets",
-        blendPreference = DisplayBlend.AnyTransparent,
-        mode = AppMode.Simulator,
-        logFilter = LogLevel.Diagnostic
-		//origin          = OriginMode.Floor,
-	};
+		appName         = "StereoKit C#",
+		assetsFolder    = "Assets",
+		blendPreference = DisplayBlend.AnyTransparent,
+		mode            = AppMode.XR,
+		logFilter       = LogLevel.Diagnostic,
+        //origin          = OriginMode.Floor,
+    };
 
 	static Model  floorMesh;
 	static Matrix floorTr;
@@ -77,7 +76,7 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			settings.mode = headless ? AppMode.Offscreen : AppMode.Simulator;
+			settings.mode                  = headless ? AppMode.Offscreen : AppMode.Simulator;
 			settings.disableUnfocusedSleep = true;
 		}
 
@@ -85,7 +84,7 @@ class Program
         // initialization occurs.
         SK.PreLoadLibrary();
 
-		var backend = Backend.Platform;
+		BackendPlatform backend = Backend.Platform;
 		if(backend != BackendPlatform.Web)
 		{
 			SK.AddStepper<PassthroughFBExt>();
@@ -101,14 +100,14 @@ class Program
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
 
-        Time.Scale = Tests.IsTesting ? 0 : 1;
+		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		Init();
 
-        // The TaskCompletionSource and await needed for running in the web so that the 
+		// The TaskCompletionSource and await needed for running in the web so that the 
 		// browser doesn't lock up while the app is running.
 		// For None web the Run loop only exits when shutdown and is not affected by the await.
-        var skRunTaskCompletionSource = new TaskCompletionSource<bool>();
+		TaskCompletionSource<bool> skRunTaskCompletionSource = new ();
         SK.Run(Step, () =>
 		{
 			Tests.Shutdown();
@@ -123,15 +122,15 @@ class Program
 		}
 	}
 
-    static void Init()
+	static void Init()
 	{
 		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
 		floorMat.Transparency = Transparency.Blend;
-		floorMat.SetVector("radius", new Vec4(5, 10, 0, 0));
+		floorMat.SetVector("radius", new Vec4(5,10,0,0));
 		floorMat.QueueOffset = -11;
 
-		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40, 40), Vec3.Up, Vec3.Forward), floorMat);
-		floorTr = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
+		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
+		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
 
 
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
@@ -156,11 +155,10 @@ class Program
 	}
 
 	//////////////////////
-	
+
 	static void Step()
 	{
-        CheckFocus();
-
+		CheckFocus();
 
 		Tests.Update();
 
@@ -189,7 +187,7 @@ class Program
 			return;
 
 		WindowDemoStep();
-    }
+	}
 
 	static void WindowDemoStep()
 	{
@@ -245,5 +243,5 @@ class Program
 			Log.Info($"App focus changed to: {lastFocus}");
 		}
 	}
-    /// :End:
+	/// :End:
 }

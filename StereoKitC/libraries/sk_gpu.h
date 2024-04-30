@@ -3612,7 +3612,7 @@ void skg_tex_target_bind(skg_tex_t *render_target) {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	if (render_target) {
-		glViewport(0, 0, render_target->width, render_target->height);		
+		glViewport(0, 0, render_target->width, render_target->height);
 	} else {
 		glViewport(0, 0, gl_active_width, gl_active_height);
 	}
@@ -4643,7 +4643,7 @@ void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, temp_framebuffer);
 
 		glBlitFramebuffer  (0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		
+
 		glDeleteFramebuffers(1, &temp_framebuffer);
 	} else {
 		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);

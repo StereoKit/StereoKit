@@ -1,53 +1,52 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="SKPrepareNativeLib" BeforeTargets="BeforeClean" Condition="$(SKBuildStereoKitC) == 'true'" >
+		<PropertyGroup>
+			<SKBuildStereoKitC Condition="'$(SKBuildStereoKitC)' == ''">false</SKBuildStereoKitC>
+			<SKCMakeConfiguration Condition="'$(SKCMakeConfiguration)' == '' AND '$(Configuration)'!='Debug'">Release</SKCMakeConfiguration>
+			<SKCMakeConfiguration Condition="'$(SKCMakeConfiguration)' == '' AND '$(Configuration)'=='Debug'">Debug</SKCMakeConfiguration>
+		</PropertyGroup>
+	</Target>
 
-  <Target Name="SKPrepareNativeLib" BeforeTargets="BeforeClean" Condition="$(SKBuildStereoKitC) == 'true'" >
-      <PropertyGroup>
-          <SKBuildStereoKitC Condition="'$(SKBuildStereoKitC)' == ''">false</SKBuildStereoKitC>
-          <SKCMakeConfiguration Condition="'$(SKCMakeConfiguration)' == '' AND '$(Configuration)'!='Debug'">Release</SKCMakeConfiguration>
-          <SKCMakeConfiguration Condition="'$(SKCMakeConfiguration)' == '' AND '$(Configuration)'=='Debug'">Debug</SKCMakeConfiguration>
-      </PropertyGroup>
-  </Target>
+	<Target Name="SKCleanNativeLib" BeforeTargets="BeforeClean" DependsOnTargets="SKPrepareNativeLib" Condition="$(SKBuildStereoKitC) == 'true'" >
+		<Message Text="SK cleaning StereoKitC $(SKCMakeConfiguration)" />
+		<Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin\intermediate\Browser_$(SKCMakeConfiguration)" />
+		<Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin\distribute\bin\WASM\wasm32\$(SKCMakeConfiguration)" />
+	</Target>
 
-  <Target Name="SKCleanNativeLib" BeforeTargets="BeforeClean" DependsOnTargets="SKPrepareNativeLib" Condition="$(SKBuildStereoKitC) == 'true'" >
-      <Message Text="SK cleaning StereoKitC $(SKCMakeConfiguration)" />
-      <Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin\intermediate\Browser_$(SKCMakeConfiguration)" />
-      <Exec Command="rmdir /s /q $(ProjectDir)..\..\..\bin\distribute\bin\WASM\wasm32\$(SKCMakeConfiguration)" />
-  </Target>
-
-  <Target Name="SKBuildNativeLib" BeforeTargets="BeforeBuild" AfterTargets="PrepareInputsForWasmBuildDependsOn" DependsOnTargets="SKPrepareNativeLib" Condition="$(SKBuildStereoKitC) == 'true'" >
-      <PropertyGroup>
-          <SKCMake Condition="'$(SKCMake)' == ''">$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin))cmake</SKCMake>
-          <SKCMakeProgram Condition="'$(SKCMakeProgram)' == ''">$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\Ninja))ninja.exe</SKCMakeProgram>
-          <SKCMakeToolchainFile Condition="'$(SKCMakeToolchainFile)' == ''">$(EmscriptenUpstreamEmscriptenPath)cmake/Modules/Platform/Emscripten.cmake</SKCMakeToolchainFile>
-          <SKCEmSdk Condition="'$(SKCEmSdk)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)))</SKCEmSdk>
-          <SKCEmSdkNode Condition="'$(SKCEmSdkNode)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe</SKCEmSdkNode>
-          <SKCEmSdkPython Condition="'$(SKCEmSdkPython)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenPythonBinPath)))python.exe</SKCEmSdkPython>
-          <SKCEmSdkCache Condition="'$(SKCEmSdkCache)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenCacheSdkCacheDir)))</SKCEmSdkCache>
-      </PropertyGroup>
-      <ItemGroup>
-          <SKCMakeEnvVars Include="@(EmscriptenEnvVars)" />
-          <SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_LLVM_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamBinPath)))" />
-          <SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)))" />
-          <SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_NODE_JS=$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe" />
-          <SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_PYTHON=$([MSBuild]::NormalizeDirectory($(EmscriptenPythonBinPath)))python.exe" />
-          <SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenSdkToolsPath)))" />
-          <SKCMakeEnvVars Include="EM_FROZEN_CACHE=0" />
-          <SKCMakeEnvVars Include="EM_CACHE=$(SKCEmSdkCache)" />
-          <SKCMakeEnvVars Include="EMSDK=$(SKCEmSdk)" />
-          <SKCMakeEnvVars Include="EMSDK_NODE=$(SKCEmSdkNode)" />
-          <SKCMakeEnvVars Include="EMSDK_PYTHON=$(SKCEmSdkPython)" />
-          <SKCMakeEnvVars Include="SK_CMAKE=$(SKCMake)" />
-          <SKCMakeEnvVars Include="SK_CMAKEPROGRAM=$(SKCMakeProgram)" />
-          <SKCMakeEnvVars Include="SK_CMAKETOOLCHAIN=$(SKCMakeToolchainFile)" />
-          <SKCMakeEnvVars Include="SK_EMSDK=$(SKCEmSdk)" />
-          <SKCMakeEnvVars Include="SK_EMSDK_PYTHON=$(SKCEmSdkNode)" />
-          <SKCMakeEnvVars Include="SK_EMSDK_NODE=$(SKCEmSdkPython)" />
-     </ItemGroup>
-     <Message Importance="high" Text="SKCMakeEnvVars: @(SKCMakeEnvVars)"/>
-      <!--<Exec Condition="false" Command='$(ProjectDir)BuildStereoKitC.bat' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>-->
-     <Message Text="SK building StereoKitC $(SKCMakeConfiguration)" />
-     <Exec Command='"$(SKCMake)" --preset Browser_$(SKCMakeConfiguration) -DCMAKE_MAKE_PROGRAM="$(SKCMakeProgram)" -DCMAKE_TOOLCHAIN_FILE="$(SKCMakeToolchainFile)"' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>
-     <Exec Command='"$(SKCMake)" --build --preset Browser_$(SKCMakeConfiguration)' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>
-  </Target>
+	<Target Name="SKBuildNativeLib" BeforeTargets="BeforeBuild" AfterTargets="PrepareInputsForWasmBuildDependsOn" DependsOnTargets="SKPrepareNativeLib" Condition="$(SKBuildStereoKitC) == 'true'" >
+		<PropertyGroup>
+			<SKCMake Condition="'$(SKCMake)' == ''">$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\CMake\bin))cmake</SKCMake>
+			<SKCMakeProgram Condition="'$(SKCMakeProgram)' == ''">$([MSBuild]::NormalizeDirectory($(DevEnvDir)CommonExtensions\Microsoft\CMake\Ninja))ninja.exe</SKCMakeProgram>
+			<SKCMakeToolchainFile Condition="'$(SKCMakeToolchainFile)' == ''">$(EmscriptenUpstreamEmscriptenPath)cmake/Modules/Platform/Emscripten.cmake</SKCMakeToolchainFile>
+			<SKCEmSdk Condition="'$(SKCEmSdk)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)))</SKCEmSdk>
+			<SKCEmSdkNode Condition="'$(SKCEmSdkNode)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe</SKCEmSdkNode>
+			<SKCEmSdkPython Condition="'$(SKCEmSdkPython)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenPythonBinPath)))python.exe</SKCEmSdkPython>
+			<SKCEmSdkCache Condition="'$(SKCEmSdkCache)' == ''">$([MSBuild]::NormalizeDirectory($(EmscriptenCacheSdkCacheDir)))</SKCEmSdkCache>
+		</PropertyGroup>
+		<ItemGroup>
+			<SKCMakeEnvVars Include="@(EmscriptenEnvVars)" />
+			<SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_LLVM_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamBinPath)))" />
+			<SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN=$([MSBuild]::NormalizeDirectory($(EmscriptenUpstreamEmscriptenPath)))" />
+			<SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_NODE_JS=$([MSBuild]::NormalizeDirectory($(EmscriptenNodeBinPath)))node.exe" />
+			<SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_PYTHON=$([MSBuild]::NormalizeDirectory($(EmscriptenPythonBinPath)))python.exe" />
+			<SKCMakeEnvVars Include="DOTNET_EMSCRIPTEN_BINARYEN_ROOT=$([MSBuild]::NormalizeDirectory($(EmscriptenSdkToolsPath)))" />
+			<SKCMakeEnvVars Include="EM_FROZEN_CACHE=0" />
+			<SKCMakeEnvVars Include="EM_CACHE=$(SKCEmSdkCache)" />
+			<SKCMakeEnvVars Include="EMSDK=$(SKCEmSdk)" />
+			<SKCMakeEnvVars Include="EMSDK_NODE=$(SKCEmSdkNode)" />
+			<SKCMakeEnvVars Include="EMSDK_PYTHON=$(SKCEmSdkPython)" />
+			<SKCMakeEnvVars Include="SK_CMAKE=$(SKCMake)" />
+			<SKCMakeEnvVars Include="SK_CMAKEPROGRAM=$(SKCMakeProgram)" />
+			<SKCMakeEnvVars Include="SK_CMAKETOOLCHAIN=$(SKCMakeToolchainFile)" />
+			<SKCMakeEnvVars Include="SK_EMSDK=$(SKCEmSdk)" />
+			<SKCMakeEnvVars Include="SK_EMSDK_PYTHON=$(SKCEmSdkNode)" />
+			<SKCMakeEnvVars Include="SK_EMSDK_NODE=$(SKCEmSdkPython)" />
+		</ItemGroup>
+		<Message Importance="high" Text="SKCMakeEnvVars: @(SKCMakeEnvVars)"/>
+		<!--<Exec Condition="false" Command='$(ProjectDir)BuildStereoKitC.bat' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>-->
+		<Message Text="SK building StereoKitC $(SKCMakeConfiguration)" />
+		<Exec Command='"$(SKCMake)" --preset Browser_$(SKCMakeConfiguration) -DCMAKE_MAKE_PROGRAM="$(SKCMakeProgram)" -DCMAKE_TOOLCHAIN_FILE="$(SKCMakeToolchainFile)"' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>
+		<Exec Command='"$(SKCMake)" --build --preset Browser_$(SKCMakeConfiguration)' EnvironmentVariables="@(SKCMakeEnvVars)" WorkingDirectory="$(ProjectDir)..\..\..\" ConsoleToMSBuild="true"/>
+	</Target>
 </Project>

@@ -151,7 +151,7 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_sw
 		// This copies the color data over to the swapchain, and resolves any
 		// multisampling on the primary target texture.
 		skg_tex_copy_to_swapchain(&surface->tex->tex, swapchain);
-		
+
 		// Present to the screen
 		skg_swapchain_present(swapchain);
 	}
