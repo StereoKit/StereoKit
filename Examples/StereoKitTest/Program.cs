@@ -17,9 +17,8 @@ class Program
         appName = "StereoKit C#",
         assetsFolder = "Assets",
         blendPreference = DisplayBlend.AnyTransparent,
-        mode = AppMode.Window,
-        logFilter = LogLevel.Diagnostic,
-        renderMultisample = 1,
+        mode = AppMode.Simulator,
+        logFilter = LogLevel.Diagnostic
 		//origin          = OriginMode.Floor,
 	};
 
