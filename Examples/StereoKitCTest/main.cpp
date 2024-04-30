@@ -159,6 +159,9 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	settings.app_name      = "StereoKit C";
 	settings.assets_folder = "Assets";
 	settings.mode          = app_mode_xr;
+#if defined(__EMSCRIPTEN__)
+	settings.depth_mode    = depth_mode_stencil;
+#endif
 	if (!sk_init(settings))
 		return 1;
 

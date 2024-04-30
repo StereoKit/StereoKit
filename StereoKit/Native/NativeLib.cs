@@ -9,6 +9,8 @@ namespace StereoKit
 {
 	static class NativeLib
 	{
+		internal static bool IsWebBackend { get { return _loaded ? _webBackend : throw new InvalidOperationException("NativeLib not loaded"); } }
+		static bool _webBackend = false;
 		static bool _loaded = false;
 
 		internal static bool Load()
@@ -18,7 +20,11 @@ namespace StereoKit
 
 			// Browsers should also have their own strategy for linking
 			if (RuntimeInformation.OSDescription == "Browser")
+			{
+				_webBackend = NativeAPI.backend_platform_get() == BackendPlatform.Web;
+				_loaded = true;
 				return true;
+			}
 
 			// Android using Xamarin or Maui both use Mono.Android
 			if (IsAssemblyLoaded("Mono.Android"))

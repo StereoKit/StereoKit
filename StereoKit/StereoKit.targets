@@ -6,7 +6,7 @@
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
-	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
+	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android' or '$(SKBuildPlatform)'=='Browser'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
 		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
 		<Error Condition="'$(SKBuildPlatform)'=='Android' and '$(SKOpenXRLoader)'!='None' and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/libopenxr_loader.so') and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/x64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/arm64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/libopenxr_loader.so')" Text="StereoKit could not find the Android OpenXR Loader indicated by &lt;SKOpenXRLoader&gt;! Please copy your platform specific libopenxr_loader.so file in this folder: $(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/[x64|arm64]/" />
@@ -45,6 +45,20 @@
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 
+	</Target>
+
+	<!-- Link libraries directly in BlazorWebassembly projects. -->
+	<Target Name="StereoKit_Libraries_Browser" AfterTargets="StereoKit_Properties" Condition="'$(SKBuildPlatform)'=='Browser'">
+		<!-- The managed .pdb is not copied by default, so we copy it here to
+		     enable debugging of the managed dll.-->
+		<Copy
+			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/netstandard2.0/StereoKit.pdb"
+			DestinationFolder  = "$(OutputPath)"
+			SkipUnchangedFiles = "true"/>
+			
+	    <ItemGroup>
+			<NativeFileReference Include="$(MSBuildThisFileDirectory)../runtimes/browser-wasm/native/StereoKitC.a" />
+		</ItemGroup>
 	</Target>
 
 	<!-- Link libraries directly in Xamarin and Maui Android projects. -->

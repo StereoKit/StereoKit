@@ -77,6 +77,50 @@ dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTes
 # check /bin/distribute for final binary files
 ```
 
+## I want to modify code (Browser & WebXR)
+
+StereoKit is a cross-platform library and can be compiled to WASM using emscripten to run in the browser!
+At this stage there is no WebXR support and so the mode will default to simulator.
+
+The build requirements are:
+- Install [cmake](https://cmake.org/) 3.21+.
+- Install [ninja](https://ninja-build.org/): `winget install Ninja-build.Ninja` on Windows. This is technically optional, but is used in the cmake presets.
+- Install the Emscripten SDK.  [here](https://emscripten.org/docs/getting_started/downloads.html) is the install guide. 
+- (Optional for Blazor) Install [.NET 9 Preview SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.00): `winget install Microsoft.DotNet.SDK.Preview` on Windows.
+- (Optional for Blazor) Install dotnet SDK workloads: `dotnet workload restore Examples/StereoKitTest/StereoKitTest_Web/StereoKitTest_Web.csproj`
+
+To build with cmake:
+```shell
+### From StereoKit's root directory ###
+
+# activate emscripten SDK, use a version that matches the .NET Blazor workload tooling (emcc 3.1.34 for .NET 8/9)
+emsdk activate 3.1.34
+
+# Build using the presets
+cmake --preset Browser_Release
+cmake --build --preset Browser_Release
+
+# Run the native test app, this will start a server and open the default browser
+emrun bin/intermediate/Browser_Release/index.htm
+
+# To run the C# Blazor test app, you will need the .NET 9 Preview SDK installed and the Blazor workloads
+# Start the app with the below and then open a browser to: https://localhost:57955/
+dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTest_Web/StereoKitTest_Web.csproj
+
+# check /bin/distribute for final binary files
+```
+
+### Considerations for Blazor
+
+A Blazor WebAssembly application is essentially AOT compiled and then linked using emscripten to generate the wasm. 
+The .NET StereoKit implementation uses PInvoke to call into the StereoKitC native lib, where most of the logic lives.
+As of .NET 7/8 the PInvoke wasm bindings is limited in it's ability to generate function signatures for wasm.
+
+Improved support for structs has been added in .NET 9 and most the StereoKit native API to be used from .NET 9. [Refer here for details](https://github.com/dotnet/runtime/pull/944460)
+
+An area that still needs improvement is String or varargs when used in native to C#, until then the logging callback functions can not be used.
+However, a workaround to explore could be to proxy the callback via Javascript.
+
 ## I want to build the whole NuGet package
 
 The NuGet package build pipeline requires all the setup steps from above first! After that, you just need to run the [build powershell script](https://github.com/maluoi/StereoKit/blob/master/Build-Nuget.ps1). This script will build all binary variants, run tests, and track some statistics.

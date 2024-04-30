@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using StereoKit;
 using StereoKit.Framework;
 
@@ -47,7 +48,7 @@ class Program
 
 	public static bool WindowConsoleShow
 	{
-		get => logWindow.Enabled;
+		get => logWindow?.Enabled == true;
 		set {
 			if (logWindow.Enabled == value) return;
 			logWindow.Enabled = value;
@@ -56,7 +57,7 @@ class Program
 		}
 	}
 
-	static void Main(string[] args)
+	static async Task Main(string[] args)
 	{
 		bool headless         = Array.IndexOf(args, "-headless") != -1;
 		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
@@ -83,10 +84,14 @@ class Program
 		// initialization occurs.
 		SK.PreLoadLibrary();
 
-		SK.AddStepper<PassthroughFBExt>();
-		//SK.AddStepper<Win32PerformanceCounterExt>();
-		logWindow = SK.AddStepper<LogWindow>();
-		logWindow.Enabled = false;
+		BackendPlatform backend = Backend.Platform;
+		if(backend != BackendPlatform.Web)
+		{
+			SK.AddStepper<PassthroughFBExt>();
+			//SK.AddStepper<Win32PerformanceCounterExt>();
+			logWindow = SK.AddStepper<LogWindow>();
+			logWindow.Enabled = false;
+		}
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
@@ -96,9 +101,19 @@ class Program
 
 		Init();
 
-		SK.Run(Step, Tests.Shutdown);
+		// The TaskCompletionSource and await needed for running in the web so that the 
+		// browser doesn't lock up while the app is running.
+		// For None web the Run loop only exits when shutdown and is not affected by the await.
+		TaskCompletionSource<bool> skRunTaskCompletionSource = new ();
+        SK.Run(Step, () =>
+		{
+			Tests.Shutdown();
+            skRunTaskCompletionSource.TrySetResult(true);
+		});
 
-		if (SK.QuitReason != QuitReason.None)
+		await skRunTaskCompletionSource.Task;
+
+        if (SK.QuitReason != QuitReason.None)
 		{
 			Log.Info("QuitReason is " + SK.QuitReason);
 		}

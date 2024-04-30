@@ -706,6 +706,7 @@ SKG_API skg_tex_t          *skg_tex_target_get           ();
 SKG_API void                skg_tex_destroy              (      skg_tex_t *tex);
 SKG_API int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
 SKG_API skg_tex_fmt_        skg_tex_fmt_from_native      (int64_t      format);
+SKG_API const char*         skg_tex_fmt_name             (skg_tex_fmt_ format);
 SKG_API uint32_t            skg_tex_fmt_size             (skg_tex_fmt_ format);
 
 
@@ -3331,8 +3332,11 @@ int32_t gl_init_emscripten() {
 	EmscriptenWebGLContextAttributes attrs;
 	emscripten_webgl_init_context_attributes(&attrs);
 	attrs.alpha                     = false;
+	attrs.antialias                 = false;
 	attrs.depth                     = true;
+	attrs.stencil                   = true;
 	attrs.enableExtensionsByDefault = true;
+	//attrs.renderViaOffscreenBackBuffer = true;
 	attrs.majorVersion              = 2;
 	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("canvas", &attrs);
 	emscripten_webgl_make_context_current(ctx);
@@ -4161,7 +4165,7 @@ void skg_pipeline_name(skg_pipeline_t *pipeline, const char* name) {
 
 void skg_pipeline_bind(const skg_pipeline_t *pipeline) {
 	glUseProgram(pipeline->_shader._program);
-	
+
 	switch (pipeline->transparency) {
 	case skg_transparency_blend:
 		glEnable(GL_BLEND);
@@ -4402,7 +4406,7 @@ void main() {
 	result._convert_shader = skg_shader_create_manual(meta, v_stage, p_stage, {});
 	result._convert_pipe   = skg_pipeline_create(&result._convert_shader);
 
-	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, skg_tex_fmt_rgba32_linear, skg_mip_none);
+	result._surface = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, format, skg_mip_none);
 	skg_tex_set_contents(&result._surface, nullptr, result.width, result.height);
 
 	result._surface_depth = skg_tex_create(skg_tex_type_depth, skg_use_static, depth_format, skg_mip_none);
@@ -4457,13 +4461,19 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 #elif defined(_SKG_GL_LOAD_GLX)
 	glXSwapBuffers(xDisplay, (Drawable) swapchain->_x_window);
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
-	float clear[4] = { 0,0,0,1 };
-	skg_tex_target_bind(nullptr);
-	skg_target_clear   (true, clear);
-	skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
-	skg_mesh_bind     (&swapchain->_quad_mesh);
-	skg_pipeline_bind (&swapchain->_convert_pipe);
-	skg_draw          (0, 0, 6, 1);
+
+	// The skg_tex_copy_to_swapchain called from the pipeline
+	// will have copyed the framebuffer to the screen, so we don't
+	// actually need to do anything here.
+
+	//float clear[4] = { 0,0,0,1 };
+	//skg_tex_target_bind(nullptr);
+	//skg_target_clear   (true, clear);
+	//skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
+	//skg_mesh_bind     (&swapchain->_quad_mesh);
+	//skg_pipeline_bind (&swapchain->_convert_pipe);
+	//skg_draw          (0, 0, 6, 1);
+
 #endif
 }
 
@@ -4950,16 +4960,27 @@ int64_t skg_tex_fmt_to_native(skg_tex_fmt_ format) {
 	case skg_tex_fmt_bgra32_linear: return GL_RGBA8;
 	case skg_tex_fmt_rg11b10:       return GL_R11F_G11F_B10F;
 	case skg_tex_fmt_rgb10a2:       return GL_RGB10_A2;
+#ifndef _SKG_GL_WEB
 	case skg_tex_fmt_rgba64u:       return GL_RGBA16;
 	case skg_tex_fmt_rgba64s:       return GL_RGBA16_SNORM;
+#else
+	case skg_tex_fmt_rgba64u:       return GL_RGBA16UI;
+	//case skg_tex_fmt_rgba64s:       return GL_RGBA16_SNORM;
+#endif
 	case skg_tex_fmt_rgba64f:       return GL_RGBA16F;
 	case skg_tex_fmt_rgba128:       return GL_RGBA32F;
 	case skg_tex_fmt_depth16:       return GL_DEPTH_COMPONENT16;
 	case skg_tex_fmt_depth32:       return GL_DEPTH_COMPONENT32F;
 	case skg_tex_fmt_depthstencil:  return GL_DEPTH24_STENCIL8;
 	case skg_tex_fmt_r8:            return GL_R8;
+#ifndef _SKG_GL_WEB
 	case skg_tex_fmt_r16u:          return GL_R16;
 	case skg_tex_fmt_r16s:          return GL_R16_SNORM;
+#else
+	case skg_tex_fmt_r16u:          return GL_R16UI;
+	//case skg_tex_fmt_r16s:          return GL_R16_SNORM;
+#endif
+
 	case skg_tex_fmt_r16f:          return GL_R16F;
 	case skg_tex_fmt_r32:           return GL_R32F;
 	case skg_tex_fmt_r8g8:          return GL_RG8;
@@ -4975,17 +4996,27 @@ skg_tex_fmt_ skg_tex_fmt_from_native(int64_t format) {
 	case GL_RGBA8:              return skg_tex_fmt_rgba32_linear;
 	case GL_R11F_G11F_B10F:     return skg_tex_fmt_rg11b10;
 	case GL_RGB10_A2:           return skg_tex_fmt_rgb10a2;
+#ifndef _SKG_GL_WEB
 	case GL_RGBA16:             return skg_tex_fmt_rgba64u;
 	case GL_RGBA16_SNORM:       return skg_tex_fmt_rgba64s;
+#else
+	case GL_RGBA16UI:             return skg_tex_fmt_rgba64u;
+	//case GL_RGBA16_SNORM:       return skg_tex_fmt_rgba64s;
+#endif
 	case GL_RGBA16F:            return skg_tex_fmt_rgba64f;
 	case GL_RGBA32F:            return skg_tex_fmt_rgba128;
 	case GL_DEPTH_COMPONENT16:  return skg_tex_fmt_depth16;
 	case GL_DEPTH_COMPONENT32F: return skg_tex_fmt_depth32;
 	case GL_DEPTH24_STENCIL8:   return skg_tex_fmt_depthstencil;
 	case GL_R8:                 return skg_tex_fmt_r8;
+#ifndef _SKG_GL_WEB
 	case GL_R16:                return skg_tex_fmt_r16u;
-	case GL_R16F:               return skg_tex_fmt_r16f;
 	case GL_R16_SNORM:          return skg_tex_fmt_r16s;
+#else
+	case GL_R16UI:                return skg_tex_fmt_r16u;
+	//case GL_R16_SNORM:          return skg_tex_fmt_r16s;
+#endif
+	case GL_R16F:               return skg_tex_fmt_r16f;
 	case GL_R32F:               return skg_tex_fmt_r32;
 	case GL_RG8:                return skg_tex_fmt_r8g8;
 	default: return skg_tex_fmt_none;
@@ -5874,6 +5905,31 @@ int32_t skg_shader_get_var_index_h(const skg_shader_t *shader, uint64_t name_has
 
 const skg_shader_var_t *skg_shader_get_var_info(const skg_shader_t *shader, int32_t var_index) {
 	return skg_shader_meta_get_var_info(shader->meta, var_index);
+}
+
+///////////////////////////////////////////
+
+const char* skg_tex_fmt_name(skg_tex_fmt_ format) {
+	switch (format) {
+	case skg_tex_fmt_bgra32:        return "bgra32_sRGB";
+	case skg_tex_fmt_bgra32_linear: return "bgra32_linear";
+	case skg_tex_fmt_rgba32:        return "rgba32_sRGB";
+	case skg_tex_fmt_rgba32_linear: return "rgba32_linear";
+	case skg_tex_fmt_rgb10a2:       return "rgb10a2";
+	case skg_tex_fmt_rg11b10:       return "rg11b10";
+	case skg_tex_fmt_rgba64u:       return "rgba64u";
+	case skg_tex_fmt_rgba64s:       return "rgba64s";
+	case skg_tex_fmt_rgba64f:       return "rgba64f";
+	case skg_tex_fmt_rgba128:       return "rgba128";
+	case skg_tex_fmt_r8:            return "r8";
+	case skg_tex_fmt_r16u:          return "r16";
+	case skg_tex_fmt_r32:           return "r32";
+	case skg_tex_fmt_depthstencil:  return "depth24_stencil8";
+	case skg_tex_fmt_depth32:       return "depth32";
+	case skg_tex_fmt_depth16:       return "depth16";
+	case skg_tex_fmt_none:          return "none";
+	default:                       return "Unknown";
+	}
 }
 
 ///////////////////////////////////////////

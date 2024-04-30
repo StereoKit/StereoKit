@@ -112,6 +112,8 @@ namespace StereoKit
 		public static void Subscribe(LogCallback onLog) 
 		{
 			NativeLib.Load();
+			if (NativeLib.IsWebBackend) throw new NotSupportedException("Log.Subscribe is not supported in the browser due strings not blittable in callbacks");
+
 			_Subscribe(onLog);
 		}
 		private static void _Subscribe(LogCallback onLog)
@@ -129,6 +131,8 @@ namespace StereoKit
 		public static void Unsubscribe(LogCallback onLog)
 		{
 			NativeLib.Load();
+			if (NativeLib.IsWebBackend) throw new NotSupportedException("Log.Unsubscribe is not supported in the browser due strings not blittable in callbacks");
+
 			_Unsubscribe(onLog);
 		}
 		private static void _Unsubscribe(LogCallback onLog)

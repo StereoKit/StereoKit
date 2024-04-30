@@ -7,6 +7,7 @@
 #include "../asset_types/assets.h"
 #include "../asset_types/mesh_.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/webxr.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/openxr_scene_understanding.h"
 #include "render.h"
@@ -212,85 +213,6 @@ void world_refresh_transforms() {
 	}
 }
 
-#else
-
-bool world_init() {
-	return true;
-}
-
-void world_update() {
-}
-
-void world_shutdown() {
-}
-
-void world_refresh_transforms() {
-}
-
-bool32_t world_raycast(ray_t ray, ray_t *out_intersection) {
-	return false;
-}
-
-void world_set_occlusion_enabled(bool32_t enabled) {
-}
-
-bool32_t world_get_occlusion_enabled() {
-	return false;
-}
-
-void world_set_raycast_enabled(bool32_t enabled) {
-}
-
-bool32_t world_get_raycast_enabled() {
-	return false;
-}
-
-void world_set_occlusion_material(material_t material) {
-}
-
-material_t world_get_occlusion_material() {
-	return nullptr;
-}
-
-void world_set_refresh_type(world_refresh_ refresh_type) {
-}
-
-world_refresh_ world_get_refresh_type() {
-	return world_refresh_area;
-}
-
-void world_set_refresh_radius(float radius_meters) {
-}
-
-float world_get_refresh_radius() {
-	return 0;
-}
-
-void world_set_refresh_interval(float every_seconds) {
-}
-
-float world_get_refresh_interval() {
-	return 0;
-}
-
-pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
-	return pose_identity;
-}
-
-pose_t world_from_perception_anchor(void* perception_spatial_anchor) {
-	return pose_identity;
-}
-
-bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t* out_pose) {
-	*out_pose = pose_identity;
-	return false;
-}
-
-bool32_t world_try_from_perception_anchor(void* perception_spatial_anchor, pose_t* out_pose) {
-	*out_pose = pose_identity;
-	return false;
-}
-
 ///////////////////////////////////////////
 
 bool32_t world_has_bounds() {
@@ -342,6 +264,54 @@ button_state_ world_get_tracked() {
 origin_mode_ world_get_origin_mode() {
 	return world_origin_mode;
 }
+
+///////////////////////////////////////////
+
+ pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
+	 switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	 case backend_xr_type_openxr:    return openxr_from_spatial_graph(spatial_graph_node_id, dynamic, qpc_time);
+#endif
+	 default:                        return pose_identity;
+	 }
+ }
+
+ ///////////////////////////////////////////
+
+ pose_t world_from_perception_anchor(void* perception_spatial_anchor) {
+	 switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	 case backend_xr_type_openxr:    return openxr_from_perception_anchor(perception_spatial_anchor);
+#endif
+	 default:                        return pose_identity;
+	 }
+ }
+
+ ///////////////////////////////////////////
+
+ bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t* out_pose) {
+	 switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	 case backend_xr_type_openxr:    return openxr_try_from_spatial_graph(spatial_graph_node_id, dynamic, qpc_time, out_pose);
+#endif
+	 default:                        break;
+	 }
+ 	*out_pose = pose_identity;
+ 	return false;
+ }
+
+ ///////////////////////////////////////////
+
+ bool32_t world_try_from_perception_anchor(void* perception_spatial_anchor, pose_t* out_pose) {
+	 switch (backend_xr_get_type()) {
+#if defined(SK_XR_OPENXR)
+	 case backend_xr_type_openxr:    return openxr_try_from_perception_anchor(perception_spatial_anchor, out_pose);
+#endif
+	 default:                        break;
+	 }
+	 *out_pose = pose_identity;
+	 return false;
+ }
 
 ///////////////////////////////////////////
 

@@ -299,12 +299,25 @@
       }
     },
     {
-      "name":        "Web_Release",
-      "description": "Build for Web",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Web_Release",
+      "name":        "Browser_Release",
+      "description": "Build for Wasm",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Browser_Release",
       "generator":   "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE":              "Release",
+        "CMAKE_CXX_FLAGS_RELEASE":         "-g -O0",
+        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
+      }
+    },
+    {
+      "name":        "Browser_Debug",
+      "description": "Debug build for Wasm",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Browser_Debug",
+      "generator":   "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":              "Debug",
+        "CMAKE_CXX_FLAGS_DEBUG":         "-g -O0",
         "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }
@@ -333,6 +346,7 @@
       { "name":"Linux_x64_Release_Fast",     "configuration":"Release", "configurePreset":"Linux_x64_Release_Fast",     "jobs":24 },
       { "name":"Linux_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"Linux_Arm64_Debug",          "jobs":24 },
       { "name":"Linux_Arm64_Release",        "configuration":"Release", "configurePreset":"Linux_Arm64_Release",        "jobs":24 },
-      { "name":"Web_Release",                "configuration":"Release", "configurePreset":"Web_Release",                "jobs":16 }
+      { "name":"Browser_Release",            "configuration":"Release", "configurePreset":"Browser_Release",            "jobs":16 },
+      { "name":"Browser_Debug",              "configuration":"Debug",   "configurePreset":"Browser_Debug",              "jobs":16 }
   ]
 }

@@ -28,7 +28,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
+project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
@@ -364,6 +364,8 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/webxr.h
+  StereoKitC/xr_backends/webxr.cpp
   StereoKitC/xr_backends/xr.h
   StereoKitC/xr_backends/xr.cpp
   StereoKitC/xr_backends/simulator.h
@@ -528,10 +530,10 @@ elseif (WIN32)
   set(SK_BIN_OS "Win32")
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
+elseif(EMSCRIPTEN)
+  set(SK_BIN_OS "Browser")
 elseif(UNIX)
   set(SK_BIN_OS "Linux")
-elseif(EMSCRIPTEN)
-  set(SK_BIN_OS "WASM")
 else()
   set(SK_BIN_OS "Unknown")
 endif()
@@ -547,6 +549,9 @@ elseif(WIN32)
   else()
     set(SK_ARCH "x86")
   endif()
+elseif(EMSCRIPTEN)
+  set(SK_ARCH "wasm32")
+  set_target_properties(StereoKitC PROPERTIES PREFIX "")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_SYSTEM_PROCESSOR)
     set(SK_ARCH ${CMAKE_SYSTEM_PROCESSOR})
@@ -578,6 +583,10 @@ if (SK_DYNAMIC_OPENXR)
   add_custom_command(TARGET StereoKitC POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:openxr_loader>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard/$<TARGET_FILE_NAME:openxr_loader>" )
+endif()
+if (EMSCRIPTEN)
+  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/StereoKitC.a" )
 endif()
 
 ###########################################
@@ -631,6 +640,7 @@ if (SK_BUILD_TESTS)
     StereoKitC
   )
 
+
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
@@ -650,6 +660,12 @@ if (SK_BUILD_TESTS)
     TARGET StereoKitCTest
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
     COMMENT "Copy resources from ${source} => ${destination}")
+
+  if (EMSCRIPTEN)
+    target_link_options   (StereoKitCTest PRIVATE -gsource-map --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets@/Assets)
+    add_custom_command(TARGET StereoKitCTest
+      COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/web_build" "$<TARGET_FILE_DIR:StereoKitCTest>")
+  endif()
 endif()
 
 ###########################################

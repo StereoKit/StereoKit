@@ -227,11 +227,28 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			while (Step())
-				if (onStep != null) onStep();
+			if (NativeLib.IsWebBackend)
+			{
+				var onStepNative = new Action(() =>
+				{
+					_steppers.Step();
+					while (_mainThreadInvoke.TryDequeue(out Action a)) a();
 
-			if (onShutdown != null) onShutdown();
-			Shutdown();
+					if (onStep != null) onStep();
+				});
+
+				NativeAPI.sk_run(
+					NativeCallbacks.GetNativeCallback(onStepNative, nameof(NativeAPI.sk_run), "app_update"),
+					NativeCallbacks.GetNativeCallback(onShutdown, nameof(NativeAPI.sk_run), "app_shutdown"));
+            }
+			else
+			{
+				while (Step())
+					if (onStep != null) onStep();
+
+				if (onShutdown != null) onShutdown();
+				Shutdown();
+			}
 		}
 
 		/// <summary>This registers an instance of the `IStepper` type

@@ -217,7 +217,6 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 	local.disallow_user_shutdown = true;
 
 #if defined(SK_OS_WEB)
-	sk_first_step();
 	web_start_main_loop(app_update, app_shutdown);
 #else
 	while (sk_step(app_update));

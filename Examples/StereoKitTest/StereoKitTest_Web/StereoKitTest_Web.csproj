@@ -1,47 +1,80 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <SKCopyAssets>true</SKCopyAssets>
+        <SKAssetFolder>$(ProjectDir)..\..\Assets</SKAssetFolder>
+        <SKAssetDestination>Assets</SKAssetDestination>
+        <SKShowDebugVars>true</SKShowDebugVars>
+        <Nullable>Enable</Nullable>
+        <WasmBuildNative>true</WasmBuildNative>
+        <WasmNativeStrip>false</WasmNativeStrip>
+        <WasmAllowUndefinedSymbols>true</WasmAllowUndefinedSymbols>
+        <EmccLinkOptimizationFlag>-sFULL_ES3=1</EmccLinkOptimizationFlag>
+    </PropertyGroup>
 
+    <!-- IF YOU ARE LOOKING AT THIS FILE AS REFERENCE, I recommend that you
+	     do not. This file 'emulates' the NuGet package's behavior, since we
+	     can't directly reference a NuGet output without lots of pain and
+	     suffering. Check here instead: https://stereokit.net/Pages/Guides/Learning-Resources.html -->
+
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <WasmDebugLevel>1</WasmDebugLevel>
+        <WasmNativeDebugSymbols>true</WasmNativeDebugSymbols>
+        <WasmEmitSymbolMap>true</WasmEmitSymbolMap>
+        <EmccCompileOptimizationFlag>-gsource-map -O0 --emit-symbol-map -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2</EmccCompileOptimizationFlag>
+        <EmccLinkOptimizationFlag>$(EmccLinkOptimizationFlag) -gsource-map -O0 -Wbad-function-cast -Wcast-function-type -Wjs-compiler -sFULL_ES3=1 -sOFFSCREEN_FRAMEBUFFER -sASSERTIONS=2 -s SAFE_HEAP=0 -s STACK_OVERFLOW_CHECK=2 --source-map-base https://localhost:57955/</EmccLinkOptimizationFlag>
+    </PropertyGroup>
+
+    <!-- 
+  The below properties are used by the BuildStereoKitC.targets which will build the StereoKitC native lib.
+  Just setting <SKBuildStereoKitC>true</SKBuildStereoKitC> will default the other properties to the SDK included
+  in the dotnet WebAssembly workloads. However, the dotnet 9 seems to get stuck during the build step.
+  The Alternative is to set the properties to paths for a local emsdk installation (must not be greater then the workload version of 3.1.34)
+  -->
+    <!--
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <WasmBuildNative>true</WasmBuildNative>
-    <EmccExtraLDFlags>-s FULL_ES3=1</EmccExtraLDFlags>
+    <SKBuildStereoKitC>true</SKBuildStereoKitC>
+    <SKCMake>C:\tools\CMake\bin\cmake</SKCMake>
+    <SKCMakeProgram>C:\tools\CMake\ninja\ninja.exe</SKCMakeProgram>
+    <SKCMakeToolchainFile>C:\tools\emsdk\upstream\emscripten\cmake\Modules\Platform\Emscripten.cmake</SKCMakeToolchainFile>
+    <SKCEmSdk>C:\tools\emsdk</SKCEmSdk>
+    <SKCEmSdkCache>C:\tools\emsdk\upstream\emscripten\cache</SKCEmSdkCache>
+    <SKCEmSdkNode>C:\tools\emsdk\node\16.20.0_64bit\bin\node.exe</SKCEmSdkNode>
+    <SKCEmSdkPython>C:\tools\emsdk\python\3.9.2-nuget_64bit\python.exe</SKCEmSdkPython>
   </PropertyGroup>
+  -->
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.6" PrivateAssets="all" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0-preview.3.24172.13" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0-preview.3.24172.13" PrivateAssets="all" />
+    </ItemGroup>
 
-  <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
-  <ItemGroup>
-    <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
-    <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/web/wasm32/$(Configuration)/StereoKitC.a" />
-  </ItemGroup>
-  <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
+    <!-- Reference the StereoKit project, emulate how the NuGet behaves -->
+    <ItemGroup>
+        <ProjectReference Include="$(ProjectDir)..\..\..\StereoKit\StereoKit.csproj" />
+        <NativeFileReference Include="$(ProjectDir)../../../bin/distribute/bin/Browser/wasm32/$(Configuration)/StereoKitC.a" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\*.cs" />
-    <Compile Include="..\Demos\*.cs" />
-    <Compile Include="..\Tools\*.cs" />
-    <Compile Include="..\Tests\*.cs" />
-    <Compile Include="..\Docs\*.cs" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\*.cs" />
+        <Compile Include="..\Demos\*.cs" />
+        <Compile Include="..\Tools\*.cs" />
+        <Compile Include="..\Tests\*.cs" />
+        <Compile Include="..\Docs\*.cs" />
+    </ItemGroup>
 
-  <!-- Copy assets, and build the app's shaders into the final app folder -->
-  <ItemGroup>
-    <Content Include="..\..\Assets\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
-    <SKShader Include="..\..\Assets\**\*.hlsl" BuildRoot="..\..\" BuildTo="Assets" />
-  </ItemGroup>
+    <!-- Use the emcc embed-file option to map and bundle Assets into the wasm file (Note: A production app should download assets from a server instead) -->
+    <Target Name="EmccIncludeSKAssets" BeforeTargets="BeforeBuild">
+        <PropertyGroup>
+            <SKCompiledShaderFolder>$([MSBuild]::NormalizePath($(IntermediateOutputPath)$(SKAssetDestination)))</SKCompiledShaderFolder>
+            <EmccLinkOptimizationFlag>$(EmccLinkOptimizationFlag) --embed-file "$(SKAssetFolder)"@/Assets --embed-file "$(SKCompiledShaderFolder)"@Assets</EmccLinkOptimizationFlag>
+        </PropertyGroup>
+    </Target>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="cd $(SolutionDir)&#xD;&#xA;xmake f -p wasm -y -m $(ConfigurationName)&#xD;&#xA;xmake" />
-  </Target>
-
-	<Target Name="StereoKitLibraries" BeforeTargets="BeforeBuild">
-		<Message Importance="high" Text="[StereoKit NuGet] Framework: $(TargetFrameworkIdentifier), Platform: $(RuntimeIdentifier)" />
-		<Message Importance="high" Text="[StereoKit NuGet] Emsdk: $(EMSDK_PATH)" />
-	</Target>
+    <Import Project="BuildStereoKitC.targets" />
+    <Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
+    <Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
+    <Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
 </Project>
+
 

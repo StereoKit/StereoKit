@@ -182,8 +182,7 @@ WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
 
 	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
 		return;
-	//log_diagf("Resized to: %d<~BLK>x<~clr>%d", width, height);
-	
+
 	skg_swapchain_resize(&win->swapchain, width, height);
 
 	window_event_t e = { platform_evt_resize };
@@ -196,9 +195,13 @@ WEB_EXPORT void sk_web_canvas_resize(int32_t width, int32_t height) {
 void (*web_app_update  )(void);
 void (*web_app_shutdown)(void);
 bool32_t web_anim_callback(double t, void *) {
-	sk_step(web_app_update);
+	bool isRunning = sk_step(web_app_update);
 	
-	return sk_is_running() ? true : false;
+	if (!isRunning && web_app_shutdown != nullptr) {
+		web_app_shutdown();
+	}
+	
+	return isRunning;
 }
 
 ///////////////////////////////////////////
@@ -455,7 +458,7 @@ void platform_print_callstack() { }
 ///////////////////////////////////////////
 
 void platform_sleep(int ms) {
-	emscripten_sleep(ms);
+	emscripten_sleep(ms); // DOES NOT WORK WITHOUT -sASYNCIFY=1, so won't work with Blazor
 }
 
 } // namespace sk
