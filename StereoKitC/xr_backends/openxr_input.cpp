@@ -490,11 +490,6 @@ void oxri_update_poses() {
 
 		//// Pose actions
 
-		// Controller grip pose
-		XrActionStatePose state_grip = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = local.action_grip_pose;
-		xrGetActionStatePose(xr_session, &get_info, &state_grip);
-
 		// Get the grip pose the verbose way, since we want to know if
 		// rotation or position are tracked independently of eachother.
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
@@ -544,12 +539,19 @@ void oxri_update_poses() {
 		}
 
 		// Controller aim pose
-		XrActionStatePose state_aim = { XR_TYPE_ACTION_STATE_POSE };
-		get_info.action = local.action_aim_pose;
-		xrGetActionStatePose(xr_session, &get_info, &state_aim);
-		pose_t local_aim;
-		openxr_get_space(local.space_aim[hand], &local_aim);
-		controller->aim = { root * local_aim.position, local_aim.orientation * root_q };
+		space_location = { XR_TYPE_SPACE_LOCATION };
+		res = xrLocateSpace(local.space_aim[hand], xr_app_space, xr_time, &space_location);
+		if (XR_UNQUALIFIED_SUCCESS(res)) {
+			pose_t local_aim;
+			if (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) {
+				memcpy(&local_aim.position, &space_location.pose.position, sizeof(vec3));
+				controller->aim.position = root * local_aim.position;
+			}
+			if (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) {
+				memcpy(&local_aim.orientation, &space_location.pose.orientation, sizeof(quat));
+				controller->aim.orientation = local_aim.orientation * root_q;
+			}
+		}
 	}
 
 	// eye input

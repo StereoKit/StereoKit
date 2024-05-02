@@ -38,7 +38,7 @@ void hand_override_shutdown() {
 
 void hand_override_update_frame() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		hand_t *inp_hand = (hand_t*)input_hand((handed_)h);
+		hand_t *inp_hand = input_hand_ref((handed_)h);
 		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, override_hand[h]);
 
 		if (!override_hand[h]) continue;

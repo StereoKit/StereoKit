@@ -48,6 +48,7 @@ void input_hand_shutdown();
 void input_hand_update  ();
 
 hand_system_  input_hand_get_system        ();
+hand_t*       input_hand_ref               (handed_ hand);
 void          input_hand_refresh_system    ();
 void          input_hand_update_poses      ();
 bool          input_hand_get_visible       (handed_ hand);
