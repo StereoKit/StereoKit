@@ -187,7 +187,7 @@ void hand_oxra_update_joints() {
 			(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[1 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
-		hand_t *inp_hand = (hand_t*)input_hand((handed_)h);
+		hand_t *inp_hand = input_hand_ref((handed_)h);
 		inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
 
 		// If both hands aren't active at all, we'll want to to switch back
@@ -221,8 +221,11 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 		
 		// Update the aim values
-		inp_hand->aim.position    = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
-		inp_hand->aim.orientation = quat_lookat_up(shoulders[h], inp_hand->aim.position, inp_hand->palm.orientation * vec3_up);
+		inp_hand->aim.position = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+
+		vec3 dir   = inp_hand->aim.position - shoulders[h];
+		vec3 right = oxra_hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
+		inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
 	}
 
 	if (!hands_active) {
@@ -235,7 +238,7 @@ void hand_oxra_update_joints() {
 
 void hand_oxra_update_states() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		hand_t* inp_hand = (hand_t*)input_hand((handed_)h);
+		hand_t* inp_hand = input_hand_ref((handed_)h);
 
 		// Pinch values from the hand interaction profile typically have deep
 		// knowledge about the hands, beyond what can be gleaned from the joint
@@ -280,10 +283,11 @@ void hand_oxra_update_states() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_inactive() {
-	oxra_mesh_dirty[0] = true;
-	oxra_mesh_dirty[1] = true;
 
 	if (hand_oxra_is_tracked()) {
+		oxra_mesh_dirty[0] = true;
+		oxra_mesh_dirty[1] = true;
+
 		oxra_hand_active = true;
 		input_hand_refresh_system();
 	}

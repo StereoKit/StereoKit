@@ -635,14 +635,17 @@ int32_t interactor_create(interactor_type_ type, interactor_event_ events, inter
 void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked) {
 	if (interactor < 0 || interactor >= skui_interactors.count) return;
 	interactor_t *actor = &skui_interactors[interactor];
-	actor->capsule_start_world = actor->capsule_start = capsule_start;
-	actor->capsule_end_world   = actor->capsule_end   = capsule_end;
-	actor->capsule_radius      = capsule_radius;
-	actor->position            = motion_pos;
-	actor->orientation         = motion_orientation;
-	actor->motion_anchor       = motion_anchor;
 	actor->tracked             = tracked;
 	actor->pinch_state         = active;
+
+	if (tracked & button_state_active) {
+		actor->capsule_start_world = actor->capsule_start = capsule_start;
+		actor->capsule_end_world   = actor->capsule_end   = capsule_end;
+		actor->capsule_radius      = capsule_radius;
+		actor->position            = motion_pos;
+		actor->orientation         = motion_orientation;
+		actor->motion_anchor       = motion_anchor;
+	}
 
 	// Don't let the hand trigger things while popping in and out of
 	// tracking
