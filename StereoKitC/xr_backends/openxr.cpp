@@ -523,6 +523,13 @@ bool openxr_init() {
 	}
 #endif
 
+	// Snapdragon Spaces advertises the palm pose extension, but provides bad
+	// data for it. Only enable it if it's explicitly requested.
+	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && xr_exts_user.index_where([](const char* const& ext) {return strcmp(ext, "XR_EXT_palm_pose") == 0; }) < 0) {
+		xr_ext_available.EXT_palm_pose = false;
+		log_diag("Rejecting Snapdragon's XR_EXT_palm_pose due to implementation issues.");
+	}
+
 	device_data.has_hand_tracking = xr_has_articulated_hands;
 	device_data.tracking          = device_tracking_none;
 	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
