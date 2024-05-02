@@ -3374,8 +3374,12 @@ int32_t gl_init_egl() {
 		skg_log(skg_log_info, "Trying EGL direct rendering from /dev/dri/renderD128");
 		int32_t fd = open ("/dev/dri/renderD128", O_RDWR | O_CLOEXEC);
 		if (fd <= 0) {
-			skg_log(skg_log_critical, "Could not find direct rendering interface at /dev/dri/renderD128");
-			return 0;
+			skg_log(skg_log_warning, "Could not find direct rendering interface at /dev/dri/renderD128");
+			fd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
+			if (fd <= 0) {
+				skg_log(skg_log_critical, "Could not find direct rendering interface at /dev/dri/card0");
+				return 0;
+			}
 		}
 
 		struct gbm_device *gbm = gbm_create_device (fd);

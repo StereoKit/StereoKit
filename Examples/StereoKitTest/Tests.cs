@@ -16,6 +16,7 @@ public static class Tests
 	static float runSeconds = 0;
 	static int   sceneFrame = 0;
 	static float sceneTime  = 0;
+	static int   failures   = 0;
 	static HashSet<string> screens = new HashSet<string>();
 
 	private static Type ActiveTest { set { nextScene = (ITest)Activator.CreateInstance(value); } }
@@ -71,7 +72,20 @@ public static class Tests
 			activeScene = nextScene;
 			nextScene   = null;
 		}
-		activeScene.Step();
+
+		// If we're testing, catch and log exceptions instead of crashing
+		if (IsTesting)
+		{
+			try { activeScene.Step(); }
+			catch ( Exception e )
+			{
+				Log.Err(e.ToString());
+				failures++;
+				runFrames = sceneFrame + 1; // Ditch out of this test
+			}
+		} else {
+			activeScene.Step();
+		}
 		sceneFrame++;
 
 		if (IsTesting && FinishedWithTest())
@@ -88,6 +102,16 @@ public static class Tests
 		activeScene?.Shutdown();
 		activeScene = null;
 		GC.Collect(int.MaxValue, GCCollectionMode.Forced);
+
+		if (IsTesting) {
+			if (failures != 0)
+			{
+				Log.Warn($"Testing <~RED>FAILED<~clr>: {failures} failures encountered!");
+				Environment.Exit(-1);
+			} else {
+				Log.Info($"Testing <~GRN>passed!<~clr>");
+			}
+		}
 	}
 
 	public static string GetDemoName  (int index)
@@ -115,12 +139,18 @@ public static class Tests
 		runSeconds = 0;
 		ActiveTest = result;
 	}
+
 	public static void Test(Func<bool> testFunction)
 	{
-		if (!testFunction())
-		{
-			Log.Err($"Test failed for {testFunction.Method.Name}!");
-			Environment.Exit(-1);
+		try {
+			if (!testFunction())
+			{
+				Log.Err($"Test failed for {testFunction.Method.Name}!");
+				failures += 1;
+			}
+		} catch (Exception e) {
+			Log.Err($"Test CRASHED for {testFunction.Method.Name}!\n{e.ToString()}");
+			failures += 1;
 		}
 	}
 
