@@ -1,8 +1,8 @@
 #include "stereokit.hlsli"
 
-//--tex_trans   = 0,0,1,1
-//--diffuse     = white
-//--occlusion   = white
+//--tex_trans = 0,0,1,1
+//--diffuse   = white
+//--lightmap  = white
 
 float4       tex_trans;
 Texture2D    diffuse    : register(t0);
