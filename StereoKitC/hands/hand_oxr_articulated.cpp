@@ -221,8 +221,11 @@ void hand_oxra_update_joints() {
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
 		
 		// Update the aim values
-		inp_hand->aim.position    = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
-		inp_hand->aim.orientation = quat_lookat_up(shoulders[h], inp_hand->aim.position, inp_hand->palm.orientation * vec3_up);
+		inp_hand->aim.position = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+
+		vec3 dir   = inp_hand->aim.position - shoulders[h];
+		vec3 right = oxra_hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
+		inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
 	}
 
 	if (!hands_active) {
