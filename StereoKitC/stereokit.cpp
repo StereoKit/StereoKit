@@ -101,16 +101,13 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
-	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
+	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 4;
 	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
 	local.settings.no_flatscreen_fallback = true;
 #endif
-
-	render_set_scaling    (local.settings.render_scaling);
-	render_set_multisample(local.settings.render_multisample);
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 

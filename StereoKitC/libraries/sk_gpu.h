@@ -1,6 +1,6 @@
-/*Licensed under MIT or Public Domain. See bottom of file for details.
+/*Licensed under MIT. See bottom of file for details.
 	Author - Nick Klingensmith - @koujaku - https://twitter.com/koujaku
-	Repository - https://github.com/maluoi/sk_gpu
+	Repository - https://github.com/StereoKit/sk_gpu
 
 sk_gpu.h
 
@@ -423,6 +423,7 @@ typedef struct skg_tex_t {
 	ID3D11ShaderResourceView  *_resource;
 	ID3D11UnorderedAccessView *_unordered;
 	ID3D11RenderTargetView    *_target_view;
+	ID3D11RenderTargetView   **_target_array_view;
 	ID3D11DepthStencilView    *_depth_view;
 } skg_tex_t;
 
@@ -501,6 +502,7 @@ typedef struct skg_tex_t {
 	skg_mip_      mips;
 	uint32_t      _texture;
 	uint32_t      _framebuffer;
+	uint32_t     *_framebuffer_layers;
 	uint32_t      _target;
 	uint32_t      _access;
 	uint32_t      _format;
@@ -689,7 +691,7 @@ SKG_API skg_tex_t           skg_tex_create_from_layer    (void *native_tex, skg_
 SKG_API skg_tex_t           skg_tex_create               (skg_tex_type_ type, skg_use_ use, skg_tex_fmt_ format, skg_mip_ mip_maps);
 SKG_API void                skg_tex_name                 (      skg_tex_t *tex, const char* name);
 SKG_API bool                skg_tex_is_valid             (const skg_tex_t *tex);
-SKG_API void                skg_tex_copy_to              (const skg_tex_t *tex, skg_tex_t *destination);
+SKG_API void                skg_tex_copy_to              (const skg_tex_t *tex, int32_t tex_surface, skg_tex_t *destination, int32_t dest_surface);
 SKG_API void                skg_tex_copy_to_swapchain    (const skg_tex_t *tex, skg_swapchain_t *destination);
 SKG_API void                skg_tex_attach_depth         (      skg_tex_t *tex, skg_tex_t *depth);
 SKG_API void                skg_tex_settings             (      skg_tex_t *tex, skg_tex_address_ address, skg_tex_sample_ sample, int32_t anisotropy);
@@ -701,7 +703,7 @@ SKG_API bool                skg_tex_get_mip_contents_arr (      skg_tex_t *tex, 
 SKG_API void*               skg_tex_get_native           (const skg_tex_t *tex);
 SKG_API void                skg_tex_bind                 (const skg_tex_t *tex, skg_bind_t bind);
 SKG_API void                skg_tex_clear                (skg_bind_t bind);
-SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target);
+SKG_API void                skg_tex_target_bind          (      skg_tex_t *render_target, int32_t layer_idx, int32_t mip_level);
 SKG_API skg_tex_t          *skg_tex_target_get           ();
 SKG_API void                skg_tex_destroy              (      skg_tex_t *tex);
 SKG_API int64_t             skg_tex_fmt_to_native        (skg_tex_fmt_ format);
@@ -1068,7 +1070,7 @@ void skg_event_end () {
 
 ///////////////////////////////////////////
 
-void skg_tex_target_bind(skg_tex_t *render_target) {
+void skg_tex_target_bind(skg_tex_t *render_target, int32_t layer_idx, int32_t mip_level) {
 	d3d_active_rendertarget = render_target;
 
 	if (render_target == nullptr) {
@@ -1083,7 +1085,15 @@ void skg_tex_target_bind(skg_tex_t *render_target) {
 	viewport.Height   = (float)render_target->height;
 	viewport.MaxDepth = 1.0f;
 	d3d_context->RSSetViewports(1, &viewport);
-	d3d_context->OMSetRenderTargets(1, &render_target->_target_view, render_target->_depth_view);
+	if (layer_idx >= 0) {
+		int32_t mip_count = render_target->mips == skg_mip_generate
+			? skg_mip_count(render_target->width, render_target->height)
+			: 1;
+		d3d_context->OMSetRenderTargets(1, &render_target->_target_array_view[layer_idx * mip_count + mip_level], render_target->_depth_view);
+	} else {
+		d3d_context->OMSetRenderTargets(1, &render_target->_target_view, render_target->_depth_view);
+	}
+	
 }
 
 ///////////////////////////////////////////
@@ -1931,7 +1941,7 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 ///////////////////////////////////////////
 
 void skg_swapchain_bind(skg_swapchain_t *swapchain) {
-	skg_tex_target_bind(swapchain->_target.format != 0 ? &swapchain->_target : nullptr);
+	skg_tex_target_bind(swapchain->_target.format != 0 ? &swapchain->_target : nullptr, -1, 0);
 }
 
 ///////////////////////////////////////////
@@ -1959,8 +1969,9 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 	result.height      = color_desc.Height;    (void)height;
 	result.array_count = color_desc.ArraySize; (void)array_count;
 	result.multisample = color_desc.SampleDesc.Count;
+	result.mips        = color_desc.MipLevels > 1 ? skg_mip_generate : skg_mip_none;
 	result.format      = override_format != 0 ? override_format : skg_tex_fmt_from_native(color_desc.Format);
-	skg_tex_make_view(&result, color_desc.MipLevels, 0, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
+	skg_tex_make_view(&result, color_desc.MipLevels, -1, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
 
 	return result;
 }
@@ -1979,7 +1990,8 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 	result._texture->GetDesc(&color_desc);
 	result.width       = color_desc.Width;  (void)width;
 	result.height      = color_desc.Height; (void)height;
-	result.array_count = 1;
+	result.array_count = color_desc.ArraySize;
+	result.array_start = array_layer;
 	result.multisample = color_desc.SampleDesc.Count;
 	result.format      = override_format != 0 ? override_format : skg_tex_fmt_from_native(color_desc.Format);
 	skg_tex_make_view(&result, color_desc.MipLevels, array_layer, color_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE);
@@ -2032,22 +2044,27 @@ void skg_tex_name(skg_tex_t *tex, const char* name) {
 
 ///////////////////////////////////////////
 
-void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
+void skg_tex_copy_to(const skg_tex_t *tex, int32_t tex_surface, skg_tex_t *destination, int32_t dest_surface) {
 	if (destination->width != tex->width || destination->height != tex->height) {
 		skg_tex_set_contents_arr(destination, nullptr, tex->array_count, tex->width, tex->height, tex->multisample);
 	}
 
-	if (tex->multisample > 1) {
-		d3d_context->ResolveSubresource(destination->_texture, 0, tex->_texture, 0, (DXGI_FORMAT)skg_tex_fmt_to_native(tex->format));
+	if (tex_surface != -1 && dest_surface != -1) {
+		d3d_context->ResolveSubresource(destination->_texture, tex_surface, tex->_texture, dest_surface, (DXGI_FORMAT)skg_tex_fmt_to_native(tex->format));
 	} else {
-		d3d_context->CopyResource(destination->_texture, tex->_texture);
+		if (tex->multisample > 1) {
+			for (int32_t i = 0; i < tex->array_count; i++)
+				d3d_context->ResolveSubresource(destination->_texture, i, tex->_texture, i, (DXGI_FORMAT)skg_tex_fmt_to_native(tex->format));
+		} else {
+			d3d_context->CopyResource(destination->_texture, tex->_texture);
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
 void skg_tex_copy_to_swapchain(const skg_tex_t *tex, skg_swapchain_t *destination) {
-	skg_tex_copy_to(tex, &destination->_target);
+	skg_tex_copy_to(tex, -1, &destination->_target, -1);
 }
 
 ///////////////////////////////////////////
@@ -2179,6 +2196,9 @@ void skg_make_mips(D3D11_SUBRESOURCE_DATA *tex_mem, const void *curr_data, skg_t
 bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start, bool use_in_shader) {
 	DXGI_FORMAT format = (DXGI_FORMAT)skg_tex_fmt_to_native(tex->format);
 	HRESULT     hr     = E_FAIL;
+	
+	int32_t start = array_start == -1 ? 0 : array_start;
+	int32_t count = array_start == -1 ? tex->array_count : 1;
 
 	if (tex->type != skg_tex_type_depth) {
 		D3D11_SHADER_RESOURCE_VIEW_DESC res_desc = {};
@@ -2187,8 +2207,8 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		// the struct. Texture2DArray is representative of the union with the
 		// most data in it, so if we fill it properly, all others should also
 		// be filled correctly.
-		res_desc.Texture2DArray.FirstArraySlice = array_start;
-		res_desc.Texture2DArray.ArraySize       = tex->array_count;
+		res_desc.Texture2DArray.FirstArraySlice = start;
+		res_desc.Texture2DArray.ArraySize       = count;
 		res_desc.Texture2DArray.MipLevels       = mip_count;
 
 		if (tex->type == skg_tex_type_cubemap) {
@@ -2196,12 +2216,12 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		} else if (tex->array_count > 1) {
 			if (tex->multisample > 1) {
 				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
-				res_desc.Texture2DMSArray.ArraySize       = tex->array_count;
-				res_desc.Texture2DMSArray.FirstArraySlice = array_start;
+				res_desc.Texture2DMSArray.ArraySize       = count;
+				res_desc.Texture2DMSArray.FirstArraySlice = start;
 			} else {
 				res_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-				res_desc.Texture2DArray.ArraySize       = tex->array_count;
-				res_desc.Texture2DArray.FirstArraySlice = array_start;
+				res_desc.Texture2DArray.ArraySize       = count;
+				res_desc.Texture2DArray.FirstArraySlice = start;
 				res_desc.Texture2DArray.MipLevels       = mip_count;
 				res_desc.Texture2DArray.MostDetailedMip = 0;
 			}
@@ -2225,17 +2245,17 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 	} else {
 		D3D11_DEPTH_STENCIL_VIEW_DESC stencil_desc = {};
 		stencil_desc.Format = format;
-		stencil_desc.Texture2DArray.FirstArraySlice = array_start;
-		stencil_desc.Texture2DArray.ArraySize       = tex->array_count;
+		stencil_desc.Texture2DArray.FirstArraySlice = start;
+		stencil_desc.Texture2DArray.ArraySize       = count;
 		if (tex->type == skg_tex_type_cubemap || tex->array_count > 1) {
 			if (tex->multisample > 1) {
 				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
-				stencil_desc.Texture2DMSArray.ArraySize       = tex->array_count;
-				stencil_desc.Texture2DMSArray.FirstArraySlice = array_start;
+				stencil_desc.Texture2DMSArray.ArraySize       = count;
+				stencil_desc.Texture2DMSArray.FirstArraySlice = start;
 			} else {
 				stencil_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-				stencil_desc.Texture2DArray.ArraySize       = tex->array_count;
-				stencil_desc.Texture2DArray.FirstArraySlice = array_start;
+				stencil_desc.Texture2DArray.ArraySize       = count;
+				stencil_desc.Texture2DArray.FirstArraySlice = start;
 				stencil_desc.Texture2DArray.MipSlice        = 0;
 			}
 		} else {
@@ -2257,17 +2277,17 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 	if (tex->type == skg_tex_type_rendertarget) {
 		D3D11_RENDER_TARGET_VIEW_DESC target_desc = {};
 		target_desc.Format = format;
-		target_desc.Texture2DArray.FirstArraySlice = array_start;
-		target_desc.Texture2DArray.ArraySize       = tex->array_count;
+		target_desc.Texture2DArray.FirstArraySlice = start;
+		target_desc.Texture2DArray.ArraySize       = count;
 		if (tex->type == skg_tex_type_cubemap || tex->array_count > 1) {
 			if (tex->multisample > 1) {
 				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
-				target_desc.Texture2DMSArray.ArraySize       = tex->array_count;
-				target_desc.Texture2DMSArray.FirstArraySlice = array_start;
+				target_desc.Texture2DMSArray.ArraySize       = count;
+				target_desc.Texture2DMSArray.FirstArraySlice = start;
 			} else {
 				target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-				target_desc.Texture2DArray.ArraySize       = tex->array_count;
-				target_desc.Texture2DArray.FirstArraySlice = array_start;
+				target_desc.Texture2DArray.ArraySize       = count;
+				target_desc.Texture2DArray.FirstArraySlice = start;
 				target_desc.Texture2DArray.MipSlice        = 0;
 			}
 		} else {
@@ -2279,10 +2299,33 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 			}
 		}
 
+		// Create a view for the whole thing
 		hr = d3d_device->CreateRenderTargetView(tex->_texture, &target_desc, &tex->_target_view);
 		if (FAILED(hr)) {
 			skg_logf(skg_log_critical, "Create Render Target View error: 0x%08X", hr);
 			return false;
+		}
+
+		// Pre-create a view for each array/mip layer, just in case
+		tex->_target_array_view = (ID3D11RenderTargetView**)malloc(sizeof(ID3D11RenderTargetView*)*tex->array_count*mip_count);
+		for (int32_t i = 0; i < tex->array_count; i++) {
+			for (uint32_t m = 0; m < mip_count; m++) {
+				if (tex->multisample > 1) {
+					target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
+					target_desc.Texture2DMSArray.ArraySize       = 1;
+					target_desc.Texture2DMSArray.FirstArraySlice = i;
+				} else {
+					target_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+					target_desc.Texture2DArray.ArraySize       = 1;
+					target_desc.Texture2DArray.FirstArraySlice = i;
+					target_desc.Texture2DArray.MipSlice        = m;
+				}
+				hr = d3d_device->CreateRenderTargetView(tex->_texture, &target_desc, &tex->_target_array_view[i]);
+				if (FAILED(hr)) {
+					skg_logf(skg_log_critical, "Create Render Target View error: 0x%08X", hr);
+					return false;
+				}
+			}
 		}
 	}
 
@@ -2291,8 +2334,8 @@ bool skg_tex_make_view(skg_tex_t *tex, uint32_t mip_count, uint32_t array_start,
 		view.Format = DXGI_FORMAT_UNKNOWN;
 		if (tex->type == skg_tex_type_cubemap || tex->array_count > 1) {
 			view.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-			view.Texture2DArray.FirstArraySlice = array_start;
-			view.Texture2DArray.ArraySize       = tex->array_count;
+			view.Texture2DArray.FirstArraySlice = start;
+			view.Texture2DArray.ArraySize       = count;
 		} else {
 			view.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		}
@@ -2383,7 +2426,7 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 			free(tex_mem);
 		}
 
-		skg_tex_make_view(tex, mip_levels, 0, true);
+		skg_tex_make_view(tex, mip_levels, -1, true);
 	} else {
 		// For dynamic textures, just upload the new value into the texture!
 		D3D11_MAPPED_SUBRESOURCE tex_mem = {};
@@ -2605,6 +2648,17 @@ void skg_tex_destroy(skg_tex_t *tex) {
 	if (tex->_resource   ) tex->_resource   ->Release();
 	if (tex->_sampler    ) tex->_sampler    ->Release();
 	if (tex->_texture    ) tex->_texture    ->Release();
+
+	if (tex->_target_array_view) {
+		int mip_count = tex->mips == skg_mip_generate
+			? skg_mip_count(tex->width, tex->height)
+			: 1;
+		for (int32_t i = 0; i < tex->array_count * mip_count; i++) {
+			if (tex->_target_array_view[i]) tex->_target_array_view[i]->Release();
+		}
+		if (tex->_target_array_view) free(tex->_target_array_view);
+	}
+	
 	*tex = {};
 }
 
@@ -3113,6 +3167,7 @@ GLE(void,     glTexParameterf,           uint32_t target, uint32_t pname, float 
 GLE(void,     glTexImage2D,              uint32_t target, int32_t level, int32_t internalformat, int32_t width, int32_t height, int32_t border, uint32_t format, uint32_t type, const void *data) \
 GLE(void,     glTexStorage2DMultisample, uint32_t target, uint32_t samples, int32_t internalformat, uint32_t width, uint32_t height, uint8_t fixedsamplelocations) \
 GLE(void,     glTexStorage3DMultisample, uint32_t target, uint32_t samples, int32_t internalformat, uint32_t width, uint32_t height, uint32_t depth, uint8_t fixedsamplelocations) \
+GLE(void,     glTexImage3D,              uint32_t target, int32_t level, int32_t internalformat, uint32_t width, uint32_t height, uint32_t depth, int32_t border, uint32_t format, uint32_t type, const void *data) \
 GLE(void,     glCopyTexSubImage2D,       uint32_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height) \
 GLE(void,     glGetTexImage,             uint32_t target, int32_t level, uint32_t format, uint32_t type, void *img) \
 GLE(void,     glReadPixels,              int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t format, uint32_t type, void *data) \
@@ -3374,12 +3429,8 @@ int32_t gl_init_egl() {
 		skg_log(skg_log_info, "Trying EGL direct rendering from /dev/dri/renderD128");
 		int32_t fd = open ("/dev/dri/renderD128", O_RDWR | O_CLOEXEC);
 		if (fd <= 0) {
-			skg_log(skg_log_warning, "Could not find direct rendering interface at /dev/dri/renderD128");
-			fd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
-			if (fd <= 0) {
-				skg_log(skg_log_critical, "Could not find direct rendering interface at /dev/dri/card0");
-				return 0;
-			}
+			skg_log(skg_log_critical, "Could not find direct rendering interface at /dev/dri/renderD128");
+			return 0;
 		}
 
 		struct gbm_device *gbm = gbm_create_device (fd);
@@ -3606,9 +3657,13 @@ void skg_draw_begin() {
 
 ///////////////////////////////////////////
 
-void skg_tex_target_bind(skg_tex_t *render_target) {
+void skg_tex_target_bind(skg_tex_t *render_target, int32_t layer_idx, int32_t mip_level) {
 	gl_active_rendertarget = render_target;
-	gl_current_framebuffer = render_target == nullptr ? 0 : render_target->_framebuffer;
+	gl_current_framebuffer = render_target == nullptr 
+		? 0 
+		: layer_idx >= 0 && render_target->array_count > 1
+			? render_target->_framebuffer_layers[layer_idx]
+			: render_target->_framebuffer;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	if (render_target) {
@@ -4462,7 +4517,7 @@ void skg_swapchain_present(skg_swapchain_t *swapchain) {
 	glXSwapBuffers(xDisplay, (Drawable) swapchain->_x_window);
 #elif defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
 	float clear[4] = { 0,0,0,1 };
-	skg_tex_target_bind(nullptr);
+	skg_tex_target_bind(nullptr, -1, 0);
 	skg_target_clear   (true, clear);
 	skg_tex_bind      (&swapchain->_surface, {0, skg_stage_pixel});
 	skg_mesh_bind     (&swapchain->_quad_mesh);
@@ -4477,16 +4532,16 @@ void skg_swapchain_bind(skg_swapchain_t *swapchain) {
 	gl_active_width  = swapchain->width;
 	gl_active_height = swapchain->height;
 #if   defined(_SKG_GL_LOAD_EMSCRIPTEN) && defined(SKG_MANUAL_SRGB)
-	skg_tex_target_bind(&swapchain->_surface);
+	skg_tex_target_bind(&swapchain->_surface, -1, 0);
 #elif defined(_SKG_GL_LOAD_WGL)
 	wglMakeCurrent((HDC)swapchain->_hdc, gl_hrc);
-	skg_tex_target_bind(nullptr);
+	skg_tex_target_bind(nullptr, -1, 0);
 #elif defined(_SKG_GL_LOAD_EGL)
 	eglMakeCurrent(egl_display, swapchain->_egl_surface, swapchain->_egl_surface, egl_context);
-	skg_tex_target_bind(nullptr);
+	skg_tex_target_bind(nullptr, -1, 0);
 #elif defined(_SKG_GL_LOAD_GLX)
 	glXMakeCurrent(xDisplay, (Drawable)swapchain->_x_window, glxContext);
-	skg_tex_target_bind(nullptr);
+	skg_tex_target_bind(nullptr, -1, 0);
 #endif
 }
 
@@ -4530,7 +4585,14 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 		glGenFramebuffers(1, &result._framebuffer);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, result._framebuffer);
-		if (array_count != 1) {
+		if (result.array_count > 1) glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0, 0);
+		else                        glFramebufferTexture     (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0);
+
+		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+		}
+		/*if (array_count != 1) {
 #ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0);
 #else
@@ -4538,7 +4600,24 @@ skg_tex_t skg_tex_create_from_existing(void *native_tex, skg_tex_type_ type, skg
 #endif
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._target, result._texture, 0);
+		}*/
+
+		// Add framebuffers for individual layers of any array surfaces
+		if (result.array_count > 1) {
+			result._framebuffer_layers = (uint32_t*)malloc(sizeof(uint32_t) * result.array_count);
+			glGenFramebuffers(result.array_count, result._framebuffer_layers);
+
+			for (int32_t i = 0; i < result.array_count; i++) {
+				glBindFramebuffer        (GL_FRAMEBUFFER, result._framebuffer_layers[i]);
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0, i);
+
+				uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+				if (status != GL_FRAMEBUFFER_COMPLETE) {
+					skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+				}
+			}
 		}
+
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
 	
@@ -4567,7 +4646,13 @@ skg_tex_t skg_tex_create_from_layer(void *native_tex, skg_tex_type_ type, skg_te
 		glGenFramebuffers(1, &result._framebuffer);
 		glBindFramebuffer        (GL_FRAMEBUFFER, result._framebuffer);
 		glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, result._texture, 0, array_layer);
-		glBindFramebuffer        (GL_FRAMEBUFFER, gl_current_framebuffer);
+
+		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
 	}
 
 	return result;
@@ -4612,6 +4697,13 @@ void skg_tex_name(skg_tex_t *tex, const char* name) {
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
 		glObjectLabel    (GL_FRAMEBUFFER, tex->_framebuffer, (uint32_t)strlen(postfix_name), postfix_name);
 	}
+	if (tex->_framebuffer_layers) {
+		for (int32_t i = 0; i<tex->array_count; i+=1) {
+			snprintf(postfix_name, sizeof(postfix_name), "%s_framebuffer_layer_%d", name, i);
+			glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer_layers[i]);
+			glObjectLabel    (GL_FRAMEBUFFER, tex->_framebuffer_layers[i], (uint32_t)strlen(postfix_name), postfix_name);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -4622,27 +4714,41 @@ bool skg_tex_is_valid(const skg_tex_t *tex) {
 
 ///////////////////////////////////////////
 
-void skg_tex_copy_to(const skg_tex_t *tex, skg_tex_t *destination) {
+void skg_tex_copy_to(const skg_tex_t *tex, int32_t tex_surface, skg_tex_t *destination, int32_t dest_surface) {
 	if (destination->width != tex->width || destination->height != tex->height) {
 		skg_tex_set_contents_arr(destination, nullptr, tex->array_count, tex->width, tex->height, tex->multisample);
 	}
 
-	if (tex->multisample > 1) {
-		uint32_t temp_framebuffer;
-		glGenFramebuffers     (1, &temp_framebuffer);
-		glBindFramebuffer     (GL_FRAMEBUFFER, temp_framebuffer);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, destination->_target, destination->_texture, 0);
+	uint32_t err = glGetError();
+	while(err) {
+		err = glGetError();
+		skg_logf(skg_log_warning, "err: %x", err);
+	}
 
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, tex->_framebuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, temp_framebuffer);
+	if (tex_surface == -1 && dest_surface == -1 && destination->array_count > 1) {
+		if (tex->array_count != destination->array_count) skg_log(skg_log_critical, "Mismatching texture array count.");
 
-		glBlitFramebuffer  (0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		for (int32_t i=0; i<destination->array_count; i+=1) {
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, tex        ->_framebuffer_layers[i]);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination->_framebuffer_layers[i]);
 
-		glDeleteFramebuffers(1, &temp_framebuffer);
+			glBlitFramebuffer(0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		}
 	} else {
-		glBindFramebuffer  (GL_FRAMEBUFFER, tex->_framebuffer);
-		glBindTexture      (destination->_target, destination->_texture);
-		glCopyTexSubImage2D(destination->_target, 0, 0,0,0,0,tex->width,tex->height);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, tex_surface >= 0 
+			? tex->_framebuffer_layers[tex_surface] 
+			: tex->_framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest_surface >= 0 
+			? destination->_framebuffer_layers[dest_surface]
+			: destination->_framebuffer);
+
+		glBlitFramebuffer(0, 0, tex->width, tex->height, 0, 0, tex->width, tex->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
+
+	err = glGetError();
+	while(err) {
+		err = glGetError();
+		skg_logf(skg_log_warning, "blit err: %x", err);
 	}
 }
 
@@ -4663,7 +4769,14 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 			? GL_DEPTH_STENCIL_ATTACHMENT 
 			: GL_DEPTH_ATTACHMENT;
 		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
-		if (tex->_target == GL_TEXTURE_2D_ARRAY) {
+		if (tex->array_count > 1) glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, 0);
+		else                      glFramebufferTexture     (GL_FRAMEBUFFER, attach, depth->_texture, 0);
+
+		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+		}
+		/*if (tex->_target == GL_TEXTURE_2D_ARRAY || ) {
 			if (tex->array_count == 1) {
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, tex->array_start);
 			} else {
@@ -4675,6 +4788,19 @@ void skg_tex_attach_depth(skg_tex_t *tex, skg_tex_t *depth) {
 			}
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, attach, tex->_target, depth->_texture, 0);
+		}*/
+
+		// Attach depth to the per-layer framebuffers
+		if (tex->array_count > 1) {
+			for (int32_t i = 0; i < tex->array_count; i++) {
+				glBindFramebuffer        (GL_FRAMEBUFFER, tex->_framebuffer_layers[i]);
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, attach, depth->_texture, 0, i);
+
+				uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+				if (status != GL_FRAMEBUFFER_COMPLETE) {
+					skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+				}
+			}
 		}
 	} else {
 		skg_log(skg_log_warning, "Can't bind a depth texture to a non-rendertarget");
@@ -4778,7 +4904,8 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		#ifndef _SKG_GL_WEB
 		if      (tex->_target == GL_TEXTURE_2D_MULTISAMPLE)       { glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,       multisample, tex->_format, width, height, true); }
 		else if (tex->_target == GL_TEXTURE_2D_MULTISAMPLE_ARRAY) { glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, multisample, tex->_format, width, height, data_frame_count, true); }
-		else                                                      { glTexImage2D             (GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]); }
+		else if (tex->_target == GL_TEXTURE_2D_ARRAY)             { glTexImage3D             (GL_TEXTURE_2D_ARRAY, 0, tex->_format, width, height, data_frame_count, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]); }
+		else                                                      { glTexImage2D             (GL_TEXTURE_2D,       0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]); }
 		#else
 		glTexImage2D(GL_TEXTURE_2D, 0, tex->_format, width, height, 0, layout, type, data_frames == nullptr ? nullptr : data_frames[0]);
 		#endif
@@ -4790,8 +4917,15 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 		glGenerateMipmap(tex->_target);
 
 	if (tex->type == skg_tex_type_rendertarget) {
-		glBindFramebuffer(GL_FRAMEBUFFER, tex->_framebuffer);
-		if (tex->array_count != 1) {
+		glBindFramebuffer   (GL_FRAMEBUFFER, tex->_framebuffer);
+		if (tex->array_count > 1) glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0, 0);
+		else                      glFramebufferTexture     (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0);
+
+		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+		}
+		/*if (tex->array_count != 1) {
 #ifndef _SKG_GL_WEB
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0);
 #else
@@ -4799,11 +4933,22 @@ void skg_tex_set_contents_arr(skg_tex_t *tex, const void **data_frames, int32_t 
 #endif
 		} else {
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_target, tex->_texture, 0);
-		}
+		}*/
 
-		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE) {
-			skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+		// Add framebuffers for individual layers of any array surfaces
+		if (tex->array_count > 1) {
+			tex->_framebuffer_layers = (uint32_t*)malloc(sizeof(uint32_t) * tex->array_count);
+			glGenFramebuffers(tex->array_count, tex->_framebuffer_layers);
+
+			for (int32_t i = 0; i < tex->array_count; i++) {
+				glBindFramebuffer        (GL_FRAMEBUFFER, tex->_framebuffer_layers[i]);
+				glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex->_texture, 0, i);
+
+				uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+				if (status != GL_FRAMEBUFFER_COMPLETE) {
+					skg_logf(skg_log_critical, "Framebuffer incomplete: %x\n", status);
+				}
+			}
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, gl_current_framebuffer);
@@ -4929,6 +5074,10 @@ void skg_tex_destroy(skg_tex_t *tex) {
 	uint32_t fb_list [] = { tex->_framebuffer };
 	if (tex->_texture    ) glDeleteTextures    (1, tex_list);
 	if (tex->_framebuffer) glDeleteFramebuffers(1, fb_list );  
+	if (tex->_framebuffer_layers) {
+		glDeleteFramebuffers(tex->array_count, tex->_framebuffer_layers);  
+		free(tex->_framebuffer_layers);
+	}
 	*tex = {};
 }
 
@@ -5769,6 +5918,9 @@ int32_t skg_shader_meta_get_var_index_h(const skg_shader_meta_t *meta, uint64_t 
 			return i;
 		}
 	}
+
+	// try a few things here?
+	
 	return -1;
 }
 
@@ -5931,11 +6083,8 @@ int32_t skg_fmt_size(skg_fmt_ format) {
 }
 #endif // SKG_IMPL
 /*
-------------------------------------------------------------------------------
-This software is available under 2 licenses -- choose whichever you prefer.
-------------------------------------------------------------------------------
-ALTERNATIVE A - MIT License
-Copyright (c) 2020 Nick Klingensmith
+Copyright (c) 2020-2024 Nick Klingensmith
+Copyright (c) 2024 Qualcomm Technologies, Inc.
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
@@ -5951,23 +6100,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-------------------------------------------------------------------------------
-ALTERNATIVE B - Public Domain (www.unlicense.org)
-This is free and unencumbered software released into the public domain.
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
-software, either in source code form or as a compiled binary, for any purpose,
-commercial or non-commercial, and by any means.
-In jurisdictions that recognize copyright laws, the author or authors of this
-software dedicate any and all copyright interest in the software to the public
-domain. We make this dedication for the benefit of the public at large and to
-the detriment of our heirs and successors. We intend this dedication to be an
-overt act of relinquishment in perpetuity of all present and future rights to
-this software under copyright law.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-------------------------------------------------------------------------------
 */
