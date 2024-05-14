@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: MIT
+﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
 // Copyright (c) 2024 Nick Klingensmith
 // Copyright (c) 2024 Qualcomm Technologies, Inc.
 
 #include "sk_fontfile.h"
+#include "../_stereokit.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,6 +53,119 @@ void fontfile_print_font(const char* name) {
 		else                    printf("|--\"%s\" -> %s\n", info[i].name, info[i].filename);
 	}
 	free(info);
+	char* file_path = fontfile_name_to_path("Arial");
+	char* font_file_folder = fontfile_folder();
+	free(file_path);
+	free(font_file_folder);
+}
+
+#if defined(__linux__) && !defined(__ANDROID__)
+
+#include <fontconfig/fontconfig.h>
+
+#endif
+
+void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
+	*out_info = nullptr;
+	*out_info_count = 0;
+
+	char* string = strdup(fontlist_utf8);
+	char* token = strtok(string, ",");
+
+	// Super simple dynamic array
+	int32_t               count = 0;
+	int32_t               capacity = 4;
+	font_fallback_info_t* data = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * capacity);
+	if (data == nullptr) return;
+
+#if defined(__linux__) && !defined(__ANDROID__)
+	FcConfig* config = FcInitLoadConfigAndFonts();
+	FcPattern* pattern = FcPatternCreate();
+
+	while (token != nullptr) {
+		char* trimmed = _trim_whitespace(token);
+		token = strtok(nullptr, ",");
+
+		FcPatternAddString(pattern, FC_FAMILY, (const FcChar8*)trimmed);
+		free(trimmed);
+	}
+	free(string);
+
+	FcConfigSubstitute(config, pattern, FcMatchPattern);
+	FcDefaultSubstitute(pattern);
+
+	FcResult   fc_result;
+	FcFontSet* font_set = FcFontSort(config, pattern, 1, NULL, &fc_result);
+
+	if (!font_set) {
+		FcPatternDestroy(pattern);
+		return;
+	}
+
+	for (int i = 0; i < font_set->nfont; i++) {
+		if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
+		if (data == nullptr) return;
+
+		FcValue file_value;
+		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
+			strncpy(data[count].filename, (char*)file_value.u.s, sizeof(data[count].filename) - 1);
+			data[count].filename[sizeof(data[count].filename) - 1] = '\0';
+		}
+		FcValue nameValue;
+		if (FcPatternGet(font_set->fonts[i], FC_FAMILY, 0, &nameValue) == FcResultMatch) {
+			strncpy(data[count].name, (char*)nameValue.u.s, sizeof(data[count].name) - 1);
+			data[count].name[sizeof(data[count].name) - 1] = '\0';
+		}
+		data[count].scale = 1;
+		count += 1;
+	}
+
+	FcFontSetDestroy(font_set);
+	FcPatternDestroy(pattern);
+	FcConfigDestroy(config);
+#endif
+
+#if defined(_WIN32) || defined(__ANDROID__)
+
+	while (token != nullptr) {
+		char* trimmed = _trim_whitespace(token);
+		char* file = fontfile_name_to_path(trimmed);
+		token = strtok(nullptr, ",");
+
+		if (file != nullptr) {
+			if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
+			if (data == nullptr) return;
+
+			strncpy(data[count].name, trimmed, sizeof(data[count].name));
+			strncpy(data[count].filename, file, sizeof(data[count].filename));
+			data[count].scale = 1;
+			count += 1;
+
+			free(file);
+
+			int32_t               link_count;
+			font_fallback_info_t* links;
+			if (fontfile_get_fallback_info(trimmed, &links, &link_count)) {
+				for (size_t i = 0; i < link_count; i++)
+				{
+					if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
+					if (data == nullptr) return;
+
+					memcpy(&data[count], &links[i], sizeof(font_fallback_info_t));
+					count += 1;
+				}
+				free(trimmed);
+				break;
+			}
+		}
+		free(trimmed);
+	}
+	free(string);
+#endif
+
+
+	*out_info = data;
+	*out_info_count = count;
 }
 
 ///////////////////////////////////////////
@@ -205,58 +319,6 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 
 ///////////////////////////////////////////
 
-void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
-	*out_info       = nullptr;
-	*out_info_count = 0;
-
-	char* string = _strdup(fontlist_utf8);
-	char* token  = strtok(string, ",");
-
-	// Super simple dynamic array
-	int32_t               count    = 0;
-	int32_t               capacity = 4;
-	font_fallback_info_t* data     = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * capacity);
-	if (data == nullptr) return;
-
-	while (token != nullptr) {
-		char *trimmed = _trim_whitespace(token);
-		char *file    = fontfile_name_to_path(trimmed);
-		token = strtok(nullptr, ",");
-
-		if (file != nullptr) {
-			if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
-			if (data == nullptr) return;
-
-			strncpy(data[count].name,     trimmed, sizeof(data[count].name));
-			strncpy(data[count].filename, file,    sizeof(data[count].filename));
-			data[count].scale = 1;
-			count += 1;
-
-			free(file);
-
-			int32_t               link_count;
-			font_fallback_info_t* links;
-			if (fontfile_get_fallback_info(trimmed, &links, &link_count)) {
-				for (size_t i = 0; i < link_count; i++)
-				{
-					if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
-					if (data == nullptr) return;
-					
-					memcpy(&data[count], &links[i], sizeof(font_fallback_info_t));
-					count += 1;
-				}
-				free(trimmed);
-				break;
-			}
-		}
-		free(trimmed);
-	}
-	free(string);
-
-	*out_info       = data;
-	*out_info_count = count;
-}
-
 #endif
 
 ///////////////////////////////////////////
@@ -297,65 +359,30 @@ char* fontfile_name_to_path(const char* name_utf8) {
 
 bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
 	*out_info = nullptr;
-	*out_info_count = 0;
+	char* font_file_path = nullptr;
+	*out_info_count = 4;
+	//English(Robota-Regular), Japanese(NotoSansCJK-Regular), Hindi(NotoSansDevanagariUI-VF)
+	uint16_t fallback_list_chars[5][1] = { { u'A'}, {u'古'}, {u'ल'} };
 
-    // There are no fallback fonts in android.
-	return false;
+
+	*out_info = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * *out_info_count);
+	if (*out_info == nullptr) return false;
+
+	font_fallback_info_t* info = *out_info;
+	AFontMatcher* matcher = AFontMatcher_create();
+	for (int i = 0; i < *out_info_count; i++) {
+		AFont* font_matched = AFontMatcher_match(matcher, name_utf8, fallback_list_chars[i], 1, nullptr);
+		font_file_path = strdup(AFont_getFontFilePath(font_matched));
+		strcpy(info[i].filename, font_file_path);
+		strcpy(info[i].name, font_file_path);
+		info[i].scale = 1;
+		AFont_close(font_matched);
+	}	
+	AFontMatcher_destroy(matcher);
+	return true;
 }
 
 ///////////////////////////////////////////
-
-void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
-	*out_info = nullptr;
-	*out_info_count = 0;
-
-	char* string = strdup(fontlist_utf8);
-	char* token = strtok(string, ",");
-
-	// Super simple dynamic array
-	int32_t               count = 0;
-	int32_t               capacity = 4;
-	font_fallback_info_t* data = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * capacity);
-	if (data == nullptr) return;
-
-	while (token != nullptr) {
-		char* trimmed = _trim_whitespace(token);
-		char* file = fontfile_name_to_path(trimmed);
-		token = strtok(nullptr, ",");
-
-		if (file != nullptr) {
-			if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
-			if (data == nullptr) return;
-
-			strncpy(data[count].name, trimmed, sizeof(data[count].name));
-			strncpy(data[count].filename, file, sizeof(data[count].filename));
-			data[count].scale = 1;
-			count += 1;
-
-			free(file);
-
-			int32_t               link_count;
-			font_fallback_info_t* links;
-			if (fontfile_get_fallback_info(trimmed, &links, &link_count)) {
-				for (size_t i = 0; i < link_count; i++)
-				{
-					if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
-					if (data == nullptr) return;
-
-					memcpy(&data[count], &links[i], sizeof(font_fallback_info_t));
-					count += 1;
-				}
-				free(trimmed);
-				break;
-			}
-		}
-		free(trimmed);
-	}
-	free(string);
-
-	*out_info = data;
-	*out_info_count = count;
-}
 
 #endif
 
@@ -365,12 +392,10 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 
 #if defined(__linux__) && !defined(__ANDROID__)
 
-#include <fontconfig/fontconfig.h>
-
 ///////////////////////////////////////////
 
 char* fontfile_folder() {
-	return strdup("/");
+	return strdup("/usr/share/fonts/");
 }
 
 ///////////////////////////////////////////
@@ -458,70 +483,6 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	FcPatternDestroy(pattern);
 
 	return true;
-}
-
-///////////////////////////////////////////
-
-void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
-	*out_info       = nullptr;
-	*out_info_count = 0;
-
-	char* string = strdup(fontlist_utf8);
-	char* token  = strtok(string, ",");
-
-	// Super simple dynamic array
-	int32_t               count    = 0;
-	int32_t               capacity = 4;
-	font_fallback_info_t* data     = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * capacity);
-	if (data == nullptr) return;
-
-	FcConfig*  config    = FcInitLoadConfigAndFonts();
-	FcPattern* pattern   = FcPatternCreate();
-
-	while (token != nullptr) {
-		char *trimmed = _trim_whitespace(token);
-		token = strtok(nullptr, ",");
-
-		FcPatternAddString(pattern, FC_FAMILY, (const FcChar8*)trimmed);
-		free(trimmed);
-	}
-	free(string);
-
-	FcConfigSubstitute (config, pattern, FcMatchPattern);
-	FcDefaultSubstitute(pattern);
-
-	FcResult   fc_result;
-	FcFontSet* font_set = FcFontSort(config, pattern, 1, NULL, &fc_result);
-
-	if (!font_set) {
-		FcPatternDestroy(pattern);
-		return;
-	}
-
-	for (int i = 0; i < font_set->nfont; i++) {
-		if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
-		if (data == nullptr) return;
-
-		FcValue file_value;
-		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
-			strncpy(data[count].filename, (char*)file_value.u.s, sizeof(data[count].filename) - 1);
-			data[count].filename[sizeof(data[count].filename) - 1] = '\0';
-		}
-		FcValue nameValue;
-		if (FcPatternGet(font_set->fonts[i], FC_FAMILY, 0, &nameValue) == FcResultMatch) {
-			strncpy(data[count].name, (char*)nameValue.u.s, sizeof(data[count].name) - 1);
-			data[count].name[sizeof(data[count].name) - 1] = '\0';
-		}
-		data[count].scale = 1;
-		count += 1;
-	}
-
-	FcFontSetDestroy(font_set);
-	FcPatternDestroy(pattern);
-	FcConfigDestroy(config);
-
-	*out_info       = data;
-	*out_info_count = count;
 }
 
 #endif
