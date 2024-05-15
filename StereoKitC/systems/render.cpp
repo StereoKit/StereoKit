@@ -141,7 +141,7 @@ const int32_t    render_instance_max     = 819;
 const int32_t    render_skytex_register  = 11;
 const skg_bind_t render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 const skg_bind_t render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-const skg_bind_t render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+const skg_bind_t render_list_blit_bind   = { 3,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 
 ///////////////////////////////////////////
 
@@ -174,8 +174,8 @@ bool render_init() {
 	local.ortho_viewport_height = 1.0f;
 	local.clear_col             = color128{0,0,0,0};
 	local.list_primary          = nullptr;
-	local.scale                 = 1;
-	local.multisample           = 1;
+	local.scale                 = sk_get_settings_ref()->render_scaling;
+	local.multisample           = sk_get_settings_ref()->render_multisample;
 	local.primary_filter        = render_layer_all_first_person;
 	local.capture_filter        = render_layer_all_first_person;
 	local.list_active           = nullptr;
@@ -732,8 +732,8 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
-		math_matrix_to_fast(views      [i], &view_f      );
-		math_matrix_to_fast(projections[i], &projection_f);
+		math_matrix_to_fast(views      [eye_offset+i], &view_f      );
+		math_matrix_to_fast(projections[eye_offset+i], &projection_f);
 
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
@@ -798,14 +798,6 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 
 ///////////////////////////////////////////
 
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t eye_offset, int32_t count, render_layer_ render_filter) {
-	render_check_viewpoints();
-	render_draw_queue(views, projections, eye_offset, count, render_filter);
-	render_check_screenshots();
-}
-
-///////////////////////////////////////////
-
 // The screenshots are produced in FIFO order, meaning the
 // order of screenshot requests by users is preserved.
 void render_check_screenshots() {
@@ -823,10 +815,10 @@ void render_check_screenshots() {
 
 		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
 		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_add_zbuffer(render_capture_surface);
+		tex_add_zbuffer  (render_capture_surface);
 
 		// Setup to render the screenshot
-		skg_tex_target_bind(&render_capture_surface->tex);
+		skg_tex_target_bind(&render_capture_surface->tex, -1, 0);
 
 		// Set up the viewport if we've got one!
 		if (local.screenshot_list[i].viewport.w != 0) {
@@ -857,11 +849,11 @@ void render_check_screenshots() {
 
 		// Render!
 		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
-		skg_tex_target_bind(nullptr);
+		skg_tex_target_bind(nullptr, -1, 0);
 
 		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
 		tex_set_colors(resolve_tex, w, h, nullptr);
-		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
+		skg_tex_copy_to(&render_capture_surface->tex, -1, &resolve_tex->tex, -1);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
 		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
@@ -869,9 +861,9 @@ void render_check_screenshots() {
 		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
 			void* top_line = ((uint8_t*)buffer) + line_size * y;
 			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
-			memcpy(tmp, top_line, line_size);
+			memcpy(tmp,      top_line, line_size);
 			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp, line_size);
+			memcpy(bot_line, tmp,      line_size);
 		}
 		sk_free(tmp);
 #endif
@@ -884,7 +876,7 @@ void render_check_screenshots() {
 		skg_event_end();
 	}
 	local.screenshot_list.clear();
-	skg_tex_target_bind(old_target);
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
@@ -896,7 +888,7 @@ void render_check_viewpoints() {
 	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
 		skg_event_begin("Viewpoint");
 		// Setup to render the screenshot
-		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex);
+		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex, -1, 0);
 
 		// Clear the viewport
 		if (local.viewpoint_list[i].clear != render_clear_none) {
@@ -922,14 +914,14 @@ void render_check_viewpoints() {
 
 		// Render!
 		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
-		skg_tex_target_bind(nullptr);
+		skg_tex_target_bind(nullptr, -1, 0);
 
 		// Release the reference we added, the user should have their own ref
 		tex_release(local.viewpoint_list[i].rendertarget);
 		skg_event_end();
 	}
 	local.viewpoint_list.clear();
-	skg_tex_target_bind(old_target);
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
@@ -980,9 +972,12 @@ void render_blit_to_bound(material_t material) {
 void render_blit(tex_t to, material_t material) {
 	skg_tex_t *old_target = skg_tex_target_get();
 
-	skg_tex_target_bind (&to->tex  );
-	render_blit_to_bound(material  );
-	skg_tex_target_bind (old_target);
+	for (int32_t i = 0; i < to->tex.array_count; i++)
+	{
+		skg_tex_target_bind(&to->tex, i, 0);
+		render_blit_to_bound(material);
+	}
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////

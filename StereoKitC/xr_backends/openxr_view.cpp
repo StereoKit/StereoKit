@@ -37,14 +37,14 @@ struct swapchain_t {
 	int32_t              height;
 	int32_t              multisample;
 	uint32_t             backbuffer_count; // The number of backbuffer surfaces the swapchain has
-	uint32_t             backbuffer_views; // The number of "views" each backbuffer needs. If this is a platform that can target different texture array surfaces in the shader, then only one view is needed. Otherwise we need one view for each array surface.
 	XrSwapchainImage    *backbuffers;
 	tex_t               *textures;
-	pipeline_surface_id *render_surfaces;
+	pipeline_surface_id  render_surface;
+	int32_t              render_surface_tex;
 	bool32_t             acquired;
 };
 void swapchain_delete(swapchain_t *swapchain) {
-	for (size_t s = 0; s < swapchain->backbuffer_count * swapchain->backbuffer_views; s++)
+	for (size_t s = 0; s < swapchain->backbuffer_count; s++)
 		tex_release(swapchain->textures[s]);
 	if (swapchain->handle)
 		xrDestroySwapchain(swapchain->handle);
@@ -87,10 +87,11 @@ void device_display_delete(device_display_t *display) {
 
 ///////////////////////////////////////////
 
-int32_t   xr_display_primary_idx    = -1;
-system_t* xr_render_sys             = nullptr;
-int64_t   xr_preferred_color_format = -1;
-int64_t   xr_preferred_depth_format = -1;
+int32_t    xr_display_primary_idx    = -1;
+system_t*  xr_render_sys             = nullptr;
+int64_t    xr_preferred_color_format = -1;
+int64_t    xr_preferred_depth_format = -1;
+bool       xr_draw_to_swapchain      = false;
 
 array_t<device_display_t>                          xr_displays           = {};
 array_t<device_display_t>                          xr_displays_2nd       = {};
@@ -252,6 +253,7 @@ bool32_t xr_set_blend(display_blend_ blend) {
 bool openxr_views_create() {
 	xr_render_sys          = systems_find("FrameRender");
 	xr_display_primary_idx = -1;
+	xr_draw_to_swapchain   = skg_capability(skg_cap_tiled_multisample);
 
 	// OpenXR has a preferred swapchain format, this'll find one that matches
 	// with formats we support.
@@ -445,7 +447,6 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	}
 	if (w > (int32_t)display->view_configs[0].maxImageRectWidth      ) w = display->view_configs[0].maxImageRectWidth;
 	if (h > (int32_t)display->view_configs[0].maxImageRectHeight     ) h = display->view_configs[0].maxImageRectHeight;
-	if (s > (int32_t)display->view_configs[0].maxSwapchainSampleCount) s = display->view_configs[0].maxSwapchainSampleCount;
 
 	if (   w == sc_color->width
 		&& h == sc_color->height
@@ -453,52 +454,53 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		return true;
 	}
 
+	// A "quilt" is a grid of images on a single texture. This terminology is
+	// used for lenticular displays like Looking Glass, and we're using it here
+	// to describe more generically what's happening in a "double wide" 
+	// rendering scenario. This gives us some extra ability to experiment with
+	// memory/image layout like "double tall", and possibly more features later.
+	int32_t array_count  = display->view_cap;
+	int32_t quilt_width  = 1;
+	int32_t quilt_height = 1;
+#if defined(SKG_OPENGL)
+	array_count  = 1;
+	quilt_width  = 1;
+	quilt_height = display->view_cap;
+#endif
+	w = w * quilt_width;
+	h = h * quilt_height;
+
 	// Create the new swapchains for the current size
-	if (!openxr_create_swapchain(&display->swapchain_color, display->type, true,  display->view_cap, xr_preferred_color_format, w, h, s)) return false;
-	if (!openxr_create_swapchain(&display->swapchain_depth, display->type, false, display->view_cap, xr_preferred_depth_format, w, h, s)) return false;
+	if (!openxr_create_swapchain(&display->swapchain_color, display->type, true,  array_count, xr_preferred_color_format, w, h, 1)) return false;
+	if (!openxr_create_swapchain(&display->swapchain_depth, display->type, false, array_count, xr_preferred_depth_format, w, h, 1)) return false;
 
-	log_diagf("Set view: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d<~BLK>@<~clr>%d<~BLK>msaa<~clr>", openxr_view_name(display->type), sc_color->width, sc_color->height, sc_color->multisample);
-
-	// If shaders can't select layers from a texture array, we'll have to
-	// separate the layers into individual render targets.
-	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) {
-		sc_color->backbuffer_views = 1;
-		sc_depth->backbuffer_views = 1;
-	} else {
-		sc_color->backbuffer_views = display->view_cap;
-		sc_depth->backbuffer_views = display->view_cap;
-	}
+	log_diagf("Set swapchain: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d", openxr_view_name(display->type), sc_color->width, sc_color->height);
 
 	// Create texture objects if we don't have 'em
 	if (sc_color->textures == nullptr) {
-		sc_color->textures = sk_malloc_t(tex_t, (size_t)sc_color->backbuffer_count * sc_color->backbuffer_views);
-		sc_depth->textures = sk_malloc_t(tex_t, (size_t)sc_depth->backbuffer_count * sc_depth->backbuffer_views);
-		memset(sc_color->textures, 0, sizeof(tex_t) * sc_color->backbuffer_count * sc_color->backbuffer_views);
-		memset(sc_depth->textures, 0, sizeof(tex_t) * sc_depth->backbuffer_count * sc_depth->backbuffer_views);
+		sc_color->textures = sk_malloc_t(tex_t, (size_t)sc_color->backbuffer_count);
+		sc_depth->textures = sk_malloc_t(tex_t, (size_t)sc_depth->backbuffer_count);
+		memset(sc_color->textures, 0, sizeof(tex_t) * sc_color->backbuffer_count);
+		memset(sc_depth->textures, 0, sizeof(tex_t) * sc_depth->backbuffer_count);
 
-		for (uint32_t back = 0; back < sc_color->backbuffer_count; back++) {
-			for (uint32_t view = 0; view < sc_color->backbuffer_views; view++) {
-				int32_t index = view*sc_color->backbuffer_count + back;
+		for (uint32_t i = 0; i < sc_color->backbuffer_count; i++) {
+			sc_color->textures[i] = tex_create(tex_type_rendertarget, tex_get_tex_format(xr_preferred_color_format));
+			sc_depth->textures[i] = tex_create(tex_type_depth,        tex_get_tex_format(xr_preferred_depth_format));
 
-				sc_color->textures[index] = tex_create(tex_type_rendertarget, tex_get_tex_format(xr_preferred_color_format));
-				sc_depth->textures[index] = tex_create(tex_type_depth,        tex_get_tex_format(xr_preferred_depth_format));
-
-				char           name[64];
-				static int32_t target_index = 0;
-				target_index++;
-				snprintf(name, sizeof(name), "renderer/colortarget_%d", target_index);
-				tex_set_id(sc_color->textures[index], name);
-				snprintf(name, sizeof(name), "renderer/depthtarget_%d", target_index);
-				tex_set_id(sc_depth->textures[index], name);
-			}
+			char           name[64];
+			static int32_t target_index = 0;
+			target_index++;
+			snprintf(name, sizeof(name), "renderer/colortarget_%d", target_index);
+			tex_set_id(sc_color->textures[i], name);
+			snprintf(name, sizeof(name), "renderer/depthtarget_%d", target_index);
+			tex_set_id(sc_depth->textures[i], name);
 		}
 
-		sc_color->render_surfaces = sk_malloc_t(pipeline_surface_id, sc_color->backbuffer_views);
-		for (uint32_t i = 0; i < sc_color->backbuffer_views; i++)
-			sc_color->render_surfaces[i] = render_pipeline_surface_create(
-				tex_get_tex_format(xr_preferred_color_format),
-				tex_get_tex_format(xr_preferred_depth_format),
-				display->view_cap/sc_color->backbuffer_views);
+		sc_color->render_surface_tex = -1;
+		sc_color->render_surface     = render_pipeline_surface_create(
+			tex_get_tex_format(xr_preferred_color_format),
+			tex_get_tex_format(xr_preferred_depth_format),
+			array_count, quilt_width, quilt_height);
 	}
 
 	// Update or set the native textures
@@ -513,19 +515,13 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		native_surface_col   = (void*)(uint64_t)sc_color->backbuffers[back].image;
 		native_surface_depth = (void*)(uint64_t)sc_depth->backbuffers[back].image;
 #endif
-		if (sc_color->backbuffer_views == 1) {
-			tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, display->view_cap);
-			tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, display->view_cap);
-			tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
-		} else {
-			for (uint32_t layer = 0; layer < sc_color->backbuffer_views; layer++) {
-				int32_t index = layer * sc_color->backbuffer_count + back;
-				tex_set_surface_layer(sc_color->textures[index], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, layer);
-				tex_set_surface_layer(sc_depth->textures[index], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, layer);
-				tex_set_zbuffer      (sc_color->textures[index], sc_depth->textures[index]);
-			}
-		}
+		tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
+		tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
+		tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
 	}
+
+	if (xr_draw_to_swapchain == false)
+		render_pipeline_surface_resize(sc_color->render_surface, sc_color->width, sc_color->height, s);
 
 	if (display->type == XR_PRIMARY_CONFIG) {
 		device_data.display_width  = w;
@@ -744,8 +740,7 @@ bool openxr_render_frame() {
 		// Set up the primary displays
 		for (int32_t i = 0; i < xr_displays.count; i++) {
 			device_display_t* display = &xr_displays[i];
-			for (uint32_t s = 0; s < display->swapchain_color.backbuffer_views; s++)
-				render_pipeline_surface_set_enabled(display->swapchain_color.render_surfaces[s], display->active);
+			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
 			if (!openxr_display_locate(display, xr_time))
@@ -766,8 +761,7 @@ bool openxr_render_frame() {
 		xr_compositor_2nd_layer_ptrs.clear();
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 			device_display_t* display = &xr_displays_2nd[i];
-			for (uint32_t s = 0; s < display->swapchain_color.backbuffer_views; s++)
-				render_pipeline_surface_set_enabled(display->swapchain_color.render_surfaces[s], display->active);
+			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
 			if (!openxr_display_locate(display, xr_time))
@@ -791,11 +785,8 @@ bool openxr_render_frame() {
 		}
 	} else {
 		// Disable all surfaces
-		for (int32_t i = 0; i < xr_displays.count; i++) {
-			swapchain_t* swapchain = &xr_displays[i].swapchain_color;
-			for (uint32_t s = 0; s < swapchain->backbuffer_views; s++)
-				render_pipeline_surface_set_enabled(swapchain->render_surfaces[s], false);
-		}
+		for (int32_t i = 0; i < xr_displays.count; i++)
+			render_pipeline_surface_set_enabled(xr_displays[i].swapchain_color.render_surface, false);
 	}
 
 	// Execute any code that's dependent on the predicted time, such as
@@ -810,6 +801,14 @@ bool openxr_render_frame() {
 
 	// Release the swapchains for all active displays
 	if (render_displays) {
+		if (xr_draw_to_swapchain == false) {
+			for (int32_t i = 0; i < xr_displays.count; i++) {
+				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
+				if (render_pipeline_surface_get_enabled(swapchain->render_surface))
+					render_pipeline_surface_to_tex(swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
+			}
+		}
+
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
@@ -868,16 +867,20 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 	// And now we'll iterate through each viewpoint, and render it!
 	vec2 clip_planes = render_get_clip();
 	for (uint32_t i = 0; i < view_count; i++) {
+		int32_t array_idx    = 0;
+		int32_t view_rect[4] = {};
+		render_pipeline_surface_get_surface_info(display->swapchain_color.render_surface, i, &array_idx, view_rect);
+
 		// Set up our rendering information for the viewpoint we're using right
 		// now!
 		XrCompositionLayerProjectionView *view = &display->view_layers[i];
 		*view = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
 		view->pose = display->view_xr[i].pose;
 		view->fov  = display->view_xr[i].fov;
-		view->subImage.imageArrayIndex  = i;
 		view->subImage.swapchain        = display->swapchain_color.handle;
-		view->subImage.imageRect.offset = { 0, 0 };
-		view->subImage.imageRect.extent = { display->swapchain_color.width, display->swapchain_color.height };
+		view->subImage.imageArrayIndex  = array_idx;
+		view->subImage.imageRect.offset = { view_rect[0], view_rect[1] };
+		view->subImage.imageRect.extent = { view_rect[2], view_rect[3] };
 
 		if (xr_ext_available.KHR_composition_layer_depth) {
 			XrCompositionLayerDepthInfoKHR *depth = &display->view_depths[i];
@@ -885,10 +888,10 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 			depth->maxDepth = 1;
 			depth->nearZ    = clip_planes.x;
 			depth->farZ     = clip_planes.y;
-			depth->subImage.imageArrayIndex  = i;
 			depth->subImage.swapchain        = display->swapchain_depth.handle;
-			depth->subImage.imageRect.offset = { 0, 0 };
-			depth->subImage.imageRect.extent = { display->swapchain_depth.width, display->swapchain_depth.height };
+			depth->subImage.imageArrayIndex  = array_idx;
+			depth->subImage.imageRect.offset = { view_rect[0], view_rect[1] };
+			depth->subImage.imageRect.extent = { view_rect[2], view_rect[3] };
 			view->next = depth;
 		}
 
@@ -905,13 +908,10 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 	display->projection_layer.views      = view_count == 0 ? nullptr : display->view_layers;
 	display->projection_layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
 
-	int32_t surfaces = display->view_cap / display->swapchain_color.backbuffer_views;
-	for (uint32_t v = 0; v < display->swapchain_color.backbuffer_views; v++) {
-		render_pipeline_surface_set_perspective(display->swapchain_color.render_surfaces[v],
-			&display->view_transforms [v * surfaces],
-			&display->view_projections[v * surfaces],
-			surfaces);
-	}
+	render_pipeline_surface_set_perspective(display->swapchain_color.render_surface,
+		display->view_transforms,
+		display->view_projections,
+		display->view_cap);
 
 	return true;
 }
@@ -933,13 +933,11 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	xrWaitSwapchainImage(display->swapchain_color.handle, &wait_info);
 	xrWaitSwapchainImage(display->swapchain_depth.handle, &wait_info);
 
-	for (uint32_t s_layer = 0; s_layer < display->swapchain_color.backbuffer_views; s_layer++) {
-		int32_t index = s_layer*display->swapchain_color.backbuffer_count + color_id;
-
-		render_pipeline_surface_set_tex  (display->swapchain_color.render_surfaces[s_layer], display->swapchain_color.textures[index]);
-		render_pipeline_surface_set_clear(display->swapchain_color.render_surfaces[s_layer], color);
-		render_pipeline_surface_set_layer(display->swapchain_color.render_surfaces[s_layer], render_filter);
-	}
+	if (xr_draw_to_swapchain)
+		render_pipeline_surface_set_tex(display->swapchain_color.render_surface, display->swapchain_color.textures[color_id]);
+	display->swapchain_color.render_surface_tex = color_id;
+	render_pipeline_surface_set_clear(display->swapchain_color.render_surface, color);
+	render_pipeline_surface_set_layer(display->swapchain_color.render_surface, render_filter);
 }
 
 ///////////////////////////////////////////
