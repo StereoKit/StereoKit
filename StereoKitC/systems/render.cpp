@@ -972,7 +972,7 @@ void render_blit_to_bound(material_t material) {
 void render_blit(tex_t to, material_t material) {
 	skg_tex_t *old_target = skg_tex_target_get();
 
-	for (size_t i = 0; i < to->tex.array_count; i++)
+	for (int32_t i = 0; i < to->tex.array_count; i++)
 	{
 		skg_tex_target_bind(&to->tex, i, 0);
 		render_blit_to_bound(material);
