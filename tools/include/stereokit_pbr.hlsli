@@ -36,6 +36,10 @@ float4 sk_pbr_shade(float4 albedo, float3 irradiance, float3 ao, float metal, fl
 	float3 view        = normalize(view_dir);
 	float3 reflection  = reflect(-view, surface_normal);
 	float  ndotv       = max(0, dot(surface_normal, view));
+	
+	// Reduce specular aliasing by boosting roughness at glancing angles. This
+	// uses 8x-7 as an approximation for x^8
+	rough += max(0, 8*(1-ndotv)-7) * (1 - rough);
 
 	float3 F0 = lerp(0.04, albedo.rgb, metal);
 	float3 F  = sk_pbr_fresnel_schlick_roughness(ndotv, F0, rough);
