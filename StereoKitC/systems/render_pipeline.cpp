@@ -221,8 +221,8 @@ void render_pipeline_surface_get_surface_info(pipeline_surface_id surface_id, in
 	int32_t x = array_based_idx % surface->quilt_width;
 
 	*out_array_idx = arr;
-	out_xywh_rect[2] = surface->tex->width  / surface->quilt_width;
-	out_xywh_rect[3] = surface->tex->height / surface->quilt_height;
+	out_xywh_rect[2] = surface->tex ? surface->tex->width  / surface->quilt_width : 0;
+	out_xywh_rect[3] = surface->tex ? surface->tex->height / surface->quilt_height: 0;
 	out_xywh_rect[0] = x * out_xywh_rect[2];
 	out_xywh_rect[1] = y * out_xywh_rect[3];
 }

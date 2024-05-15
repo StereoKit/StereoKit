@@ -91,6 +91,7 @@ int32_t    xr_display_primary_idx    = -1;
 system_t*  xr_render_sys             = nullptr;
 int64_t    xr_preferred_color_format = -1;
 int64_t    xr_preferred_depth_format = -1;
+bool       xr_draw_to_swapchain      = false;
 
 array_t<device_display_t>                          xr_displays           = {};
 array_t<device_display_t>                          xr_displays_2nd       = {};
@@ -252,6 +253,7 @@ bool32_t xr_set_blend(display_blend_ blend) {
 bool openxr_views_create() {
 	xr_render_sys          = systems_find("FrameRender");
 	xr_display_primary_idx = -1;
+	xr_draw_to_swapchain   = skg_capability(skg_cap_tiled_multisample);
 
 	// OpenXR has a preferred swapchain format, this'll find one that matches
 	// with formats we support.
@@ -513,12 +515,13 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		native_surface_col   = (void*)(uint64_t)sc_color->backbuffers[back].image;
 		native_surface_depth = (void*)(uint64_t)sc_depth->backbuffers[back].image;
 #endif
-		tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count);
-		tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count);
+		tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
+		tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
 		tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
 	}
 
-	render_pipeline_surface_resize(sc_color->render_surface, sc_color->width, sc_color->height, s);
+	if (xr_draw_to_swapchain == false)
+		render_pipeline_surface_resize(sc_color->render_surface, sc_color->width, sc_color->height, s);
 
 	if (display->type == XR_PRIMARY_CONFIG) {
 		device_data.display_width  = w;
@@ -798,10 +801,12 @@ bool openxr_render_frame() {
 
 	// Release the swapchains for all active displays
 	if (render_displays) {
-		for (int32_t i = 0; i < xr_displays.count; i++) {
-			swapchain_t* swapchain = &xr_displays[i].swapchain_color;
-			if (render_pipeline_surface_get_enabled(swapchain->render_surface))
-				render_pipeline_surface_to_tex     (swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
+		if (xr_draw_to_swapchain == false) {
+			for (int32_t i = 0; i < xr_displays.count; i++) {
+				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
+				if (render_pipeline_surface_get_enabled(swapchain->render_surface))
+					render_pipeline_surface_to_tex(swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
+			}
 		}
 
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
@@ -928,7 +933,8 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	xrWaitSwapchainImage(display->swapchain_color.handle, &wait_info);
 	xrWaitSwapchainImage(display->swapchain_depth.handle, &wait_info);
 
-	//render_pipeline_surface_set_tex  (display->swapchain_color.render_surfaces[s_layer], display->swapchain_color.textures[index]);
+	if (xr_draw_to_swapchain)
+		render_pipeline_surface_set_tex(display->swapchain_color.render_surface, display->swapchain_color.textures[color_id]);
 	display->swapchain_color.render_surface_tex = color_id;
 	render_pipeline_surface_set_clear(display->swapchain_color.render_surface, color);
 	render_pipeline_surface_set_layer(display->swapchain_color.render_surface, render_filter);
