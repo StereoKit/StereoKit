@@ -42,6 +42,7 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_PHYSICS                      ON  CACHE BOOL "Enable physics.")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
+set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -136,7 +137,13 @@ elseif (UNIX)
   find_package(Threads REQUIRED)
 
 elseif(WIN32)
-  set(SK_SHADER_TARGETS "x")
+  if (SK_WINDOWS_GL)
+    set(SK_SHADER_TARGETS "g")
+    add_definitions("-DSKG_FORCE_OPENGL")
+    add_definitions("-DSK_GPU_LABELS")
+  else()
+    set(SK_SHADER_TARGETS "x")
+  endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     Comdlg32

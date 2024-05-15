@@ -693,7 +693,7 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned) {
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, int32_t framebuffer_multisample, bool32_t owned) {
 	texture->owned = owned;
 	
 	if (texture->owned && skg_tex_is_valid(&texture->tex))
@@ -706,7 +706,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-	texture->tex    = native_surface == nullptr ? skg_tex_t{} : skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count);
+	texture->tex    = native_surface == nullptr ? skg_tex_t{} : skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count, multisample, framebuffer_multisample);
 	texture->width  = texture->tex.width;
 	texture->height = texture->tex.height;
 
