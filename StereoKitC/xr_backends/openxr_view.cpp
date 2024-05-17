@@ -400,6 +400,8 @@ bool openxr_display_create(XrViewConfigurationType view_type, device_display_t *
 	// Extract information from the views we got
 	out_display->type             = view_type;
 	out_display->active           = true;
+	out_display->swapchain_color.render_surface = -1;
+	out_display->swapchain_depth.render_surface = -1;
 	out_display->projection_layer = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
 	out_display->view_xr          = sk_malloc_t(XrView,                           out_display->view_cap);
 	out_display->view_configs     = sk_malloc_t(XrViewConfigurationView,          out_display->view_cap);
@@ -452,6 +454,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		&& s == sc_color->multisample) {
 		return true;
 	}
+
+	xr_draw_to_swapchain = skg_capability(skg_cap_tiled_multisample) || s == 1;
 
 	// A "quilt" is a grid of images on a single texture. This terminology is
 	// used for lenticular displays like Looking Glass, and we're using it here
@@ -743,6 +747,7 @@ bool openxr_render_frame() {
 		// Set up the primary displays
 		for (int32_t i = 0; i < xr_displays.count; i++) {
 			device_display_t* display = &xr_displays[i];
+			if (display->swapchain_color.render_surface < 0) continue;
 			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
@@ -764,6 +769,7 @@ bool openxr_render_frame() {
 		xr_compositor_2nd_layer_ptrs.clear();
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
 			device_display_t* display = &xr_displays_2nd[i];
+			if (display->swapchain_color.render_surface < 0) continue;
 			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
@@ -807,7 +813,7 @@ bool openxr_render_frame() {
 		if (xr_draw_to_swapchain == false) {
 			for (int32_t i = 0; i < xr_displays.count; i++) {
 				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
-				if (render_pipeline_surface_get_enabled(swapchain->render_surface))
+				if (swapchain->render_surface >= 0 && render_pipeline_surface_get_enabled(swapchain->render_surface))
 					render_pipeline_surface_to_tex(swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
 			}
 		}
