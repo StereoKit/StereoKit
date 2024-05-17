@@ -101,8 +101,16 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
-	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 4;
 	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
+
+	// HoloLens (UWP) can't handle MSAA and a resolve, so we set MSAA to 1 by
+	// default there. Fortunately it looks great without it, so we don't really
+	// need MSAA there. This setting is still explicitly assignable.
+#if defined(SK_OS_WINDOWS_UWP)
+	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
+#else
+	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 4;
+#endif
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
