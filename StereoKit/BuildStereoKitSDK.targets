@@ -94,10 +94,6 @@
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->
 	<Target Name="SKSDKCheckBuildFiles" BeforeTargets="BeforeBuild">
-		<Message Text="BeforeBuild: Using $(SKSDKBuildOS) StereoKitC from $(SKSDKLibPath)." Importance="High"/>
 		<Error Condition="!Exists('$(SKSDKLibPath)')" Text="StereoKitC was not properly built! Binary file $(SKSDKLibPath) is missing." />
-	</Target>
-	<Target Name="SKSDKCheckBuildFiles2" BeforeTargets="Build">
-		<Message Text="Build: Using $(SKSDKBuildOS) StereoKitC from $(SKSDKLibPath)." Importance="High"/>
 	</Target>
 </Project>
