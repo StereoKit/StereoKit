@@ -25,13 +25,13 @@ jobs:
 
     - name: Build Native Win32 x64
       run: |
-        cmake --preset Win32_x64_Release_Fast
-        cmake --build --preset Win32_x64_Release_Fast
+        cmake --preset Win32_x64_Release
+        cmake --build --preset Win32_x64_Release
 
     - name: Build Native UWP x64
       run: |
-        cmake --preset Uwp_x64_Release_Fast
-        cmake --build --preset Uwp_x64_Release_Fast
+        cmake --preset Uwp_x64_Release
+        cmake --build --preset Uwp_x64_Release
 
   native-linux-android-dotnet:
     runs-on: ubuntu-20.04
@@ -56,8 +56,8 @@ jobs:
 
     - name: Build Native Linux x64
       run: |
-        cmake --preset Linux_x64_Release_Fast
-        cmake --build --preset Linux_x64_Release_Fast
+        cmake --preset Linux_x64_Release
+        cmake --build --preset Linux_x64_Release
 
     - name: Set up Android NDK
       uses: nttld/setup-ndk@v1.4.2
@@ -78,8 +78,8 @@ jobs:
 
     - name: Build Native Android ARM64
       run: |
-        cmake --preset Android_Arm64_Release_Fast
-        cmake --build --preset Android_Arm64_Release_Fast
+        cmake --preset Android_Arm64_Release
+        cmake --build --preset Android_Arm64_Release
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 

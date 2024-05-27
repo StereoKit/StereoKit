@@ -62,7 +62,13 @@
 
 	<!-- Make sure the native binaries are built before we try and build this C# project. -->
 	<PropertyGroup>
-		<PreBuildEvent>cd $(SKSDKFolder) &amp;&amp; cmake --preset $(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration) &amp;&amp; cmake --build --preset $(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)</PreBuildEvent>
+		<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
+		<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'">$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)\CMakeCache.txt</SKSDKCacheFile>
+		<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"                               >$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)\CMakeCache.txt</SKSDKCacheFile>
+
+		<PreBuildEvent                                         >cd $(SKSDKFolder)</PreBuildEvent>
+		<PreBuildEvent Condition="!Exists('$(SKSDKCacheFile)')">$(PreBuildEvent) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</PreBuildEvent>
+		<PreBuildEvent                                         >$(PreBuildEvent) &amp;&amp; cmake --build --preset $(SKSDKPreset)</PreBuildEvent>
 	</PropertyGroup>
 
 	<!-- Attach the native library binaries. -->
