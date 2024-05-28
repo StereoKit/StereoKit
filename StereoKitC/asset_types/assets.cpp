@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 #include "assets.h"
 #include "../_stereokit.h"
@@ -23,6 +23,7 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/atomic_util.h"
 #include "../libraries/ferr_thread.h"
+#include "../systems/render_.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -108,15 +109,16 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 void *assets_allocate(asset_type_ type) {
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
-	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
-	case asset_type_tex:      size = sizeof(_tex_t);      break;
-	case asset_type_shader:   size = sizeof(_shader_t);   break;
-	case asset_type_material: size = sizeof(_material_t); break;
-	case asset_type_model:    size = sizeof(_model_t);    break;
-	case asset_type_font:     size = sizeof(_font_t);     break;
-	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
-	case asset_type_sound:    size = sizeof(_sound_t);    break;
-	case asset_type_anchor:   size = sizeof(_anchor_t);   break;
+	case asset_type_mesh:        size = sizeof(_mesh_t );       break;
+	case asset_type_tex:         size = sizeof(_tex_t);         break;
+	case asset_type_shader:      size = sizeof(_shader_t);      break;
+	case asset_type_material:    size = sizeof(_material_t);    break;
+	case asset_type_model:       size = sizeof(_model_t);       break;
+	case asset_type_font:        size = sizeof(_font_t);        break;
+	case asset_type_sprite:      size = sizeof(_sprite_t);      break;
+	case asset_type_sound:       size = sizeof(_sound_t);       break;
+	case asset_type_anchor:      size = sizeof(_anchor_t);      break;
+	case asset_type_render_list: size = sizeof(_render_list_t); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -215,15 +217,16 @@ void assets_destroy(asset_header_t *asset) {
 
 	// Call asset specific destroy function
 	switch(asset->type) {
-	case asset_type_mesh:     mesh_destroy    ((mesh_t    )asset); break;
-	case asset_type_tex:      tex_destroy     ((tex_t     )asset); break;
-	case asset_type_shader:   shader_destroy  ((shader_t  )asset); break;
-	case asset_type_material: material_destroy((material_t)asset); break;
-	case asset_type_model:    model_destroy   ((model_t   )asset); break;
-	case asset_type_font:     font_destroy    ((font_t    )asset); break;
-	case asset_type_sprite:   sprite_destroy  ((sprite_t  )asset); break;
-	case asset_type_sound:    sound_destroy   ((sound_t   )asset); break;
-	case asset_type_anchor:   anchor_destroy  ((anchor_t  )asset); break;
+	case asset_type_mesh:        mesh_destroy       ((mesh_t       )asset); break;
+	case asset_type_tex:         tex_destroy        ((tex_t        )asset); break;
+	case asset_type_shader:      shader_destroy     ((shader_t     )asset); break;
+	case asset_type_material:    material_destroy   ((material_t   )asset); break;
+	case asset_type_model:       model_destroy      ((model_t      )asset); break;
+	case asset_type_font:        font_destroy       ((font_t       )asset); break;
+	case asset_type_sprite:      sprite_destroy     ((sprite_t     )asset); break;
+	case asset_type_sound:       sound_destroy      ((sound_t      )asset); break;
+	case asset_type_anchor:      anchor_destroy     ((anchor_t     )asset); break;
+	case asset_type_render_list: render_list_destroy((render_list_t)asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -742,8 +745,6 @@ int32_t asset_thread(void *thread_inst_obj) {
 	thread->id      = ft_id_current();
 	thread->running = true;
 
-	ft_thread_name(ft_thread_current(), "StereoKit Assets");
-	 
 	ft_mutex_t wait_mtx = ft_mutex_create();
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
@@ -761,7 +762,10 @@ int32_t asset_thread(void *thread_inst_obj) {
 ///////////////////////////////////////////
 
 void assets_block_until(asset_header_t *asset, asset_state_ state) {
-	if (asset->state >= state || asset->state < 0)
+	// If we're past the required state already, drop out. asset_state_none and
+	// below (error states) means no loading is happening, so blocking will
+	// only put us in an infinite loop.
+	if (asset->state >= state || asset->state <= asset_state_none)
 		return;
 
 	ft_id_t curr_id = ft_id_current();

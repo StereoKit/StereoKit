@@ -29,6 +29,7 @@ Set StereoKitTest as the startup project, set the platform to x64, and you shoul
 ## I want to modify code (Android)
 
 - Install [cmake](https://cmake.org/) 3.21+.
+- Install [ninja](https://ninja-build.org/): `winget install Ninja-build.Ninja` on Windows. This is technically optional, but is used in the cmake presets.
 - Install the Android NDK r25c, either via Android's SDK Manager in Android Studio, or [here](https://developer.android.com/ndk/downloads/revision_history).
 - Add `NDK` with your NDK path to your environment variables.
 
@@ -36,11 +37,11 @@ Set StereoKitTest as the startup project, set the platform to x64, and you shoul
 # For Windows GUI, see: `Edit the system environment variables` in the Control
 # Panel.
 
-# Windows Command Line
-set NDK C:\Users\[user]\AppData\Local\Android\Sdk\ndk\25.2.9519653
+# Windows Command Line, '/' seems more reliable for something in cmake
+set NDK C:/Users/[user]/AppData/Local/Android/Sdk/ndk/25.2.9519653
 
 # Powershell
-[Environment]::SetEnvironmentVariable('NDK', 'C:\Users\[user]\AppData\Local\Android\Sdk\ndk\25.2.9519653', 'User')
+[Environment]::SetEnvironmentVariable('NDK', 'C:/Users/[user]/AppData/Local/Android/Sdk/ndk/25.2.9519653', 'User')
 
 # Linux
 sudo echo "NDK=~/Android/Sdk/ndk/25.2.9519653" >> ~/.profile

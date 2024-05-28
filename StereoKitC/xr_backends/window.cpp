@@ -78,9 +78,10 @@ bool window_init() {
 	case platform_win_type_existing: {
 		local->window = platform_win_get_existing(platform_surface_swapchain);
 	} break;
+	default: return false;
 	}
 
-	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
+	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
 	if (swapchain)
 		window_surface_resize(local->surface, swapchain->width, swapchain->height);
@@ -132,7 +133,7 @@ void window_step_begin() {
 		case platform_evt_character:    input_text_inject_char  (data.character);                                  break;
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
-		case platform_evt_close:        sk_quit(); break;
+		case platform_evt_close:        sk_quit(quit_reason_system_close); break;
 		case platform_evt_resize:       window_surface_resize(local->surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;
@@ -144,7 +145,7 @@ void window_step_begin() {
 ///////////////////////////////////////////
 
 void window_step_end() {
-	input_update_poses(true);
+	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());
 	matrix proj = render_get_projection_matrix();

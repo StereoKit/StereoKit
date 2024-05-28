@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -34,8 +34,8 @@ struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
 	pose_t      pose_prev[5][5];
-	material_t  material;
-	hand_mesh_t mesh;
+	pose_t      aim;
+	mesh_t      active_mesh;
 	vec3        pinch_pt_relative;
 	bool        visible;
 	bool        enabled;
@@ -61,7 +61,7 @@ typedef struct hand_system_t {
 	void (*shutdown)();
 	void (*update_inactive)();
 	void (*update_frame)();
-	void (*update_poses)(bool update_visuals);
+	void (*update_poses)();
 } hand_system_t;
 
 hand_system_t hand_sources[] = { // In order of priority
@@ -73,7 +73,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		hand_override_shutdown,
 		nullptr,
 		hand_override_update_frame,
-		hand_override_update_poses },
+		nullptr },
 #if defined(SK_XR_OPENXR)
 	{ hand_system_oxr_articulated,
 		hand_source_articulated,
@@ -111,7 +111,7 @@ hand_system_t hand_sources[] = { // In order of priority
 		[]() {},
 		nullptr,
 		[]() {},
-		[](bool) {} },
+		[]() {} },
 };
 int32_t             hand_system = -1;
 hand_state_t        hand_state[2] = {};
@@ -120,7 +120,7 @@ int32_t             input_hand_pointer_id[handed_max] = {-1, -1};
 array_t<hand_sim_t> hand_sim_poses   = {};
 hand_sim_id_t       hand_sim_next_id = 1;
 
-void input_hand_update_mesh(handed_ hand);
+void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
 
 ///////////////////////////////////////////
 
@@ -130,20 +130,14 @@ const hand_t *input_hand(handed_ hand) {
 
 ///////////////////////////////////////////
 
+hand_t* input_hand_ref(handed_ hand) {
+	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
 hand_source_ input_hand_source(handed_) {
 	return hand_sources[hand_system].source;
-}
-
-///////////////////////////////////////////
-
-const controller_t *input_controller(handed_ hand) {
-	return &input_controllers[hand];
-}
-
-///////////////////////////////////////////
-
-button_state_ input_controller_menu() {
-	return input_controller_menubtn;
 }
 
 ///////////////////////////////////////////
@@ -195,53 +189,16 @@ void input_hand_init() {
 	input_hand_sim_pose_add(input_pose_point,   controller_key_grip,    controller_key_none, key_mouse_right);
 	input_hand_sim_pose_add(input_pose_fist,    controller_key_trigger, controller_key_grip, key_mouse_left, key_mouse_right);
 
-	material_t hand_mat = material_copy_id(default_id_material);
-	material_set_id          (hand_mat, default_id_material_hand);
-	material_set_transparency(hand_mat, transparency_blend);
-
-	gradient_t color_grad = gradient_create();
-	// Snapdragon's implementation of XR_MSFT_hand_tracking_mesh does not work
-	// well with SK's implementation of UV generation just yet, so we set it to
-	// pure white for now instead. Users can always opt out of the extension if
-	// they prefer the fallback hand mesh.
-	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && backend_openxr_ext_enabled("XR_MSFT_hand_tracking_mesh")) {
-		gradient_add(color_grad, color128{ 1,1,1,1 }, 0.0f);
-		gradient_add(color_grad, color128{ 1,1,1,1 }, 1.0f);
-	} else {
-		gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
-		gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
-		gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
-		gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
-	}
-
-	color32 gradient[16 * 16];
-	for (int32_t y = 0; y < 16; y++) {
-		color32 col = gradient_get32(color_grad, 1-y/15.f);
-	for (int32_t x = 0; x < 16; x++) {
-		gradient[x + y * 16] = col;
-	} }
-	gradient_destroy(color_grad);
-
-	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
-	tex_set_colors (gradient_tex, 16, 16, gradient);
-	tex_set_address(gradient_tex, tex_address_clamp);
-	material_set_texture     (hand_mat, "diffuse", gradient_tex);
-	material_set_queue_offset(hand_mat, 10);
-	
 	// Initialize the hands!
 	for (int32_t i = 0; i < handed_max; i++) {
-		hand_state[i].visible   = true;
-		hand_state[i].material  = hand_mat;
+		hand_state[i].visible      = true;
 		hand_state[i].pose_prev_id = -1;
-		memcpy(hand_state[i].pose_prev, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
-		material_addref(hand_state[i].material);
-
+		memcpy(hand_state[i].pose_prev,  input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
+		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 		hand_state[i].info.palm.orientation = quat_identity;
-		hand_state[i].info.handedness = (handed_)i;
-		input_hand_update_mesh((handed_)i);
+		hand_state[i].info.handedness       = (handed_)i;
 
 		// Set up initial default hand pose, so we don't get any accidental pinch/grips on start
-		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 		hand_t &hand = hand_state[i].info;
 		for (int32_t f = 0; f < 5; f++) {
 		for (int32_t j = 0; j < 5; j++) {
@@ -259,9 +216,6 @@ void input_hand_init() {
 		} }
 	}
 
-	tex_release(gradient_tex);
-	material_release(hand_mat);
-
 	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].init();
 	}
@@ -274,13 +228,6 @@ void input_hand_init() {
 void input_hand_shutdown() {
 	for (int32_t i = 0; i < _countof(hand_sources); i++) {
 		hand_sources[i].shutdown();
-	}
-
-	for (int32_t i = 0; i < handed_max; i++) {
-		material_release(hand_state[i].material);
-		mesh_release    (hand_state[i].mesh.mesh);
-		sk_free(hand_state[i].mesh.inds);
-		sk_free(hand_state[i].mesh.verts);
 	}
 	hand_sim_poses.free();
 }
@@ -323,63 +270,35 @@ void input_hand_update() {
 
 ///////////////////////////////////////////
 
-void input_hand_update_poses(bool update_visuals) {
-	if (hand_system >= 0)
-		hand_sources[hand_system].update_poses(update_visuals);
-
-	if (update_visuals) {
-		for (int32_t i = 0; i < handed_max; i++) {
-			// Update hand meshes, and draw 'em
-			bool tracked = hand_state[i].info.tracked_state & button_state_active;
-			if (hand_state[i].visible && hand_state[i].material != nullptr && tracked && sk_app_focus() == app_focus_active) {
-				render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_state[i].mesh.root_transform, hand_state[i].info.pinch_state & button_state_active ? color128{1.5f, 1.5f, 1.5f, 1} : color128{1,1,1,1});
-			}
-		}
-	}
+void input_hand_update_poses() {
+	if (hand_system >= 0 && hand_sources[hand_system].update_poses)
+		hand_sources[hand_system].update_poses();
 }
 
 ///////////////////////////////////////////
 
-void input_hand_update_meshes() {
-	for (int32_t i = 0; i < handed_max; i++) {
-		// Update hand meshes, and draw 'em
-		bool tracked = hand_state[i].info.tracked_state & button_state_active;
-		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
-			input_hand_update_mesh((handed_)i);
-		}
-	}
+void input_hand_sim_trigger(button_state_ prev_state, hand_joint_t a, hand_joint_t b, float activation_dist, float deactivation_dist, float max_dist, button_state_ *out_state, float *out_activation) {
+	button_state_ result        = button_state_inactive;
+	bool          was_triggered = prev_state & button_state_active;
+	float         threshold     = was_triggered ? deactivation_dist : activation_dist;
+
+	float offset = a.radius + b.radius;
+	float dist   = vec3_distance(a.position, b.position) - offset;
+
+	float activation   = fminf(1, fmaxf(0, 1 - ((dist - threshold) / (max_dist - threshold))));
+	bool  is_triggered = dist <= threshold;
+
+	if (was_triggered != is_triggered) result |= is_triggered ? button_state_just_active : button_state_just_inactive;
+	if (is_triggered) result |= button_state_active;
+
+	*out_state      = result;
+	*out_activation = activation;
 }
 
 ///////////////////////////////////////////
 
 void input_hand_state_update(handed_ handedness) {
 	hand_t &hand = hand_state[handedness].info;
-
-	// Update hand state based on inputs
-	bool was_trigger = hand.pinch_state & button_state_active;
-	bool was_gripped = hand.grip_state  & button_state_active;
-	// Clear all except tracking state
-	hand.pinch_state = button_state_inactive;
-	hand.grip_state  = button_state_inactive;
-	
-	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
-	const float pinch_activation_dist = (was_trigger ? 1.5f : 1.0f) * cm2m;
-	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
-	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
-	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
-	float grip_dist     = vec3_magnitude(hand.fingers[hand_finger_ring][hand_joint_tip].position - hand.fingers[hand_finger_ring][hand_joint_root].position) - grip_offset;
-	
-	const float pinch_max = 8 * cm2m;
-	const float grip_max  = 11 * cm2m;
-	hand.pinch_activation = fminf(1, fmaxf(0, 1 - ((finger_dist - pinch_activation_dist) / (pinch_max - pinch_activation_dist))));
-	hand.grip_activation  = fminf(1, fmaxf(0, 1 - ((grip_dist   - grip_activation_dist)  / (grip_max  - grip_activation_dist))));
-	bool is_trigger = finger_dist <= pinch_activation_dist;
-	bool is_grip    = grip_dist   <= grip_activation_dist;
-
-	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
-	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
-	if (is_trigger) hand.pinch_state |= button_state_active;
-	if (is_grip)    hand.grip_state  |= button_state_active;
 
 	hand.pinch_pt = vec3_lerp(
 		hand.fingers[0][4].position,
@@ -398,6 +317,11 @@ void input_hand_state_update(handed_ handedness) {
 			hand.pinch_pt = matrix_transform_pt(from_relative, hand_state[handedness].pinch_pt_relative);
 		}
 	}
+
+	pointer_t* pointer = input_get_pointer(input_hand_pointer_id[handedness]);
+	pointer->state = button_make_state(
+		(pointer->state & button_state_active) != 0,
+		((pointer->tracked & button_state_active) != 0) && ((hand.pinch_state & button_state_active) != 0));
 }
 
 ///////////////////////////////////////////
@@ -410,12 +334,6 @@ bool input_hand_get_visible(handed_ hand) {
 
 hand_joint_t *input_hand_get_pose_buffer(handed_ hand) {
 	return &hand_state[hand].info.fingers[0][0];
-}
-
-///////////////////////////////////////////
-
-hand_mesh_t *input_hand_mesh_data(handed_ handedness) {
-	return &hand_state[handedness].mesh;
 }
 
 ///////////////////////////////////////////
@@ -473,20 +391,6 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
 }
 
-///////////////////////////////////////////
-
-bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) {
-	*out_amount = 0;
-	switch (key) {
-	case controller_key_trigger: if (input_controllers[hand].trigger > 0.1f) { *out_amount = input_controllers[hand].trigger; return true; } else { return false; }
-	case controller_key_grip:    if (input_controllers[hand].grip    > 0.1f) { *out_amount = input_controllers[hand].grip;    return true; } else { return false; }
-	case controller_key_menu:  return (input_controller_menubtn & button_state_active) > 0;
-	case controller_key_stick: return (input_controllers[hand].stick_click & button_state_active) > 0;
-	case controller_key_x1:    return (input_controllers[hand].x1 & button_state_active) > 0;
-	case controller_key_x2:    return (input_controllers[hand].x2 & button_state_active) > 0;
-	default: return false;
-	}
-}
 ///////////////////////////////////////////
 
 void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked) {
@@ -615,19 +519,23 @@ const vec3 sincos_norm[] = {
 
 const float texcoord_v[SK_FINGERJOINTS + 1] = { 1, 1-0.44f, 1-0.69f, 1-0.85f, 1-0.96f, 1-0.99f };
 
-void input_hand_update_mesh(handed_ hand) {
-	hand_mesh_t &data = hand_state[hand].mesh;
+void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_t **ref_verts, vind_t **ref_inds) {
+	assert(mesh != nullptr);
 
-	const int32_t ring_count  = _countof(sincos);
-	const int32_t slice_count = SK_FINGERJOINTS + 1;
+	const int32_t  ring_count  = _countof(sincos);
+	const int32_t  slice_count = SK_FINGERJOINTS + 1;
+	const uint32_t vert_count  = (_countof(sincos) * slice_count + 1) * SK_FINGERS; // verts: per joint, per finger
+
+	vert_t *verts = *ref_verts;
+	vind_t *inds  = *ref_inds;
 
 	// if this mesh hasn't been initialized yet
-	if (data.verts == nullptr) {
-		data.root_transform = matrix_identity;
-		data.vert_count = (_countof(sincos) * slice_count + 1) * SK_FINGERS ; // verts: per joint, per finger 
-		data.ind_count  = (3 * 5 * 2 * (slice_count-1) + (8 * 3)) * (SK_FINGERS) ; // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
-		data.verts      = sk_malloc_t(vert_t, data.vert_count);
-		data.inds       = sk_malloc_t(vind_t, data.ind_count );
+	if (*ref_verts == nullptr) {
+		const uint32_t ind_count = (3 * 5 * 2 * (slice_count - 1) + (8 * 3)) * (SK_FINGERS); // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
+		*ref_verts = sk_malloc_t(vert_t, vert_count);
+		*ref_inds  = sk_malloc_t(vind_t, ind_count );
+		verts      = *ref_verts;
+		inds       = *ref_inds;
 
 		int32_t ind = 0;
 		for (vind_t f = 0; f < SK_FINGERS; f++) {
@@ -635,17 +543,17 @@ void input_hand_update_mesh(handed_ hand) {
 			vind_t end_vert   = (f+1) * (ring_count * slice_count + 1) - (ring_count + 1);
 
 			// start cap
-			data.inds[ind++] = start_vert+2;
-			data.inds[ind++] = start_vert+1;
-			data.inds[ind++] = start_vert+0;
+			inds[ind++] = start_vert+2;
+			inds[ind++] = start_vert+1;
+			inds[ind++] = start_vert+0;
 
-			data.inds[ind++] = start_vert+4;
-			data.inds[ind++] = start_vert+3;
-			data.inds[ind++] = start_vert+6;
+			inds[ind++] = start_vert+4;
+			inds[ind++] = start_vert+3;
+			inds[ind++] = start_vert+6;
 
-			data.inds[ind++] = start_vert+5;
-			data.inds[ind++] = start_vert+4;
-			data.inds[ind++] = start_vert+6;
+			inds[ind++] = start_vert+5;
+			inds[ind++] = start_vert+4;
+			inds[ind++] = start_vert+6;
 		
 			// tube faces
 			for (vind_t j = 0; j < slice_count-1; j++) {
@@ -655,81 +563,75 @@ void input_hand_update_mesh(handed_ hand) {
 				vind_t next1 = start_vert + (j+1) * ring_count + c;
 				vind_t curr2 = start_vert +  j    * ring_count + (c+1);
 				vind_t next2 = start_vert + (j+1) * ring_count + (c+1);
-				data.inds[ind++] = next2;
-				data.inds[ind++] = next1;
-				data.inds[ind++] = curr1;
+				inds[ind++] = next2;
+				inds[ind++] = next1;
+				inds[ind++] = curr1;
 
-				data.inds[ind++] = curr2;
-				data.inds[ind++] = next2;
-				data.inds[ind++] = curr1;
+				inds[ind++] = curr2;
+				inds[ind++] = next2;
+				inds[ind++] = curr1;
 			} }
 
 			// end cap
-			data.inds[ind++] = end_vert+0;
-			data.inds[ind++] = end_vert+1;
-			data.inds[ind++] = end_vert+7;
+			inds[ind++] = end_vert+0;
+			inds[ind++] = end_vert+1;
+			inds[ind++] = end_vert+7;
 
-			data.inds[ind++] = end_vert+1;
-			data.inds[ind++] = end_vert+2;
-			data.inds[ind++] = end_vert+7;
+			inds[ind++] = end_vert+1;
+			inds[ind++] = end_vert+2;
+			inds[ind++] = end_vert+7;
 
-			data.inds[ind++] = end_vert+3;
-			data.inds[ind++] = end_vert+4;
-			data.inds[ind++] = end_vert+7;
+			inds[ind++] = end_vert+3;
+			inds[ind++] = end_vert+4;
+			inds[ind++] = end_vert+7;
 
-			data.inds[ind++] = end_vert+4;
-			data.inds[ind++] = end_vert+5;
-			data.inds[ind++] = end_vert+7;
+			inds[ind++] = end_vert+4;
+			inds[ind++] = end_vert+5;
+			inds[ind++] = end_vert+7;
 
-			data.inds[ind++] = end_vert+5;
-			data.inds[ind++] = end_vert+6;
-			data.inds[ind++] = end_vert+7;
+			inds[ind++] = end_vert+5;
+			inds[ind++] = end_vert+6;
+			inds[ind++] = end_vert+7;
 		}
 
 		// Generate uvs and colors for the mesh
-		int v = 0;
-		for (int f = 0; f < SK_FINGERS; f++) {
+		int32_t v = 0;
+		for (int32_t f = 0; f < SK_FINGERS; f++) {
 			float x = ((float)f / SK_FINGERS) + (0.5f/SK_FINGERS);
-		for (int j = 0; j < slice_count; j++) {
+		for (int32_t j = 0; j < slice_count; j++) {
 			float y = texcoord_v[f==0 ? maxi(0,j-1) : j];
 			
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 255,255,255,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 255,255,255,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 255,255,255,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 200,200,200,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 200,200,200,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 200,200,200,255 };
-			data.verts[v  ].uv  = { x,y };
-			data.verts[v++].col = { 200,200,200,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 255,255,255,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 255,255,255,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 255,255,255,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 200,200,200,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 200,200,200,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 200,200,200,255 };
+			verts[v  ].uv  = { x,y };
+			verts[v++].col = { 200,200,200,255 };
 		} 
-		data.verts[v  ].uv  = { x,0 };
-		data.verts[v++].col = { 255,255,255,255 };
+		verts[v  ].uv  = { x,0 };
+		verts[v++].col = { 255,255,255,255 };
 		}
 
-		data.mesh = mesh_create();
-		mesh_set_keep_data(data.mesh, false);
-		mesh_set_id(data.mesh, hand == handed_left
-			? default_id_mesh_lefthand
-			: default_id_mesh_righthand);
-		mesh_set_inds(data.mesh, data.inds, data.ind_count);
+		mesh_set_inds(mesh, inds, ind_count);
 	}
 
-	int v = 0;
-	for (int f = 0; f < SK_FINGERS;      f++) {
-		const hand_joint_t &pose_last = hand_state[hand].info.fingers[f][SK_FINGERJOINTS-1];
-		vec3 tip_fwd = pose_last.orientation * vec3_forward;
-		vec3 tip_up  = pose_last.orientation * vec3_up;
-		for (int j = 0; j < SK_FINGERJOINTS; j++) {
-			const hand_joint_t &pose_prev = hand_state[hand].info.fingers[f][maxi(0,j-1)];
-			const hand_joint_t &pose      = hand_state[hand].info.fingers[f][j];
-			quat orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
-
+	int32_t v = 0;
+	for (int32_t f = 0; f < SK_FINGERS; f++) {
+		const hand_joint_t pose_last = fingers[f][SK_FINGERJOINTS-1];
+		const vec3         tip_fwd   = pose_last.orientation * vec3_forward;
+		const vec3         tip_up    = pose_last.orientation * vec3_up;
+		for (int32_t j = 0; j < SK_FINGERJOINTS; j++) {
+			const hand_joint_t pose_prev   = fingers[f][maxi(0,j-1)];
+			const hand_joint_t pose        = fingers[f][j];
+			const quat         orientation = quat_slerp(pose_prev.orientation, pose.orientation, 0.5f);
 
 			// Find a scaling offset to preserve the volume of the joint while
 			// bending
@@ -751,8 +653,8 @@ void input_hand_update_mesh(handed_ hand) {
 
 			// Use the local axis to create a ring of verts
 			for (int32_t i = 0; i < ring_count; i++) {
-				data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-				data.verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
+				verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+				verts[v].pos  = pose.position + (up*sincos[i].y + right*sincos[i].x)*scale;
 				v++;
 			}
 
@@ -761,19 +663,19 @@ void input_hand_update_mesh(handed_ hand) {
 				scale = scale * 0.75f;
 				for (int32_t i = 0; i < ring_count; i++) {
 					vec3 at = pose.position + tip_fwd * pose.radius * 0.65f;
-					data.verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
-					data.verts[v].pos  = at + (up*sincos[i].y + right*sincos[i].x)*scale + tip_up * pose.radius*0.25f;
+					verts[v].norm = (up*sincos_norm[i].y + right*sincos_norm[i].x) * SK_SQRT2;
+					verts[v].pos  = at + (up*sincos[i].y + right*sincos[i].x)*scale + tip_up * pose.radius*0.25f;
 					v++;
 				}
 			}
 		}
-		data.verts[v].norm = tip_fwd;
-		data.verts[v].pos  = pose_last.position + data.verts[v].norm * pose_last.radius + tip_up * pose_last.radius * 0.9f;
+		verts[v].norm = tip_fwd;
+		verts[v].pos  = pose_last.position + verts[v].norm * pose_last.radius + tip_up * pose_last.radius * 0.9f;
 		v++;
 	}
 
 	// And update the mesh vertices!
-	mesh_set_verts(data.mesh, data.verts, data.vert_count);
+	mesh_set_verts(mesh, verts, vert_count);
 }
 
 ///////////////////////////////////////////
@@ -786,23 +688,6 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 	}
 
 	hand_state[hand].visible = visible;
-}
-
-///////////////////////////////////////////
-
-void input_hand_material(handed_ hand, material_t material) {
-	if (hand == handed_max) {
-		input_hand_material(handed_left,  material);
-		input_hand_material(handed_right, material);
-		return;
-	}
-
-	material_release(hand_state[hand].material);
-	
-	if (material != nullptr)
-		material_addref(material);
-
-	hand_state[hand].material = material;
 }
 
 } // namespace sk

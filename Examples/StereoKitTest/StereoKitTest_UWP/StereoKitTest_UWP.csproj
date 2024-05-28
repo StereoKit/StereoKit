@@ -12,7 +12,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.19041.0</TargetPlatformVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -27,6 +27,7 @@
     <LangVersion>latest</LangVersion>
     <SKAssetFolder>..\..\Assets</SKAssetFolder>
     <SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
@@ -54,6 +55,12 @@
   <PropertyGroup>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
+  
+  <!-- Include the Stereokit project manually. This is similar to including the
+	     StereoKit NuGet, but different because C# cannot consume a NuGet package
+	     directly. -->
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\BuildStereoKitSDK.targets" />
+
   <ItemGroup>
     <Compile Include="..\*.cs" Visible="false" />
     <Compile Include="..\Demos\*.cs" Visible="false" />
@@ -62,11 +69,13 @@
     <Compile Include="..\Docs\*.cs" Visible="false" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
+
   <ItemGroup>
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
@@ -77,13 +86,7 @@
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
-  <PropertyGroup>
-    <SKAssetFolder>..\..\Assets</SKAssetFolder>
-    <SKAssetDestination>Assets</SKAssetDestination>
-  </PropertyGroup>
-  <Import Project="..\..\..\StereoKit\StereoKit.props" />
-  <Import Project="..\..\..\StereoKit\SKAssets.targets" />
-  <Import Project="..\..\..\StereoKit\SKShaders.targets" />
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.MixedReality.QR">
       <Version>0.5.3019</Version>
@@ -92,25 +95,8 @@
       <Version>6.2.14</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
-      <Project>{45af7827-11ca-4691-a063-8c78fb0be1ec}</Project>
-      <Name>StereoKitC_UWP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\StereoKit\StereoKit.csproj">
-      <Project>{0152979d-5d5e-4d18-9ef7-7261581b2bc6}</Project>
-      <Name>StereoKit</Name>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild"> 
-  </Target>
-  -->
 </Project>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 #include "simulator.h"
 
@@ -89,9 +89,10 @@ bool simulator_init() {
 	case platform_win_type_existing: {
 		sim_window = platform_win_get_existing(platform_surface_swapchain);
 	} break;
+	default: return false;
 	}
 
-	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
+	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
@@ -138,7 +139,7 @@ void simulator_step_begin() {
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		//case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
-		case platform_evt_close:        sk_quit(); break;
+		case platform_evt_close:        sk_quit(quit_reason_system_close); break;
 		case platform_evt_resize:       sim_surface_resize(sim_surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;
@@ -176,8 +177,8 @@ void simulator_step_begin() {
 
 			vec2 prev_pt = mouse->pos - mouse->pos_change;
 
-			platform_set_cursor(prev_pt);
-			input_mouse_data.pos = prev_pt;
+			platform_set_cursor     (prev_pt);
+			input_mouse_override_pos(prev_pt);
 
 		} else {
 			orientation = quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z);
@@ -192,9 +193,9 @@ void simulator_step_begin() {
 	}
 
 	bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
-	input_eyes_track_state = button_make_state(input_eyes_track_state & button_state_active, sim_tracked);
+	input_eyes_tracked_set(button_make_state(input_eyes_tracked() & button_state_active, sim_tracked));
 	ray_t ray = {};
-	if (sim_tracked && ray_from_mouse(input_mouse_data.pos, ray)) {
+	if (sim_tracked && ray_from_mouse(input_mouse()->pos, ray)) {
 		input_eyes_pose_world.position    = ray.pos;
 		input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
 		input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
@@ -215,7 +216,7 @@ void simulator_step_begin() {
 
 void simulator_step_end() {
 	anchors_step_end();
-	input_update_poses(true);
+	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());
 	matrix proj = render_get_projection_matrix();

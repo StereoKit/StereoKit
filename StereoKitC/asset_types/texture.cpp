@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
 #include "../stereokit.h"
 #include "../platforms/platform.h"
 #include "../libraries/ferr_hash.h"
@@ -9,21 +14,8 @@
 #include "texture.h"
 #include "texture_.h"
 
-#pragma warning(push)
-#pragma warning(disable : 26451 6011 6262 6308 6387 28182 26819 )
-#define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
-#define STBI_MALLOC sk::sk_malloc
-#define STBI_REALLOC sk::sk_realloc
-#define STBI_FREE sk::_sk_free
-#if defined (_M_ARM)
-#define STBI_NEON
-#endif
-// Use of STB_IMAGE_STATIC seems to cause issues if stb_image is ever included
-// additional times, so this should be the only place it's ever included!
-#define STB_IMAGE_STATIC
 #include "../libraries/stb_image.h"
-#pragma warning(pop)
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -97,9 +89,7 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 	for (int32_t i = 0; i < data->file_count; i++) {
 		// Read from file
 
-		char*    asset_filename = assets_file(data->file_names[i]);
-		bool32_t loaded         = platform_read_file(asset_filename, &data->file_data[i], &data->file_sizes[i]);
-		sk_free(asset_filename);
+		bool32_t loaded         = platform_read_file(data->file_names[i], &data->file_data[i], &data->file_sizes[i]);
 		if (!loaded) {
 			log_warnf(tex_msg_load_failed, data->file_names[i]);
 			tex->header.state = asset_state_error_not_found;
@@ -213,9 +203,7 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 	data->file_data  = sk_malloc_t(void *, data->file_count);
 	data->file_sizes = sk_malloc_t(size_t, data->file_count);
 
-	char*    asset_filename = assets_file(data->file_names[0]);
-	bool32_t loaded         = platform_read_file(asset_filename, &data->file_data[0], &data->file_sizes[0]);
-	sk_free(asset_filename);
+	bool32_t loaded         = platform_read_file(data->file_names[0], &data->file_data[0], &data->file_sizes[0]);
 	if (!loaded) {
 		log_warnf(tex_msg_load_failed, data->file_names[0]);
 		tex->header.state = asset_state_error_not_found;
@@ -517,7 +505,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->address_mode = tex_address_wrap;
 	result->sample_mode  = tex_sample_linear;
 	result->anisotropy   = 4;
-	result->header.state = asset_state_loaded_meta;
+	result->header.state = asset_state_none;
 
 	tex_set_fallback(result, tex_loading_texture);
 
@@ -711,7 +699,7 @@ tex_t tex_get_zbuffer(tex_t texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned) {
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, int32_t framebuffer_multisample, bool32_t owned) {
 	texture->owned = owned;
 	
 	if (texture->owned && skg_tex_is_valid(&texture->tex))
@@ -724,7 +712,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-	texture->tex    = native_surface == nullptr ? skg_tex_t{} : skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count);
+	texture->tex    = native_surface == nullptr ? skg_tex_t{} : skg_tex_create_from_existing(native_surface, skg_type, skg_tex_fmt_from_native(native_fmt), width, height, surface_count, multisample, framebuffer_multisample);
 	texture->width  = texture->tex.width;
 	texture->height = texture->tex.height;
 

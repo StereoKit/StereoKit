@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 /// :CodeDoc: Guides 3 Using Hands
 /// # Using Hands
@@ -22,19 +22,13 @@ class DemoHands : ITest
 	string title       = "Hand Input";
 	string description = "StereoKit uses a hands first approach to user input! Even when hand-sensors aren't available, hand data is simulated instead using existing devices. Check out Input.Hand for all the cool data you get!\n\nThis demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.";
 
-	static Pose optionsPose = Demo.contentPose.Pose;
-	bool showHands     = true;
-	bool showJoints    = false;
-	bool showAxes      = true;
-	bool showPointers  = true;
-	bool showHandMenus = true;
-	bool showHandSize  = true;
-	bool showPinchPt   = true;
-
 	HandMenuRadial handMenu;
 	HandMenuRadial prevHandMenu;
 
 	public void Initialize() {
+		optionsPose = (Demo.contentPose * optionsPose.ToMatrix()).Pose;
+		dataPose    = (Demo.contentPose * dataPose   .ToMatrix()).Pose;
+
 		prevHandMenu = SK.GetStepper<HandMenuRadial>();
 		if (prevHandMenu != null)
 			SK.RemoveStepper(prevHandMenu);
@@ -116,6 +110,24 @@ class DemoHands : ITest
 	}
 
 	public void Step()
+	{
+		ShowHandData();
+		ShowHandOptions();
+
+		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
+
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.34f, .4f, 0)));
+	}
+
+	Pose optionsPose = new Pose(-0.2f, 0, 0);
+	bool showHands     = true;
+	bool showJoints    = false;
+	bool showAxes      = true;
+	bool showPointers  = true;
+	bool showHandMenus = true;
+	bool showHandSize  = true;
+	bool showPinchPt   = true;
+	void ShowHandOptions()
 	{
 		Vec2 size = V.XY(8, 0) * U.cm;
 
@@ -210,10 +222,40 @@ class DemoHands : ITest
 			if (l.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(l.pinchPt, 0.005f));
 			if (r.IsTracked) Mesh.Sphere.Draw(Default.Material, Matrix.TS(r.pinchPt, 0.005f));
 		}
+	}
 
-		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.34f, .4f, 0)));
+	Pose   dataPose   = new Pose(0.2f, 0, 0);
+	Handed activeHand = Handed.Right;
+	void ShowHandData()
+	{
+		UI.WindowBegin("Raw Data", ref dataPose, new Vec2(0.4f, 0));
+		if (UI.Radio("Left", activeHand == Handed.Left)) activeHand = Handed.Left;
+		UI.SameLine();
+		if (UI.Radio("Right", activeHand == Handed.Right)) activeHand = Handed.Right;
+
+		Hand hand = Input.Hand(activeHand);
+		LineItem("Tracked",     hand.IsTracked.ToString());
+
+		LineItem("Pinch %",     $"{hand.pinchActivation:0.00}");
+		LineItem("Pinched",     hand.pinch.IsActive().ToString());
+		LineItem("Grip %",      $"{hand.gripActivation:0.00}");
+		LineItem("Gripped",     hand.grip.IsActive().ToString());
+
+		LineItem("Aim Pose",    hand.aim.ToString());
+		LineItem("Aim Ready",   hand.aimReady.IsActive().ToString());
+
+		LineItem("Palm",        hand.palm.ToString());
+		LineItem("Wrist",       hand.wrist.ToString());
+		LineItem("Size",        $"{hand.size*100:0.00}cm");
+
+		UI.WindowEnd();
+	}
+	static void LineItem(string label, string content)
+	{
+		UI.Label(label, new Vec2(UI.LineHeight * 3, 0));
+		UI.SameLine();
+		UI.Label(content);
 	}
 
 	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)

@@ -49,6 +49,10 @@ namespace StereoKit
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
+		/// <summary> This tells the reason why StereoKit has quit and 
+		/// developer can take appropriate action to debug.</summary>
+		public static QuitReason QuitReason => NativeAPI.sk_get_quit_reason();
+
 		/// <summary>On Android systems, this must be assigned right away,
 		/// before _any_ access to SK methods. When using Xamarin.Essentials or
 		/// Microsoft.Maui.Essentials, this will be done automatically. This
@@ -181,9 +185,9 @@ namespace StereoKit
 		/// <summary>Lets StereoKit know it should quit! It'll finish the
 		/// current frame, and after that Step will return that it wants to
 		/// exit.</summary>
-		public static void Quit()
+		public static void Quit(QuitReason quitReason = QuitReason.User)
 		{
-			NativeAPI.sk_quit();
+			NativeAPI.sk_quit(quitReason);
 		}
 
 		/// <summary> Steps all StereoKit systems, and inserts user code via

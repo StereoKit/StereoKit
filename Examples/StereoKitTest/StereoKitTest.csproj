@@ -11,6 +11,7 @@
 
 		<SKAssetFolder>..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
 
 		<NoWarn>CS1587</NoWarn>
 	</PropertyGroup>
@@ -33,25 +34,6 @@
 		<None Remove="StereoKitTest_Xamarin\**" />
 	</ItemGroup>
 	
-	<!-- Reference the StereoKit project, emulate how the NuGet behaves -->
-	<ItemGroup>
-		<ProjectReference Include="$(ProjectDir)..\..\StereoKit\StereoKit.csproj" />
-		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.dll"     Include="$(ProjectDir)..\..\bin\distribute\bin\Win32\x64\$(Configuration)\StereoKitC.dll" />
-		<None Visible="false" Condition="'$(OS)'=='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\win-x64\native\StereoKitC.pdb"     Include="$(ProjectDir)..\..\bin\distribute\bin\Win32\x64\$(Configuration)\StereoKitC.pdb" />
-		<None Visible="false" Condition="'$(OS)'!='Windows_NT'" CopyToOutputDirectory="PreserveNewest" Link="runtimes\linux-x64\native\libStereoKitC.so" Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so" />
-		<None
-			Visible="false"
-			Condition="'$(OS)'!='Windows_NT' and Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so.dbg')"
-			CopyToOutputDirectory="PreserveNewest"
-			Link="runtimes\linux-x64\native\libStereoKitC.so.dbg"
-			Include="$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so.dbg" />
-	</ItemGroup>
-
-	<!-- Error out if StereoKitC hasn't successfully built! -->
-	<Target Name="SKCheckBuildFiles" BeforeTargets="BeforeBuild">
-		<Error Condition="'$(OS)'=='Windows_NT' and !Exists('$(ProjectDir)..\..\bin\distribute\bin\Win32\x64\$(Configuration)\StereoKitC.dll')"   Text="StereoKitC was not properly built! Binary file $(ProjectDir)..\..\bin\distribute\bin\Win32\x64\$(Configuration)\StereoKitC.dll is missing." />
-		<Error Condition="'$(OS)'!='Windows_NT' and !Exists('$(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so')" Text="StereoKitC was not properly built! Binary file $(ProjectDir)../../bin/distribute/bin/Linux/x64/$(Configuration)/libStereoKitC.so is missing." />
-	</Target>
 
 	<!-- This guide file shouldn't be compiled -->
 	<ItemGroup>
@@ -61,7 +43,9 @@
 		<None Include="Guides\GuideGettingStarted.cs" />
 	</ItemGroup>
 
-	<Import Project="$(ProjectDir)..\..\StereoKit\StereoKit.props" />
-	<Import Project="$(ProjectDir)..\..\StereoKit\SKAssets.targets" />
-	<Import Project="$(ProjectDir)..\..\StereoKit\SKShaders.targets" />
+	<!-- Include the Stereokit project manually. This is similar to including the
+	     StereoKit NuGet, but different because C# cannot consume a NuGet package
+	     directly. -->
+	<Import Project="$(ProjectDir)..\..\StereoKit\BuildStereoKitSDK.targets" />
+
 </Project>

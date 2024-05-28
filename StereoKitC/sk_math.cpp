@@ -623,6 +623,13 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
 	float d   = 0;
 	ray_t ray = { line_start, line_end - line_start };
+
+	// If the direction is too small, we can get inf/NaN's, so we treat it as a point.
+	if (vec3_magnitude_sq(ray.dir) < 0.0001f) {
+		*out_at = ray.pos;
+		return bounds_point_contains({ bounds.center, bounds.dimensions + vec3_one*(radius*2) }, ray.pos);
+	} 
+	
 	if (bounds_ray_intersect_dist(bounds, ray, &d) && d <= 1) {
 		*out_at = line_start + (line_end - line_start) * d;
 		return true;
@@ -736,7 +743,9 @@ bounds_t bounds_grow_to_fit_box_opt(bounds_t *opt_bounds, bounds_t box, const ma
 		min   = XMLoadFloat3((XMFLOAT3*)&minf);
 		max   = XMLoadFloat3((XMFLOAT3*)&maxf);
 	} else {
-		vec3 corner = bounds_corner(box, 0);
+		vec3 corner = opt_transform
+			? matrix_transform_pt(*opt_transform, bounds_corner(box, 0))
+			: bounds_corner(box, 0);
 		min   = XMLoadFloat3((XMFLOAT3*)&corner);
 		max   = min;
 		start = 1;
@@ -796,9 +805,9 @@ void line_line_closest_point_tdist(vec3 line_start, vec3 line_end, vec3 other_li
 	float denom = v21 * v21 - v22 * v11;
 
 	float s, t;
-	if (fabsf(denom) < 1e-6) {
+	if (fabsf(denom) < 1e-6f) {
 		s = 0.;
-		t = (v11 * s - v21_1) / (v21 != 0 ? v21 : 1e-6); // Avoid division by zero
+		t = (v11 * s - v21_1) / (v21 != 0 ? v21 : 1e-6f); // Avoid division by zero
 	} else {
 		s = ( v21_2 * v21 - v22 * v21_1) / denom;
 		t = (-v21_1 * v21 + v11 * v21_2) / denom;

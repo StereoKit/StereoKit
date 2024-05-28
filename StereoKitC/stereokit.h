@@ -410,12 +410,24 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
+/* Provides a reason on why StereoKit has quit.*/
+typedef enum quit_reason_ {
+	/*Default state when SK has not quit.*/
+	quit_reason_none,
+	/*User has selected to quit the application using application controls.*/
+	quit_reason_user,
+	/* Runtime Error SESSION_LOST*/
+	quit_reason_session_lost,
+	/* User has closed the application from outside of the application.*/
+	quit_reason_system_close,
+} quit_reason_;
+
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (void);
+SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -426,6 +438,7 @@ SK_API system_info_t sk_system_info        (void);
 SK_API const char   *sk_version_name       (void);
 SK_API uint64_t      sk_version_id         (void);
 SK_API app_focus_    sk_app_focus          (void);
+SK_API quit_reason_  sk_get_quit_reason    (void);
 
 ///////////////////////////////////////////
 
@@ -699,6 +712,7 @@ SK_DeclarePrivateType(model_t);
 SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(anchor_t);
+SK_DeclarePrivateType(render_list_t);
 
 ///////////////////////////////////////////
 
@@ -1000,7 +1014,7 @@ SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
-SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned sk_default(true));
+SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), int32_t framebuffer_multisample sk_default(1), bool32_t owned sk_default(true));
 SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -1343,7 +1357,7 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, void *data, size_t data_size, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
@@ -1527,6 +1541,16 @@ SK_API void                  render_screenshot_viewpoint(void (*render_on_screen
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
+SK_API render_list_t         render_get_primary_list();
+
+///////////////////////////////////////////
+
+SK_API render_list_t         render_list_create    ();
+SK_API void                  render_list_addref    (      render_list_t list);
+SK_API void                  render_list_release   (      render_list_t list);
+SK_API void                  render_list_clear     (      render_list_t list);
+SK_API int32_t               render_list_item_count(const render_list_t list);
+SK_API int32_t               render_list_prev_count(const render_list_t list);
 
 ///////////////////////////////////////////
 
@@ -1632,7 +1656,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
-SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, char** keyboard_layout, int layouts_num);
+SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** keyboard_layout, int layouts_num);
 
 ///////////////////////////////////////////
 
@@ -1750,11 +1774,13 @@ typedef struct hand_t {
 	hand_joint_t  fingers[5][5];
 	pose_t        wrist;
 	pose_t        palm;
+	pose_t        aim;
 	vec3          pinch_pt;
 	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
+	button_state_ aim_ready;
 	float         size;
 	float         pinch_activation;
 	float         grip_activation;
@@ -2035,6 +2061,8 @@ SK_API void                  input_hand_override     (handed_ hand, const hand_j
 SK_API hand_source_          input_hand_source       (handed_ hand);
 SK_API const controller_t*   input_controller        (handed_ hand);
 SK_API button_state_         input_controller_menu   (void);
+SK_API void                  input_controller_model_set(handed_ hand, model_t model);
+SK_API model_t               input_controller_model_get(handed_ hand);
 SK_API const pose_t*         input_head              (void);
 SK_API const pose_t*         input_eyes              (void);
 SK_API button_state_         input_eyes_tracked      (void);
@@ -2287,6 +2315,8 @@ typedef enum asset_type_ {
 	asset_type_solid,
 	/*An Anchor.*/
 	asset_type_anchor,
+	/*A RenderList*/
+	asset_type_render_list,
 } asset_type_;
 
 typedef void* asset_t;
@@ -2341,7 +2371,8 @@ SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
-SK_CONST char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char* default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char *default_id_shader_lightmap      = "default/shader_lightmap";
 SK_CONST char *default_id_shader_font          = "default/shader_font";
 SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";
@@ -2354,6 +2385,8 @@ SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";
 SK_CONST char *default_id_sound_ungrab         = "default/sound_ungrab";
+SK_CONST char *default_id_model_controller_l   = "default/model_controller_l";
+SK_CONST char *default_id_model_controller_r   = "default/model_controller_r";
 
 #ifdef __cplusplus
 } // namespace sk

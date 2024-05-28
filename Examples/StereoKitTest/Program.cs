@@ -84,7 +84,6 @@ class Program
 		SK.PreLoadLibrary();
 
 		SK.AddStepper<PassthroughFBExt>();
-		SK.AddStepper<ControllerStepper>();
 		//SK.AddStepper<Win32PerformanceCounterExt>();
 		logWindow = SK.AddStepper<LogWindow>();
 		logWindow.Enabled = false;
@@ -98,6 +97,12 @@ class Program
 		Init();
 
 		SK.Run(Step, Tests.Shutdown);
+
+		if (SK.QuitReason != QuitReason.None)
+		{
+			Log.Info("QuitReason is " + SK.QuitReason);
+		}
+
 	}
 
 	static void Init()

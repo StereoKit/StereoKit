@@ -45,6 +45,7 @@
 	#include <windows.h>
 
 #endif
+#include "../asset_types/assets.h"
 
 ///////////////////////////////////////////
 
@@ -88,9 +89,9 @@ bool platform_init() {
 #endif
 	skg_callback_log([](skg_log_ level, const char *text) {
 		switch (level) {
-		case skg_log_info:     log_diagf("[<~mag>sk_gpu<~clr>] %s", text); break;
-		case skg_log_warning:  log_warnf("[<~mag>sk_gpu<~clr>] %s", text); break;
-		case skg_log_critical: log_errf ("[<~mag>sk_gpu<~clr>] %s", text); break;
+		case skg_log_info:     log_diagf("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skg_log_warning:  log_warnf("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skg_log_critical: log_errf ("[<~ylw>sk_gpu<~clr>] %s", text); break;
 		}
 	});
 	if (skg_init(settings->app_name, luid) <= 0) {
@@ -264,7 +265,7 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 	}
 }
 
-bool32_t platform_keyboard_set_layout(text_context_ keyboard_type, char** keyboard_text, int layouts_num) {
+bool32_t platform_keyboard_set_layout(text_context_ keyboard_type, const char** keyboard_text, int layouts_num) {
 	return virtualkeyboard_set_layout(keyboard_type, keyboard_text, layouts_num);
 }
 
@@ -357,7 +358,7 @@ char *platform_pop_path_new(const char *path) {
 
 ///////////////////////////////////////////
 
-bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_size) {
+bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
 
@@ -395,7 +396,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	// treating them like files.
 	struct stat buffer;
 	if (stat(slash_fix_filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
-		log_diagf("platform_read_file can't read folders: %s", slash_fix_filename);
+		log_diagf("platform_read_file_direct can't read folders: %s", slash_fix_filename);
 		sk_free(slash_fix_filename);
 		return false;
 	}
@@ -429,8 +430,8 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 		buffer = sk_malloc_t(wchar_t, buffer_size);
 		DWORD err = GetFullPathNameW(wfilename, buffer_size, buffer, nullptr);
 
-		if (err == 0) { log_diagf("platform_read_file can't find or resolve %s", slash_fix_filename); }
-		else          { log_diagf("platform_read_file can't find %ls", buffer); }
+		if (err == 0) { log_diagf("platform_read_file_direct can't find or resolve %s", slash_fix_filename); }
+		else          { log_diagf("platform_read_file_direct can't find %ls", buffer); }
 		sk_free(slash_fix_filename);
 		sk_free(buffer);
 		return false;
@@ -455,7 +456,7 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 	}
 	#endif
 	if (fp == nullptr) {
-		log_diagf("platform_read_file can't find %s", slash_fix_filename);
+		log_diagf("platform_read_file_direct can't find %s", slash_fix_filename);
 		sk_free(slash_fix_filename);
 		return false;
 	}
@@ -477,6 +478,14 @@ bool32_t platform_read_file(const char *filename, void **out_data, size_t *out_s
 
 	sk_free(slash_fix_filename);
 	return read != 0 || *out_size == 0;
+}
+
+///////////////////////////////////////////
+bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_size) {
+	char* asset_filename = assets_file(filename);
+	bool32_t read_file_result = platform_read_file_direct(asset_filename, out_data, out_size);
+	sk_free(asset_filename);
+	return read_file_result;
 }
 
 ///////////////////////////////////////////

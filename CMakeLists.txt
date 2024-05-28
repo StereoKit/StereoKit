@@ -1,8 +1,9 @@
+# SPDX-License-Identifier: MIT
 # Copyright 2021, Collabora, Ltd.
 # Copyright Moses Turner, 2021.
-# Copyright Nick Klingensmith, 2021.
+# Copyright (c) 2021-2024 Nick Klingensmith
+# Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 # Many thanks to Ryan Pavlik for showing the way
-# SPDX-License-Identifier: MIT
 
 # This build file has the following options
 # - SK_MULTITHREAD_BUILD_BY_DEFAULT
@@ -19,6 +20,10 @@
 #     loaders.
 
 cmake_minimum_required(VERSION 3.10)
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+  cmake_policy(SET CMP0135 NEW)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,6 +42,7 @@ set(SK_MULTITHREAD_BUILD_BY_DEFAULT ON  CACHE BOOL "MSVC only, on by default. Th
 set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest project in addition to the StereoKitC library.")
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
+set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -82,11 +88,18 @@ if(FORCE_COLORED_OUTPUT)
 	endif()
 endif()
 
+# Hide shader compile metadata unless we're in verbose mode
+set(SK_SHADER_VERBOSITY "-si")
+if(CMAKE_VERBOSE_MAKEFILE)
+  set(SK_SHADER_VERBOSITY "")
+endif()
+
 ###########################################
 ## Platform Specific Settings            ##
 ###########################################
 
 if (ANDROID)
+  set(SK_SHADER_TARGETS "e")
   set(ANDROID_LIBS
     android
     EGL)
@@ -97,6 +110,7 @@ elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
   set(SK_BUILD_SHARED_LIBS OFF)
+  set(SK_SHADER_TARGETS "w")
   add_definitions("-D_XM_NO_INTRINSICS_")
   set(SK_LINKER_FLAGS 
     -sFULL_ES3
@@ -107,6 +121,7 @@ elseif(EMSCRIPTEN)
     -g
     -gsource-map )
 elseif (UNIX)
+  set(SK_SHADER_TARGETS "e")
   set(LINUX_LIBS
     Threads::Threads
     EGL
@@ -121,6 +136,13 @@ elseif (UNIX)
   find_package(Threads REQUIRED)
 
 elseif(WIN32)
+  if (SK_WINDOWS_GL)
+    set(SK_SHADER_TARGETS "g")
+    add_definitions("-DSKG_FORCE_OPENGL")
+    add_definitions("-DSK_GPU_LABELS")
+  else()
+    set(SK_SHADER_TARGETS "x")
+  endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   set(WINDOWS_LIBS
     Comdlg32
@@ -165,53 +187,20 @@ if (SK_BUILD_OPENXR_LOADER)
   set(OPENXR_LIB openxr_loader)
 endif()
 
-###########################################
-## Shader Compiler                       ##
-###########################################
+#### meshoptimizer - https://github.com/zeux/meshoptimizer ####
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME meshoptimizer # 0.20
+  GITHUB_REPOSITORY zeux/meshoptimizer
+  GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
+)
+set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-set(SK_SRC_SHADERS_HLSL
-  StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_default.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_font.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_ui_quadrant.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_ui_aura.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_unlit.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_unlit_clip.hlsl )
-
-set(SK_SRC_SHADERS_H
-  StereoKitC/shaders_builtin/shader_builtin.h )
-
-set(SK_SHADER_COMPILER "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc")
-foreach(SHADER ${SK_SRC_SHADERS_HLSL})
-  if (WIN32)
-    set(SK_SHADER_TARGETS "x")
-  elseif(ANDROID)
-    set(SK_SHADER_TARGETS "e")
-  elseif(EMSCRIPTEN)
-    set(SK_SHADER_TARGETS "w")
-  elseif(UNIX)
-    set(SK_SHADER_TARGETS "e")
-  endif()
-
-  # Hide shader compile metadata unless we're in verbose mode
-  set(SK_SHADER_VERBOSITY "-si")
-  if(CMAKE_VERBOSE_MAKEFILE)
-    set(SK_SHADER_VERBOSITY "")
-  endif()
-
-  get_filename_component(SHADER_NAME ${SHADER} NAME)
-  add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h
-    COMMAND ${SK_SHADER_COMPILER} -O3 -f -h -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include -o ${CMAKE_BINARY_DIR}/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER} )
-  list(APPEND SK_SRC_SHADERS_H ${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.h)
-endforeach(SHADER)
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME sk_gpu # 2024.3.31
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
+  OPTIONS
+  "SKG_HEADER OFF"
+)
 
 ###########################################
 ## StereoKitC                            ##
@@ -273,6 +262,8 @@ set(SK_SRC_ASSET_TYPES
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
+  StereoKitC/libraries/default_controller_l.h
+  StereoKitC/libraries/default_controller_r.h
   StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
@@ -293,6 +284,7 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/stb_image.h
   StereoKitC/libraries/stb_image_write.h
   StereoKitC/libraries/stb_truetype.h
+  StereoKitC/libraries/stb.cpp
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
   StereoKitC/libraries/unicode.h
@@ -307,6 +299,8 @@ set(SK_SRC_UTILS
   StereoKitC/utils/random.cpp)
 
 set(SK_SRC_SYSTEMS
+  StereoKitC/systems/_stereokit_systems.h
+  StereoKitC/systems/_stereokit_systems.cpp
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
   StereoKitC/systems/bbox.h
@@ -319,9 +313,12 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input.cpp
   StereoKitC/systems/input_keyboard.h
   StereoKitC/systems/input_keyboard.cpp
+  StereoKitC/systems/input_render.h
+  StereoKitC/systems/input_render.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
   StereoKitC/systems/render.h
+  StereoKitC/systems/render_.h
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_pipeline.h
   StereoKitC/systems/render_pipeline.cpp
@@ -405,6 +402,9 @@ set(SK_SRC_UI
   StereoKitC/ui/ui_theming.h
   StereoKitC/ui/ui_theming.cpp )
 
+set(SK_SRC_SHADERS_H
+  StereoKitC/shaders_builtin/shader_builtin.h )
+
 # Switch between a static or shared library based on
 # the cmake options provided.
 if (SK_BUILD_SHARED_LIBS)
@@ -426,6 +426,25 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
+skshaderc_compile_headers(StereoKitC
+  ${CMAKE_BINARY_DIR}/shaders
+  "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_default.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_font.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_quadrant.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_ui_aura.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_unlit.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_unlit_clip.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_lightmap.hlsl )
+
 # Set up Visual Studio folders/filters for a more organized
 # workspace there.
 source_group("code"            FILES ${SK_SRC_CODE})
@@ -446,7 +465,7 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
   set(SK_BIN_DEBUG_EXT ".so.dbg")
 
-  if (NOT EMSCRIPTEN)
+  if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS)
     set(SK_SEPARATE_DBG ON)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
@@ -471,7 +490,6 @@ target_include_directories(StereoKitC
   PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
-    ${CMAKE_BINARY_DIR}/shaders/
 )
 
 target_link_libraries( StereoKitC
@@ -481,14 +499,16 @@ target_link_libraries( StereoKitC
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
+    meshoptimizer
   PUBLIC
+    sk_gpu
     ${ANDROID_LIBS}
 )
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-  set(SK_RELEASE_LINK    -Wl,--gc-sections -flto)
+  set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
   set(SK_WARNING_FLAG    -w)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy)
@@ -555,6 +575,8 @@ add_custom_command(TARGET StereoKitC POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>"
   COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
+add_custom_command(TARGET StereoKitC POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${sk_gpu_SOURCE_DIR}/tools" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc" )
 if (SK_SEPARATE_DBG)
   add_custom_command(TARGET StereoKitC POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
@@ -610,8 +632,6 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_lighting.cpp
     Examples/StereoKitCTest/skt_lighting.h
     Examples/StereoKitCTest/skt_lighting.cpp
-    Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl.h
-    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl.h
   )
 
   target_link_libraries( StereoKitCTest
@@ -621,6 +641,13 @@ if (SK_BUILD_TESTS)
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP")
   endif()
+
+  skshaderc_compile_headers( StereoKitCTest
+    ${CMAKE_BINARY_DIR}/test_shaders
+    "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    Examples/StereoKitCTest/Shaders/blit.hlsl
+    Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 

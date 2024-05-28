@@ -1,8 +1,9 @@
-﻿using StereoKit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using System.Threading.Tasks;
 
 class TestFromThread : ITest
@@ -28,7 +29,7 @@ class TestFromThread : ITest
 		{
 			// Load the shader via memory to force load a unique new shader
 			// with a brand new id.
-			Shader uniqueshader = Shader.FromMemory(Platform.ReadFileBytes("Assets/Shaders/floor_shader.hlsl.sks"));
+			Shader uniqueshader = Shader.FromMemory(Platform.ReadFileBytes("Shaders/floor_shader.hlsl.sks"));
 			uniqueShaderMat = new Material(uniqueshader);
 			material        = Material.Default.Copy();
 			mesh            = Mesh.GenerateSphere(1);

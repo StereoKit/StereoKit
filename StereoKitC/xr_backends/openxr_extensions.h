@@ -103,7 +103,7 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_UWP false
 #endif
-#if defined(SK__DEBUG)
+#if defined(SK_DEBUG)
 #define EXT_AVAILABLE_DEBUG true
 #else
 #define EXT_AVAILABLE_DEBUG false
@@ -137,6 +137,7 @@ namespace sk {
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
+	_(MSFT_hand_interaction,             true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_anchor_persistence,   true) \
 	_(MSFT_spatial_graph_bridge,         true) \
@@ -153,7 +154,8 @@ namespace sk {
 
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
-	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID)
+	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID) \
+	_(KHR_android_thread_settings, EXT_AVAILABLE_ANDROID)
 
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
@@ -208,6 +210,11 @@ namespace sk {
 	_(xrTryGetPerceptionAnchorFromSpatialAnchorMSFT) \
 	_(xrGetAudioOutputDeviceGuidOculus)              \
 	_(xrGetAudioInputDeviceGuidOculus)
+#elif defined(SK_OS_ANDROID)
+#define FOR_EACH_PLATFORM_FUNCTION(_)  \
+	_(xrConvertTimespecTimeToTimeKHR ) \
+	_(xrConvertTimeToTimespecTimeKHR ) \
+	_(xrSetAndroidApplicationThreadKHR)
 #else
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
 	_(xrConvertTimespecTimeToTimeKHR ) \

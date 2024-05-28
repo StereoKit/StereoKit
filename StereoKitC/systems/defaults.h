@@ -22,6 +22,7 @@ extern shader_t     sk_default_shader;
 extern shader_t     sk_default_shader_blit;
 extern shader_t     sk_default_shader_pbr;
 extern shader_t     sk_default_shader_unlit;
+extern shader_t     sk_default_shader_lightmap;
 extern shader_t     sk_default_shader_font;
 extern shader_t     sk_default_shader_equirect;
 extern shader_t     sk_default_shader_ui;
@@ -37,6 +38,8 @@ extern font_t       sk_default_font;
 extern text_style_t sk_default_text_style;
 extern sound_t      sk_default_click;
 extern sound_t      sk_default_unclick;
+extern model_t      sk_default_controller_l;
+extern model_t      sk_default_controller_r;
 
 extern const spherical_harmonics_t sk_default_lighting;
 
