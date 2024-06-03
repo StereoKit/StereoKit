@@ -109,7 +109,6 @@ $dependencies = @(
         'reactphysics3d',
         'https://github.com/DanielChappuis/reactphysics3d.git',
         $null,
-        $null,
         @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) ),
         $null

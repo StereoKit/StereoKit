@@ -804,7 +804,7 @@ bool openxr_render_frame() {
 	// Input can be costly to look at on some systems, so this happens _after_
 	// swapchains are acquired, so they're in close time proximity to
 	// xrWaitFrame. Theoretically better?
-	input_step_late();
+	input_update_poses(true);
 
 	render_pipeline_draw();
 

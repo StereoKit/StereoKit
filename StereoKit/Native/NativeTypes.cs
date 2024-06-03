@@ -164,6 +164,7 @@ namespace StereoKit
 	public struct SystemInfo
 	{
 		/// <summary>The type of display this device has.</summary>
+		[Obsolete("Obsolete, please use Device.DisplayBlend")]
 		public Display displayType;
 		/// <summary>Width of the display surface, in pixels! For a stereo
 		/// display, this will be the width of a single eye.</summary>
@@ -210,10 +211,6 @@ namespace StereoKit
 		/// set to true, and World.Raycast can be used.</summary>
 		public bool worldRaycastPresent { get => _worldRaycastPresent > 0; }
 		private int _worldRaycastPresent;
-
-		/// <summary>Obsolete, please use Device.DisplayBlend</summary>
-		[Obsolete("Obsolete, please use Device.DisplayBlend", true)]
-		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
 
 	/*[StructLayout(LayoutKind.Sequential)]
