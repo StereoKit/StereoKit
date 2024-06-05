@@ -10,12 +10,12 @@ class TestTextStyle : ITest
 	{
 		Tests.RunForFrames(2);
 		style1 = Text.MakeStyle(
-			Font.FromFile("C:/Windows/Fonts/times.ttf") ?? Default.Font,
+			Font.FromFile("aileron_font.ttf") ?? Default.Font,
 			2 * U.cm,
 			Color.HSV(0,1,1));
 
 		style2 = Text.MakeStyle(
-			Font.FromFile("C:/Windows/Fonts/times.ttf") ?? Default.Font,
+			Font.FromFile("aileron_font.ttf") ?? Default.Font,
 			1 * U.cm,
 			Color.HSV(.33f,.5f,1));
 	}

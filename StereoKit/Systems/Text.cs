@@ -293,5 +293,27 @@ namespace StereoKit
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 Size(string text)
 			=> NativeAPI.text_size_16(text, TextStyle.Default);
+
+		/// <summary>Need to know how much space text will take when
+		/// constrained to a certain width? This will find it using the default
+		/// text style!</summary>
+		/// <param name="text">Text to measure the size of.</param>
+		/// <param name="maxWidth">Width of the available space in meters.</param>
+		/// <returns>The size that this text will take up, in meters! Width
+		/// will be the same as maxWidth as long as the text takes more than
+		/// one line, and height will be the total height of the text.</returns>
+		public static Vec2 Size(string text, float maxWidth)
+			=> NativeAPI.text_size_constrained_16(text, TextStyle.Default, maxWidth);
+
+		/// <summary>Need to know how much space text will take when
+		/// constrained to a certain width? This will find it using the
+		/// indicated text style!</summary>
+		/// <param name="text">Text to measure the size of.</param>
+		/// <param name="maxWidth">Width of the available space in meters.</param>
+		/// <returns>The size that this text will take up, in meters! Width
+		/// will be the same as maxWidth as long as the text takes more than
+		/// one line, and height will be the total height of the text.</returns>
+		public static Vec2 Size(string text, TextStyle style, float maxWidth)
+			=> NativeAPI.text_size_constrained_16(text, style, maxWidth);
 	}
 }
