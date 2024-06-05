@@ -546,7 +546,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	step.wrap   = fit & text_fit_wrap;
 	step.style  = &text_styles[style];
 	step.bounds = size;
-	step.start  = { off_x, off_y };
+	step.start  = { };
 
 	// Debug draw bounds
 	/*vec2 dbg_start = step.start;
@@ -591,6 +591,9 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
 	if      (position & text_align_y_center) step.start.y += step.bounds.y / 2.f;
 	else if (position & text_align_y_bottom) step.start.y += step.bounds.y;
+	vec2 bounds_min = step.start - step.bounds;
+	vec2 bounds_max = step.start;
+	step.start += vec2{ off_x, off_y };
 	step.pos = step.start;
 
 	// Figure out the vertical align of the text
@@ -605,15 +608,14 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	color32 color = color_to_32( color32_to_128(step.style->color) * vertex_tint_linear );
 
 	// Core loop for drawing the text
-	vec2     bounds_min = step.start - step.bounds;
-	bool     clip       = fit & text_fit_clip;
-	char32_t c          = 0;
+	bool     clip = fit & text_fit_clip;
+	char32_t c    = 0;
 	text_step_next_line<C, char_decode_b_T>(text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 	if (clip) {
 		while(char_decode_b_T(text, &text, &c)) {
 			const font_char_t *char_info = font_get_glyph(step.style->font, c);
 			if (!text_is_space(c)) {
-				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal, up, right);
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, bounds_max, char_info, *step.style, color, buffer, tr, normal, up, right);
 			}
 			text_step_position<C, char_decode_b_T>(c, char_info, text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 		}
