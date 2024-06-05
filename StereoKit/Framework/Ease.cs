@@ -115,8 +115,8 @@ namespace StereoKit.Framework
 		public void SetTo (Vec3 value) { begin = value; start = 0; end = value; ease = Ease.Linear; this.duration = 1; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
-		/// <param name="v">The easing value.</param>
-		public static implicit operator Vec3(EaseVec3 v) => v.Resolve();
+		/// <param name="value">The easing value.</param>
+		public static implicit operator Vec3(EaseVec3 value) => value.Resolve();
 	}
 
 	/// <inheritdoc cref="EaseVec3"/>
@@ -151,8 +151,8 @@ namespace StereoKit.Framework
 		public void SetTo (Color value)                                      { begin = value;     start = 0;           end = value;       ease = Ease.Linear; this.duration = 1; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
-		/// <param name="v">The easing value.</param>
-		public static implicit operator Color(EaseColor color) => color.Resolve();
+		/// <param name="value">The easing value.</param>
+		public static implicit operator Color(EaseColor value) => value.Resolve();
 	}
 
 	/// <inheritdoc cref="EaseVec3"/>
@@ -185,7 +185,7 @@ namespace StereoKit.Framework
 		public void SetTo (Pose value)                                      { begin = value;     start = 0;           end = value;       ease = Ease.Linear; this.duration = 1; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
-		/// <param name="v">The easing value.</param>
-		public static implicit operator Pose(EasePose pose) => pose.Resolve();
+		/// <param name="value">The easing value.</param>
+		public static implicit operator Pose(EasePose value) => value.Resolve();
 	}
 }
