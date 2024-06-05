@@ -1327,6 +1327,8 @@ SK_API float         text_add_in                   (const char*     text_utf8,  
 SK_API float         text_add_in_16                (const char16_t* text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
 SK_API vec2          text_size                     (const char*     text_utf8,  text_style_t style sk_default(0));
 SK_API vec2          text_size_16                  (const char16_t* text_utf16, text_style_t style sk_default(0));
+SK_API vec2          text_size_constrained         (const char*     text_utf8,  text_style_t style, float max_width);
+SK_API vec2          text_size_constrained_16      (const char16_t* text_utf16, text_style_t style, float max_width);
 SK_API vec2          text_char_at                  (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 SK_API vec2          text_char_at_16               (const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 
