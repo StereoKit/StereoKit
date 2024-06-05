@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using System;
 
 class TestText : ITest
 {
@@ -25,13 +26,13 @@ class TestText : ITest
 
 
 		at = new Vec3(0, 0.2f, -0.5f);
-		Text.Add(shortText, Matrix.TR(at, r), new Vec2(0.5f, 0.2f), TextFit.Wrap, style, TextAlign.TopLeft, TextAlign.TopLeft);
 		s = Text.Size(shortText, 0.5f);
+		Text.Add(shortText, Matrix.TR(at, r), new Vec2(0.5f, s.y), TextFit.Wrap | TextFit.Clip, style, Color.White, TextAlign.TopLeft, TextAlign.TopLeft, 0.0f, ((float)Math.Sin(Time.Totalf))*s.y, 0);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), Color.Black);
 
 		at = new Vec3(0, 0.5f, -0.5f);
-		Text.Add(longText, Matrix.TR(at, r), new Vec2(0.5f,0.2f), TextFit.Wrap, style, TextAlign.TopLeft, TextAlign.TopLeft);
 		s = Text.Size(longText, 0.5f);
+		Text.Add(longText, Matrix.TR(at, r), new Vec2(0.5f,s.y), TextFit.Wrap | TextFit.Clip, style, Color.White, TextAlign.TopLeft, TextAlign.TopLeft, 0.0f, ((float)Math.Sin(Time.Totalf)) * s.y, 0);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), Color.Black);
 
 	}
