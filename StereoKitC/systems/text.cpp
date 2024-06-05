@@ -52,10 +52,10 @@ struct text_stepper_t {
 array_t<_text_style_t> text_styles  = {};
 array_t<text_buffer_t> text_buffers = {};
 
-template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
+/*template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
 float text_step_height(const C* text, int32_t* out_length, const text_stepper_t& step);
 template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
-void text_step_next_line(const C* start, text_stepper_t& step);
+void text_step_next_line(const C* start, text_stepper_t& step);*/
 
 ///////////////////////////////////////////
 
@@ -204,6 +204,29 @@ void text_style_set_char_height(text_style_t style, float height_meters) {
 
 ///////////////////////////////////////////
 
+template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
+inline vec2 text_size_constrained_g(const C* text, text_style_t style_id, float max_width) {
+	const _text_style_t* style = &text_styles[style_id];
+
+	const C *curr           = text;
+	int32_t  line_count     = 1;
+	int32_t  line_remaining = 0;
+	float    largest_width  = text_step_line_length<C, char_decode_b_T>(curr, &line_remaining, &curr, style, true, max_width);
+	while (*curr != 0) {
+		float curr_width = text_step_line_length<C, char_decode_b_T>(curr, &line_remaining, &curr, style, true, max_width);
+		if (largest_width < curr_width)
+			largest_width = curr_width;
+		line_count += 1;
+	}
+
+	return {line_count > 1 ? max_width : largest_width, (line_count + (line_count - 1) * style->line_spacing) * style->char_height };
+}
+
+vec2 text_size_constrained   (const char     *text_utf8,  text_style_t style, float max_width) { return text_size_constrained_g<char,     utf8_decode_fast_b >(text_utf8,  style, max_width); }
+vec2 text_size_constrained_16(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_constrained_g<char16_t, utf16_decode_fast_b>(text_utf16, style, max_width); }
+
+///////////////////////////////////////////
+
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 inline vec2 text_size_g(const C *text, text_style_t style) {
 	if (text == nullptr) return {};
@@ -266,7 +289,7 @@ inline vec2 text_char_at_g(const C *text, text_style_t style, int32_t char_index
 
 	// Calculate the strlen and text height for verical centering
 	int32_t text_length = 0;
-	float   text_height = text_step_height<C, char_decode_b_T>(text, &text_length, step);
+	float   text_height = text_step_height<C, char_decode_b_T>(text, &text_length, step.style, step.wrap, step.bounds.x);
 	// if the size is still zero, then lets use the calculated height
 	if (step.bounds.y == 0)
 		step.bounds.y = text_height;
@@ -287,7 +310,7 @@ inline vec2 text_char_at_g(const C *text, text_style_t style, int32_t char_index
 	char32_t c          = 0;
 	int32_t  count      = 0;
 	if (*text != '\0')
-		text_step_next_line<C, char_decode_b_T>(text, step);
+		text_step_next_line<C, char_decode_b_T>(text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 	while(char_decode_b_T(text, &text, &c)) {
 		if (count == char_index) {
 			return step.pos;
@@ -296,7 +319,7 @@ inline vec2 text_char_at_g(const C *text, text_style_t style, int32_t char_index
 		
 		step.line_remaining--;
 		if (step.line_remaining <= 0 && *text != '\0') {
-			text_step_next_line<C, char_decode_b_T>(text, step);
+			text_step_next_line<C, char_decode_b_T>(text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 			step.pos.y -= step.style->char_height * step.style->line_spacing;
 		} else if (c != '\n') {
 			step.pos.x -= char_info->xadvance * step.style->char_height;
@@ -313,23 +336,23 @@ vec2 text_char_at_16(const char16_t* text_utf16, text_style_t style, int32_t cha
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-float text_step_line_length(const C *start, int32_t *out_char_count, const C **out_next_start, const text_stepper_t &step) {
+float text_step_line_length(const C *start, int32_t *out_char_count, const C **out_next_start, const _text_style_t *style, bool wrap, float max_width) {
 	// If we're not wrapping, this is really simple
-	if (!step.wrap) {
-		const C *curr  = start;
+	if (wrap == false) {
+		const C* curr  = start;
 		char32_t ch    = 0;
 		float    width = 0;
 		int32_t  count = 0;
 		while (char_decode_b_T(curr, &curr, &ch) && ch != '\n') {
-			width += font_get_glyph(step.style->font, ch)->xadvance;
+			width += font_get_glyph(style->font, ch)->xadvance;
 			count++;
 		}
-		*out_char_count = ch == '\n' ? count+1 : count;
+		*out_char_count = ch == '\n' ? count + 1 : count;
 		*out_next_start = curr;
-		return width * step.style->char_height;
+		return width * style->char_height;
 	}
 
-	// Otherwise, we gotta do it the tricky way
+	// If we _are_ wrapping, we gotta do it the tricky way
 	float    curr_width = 0;
 	float    last_width = 0;
 	int32_t  last_count = 0;
@@ -357,11 +380,11 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 			break;
 
 		// Advance by character width
-		const font_char_t *char_info  = font_get_glyph(step.style->font, curr);
-		float              next_width = char_info->xadvance*step.style->char_height + curr_width;
+		const font_char_t *char_info  = font_get_glyph(style->font, curr);
+		float              next_width = char_info->xadvance*style->char_height + curr_width;
 
 		// Check if it steps out of bounds
-		if (!is_break && next_width > step.bounds.x) {
+		if (!is_break && next_width > max_width) {
 			// If there were no breaks in this line, set to the previous character
 			if (last_width == 0) {
 				last_width = curr_width;
@@ -387,46 +410,46 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-float text_step_height(const C *text, int32_t *out_length, const text_stepper_t &step) {
+float text_step_height(const C *text, int32_t *out_length, const _text_style_t *style, bool wrap, float max_width) {
 	int32_t  count  = 1;
 	int32_t  length = 0;
 	const C *curr   = text;
 	float    height = 0;
 	while (count > 0) {
-		text_step_line_length<C, char_decode_b_T>(curr, &count, &curr, step);
+		text_step_line_length<C, char_decode_b_T>(curr, &count, &curr, style, wrap, max_width);
 		length += count;
 		if (count > 0)
 			height += 1;
 	}
 
 	*out_length = length;
-	return (height + (height-1)*step.style->line_spacing) * step.style->char_height;
+	return (height + (height-1)*style->line_spacing) * style->char_height;
 }
 
 ///
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-void text_step_next_line(const C *start, text_stepper_t &step) {
+void text_step_next_line(const C *start, const _text_style_t* style, text_align_ align, bool wrap, float max_width, float start_x, int32_t *out_line_remaining, vec2 *ref_pos) {
 	const C *next;
-	float line_size  = text_step_line_length<C, char_decode_b_T>(start, &step.line_remaining, &next, step);
+	float line_size  = text_step_line_length<C, char_decode_b_T>(start, out_line_remaining, &next, style, wrap, max_width);
 	float align_x    = 0;
-	if (step.align & text_align_x_center) align_x = ((step.bounds.x - line_size) / 2.f);
-	if (step.align & text_align_x_right)  align_x =  (step.bounds.x - line_size);
-	step.pos.x  = step.start.x - align_x;
-	step.pos.y -= step.style->char_height;
+	if (align & text_align_x_center) align_x = ((max_width - line_size) / 2.f);
+	if (align & text_align_x_right)  align_x =  (max_width - line_size);
+	ref_pos->x  = start_x - align_x;
+	ref_pos->y -= style->char_height;
 }
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-void text_step_position(char32_t ch, const font_char_t *char_info, const C *next, text_stepper_t &step) {
-	step.line_remaining--;
-	if (step.line_remaining <= 0) {
-		text_step_next_line<C, char_decode_b_T>(next, step);
-		step.pos.y -= step.style->char_height * step.style->line_spacing;
+void text_step_position(char32_t ch, const font_char_t *char_info, const C *next, const _text_style_t* style, text_align_ align, bool wrap, float max_width, float start_x, int32_t* ref_line_remaining, vec2* ref_pos) {
+	*ref_line_remaining = *ref_line_remaining - 1;
+	if (*ref_line_remaining <= 0) {
+		text_step_next_line<C, char_decode_b_T>(next, style, align, wrap, max_width, start_x, ref_line_remaining, ref_pos);
+		ref_pos->y -= style->char_height * style->line_spacing;
 		return;
 	}
 
 	if (ch != '\n'){
-		step.pos.x -= char_info->xadvance*step.style->char_height;
+		ref_pos->x -= char_info->xadvance*style->char_height;
 	}
 }
 
@@ -523,7 +546,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	step.wrap   = fit & text_fit_wrap;
 	step.style  = &text_styles[style];
 	step.bounds = size;
-	step.start  = { off_x, off_y };
+	step.start  = { };
 
 	// Debug draw bounds
 	/*vec2 dbg_start = step.start;
@@ -558,7 +581,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 
 	// Calculate the strlen and text height for verical centering
 	int32_t text_length = 0;
-	float   text_height = text_step_height<C, char_decode_b_T>(text, &text_length, step);
+	float   text_height = text_step_height<C, char_decode_b_T>(text, &text_length, step.style, step.wrap, step.bounds.x);
 	// if the size is still zero, then lets use the calculated height
 	if (step.bounds.y == 0)
 		step.bounds.y = text_height;
@@ -568,6 +591,9 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	else if (position & text_align_x_right)  step.start.x += step.bounds.x;
 	if      (position & text_align_y_center) step.start.y += step.bounds.y / 2.f;
 	else if (position & text_align_y_bottom) step.start.y += step.bounds.y;
+	vec2 bounds_min = step.start - step.bounds;
+	vec2 bounds_max = step.start;
+	step.start += vec2{ off_x, off_y };
 	step.pos = step.start;
 
 	// Figure out the vertical align of the text
@@ -582,17 +608,16 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	color32 color = color_to_32( color32_to_128(step.style->color) * vertex_tint_linear );
 
 	// Core loop for drawing the text
-	vec2     bounds_min = step.start - step.bounds;
-	bool     clip       = fit & text_fit_clip;
-	char32_t c          = 0;
-	text_step_next_line<C, char_decode_b_T>(text, step);
+	bool     clip = fit & text_fit_clip;
+	char32_t c    = 0;
+	text_step_next_line<C, char_decode_b_T>(text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 	if (clip) {
 		while(char_decode_b_T(text, &text, &c)) {
 			const font_char_t *char_info = font_get_glyph(step.style->font, c);
 			if (!text_is_space(c)) {
-				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, step.start, char_info, *step.style, color, buffer, tr, normal, up, right);
+				text_add_quad_clipped(step.pos.x, step.pos.y, off_z, bounds_min, bounds_max, char_info, *step.style, color, buffer, tr, normal, up, right);
 			}
-			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 		}
 	} else {
 		while (char_decode_b_T(text, &text, &c)) {
@@ -600,7 +625,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 			if (!text_is_space(c)) {
 				text_add_quad(step.pos.x, step.pos.y, off_z, char_info, *step.style, color, buffer, base, normal, up, right);
 			}
-			text_step_position<C, char_decode_b_T>(c, char_info, text, step);
+			text_step_position<C, char_decode_b_T>(c, char_info, text, step.style, step.align, step.wrap, step.bounds.x, step.start.x, &step.line_remaining, &step.pos);
 		}
 	}
 	return (step.start.y - step.pos.y) - step.style->char_height;
