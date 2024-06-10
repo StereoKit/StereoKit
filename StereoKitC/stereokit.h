@@ -1306,6 +1306,8 @@ SK_API void              material_buffer_release  (material_buffer_t buffer);
 /*This enum describes how text layout behaves within the space
   it is given.*/
 typedef enum text_fit_ {
+	/*No particularly special behavior.*/
+	text_fit_none           = 0,
 	/*The text will wrap around to the next line down when it
 	  reaches the end of the space on the X axis.*/
 	text_fit_wrap           = 1 << 0,

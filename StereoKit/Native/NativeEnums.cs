@@ -653,6 +653,8 @@ namespace StereoKit
 	/// it is given.</summary>
 	[Flags]
 	public enum TextFit {
+		/// <summary>No particularly special behavior.</summary>
+		None         = 0,
 		/// <summary>The text will wrap around to the next line down when it
 		/// reaches the end of the space on the X axis.</summary>
 		Wrap         = 1 << 0,
