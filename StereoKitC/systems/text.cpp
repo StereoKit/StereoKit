@@ -272,6 +272,8 @@ template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
 inline vec2 text_size_constrained_g(const C* text, text_style_t style_id, float max_width) {
 	const _text_style_t* style = &text_styles[style_id];
 
+	if (max_width <= 0) return {};
+
 	const C *curr           = text;
 	int32_t  line_count     = 1;
 	int32_t  line_remaining = 0;
