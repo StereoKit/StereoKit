@@ -47,10 +47,10 @@ void fontfile_print_font(const char* name) {
 	fontfile_from_css(name, &info, &info_count);
 	if (info_count == 0) {
 	}
-	printf("Font Selection: \"%s\"\n|Base: %s -> %s\n", name, info[0].name, info[0].filename);
+	printf("Font Selection: \"%s\"\n|Base: %s -> %s\n", name, info[0].name, info[0].filepath);
 	for (int32_t i = 1; i < info_count; i++) {
-		if (info[i].scale != 1) printf("|--\"%s\" -> %s %.2f\n", info[i].name, info[i].filename, info[i].scale);
-		else                    printf("|--\"%s\" -> %s\n", info[i].name, info[i].filename);
+		if (info[i].scale != 1) printf("|--\"%s\" -> %s %.2f\n", info[i].name, info[i].filepath, info[i].scale);
+		else                    printf("|--\"%s\" -> %s\n", info[i].name, info[i].filepath);
 	}
 	free(info);
 	char* file_path = fontfile_name_to_path("Arial");
@@ -69,7 +69,11 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 	*out_info = nullptr;
 	*out_info_count = 0;
 
+#ifdef _WIN32
+	char* string = _strdup(fontlist_utf8);
+#else
 	char* string = strdup(fontlist_utf8);
+#endif
 	char* token = strtok(string, ",");
 
 	// Super simple dynamic array
@@ -108,8 +112,8 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 
 		FcValue file_value;
 		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
-			strncpy(data[count].filename, (char*)file_value.u.s, sizeof(data[count].filename) - 1);
-			data[count].filename[sizeof(data[count].filename) - 1] = '\0';
+			strncpy(data[count].filepath, (char*)file_value.u.s, sizeof(data[count].filepath) - 1);
+			data[count].filepath[sizeof(data[count].filepath) - 1] = '\0';
 		}
 		FcValue nameValue;
 		if (FcPatternGet(font_set->fonts[i], FC_FAMILY, 0, &nameValue) == FcResultMatch) {
@@ -137,7 +141,8 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 			if (data == nullptr) return;
 
 			strncpy(data[count].name, trimmed, sizeof(data[count].name));
-			strncpy(data[count].filename, file, sizeof(data[count].filename));
+			char* folder = fontfile_folder();
+			snprintf(data[count].filepath, 256, "%s/%s", folder, file);
 			data[count].scale = 1;
 			count += 1;
 
@@ -154,8 +159,10 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 					memcpy(&data[count], &links[i], sizeof(font_fallback_info_t));
 					count += 1;
 				}
-				free(trimmed);
-				break;
+				//free(trimmed);
+				//break; Should not stop after first font is found.
+				// We don't know if the first font works until we render the text
+				// Hence get all the fonts and their fallback and only then return.
 			}
 		}
 		free(trimmed);
@@ -287,19 +294,24 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	*out_info = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * max_count);
 	if (*out_info == nullptr) return false;
 	font_fallback_info_t* info = *out_info;
-
+	
 	line = buffer;
 	int32_t count = 0;
 	while (line[0] != '\0' && count < max_count) {
 		wchar_t wfilename[128], wname[128];
+		char filename[128];
 		int32_t numerator, denominator;
 		int32_t num_fields = swscanf(line, L"%127[^,],%127[^,],%d,%d", wfilename, wname, &numerator, &denominator);
 		wfilename[127] = wname[127] = '\0';
 
 		if (num_fields < 3) numerator   = 1;
 		if (num_fields < 4) denominator = 1;
-		wcstombs(info[count].filename, wfilename, sizeof(info[count].filename));
-		wcstombs(info[count].name,     wname,     sizeof(info[count].name));
+		wcstombs(filename, wfilename, sizeof(filename));
+		wcstombs(info[count].name, wname, sizeof(info[count].name));
+
+		char* folder = fontfile_folder();
+		snprintf(info[count].filepath, 256, "%s/%s", folder, filename);
+
 		info[count].scale = numerator / (float)denominator;
 
 		if (count > 0 && strcmp(info[count - 1].name, info[count].name) == 0) {
@@ -373,7 +385,7 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	for (int i = 0; i < *out_info_count; i++) {
 		AFont* font_matched = AFontMatcher_match(matcher, name_utf8, fallback_list_chars[i], 1, nullptr);
 		font_file_path = strdup(AFont_getFontFilePath(font_matched));
-		strcpy(info[i].filename, font_file_path);
+		strcpy(info[i].filepath, font_file_path);
 		strcpy(info[i].name, font_file_path);
 		info[i].scale = 1;
 		AFont_close(font_matched);
@@ -466,8 +478,8 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	for (int i = 0; i < font_set->nfont; i++) {
 		FcValue file_value;
 		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
-			strncpy((*out_info)[i].filename, (char*)file_value.u.s, sizeof((*out_info)[i].filename) - 1);
-			(*out_info)[i].filename[sizeof((*out_info)[i].filename) - 1] = '\0';
+			strncpy((*out_info)[i].filepath, (char*)file_value.u.s, sizeof((*out_info)[i].filepath) - 1);
+			(*out_info)[i].filepath[sizeof((*out_info)[i].filepath) - 1] = '\0';
 		}
 
 		FcValue nameValue;
