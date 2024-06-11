@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 struct font_fallback_info_t {
-	char  filename[128];
+	char  filepath[256];
 	char  name    [128];
 	float scale;
 };
