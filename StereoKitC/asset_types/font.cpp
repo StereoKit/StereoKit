@@ -4,6 +4,7 @@
 #include "../libraries/aileron_font_data.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
+#include "../libraries/sk_fontfile.h"
 #include "../rect_atlas.h"
 #include "../platforms/platform.h"
 #include "../sk_memory.h"
@@ -58,8 +59,9 @@ int32_t font_source_add(const char *filename) {
 
 	if (font_sources[id].references == 1) {
 		size_t length;
-		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
-			log_warnf("Font file failed to load: %s", filename);
+		char* asset_filename = assets_file(filename);
+		if (!platform_read_file(asset_filename, (void **)&font_sources[id].file, &length)) {
+			log_warnf("Font file failed to load: %s %s", filename, asset_filename);
 		} else {
 			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
 			font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
@@ -540,6 +542,31 @@ void font_update_fonts() {
 	for (int32_t i = 0; i < font_list.count; i++) {
 		font_update_cache(font_list[i]);
 	}
+}
+
+///////////////////////////////////////////
+
+font_t font_create_family(const char* font_family) {
+	font_fallback_info_t* info;
+	int32_t               info_count;
+	fontfile_from_css(font_family, &info, &info_count);
+
+	if (info_count == 0) {
+		log_errf("No font files provided for the font_family %s.", font_family);
+		return nullptr;
+	}
+	const char** files = (const char **)malloc(sizeof(char **) * info_count);
+	for (int32_t i = 0; i < info_count; i++) {
+#ifdef _WIN32
+		files[i] = _strdup(info[i].filepath);
+#else
+		files[i] = strdup(info[i].filepath);
+#endif
+	}
+
+	free(info);
+	font_t font = font_create_files(files, info_count);
+	return font;
 }
 
 } // namespace sk

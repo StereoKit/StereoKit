@@ -1056,6 +1056,8 @@ SK_API const char*  font_get_id             (const font_t font);
 SK_API void         font_addref             (font_t font);
 SK_API void         font_release            (font_t font);
 SK_API tex_t        font_get_tex            (font_t font);
+SK_API font_t       font_create_family      (const char *font_family);
+
 
 ///////////////////////////////////////////
 
