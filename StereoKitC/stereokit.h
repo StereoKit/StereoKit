@@ -1265,6 +1265,7 @@ typedef enum text_fit_ {
 	  on going.*/
 	text_fit_overflow       = 1 << 4
 } text_fit_;
+SK_MakeFlag(text_fit_)
 
 /*A bit-flag enum for describing alignment or positioning.
   Items can be combined using the '|' operator, like so:
@@ -1489,6 +1490,7 @@ typedef enum render_clear_ {
 	/*Clear both color and depth data.*/
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
+SK_MakeFlag(render_clear_)
 
 /*The projection mode used by StereoKit for the main camera! You
   can use this with Renderer.Projection. These options are only
