@@ -291,8 +291,8 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 		
 		
 #if defined(SKG_OPENGL)
-		int32_t line_size = tex_format_size(equirect->format) * tex->width;
-		void   *tmp       = sk_malloc(line_size);
+		size_t line_size = tex_format_size(equirect->format) * tex->width;
+		void*  tmp       = sk_malloc(line_size);
 		for (int32_t y = 0; y < tex->height/2; y++) {
 			void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
 			void *bot_line = ((uint8_t*)face_data[i]) + line_size * ((tex->height-1) - y);

@@ -69,8 +69,8 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 		const cgltf_attribute*attr           = &p->attributes[a];
 		const cgltf_accessor* accessor       =  p->attributes[a].data;
 		const uint8_t*        source_buff    = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
-		const int32_t         component_num  = cgltf_num_components  (accessor->type);
-		const int32_t         component_size = cgltf_component_size  (accessor->component_type);
+		const cgltf_size      component_num  = cgltf_num_components  (accessor->type);
+		const cgltf_size      component_size = cgltf_component_size  (accessor->component_type);
 
 		if (attr->type == cgltf_attribute_type_joints && attr->index == 0) {
 			bone_id_ct = (int32_t)accessor->count;
@@ -114,7 +114,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 			if (component_num == 1) for (int32_t j = 0; j < weight_ct; j++) {
 				weights[j].x = 1; // one weight? Must be 1
 			} else if (component_num == 2) for (int32_t j = 0; j < weight_ct; j++) {
-				int32_t jc = j * component_num;
+				cgltf_size jc = j * component_num;
 				vec4   *w  = &weights[j];
 				w->x = floats[jc];
 				w->y = floats[jc+1];
@@ -122,7 +122,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 				w->x = w->x * sum;
 				w->y = w->y * sum;
 			} else if (component_num == 3) for (int32_t j = 0; j < weight_ct; j++) {
-				int32_t jc = j * component_num;
+				cgltf_size jc = j * component_num;
 				vec4   *w  = &weights[j];
 				w->x = floats[jc];
 				w->y = floats[jc+1];
@@ -231,13 +231,13 @@ void gltf_meshopt_decode(cgltf_data* gltf_data) {
 
 ///////////////////////////////////////////
 
-void gltf_view_to_vert_f(void* dest, size_t dest_step, size_t vert_offset, cgltf_accessor *accessor) {
-	uint8_t*       destination = ((uint8_t*)dest) + vert_offset;
+void gltf_view_to_vert_f(void* destination_buffer, size_t dest_step, size_t vert_offset, cgltf_accessor *accessor) {
+	uint8_t*       destination = ((uint8_t*)destination_buffer) + vert_offset;
 	const uint8_t* source_buff = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
 
-	int32_t component_num  = cgltf_num_components(accessor->type);
-	int32_t component_size = cgltf_component_size(accessor->component_type);
-	bool standard_path = accessor->is_sparse == true ||
+	cgltf_size component_num  = cgltf_num_components(accessor->type);
+	cgltf_size component_size = cgltf_component_size(accessor->component_type);
+	bool standard_path = accessor->is_sparse ||
 		(accessor->type == cgltf_type_mat3 && component_size == 2) ||
 		(accessor->type == cgltf_type_mat3 && component_size == 1) ||
 		(accessor->type == cgltf_type_mat2 && component_size == 1);
