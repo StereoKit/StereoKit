@@ -366,6 +366,13 @@ void ui_slider_behavior(id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
 
+	// Input comes from the developer and could be any value, so we want to
+	// ensure it's clamped to the correct range.
+	if (value->x < min.x) value->x = min.x;
+	if (value->y < min.y) value->y = min.y;
+	if (value->x > max.x) value->x = max.x;
+	if (value->y > max.y) value->y = max.y;
+
 	// Find sizes of slider elements
 	vec2  range        = max - min;
 	vec2  percent      = { range.x == 0 ? 0.5f : (value->x - min.x)/range.x,  range.y == 0 ? 0.5f : (value->y - min.y)/range.y };
