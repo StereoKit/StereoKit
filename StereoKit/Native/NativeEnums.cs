@@ -1227,6 +1227,8 @@ namespace StereoKit
 		Solid,
 		/// <summary>An Anchor.</summary>
 		Anchor,
+		/// <summary>A RenderList</summary>
+		RenderList,
 	}
 
 }
