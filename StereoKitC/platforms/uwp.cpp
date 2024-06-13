@@ -242,7 +242,7 @@ platform_win_type_ platform_win_type() { return platform_win_type_creatable; }
 
 ///////////////////////////////////////////
 
-platform_win_t platform_win_get_existing(platform_surface_ surface_type) { return -1; }
+platform_win_t platform_win_get_existing(platform_surface_ ) { return -1; }
 
 ///////////////////////////////////////////
 
@@ -602,7 +602,7 @@ void uwp_window_thread(void *win_id_ptr) {
 
 ///////////////////////////////////////////
 
-platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) {
+platform_win_t platform_win_make(const char* title, recti_t, platform_surface_ surface_type) {
 	uwp_windows.add({});
 	platform_win_t win_id = uwp_windows.count - 1;
 	window_t      *win    = &uwp_windows[win_id];
@@ -747,7 +747,7 @@ void platform_msgbox_err(const char *text, const char *header) {
 
 ///////////////////////////////////////////
 
-void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, const platform_file_attr_t file_attr)) {
+void platform_iterate_dir(const char*, void*, void (*)(void* callback_data, const char* name, const platform_file_attr_t file_attr)) {
 }
 
 }

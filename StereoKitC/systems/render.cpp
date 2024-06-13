@@ -1203,7 +1203,7 @@ void render_list_add(const render_item_t *item) {
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	local.list_active->queue.add(*item);
+	list->queue.add(*item);
 	assets_addref(&item->material->header);
 	assets_addref(&item->mesh->header);
 }
