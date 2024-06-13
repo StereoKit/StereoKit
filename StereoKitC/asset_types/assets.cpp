@@ -51,6 +51,7 @@ struct asset_thread_t {
 ///////////////////////////////////////////
 
 array_t<asset_header_t *>      assets = {};
+ft_mutex_t                     assets_lock = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
 ft_mutex_t                     assets_job_lock = {};
@@ -83,12 +84,16 @@ void *assets_find(const char *id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void *assets_find(uint64_t id, asset_type_ type) {
-	int32_t count = assets.count;
-	for (int32_t i = 0; i < count; i++) {
-		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0)
-			return assets[i];
+	void* result = nullptr;
+	ft_mutex_lock(assets_lock);
+	for (int32_t i = 0; i < assets.count; i++) {
+		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0) {
+			result = assets[i];
+			break;
+		}
 	}
-	return nullptr;
+	ft_mutex_unlock(assets_lock);
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -133,7 +138,10 @@ void *assets_allocate(asset_type_ type) {
 	header->index   = assets.count;
 	header->state   = asset_state_none;
 	assets_addref(header);
+
+	ft_mutex_lock(assets_lock);
 	assets.add(header);
+	ft_mutex_unlock(assets_lock);
 	return header;
 }
 
@@ -231,12 +239,14 @@ void assets_destroy(asset_header_t *asset) {
 	}
 
 	// Remove it from our list of assets
+	ft_mutex_lock(assets_lock);
 	for (int32_t i = 0; i < assets.count; i++) {
 		if (assets[i] == asset) {
 			assets.remove(i);
 			break;
 		}
 	}
+	ft_mutex_unlock(assets_lock);
 
 	// And at last, free the memory we allocated for it!
 	sk_free(asset);
@@ -342,6 +352,7 @@ char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
+	assets_lock                     = ft_mutex_create();
 	assets_multithread_destroy_lock = ft_mutex_create();
 	assets_job_lock                 = ft_mutex_create();
 	asset_thread_task_mtx           = ft_mutex_create();
@@ -437,6 +448,7 @@ void assets_shutdown() {
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
+	ft_mutex_destroy(&assets_lock);
 	ft_mutex_destroy(&assets_multithread_destroy_lock);
 	ft_mutex_destroy(&assets_job_lock);
 	ft_mutex_destroy(&assets_load_event_lock);
