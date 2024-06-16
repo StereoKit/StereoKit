@@ -1672,7 +1672,20 @@ SK_API int32_t               render_list_prev_count(const render_list_t list);
 
 ///////////////////////////////////////////
 
-SK_API void          hierarchy_push              (const sk_ref(matrix) transform);
+/*When used with a hierarchy modifying function that will push/pop items onto a
+  stack, this can be used to change the behavior of how parent hierarchy items
+  will affect the item being added to the top of the stack.*/
+typedef enum hierarchy_parent_ {
+	/*Inheriting is generally the default behavior of a hierarchy stack, the
+	  current item will inherit the properties of the parent stack item in some
+	  form or another.*/
+	hierarchy_parent_inherit,
+	/*Ignoring the parent hierarchy stack item will let you skip inheriting
+	  anything from the parent item. The new item remains exactly as provided.*/
+	hierarchy_parent_ignore,
+} hierarchy_parent_;
+
+SK_API void          hierarchy_push              (const sk_ref(matrix) transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void          hierarchy_pop               (void);
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        (void);

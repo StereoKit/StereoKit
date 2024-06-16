@@ -21,8 +21,13 @@
 		/// stack! All Push calls must have an accompanying Pop call.</summary>
 		/// <param name="parentTransform">The transform Matrix you want to 
 		/// apply to all following draw calls.</param>
-		public static void Push(in Matrix parentTransform)
-			=> NativeAPI.hierarchy_push(parentTransform);
+		/// <param name="parentBehavior">This determines how this matrix
+		/// combines with the parent matrix below it. Normal behavior is to
+		/// "inherit" the parent matrix, but there are cases where you may wish
+		/// to entirely ignore the parent transform. For example, if you're in
+		/// UI space, and wish to do some world space rendering.</param>
+		public static void Push(in Matrix parentTransform, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.hierarchy_push(parentTransform, parentBehavior);
 
 		/// <summary>Removes the top Matrix from the stack!</summary>
 		public static void Pop()
