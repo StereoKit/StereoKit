@@ -1066,8 +1066,8 @@ void ui_pop_id() {
 
 ///////////////////////////////////////////
 
-void ui_push_enabled(bool32_t enabled, bool32_t ignore_parent) {
-	skui_enabled_stack.add(ignore_parent
+void ui_push_enabled(bool32_t enabled, hierarchy_parent_ parent_behavior) {
+	skui_enabled_stack.add(parent_behavior == hierarchy_parent_ignore
 		? enabled
 		: ((bool)enabled == true) && ((bool)ui_is_enabled() == true));
 }

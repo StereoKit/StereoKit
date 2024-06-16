@@ -175,7 +175,7 @@ SK_API void     ui_pop_text_style        (void);
 SK_API text_style_t ui_get_text_style    (void);
 SK_API void     ui_push_tint             (color128 tint_gamma);
 SK_API void     ui_pop_tint              (void);
-SK_API void     ui_push_enabled          (bool32_t enabled, bool32_t ignore_parent sk_default(false));
+SK_API void     ui_push_enabled          (bool32_t enabled, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void     ui_pop_enabled           (void);
 SK_API bool32_t ui_is_enabled            (void);
 SK_API void     ui_push_preserve_keyboard(bool32_t preserve_keyboard);
