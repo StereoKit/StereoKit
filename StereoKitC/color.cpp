@@ -105,6 +105,58 @@ vec3 color_to_lab(const color128 &color) {
 
 ///////////////////////////////////////////
 
+color128 color_oklab(float lightness, float a, float b, float transparency) {
+	float l_ = lightness + 0.3963377774f * a + 0.2158037573f * b;
+	float m_ = lightness - 0.1055613458f * a - 0.0638541728f * b;
+	float s_ = lightness - 0.0894841775f * a - 1.2914855480f * b;
+
+	float l = l_ * l_ * l_;
+	float m = m_ * m_ * m_;
+	float s = s_ * s_ * s_;
+
+	return {
+		+4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
+		-1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
+		-0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s,
+		transparency };
+}
+
+///////////////////////////////////////////
+
+vec3 color_to_oklab(const sk_ref(color128) color) {
+	float l = 0.4122214708f * color.r + 0.5363325363f * color.g + 0.0514459929f * color.b;
+	float m = 0.2119034982f * color.r + 0.6806995451f * color.g + 0.1073969566f * color.b;
+	float s = 0.0883024619f * color.r + 0.2817188376f * color.g + 0.6299787005f * color.b;
+
+	float l_ = cbrtf(l);
+	float m_ = cbrtf(m);
+	float s_ = cbrtf(s);
+
+	return {
+		0.2104542553f * l_ + 0.7936177850f * m_ - 0.0040720468f * s_,
+		1.9779984951f * l_ - 2.4285922050f * m_ + 0.4505937099f * s_,
+		0.0259040371f * l_ + 0.7827717662f * m_ - 0.8086757660f * s_ };
+}
+
+///////////////////////////////////////////
+
+color128 color_okhcl(float hue, float chroma, float lightness, float transparency) {
+	float angle = hue * (MATH_PI * 2);
+	return color_oklab(lightness, cosf(angle) * chroma, sinf(angle) * chroma, transparency);
+}
+
+///////////////////////////////////////////
+
+vec3 color_to_okhcl(const sk_ref(color128) color) {
+	vec3  lab = color_to_oklab(color);
+	float l   = lab.x;
+	float c   = sqrtf(lab.y*lab.y + lab.z*lab.z);
+	float h   = atan2f(lab.z, lab.x);
+	return { h, c, l };
+}
+
+///////////////////////////////////////////
+
 color128 color_to_linear(color128 srgb_gamma_correct) {
 	return {
 		powf(srgb_gamma_correct.r, 2.2f),

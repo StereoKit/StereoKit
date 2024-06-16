@@ -65,8 +65,8 @@ namespace StereoKit
 	/// 
 	/// Also note that RGB is often a terrible color format for picking
 	/// colors, but it's how our displays work and we're stuck with it. If
-	/// you want to create a color via code, try out the static Color.HSV
-	/// method instead!
+	/// you want to create a color via code, try out the static Color.HSV or
+	/// Color.OkHCL method instead!
 	/// 
 	/// A note on gamma space vs. linear space colors! `Color` is not 
 	/// inherently one or the other, but most color values we work with tend
@@ -87,24 +87,29 @@ namespace StereoKit
 		/// <summary>Pure transparent black! Same as (0,0,0,0).</summary>
 		public static readonly Color BlackTransparent = new Color(0,0,0,0);
 
-		/// <summary>Red component, a value that is generally between 0-1</summary>
+		/// <summary>Red component, a value that is generally between 0-1
+		/// </summary>
 		public float r;
-		/// <summary>Green component, a value that is generally between 0-1</summary>
+		/// <summary>Green component, a value that is generally between 0-1
+		/// </summary>
 		public float g;
-		/// <summary>Blue component, a value that is generally between 0-1</summary>
+		/// <summary>Blue component, a value that is generally between 0-1
+		/// </summary>
 		public float b;
-		/// <summary>Alpha, or opacity component, a value that is generally between 0-1, where 0 is 
-		/// completely transparent, and 1 is completely opaque.</summary>
+		/// <summary>Alpha, or opacity component, a value that is generally
+		/// between 0-1, where 0 is completely transparent, and 1 is completely
+		/// opaque.</summary>
 		public float a;
 
-		/// <summary>Try Color.HSV instead! But if you really need to create a color from RGB
-		/// values, I suppose you're in the right place. All parameter values are generally in
-		/// the range of 0-1.</summary>
+		/// <summary>Try Color.HSV or Color.OkHCL instead! But if you really
+		/// need to create a color from RGB values, I suppose you're in the
+		/// right place. All parameter values are generally in the range of
+		/// 0-1.</summary>
 		/// <param name="red">Red component, 0-1.</param>
 		/// <param name="green">Green component, 0-1.</param>
 		/// <param name="blue">Blue component, 0-1.</param>
-		/// <param name="opacity">Opacity, or the alpha component, 0-1 where 0 is completely 
-		/// transparent, and 1 is completely opaque.</param>
+		/// <param name="opacity">Opacity, or the alpha component, 0-1 where 0
+		/// is completely transparent, and 1 is completely opaque.</param>
 		public Color(float red, float green, float blue, float opacity=1)
 		{
 			this.r = red;
@@ -124,9 +129,26 @@ namespace StereoKit
 		/// <summary>Converts the gamma space RGB color to a CIE LAB color
 		/// space value! Conversion back and forth from LAB space could be
 		/// somewhat lossy.</summary>
-		/// <returns>An LAB vector where x=L, y=A, z=B.</returns>
+		/// <returns>An LAB color vector where x=L, y=A, z=B.</returns>
 		public Vec3 ToLAB()
 			=> NativeAPI.color_to_lab(this);
+
+		/// <summary>Converts the gamma space RGB color to an Oklab color
+		/// space value! Oklab is a perceptual color space where lightness is
+		/// preserved across colors. See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+		/// for details!</summary>
+		/// <returns>An Oklab color vector where x=L, y=A, z=B.</returns>
+		public Vec3 ToOklab()
+			=> NativeAPI.color_to_oklab(this);
+
+		/// <summary>Converts the gamma space RGB color to an Oklab hue/chroma/
+		/// lightness color space value! Oklab is a perceptual color space
+		/// where lightness is preserved across colors. See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+		/// for details!</summary>
+		/// <returns>An Oklab hue/chroma/lightness color vector where x=hue,
+		/// y=chroma, z=lightness.</returns>
+		public Vec3 ToOkHCL()
+			=> NativeAPI.color_to_okhcl(this);
 
 		/// <summary>Creates a Red/Green/Blue gamma space color from
 		/// Hue/Saturation/Value information.</summary>
@@ -201,6 +223,89 @@ namespace StereoKit
 		/// values.</returns>
 		public static Color LAB(Vec3 lab, float opacity = 1)
 			=> NativeAPI.color_lab(lab.x, lab.y, lab.z, opacity);
+
+		/// <summary>Creates a gamma space RGB color from an Oklab perceptual
+		/// color space. Oklab is a color space that models human perception,
+		/// and has significantly more accurate to perception lightness
+		/// values, so this is an excellent color space for color operations
+		/// that wish to preserve color brightness properly. OkHCL may be a
+		/// much more intuitive function to use instead.
+		/// 
+		/// See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+		/// for details!</summary>
+		/// <param name="lightness">Lightness of the color! Range is 0-1.</param>
+		/// <param name="a">'a' is from red to green. Range is 0-1.</param>
+		/// <param name="b">'b' is from blue to yellow. Range is 0-1.</param>
+		/// <param name="transparency">The transparency copied into the final
+		/// color!</param>
+		/// <returns>A gamma space RGBA color constructed from the Oklab
+		/// values.</returns>
+		public static Color Oklab(float lightness, float a, float b, float transparency=1)
+			=> NativeAPI.color_oklab(lightness, a, b, transparency);
+
+        /// <summary>Creates a gamma space RGB color from an Oklab perceptual
+        /// color space. Oklab is a color space that models human perception,
+        /// and has significantly more accurate to perception lightness
+        /// values, so this is an excellent color space for color operations
+        /// that wish to preserve color brightness properly. OkHCL may be a
+        /// much more intuitive function to use instead.
+        /// 
+        /// See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+        /// for details!</summary>
+        /// <param name="LAB">Lightness of the color! Range is 0-1.
+        /// 'a' is from red to green. Range is 0-1.
+        /// 'b' is from blue to yellow. Range is 0-1.</param>
+        /// <param name="transparency">The transparency copied into the final
+        /// color!</param>
+        /// <returns>A gamma space RGBA color constructed from the Oklab
+        /// values.</returns>
+        public static Color Oklab(Vec3 LAB, float transparency=1)
+			=> NativeAPI.color_oklab(LAB.x, LAB.y, LAB.z, transparency);
+
+		/// <summary>Creates a gamma space RGB color from an Oklab perceptual
+		/// color space, using cylindrical values similar to HSV! Oklab is a
+		/// color space that models human perception, and has significantly
+		/// more accurate to perception lightness values, so this is an
+		/// excellent color space for color operations that wish to preserve
+		/// color brightness properly.
+		/// 
+		/// See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+		/// for details!</summary>
+		/// <param name="hue">Hue most directly relates to the color as we
+		/// think of it! 0 is red, 0.1667 is yellow, 0.3333 is green, 0.5 is
+		/// cyan, 0.6667 is blue, 0.8333 is magenta, and 1 is red again!
+		/// </param>
+		/// <param name="chroma">The vibrancy of the color, where 0 is straight
+		/// up a shade of gray, and 1 is 'poke you in the eye colorful'.
+		/// </param>
+		/// <param name="lightness">The brightness of the color! 0 is always
+		/// black.</param>
+		/// <returns>A gamma space RGBA color constructed from the Oklab
+		/// values.</returns>
+		public static Color OkHCL(float hue, float chroma, float lightness, float transparency=1)
+			=> NativeAPI.color_okhcl(hue, chroma, lightness, transparency);
+
+		/// <summary>Creates a gamma space RGB color from an Oklab perceptual
+		/// color space, using cylindrical values similar to HSV! Oklab is a
+		/// color space that models human perception, and has significantly
+		/// more accurate to perception lightness values, so this is an
+		/// excellent color space for color operations that wish to preserve
+		/// color brightness properly.
+		/// 
+		/// See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
+		/// for details!</summary>
+		/// <param name="HCL">Hue most directly relates to the color as we
+		/// think of it! 0 is red, 0.1667 is yellow, 0.3333 is green, 0.5 is
+		/// cyan, 0.6667 is blue, 0.8333 is magenta, and 1 is red again!
+		/// 
+		/// The vibrancy of the color, where 0 is straight up a shade of gray,
+		/// and 1 is 'poke you in the eye colorful'.
+		/// 
+		/// The brightness of the color! 0 is always black.</param>
+		/// <returns>A gamma space RGBA color constructed from the Oklab
+		/// values.</returns>
+		public static Color OkHCL(Vec3 HCL, float transparency=1)
+			=> NativeAPI.color_okhcl(HCL.x, HCL.y, HCL.z, transparency);
 
 		/// <summary>Create a color from an integer based hex value! This can
 		/// make it easier to copy over colors from the web. This isn't a

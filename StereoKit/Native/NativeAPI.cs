@@ -105,11 +105,15 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_hsv   (float hue, float saturation, float value, float transparency);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_hsv(in Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_lab   (float l, float a, float b, float transparency);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_lab(in Color color);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_to_linear(Color srgb_gamma_correct);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_hsv      (float hue, float saturation, float value, float transparency);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_hsv   (in Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_lab      (float l, float a, float b, float transparency);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_lab   (in Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_oklab    (float lightness, float a, float b, float transparency);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_oklab (in Color color);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_okhcl    (float hue, float chroma, float lightness, float transparency);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_okhcl (in Color color);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_to_linear(Color srgb_gamma_correct);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_to_gamma (Color srgb_linear);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr  gradient_create ();

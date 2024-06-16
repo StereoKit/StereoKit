@@ -684,6 +684,10 @@ SK_API        color128 color_hsv      (float hue, float saturation, float value,
 SK_API        vec3     color_to_hsv   (const sk_ref(color128) color);
 SK_API        color128 color_lab      (float l, float a, float b, float transparency);
 SK_API        vec3     color_to_lab   (const sk_ref(color128) color);
+SK_API        color128 color_oklab    (float lightness, float a, float b, float transparency);
+SK_API        vec3     color_to_oklab (const sk_ref(color128) color);
+SK_API        color128 color_okhcl    (float hue, float chroma, float lightness, float transparency);
+SK_API        vec3     color_to_okhcl (const sk_ref(color128) color);
 SK_API        color128 color_to_linear(color128 srgb_gamma_correct);
 SK_API        color128 color_to_gamma (color128 srgb_linear);
 
