@@ -727,7 +727,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle ui_get_text_style   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_tint             (Color tint_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_tint              ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          ([MarshalAs(UnmanagedType.Bool)] bool enabled, [MarshalAs(UnmanagedType.Bool)] bool ignoreParent);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_enabled          ([MarshalAs(UnmanagedType.Bool)] bool enabled, HierarchyParent parentBehavior);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_enabled           ();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_enabled            ();

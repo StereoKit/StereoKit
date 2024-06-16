@@ -215,7 +215,7 @@ class DocUI : ITest
 			}
 			UI.PopEnabled();
 
-			UI.PushEnabled(true, true);
+			UI.PushEnabled(true, HierarchyParent.Ignore);
 			{
 				// This label was enabled, overriding the parent, and so is
 				// enabled.

@@ -1322,8 +1322,20 @@ namespace StereoKit
 		/// interactable?</param>
 		/// <param name="ignoreParent">Do we want to ignore or inherit the
 		/// state of the current stack?</param>
-		public static void PushEnabled(bool enabled, bool ignoreParent = false)
-			=> NativeAPI.ui_push_enabled(enabled, ignoreParent);
+		[Obsolete("Use override with HierarchyParent parameter")]
+		public static void PushEnabled(bool enabled, bool ignoreParent)
+			=> NativeAPI.ui_push_enabled(enabled, ignoreParent ? HierarchyParent.Ignore : HierarchyParent.Inherit);
+
+		/// <summary>All UI between PushEnabled and its matching PopEnabled
+		/// will set the UI to an enabled or disabled state, allowing or
+		/// preventing interaction with specific elements. The default state is
+		/// true.</summary>
+		/// <param name="enabled">Should the following elements be enabled and
+		/// interactable?</param>
+		/// <param name="parentBehavior">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		public static void PushEnabled(bool enabled, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.ui_push_enabled(enabled, parentBehavior);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>
