@@ -55,12 +55,12 @@ void hierarchy_step() {
 
 ///////////////////////////////////////////
 
-void hierarchy_push(const matrix &transform) {
+void hierarchy_push(const matrix &transform, hierarchy_parent_ parent_behavior) {
 	local->stack.add(hierarchy_item_t{transform, matrix_identity, false});
 	local->enabled = local->userenabled;
 
 	int32_t size = local->stack.count;
-	if (size > 1)
+	if (size > 1 && parent_behavior == hierarchy_parent_inherit)
 		matrix_mul(local->stack[size - 1].transform, local->stack[size - 2].transform, local->stack[size - 1].transform);
 }
 
