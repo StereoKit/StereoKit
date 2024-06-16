@@ -66,7 +66,7 @@ namespace StereoKit
 	/// Also note that RGB is often a terrible color format for picking
 	/// colors, but it's how our displays work and we're stuck with it. If
 	/// you want to create a color via code, try out the static Color.HSV or
-	/// Color.OkHCL method instead!
+	/// Color.OkHSV method instead!
 	/// 
 	/// A note on gamma space vs. linear space colors! `Color` is not 
 	/// inherently one or the other, but most color values we work with tend
@@ -141,14 +141,14 @@ namespace StereoKit
 		public Vec3 ToOklab()
 			=> NativeAPI.color_to_oklab(this);
 
-		/// <summary>Converts the gamma space RGB color to an Oklab hue/chroma/
-		/// lightness color space value! Oklab is a perceptual color space
+		/// <summary>Converts the gamma space RGB color to an Oklab hue/saturation/
+		/// value color space value! Oklab is a perceptual color space
 		/// where lightness is preserved across colors. See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
 		/// for details!</summary>
-		/// <returns>An Oklab hue/chroma/lightness color vector where x=hue,
-		/// y=chroma, z=lightness.</returns>
-		public Vec3 ToOkHCL()
-			=> NativeAPI.color_to_okhcl(this);
+		/// <returns>An Oklab hue/saturation/value color vector where x=hue,
+		/// y=saturation, z=value.</returns>
+		public Vec3 ToOkHSV()
+			=> NativeAPI.color_to_okhsv(this);
 
 		/// <summary>Creates a Red/Green/Blue gamma space color from
 		/// Hue/Saturation/Value information.</summary>
@@ -275,15 +275,15 @@ namespace StereoKit
 		/// think of it! 0 is red, 0.1667 is yellow, 0.3333 is green, 0.5 is
 		/// cyan, 0.6667 is blue, 0.8333 is magenta, and 1 is red again!
 		/// </param>
-		/// <param name="chroma">The vibrancy of the color, where 0 is straight
+		/// <param name="saturation">The vibrancy of the color, where 0 is straight
 		/// up a shade of gray, and 1 is 'poke you in the eye colorful'.
 		/// </param>
-		/// <param name="lightness">The brightness of the color! 0 is always
+		/// <param name="value">The brightness of the color! 0 is always
 		/// black.</param>
 		/// <returns>A gamma space RGBA color constructed from the Oklab
 		/// values.</returns>
-		public static Color OkHCL(float hue, float chroma, float lightness, float transparency=1)
-			=> NativeAPI.color_okhcl(hue, chroma, lightness, transparency);
+		public static Color OkHSV(float hue, float saturation, float value, float transparency=1)
+			=> NativeAPI.color_okhsv(hue, saturation, value, transparency);
 
 		/// <summary>Creates a gamma space RGB color from an Oklab perceptual
 		/// color space, using cylindrical values similar to HSV! Oklab is a
@@ -294,7 +294,7 @@ namespace StereoKit
 		/// 
 		/// See [Bjorn Ottosson's post](https://bottosson.github.io/posts/oklab/)
 		/// for details!</summary>
-		/// <param name="HCL">Hue most directly relates to the color as we
+		/// <param name="HSV">Hue most directly relates to the color as we
 		/// think of it! 0 is red, 0.1667 is yellow, 0.3333 is green, 0.5 is
 		/// cyan, 0.6667 is blue, 0.8333 is magenta, and 1 is red again!
 		/// 
@@ -304,8 +304,8 @@ namespace StereoKit
 		/// The brightness of the color! 0 is always black.</param>
 		/// <returns>A gamma space RGBA color constructed from the Oklab
 		/// values.</returns>
-		public static Color OkHCL(Vec3 HCL, float transparency=1)
-			=> NativeAPI.color_okhcl(HCL.x, HCL.y, HCL.z, transparency);
+		public static Color OkHSV(Vec3 HSV, float transparency=1)
+			=> NativeAPI.color_okhsv(HSV.x, HSV.y, HSV.z, transparency);
 
 		/// <summary>Create a color from an integer based hex value! This can
 		/// make it easier to copy over colors from the web. This isn't a

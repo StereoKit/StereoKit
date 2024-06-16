@@ -27,7 +27,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AppFocus    sk_app_focus();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern QuitReason    sk_get_quit_reason();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern QuitReason  sk_get_quit_reason();
 
 		///////////////////////////////////////////
 
@@ -106,13 +106,13 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_hsv      (float hue, float saturation, float value, float transparency);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_hsv   (in Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_hsv   (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_lab      (float l, float a, float b, float transparency);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_lab   (in Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_lab   (Color color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_oklab    (float lightness, float a, float b, float transparency);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_oklab (in Color color);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_okhcl    (float hue, float chroma, float lightness, float transparency);
-        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_okhcl (in Color color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_oklab (Color color);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_okhsv    (float hue, float chroma, float lightness, float transparency);
+        [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3  color_to_okhsv (Color color);
         [DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_to_linear(Color srgb_gamma_correct);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color color_to_gamma (Color srgb_linear);
 
