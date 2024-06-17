@@ -45,8 +45,23 @@ namespace StereoKit
 		/// the RenderList.</summary>
 		public void Clear() => NativeAPI.render_list_clear(_inst);
 
+		public void Add(Mesh mesh, Material material, Matrix worldTransform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_list_add_mesh(_inst, mesh._inst, material._inst, worldTransform, colorLinear, layer);
+
+		public void Add(Model model, Matrix worldTransform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_list_add_model(_inst, model._inst, worldTransform, colorLinear, layer);
+
+		public void Add(Model model, Material materialOverride, Matrix worldTransform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_list_add_model_mat(_inst, model._inst, materialOverride._inst, worldTransform, colorLinear, layer);
+
+		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Rect viewport, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All)
+			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, viewport, layerFilter, clear);
+
 		/// <summary>The default RenderList used by the Renderer for the
 		/// primary display surface.</summary>
 		public static RenderList Primary => Default.RenderList;
+
+		public static void Push(RenderList list) => NativeAPI.render_list_push(list._inst);
+		public static void Pop() => NativeAPI.render_list_pop();
 	}
 }

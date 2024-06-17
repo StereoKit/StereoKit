@@ -1551,12 +1551,19 @@ SK_API render_list_t         render_get_primary_list();
 
 ///////////////////////////////////////////
 
-SK_API render_list_t         render_list_create    ();
-SK_API void                  render_list_addref    (      render_list_t list);
-SK_API void                  render_list_release   (      render_list_t list);
-SK_API void                  render_list_clear     (      render_list_t list);
-SK_API int32_t               render_list_item_count(const render_list_t list);
-SK_API int32_t               render_list_prev_count(const render_list_t list);
+SK_API render_list_t         render_list_create       ();
+SK_API void                  render_list_addref       (      render_list_t list);
+SK_API void                  render_list_release      (      render_list_t list);
+SK_API void                  render_list_clear        (      render_list_t list);
+SK_API int32_t               render_list_item_count   (const render_list_t list);
+SK_API int32_t               render_list_prev_count   (const render_list_t list);
+SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport_px sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all));
+
+SK_API void                  render_list_push         (      render_list_t list);
+SK_API void                  render_list_pop          ();
 
 ///////////////////////////////////////////
 

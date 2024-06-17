@@ -654,6 +654,13 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
+		public static Tex FromRenderTarget(int width, int height, TexFormat format = TexFormat.Rgba32Linear)
+		{
+			Tex result = new Tex(TexType.Rendertarget, format);
+			result.SetColors(width, height, IntPtr.Zero);
+			return result;
+		}
+
 		/// <summary>This generates a solid color texture of the given
 		/// dimensions. Can be quite nice for creating placeholder textures!
 		/// Make sure to match linear/gamma colors with the correct format.
