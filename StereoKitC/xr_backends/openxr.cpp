@@ -941,10 +941,12 @@ void openxr_step_end() {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
 		}
 #endif
+		audio_pause();
 		while (xr_session_state == XR_SESSION_STATE_IDLE) {
 			platform_sleep(100);
 			openxr_poll_events();
 		}
+		audio_resume();
 #if defined(SK_OS_ANDROID)
 		if (xr_ext_available.KHR_android_thread_settings) {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
