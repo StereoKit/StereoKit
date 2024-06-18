@@ -26,6 +26,7 @@ ma_device         au_mic_device     = {};
 sound_t           au_mic_sound      = {};
 char             *au_mic_name       = nullptr;
 bool              au_recording      = false;
+bool              au_paused         = false;
 
 ///////////////////////////////////////////
 
@@ -445,6 +446,24 @@ void audio_shutdown() {
 	sound_release(au_mic_sound);
 	au_mic_sound = nullptr;
 	sk_free(au_mix_temp);
+}
+
+///////////////////////////////////////////
+
+void audio_pause() {
+	if (au_paused) return;
+
+	au_paused = true;
+	ma_device_stop(&au_device);
+}
+
+///////////////////////////////////////////
+
+void audio_resume() {
+	if (!au_paused) return;
+
+	au_paused = false;
+	ma_device_start(&au_device);
 }
 
 }
