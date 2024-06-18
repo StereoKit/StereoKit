@@ -43,7 +43,7 @@ class DemoRenderList : ITest
 
 		Vec3 at = new Vec3(0,0,1.8f);
 		Renderer.ClearColor = Color.HSV(0.4f, 0.3f, 0.5f);
-		list.DrawNow(renderTex, Matrix.TR(-at, Quat.LookAt(at, Vec3.Zero)), Matrix.Perspective(90, 1, 0.01f,50), new Rect(0,0,1024,1024));
+		list.DrawNow(renderTex, Matrix.TR(-at, Quat.LookAt(at, Vec3.Zero)), Matrix.Perspective(90, 1, 0.01f,50), new Rect(0,0,1,1));
 
 		renderMat[MatParamName.DiffuseTex] = renderTex;
 	}

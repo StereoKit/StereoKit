@@ -661,28 +661,19 @@ color128 render_get_clear_color_ln() {
 ///////////////////////////////////////////
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	matrix t = hierarchy_use_top() 
-		? transform * hierarchy_top() 
-		: transform;
-	render_list_add_mesh(local.list_active, mesh, material, t, color_linear, layer);
+	render_list_add_mesh(local.list_active, mesh, material, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
-	matrix t = hierarchy_use_top()
-		? transform * hierarchy_top()
-		: transform;
-	render_list_add_model_mat(local.list_active, model, material_override, t, color_linear, layer);
+	render_list_add_model_mat(local.list_active, model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	matrix t = hierarchy_use_top()
-		? transform * hierarchy_top()
-		: transform;
-	render_list_add_model_mat(local.list_active, model, nullptr, t, color_linear, layer);
+	render_list_add_model_mat(local.list_active, model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
@@ -1328,13 +1319,14 @@ int32_t render_list_prev_count(render_list_t list) {
 
 ///////////////////////////////////////////
 
-void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, matrix world_transform, color128 color_linear, render_layer_ layer) {
+void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, matrix transform, color128 color_linear, render_layer_ layer) {
 	render_item_t item;
 	item.mesh      = mesh;
 	item.mesh_inds = mesh->ind_draw;
 	item.color     = color_linear;
 	item.layer     = (uint16_t)layer;
-	math_matrix_to_fast(world_transform, &item.transform);
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), item.transform);
+	else                     math_matrix_to_fast(transform, &item.transform);
 
 	material_t curr = material;
 	while (curr != nullptr) {
@@ -1347,15 +1339,16 @@ void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, 
 
 ///////////////////////////////////////////
 
-void render_list_add_model(render_list_t list, model_t model, matrix world_transform, color128 color_linear, render_layer_ layer) {
-	render_list_add_model_mat(list, model, nullptr, world_transform, color_linear, layer);
+void render_list_add_model(render_list_t list, model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_list_add_model_mat(list, model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
-void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer) {
+void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
 	XMMATRIX root;
-	math_matrix_to_fast(world_transform, &root);
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), root);
+	else                     math_matrix_to_fast(transform, &root);
 
 	anim_update_model(model);
 	for (int32_t i = 0; i < model->visuals.count; i++) {
@@ -1396,10 +1389,10 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	}
 
 	int32_t viewport_i[4] = {
-		(int32_t)viewport.x,
-		(int32_t)viewport.y,
-		(int32_t)viewport.w,
-		(int32_t)viewport.h };
+		(int32_t)(viewport.x * to_rendertarget->width),
+		(int32_t)(viewport.y * to_rendertarget->height),
+		(int32_t)(viewport.w * to_rendertarget->width),
+		(int32_t)(viewport.h * to_rendertarget->height) };
 	skg_viewport(viewport_i);
 
 	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
