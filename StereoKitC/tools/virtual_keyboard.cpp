@@ -315,6 +315,13 @@ bool _key_toggle(const keylayout_key_t* key, bool32_t *toggle, vec2 size) {
 ///////////////////////////////////////////
 
 void virtualkeyboard_step() {
+
+	// Make sure any keys pressed last frame get a release event this frame. We
+	// need this to execute regardless of if the keyboard is visible, since we
+	// may need to release keys that caused the keyboard to close on previous
+	// frames.
+	virtualkeyboard_release_keys();
+
 	if (!local.open) return;
 	const keylayout_info_t* keyboard = &local.keyboards[local.active_context][local.active_layout];
 
@@ -324,9 +331,6 @@ void virtualkeyboard_step() {
 	float cell_size   = cell_height * 0.5f;
 	// Calculate the width in advance, so the keyboard doesn't "pop"
 	float window_width = cell_size * keyboard->width_cells + gutter * keyboard->width_gutters + margin * 2;
-
-	// Make sure any keys pressed last frame get a release event this frame.
-	virtualkeyboard_release_keys();
 
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
