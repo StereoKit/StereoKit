@@ -53,6 +53,8 @@ void render_pipeline_draw() {
 	if (!local.begin_called)
 		render_pipeline_begin();
 
+	render_list_t list = render_get_primary_list();
+
 	for (int32_t i = 0; i < local.surfaces.count; i++) {
 		pipeline_surface_t* s = &local.surfaces[i];
 		if (s->enabled == false) continue;
@@ -72,7 +74,7 @@ void render_pipeline_draw() {
 				skg_viewport(viewport);
 
 				int32_t idx = quilt_x + quilt_y * s->quilt_width;
-				render_draw_queue(s->view_matrices, s->proj_matrices, idx, s->array_count, s->layer);
+				render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, s->layer);
 			} }
 #elif defined (SKG_OPENGL)
 			for (int32_t layer = 0; layer < s->array_count; layer++) {
@@ -85,7 +87,7 @@ void render_pipeline_draw() {
 					skg_viewport(viewport);
 
 					int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
-					render_draw_queue(s->view_matrices, s->proj_matrices, idx, 1, s->layer);
+					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, s->layer);
 				} }
 			}
 #else
@@ -95,7 +97,9 @@ void render_pipeline_draw() {
 		skg_event_end();
 	}
 
-	render_clear();
+	render_list_clear  (list);
+	render_list_release(list);
+
 	local.begin_called = false;
 }
 

@@ -1056,6 +1056,7 @@ typedef enum tex_address_ {
 
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
+SK_API tex_t        tex_create_rendertarget (int32_t width, int32_t height, int32_t msaa sk_default(1), tex_format_ color_format sk_default(tex_format_rgba32), tex_format_ depth_format sk_default(tex_format_depth16));
 SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_mem          (void *data, size_t data_size,                  bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
@@ -1663,12 +1664,19 @@ SK_API render_list_t         render_get_primary_list();
 
 ///////////////////////////////////////////
 
-SK_API render_list_t         render_list_create    ();
-SK_API void                  render_list_addref    (      render_list_t list);
-SK_API void                  render_list_release   (      render_list_t list);
-SK_API void                  render_list_clear     (      render_list_t list);
-SK_API int32_t               render_list_item_count(const render_list_t list);
-SK_API int32_t               render_list_prev_count(const render_list_t list);
+SK_API render_list_t         render_list_create       ();
+SK_API void                  render_list_addref       (      render_list_t list);
+SK_API void                  render_list_release      (      render_list_t list);
+SK_API void                  render_list_clear        (      render_list_t list);
+SK_API int32_t               render_list_item_count   (const render_list_t list);
+SK_API int32_t               render_list_prev_count   (const render_list_t list);
+SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport_px sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all));
+
+SK_API void                  render_list_push         (      render_list_t list);
+SK_API void                  render_list_pop          ();
 
 ///////////////////////////////////////////
 

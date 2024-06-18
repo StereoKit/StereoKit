@@ -170,6 +170,7 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_find                (string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create              (TexType type = TexType.Image, TexFormat format = TexFormat.Rgba32);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_rendertarget (int width, int height, int msaa, TexFormat color_format, TexFormat depth_format);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color32      ([In] Color32[] data, int width, int height, [MarshalAs(UnmanagedType.Bool)] bool srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_color128     ([In] Color[]   data, int width, int height, [MarshalAs(UnmanagedType.Bool)] bool srgb_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_create_mem          ([In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
@@ -485,12 +486,19 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_list_create    ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_addref    (IntPtr list);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_release   (IntPtr list);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_clear     (IntPtr list);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_item_count(IntPtr list);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_prev_count(IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_list_create       ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_addref       (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_release      (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_clear        (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_item_count   (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int                render_list_prev_count   (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_mesh     (IntPtr list, IntPtr mesh, IntPtr material,           Matrix transform, Color color_linear, RenderLayer layer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_model    (IntPtr list, IntPtr model,                           Matrix transform, Color color_linear, RenderLayer layer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_model_mat(IntPtr list, IntPtr model, IntPtr material_override, Matrix transform, Color color_linear, RenderLayer layer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_draw_now     (IntPtr list, IntPtr to_rendertarget, Matrix camera, Matrix projection, Rect viewport_px, RenderLayer layer_filter, RenderClear clear);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_push         (IntPtr list);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_pop          ();
 
 		///////////////////////////////////////////
 

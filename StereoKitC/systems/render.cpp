@@ -660,72 +660,24 @@ color128 render_get_clear_color_ln() {
 ///////////////////////////////////////////
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	render_item_t item;
-	item.mesh      = mesh;
-	item.mesh_inds = mesh->ind_draw;
-	item.color     = color_linear;
-	item.layer     = (uint16_t)layer;
-	if (hierarchy_use_top()) {
-		matrix_mul(transform, hierarchy_top(), item.transform);
-	} else {
-		math_matrix_to_fast(transform, &item.transform);
-	}
-
-	material_t curr = material;
-	while (curr != nullptr) {
-		item.material = curr;
-		item.sort_id  = render_sort_id(curr, mesh);
-		render_list_add(&item);
-		curr = curr->chain;
-	}
+	render_list_add_mesh(local.list_active, mesh, material, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
-	XMMATRIX root;
-	if (hierarchy_use_top()) {
-		matrix_mul(transform, hierarchy_top(), root);
-	} else {
-		math_matrix_to_fast(transform, &root);
-	}
-
-	anim_update_model(model);
-	for (int32_t i = 0; i < model->visuals.count; i++) {
-		const model_visual_t *vis = &model->visuals[i];
-		if (vis->visible == false) continue;
-		
-		render_item_t item;
-		item.mesh      = vis->mesh;
-		item.mesh_inds = vis->mesh->ind_count;
-		item.color     = color_linear;
-		item.layer     = (uint16_t)layer;
-		matrix_mul(vis->transform_model, root, item.transform);
-
-		material_t curr = material_override == nullptr ? vis->material : material_override;
-		while (curr != nullptr) {
-			item.material = curr;
-			item.sort_id  = render_sort_id(curr, vis->mesh);
-			render_list_add(&item);
-			curr = curr->chain;
-		}
-	}
-
-	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
-		model->transforms_changed = false;
-		anim_update_skin(model);
-	}
+	render_list_add_model_mat(local.list_active, model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+	render_list_add_model_mat(local.list_active, model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
+void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
 
 	// Copy camera information into the global buffer
@@ -788,7 +740,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	skg_event_end();
 	skg_event_begin("Execute Render List");
 
-	render_list_execute(local.list_primary, filter, view_count, 0, INT_MAX);
+	render_list_execute(list, filter, view_count, 0, INT_MAX);
 
 	skg_event_end();
 }
@@ -834,18 +786,13 @@ void render_check_screenshots() {
 
 		// Clear the viewport
 		if (local.screenshot_list[i].clear != render_clear_none) {
-			float color[4] = {
-				local.clear_col.r / 255.f,
-				local.clear_col.g / 255.f,
-				local.clear_col.b / 255.f,
-				local.clear_col.a / 255.f };
 			skg_target_clear(
 				(local.screenshot_list[i].clear & render_clear_depth),
-				(local.screenshot_list[i].clear & render_clear_color) ? &color[0] : (float*)nullptr);
+				(local.screenshot_list[i].clear & render_clear_color) ? &local.clear_col.r : (float*)nullptr);
 		}
 
 		// Render!
-		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
@@ -889,14 +836,9 @@ void render_check_viewpoints() {
 
 		// Clear the viewport
 		if (local.viewpoint_list[i].clear != render_clear_none) {
-			float color[4] = {
-				local.clear_col.r / 255.f,
-				local.clear_col.g / 255.f,
-				local.clear_col.b / 255.f,
-				local.clear_col.a / 255.f };
 			skg_target_clear(
 				(local.viewpoint_list[i].clear & render_clear_depth),
-				(local.viewpoint_list[i].clear & render_clear_color) ? &color[0] : (float *)nullptr);
+				(local.viewpoint_list[i].clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
 		}
 
 		// Set up the viewport if we've got one!
@@ -910,7 +852,7 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		// Release the reference we added, the user should have their own ref
@@ -925,7 +867,7 @@ void render_check_viewpoints() {
 
 void render_clear() {
 	//log_infof("draws: %d, instances: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.draw_instances, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
-	render_list_clear(local.list_active);
+	render_list_clear(local.list_primary);
 
 	local.last_material = nullptr;
 	local.last_shader   = nullptr;
@@ -1275,6 +1217,10 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view
 	}
 
 	list->state = render_list_state_rendered;
+
+	local.last_material = nullptr;
+	local.last_shader   = nullptr;
+	local.last_mesh     = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -1372,6 +1318,87 @@ int32_t render_list_item_count(render_list_t list) {
 
 int32_t render_list_prev_count(render_list_t list) {
 	return list->prev_count;
+}
+
+///////////////////////////////////////////
+
+void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_item_t item;
+	item.mesh      = mesh;
+	item.mesh_inds = mesh->ind_draw;
+	item.color     = color_linear;
+	item.layer     = (uint16_t)layer;
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), item.transform);
+	else                     math_matrix_to_fast(transform, &item.transform);
+
+	material_t curr = material;
+	while (curr != nullptr) {
+		item.material = curr;
+		item.sort_id  = render_sort_id(curr, mesh);
+		render_list_add_to(list, &item);
+		curr = curr->chain;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_list_add_model(render_list_t list, model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_list_add_model_mat(list, model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	XMMATRIX root;
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), root);
+	else                     math_matrix_to_fast(transform, &root);
+
+	anim_update_model(model);
+	for (int32_t i = 0; i < model->visuals.count; i++) {
+		const model_visual_t *vis = &model->visuals[i];
+		if (vis->visible == false) continue;
+		
+		render_item_t item;
+		item.mesh      = vis->mesh;
+		item.mesh_inds = vis->mesh->ind_count;
+		item.color     = color_linear;
+		item.layer     = (uint16_t)layer;
+		matrix_mul(vis->transform_model, root, item.transform);
+
+		material_t curr = material_override == nullptr ? vis->material : material_override;
+		while (curr != nullptr) {
+			item.material = curr;
+			item.sort_id  = render_sort_id(curr, vis->mesh);
+			render_list_add_to(list, &item);
+			curr = curr->chain;
+		}
+	}
+
+	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
+		model->transforms_changed = false;
+		anim_update_skin(model);
+	}
+}
+
+///////////////////////////////////////////
+
+void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport, render_layer_ layer_filter, render_clear_ clear) {
+	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
+
+	if (clear != render_clear_none) {
+		skg_target_clear(
+			(clear & render_clear_depth),
+			(clear & render_clear_color) ? &local.clear_col.r : (float*)nullptr);
+	}
+
+	int32_t viewport_i[4] = {
+		(int32_t)(viewport.x * to_rendertarget->width),
+		(int32_t)(viewport.y * to_rendertarget->height),
+		(int32_t)(viewport.w * to_rendertarget->width),
+		(int32_t)(viewport.h * to_rendertarget->height) };
+	skg_viewport(viewport_i);
+
+	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
 }
 
 ///////////////////////////////////////////
