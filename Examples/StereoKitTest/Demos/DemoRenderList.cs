@@ -5,7 +5,7 @@ class DemoRenderList : ITest
 	string title       = "Render Lists";
 	string description = "";
 
-	Tex renderTex = Tex.FromRenderTarget(1024, 1024, TexFormat.Rgba32);
+	Tex renderTex = Tex.RenderTarget(1024, 1024);
 	Material renderMat = Material.Unlit.Copy();
 
 	public void Step()

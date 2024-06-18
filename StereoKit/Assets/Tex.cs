@@ -654,11 +654,22 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
-		public static Tex FromRenderTarget(int width, int height, TexFormat format = TexFormat.Rgba32Linear)
+		/// <summary>This will assemble a texture ready for rendering to! It
+		/// creates a render target texture with no mip maps and a depth buffer
+		/// attached.</summary>
+		/// <param name="width">Width in pixels.</param>
+		/// <param name="height">Height in pixels</param>
+		/// <param name="multisample">Multisample level, or MSAA. This should
+		/// be 1, 2, 4, 8, or 16. The results will have moother edges with
+		/// higher values, but will cost more RAM and time to render.</param>
+		/// <param name="colorFormat">The format of the color surface.</param>
+		/// <param name="depthFormat">The format of the depth buffer. If this
+		/// is None, no depth buffer will be attached to this rendertarget.</param>
+		/// <returns>Returns a texture set up as a rendertarget.</returns>
+		public static Tex RenderTarget(int width, int height, int multisample = 1, TexFormat colorFormat = TexFormat.Rgba32, TexFormat depthFormat = TexFormat.Depth16)
 		{
-			Tex result = new Tex(TexType.Rendertarget, format);
-			result.SetColors(width, height, IntPtr.Zero);
-			return result;
+			IntPtr tex =  NativeAPI.tex_create_rendertarget(width, height, multisample, colorFormat, depthFormat);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
 		/// <summary>This generates a solid color texture of the given
