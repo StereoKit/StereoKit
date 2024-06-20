@@ -62,13 +62,11 @@ namespace StereoKit {
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
 
-		/// <summary>Loads a font and creates a font asset from it.</summary>
-		/// <param name="fontFiles">A list of file addresses for the font! For
-		/// example: 'C:/Windows/Fonts/segoeui.ttf'. If a glyph is not found,
-		/// StereoKit will look in the next font file in the list.</param>
-		/// <returns>A font from the given files, or null if all of the files
-		/// failed to load properly! If any of the given files successfully 
-		/// loads, then this font will be a valid asset.</returns>
+		/// <summary>Loads font from a specified list of font family names</summary>
+		/// <param name="fontFamily">List of font family names separated by comma(,)
+		/// similar to a list of names css allows.</param>
+		/// <returns>A font from the given font family names, Most of the OS provide 
+		/// fallback fonts, hence there will always be a set of fonts.</returns>
 		public static Font FromFamily(string fontFamily)
 		{
 			IntPtr inst = NativeAPI.font_create_family(fontFamily);
