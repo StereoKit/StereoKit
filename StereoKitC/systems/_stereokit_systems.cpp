@@ -32,7 +32,8 @@ bool stereokit_systems_register() {
 	system_t sys_platform_begin   = { "FrameBegin"  };
 	system_t sys_platform_render  = { "FrameRender" };
 
-	system_set_step_deps(sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
+	system_set_initialize_deps(sys_platform, "Assets");
+	system_set_step_deps      (sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
 
 	sys_platform       .func_initialize = platform_init;
 	sys_platform       .func_shutdown   = platform_shutdown;
@@ -72,11 +73,10 @@ bool stereokit_systems_register() {
 	systems_add(&sys_renderer);
 
 	system_t sys_assets = { "Assets" };
-	system_set_initialize_deps(sys_assets, "Platform");
-	system_set_step_deps      (sys_assets, "FrameRender");
-	sys_assets.func_initialize       = assets_init;
-	sys_assets.func_step             = assets_step;
-	sys_assets.func_shutdown         = assets_shutdown;
+	system_set_step_deps(sys_assets, "FrameRender");
+	sys_assets.func_initialize = assets_init;
+	sys_assets.func_step       = assets_step;
+	sys_assets.func_shutdown   = assets_shutdown;
 	systems_add(&sys_assets);
 
 	system_t sys_audio = { "Audio" };
