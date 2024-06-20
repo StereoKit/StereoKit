@@ -99,7 +99,7 @@
 	</Target>
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->
-	<Target Name="SKSDKCheckBuildFiles" BeforeTargets="BeforeBuild">
+	<Target Name="SKSDKCheckBuildFiles" AfterTargets="PreBuildEvent" BeforeTargets="CoreCompile">
 		<Error Condition="!Exists('$(SKSDKLibPath)')" Text="StereoKitC was not properly built! Binary file $(SKSDKLibPath) is missing." />
 	</Target>
 </Project>
