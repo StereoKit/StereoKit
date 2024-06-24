@@ -683,7 +683,9 @@ namespace StereoKit
 		/// <param name="height">Height in pixels</param>
 		/// <param name="multisample">Multisample level, or MSAA. This should
 		/// be 1, 2, 4, 8, or 16. The results will have moother edges with
-		/// higher values, but will cost more RAM and time to render.</param>
+		/// higher values, but will cost more RAM and time to render. Note that
+		/// GL platforms cannot trivially draw a multisample > 1 texture in a
+		/// shader.</param>
 		/// <param name="colorFormat">The format of the color surface.</param>
 		/// <param name="depthFormat">The format of the depth buffer. If this
 		/// is None, no depth buffer will be attached to this rendertarget.</param>

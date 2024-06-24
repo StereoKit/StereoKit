@@ -517,7 +517,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_format_ color_format, tex_format_ depth_format) {
 	tex_t result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
-	tex_set_color_arr(result, width, height, nullptr, 1, nullptr, 8);
+	tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
 	if (depth_format != tex_format_none)
 		tex_add_zbuffer(result, depth_format);
 
