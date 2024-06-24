@@ -100,6 +100,7 @@
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->
 	<Target Name="SKSDKCheckBuildFiles" AfterTargets="PreBuildEvent" BeforeTargets="CoreCompile">
-		<Error Condition="!Exists('$(SKSDKLibPath)')" Text="StereoKitC was not properly built! Binary file $(SKSDKLibPath) is missing." />
+		<Error Condition="!Exists('$(SKSDKLibPath)')" Text="[StereoKit SDK] StereoKitC was not properly built! Binary file $(SKSDKLibPath) is missing." />
+		<Message Importance="high" Text="[StereoKit SDK] Using locally built StereoKitC at $(SKSDKLibPath)"/>
 	</Target>
 </Project>
