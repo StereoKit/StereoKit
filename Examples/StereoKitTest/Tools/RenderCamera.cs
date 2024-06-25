@@ -41,9 +41,7 @@ namespace StereoKit.Framework
 
 		public bool Initialize()
 		{
-			_frameSurface = new Tex(TexType.Rendertarget, TexFormat.Rgba32);
-			_frameSurface.SetSize(Width, Height);
-			_frameSurface.AddZBuffer(TexFormat.Depth32);
+			_frameSurface = Tex.RenderTarget(Width, Height, 1, TexFormat.Rgba32, TexFormat.Depth32);
 			_frameMaterial = Default.MaterialUnlit.Copy();
 			_frameMaterial[MatParamName.DiffuseTex] = _frameSurface;
 			_frameMaterial.FaceCull = Cull.None;
@@ -83,8 +81,9 @@ namespace StereoKit.Framework
 				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), TextAlign.CenterLeft);
 				Hierarchy.Pop();
 
-				Renderer.RenderTo(_frameSurface, 
-					_renderFrom.ToMatrix(), 
+				Matrix glFix = Backend.Graphics == BackendGraphics.D3D11 ? Matrix.Identity : Matrix.R(0,0,180);
+				Renderer.RenderTo(_frameSurface,
+					glFix * _renderFrom.ToMatrix(),
 					Matrix.Perspective(fov, (float)Width/Height, 0.01f, 100));
 			}
 			if (_recording)
