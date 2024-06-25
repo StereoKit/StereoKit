@@ -1380,6 +1380,7 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 ///////////////////////////////////////////
 
 void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport, render_layer_ layer_filter, render_clear_ clear) {
+	skg_tex_t* old_target = skg_tex_target_get();
 	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
 
 	if (clear != render_clear_none) {
@@ -1396,6 +1397,8 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	skg_viewport(viewport_i);
 
 	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
+
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
