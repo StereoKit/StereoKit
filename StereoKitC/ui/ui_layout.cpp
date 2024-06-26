@@ -1,7 +1,14 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_layout.h"
 #include "ui_theming.h"
 
 #include "../libraries/array.h"
+#include "../sk_math.h"
 
 ///////////////////////////////////////////
 
@@ -510,9 +517,26 @@ pose_t ui_popup_pose(vec3 shift) {
 		vec3 right = rot * vec3_right;
 
 		const float away =  0.1f;  // Away from the panel
-		const float down = -0.05f; // Down from the element;
+		const float down = -0.08f; // Down from the element;
 		result.position    = at + fwd * away + up * down;
 		result.orientation = quat_from_angles(25, 0, 0) * rot;
+
+		// If this pose is out-of-reach, we want to clamp it to be within arm's
+		// reach, touchable by the user.
+		const float max_dist = 0.6f;
+		const float rot_dist = 0.1f;
+		float dist_sq = vec3_distance_sq(input_head()->position, result.position);
+		if (dist_sq > max_dist * max_dist) {
+			result.position = input_head()->position + vec3_normalize(result.position - input_head()->position) * max_dist;
+
+			// we don't want to rotate allll the way if the keyboard is pretty
+			// much in the right spot. Instead, we should gradually face
+			// towards the user as the pose gets further from its original
+			// position.
+			quat  dest_rot = quat_lookat(result.position, input_head()->position);
+			float percent  = math_saturate((sqrtf(dist_sq) - max_dist) / rot_dist);
+			result.orientation = quat_slerp(result.orientation, dest_rot, percent);
+		}
 	} else {
 		// For an independant popup, we want to position it in front of the
 		// user. We'll place it in arm's reach, but this may be a bit odd for
