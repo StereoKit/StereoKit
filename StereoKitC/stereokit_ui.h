@@ -166,6 +166,10 @@ SK_API void     ui_set_element_color    (ui_vis_ element_visual, ui_color_ color
 SK_API void     ui_set_element_sound    (ui_vis_ element_visual, sound_t activate, sound_t deactivate);
 SK_API bool32_t ui_has_keyboard_focus   (void);
 SK_API pose_t   ui_popup_pose           (vec3 shift);
+SK_API void     ui_draw_element         (ui_vis_ element_visual,                        vec3 start, vec3 size, float focus);
+SK_API void     ui_draw_element_color   (ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus);
+SK_API color128 ui_get_element_color    (ui_vis_ element_visual,                                               float focus);
+SK_API float    ui_get_anim_focus       (id_hash_t id, button_state_ focus_state, button_state_ activation_state);
 
 SK_API void     ui_push_grab_aura        (bool32_t enabled);
 SK_API void     ui_pop_grab_aura         ();
@@ -269,8 +273,11 @@ SK_API bool32_t ui_vslider_at        (const char*     id,   sk_ref(float)  value
 SK_API bool32_t ui_vslider_at_16     (const char16_t* id,   sk_ref(float)  value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_vslider_at_f64    (const char*     id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
 SK_API bool32_t ui_vslider_at_f64_16 (const char16_t* id,   sk_ref(double) value, double min, double max, double step, vec3 window_relative_pos, vec2 size,      ui_confirm_ confirm_method sk_default(ui_confirm_push), ui_notify_ notify_on sk_default(ui_notify_change));
-SK_API bool32_t ui_input             (const char*     id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
-SK_API bool32_t ui_input_16          (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_::text_context_text));
+SK_API bool32_t ui_input             (const char*     id, char     *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_text));
+SK_API bool32_t ui_input_16          (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec2 size sk_default(vec2_zero), text_context_ type sk_default(text_context_text));
+SK_API bool32_t ui_input_at          (const char*     id, char     *buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type sk_default(text_context_text));
+SK_API bool32_t ui_input_at_16       (const char16_t* id, char16_t *buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type sk_default(text_context_text));
+
 SK_API void     ui_image             (sprite_t image, vec2 size);
 SK_API void     ui_model             (model_t model, vec2 ui_size, float model_scale);
 SK_API void     ui_model_at          (model_t model, vec3 start, vec3 size, color128 color);

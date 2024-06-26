@@ -356,6 +356,8 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	if (out_button_state & button_state_just_active)
 		ui_play_sound_on_off(ui_vis_button, id, hierarchy_to_world_point(ui_layout_last().center));
 
+	if (actor)
+		out_focus_state = button_make_state(actor->focused_prev_prev == id, actor->focused_prev == id);
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
 }
@@ -602,7 +604,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 	}
 
 	if (draw) {
-		ui_draw_el(ui_vis_handle,
+		ui_draw_element(ui_vis_handle,
 			handle_bounds.center+handle_bounds.dimensions/2,
 			handle_bounds.dimensions,
 			color_blend);

@@ -20,10 +20,6 @@ void     ui_theming_update   ();
 void     ui_theming_shutdown ();
 
 vec2     ui_get_mesh_minsize (ui_vis_ element_visual);
-void     ui_draw_el          (ui_vis_ element_visual, vec3 start, vec3 size, float focus);
-void     ui_draw_el_color    (ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus);
-color128 ui_get_el_color     (ui_vis_ element_visual, float focus);
-color128 ui_get_el_anim_color(ui_vis_ element_visual, float activation);
 void     ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at);
 void     ui_play_sound_on    (ui_vis_ element_visual, vec3 at);
 void     ui_play_sound_off   (ui_vis_ element_visual, vec3 at);
@@ -35,7 +31,6 @@ bool     ui_anim_has          (id_hash_t id, int32_t channel, float duration);
 float    ui_anim_elapsed      (id_hash_t id, int32_t channel, float duration = 1, float max = 1);
 float    ui_anim_elapsed_total(id_hash_t id, int32_t channel);
 
-float    ui_get_anim_focus      (id_hash_t id, button_state_ activation_state, float activation);
-float    ui_get_anim_focus_inout(id_hash_t id, button_state_ activation_state, float activation);
+float    ui_get_anim_focus_inout(id_hash_t id, button_state_ activation_state);
 
 }

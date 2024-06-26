@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
-using System.Collections.Generic;
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -37,6 +36,15 @@ namespace StereoKit
 			this.center = center;
 			dimensions = totalDimensions;
 		}
+
+		/// <summary>From the front, this is the Top (Y+), Left (X+), Center
+		/// (Z0) of the bounds. Useful when working with UI layout bounds.
+		/// </summary>
+		public Vec3 TLC => center + dimensions.XY0/2;
+
+		/// <summary>From the front, this is the Top (Y+), Left (X+), Back (Z+)
+		/// of the bounds. Useful when working with UI layout bounds.</summary>
+		public Vec3 TLB => center + dimensions/2;
 
 		/// <summary>Creates a bounding box object centered around zero!
 		/// </summary>
