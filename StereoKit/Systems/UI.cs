@@ -1439,15 +1439,50 @@ namespace StereoKit
 		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
 			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
 
-		public static void DrawElement(UIVisual elementVisual, Vec3 start, Vec3 size, float focus)
-			=> NativeAPI.ui_draw_element(elementVisual, start, size, focus);
-
+		/// <summary>This will draw a visual element from StereoKit's theming
+		/// system, while paying attention to certain factors such as enabled/
+		/// disabled, tinting and more.</summary>
+		/// <param name="elementVisual">The element type to draw.</param>
+		/// <param name="elementColor">If you wish to use the coloring from a
+		/// different element, you can use this to override the theme color
+		/// used when drawing.</param>
+		/// <param name="start">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="focus">The amount of visual focus this element
+		/// currently has, where 0 is unfocused, and 1 is active. You can
+		/// acquire a good focus value from `UI.GetAnimFocus`.</param>
 		public static void DrawElement(UIVisual elementVisual, UIVisual elementColor, Vec3 start, Vec3 size, float focus)
 			=> NativeAPI.ui_draw_element_color(elementVisual, elementColor, start, size, focus);
 
+		/// <inheritdoc cref="DrawElement(UIVisual, UIVisual, Vec3, Vec3, float)"/>
+		public static void DrawElement(UIVisual elementVisual, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element(elementVisual, start, size, focus);
+
+		/// <summary>This will get a final linear draw color for a particular
+		/// UI element type with a particular focus value. This obeys the
+		/// current hierarchy of tinting and enabled states.</summary>
+		/// <param name="elementVisual">Get the color from this element type.
+		/// </param>
+		/// <param name="focus">The amount of visual focus this element
+		/// currently has, where 0 is unfocused, and 1 is active. You can
+		/// acquire a good focus value from `UI.GetAnimFocus`</param>
+		/// <returns>A linear color good for tinting UI meshes.</returns>
 		public static Color GetElementColor(UIVisual elementVisual, float focus)
 			=> NativeAPI.ui_get_element_color(elementVisual, focus);
 
+		/// <summary>This resolves a UI element with an ID and its current
+		/// states into a nicely animated focus value.</summary>
+		/// <param name="id">The hierarchical id of the UI element we're
+		/// checking the focus of, this can be created with `UI.StackHash`.
+		/// </param>
+		/// <param name="focusState">The current focus state of the UI element.
+		/// </param>
+		/// <param name="activationState">The current activation status of the
+		/// UI element.</param>
+		/// <returns>A focus value in the realm of 0-1, where 0 is unfocused,
+		/// and 1 is active.</returns>
 		public static float GetAnimFocus(ulong id, BtnState focusState, BtnState activationState)
 			=> NativeAPI.ui_get_anim_focus(id, focusState, activationState);
 
