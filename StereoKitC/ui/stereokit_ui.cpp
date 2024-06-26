@@ -140,7 +140,7 @@ void ui_hseparator() {
 	vec2 size;
 	ui_layout_reserve_sz({ 0, text_style_get_char_height(ui_get_text_style())*0.4f }, false, &pos, &size);
 
-	ui_draw_el(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
+	ui_draw_element(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
 }
 
 ///////////////////////////////////////////
@@ -284,9 +284,8 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	int32_t       interactor;
 	ui_button_behavior(window_relative_pos, size, id, finger_offset, state, focus, &interactor);
 
-	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_get_anim_focus(id, state, activation));
+	float min_activation = 1 - (finger_offset / skui_settings.depth);
+	ui_draw_element(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
 	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
 
 	return state & button_state_just_inactive;
@@ -354,9 +353,8 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	}
 	finger_offset = pressed ? fminf(skui_pressed_depth * skui_settings.depth, finger_offset) : finger_offset;
 
-	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, ui_get_anim_focus(id, state, activation));
+	float min_activation = 1 - (finger_offset / skui_settings.depth);
+	ui_draw_element(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
 	return state & button_state_just_inactive;
@@ -418,9 +416,8 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	int32_t       interactor;
 	ui_button_behavior(window_relative_pos, { diameter,diameter }, id, finger_offset, state, focus, &interactor);
 
-	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, ui_get_anim_focus(id, state, activation));
+	float min_activation = 1 - (finger_offset / skui_settings.depth);
+	ui_draw_element(ui_vis_button_round, window_relative_pos, { diameter, diameter, finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
@@ -478,20 +475,16 @@ inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t cha
 inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
 
 template<typename C>
-bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
-	vec3 final_pos;
-	vec2 final_size;
-	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
-
+bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type) {
 	id_hash_t id_hash  = ui_stack_hash(id);
 	bool      result   = false;
-	vec3      box_size = vec3{ final_size.x, final_size.y, skui_settings.depth/2 };
+	vec3      box_size = vec3{ size.x, size.y, skui_settings.depth / 2 };
 
 	// Find out if the user is trying to focus this UI element
 	float         finger_offset;
 	int32_t       interactor;
 	button_state_ state, focus;
-	ui_button_behavior(final_pos, final_size, id_hash, finger_offset, state, focus, &interactor);
+	ui_button_behavior(window_relative_pos, size, id_hash, finger_offset, state, focus, &interactor);
 
 	if (state & button_state_just_inactive) {
 		platform_keyboard_show(true,type);
@@ -571,10 +564,9 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 	}
 
 	// Render the input UI
-	vec2  text_bounds = { final_size.x - skui_settings.padding * 2,final_size.y };
-	bool  has_focus   = interactor >= 0 ? interactor_get(interactor)->focused_prev == id_hash : false;
-	float activation  = (1 - (finger_offset / skui_settings.depth)) * 0.5f + (has_focus ? 0.5f : 0);
-	ui_draw_el(ui_vis_input, final_pos, vec3{ final_size.x, final_size.y, skui_settings.depth/2 }, ui_get_anim_focus(id_hash, state, activation));
+	vec2  text_bounds    = { size.x - skui_settings.padding * 2,size.y };
+	float min_activation = 1 - (finger_offset / skui_settings.depth);
+	ui_draw_element(ui_vis_input, window_relative_pos, vec3{ size.x, size.y, skui_settings.depth / 2 }, fmaxf(min_activation, ui_get_anim_focus(id_hash, focus, state)));
 
 	// Swap out for a string of asterisks to hide any password
 	const C* draw_text = buffer;
@@ -613,27 +605,35 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 			float   right     = fmaxf(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
 
 			vec3 sz  = vec3{ -(right - left), line, line * 0.01f };
-			vec3 pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
+			vec3 pos = (window_relative_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
 			ui_draw_cube(pos, sz, ui_color_complement, 0);
 		} 
 
 		// Show a blinking text carat
 		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
-			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, 0);
+			ui_draw_element(ui_vis_carat, window_relative_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, 0);
 		}
 	}
 
-	ui_text_in(draw_text, text_align_top_left, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds, vec2_zero);
+	ui_text_in(draw_text, text_align_top_left, text_align_center_left, text_fit_clip, window_relative_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds, vec2_zero);
 
 	return result;
 }
 
-bool32_t ui_input(const char *id, char *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
-	return ui_input_g<char>(id, buffer, buffer_size, size, type);
+template<typename C>
+bool32_t ui_input_g(const C* id, C* buffer, int32_t buffer_size, vec2 size, text_context_ type) {
+	vec3 final_pos;
+	vec2 final_size;
+	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
+
+	return ui_input_at_g(id, buffer, buffer_size, final_pos, final_size, type);
 }
-bool32_t ui_input_16(const char16_t *id, char16_t *buffer, int32_t buffer_size, vec2 size, text_context_ type) {
-	return ui_input_g<char16_t>(id, buffer, buffer_size, size, type);
-}
+
+bool32_t ui_input      (const char*     id, char*     buffer, int32_t buffer_size, vec2 size, text_context_ type) { return ui_input_g<char    >(id, buffer, buffer_size, size, type); }
+bool32_t ui_input_16   (const char16_t* id, char16_t* buffer, int32_t buffer_size, vec2 size, text_context_ type) { return ui_input_g<char16_t>(id, buffer, buffer_size, size, type); }
+
+bool32_t ui_input_at   (const char*     id, char*     buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type) { return ui_input_at_g<char    >(id, buffer, buffer_size, window_relative_pos, size, type); }
+bool32_t ui_input_at_16(const char16_t* id, char16_t* buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type) { return ui_input_at_g<char16_t>(id, buffer, buffer_size, window_relative_pos, size, type); }
 
 ///////////////////////////////////////////
 
@@ -656,14 +656,14 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	float bar_length = math_saturate(percent) * size.x;
 	vec2  min_size   = ui_get_mesh_minsize(ui_vis_slider_line_active);
 	if (bar_length <= min_size.x) {
-		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_inactive,
+		ui_draw_element_color(ui_vis_slider_line, ui_vis_slider_line_inactive,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
 			focus);
 		hierarchy_pop();
 		return;
 	} else if (bar_length >= size.x-min_size.x) {
-		ui_draw_el_color(ui_vis_slider_line, ui_vis_slider_line_active,
+		ui_draw_element_color(ui_vis_slider_line, ui_vis_slider_line_active,
 			vec3{ 0,      bar_y,      0 },
 			vec3{ size.x, bar_height, bar_depth },
 			focus);
@@ -672,11 +672,11 @@ void ui_progress_bar_at_ex(float percent, vec3 start_pos, vec2 size, float focus
 	}
 
 	// Slide line
-	ui_draw_el(ui_vis_slider_line_active,
+	ui_draw_element(ui_vis_slider_line_active,
 		vec3{ 0,          bar_y,      0 },
 		vec3{ bar_length, bar_height, bar_depth },
 		focus);
-	ui_draw_el(ui_vis_slider_line_inactive,
+	ui_draw_element(ui_vis_slider_line_inactive,
 		vec3{        - bar_length, bar_y,      0 },
 		vec3{ size.x - bar_length, bar_height, bar_depth },
 		focus);
@@ -728,12 +728,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	value = vertical ? vval.y : vval.x;
 
 	// Draw the UI
-	float percent    = (value - min) / (max - min);
-	bool  has_focus  = interactor >= 0 ? interactor_get(interactor)->focused_prev == id : false;
-	float activation = has_focus ? 0.5f : 0;
-	float vis_focus  = ui_get_anim_focus(id, active_state, activation);
+	float percent   = (value - min) / (max - min);
+	float vis_focus = ui_get_anim_focus(id, focus_state, active_state);
 	ui_progress_bar_at_ex(percent, window_relative_pos, size, vis_focus, vertical);
-	ui_draw_el(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
+	ui_draw_element(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
 		vec3{ button_center.x+button_size.x/2, button_center.y+button_size.y/2, window_relative_pos.z },
 		vec3{ button_size.x, button_size.y, fmaxf(finger_offset,rule_size * skui_pressed_depth + mm2m) },
 		vis_focus);
@@ -926,19 +924,19 @@ void ui_window_end() {
 	vec3 start = win->layout_start + vec3{ 0,0,skui_settings.depth };
 	vec3 size  = { win->prev_size.x, win->prev_size.y, skui_settings.depth };
 
-	float focus = ui_get_anim_focus_inout(win->hash, ui_id_focus_state(win->hash), 0);
+	float focus = ui_get_anim_focus_inout(win->hash, ui_id_focus_state(win->hash));
 	if (win->move != ui_move_none && ui_grab_aura_enabled()) {
 		vec3 aura_start = vec3{ start.x+skui_aura_radius,  start.y+skui_aura_radius,  start.z };
 		vec3 aura_size  = vec3{ size .x+skui_aura_radius*2,size .y+skui_aura_radius*2,size .z };
 		if (win->type & ui_win_head) { aura_start.y += line_height; aura_size.y += line_height; }
-		ui_draw_el(ui_vis_aura, aura_start, aura_size, focus);
+		ui_draw_element(ui_vis_aura, aura_start, aura_size, focus);
 	}
 
 	if (win->type & ui_win_head) {
-		ui_draw_el(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
+		ui_draw_element(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
 	}
 	if (win->type & ui_win_body) {
-		ui_draw_el(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);
+		ui_draw_element(win->type == ui_win_body ? ui_vis_window_body_only : ui_vis_window_body, start, size, 0);
 	}
 	hierarchy_pop();
 	ui_pop_id();
@@ -959,7 +957,7 @@ void ui_panel_at(vec3 start, vec2 size, ui_pad_ padding) {
 		start_offset = { gutter,  gutter,  0 };
 		size_offset  = { gutter2, gutter2, 0 };
 	}
-	ui_draw_el(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, 0);
+	ui_draw_element(ui_vis_panel, start+start_offset, vec3{ size.x, size.y, skui_settings.depth* 0.1f }+size_offset, 0);
 }
 
 } // namespace sk

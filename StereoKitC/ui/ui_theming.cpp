@@ -421,7 +421,7 @@ sound_t ui_get_sound_off(ui_vis_ element_visual) {
 
 ///////////////////////////////////////////
 
-color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
+color128 ui_get_element_color(ui_vis_ element_visual, float focus) {
 	ui_color_ color       = ui_get_color(element_visual);
 	color128  final_color = ui_is_enabled()
 		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
@@ -434,7 +434,7 @@ color128 ui_get_el_color(ui_vis_ element_visual, float focus) {
 
 ///////////////////////////////////////////
 
-void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
+void ui_draw_element_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus) {
 	/*if (size.x < skui_box_min.x) size.x = skui_box_min.x;
 	if (size.y < skui_box_min.y) size.y = skui_box_min.y;
 	if (size.z < skui_box_min.z) size.z = skui_box_min.z;*/
@@ -443,17 +443,17 @@ void ui_draw_el_color(ui_vis_ element_visual, ui_vis_ element_color, vec3 start,
 		ui_get_mesh    (element_visual),
 		ui_get_material(element_visual),
 		matrix_ts(start - size / 2, size),
-		ui_get_el_color(element_color, focus));
+		ui_get_element_color(element_color, focus));
 }
 
 ///////////////////////////////////////////
 
-void ui_draw_el(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
+void ui_draw_element(ui_vis_ element_visual, vec3 start, vec3 size, float focus) {
 	render_add_mesh(
 		ui_get_mesh    (element_visual),
 		ui_get_material(element_visual),
 		matrix_ts(start - size / 2, size),
-		ui_get_el_color(element_visual, focus));
+		ui_get_element_color(element_visual, focus));
 }
 
 ///////////////////////////////////////////
@@ -683,7 +683,7 @@ float ui_anim_elapsed_total(id_hash_t id, int32_t channel) {
 
 ///////////////////////////////////////////
 
-float ui_get_anim_focus(id_hash_t id, button_state_ activation_state, float activation) {
+float ui_get_anim_focus(id_hash_t id, button_state_ focus_state, button_state_ activation_state) {
 	if (activation_state & button_state_just_active)
 		ui_anim_start(id, 0);
 	float anim = activation_state & button_state_active ? 1.0f : 0.0f;
@@ -691,12 +691,12 @@ float ui_get_anim_focus(id_hash_t id, button_state_ activation_state, float acti
 		float t = ui_anim_elapsed(id, 0, skui_anim_duration);
 		anim = math_ease_overshoot(0, 1, skui_anim_overshoot, t);
 	}
-	return fmaxf(anim, activation);
+	return fmaxf(anim, (focus_state & button_state_active) * 0.5f); // !! This assumes button_state_active == 1 !!
 }
 
 ///////////////////////////////////////////
 
-float ui_get_anim_focus_inout(id_hash_t id, button_state_ activation_state, float activation) {
+float ui_get_anim_focus_inout(id_hash_t id, button_state_ activation_state) {
 	const float delay = 0.2f;
 	if (activation_state & button_state_just_active) ui_anim_start(id, 0);
 	if (activation_state & button_state_just_inactive) {

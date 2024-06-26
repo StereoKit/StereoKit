@@ -892,11 +892,43 @@ namespace StereoKit
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
 		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
-			StringBuilder builder = value != null ? 
-				new StringBuilder(value, value.Length + 16) :
-				new StringBuilder(16);
+			StringBuilder builder = value != null
+				? new StringBuilder(value, value.Length + 16)
+				: new StringBuilder(16);
 
-			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type))
+			{
+				value = builder.ToString();
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>This is an input field where users can input text to the
+		/// app! Selecting it will spawn a virtual keyboard, or act as the
+		/// keyboard focus. Hitting escape or enter, or focusing another UI
+		/// element will remove focus from this Input.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The string that will store the Input's
+		/// content in.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="type">What category of text this Input represents.
+		/// This may affect what kind of soft keyboard will be displayed, if
+		/// one is shown to the user.</param>
+		/// <returns>Returns true every time the contents of 'value' change.
+		/// </returns>
+		public static bool InputAt(string id, ref string value, Vec3 topLeftCorner, Vec2 size, TextContext type = TextContext.Text)
+		{
+			StringBuilder builder = value != null
+				? new StringBuilder(value, value.Length + 16)
+				: new StringBuilder(16);
+
+			if (NativeAPI.ui_input_at_16(id, builder, builder.Capacity, topLeftCorner, size, type))
+			{
 				value = builder.ToString();
 				return true;
 			}
@@ -1406,6 +1438,18 @@ namespace StereoKit
 		/// A null sound will fall back to the default sound.</param>
 		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
 			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
+
+		public static void DrawElement(UIVisual elementVisual, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element(elementVisual, start, size, focus);
+
+		public static void DrawElement(UIVisual elementVisual, UIVisual elementColor, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element_color(elementVisual, elementColor, start, size, focus);
+
+		public static Color GetElementColor(UIVisual elementVisual, float focus)
+			=> NativeAPI.ui_get_element_color(elementVisual, focus);
+
+		public static float GetAnimFocus(ulong id, BtnState focusState, BtnState activationState)
+			=> NativeAPI.ui_get_anim_focus(id, focusState, activationState);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user
