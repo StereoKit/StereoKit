@@ -35,7 +35,7 @@ bool32_t anchor_stage_init() {
 	// Read anchors from a text file
 	char*  anchor_file      = nullptr;
 	size_t anchor_file_size = 0;
-	if (platform_read_file(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+	if (platform_read_file_direct(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
 		stref_t data_stref = stref_make(anchor_file);
 		stref_t line = {};
 		while (stref_nextline(data_stref, line)) {

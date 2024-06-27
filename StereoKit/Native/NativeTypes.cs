@@ -202,7 +202,7 @@ namespace StereoKit
 
 		/// <summary>Obsolete, please use Device.DisplayBlend</summary>
 		[Obsolete("Obsolete, please use Device.DisplayBlend", true)]
-		public DisplayBlend displayType { get; set; }
+		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
 
 	/*[StructLayout(LayoutKind.Sequential)]
@@ -806,6 +806,24 @@ namespace StereoKit
 		Left   = TopLeft    | BottomLeft,
 		/// <summary>The top right and bottom right corners.</summary>
 		Right  = TopRight   | BottomRight,
+	}
+
+	/// <summary>This describes how UI elements with scrollable regions scroll
+	/// around or use scroll bars! This allows you to enable or disable
+	/// vertical and horizontal scrolling.</summary>
+	public enum UIScroll
+	{
+		/// <summary>No scroll bars or scrolling.</summary>
+		None       = 0,
+		/// <summary>This will enable vertical scroll bars or scrolling.
+		/// </summary>
+		Vertical   = 1 << 0,
+		/// <summary>This will enable horizontal scroll bars or scrolling.
+		/// </summary>
+		Horizontal = 1 << 1,
+		/// <summary>This will enable both vertical and horizontal scroll bars
+		/// or scrolling.</summary>
+		Both = Vertical | Horizontal,
 	}
 
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the

@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-internal class TestPanel : ITest
+internal class TestUIPanel : ITest
 {
 	public void Initialize()
 	{

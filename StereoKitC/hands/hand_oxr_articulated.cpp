@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
@@ -27,6 +33,10 @@ bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
 XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
 float            oxra_hand_joint_scale = 1;
+
+///////////////////////////////////////////
+
+void hand_oxra_update_states();
 
 ///////////////////////////////////////////
 
@@ -119,7 +129,7 @@ void hand_oxra_init() {
 			oxra_mesh_src[h].indexBuffer.indexCapacityInput   = properties_handmesh.maxHandMeshIndexCount;
 			oxra_mesh_src[h].indexBuffer.indices              = sk_malloc_t(uint32_t, properties_handmesh.maxHandMeshIndexCount);
 			oxra_mesh_src[h].vertexBuffer.vertexCapacityInput = properties_handmesh.maxHandMeshVertexCount;
-			oxra_mesh_src[h].vertexBuffer.vertices            = sk_malloc_t(XrHandMeshVertexMSFT, properties_handmesh.maxHandMeshIndexCount);
+			oxra_mesh_src[h].vertexBuffer.vertices            = sk_malloc_t(XrHandMeshVertexMSFT, properties_handmesh.maxHandMeshVertexCount);
 
 			// Create the hand mesh space that's used to track the hand mesh
 			// lifecycle.
@@ -152,28 +162,9 @@ void hand_oxra_shutdown() {
 ///////////////////////////////////////////
 
 void hand_oxra_update_joints() {
-	// Generate some shoulder data used for generating hand pointers
 
-	// Average shoulder width for women:37cm, men:41cm, center of shoulder
-	// joint is around 4cm inwards
-	const float avg_shoulder_width = ((39.0f/2.0f)-4.0f)*cm2m;
-	const float head_length        = 10*cm2m;
-	const float neck_length        = 7*cm2m;
-
-	// Chest center is down to the base of the head, and then down the neck.
-	const pose_t *head = input_head();
-	vec3 chest_center = head->position + head->orientation * vec3{0,-head_length,0};
-	chest_center.y   -= neck_length;
-
-	// Shoulder forward facing direction is head direction weighted equally 
-	// with the direction of both hands.
-	vec3 face_fwd = input_head()->orientation * vec3_forward;
-	face_fwd.y = 0;
-	face_fwd   = vec3_normalize(face_fwd) * 2;
-	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
-	face_fwd  += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
-	face_fwd  *= 0.25f;
-	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width;
+	vec3 shoulders[2];
+	body_make_shoulders(&shoulders[handed_left], &shoulders[handed_right]);
 
 	bool hands_active = false;
 	for (int32_t h = 0; h < handed_max; h++) {
@@ -196,8 +187,8 @@ void hand_oxra_update_joints() {
 			(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[1 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
-		hand_t *inp_hand     = (hand_t*)input_hand((handed_)h);
-		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, valid_joints);
+		hand_t *inp_hand = input_hand_ref((handed_)h);
+		inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
 
 		// If both hands aren't active at all, we'll want to to switch back
 		// to controllers.
@@ -228,32 +219,13 @@ void hand_oxra_update_joints() {
 		static const quat face_forward = quat_from_angles(-90,0,0);
 		inp_hand->palm  = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * oxra_hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
 		inp_hand->wrist = pose_t{ oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                oxra_hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+		
+		// Update the aim values
+		inp_hand->aim.position = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 
-		// Update the hand pointer
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
-
-		// Create pointers for the hands
-		vec3   shoulder   = chest_center + face_right * (h == handed_right ? 1.0f : -1.0f);
-		vec3   ray_joint  = oxra_hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
-		pose_t point_pose = {
-			ray_joint,
-			quat_lookat_up(shoulder, ray_joint, inp_hand->palm.orientation*vec3_up) };
-		pointer->ray.pos     = point_pose.position;
-		pointer->ray.dir     = point_pose.orientation * vec3_forward;
-		pointer->orientation = point_pose.orientation;
-
-		// The pointer should be tracked when the hand is tracked and in a
-		// "ready pose" (facing the same general direction as the user). It
-		// should remain tracked if it was activated, even if it's no longer in
-		// a ready pose.
-		const float near_dist  = 0.2f;
-		const float hand_angle = 0.25f; // ~150 degrees
-		bool was_tracked  = (pointer ->tracked       & button_state_active) > 0;
-		bool is_active    = (pointer ->state         & button_state_active) > 0;
-		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
-		bool is_facing    = vec3_dot(vec3_normalize(pointer->ray.pos - head->position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
-		bool is_far       = vec2_distance_sq({pointer->ray.pos.x, pointer->ray.pos.z}, {head->position.x, head->position.z}) > (near_dist*near_dist);
-		pointer->tracked = button_make_state(was_tracked, hand_tracked && (is_active || is_facing));
+		vec3 dir   = inp_hand->aim.position - shoulders[h];
+		vec3 right = oxra_hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
+		inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
 	}
 
 	if (!hands_active) {
@@ -264,11 +236,58 @@ void hand_oxra_update_joints() {
 
 ///////////////////////////////////////////
 
+void hand_oxra_update_states() {
+	for (int32_t h = 0; h < handed_max; h++) {
+		hand_t* inp_hand = input_hand_ref((handed_)h);
+
+		// Pinch values from the hand interaction profile typically have deep
+		// knowledge about the hands, beyond what can be gleaned from the joint
+		// data. In StereoKit, all interaction profiles are reported as
+		// controllers, so we're checking if this controller's source is from
+		// such a hand profile.
+		if (input_controller_is_hand((handed_)h)) {
+			inp_hand->pinch_activation = input_controller((handed_)h)->trigger;
+			inp_hand->pinch_state      = button_make_state((inp_hand->pinch_state & button_state_active) > 0, inp_hand->pinch_activation >= 1);
+		} else {
+			input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[hand_finger_index][hand_joint_tip], inp_hand->fingers[hand_finger_thumb][hand_joint_tip],
+				PINCH_ACTIVATION_DIST, PINCH_DEACTIVATION_DIST, PINCH_MAX_DIST,
+				&inp_hand->pinch_state, &inp_hand->pinch_activation);
+		}
+		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[hand_finger_ring][hand_joint_tip], inp_hand->fingers[hand_finger_ring][hand_joint_root],
+			GRIP_ACTIVATION_DIST, GRIP_DEACTIVATION_DIST, GRIP_MAX_DIST,
+			&inp_hand->grip_state, &inp_hand->grip_activation);
+
+		// The pointer should be tracked when the hand is tracked and in a
+		// "ready pose" (facing the same general direction as the user). It
+		// should remain tracked if it was activated, even if it's no longer in
+		// a ready pose.
+		const pose_t* head = input_head();
+		const float near_dist  = 0.2f;
+		const float hand_angle = 0.25f; // ~150 degrees
+		bool is_pinched   = (inp_hand->pinch_state   & button_state_active) > 0;
+		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
+		bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head->position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
+		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head->position.x, head->position.z}) > (near_dist*near_dist);
+		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
+		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
+
+		// Update the hand pointer
+		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
+		pointer->ray.pos     = inp_hand->aim.position;
+		pointer->ray.dir     = inp_hand->aim.orientation * vec3_forward;
+		pointer->orientation = inp_hand->aim.orientation;
+		pointer->tracked = inp_hand->aim_ready;
+	}
+}
+
+///////////////////////////////////////////
+
 void hand_oxra_update_inactive() {
-	oxra_mesh_dirty[0] = true;
-	oxra_mesh_dirty[1] = true;
 
 	if (hand_oxra_is_tracked()) {
+		oxra_mesh_dirty[0] = true;
+		oxra_mesh_dirty[1] = true;
+
 		oxra_hand_active = true;
 		input_hand_refresh_system();
 	}
@@ -278,6 +297,7 @@ void hand_oxra_update_inactive() {
 
 void hand_oxra_update_frame() {
 	hand_oxra_update_joints();
+	hand_oxra_update_states();
 }
 
 ///////////////////////////////////////////

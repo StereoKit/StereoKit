@@ -103,7 +103,7 @@ namespace sk {
 #else
 #define EXT_AVAILABLE_UWP false
 #endif
-#if defined(SK__DEBUG)
+#if defined(SK_DEBUG)
 #define EXT_AVAILABLE_DEBUG true
 #else
 #define EXT_AVAILABLE_DEBUG false
@@ -137,6 +137,7 @@ namespace sk {
 	_(OCULUS_audio_device_guid,          true) \
 	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
+	_(MSFT_hand_interaction,             true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_anchor_persistence,   true) \
 	_(MSFT_spatial_graph_bridge,         true) \

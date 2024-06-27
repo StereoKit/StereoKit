@@ -318,7 +318,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, 1, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
@@ -652,6 +652,26 @@ namespace StereoKit
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
 			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
+		}
+
+		/// <summary>This will assemble a texture ready for rendering to! It
+		/// creates a render target texture with no mip maps and a depth buffer
+		/// attached.</summary>
+		/// <param name="width">Width in pixels.</param>
+		/// <param name="height">Height in pixels</param>
+		/// <param name="multisample">Multisample level, or MSAA. This should
+		/// be 1, 2, 4, 8, or 16. The results will have moother edges with
+		/// higher values, but will cost more RAM and time to render. Note that
+		/// GL platforms cannot trivially draw a multisample > 1 texture in a
+		/// shader.</param>
+		/// <param name="colorFormat">The format of the color surface.</param>
+		/// <param name="depthFormat">The format of the depth buffer. If this
+		/// is None, no depth buffer will be attached to this rendertarget.</param>
+		/// <returns>Returns a texture set up as a rendertarget.</returns>
+		public static Tex RenderTarget(int width, int height, int multisample = 1, TexFormat colorFormat = TexFormat.Rgba32, TexFormat depthFormat = TexFormat.Depth16)
+		{
+			IntPtr tex =  NativeAPI.tex_create_rendertarget(width, height, multisample, colorFormat, depthFormat);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
 		/// <summary>This generates a solid color texture of the given

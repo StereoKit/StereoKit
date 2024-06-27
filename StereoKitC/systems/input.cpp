@@ -28,6 +28,7 @@ struct input_state_t {
 	array_t<pointer_t>    pointers;
 	mouse_t               mouse_data;
 	controller_t          controllers[2];
+	bool                  controller_hand[2];
 	button_state_         controller_menubtn;
 	button_state_         eyes_track_state;
 };
@@ -239,6 +240,18 @@ bool input_controller_key(handed_ hand, controller_key_ key, float *out_amount) 
 
 ///////////////////////////////////////////
 
+bool input_controller_is_hand(handed_ hand) {
+	return local.controller_hand[hand];
+}
+
+///////////////////////////////////////////
+
+void input_controller_set_hand(handed_ hand, bool is_hand) {
+	local.controller_hand[hand] = is_hand;
+}
+
+///////////////////////////////////////////
+
 void input_mouse_update() {
 	vec2  mouse_pos    = {};
 	float mouse_scroll = platform_get_scroll();
@@ -261,6 +274,34 @@ void input_mouse_update() {
 
 void input_mouse_override_pos(vec2 override_pos) {
 	local.mouse_data.pos = { override_pos.x, override_pos.y };
+}
+
+///////////////////////////////////////////
+
+void body_make_shoulders(vec3* out_left, vec3* out_right) {
+	// Average shoulder width for women:37cm, men:41cm, center of shoulder
+	// joint is around 4cm inwards
+	const float avg_shoulder_width = ((39.0f/2.0f)-4.0f)*cm2m;
+	const float head_length        = 10*cm2m;
+	const float neck_length        = 7*cm2m;
+
+	// Chest center is down to the base of the head, and then down the neck.
+	const pose_t *head = input_head();
+	vec3 chest_center = head->position + head->orientation * vec3{0,-head_length,0};
+	chest_center.y   -= neck_length;
+
+	// Shoulder forward facing direction is head direction weighted equally 
+	// with the direction of both hands.
+	vec3 face_fwd = input_head()->orientation * vec3_forward;
+	face_fwd.y = 0;
+	face_fwd   = vec3_normalize(face_fwd) * 2;
+	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
+	face_fwd  += vec3_normalize(input_hand(handed_right)->wrist.position - chest_center);
+	face_fwd  *= 0.25f;
+	vec3 face_right = vec3_normalize(vec3_cross(face_fwd, vec3_up)) * avg_shoulder_width;
+
+	if (out_left)  *out_left  = chest_center - face_right;
+	if (out_right) *out_right = chest_center + face_right;
 }
 
 } // namespace sk

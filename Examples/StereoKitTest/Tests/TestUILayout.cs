@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class TestLayout : ITest
+class TestUILayout : ITest
 {
 	public void Initialize() { Tests.RunForFrames(2); }
 	public void Shutdown() { }

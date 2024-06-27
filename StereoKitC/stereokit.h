@@ -1004,6 +1004,7 @@ typedef enum tex_address_ {
 
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
+SK_API tex_t        tex_create_rendertarget (int32_t width, int32_t height, int32_t msaa sk_default(1), tex_format_ color_format sk_default(tex_format_rgba32), tex_format_ depth_format sk_default(tex_format_depth16));
 SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_mem          (void *data, size_t data_size,                  bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
@@ -1014,7 +1015,7 @@ SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
-SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned sk_default(true));
+SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), int32_t framebuffer_multisample sk_default(1), bool32_t owned sk_default(true));
 SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -1056,6 +1057,8 @@ SK_API const char*  font_get_id             (const font_t font);
 SK_API void         font_addref             (font_t font);
 SK_API void         font_release            (font_t font);
 SK_API tex_t        font_get_tex            (font_t font);
+SK_API font_t       font_create_family      (const char *font_family);
+
 
 ///////////////////////////////////////////
 
@@ -1247,6 +1250,8 @@ SK_API void              material_buffer_release  (material_buffer_t buffer);
 /*This enum describes how text layout behaves within the space
   it is given.*/
 typedef enum text_fit_ {
+	/*No particularly special behavior.*/
+	text_fit_none           = 0,
 	/*The text will wrap around to the next line down when it
 	  reaches the end of the space on the X axis.*/
 	text_fit_wrap           = 1 << 0,
@@ -1263,6 +1268,7 @@ typedef enum text_fit_ {
 	  on going.*/
 	text_fit_overflow       = 1 << 4
 } text_fit_;
+SK_MakeFlag(text_fit_)
 
 /*A bit-flag enum for describing alignment or positioning.
   Items can be combined using the '|' operator, like so:
@@ -1327,6 +1333,8 @@ SK_API float         text_add_in                   (const char*     text_utf8,  
 SK_API float         text_add_in_16                (const char16_t* text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
 SK_API vec2          text_size                     (const char*     text_utf8,  text_style_t style sk_default(0));
 SK_API vec2          text_size_16                  (const char16_t* text_utf16, text_style_t style sk_default(0));
+SK_API vec2          text_size_constrained         (const char*     text_utf8,  text_style_t style, float max_width);
+SK_API vec2          text_size_constrained_16      (const char16_t* text_utf16, text_style_t style, float max_width);
 SK_API vec2          text_char_at                  (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 SK_API vec2          text_char_at_16               (const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 
@@ -1485,6 +1493,7 @@ typedef enum render_clear_ {
 	/*Clear both color and depth data.*/
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
+SK_MakeFlag(render_clear_)
 
 /*The projection mode used by StereoKit for the main camera! You
   can use this with Renderer.Projection. These options are only
@@ -1545,16 +1554,36 @@ SK_API render_list_t         render_get_primary_list();
 
 ///////////////////////////////////////////
 
-SK_API render_list_t         render_list_create    ();
-SK_API void                  render_list_addref    (      render_list_t list);
-SK_API void                  render_list_release   (      render_list_t list);
-SK_API void                  render_list_clear     (      render_list_t list);
-SK_API int32_t               render_list_item_count(const render_list_t list);
-SK_API int32_t               render_list_prev_count(const render_list_t list);
+SK_API render_list_t         render_list_create       ();
+SK_API void                  render_list_addref       (      render_list_t list);
+SK_API void                  render_list_release      (      render_list_t list);
+SK_API void                  render_list_clear        (      render_list_t list);
+SK_API int32_t               render_list_item_count   (const render_list_t list);
+SK_API int32_t               render_list_prev_count   (const render_list_t list);
+SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport_px sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all));
+
+SK_API void                  render_list_push         (      render_list_t list);
+SK_API void                  render_list_pop          ();
 
 ///////////////////////////////////////////
 
-SK_API void          hierarchy_push              (const sk_ref(matrix) transform);
+/*When used with a hierarchy modifying function that will push/pop items onto a
+  stack, this can be used to change the behavior of how parent hierarchy items
+  will affect the item being added to the top of the stack.*/
+typedef enum hierarchy_parent_ {
+	/*Inheriting is generally the default behavior of a hierarchy stack, the
+	  current item will inherit the properties of the parent stack item in some
+	  form or another.*/
+	hierarchy_parent_inherit,
+	/*Ignoring the parent hierarchy stack item will let you skip inheriting
+	  anything from the parent item. The new item remains exactly as provided.*/
+	hierarchy_parent_ignore,
+} hierarchy_parent_;
+
+SK_API void          hierarchy_push              (const sk_ref(matrix) transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void          hierarchy_pop               (void);
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        (void);
@@ -1774,11 +1803,13 @@ typedef struct hand_t {
 	hand_joint_t  fingers[5][5];
 	pose_t        wrist;
 	pose_t        palm;
+	pose_t        aim;
 	vec3          pinch_pt;
 	handed_       handedness;
 	button_state_ tracked_state;
 	button_state_ pinch_state;
 	button_state_ grip_state;
+	button_state_ aim_ready;
 	float         size;
 	float         pinch_activation;
 	float         grip_activation;
@@ -2369,7 +2400,8 @@ SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
-SK_CONST char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char* default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char *default_id_shader_lightmap      = "default/shader_lightmap";
 SK_CONST char *default_id_shader_font          = "default/shader_font";
 SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";

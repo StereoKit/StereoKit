@@ -1,4 +1,9 @@
-﻿using System.Numerics;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace StereoKit
@@ -32,6 +37,11 @@ namespace StereoKit
 		/// <param name="z">The z axis.</param>
 		public Vec3(float x, float y, float z) => v = new Vector3(x, y, z);
 
+		/// <summary>Initialize from a System.Numerics vector, this can also be
+		/// done by an implicit or explicit cast/assignment.</summary>
+		/// <param name="v">A System.Numerics vector.</param>
+		public Vec3(Vector3 v) => this.v = v;
+
 		/// <summary>Creates a vector with all values the same! StereoKit uses
 		/// a right-handed metric coordinate system, where +x is to the
 		/// right, +y is upwards, and -z is forward.</summary>
@@ -42,7 +52,7 @@ namespace StereoKit
 		/// to StereoKit.Vec3.</summary>
 		/// <param name="v">Any System.Numerics Vector3.</param>
 		/// <returns>A StereoKit compatible vector.</returns>
-		public static implicit operator Vec3(Vector3 v) => new Vec3(v.X, v.Y, v.Z);
+		public static implicit operator Vec3(Vector3 v) => new Vec3(v);
 		/// <summary>Allows implicit conversion from StereoKit.Vec3 to
 		/// System.Numerics.Vector3</summary>
 		/// <param name="v">Any StereoKit.Vec3.</param>
@@ -54,12 +64,22 @@ namespace StereoKit
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector from the added components.</returns>
 		public static Vec3 operator +(Vec3 a, Vec3 b) => a.v + b.v;
+		/// <summary>Adds the float to each component of the vector.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector from the added components.</returns>
+		public static Vec3 operator +(Vec3 a, float b) => a.v + new Vector3(b, b, b);
 		/// <summary>Subtracts matching components from eachother. Not
 		/// commutative.</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector from the subtracted components.</returns>
 		public static Vec3 operator -(Vec3 a, Vec3 b) => a.v - b.v;
+		/// <summary>Subtract the float to each component of the vector.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector from the subtracted components.</returns>
+		public static Vec3 operator -(Vec3 a, float b) => a.v - new Vector3(b, b, b);
 		/// <summary>A component-wise vector multiplication, same thing as
 		/// a non-uniform scale. NOT a dot or cross product! Commutative.
 		/// </summary>
@@ -134,6 +154,9 @@ namespace StereoKit
 		/// <summary>This returns a Vec3 that has been flattened to 0 on the
 		/// Z axis. No other changes are made.</summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
+		/// <summary>This returns a Vec3 that has been set to 1 on the
+		/// Z axis. No other changes are made.</summary>
+		public Vec3 XY1 => new Vec3(x, y, 1);
 
 		/// <summary>Magnitude is the length of the vector! The distance from
 		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap

@@ -79,8 +79,8 @@ void hand_mouse_update_frame() {
 
 	mouse_pointer_id = input_hand_pointer_id[mouse_active_hand];
 
-	pointer_t    *pointer_cursor = input_get_pointer(mouse_pointer_id);
-	const hand_t *hand           = input_hand       (mouse_active_hand);
+	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
+	hand_t    *hand           = (hand_t*)input_hand(mouse_active_hand);
 	bool l_pressed     = false;
 	bool r_pressed     = false;
 	bool was_tracked   = hand->tracked_state & button_state_active;
@@ -106,6 +106,14 @@ void hand_mouse_update_frame() {
 	if (was_tracked   != hand_tracked) input_fire_event( src, hand_tracked  ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 	if (was_l_pressed != l_pressed   ) input_fire_event( src, l_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
 	if (was_r_pressed != r_pressed   ) input_fire_event( src, r_pressed     ? button_state_just_active : button_state_just_inactive, *pointer_cursor);
+
+	hand->pinch_state      = input_key(key_mouse_left );
+	hand->grip_state       = input_key(key_mouse_right);
+	hand->pinch_activation = (input_key(key_mouse_left ) & button_state_active) > 0;
+	hand->grip_activation  = (input_key(key_mouse_right) & button_state_active) > 0;
+
+	hand->aim       = { pointer_cursor->ray.pos, pointer_cursor->orientation };
+	hand->aim_ready = pointer_cursor->tracked;
 }
 
 ///////////////////////////////////////////

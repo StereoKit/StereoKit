@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class TestLayoutCuts : ITest
+class TestUILayoutCuts : ITest
 {
 	public void Initialize() { Tests.RunForFrames(2); }
 	public void Shutdown() { }
@@ -70,7 +70,7 @@ class TestLayoutCuts : ITest
 		UI.LayoutPushCut(UICut.Top, UI.LineHeight);
 		UI.Button  ("Back");
 		UI.SameLine();
-		UI.Text    ("Dagoth Wave", TextAlign.Center, TextFit.Wrap, Vec2.Zero);
+		UI.Text    ("Dagoth Wave", TextAlign.Center, TextFit.Clip, new Vec2(UI.LayoutRemaining.x, UI.LineHeight));
 		UI.LayoutPop();
 
 		float width = 0.1f;

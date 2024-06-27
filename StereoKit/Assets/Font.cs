@@ -62,6 +62,17 @@ namespace StereoKit {
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
 
+		/// <summary>Loads font from a specified list of font family names</summary>
+		/// <param name="fontFamily">List of font family names separated by comma(,)
+		/// similar to a list of names css allows.</param>
+		/// <returns>A font from the given font family names, Most of the OS provide 
+		/// fallback fonts, hence there will always be a set of fonts.</returns>
+		public static Font FromFamily(string fontFamily)
+		{
+			IntPtr inst = NativeAPI.font_create_family(fontFamily);
+			return inst == IntPtr.Zero ? null : new Font(inst);
+		}
+
 		/// <inheritdoc cref="StereoKit.Default.Font" />
 		public static Font Default => StereoKit.Default.Font;
 	}

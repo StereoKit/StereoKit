@@ -621,6 +621,8 @@ namespace StereoKit
 	/// it is given.</summary>
 	[Flags]
 	public enum TextFit {
+		/// <summary>No particularly special behavior.</summary>
+		None         = 0,
 		/// <summary>The text will wrap around to the next line down when it
 		/// reaches the end of the space on the X axis.</summary>
 		Wrap         = 1 << 0,
@@ -747,6 +749,19 @@ namespace StereoKit
 		/// thumbnails of 3D objects, or other similar cases. In this mode,
 		/// parallel lines remain parallel regardless of how far they travel.</summary>
 		Ortho        = 1,
+	}
+
+	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
+	/// stack, this can be used to change the behavior of how parent hierarchy items
+	/// will affect the item being added to the top of the stack.</summary>
+	public enum HierarchyParent {
+		/// <summary>Inheriting is generally the default behavior of a hierarchy stack, the
+		/// current item will inherit the properties of the parent stack item in some
+		/// form or another.</summary>
+		Inherit,
+		/// <summary>Ignoring the parent hierarchy stack item will let you skip inheriting
+		/// anything from the parent item. The new item remains exactly as provided.</summary>
+		Ignore,
 	}
 
 	/// <summary>When opening the Platform.FilePicker, this enum describes
@@ -1225,6 +1240,8 @@ namespace StereoKit
 		Solid,
 		/// <summary>An Anchor.</summary>
 		Anchor,
+		/// <summary>A RenderList</summary>
+		RenderList,
 	}
 
 }

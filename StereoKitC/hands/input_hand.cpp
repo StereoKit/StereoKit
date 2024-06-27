@@ -34,6 +34,7 @@ struct hand_state_t {
 	hand_t      info;
 	pose_t      pose_blend[5][5];
 	pose_t      pose_prev[5][5];
+	pose_t      aim;
 	mesh_t      active_mesh;
 	vec3        pinch_pt_relative;
 	bool        visible;
@@ -124,6 +125,12 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 ///////////////////////////////////////////
 
 const hand_t *input_hand(handed_ hand) {
+	return &hand_state[hand].info;
+}
+
+///////////////////////////////////////////
+
+hand_t* input_hand_ref(handed_ hand) {
 	return &hand_state[hand].info;
 }
 
@@ -270,34 +277,28 @@ void input_hand_update_poses() {
 
 ///////////////////////////////////////////
 
+void input_hand_sim_trigger(button_state_ prev_state, hand_joint_t a, hand_joint_t b, float activation_dist, float deactivation_dist, float max_dist, button_state_ *out_state, float *out_activation) {
+	button_state_ result        = button_state_inactive;
+	bool          was_triggered = prev_state & button_state_active;
+	float         threshold     = was_triggered ? deactivation_dist : activation_dist;
+
+	float offset = a.radius + b.radius;
+	float dist   = vec3_distance(a.position, b.position) - offset;
+
+	float activation   = fminf(1, fmaxf(0, 1 - ((dist - threshold) / (max_dist - threshold))));
+	bool  is_triggered = dist <= threshold;
+
+	if (was_triggered != is_triggered) result |= is_triggered ? button_state_just_active : button_state_just_inactive;
+	if (is_triggered) result |= button_state_active;
+
+	*out_state      = result;
+	*out_activation = activation;
+}
+
+///////////////////////////////////////////
+
 void input_hand_state_update(handed_ handedness) {
 	hand_t &hand = hand_state[handedness].info;
-
-	// Update hand state based on inputs
-	bool was_trigger = hand.pinch_state & button_state_active;
-	bool was_gripped = hand.grip_state  & button_state_active;
-	// Clear all except tracking state
-	hand.pinch_state = button_state_inactive;
-	hand.grip_state  = button_state_inactive;
-	
-	const float grip_activation_dist  = (was_gripped ? 6 : 5) * cm2m;
-	const float pinch_activation_dist = (was_trigger ? 1.5f : 1.0f) * cm2m;
-	float finger_offset = hand.fingers[hand_finger_index][hand_joint_tip].radius + hand.fingers[hand_finger_thumb][hand_joint_tip].radius;
-	float finger_dist   = vec3_magnitude((hand.fingers[hand_finger_index][hand_joint_tip].position - hand.fingers[hand_finger_thumb][hand_joint_tip].position)) - finger_offset;
-	float grip_offset   = hand.fingers[hand_finger_ring][hand_joint_tip].radius + hand.fingers[hand_finger_ring][hand_joint_root].radius;
-	float grip_dist     = vec3_magnitude(hand.fingers[hand_finger_ring][hand_joint_tip].position - hand.fingers[hand_finger_ring][hand_joint_root].position) - grip_offset;
-	
-	const float pinch_max = 8 * cm2m;
-	const float grip_max  = 11 * cm2m;
-	hand.pinch_activation = fminf(1, fmaxf(0, 1 - ((finger_dist - pinch_activation_dist) / (pinch_max - pinch_activation_dist))));
-	hand.grip_activation  = fminf(1, fmaxf(0, 1 - ((grip_dist   - grip_activation_dist)  / (grip_max  - grip_activation_dist))));
-	bool is_trigger = finger_dist <= pinch_activation_dist;
-	bool is_grip    = grip_dist   <= grip_activation_dist;
-
-	if (was_trigger != is_trigger) hand.pinch_state |= is_trigger ? button_state_just_active : button_state_just_inactive;
-	if (was_gripped != is_grip)    hand.grip_state  |= is_grip    ? button_state_just_active : button_state_just_inactive;
-	if (is_trigger) hand.pinch_state |= button_state_active;
-	if (is_grip)    hand.grip_state  |= button_state_active;
 
 	hand.pinch_pt = vec3_lerp(
 		hand.fingers[0][4].position,

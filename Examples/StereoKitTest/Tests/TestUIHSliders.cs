@@ -1,7 +1,7 @@
 ﻿using StereoKit;
 using System;
 
-class TestHSliders : ITest
+class TestUIHSliders : ITest
 {
 	float pushValue  = 0;
 	float pinchValue = 0;
@@ -17,8 +17,8 @@ class TestHSliders : ITest
 
 	bool TestPinch()
 	{
-		bool match = Math.Abs(pinchValue - 0.56f) < 0.02f;
-		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider pinch value: {pinchValue:N3} - expected ~0.56");
+		bool match = Math.Abs(pinchValue - 0.5f) < 0.02f;
+		Log.Write(match ? LogLevel.Info : LogLevel.Error, $"HSlider pinch value: {pinchValue:N3} - expected ~0.5");
 		return match;
 	}
 

@@ -369,7 +369,7 @@ namespace StereoKit
 		/// within its bounds? TextAlign.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
-			=> NativeAPI.ui_text_16(text, textAlign);
+			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, 0, textAlign, TextFit.Wrap);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -389,7 +389,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
-			=> NativeAPI.ui_text_sz_16(text, textAlign, fit, size);
+			=> NativeAPI.ui_text_sz_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -409,7 +409,48 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
+			=> NativeAPI.ui_text_at_16(text, IntPtr.Zero, UIScroll.None, textAlign, fit, topLeftCorner, size);
+
+		/// <summary>A scrolling text element! This is for reading large chunks
+		/// of text that may be too long to fit in the available space. It
+		/// requires a size, as well as a place to store the current scroll
+		/// value. Text uses the UI's current font settings, which can be
+		/// changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="scroll">This is the current scroll value of the text,
+		/// in meters, _not_ percent.</param>
+		/// <param name="scrollDirection">What scroll bars are allowed to show
+		/// on this text? Vertical, horizontal, both?</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default, and this scrolling
+		/// overload will always add `TextFit.Clip` internally.</param>
+		/// <returns>Returns true if any of the scroll bars have changed this
+		/// frame.</returns>
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
+
+		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <param name="height">The vertical height of this Text element,
+		/// width will automatically take the remainder of the current layout
+		/// width.</param>
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
+
+		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		public static bool TextAt(string text, ref Vec2 scroll, UIScroll scrollDirection, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_text_at_16(text, ref scroll, scrollDirection, textAlign, fit, topLeftCorner, size);
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
@@ -851,11 +892,43 @@ namespace StereoKit
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
 		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
-			StringBuilder builder = value != null ? 
-				new StringBuilder(value, value.Length + 16) :
-				new StringBuilder(16);
+			StringBuilder builder = value != null
+				? new StringBuilder(value, value.Length + 16)
+				: new StringBuilder(16);
 
-			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type)) { 
+			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type))
+			{
+				value = builder.ToString();
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>This is an input field where users can input text to the
+		/// app! Selecting it will spawn a virtual keyboard, or act as the
+		/// keyboard focus. Hitting escape or enter, or focusing another UI
+		/// element will remove focus from this Input.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="value">The string that will store the Input's
+		/// content in.</param>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="type">What category of text this Input represents.
+		/// This may affect what kind of soft keyboard will be displayed, if
+		/// one is shown to the user.</param>
+		/// <returns>Returns true every time the contents of 'value' change.
+		/// </returns>
+		public static bool InputAt(string id, ref string value, Vec3 topLeftCorner, Vec2 size, TextContext type = TextContext.Text)
+		{
+			StringBuilder builder = value != null
+				? new StringBuilder(value, value.Length + 16)
+				: new StringBuilder(16);
+
+			if (NativeAPI.ui_input_at_16(id, builder, builder.Capacity, topLeftCorner, size, type))
+			{
 				value = builder.ToString();
 				return true;
 			}
@@ -1281,8 +1354,20 @@ namespace StereoKit
 		/// interactable?</param>
 		/// <param name="ignoreParent">Do we want to ignore or inherit the
 		/// state of the current stack?</param>
-		public static void PushEnabled(bool enabled, bool ignoreParent = false)
-			=> NativeAPI.ui_push_enabled(enabled, ignoreParent);
+		[Obsolete("Use override with HierarchyParent parameter")]
+		public static void PushEnabled(bool enabled, bool ignoreParent)
+			=> NativeAPI.ui_push_enabled(enabled, ignoreParent ? HierarchyParent.Ignore : HierarchyParent.Inherit);
+
+		/// <summary>All UI between PushEnabled and its matching PopEnabled
+		/// will set the UI to an enabled or disabled state, allowing or
+		/// preventing interaction with specific elements. The default state is
+		/// true.</summary>
+		/// <param name="enabled">Should the following elements be enabled and
+		/// interactable?</param>
+		/// <param name="parentBehavior">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		public static void PushEnabled(bool enabled, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.ui_push_enabled(enabled, parentBehavior);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>
@@ -1353,6 +1438,53 @@ namespace StereoKit
 		/// A null sound will fall back to the default sound.</param>
 		public static void SetElementSound(UIVisual visual, Sound activate, Sound deactivate)
 			=> NativeAPI.ui_set_element_sound(visual, activate?._inst ?? IntPtr.Zero, deactivate?._inst ?? IntPtr.Zero);
+
+		/// <summary>This will draw a visual element from StereoKit's theming
+		/// system, while paying attention to certain factors such as enabled/
+		/// disabled, tinting and more.</summary>
+		/// <param name="elementVisual">The element type to draw.</param>
+		/// <param name="elementColor">If you wish to use the coloring from a
+		/// different element, you can use this to override the theme color
+		/// used when drawing.</param>
+		/// <param name="start">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="focus">The amount of visual focus this element
+		/// currently has, where 0 is unfocused, and 1 is active. You can
+		/// acquire a good focus value from `UI.GetAnimFocus`.</param>
+		public static void DrawElement(UIVisual elementVisual, UIVisual elementColor, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element_color(elementVisual, elementColor, start, size, focus);
+
+		/// <inheritdoc cref="DrawElement(UIVisual, UIVisual, Vec3, Vec3, float)"/>
+		public static void DrawElement(UIVisual elementVisual, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element(elementVisual, start, size, focus);
+
+		/// <summary>This will get a final linear draw color for a particular
+		/// UI element type with a particular focus value. This obeys the
+		/// current hierarchy of tinting and enabled states.</summary>
+		/// <param name="elementVisual">Get the color from this element type.
+		/// </param>
+		/// <param name="focus">The amount of visual focus this element
+		/// currently has, where 0 is unfocused, and 1 is active. You can
+		/// acquire a good focus value from `UI.GetAnimFocus`</param>
+		/// <returns>A linear color good for tinting UI meshes.</returns>
+		public static Color GetElementColor(UIVisual elementVisual, float focus)
+			=> NativeAPI.ui_get_element_color(elementVisual, focus);
+
+		/// <summary>This resolves a UI element with an ID and its current
+		/// states into a nicely animated focus value.</summary>
+		/// <param name="id">The hierarchical id of the UI element we're
+		/// checking the focus of, this can be created with `UI.StackHash`.
+		/// </param>
+		/// <param name="focusState">The current focus state of the UI element.
+		/// </param>
+		/// <param name="activationState">The current activation status of the
+		/// UI element.</param>
+		/// <returns>A focus value in the realm of 0-1, where 0 is unfocused,
+		/// and 1 is active.</returns>
+		public static float GetAnimFocus(ulong id, BtnState focusState, BtnState activationState)
+			=> NativeAPI.ui_get_anim_focus(id, focusState, activationState);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
 		/// windows, or windows that are created due to some type of user
