@@ -145,7 +145,7 @@ typedef uint64_t id_hash_t;
 
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
 SK_API void     ui_quadrant_size_mesh   (mesh_t ref_mesh, float overflow_percent);
-SK_API mesh_t   ui_gen_quadrant_mesh    (ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
+SK_API mesh_t   ui_gen_quadrant_mesh    (ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, bool32_t quadrantify, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count);
 SK_API void     ui_show_volumes         (bool32_t      show);
 SK_API void     ui_enable_far_interact  (bool32_t      enable);
 SK_API bool32_t ui_far_interact_enabled (void);

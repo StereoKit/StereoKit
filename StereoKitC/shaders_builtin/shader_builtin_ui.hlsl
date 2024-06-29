@@ -16,7 +16,7 @@ struct psIn {
 	float4 pos     : SV_POSITION;
 	float2 uv      : TEXCOORD0;
 	float3 world   : TEXCOORD1;
-	half3  color   : COLOR0;
+	half4  color   : COLOR0;
 	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
@@ -30,13 +30,14 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	o.pos   = mul(world, sk_viewproj[o.view_id]);
 	o.world = world.xyz;
 	o.uv    = input.uv;
-	o.color = (color * input.color * sk_inst[id].color).rgb * sk_lighting(normal);
+	o.color.rgb = color.rgb * input.color.rgb * sk_inst[id].color.rgb * sk_lighting(normal);
+	o.color.a   = input.color.a;
 	return o;
 }
 
 float4 ps(psIn input) : SV_TARGET {
 	float  glow = pow(1 - saturate(sk_finger_distance(input.world) / 0.12), 10);
-	float4 col  = float4(lerp(input.color.rgb, half3(1, 1, 1), glow), 1);
+	float4 col  = float4(lerp(input.color.rgb, half3(1, 1, 1), glow), input.color.a);
 
 	return diffuse.Sample(diffuse_s, input.uv) * col;
 }
