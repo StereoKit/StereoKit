@@ -23,6 +23,9 @@
 #include <limits.h>
 #include <stdio.h>
 
+#include <basisu_transcoder.h>
+using namespace basist;
+
 namespace sk {
 
 void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height);
@@ -358,6 +361,16 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32
 		return true;
 	}
 
+	ktx2_transcoder ktx_transcoder;
+	if (ktx_transcoder.init(data, data_size)) {
+		ktx2_header header = ktx_transcoder.get_header();
+		*out_width  = header.m_pixel_width;
+		*out_height = header.m_pixel_height;
+		*out_format = tex_format_rgba32;
+		ktx_transcoder.clear();
+		return true;
+	}
+
 	return false;
 }
 
@@ -390,6 +403,23 @@ void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_
 		return result;
 	}
 
+	// Check for a basisu image
+	basisu_transcoder_init();
+
+	// Check for KTX2
+	ktx2_transcoder ktx_transcoder;
+	if (ktx_transcoder.init(data, data_size)) {
+		ktx2_header header = ktx_transcoder.get_header();
+		*out_width  = header.m_pixel_width;
+		*out_height = header.m_pixel_height;
+		*out_format = tex_format_rgba32;
+		color32 *data = sk_malloc_t(color32, *out_width * *out_height);
+		ktx2_transcoder_state state = {};
+		ktx_transcoder.start_transcoding();
+		bool result = ktx_transcoder.transcode_image_level(0, 0, 0, data, *out_width * *out_height, transcoder_texture_format::cTFRGBA32, 0, *out_width, *out_width, 0, 0, &state);
+		ktx_transcoder.clear();
+		return result ? data : nullptr;
+	}
 	return nullptr;
 }
 
