@@ -52,7 +52,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float2 glow = FingerGlowEx(input.world.xyz, input.normal);
+	float2 glow = sk_finger_glow_ex(input.world.xyz, input.normal);
 	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
 	glow.x = max(0,1-(glow.x / border_affect_radius));
 	
@@ -66,7 +66,7 @@ float4 ps(psIn input) : SV_TARGET {
 	// on the associated material. This creates artifacts with depth write on.
 	// input.color.a *= abs(corner)/fwidth(corner);
 
-	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow.y), input.color.a);
+	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow.y), 1);
 
 	return col;
 }

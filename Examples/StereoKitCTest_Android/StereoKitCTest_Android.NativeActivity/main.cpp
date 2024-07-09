@@ -38,7 +38,7 @@ void android_main(struct android_app* state) {
 	settings.app_name           = "StereoKitCTest_Android";
 	settings.android_activity   = state->activity->clazz;
 	settings.android_java_vm    = state->activity->vm;
-	settings.display_preference = display_mode_mixedreality;
+	settings.mode               = app_mode_xr;
 	if (!sk_init(settings))
 		return;
 
@@ -57,8 +57,8 @@ void android_main(struct android_app* state) {
 		if (app_visible) sk_step([]() {
 			render_add_mesh(mesh, mat, matrix_trs(vec3_zero));
 
-			if (sk_active_display_mode() == display_mode_flatscreen) {
-				vec3 pos = { cosf(time_getf())*.6f, 0.5f, sinf(time_getf())*.6f };
+			if (device_display_get_type() == display_type_flatscreen) {
+				vec3 pos = { cosf(time_totalf())*.6f, 0.5f, sinf(time_totalf())*.6f };
 				render_set_cam_root(matrix_trs(pos, quat_lookat(pos, vec3{0,0.25f,0})));
 			}
 

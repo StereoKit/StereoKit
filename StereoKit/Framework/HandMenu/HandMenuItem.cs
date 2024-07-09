@@ -50,7 +50,14 @@ namespace StereoKit.Framework
 			this.callback = callback;
 		}
 
-		public virtual void Draw(Vec3 at, float fitRadius, float angle, bool focused)
+		/// <summary>This draws the menu item on the radial menu!</summary>
+		/// <param name="at">Center of the radial slice</param>
+		/// <param name="arcLength">Length of the arc at the midpoint of the
+		/// radial slice.</param>
+		/// <param name="angle">Angle of the centerpoint of the slice this is
+		/// rendered on.</param>
+		/// <param name="focused">If the current menu slice has focus.</param>
+		public virtual void Draw(Vec3 at, float arcLength, float angle, bool focused)
 		{
 			if (image != null)
 			{

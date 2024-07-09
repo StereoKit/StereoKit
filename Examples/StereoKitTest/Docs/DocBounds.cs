@@ -23,7 +23,7 @@ class DocBounds : ITest
 		// coordinates are in the same space!
 		Ray ray = new Ray(Vec3.Up, -Vec3.Up);
 		if (bounds.Intersect(ray, out Vec3 at))
-			Log.Info("Bounds intersection at " + at); // <0, 0.5f, 0>
+			Log.Info($"Bounds intersection at {at}"); // <0, 0.5f, 0>
 
 		// You can also scale a Bounds using the '*' operator overload, 
 		// this is really useful if you're working with the Bounds of a
@@ -40,5 +40,5 @@ class DocBounds : ITest
 	}
 
 	public void Shutdown() { }
-	public void Update() { }
+	public void Step() { }
 }

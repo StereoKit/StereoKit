@@ -10,9 +10,6 @@
     <ClCompile Include="systems\input.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="systems\physics.cpp">
-      <Filter>systems</Filter>
-    </ClCompile>
     <ClCompile Include="systems\render.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
     </ClCompile>
     <ClCompile Include="systems\line_drawer.cpp">
       <Filter>systems</Filter>
-    </ClCompile>
-    <ClCompile Include="intersect.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="color.cpp">
       <Filter>src</Filter>
@@ -109,9 +103,6 @@
     <ClCompile Include="systems\input_keyboard.cpp">
       <Filter>systems</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\tinycthread.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="systems\audio.cpp">
       <Filter>systems</Filter>
     </ClCompile>
@@ -133,9 +124,6 @@
     <ClCompile Include="tools\virtual_keyboard.cpp">
       <Filter>tools</Filter>
     </ClCompile>
-    <ClCompile Include="libraries\stb_image.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="ui\stereokit_ui.cpp">
       <Filter>ui</Filter>
     </ClCompile>
@@ -154,16 +142,10 @@
     <ClCompile Include="platforms\android.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
-    <ClCompile Include="platforms\flatscreen_input.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
     <ClCompile Include="platforms\linux.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
     <ClCompile Include="platforms\platform.cpp">
-      <Filter>platforms</Filter>
-    </ClCompile>
-    <ClCompile Include="platforms\platform_utils.cpp">
       <Filter>platforms</Filter>
     </ClCompile>
     <ClCompile Include="platforms\uwp.cpp">
@@ -199,6 +181,78 @@
     <ClCompile Include="xr_backends\openxr_view.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
+    <ClCompile Include="libraries\unicode.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="asset_types\anchor.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\anchor_openxr_msft.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\anchor_stage.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_layout.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_core.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\sdf.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ui_theming.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\simulator.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\random.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\ferr_thread.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\xr.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\offscreen.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\window.cpp">
+      <Filter>xr_backends</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\tools.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="platforms\platform_common_win.cpp">
+      <Filter>platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="platforms\platform_common_unix.cpp">
+      <Filter>platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\render_pipeline.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\_stereokit_systems.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="systems\input_render.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\stb.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="libraries\sk_fontfile.cpp">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -215,9 +269,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="systems\input.h">
-      <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="systems\physics.h">
       <Filter>systems</Filter>
     </ClInclude>
     <ClInclude Include="systems\render.h">
@@ -298,33 +349,6 @@
     <ClInclude Include="libraries\sk_gpu.h">
       <Filter>libraries</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_default.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_equirect.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_font.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_lines.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_skybox.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="sk_math.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -343,12 +367,6 @@
     <ClInclude Include="systems\input_keyboard.h">
       <Filter>systems</Filter>
     </ClInclude>
-    <ClInclude Include="libraries\tinycthread.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_ui_box.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="systems\audio.h">
       <Filter>systems</Filter>
     </ClInclude>
@@ -357,9 +375,6 @@
     </ClInclude>
     <ClInclude Include="systems\world.h">
       <Filter>systems</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_unlit_clip.hlsl.h">
-      <Filter>shaders_builtin</Filter>
     </ClInclude>
     <ClInclude Include="libraries\unicode.h">
       <Filter>libraries</Filter>
@@ -370,9 +385,6 @@
     <ClInclude Include="asset_types\animation.h">
       <Filter>asset_types</Filter>
     </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_pbr_clip.hlsl.h">
-      <Filter>shaders_builtin</Filter>
-    </ClInclude>
     <ClInclude Include="libraries\aileron_font_data.h">
       <Filter>libraries</Filter>
     </ClInclude>
@@ -382,14 +394,8 @@
     <ClInclude Include="tools\virtual_keyboard.h">
       <Filter>tools</Filter>
     </ClInclude>
-    <ClInclude Include="tools\virtual_keyboard_layouts.h">
-      <Filter>tools</Filter>
-    </ClInclude>
     <ClInclude Include="stereokit_ui.h">
       <Filter>ui</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders_builtin\shader_builtin_blit.hlsl.h">
-      <Filter>shaders_builtin</Filter>
     </ClInclude>
     <ClInclude Include="sk_math_dx.h">
       <Filter>src</Filter>
@@ -409,16 +415,10 @@
     <ClInclude Include="platforms\android.h">
       <Filter>platforms</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\flatscreen_input.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
     <ClInclude Include="platforms\linux.h">
       <Filter>platforms</Filter>
     </ClInclude>
     <ClInclude Include="platforms\platform.h">
-      <Filter>platforms</Filter>
-    </ClInclude>
-    <ClInclude Include="platforms\platform_utils.h">
       <Filter>platforms</Filter>
     </ClInclude>
     <ClInclude Include="platforms\uwp.h">
@@ -460,6 +460,81 @@
     <ClInclude Include="xr_backends\openxr_view.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
+    <ClInclude Include="asset_types\anchor.h">
+      <Filter>asset_types</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\anchor_openxr_msft.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\anchor_stage.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\atomic_util.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_layout.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_core.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\sdf.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\ui_theming.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\simulator.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\random.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\ferr_thread.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\xr.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\window.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\offscreen.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
+    <ClInclude Include="platforms\_platform.h">
+      <Filter>platforms</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\tools.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\render_pipeline.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\_stereokit_systems.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\input_render.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\default_controller_r.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\default_controller_l.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\render_.h">
+      <Filter>systems</Filter>
+    </ClInclude>
+    <ClInclude Include="libraries\sk_fontfile.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -492,6 +567,9 @@
     <Filter Include="xr_backends">
       <UniqueIdentifier>{16429ea8-7ffe-4668-8807-596c42670405}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{cc487034-d7b8-48bc-85ed-fba2b844bd5e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -522,9 +600,6 @@
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\Tools\include\stereokit.hlsli">
-      <Filter>shaders_builtin</Filter>
-    </None>
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
@@ -538,7 +613,16 @@
     <None Include="shaders_builtin\shader_builtin_blit.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
-    <None Include="..\Tools\include\stereokit_pbr.hlsli">
+    <None Include="$(ProjectDir)..\tools\include\stereokit.hlsli">
+      <Filter>shaders_builtin</Filter>
+    </None>
+    <None Include="$(ProjectDir)..\tools\include\stereokit_pbr.hlsli">
+      <Filter>shaders_builtin</Filter>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl">
+      <Filter>shaders_builtin</Filter>
+    </None>
+    <None Include="shaders_builtin\shader_builtin_lightmap.hlsl">
       <Filter>shaders_builtin</Filter>
     </None>
   </ItemGroup>

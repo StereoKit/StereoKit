@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -31,16 +37,30 @@ namespace StereoKit
 			dimensions = totalDimensions;
 		}
 
+		/// <summary>From the front, this is the Top (Y+), Left (X+), Center
+		/// (Z0) of the bounds. Useful when working with UI layout bounds.
+		/// </summary>
+		public Vec3 TLC => center + dimensions.XY0/2;
+
+		/// <summary>From the front, this is the Top (Y+), Left (X+), Back (Z+)
+		/// of the bounds. Useful when working with UI layout bounds.</summary>
+		public Vec3 TLB => center + dimensions/2;
+
 		/// <summary>Creates a bounding box object centered around zero!
 		/// </summary>
 		/// <param name="totalDimensions">The total size of the box, from one
 		/// end to the other. This is the width, height, and depth of the
 		/// Bounds.</param>
 		public Bounds(Vec3 totalDimensions)
-		{
-			this.center = Vec3.Zero;
-			dimensions = totalDimensions;
-		}
+			: this(Vec3.Zero, totalDimensions) { }
+
+		/// <summary>Creates a bounding box object centered around zero!
+		/// </summary>
+		/// <param name="totalDimensionX">Total size on the X axis.</param>
+		/// <param name="totalDimensionY">Total size on the Y axis.</param>
+		/// <param name="totalDimensionZ">Total size on the Z axis.</param>
+		public Bounds(float totalDimensionX, float totalDimensionY, float totalDimensionZ)
+			: this(Vec3.Zero, new Vec3(totalDimensionX, totalDimensionY, totalDimensionZ)) { }
 
 		/// <summary>Create a bounding box from a corner, plus box dimensions.
 		/// </summary>
@@ -59,6 +79,43 @@ namespace StereoKit
 		public static Bounds FromCorners(Vec3 bottomLeftBack, Vec3 topRightFront)
 			=> new Bounds(bottomLeftBack/2 + topRightFront/2, topRightFront-bottomLeftBack);
 
+		/// <summary>Grow the Bounds to encapsulate the provided point. Returns
+		/// the result, and does NOT modify the current bounds.</summary>
+		/// <param name="pt">The point to encapsulate! This should be in the
+		/// same space as the bounds.</param>
+		/// <returns>The bounds that also encapsulate the provided point.
+		/// </returns>
+		public Bounds Grown (Vec3 pt)
+			=> NativeAPI.bounds_grow_to_fit_pt(this, pt);
+		/// <summary>Grow the Bounds to encapsulate the provided box after it
+		/// has been transformed by the provided matrix transform. This will
+		/// transform each corner of the box, and expand the bounds to
+		/// encapsulate each point!</summary>
+		/// <param name="box">The box to encapsulate! The corners of this box
+		/// are transformed, and then used to grow the Bounds.</param>
+		/// <param name="boxTransform">The Matrix transform for the box. If
+		/// this is just an Identity matrix, you can skip providing a Matrix.
+		/// </param>
+		/// <returns>The bounds that also encapsulate the provided transformed
+		/// box.</returns>
+		public Bounds Grown (Bounds box, Matrix boxTransform)
+			=> NativeAPI.bounds_grow_to_fit_box(this, box, boxTransform);
+		/// <summary>Grow the Bounds to encapsulate the provided box.</summary>
+		/// <param name="box">The box to encapsulate!</param>
+		/// <returns>The bounds that also encapsulate the provided box.
+		/// </returns>
+		public Bounds Grown (Bounds box)
+			=> NativeAPI.bounds_grow_to_fit_box(this, box, IntPtr.Zero);
+		/// <summary>This returns a Bounds that encapsulates the transformed
+		/// points of the current Bounds's corners. Note that this will likely
+		/// introduce a lot of extra empty volume in many cases, as the result
+		/// is still always axis aligned.</summary>
+		/// <param name="transform">A transform Matrix for the current Bounds's
+		/// corners.</param>
+		/// <returns>A Bounds that encapsulates the transformed points of the
+		/// current Bounds's corners</returns>
+		public Bounds Transformed(Matrix transform)
+			=> NativeAPI.bounds_transform(this, transform);
 
 		/// <summary>Calculate the intersection between a Ray, and these
 		/// bounds. Returns false if no intersection occurred, and 'at' will
@@ -120,7 +177,7 @@ namespace StereoKit
 			dimensions *= scale;
 		}
 
-		/// <summary>Scale the bounds.  
+		/// <summary>Scale the bounds.
 		/// It will scale the center as well as	the dimensions!
 		/// Returns a new Bounds.</summary>
 		/// <remarks>This is equivalent to using the * operator: bounds * scale</remarks>
@@ -133,12 +190,28 @@ namespace StereoKit
 		[Pure]
 		public Bounds Scaled(Vec3 scale) => this * scale;
 
+		/// <summary>This operator will create a new Bounds that has been
+		/// properly scaled up by the float. This does affect the center
+		/// position of the Bounds.</summary>
+		/// <param name="a">The source Bounds.</param>
+		/// <param name="b">A scalar multiplier for the Bounds.</param>
+		/// <returns>A new Bounds that has been scaled.</returns>
 		[Pure]
 		public static Bounds operator *(Bounds a, float b) => new Bounds(a.center * b, a.dimensions * b);
 
+		/// <summary>This operator will create a new Bounds that has been
+		/// properly scaled up by the Vec3. This does affect the center
+		/// position of the Bounds.</summary>
+		/// <param name="a">The source Bounds.</param>
+		/// <param name="b">A Vec3 multiplier for the Bounds.</param>
+		/// <returns>A new Bounds that has been scaled.</returns>
 		[Pure]
 		public static Bounds operator *(Bounds a, Vec3 b) => new Bounds(a.center * b, a.dimensions * b);
 
+		/// <summary>Creates a text description of the Bounds, in the format of
+		/// "[center:X dimensions:X]"</summary>
+		/// <returns>A text description of the Bounds, in the format of
+		/// "[center:X dimensions:X]"</returns>
 		public override string ToString()
 			=> string.Format("[center:{0} dimensions:{1}]", center, dimensions);
 	}

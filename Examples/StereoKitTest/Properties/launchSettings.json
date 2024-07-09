@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "StereoKitTest": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    },
+    "StereoKitTest Tests": {
+      "commandName": "Project",
+      "commandLineArgs": "-test -screenfolder ../../../tools/screenshots/",
+      "nativeDebugging": true
+    },
+    "StereoKitTest GLTF": {
+      "commandName": "Project",
+      "commandLineArgs": "-test -start TestGltf -gltf C:\\Tools\\glTF-Sample-Models-master\\2.0 -gltfscreenfolder ../../../tools/screenshots_gltf",
+      "nativeDebugging": true
+    }
+  }
+}

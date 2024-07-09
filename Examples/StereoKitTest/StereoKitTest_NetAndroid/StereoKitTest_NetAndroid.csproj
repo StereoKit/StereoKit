@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net7.0-android</TargetFramework>
+		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+		<OutputType>Exe</OutputType>
+		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>0.3.9</ApplicationDisplayVersion>
+		<RootNamespace>StereoKitTest</RootNamespace>
+		<ReadOnlyProject>true</ReadOnlyProject>
+
+		<SKOpenXRLoaderFolder Condition="'$(OS)'!='Windows_NT'">/mnt/c/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
+		<SKOpenXRLoaderFolder Condition="'$(OS)'=='Windows_NT'">C:/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
+		<SKOpenXRLoader>Standard</SKOpenXRLoader>
+		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
+		
+		<!--<TestBuildMode>x64</TestBuildMode>-->
+		<TestBuildMode>ARM64</TestBuildMode>
+
+		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='ARM64'">android-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='x64'">android-x64</RuntimeIdentifiers>
+		
+		<!--Suppress targetSdkVersion 29 warnings. XR devices use old versions
+		    of Android.-->
+		<NoWarn>XA4211;XA1006;XA4301;CS1587</NoWarn>
+	</PropertyGroup>
+
+	<!-- Include the Stereokit project manually. This is similar to including the
+	     StereoKit NuGet, but different because C# cannot consume a NuGet package
+	     directly. -->
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\BuildStereoKitSDK.targets" />
+
+	<PropertyGroup>
+		<AndroidManifest          >AndroidManifest.xml</AndroidManifest>
+		<MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
+		<MonoAndroidAssetsPrefix  >Assets</MonoAndroidAssetsPrefix>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\Program.cs" Visible="false" />
+		<Compile Include="..\DebugToolWindow.cs" Visible="false" />
+		<Compile Include="..\ITest.cs" Visible="false" />
+		<Compile Include="..\Tests.cs" Visible="false" />
+		<Compile Include="..\Demos\*.cs" Visible="false" />
+		<Compile Include="..\Tools\*.cs" Visible="false" />
+		<Compile Include="..\Tests\*.cs" Visible="false" />
+	</ItemGroup>
+
+</Project>

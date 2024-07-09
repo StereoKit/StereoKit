@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../platforms/platform_utils.h" // SK_DEBUG
+#include "../platforms/platform.h" // SK_DEBUG
 #include <stdint.h>
 
 namespace sk {
@@ -60,7 +60,7 @@ void  assets_safeswap_ref  (asset_header_t **asset_link, asset_header_t *asset);
 void  assets_shutdown_check();
 char *assets_file          (const char *file_name);
 bool  assets_init          ();
-void  assets_update        ();
+void  assets_step          ();
 void  assets_shutdown      ();
 void  assets_on_load       (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context);
 void  assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));

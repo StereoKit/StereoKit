@@ -54,7 +54,6 @@ namespace StereoKit
 				case Type _ when t == typeof(Mesh    ): return AssetType.Mesh;
 				case Type _ when t == typeof(Model   ): return AssetType.Model;
 				case Type _ when t == typeof(Shader  ): return AssetType.Shader;
-				case Type _ when t == typeof(Solid   ): return AssetType.Solid;
 				case Type _ when t == typeof(Sound   ): return AssetType.Sound;
 				case Type _ when t == typeof(Sprite  ): return AssetType.Sprite;
 				case Type _ when t == typeof(Tex     ): return AssetType.Tex;
@@ -72,7 +71,6 @@ namespace StereoKit
 				case AssetType.Mesh:     return new Mesh    (inst);
 				case AssetType.Model:    return new Model   (inst);
 				case AssetType.Shader:   return new Shader  (inst);
-				case AssetType.Solid:    return new Solid   (inst);
 				case AssetType.Sound:    return new Sound   (inst);
 				case AssetType.Sprite:   return new Sprite  (inst);
 				case AssetType.Tex:      return new Tex     (inst);
@@ -80,6 +78,11 @@ namespace StereoKit
 			}
 		}
 
+		/// <summary>Allows for enumerating all StereoKit assets matching the
+		/// specified type.</summary>
+		/// <typeparam name="T">Any `IAsset` type.</typeparam>
+		/// <returns>An enumeration of all loaded asset objects that match the
+		/// given type.</returns>
 		public static IEnumerable<T> Type<T>() where T : IAsset
 		{
 			AssetType assetType = TypeToAssetType(typeof(T));
@@ -97,6 +100,11 @@ namespace StereoKit
 			}
 		}
 
+		/// <summary>Allows for enumerating all StereoKit assets matching the
+		/// specified type.</summary>
+		/// <param name="type">Any `IAsset` type.</param>
+		/// <returns>An enumeration of all loaded asset objects that match the
+		/// given type.</returns>
 		public static IEnumerable<IAsset> Type(Type type)
 		{
 			AssetType assetType = TypeToAssetType(type);
@@ -114,6 +122,8 @@ namespace StereoKit
 			}
 		}
 		
+		/// <summary>This is an enumeration of all asset object loaded by
+		/// StereoKit at the current moment.</summary>
 		public static IEnumerable<IAsset> All { get
 		{
 			int count = NativeAPI.assets_count();

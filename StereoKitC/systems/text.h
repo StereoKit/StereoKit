@@ -2,7 +2,7 @@
 
 namespace sk {
 
-void text_update();
+void text_step();
 void text_shutdown();
 
 } // namespace sk

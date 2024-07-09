@@ -9,6 +9,7 @@ float screen_size;
 
 struct vsIn {
 	float4 pos  : SV_POSITION;
+	float3 norm : NORMAL0;
 	float2 off  : TEXCOORD0;
 	float4 color: COLOR0;
 };

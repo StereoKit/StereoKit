@@ -40,6 +40,6 @@ class DocShaderArrays : ITest
 	/// :End:
 
 	public void Shutdown() { }
-	public void Update()
+	public void Step()
 		=> Mesh.Cube.Draw(arrayMaterial, Matrix.TS(0, 0, -0.5f, 0.1f));
 }

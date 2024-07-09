@@ -1,7 +1,7 @@
 ﻿using StereoKit;
 using System;
 
-/// :CodeDoc: Guides 5 Drawing
+/// :CodeDoc: Guides 6 Drawing
 /// # Drawing content with StereoKit
 /// 
 /// Generally, the first thing you want to do is get content on-screen! Or
@@ -27,7 +27,7 @@ class GuideDrawing : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		Hierarchy.Push(Matrix.T(0, 2, 0));
 		Mesh.Sphere.Draw(wireframeMaterial, Matrix.TS(-0.07f, 0, 0, 0.1f));

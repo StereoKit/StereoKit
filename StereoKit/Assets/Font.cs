@@ -27,6 +27,7 @@ namespace StereoKit {
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty font!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Font()
 		{
 			if (_inst != IntPtr.Zero)
@@ -42,7 +43,7 @@ namespace StereoKit {
 			IntPtr fontInst = NativeAPI.font_find(fontId);
 			if (fontInst == IntPtr.Zero)
 			{
-				Log.Write(LogLevel.Warning, "Couldn't find a font named {0}", fontId);
+				Log.Warn($"Couldn't find a font named {fontId}");
 				return null;
 			}
 			return new Font(fontInst);
@@ -58,6 +59,17 @@ namespace StereoKit {
 		public static Font FromFile(params string[] fontFiles)
 		{
 			IntPtr inst = NativeAPI.font_create_files(fontFiles, fontFiles.Length);
+			return inst == IntPtr.Zero ? null : new Font(inst);
+		}
+
+		/// <summary>Loads font from a specified list of font family names</summary>
+		/// <param name="fontFamily">List of font family names separated by comma(,)
+		/// similar to a list of names css allows.</param>
+		/// <returns>A font from the given font family names, Most of the OS provide 
+		/// fallback fonts, hence there will always be a set of fonts.</returns>
+		public static Font FromFamily(string fontFamily)
+		{
+			IntPtr inst = NativeAPI.font_create_family(fontFamily);
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
 

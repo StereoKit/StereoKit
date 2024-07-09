@@ -71,10 +71,12 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```
+		/// border_affect_radius - meters
+		/// ```
 		/// </summary>
 		public static Material MaterialUIBox { get; private set; }
 		/// <summary>The material used by the UI for Quadrant Sized UI
@@ -180,10 +182,13 @@
 		/// UV coordinates from 0-1.
 		/// 
 		/// Shader Parameters:
-		/// ```color                - color
+		/// ```
+		/// color                - color
 		/// border_size          - meters
 		/// border_size_grow     - meters
-		/// border_affect_radius - meters```</summary>
+		/// border_affect_radius - meters
+		/// ```
+		/// </summary>
 		public static Shader ShaderUIBox { get; private set; }
 
 		/// <summary>A default click sound that lasts for 300ms. It's a
@@ -195,10 +200,66 @@
 		/// low frequencies in it.</summary>
 		public static Sound SoundUnclick { get; private set; }
 
+		/// <summary>This is a 64x64 image of a filled hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
+		public static Sprite SpriteRadioOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty hole. This is common
+		/// iconography for radio buttons which use an empty hole to indicate
+		/// an un-selected radio, and a filled hole for a selected radio. This
+		/// is used by the UI for radio buttons!</summary>
+		public static Sprite SpriteRadioOff { get; private set; }
+		/// <summary>This is a 64x64 image of a filled rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
+		public static Sprite SpriteToggleOn { get; private set; }
+		/// <summary>This is a 64x64 image of an empty rounded square. This is
+		/// common iconography for checkboxes which use an empty square to
+		/// indicate an un-selected checkbox, and a filled square for a
+		/// selected checkbox. This is used by the UI for toggle buttons!
+		/// </summary>
+		public static Sprite SpriteToggleOff { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing up.</summary>
+		public static Sprite SpriteArrowUp { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing down.</summary>
+		public static Sprite SpriteArrowDown { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing left.</summary>
+		public static Sprite SpriteArrowLeft { get; private set; }
+		/// <summary>This is a 64x64 image of a slightly rounded triangle
+		/// pointing right.</summary>
+		public static Sprite SpriteArrowRight { get; private set; }
+		/// <summary>This is a 64x64 image of a backspace action button,
+		/// similar to a backspace button you might find on a mobile keyboard.
+		/// </summary>
+		public static Sprite SpriteBackspace { get; private set; }
+		/// <summary>This is a 64x64 image of an upward facing rounded arrow.
+		/// This is a triangular top with a narrow rectangular base, and is
+		/// used to indicate a 'shift' icon on a keyboard.</summary>
+		public static Sprite SpriteShift { get; private set; }
+		/// <summary>This is a 64x64 image of a square aspect X, with rounded
+		/// edge. It's used to indicate a 'close' icon.</summary>
+		public static Sprite SpriteClose { get; private set; }
+		/// <summary>3 horizontal bars, indicating either a 'hamburger' menu,
+		/// or a list of items.</summary>
+		public static Sprite SpriteList { get; private set; }
+		/// <summary>A 3x3 grid of squares, indicating a grid of items.
+		/// </summary>
+		public static Sprite SpriteGrid { get; private set; }
+
 		/// <summary>The default font used by StereoKit's text. This varies
 		/// from platform to platform, but is typically a sans-serif general
 		/// purpose font, such as Segoe UI.</summary>
 		public static Font Font { get; private set; }
+
+		/// <summary>The default RenderList used by the Renderer for the
+		/// primary display surface.</summary>
+		public static RenderList RenderList { get; private set; }
 
 		internal static void Initialize()
 		{
@@ -242,6 +303,22 @@
 
 			SoundClick   = Sound.Find(DefaultIds.soundClick);
 			SoundUnclick = Sound.Find(DefaultIds.soundUnclick);
+
+			SpriteRadioOn    = Sprite.Find(DefaultIds.spriteRadioOn);
+			SpriteRadioOff   = Sprite.Find(DefaultIds.spriteRadioOff);
+			SpriteToggleOn   = Sprite.Find(DefaultIds.spriteToggleOn);
+			SpriteToggleOff  = Sprite.Find(DefaultIds.spriteToggleOff);
+			SpriteArrowLeft  = Sprite.Find(DefaultIds.spriteArrowLeft);
+			SpriteArrowRight = Sprite.Find(DefaultIds.spriteArrowRight);
+			SpriteArrowUp    = Sprite.Find(DefaultIds.spriteArrowUp);
+			SpriteArrowDown  = Sprite.Find(DefaultIds.spriteArrowDown);
+			SpriteBackspace  = Sprite.Find(DefaultIds.spriteBackspace);
+			SpriteShift      = Sprite.Find(DefaultIds.spriteShift);
+			SpriteClose      = Sprite.Find(DefaultIds.spriteClose);
+			SpriteList       = Sprite.Find(DefaultIds.spriteList);
+			SpriteGrid       = Sprite.Find(DefaultIds.spriteGrid);
+
+			RenderList = new RenderList(NativeAPI.render_get_primary_list());
 		}
 
 		internal static void Shutdown()
@@ -283,6 +360,22 @@
 
 			SoundClick   = null;
 			SoundUnclick = null;
+
+			SpriteRadioOn    = null;
+			SpriteRadioOff   = null;
+			SpriteToggleOn   = null;
+			SpriteToggleOff  = null;
+			SpriteArrowLeft  = null;
+			SpriteArrowRight = null;
+			SpriteArrowUp    = null;
+			SpriteArrowDown  = null;
+			SpriteBackspace  = null;
+			SpriteShift      = null;
+			SpriteClose      = null;
+			SpriteList       = null;
+			SpriteGrid       = null;
+
+			RenderList = null;
 		}
 	}
 }

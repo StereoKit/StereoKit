@@ -24,7 +24,7 @@ class GuideWorkingWithMaterials : ITest
 	{
 	}
 
-	public void Update()
+	public void Step()
 	{
 		/// :CodeDoc: Guides Working with Materials
 		/// ## Using Materials

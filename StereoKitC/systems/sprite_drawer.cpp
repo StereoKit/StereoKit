@@ -59,8 +59,6 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t *buffer) {
 ///////////////////////////////////////////
 
 void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_position, color32 color) {
-
-		
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		vec3 offset = vec3_zero;
@@ -78,7 +76,7 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 		float            height = sprite->size;
 
 
-		//vec3 offset = vec3_zero;
+		vec3 offset = vec3_zero;
 		if      (anchor_position & text_align_x_left  ) offset.x = -width /2.0f;
 		else if (anchor_position & text_align_x_right ) offset.x =  width /2.0f;
 		if      (anchor_position & text_align_y_bottom) offset.y =  height/2.0f;
@@ -89,8 +87,8 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 
 		// Get the hierarchy based transform
 		XMMATRIX tr;
-		if (hierarchy_enabled) {
-			matrix_mul(at, hierarchy_stack.last().transform, tr);
+		if (hierarchy_is_enabled()) {
+			matrix_mul(at, hierarchy_top(), tr);
 		} else {
 			math_matrix_to_fast(at, &tr);
 		}
@@ -132,7 +130,7 @@ bool sprite_drawer_init() {
 ///////////////////////////////////////////
 
 void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
-	render_bind_target_push(target);
+	render_bind_target_push(target, -1, 0);
 	for (size_t i = 0; i < sprites.count; i++) {
 		material_set_texture(sprite_blit_mat, "source", sprites[i]->texture);
 		material_set_vector4(sprite_blit_mat, "blit_to", {
@@ -142,12 +140,12 @@ void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
 			sprites[i]->uvs[1].y - sprites[i]->uvs[0].y });
 		render_blit_to_bound_noclear(sprite_blit_mat);
 	}
-	render_bind_target_pop();
+	render_bind_target_pop(true);
 }
 
 ///////////////////////////////////////////
 
-void sprite_drawer_update() {
+void sprite_drawer_step() {
 	for (size_t i = 0; i < sprite_atlases.count; i++) {
 		sprite_atlas_t* atlas = &sprite_atlases[i];
 		if (atlas->rects.w != tex_get_width (atlas->texture) ||

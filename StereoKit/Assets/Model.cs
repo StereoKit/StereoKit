@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace StereoKit
 {
@@ -28,11 +27,6 @@ namespace StereoKit
 		private ModelNodeCollection   _nodeCollection;
 		private ModelVisualCollection _visualCollection;
 		private ModelAnimCollection   _animCollection;
-
-		/// <summary>The number of mesh subsets attached to this model.
-		/// </summary>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals instead.")]
-		public int SubsetCount => NativeAPI.model_subset_count(_inst);
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managine your assets, or finding
@@ -135,6 +129,7 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty model!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Model()
 		{
 			if (_inst != IntPtr.Zero)
@@ -144,127 +139,12 @@ namespace StereoKit
 
 		#region Methods
 
-		/// <summary>Creates a shallow copy of a Model asset! Meshes and 
+		/// <summary>Creates a shallow copy of a Model asset! Meshes and
 		/// Materials referenced by this Model will be referenced, not
 		/// copied.</summary>
 		/// <returns>A new shallow copy of a Model.</returns>
 		public Model Copy()
 			=> new Model(NativeAPI.model_copy(_inst));
-
-		/// <summary>Returns the name of the specific subset! This will be 
-		/// the node name of your model asset. If no node name is available,
-		/// SteroKit will generate a name in the format of "subsetX", where
-		/// X would be the subset index. Note that names are not guaranteed
-		/// to be unique (users may assign the same name to multiple nodes).
-		/// Some nodes may also produce multiple subsets with the same name,
-		/// such as when a node contains a Mesh with multiple Materials, each
-		/// Mesh/Material combination will receive a subset with the same
-		/// name.</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the 
-		/// Material for, should be less than SubsetCount.</param>
-		/// <returns>See summary for details.</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Name instead.")]
-		public string GetName(int subsetIndex)
-			=> Marshal.PtrToStringAnsi(NativeAPI.model_get_name(_inst, subsetIndex));
-
-		/// <summary>Gets a link to the Material asset used by the model 
-		/// subset! Note that this is not necessarily a unique material, and 
-		/// could be shared in a number of other places. Consider copying and
-		/// replacing it if you intend to modify it!</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the 
-		/// Material for, should be less than SubsetCount.</param>
-		/// <returns>A link to the Material asset used by the model subset at
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
-		public Material GetMaterial(int subsetIndex)
-			=> new Material(NativeAPI.model_get_material(_inst, subsetIndex));
-
-		/// <summary>Gets a link to the Mesh asset used by the model subset!
-		/// Note that this is not necessarily a unique mesh, and could be 
-		/// shared in a number of other places. Consider copying and
-		/// replacing it if you intend to modify it!</summary>
-		/// <param name="subsetIndex">Index of the model subset to get the
-		/// Mesh for, should be less than SubsetCount.</param>
-		/// <returns>A link to the Mesh asset used by the model subset at
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
-		public Mesh GetMesh(int subsetIndex)
-			=> new Mesh(NativeAPI.model_get_mesh(_inst, subsetIndex));
-
-		/// <summary>Gets the transform matrix used by the model subset!
-		/// </summary>
-		/// <param name="subsetIndex">Index of the model subset to get the 
-		/// transform for, should be less than SubsetCount.</param>
-		/// <returns>A transform matrix used by the model subset at 
-		/// subsetIndex</returns>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
-		public Matrix GetTransform(int subsetIndex)
-			=> NativeAPI.model_get_transform(_inst, subsetIndex);
-
-		/// <summary>Changes the Material for the subset to a new one!
-		/// </summary>
-		/// <param name="subsetIndex">Index of the model subset to replace, 
-		/// should be less than SubsetCount.</param>
-		/// <param name="material">The new Material, cannot be null.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Material instead.")]
-		public void SetMaterial(int subsetIndex, Material material)
-			=> NativeAPI.model_set_material(_inst, subsetIndex, material._inst);
-
-		/// <summary>Changes the mesh for the subset to a new one!</summary>
-		/// <param name="subsetIndex">Index of the model subset to replace, 
-		/// should be less than SubsetCount.</param>
-		/// <param name="mesh">The new Mesh, cannot be null.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.Mesh instead.")]
-		public void SetMesh(int subsetIndex, Mesh mesh)
-			=> NativeAPI.model_set_mesh(_inst, subsetIndex, mesh._inst);
-
-		/// <summary>Changes the transform for the subset to a new one! This 
-		/// is in Model space, so it's relative to the origin of the model.
-		/// </summary>
-		/// <param name="subsetIndex">Index of the transform to replace,
-		/// should be less than SubsetCount.</param>
-		/// <param name="transform">The new transform.</param>
-		[Obsolete("For removal in v0.4. Use Nodes/Visuals.ModelTransform instead.")]
-		public void SetTransform(int subsetIndex, in Matrix transform)
-			=> NativeAPI.model_set_transform(_inst, subsetIndex, transform);
-
-		/// <summary>Adds a new subset to the Model, and recalculates the 
-		/// bounds. A default subset name of "subsetX" will be used, where X
-		/// is the subset's index.</summary>
-		/// <param name="mesh">The Mesh for the subset, may not be null.
-		/// </param>
-		/// <param name="material">The Material for the subset, may not be 
-		/// null.</param>
-		/// <param name="transform">A transform Matrix representing the 
-		/// Mesh's location relative to the origin of the Model.</param>
-		/// <returns>The index of the subset that was just added.</returns>
-		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
-		public int AddSubset(Mesh mesh, Material material, in Matrix transform)
-			=> NativeAPI.model_add_subset(_inst, mesh._inst, material._inst, transform);
-
-		/// <summary>Adds a new subset to the Model, and recalculates the 
-		/// bounds.</summary>
-		/// <param name="name">The text name of the subset. If this is null,
-		/// then a default name of "subsetX" will be used, where X is the 
-		/// subset's index.</param>
-		/// <param name="mesh">The Mesh for the subset, may not be null.
-		/// </param>
-		/// <param name="material">The Material for the subset, may not be 
-		/// null.</param>
-		/// <param name="transform">A transform Matrix representing the 
-		/// Mesh's location relative to the origin of the Model.</param>
-		/// <returns>The index of the subset that was just added.</returns>
-		[Obsolete("For removal in v0.4. Use AddNode or Nodes/Visuals.AddChild instead.")]
-		public int AddSubset(string name, Mesh mesh, Material material, in Matrix transform)
-			=> NativeAPI.model_add_named_subset(_inst, name, mesh._inst, material._inst, transform);
-
-		/// <summary>Removes and dereferences a subset from the model.
-		/// </summary>
-		/// <param name="subsetIndex">Index of the subset to remove, should
-		/// be less than SubsetCount.</param>
-		[Obsolete("For removal in v0.4.")]
-		public void RemoveSubset(int subsetIndex)
-			=> NativeAPI.model_remove_subset(_inst, subsetIndex);
 
 		/// <summary>Searches for an animation with the given name, and if it's
 		/// found, sets it up as the active animation and begins playing it
@@ -350,13 +230,20 @@ namespace StereoKit
 		/// <param name="modelSpaceAt">The intersection point and surface
 		/// direction of the ray and the mesh, if an intersection occurs.
 		/// This is in model space, and must be transformed back into world
-		/// space later. Direction is not guaranteed to be normalized, 
+		/// space later. Direction is not guaranteed to be normalized,
 		/// especially if your own model->world transform contains scale/skew
 		/// in it.</param>
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, out modelSpaceAt) > 0;
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt);
+
+		/// <inheritdoc cref="Intersect(Ray, out Ray)"/>
+		/// <param name="cullFaces">How should intersection work with respect
+		/// to the direction the triangles are facing? Should we skip triangles
+		/// that are facing away from the ray, or don't skip anything?</param>
+		public bool Intersect(Ray modelSpaceRay, Cull cullFaces, out Ray modelSpaceAt)
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt);
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a
@@ -407,6 +294,13 @@ namespace StereoKit
 		public void RecalculateBounds()
 			=> NativeAPI.model_recalculate_bounds(_inst);
 
+		/// <summary>Examines the visuals as they currently are, and rebuilds
+		/// the bounds based on all the vertices in the model! This leads (in general)
+		/// to a tighter bound than the default bound based on bounding boxes.
+		/// However, computing the exact bound can take much longer!</summary>
+		public void RecalculateBoundsExact()
+			=> NativeAPI.model_recalculate_bounds_exact(_inst);
+
 		/// <inheritdoc cref="Model.Draw(Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
 		/// to pass into the shader! Normally this gets used like a material
@@ -420,7 +314,13 @@ namespace StereoKit
 		/// a 3rd person perspective, but filtering it out from the 1st
 		/// person perspective.</param>
 		public void Draw(Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_model(_inst, transform, colorLinear, layer);
+			=> NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, transform, colorLinear, layer);
+
+		/// <inheritdoc cref="Draw(Matrix, Color, RenderLayer)"/>
+		/// <param name="materialOverride">Allows you to override the Material
+		/// of all nodes on this Model with your own Material.</param>
+		public void Draw(Material materialOverride, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
+			=> NativeAPI.render_add_model_mat(_inst, materialOverride?._inst ?? IntPtr.Zero, transform, colorLinear, layer);
 
 		/// <summary>Adds this Model to the render queue for this frame! If
 		/// the Hierarchy has a transform on it, that transform is combined
@@ -428,7 +328,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the Model
 		/// from Model Space into the current Hierarchy Space.</param>
 		public void Draw(Matrix transform)
-			=> NativeAPI.render_add_model(_inst, transform, Color.White, RenderLayer.Layer0);
+			=> NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, transform, Color.White, RenderLayer.Layer0);
 		#endregion
 
 		/// <summary>Looks for a Model asset that's already loaded, matching
@@ -542,13 +442,20 @@ namespace StereoKit
 			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_model._inst, _nodeId));
 			set => NativeAPI.model_node_set_name(_model._inst, _nodeId, value);
 		}
+
+		/// <summary>A collection of key/value pairs that add additional
+		/// information to this node. If this comes from a GLTF model, this
+		/// will be populated with the contents of the "extras" section of the
+		/// node.</summary>
+		public ModelNodeInfoCollection Info => new ModelNodeInfoCollection(_model._inst, _nodeId);
+
 		/// <summary>A flag that indicates the Mesh for this node will be used
 		/// in ray intersection tests. This flag is ignored if no Mesh is 
 		/// attached.</summary>
 		public bool Solid
 		{
-			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId) > 0;
-			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value ? 1 : 0);
+			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId);
+			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value);
 		}
 		/// <summary>Is this node flagged as visible? By default, this is true
 		/// for all nodes with visual elements attached. These nodes will not
@@ -557,8 +464,8 @@ namespace StereoKit
 		/// and setting this value will have no effect.</summary>
 		public bool Visible
 		{
-			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId) > 0;
-			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value ? 1 : 0);
+			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId);
+			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value);
 		}
 		/// <summary>The transform of this node relative to the Model itself.
 		/// This incorporates transforms from all parent nodes. Setting this
@@ -597,6 +504,28 @@ namespace StereoKit
 			_model = model;
 			_nodeId = nodeId;
 		}
+
+		/// <summary>Get a Key/Value pair associated with this ModelNode. This
+		/// is auto-populated from the GLTF extras, and you can also add your
+		/// own items here as well.</summary>
+		/// <param name="key">The dictionary key to look up.</param>
+		/// <returns>Null if this key does not exist, or a string with data
+		/// otherwise.</returns>
+		public string GetInfo(string key)
+		{
+			IntPtr result = NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key));
+			return result == IntPtr.Zero
+				? null
+				: NativeHelper.FromUtf8(result);
+		}
+
+		/// <summary>Set a Key/Value pair associated with this ModelNode. This
+		/// is auto-populated from the GLTF extras, and you can also add your
+		/// own items here as well.</summary>
+		/// <param name="key">The dictionary key to look up.</param>
+		/// <param name="value"></param>
+		public void SetInfo(string key, string value)
+			=> NativeAPI.model_node_info_set(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
 		/// hierarchy tree. If it cannot, then it remains the same. </summary>
@@ -668,16 +597,106 @@ namespace StereoKit
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_model, nodeId) : null;
 	}
 
+	/// <summary>A collection of key/value string pairs adding additional
+	/// information to the ModelNode.</summary>
+	public struct ModelNodeInfoCollection : IEnumerable<KeyValuePair<string, string>>
+	{
+		IntPtr _model;
+		int    _nodeId;
+		internal ModelNodeInfoCollection(IntPtr model, int node)
+		{
+			_model  = model;
+			_nodeId = node;
+		}
+
+		/// <summary>A quick way to get values via their keys. Note that since
+		/// Info is a property, the 'set' part of this operator doesn't work.
+		/// Try using the Add function instead.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>Associated value, or null if not found.</returns>
+		public string this[string key] {
+			get => NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)));
+			set => NativeAPI.model_node_info_set(_model, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+		}
+
+		/// <summary>An enumerable for the keys in this collection.</summary>
+		public IEnumerable<string> Keys { 
+			get {
+				int iterator = 0;
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out _))
+					yield return NativeHelper.FromUtf8(key);
+			}
+		}
+		/// <summary>An enumerable for the values in this collection.</summary>
+		public IEnumerable<string> Values
+		{
+			get
+			{
+				int iterator = 0;
+				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out _, out IntPtr val))
+					yield return NativeHelper.FromUtf8(val);
+			}
+		}
+
+		/// <summary>The number of key/value pairs in the collection.</summary>
+		public int Count => NativeAPI.model_node_info_count(_model, _nodeId);
+
+		/// <summary>Adds a key/value pair, or replaces an existing key/value
+		/// pair.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <param name="val">Value to associate with the key.</param>
+		public void Add(string key, string val) => this[key] = val;
+
+
+		/// <summary>Finds the value associated with the given key, returns
+		/// null if the key is not present.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>Associated value, or null if not found.</returns>
+		public string Get(string key) => this[key];
+
+		/// <summary>Clears all key/value pairs from the collection.</summary>
+		public void Clear() => NativeAPI.model_node_info_clear(_model, _nodeId);
+
+		/// <summary>Finds if the key is present in the collection with a
+		/// non-null value.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>True if found, false if not.</returns>
+		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)) != IntPtr.Zero;
+
+		/// <summary>Removes a specific key/value pair from the collection, if
+		/// present.</summary>
+		/// <param name="key">Identifying key.</param>
+		/// <returns>True if found and removed, false if not.</returns>
+		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key));
+
+		/// <summary>The enumerator for the collection's KeyValuePairs.</summary>
+		/// <returns>Each consecutive pair in the collection.</returns>
+		public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+		{
+			int iterator = 0;
+			while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out IntPtr val))
+				yield return new KeyValuePair<string, string>(NativeHelper.FromUtf8(key), NativeHelper.FromUtf8(val));
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+	}
+
 	/// <summary>An enumerable for Model's ModelNodes</summary>
 	public class ModelNodeCollection : IEnumerable<ModelNode>
 	{
 		Model _model;
 		/// <summary>This is the total number of nodes in the Model.</summary>
 		public int Count => NativeAPI.model_node_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_index(_model._inst, index));
 
 		internal ModelNodeCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<ModelNode> GetEnumerator()
 		{
 			int count = Count;
@@ -719,10 +738,16 @@ namespace StereoKit
 		/// <summary>This is the total number of nodes with visual data
 		/// attached to them.</summary>
 		public int Count => NativeAPI.model_node_visual_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_visual_index(_model._inst, index));
 
 		internal ModelVisualCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<ModelNode> GetEnumerator()
 		{
 			int count = Count;
@@ -764,10 +789,16 @@ namespace StereoKit
 		/// <summary>This is the total number of animations attached to the
 		/// model.</summary>
 		public int Count => NativeAPI.model_anim_count(_model._inst);
+		/// <summary>Allows you to retrieve a node from this collection via its
+		/// index.</summary>
+		/// <param name="index">This should be in the range of [0, Count).</param>
+		/// <returns>A ModelNode for the given index.</returns>
 		public Anim this[int index] => new Anim(_model, index);
 
 		internal ModelAnimCollection(Model model) { _model = model; }
 
+		/// <summary>Gets an enumerator for the collection.</summary>
+		/// <returns>An enumerator.</returns>
 		public IEnumerator<Anim> GetEnumerator()
 		{
 			int count = Count;

@@ -55,29 +55,12 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty sprite!");
 		}
+		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sprite()
 		{
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
-
-		/// <summary>Draw the sprite on a quad with the provided transform!
-		/// </summary>
-		/// <param name="transform">A Matrix describing a transform from 
-		/// model space to world space.</param>
-		/// <param name="color">Per-instance color data for this render item.
-		/// </param>
-		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
-		public void Draw(in Matrix transform, Color32 color) 
-			=> NativeAPI.sprite_draw(_inst, transform, color);
-
-		/// <summary>Draw the sprite on a quad with the provided transform!
-		/// </summary>
-		/// <param name="transform">A Matrix describing a transform from 
-		/// model space to world space.</param>
-		[Obsolete("This function does not correctly account for aspect ratio. Use a Draw method overload that takes TextAlign as a parameter.")]
-		public void Draw(in Matrix transform)
-			=> NativeAPI.sprite_draw(_inst, transform, Color32.White);
 
 		/// <summary>Draws the sprite at the location specified by the
 		/// transform matrix. A sprite is always sized in model space as 1 x
@@ -93,15 +76,28 @@ namespace StereoKit
 		/// you're specifying the transform of. The 'Anchor' point or
 		/// 'Origin' of the Sprite.</param>
 		public void Draw(in Matrix transform, TextAlign anchorPosition)
-			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, Color32.White);
-
+			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, Color32.White);
 
 		/// <inheritdoc cref="Draw(in Matrix, TextAlign)"/>
 		/// <param name="linearColor">Per-instance color data for this render
 		/// item. It is unmodified by StereoKit, and is generally interpreted
 		/// as linear.</param>
 		public void Draw(in Matrix transform, TextAlign anchorPosition, Color32 linearColor)
-			=> NativeAPI.sprite_draw_at(_inst, transform, anchorPosition, linearColor);
+			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, linearColor);
+
+		/// <summary>Finds a sprite that matches the given id! Check out the
+		/// DefaultIds static class for some built-in ids. Sprites will auto-id
+		/// themselves using this pattern if single sprites: {Tex.Id}/spr, and
+		/// this pattern if atlased sprites: atlas_spr/{atlas}/{Tex.Id}.
+		/// </summary>
+		/// <param name="id">Id of the sprite asset.</param>
+		/// <returns>A Sprite asset with the given id, or null if none is
+		/// found.</returns>
+		public static Sprite Find(string id)
+		{
+			IntPtr sprite = NativeAPI.sprite_find(id);
+			return sprite == IntPtr.Zero ? null : new Sprite(sprite);
+		}
 
 		/// <summary>Create a sprite from an image file! This loads a Texture
 		/// from file, and then uses that Texture as the source for the 
@@ -145,5 +141,28 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
 		}
+
+		/// <inheritdoc cref="Default.SpriteRadioOn" />
+		public static Sprite RadioOn => Default.SpriteRadioOn;
+		/// <inheritdoc cref="Default.SpriteRadioOff" />
+		public static Sprite RadioOff => Default.SpriteRadioOff;
+		/// <inheritdoc cref="Default.SpriteToggleOn" />
+		public static Sprite ToggleOn => Default.SpriteToggleOn;
+		/// <inheritdoc cref="Default.SpriteToggleOff" />
+		public static Sprite ToggleOff => Default.SpriteToggleOff;
+		/// <inheritdoc cref="Default.SpriteArrowLeft" />
+		public static Sprite ArrowLeft => Default.SpriteArrowLeft;
+		/// <inheritdoc cref="Default.SpriteArrowRight" />
+		public static Sprite ArrowRight => Default.SpriteArrowRight;
+		/// <inheritdoc cref="Default.SpriteArrowUp" />
+		public static Sprite ArrowUp => Default.SpriteArrowUp;
+		/// <inheritdoc cref="Default.SpriteArrowDown" />
+		public static Sprite ArrowDown => Default.SpriteArrowDown;
+		/// <inheritdoc cref="Default.SpriteBackspace" />
+		public static Sprite Backspace => Default.SpriteBackspace;
+		/// <inheritdoc cref="Default.SpriteShift" />
+		public static Sprite Shift => Default.SpriteShift;
+		/// <inheritdoc cref="Default.SpriteClose" />
+		public static Sprite Close => Default.SpriteClose;
 	}
 }

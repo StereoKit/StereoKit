@@ -5,19 +5,16 @@
 #include "../libraries/sk_gpu.h"
 
 #include "../stereokit.h"
-#include "../sk_math_dx.h"
 #include "../systems/bvh.h"
 #include "assets.h"
 #include "mesh_.h"
 
 namespace sk {
 
-
 struct mesh_weights_t {
-	uint16_t *bone_ids;
-	vec4     *weights;
+	bone_weight_t *bone_data;
 	matrix   *bone_inverse_transforms;
-	DirectX::XMMATRIX *bone_transforms;
+	matrix   *bone_transforms;
 	vert_t   *deformed_verts;
 	int32_t   bone_count;
 };

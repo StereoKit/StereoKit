@@ -29,6 +29,8 @@ namespace StereoKit.Framework
 		internal List<HandRadialLayer> childLayers = new List<HandRadialLayer>();
 		internal HandMenuItem          layerItem;
 
+		/// <summary>The layer above this layer, will be null if this is the
+		/// root layer.</summary>
 		public HandRadialLayer Parent => parent;
 
 		/// <summary>Creates a menu layer, this overload will calculate a
@@ -62,6 +64,20 @@ namespace StereoKit.Framework
 				}
 			}
 		}
+
+		/// <summary>Creates a menu layer with an angle offset for the layer's
+		/// rotation!</summary>
+		/// <param name="name">Name of the layer, this is used for layer
+		/// traversal, so make sure you get the spelling right! Perhaps use
+		/// const strings for these.</param>
+		/// <param name="startAngle">An angle offset for the layer, if you want
+		/// a specific orientation for the menu's contents. Note this may not
+		/// behave as expected if you're setting this manually and using the
+		/// backAngle as well.</param>
+		/// <param name="items">A list of menu items to display in this menu
+		/// layer.</param>
+		public HandRadialLayer(string name, float startAngle, params HandMenuItem[] items)
+			: this(name, null, startAngle, items) { }
 
 		/// <summary>Creates a menu layer with an angle offset for the layer's
 		/// rotation!</summary>

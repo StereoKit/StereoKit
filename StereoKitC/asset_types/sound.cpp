@@ -3,8 +3,9 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
-#include "../platforms/platform_utils.h"
+#include "../platforms/platform.h"
 #include "../systems/audio.h"
+#include "../libraries/ferr_thread.h"
 
 #include <string.h>
 
@@ -43,9 +44,7 @@ sound_t sound_create(const char *filename) {
 	
 	void*    data;
 	size_t   length;
-	char*    sound_file = assets_file(filename);
-	bool32_t loaded     = platform_read_file(sound_file, &data, &length);
-	sk_free(sound_file);
+	bool32_t loaded     = platform_read_file(filename, &data, &length);
 	if (!loaded) {
 		log_warnf("Sound file failed to load: %s", filename);
 		return nullptr;
@@ -57,7 +56,7 @@ sound_t sound_create(const char *filename) {
 
 	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
 	if (ma_decoder_init_memory(data, length, &config, &result->decoder) != MA_SUCCESS) {
-		log_errf("Failed to parse sound '%s'.", sound_file);
+		log_errf("Failed to parse sound '%s'.", filename);
 		assets_releaseref(&result->header);
 		return nullptr;
 	}
@@ -69,12 +68,12 @@ sound_t sound_create(const char *filename) {
 sound_t sound_create_stream(float buffer_duration) {
 	sound_t result = (_sound_t*)assets_allocate(asset_type_sound);
 
-	result->type = sound_type_stream;
+	result->type      = sound_type_stream;
+	result->data_lock = ft_mutex_create();
 	result->buffer.capacity = (uint64_t)((double)buffer_duration * AU_SAMPLE_RATE);
 	result->buffer.data     = sk_malloc_t(float, (size_t)result->buffer.capacity);
 	memset(result->buffer.data, 0, (size_t)(result->buffer.capacity * sizeof(float)));
-	mtx_init(&result->data_lock, mtx_plain);
-	ma_pcm_rb_init(AU_SAMPLE_FORMAT, 1, result->buffer.capacity, result->buffer.data, nullptr, &result->stream_buffer);
+	ma_pcm_rb_init(AU_SAMPLE_FORMAT, 1, (ma_uint32)result->buffer.capacity, result->buffer.data, nullptr, &result->stream_buffer);
 
 	return result;
 }
@@ -117,11 +116,11 @@ void sound_write_samples(sound_t sound, const float *samples, uint64_t sample_co
 	sample_count = mini((uint32_t)sample_count, ma_pcm_rb_available_write(&sound->stream_buffer));
 	
 	ma_uint32 written  = 0;
-	mtx_lock(&sound->data_lock);
+	ft_mutex_lock(sound->data_lock);
 	ma_uint32 writable = 0;
 	void*     write_to = nullptr;
 	while (written < sample_count) {
-		writable = sample_count - written;
+		writable = (ma_uint32)sample_count - written;
 		
 		ma_result res = ma_pcm_rb_acquire_write(&sound->stream_buffer, &writable, &write_to);
 		if (res != MA_SUCCESS) { break; }
@@ -132,7 +131,7 @@ void sound_write_samples(sound_t sound, const float *samples, uint64_t sample_co
 		
 		written += writable;
 	}
-	mtx_unlock(&sound->data_lock);
+	ft_mutex_unlock(sound->data_lock);
 
 	sound->buffer.count = mini(sound->buffer.count + written, sound->buffer.capacity);
 }
@@ -146,11 +145,11 @@ uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_c
 	sample_count = mini((uint32_t)sample_count, available);
 
 	ma_uint32 read  = 0;
-	mtx_lock(&sound->data_lock);
+	ft_mutex_lock(sound->data_lock);
 	ma_uint32 readable  = 0;
 	void*     read_from = nullptr;
 	while (read < sample_count) {
-		readable = sample_count - read;
+		readable = (ma_uint32)sample_count - read;
 		
 		ma_result res = ma_pcm_rb_acquire_read(&sound->stream_buffer, &readable, &read_from);
 		if (res != MA_SUCCESS) { break; }
@@ -162,7 +161,7 @@ uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_c
 		
 		read += readable;
 	}
-	mtx_unlock(&sound->data_lock);
+	ft_mutex_unlock(sound->data_lock);
 
 	return read;
 }
@@ -274,8 +273,8 @@ void sound_destroy(sound_t sound) {
 		ma_pcm_rb_uninit(&sound->stream_buffer);
 	}
 	if (sound->buffer.data) {
-		sk_free    ( sound->buffer.data);
-		mtx_destroy(&sound->data_lock);
+		sk_free         ( sound->buffer.data);
+		ft_mutex_destroy(&sound->data_lock);
 	}
 	memset(sound, 0, sizeof(_sound_t));
 }

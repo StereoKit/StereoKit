@@ -149,7 +149,7 @@ void anim_update_model(model_t model) {
 	// Don't update more than once per frame
 	float curr_time = model->anim_inst.mode == anim_mode_manual 
 		? model->anim_inst.start_time
-		: time_getf();
+		: time_totalf();
 	if (model->anim_inst.last_update == curr_time) return;
 	model->anim_inst.last_update = curr_time;
 	model->transforms_changed    = true;
@@ -242,7 +242,7 @@ void anim_inst_play(model_t model, int32_t anim_id, anim_mode_ mode) {
 	}
 	memset(model->anim_inst.curve_last_keyframe, 0, sizeof(int32_t) * count);
 
-	model->anim_inst.start_time  = time_getf();
+	model->anim_inst.start_time  = time_totalf();
 	model->anim_inst.last_update = -1;
 	model->anim_inst.anim_id     = anim_id;
 	model->anim_inst.mode        = mode;
@@ -254,6 +254,7 @@ void anim_inst_destroy(anim_inst_t *inst) {
 	for (int32_t i = 0; i < inst->skinned_mesh_count; i++) {
 		sk_free(inst->skinned_meshes[i].bone_transforms);
 		mesh_release(inst->skinned_meshes[i].original_mesh);
+		mesh_release(inst->skinned_meshes[i].modified_mesh);
 	}
 	sk_free(inst->skinned_meshes);
 	sk_free(inst->curve_last_keyframe);
@@ -272,6 +273,7 @@ void anim_data_destroy(anim_data_t *data) {
 			sk_free(data->anims[i].curves[c].keyframe_times);
 		}
 		data->anims[i].curves.free();
+		sk_free(data->anims[i].name);
 	}
 	for (int32_t i = 0; i < data->skeletons.count; i++) {
 		sk_free(data->skeletons[i].bone_to_node_map);
@@ -339,7 +341,7 @@ anim_data_t anim_data_copy(anim_data_t *data) {
 
 ///////////////////////////////////////////
 
-void anim_update() {
+void anim_step() {
 	animation_list.each(_anim_update_skin);
 	animation_list.clear();
 }

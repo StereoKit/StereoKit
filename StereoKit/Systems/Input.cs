@@ -1,6 +1,12 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace StereoKit
 {
@@ -54,15 +60,23 @@ namespace StereoKit
 		/// or Hand[] instead. See Hand.Get for more info!</summary>
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
 		public HandJoint[]  fingers;
-		/// <summary>Pose of the wrist. TODO: Not populated right now.
-		/// </summary>
+		/// <summary>Pose of the wrist. This is located at the base of your
+		/// hand, and has a rigid orientation that points forward towards your
+		/// fingers. Its orientation is unrelated to the forearm. This pose can
+		/// be useful for making a hand relative coordinate space!</summary>
 		public  Pose        wrist;
 		/// <summary>The position and orientation of the palm! Position is
 		/// specifically defined as the middle of the middle finger's root
 		/// (metacarpal) bone. For orientation, Forward is the direction the
 		/// flat of the palm is facing, "Iron Man" style. X+ is to the outside
 		/// of the right hand, and to the inside of the left hand. </summary>
-		public Pose         palm;
+		public Pose palm;
+		/// <summary>A pose an orientation representing where the hand is
+		/// pointing to. This may be provided by the OpenXR runtime, or be a
+		/// fallback provided by StereoKit. Typically this starts and the index
+		/// finger's primary knuckle, and points in the same direction as a
+		/// line drawn from the shoulder to the knuckle.</summary>
+		public Pose aim;
 		/// <summary>This is an approximation of where the center of a 
 		/// 'pinch' gesture occurs, and is used internally by StereoKit for
 		/// some tasks, such as UI. For simulated hands, this position will
@@ -83,6 +97,11 @@ namespace StereoKit
 		/// <summary>Is the hand making a grip gesture right now? Fingers
 		/// next to the palm.</summary>
 		public  BtnState    grip;
+		/// <summary>This is a filter state for when the hand is ready to
+		/// interact with something at a distance. This often factors into
+		/// account palm direction, as well as distance from the body, and the
+		/// current pinch and tracked state.</summary>
+		public BtnState     aimReady;
 		/// <summary>This is the size of the hand, calculated by measuring 
 		/// the length of the middle finger! This is calculated by adding the 
 		/// distances between each joint, then adding the joint radius of the
@@ -100,8 +119,23 @@ namespace StereoKit
 		/// error tolerant threshold.</summary>
 		public float gripActivation;
 
+		/// <summary>A 2D array accessor for getting a specific joint from the
+		/// hand! This version uses an enumeration for safe access.</summary>
+		/// <param name="finger">Which finger on the hand.</param>
+		/// <param name="joint">Which joint on the finger. Note that for the
+		/// thumb, Root and KnuckleMajor are the same.</param>
+		/// <returns>The hand joint.</returns>
 		public HandJoint this[FingerId finger, JointId joint] => fingers[(int)finger * 5 + (int)joint];
-		public HandJoint this[int      finger, int     joint] => fingers[finger * 5 + joint];
+		/// <summary>A 2D array accessor for getting a specific joint from the
+		/// hand! This version uses integers for easy iteration. Values should
+		/// be in the range of [0,5).</summary>
+		/// <param name="finger">Which finger on the hand, where 0 is the
+		/// thumb, and 4 is the pinky.</param>
+		/// <param name="joint">Which joint on the finger, where 0 is the Root,
+		/// and 4 is the tip. Note that for the thumb, 0 and 1 are the same.
+		/// </param>
+		/// <returns>The hand joint.</returns>
+		public HandJoint this[int finger, int joint] => fingers[finger * 5 + joint];
 		
 		/// <summary>Returns the joint information of the indicated hand
 		/// joint! This also includes fingertips as a 'joint'. This is the
@@ -161,11 +195,6 @@ namespace StereoKit
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
 		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
-		/// <summary>Does StereoKit register the hand with the physics
-		/// system? By default, this is true. Right now this is just a single
-		/// block collider, but later will involve per-joint colliders!
-		/// </summary>
-		public bool     Solid    { set { NativeAPI.input_hand_solid   (handed, value); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -262,20 +291,20 @@ namespace StereoKit
 		/// <summary>Is the controller's X2 button currently pressed? 
 		/// Depending on the specific hardware, this is the second general
 		/// purpose button on the controller. For example, on an Oculus Quest
-		/// Touch controller this would represent 'X' on the left controller,
-		/// and 'A' on the right controller.</summary>
+		/// Touch controller this would represent 'Y' on the left controller,
+		/// and 'B' on the right controller.</summary>
 		public bool IsX2Pressed => (x2 & BtnState.Active) > 0;
 		/// <summary>Has the controller's X2 button just been pressed this
 		/// frame? Depending on the specific hardware, this is the second
 		/// general purpose button on the controller. For example, on an
-		/// Oculus Quest Touch controller this would represent 'X' on the
-		/// left controller, and 'A' on the right controller.</summary>
+		/// Oculus Quest Touch controller this would represent 'Y' on the
+		/// left controller, and 'B' on the right controller.</summary>
 		public bool IsX2JustPressed => (x2 & BtnState.JustActive) > 0;
 		/// <summary>Has the controller's X2 button just been released this
 		/// frame? Depending on the specific hardware, this is the second
 		/// general purpose button on the controller. For example, on an
-		/// Oculus Quest Touch controller this would represent 'X' on the
-		/// left controller, and 'A' on the right controller.</summary>
+		/// Oculus Quest Touch controller this would represent 'Y' on the
+		/// left controller, and 'B' on the right controller.</summary>
 		public bool IsX2JustUnPressed => (x2 & BtnState.JustInactive) > 0;
 
 		/// <summary>Is the analog stick/directional controller button 
@@ -365,10 +394,36 @@ namespace StereoKit
 		public static BtnState ControllerMenuButton
 			=> NativeAPI.input_controller_menu();
 
+		/// <summary>When StereoKit is rendering the input source, this allows
+		/// you to override the controller Model SK uses. The Model SK uses by
+		/// default may be provided from the OpenXR runtime depending on
+		/// extension support, but if not, SK does have a default Model.
+		/// Setting this to null will restore SK's default.</summary>
+		/// <param name="handed">The hand to assign the Model to.</param>
+		/// <param name="model">The Model to use to represent the controller.
+		/// Null is valid, and will restore SK's default model.</param>
+		public static void ControllerModelSet(Handed handed, Model model)
+			=> NativeAPI.input_controller_model_set(handed, model?._inst ?? IntPtr.Zero);
+
+		/// <summary>This retreives the Model currently in use by StereoKit to
+		/// represent the controller input source. By default, this will be a
+		/// Model provided by OpenXR, or SK's fallback Model. This will never
+		/// be null while SK is initialized.</summary>
+		/// <param name="handed">The hand of the controller Model to retreive.
+		/// </param>
+		/// <returns>The current controller Model. By default, his will be a
+		/// Model provided by OpenXR, or SK's fallback Model. This will never
+		/// be null while SK is initialized.</returns>
+		public static Model ControllerModelGet(Handed handed)
+		{
+			IntPtr model = NativeAPI.input_controller_model_get(handed);
+			return model == IntPtr.Zero ? null : new Model(model);
+		}
+
 		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
-		/// controllers. 
+		/// controllers.
 		/// 
 		/// Note that this is a copy of the hand information, and it's a good
 		/// chunk of data, so it's a good idea to grab it once and keep it
@@ -382,10 +437,34 @@ namespace StereoKit
 			Marshal.PtrToStructure(NativeAPI.input_hand(handed), hands[(int)handed]);
 			return hands[(int)handed];
 		}
+		/// <summary>Retrieves all the information about the user's hand!
+		/// StereoKit will always provide hand information, however sometimes
+		/// that information is simulated, like in the case of a mouse, or
+		/// controllers.
+		/// 
+		/// Note that this is a copy of the hand information, and it's a good
+		/// chunk of data, so it's a good idea to grab it once and keep it
+		/// around for the frame, or at least function, rather than asking
+		/// for it again and again each time you want to touch something.
+		/// </summary>
+		/// <param name="handed">Do you want the left or the right hand? 0 is
+		/// left, and 1 is right.</param>
+		/// <returns>A copy of the entire set of hand data!</returns>
 		public static Hand Hand(int handed){
 			Marshal.PtrToStructure(NativeAPI.input_hand((Handed)handed), hands[handed]);
 			return hands[handed];
 		}
+
+		/// <summary>This gets the _current_ source of the hand joints! This
+		/// allows you to distinguish between fully articulated joints, and
+		/// simulated hand joints that may not have the same range of mobility.
+		/// Note that this may change during a session, the user may put down
+		/// their controllers, automatically switching to hands, or visa versa.
+		/// </summary>
+		/// <param name="hand">Do  you want the left or right hand? 0 is left,
+		/// and 1 is right.</param>
+		/// <returns>Returns information about hand tracking data source.</returns>
+		public static HandSource HandSource(Handed hand) => NativeAPI.input_hand_source(hand);
 
 		/// <summary>This allows you to completely override the hand's pose 
 		/// information! It is still treated like the user's hand, so this is
@@ -403,6 +482,36 @@ namespace StereoKit
 		/// </param>
 		public static void HandClearOverride(Handed hand)
 			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+
+		/// <summary>StereoKit will use controller inputs to simulate an
+		/// articulated hand. This function allows you to add new simulated
+		/// poses to different controller or keyboard buttons!</summary>
+		/// <param name="handJointsPalmRelative25">25 joint poses, thumb to pinky, and root
+		/// to tip with two duplicate poses for the thumb root joint. These
+		/// should be right handed, and relative to the palm joint.</param>
+		/// <param name="button1">Controller button to activate this pose, can
+		/// be None if this is a keyboard only pose.</param>
+		/// <param name="andButton2">Second controller button required to
+		/// activate this pose. First must also be pressed. Can be None if it's
+		/// only a single button pose.</param>
+		/// <param name="orHotkey1">Keyboard key to activate this pose, can be
+		/// None if this is a controller only pose.</param>
+		/// <param name="andHotkey2">Second keyboard key required to activate
+		/// this pose. First must also be pressed. Can be None if it's only a
+		/// single key pose.</param>
+		/// <returns>Returns the id of the hand sim pose, so it can be removed
+		/// later.</returns>
+		public static HandSimId HandSimPoseAdd(Pose[] handJointsPalmRelative25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
+			=> NativeAPI.input_hand_sim_pose_add(handJointsPalmRelative25, button1, andButton2, orHotkey1, andHotkey2);
+		/// <summary>Lets you remove an existing hand pose.</summary>
+		/// <param name="id">Any valid or invalid hand sim pose id.</param>
+		public static void HandSimPoseRemove(HandSimId id)
+			=> NativeAPI.input_hand_sim_pose_remove(id);
+		/// <summary>This clears all registered hand simulation poses,
+		/// including the ones that StereoKit registers by default!</summary>
+		public static void HandSimPoseClear()
+			=> NativeAPI.input_hand_sim_pose_clear();
+
 		/// <summary>Sets whether or not StereoKit should render the hand for
 		/// you. Turn this to false if you're going to render your own, or 
 		/// don't need the hand itself to be visible.</summary>
@@ -412,15 +521,6 @@ namespace StereoKit
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
 			=> NativeAPI.input_hand_visible(hand, visible);
-		/// <summary>Does StereoKit register the hand with the physics
-		/// system? By default, this is true. Right now this is just a single
-		/// block collider, but later will involve per-joint colliders!
-		/// </summary>
-		/// <param name="hand">If Handed.Max, this will set the value for 
-		/// both hands.</param>
-		/// <param name="solid">True? Physics! False? No physics.</param>
-		public static void HandSolid(Handed hand, bool solid)
-			=> NativeAPI.input_hand_solid(hand, solid);
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>
@@ -428,7 +528,7 @@ namespace StereoKit
 		/// both hands.</param>
 		/// <param name="material">The new Material!</param>
 		public static void HandMaterial(Handed hand, Material material)
-			=> NativeAPI.input_hand_material(hand, material._inst);
+			=> NativeAPI.input_hand_material(hand, material?._inst ?? IntPtr.Zero);
 		/// <summary>Keyboard key state! On desktop this is super handy, but
 		/// even standalone MR devices can have bluetooth keyboards, or even
 		/// just holographic system keyboards!</summary>
@@ -437,6 +537,26 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+		/// <summary>This will inject a key press event into StereoKit's input
+		/// event queue. It will be processed at the start of the next frame,
+		/// and will be indistinguishable from a physical key press. Remember
+		/// to release your key as well!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to press.</param>
+		public static void KeyInjectPress(Key key) => NativeAPI.input_key_inject_press(key);
+		/// <summary>This will inject a key release event into StereoKit's
+		/// input event queue. It will be processed at the start of the next
+		/// frame, and will be indistinguishable from a physical key release.
+		/// This should be preceded by a key press!
+		/// 
+		/// This will _not_ submit text to StereoKit's text queue, and will not
+		/// show up in places like UI.Input. For that, you must submit a
+		/// TextInjectChar call.</summary>
+		/// <param name="key">The key to release.</param>
+		public static void KeyInjectRelease(Key key) => NativeAPI.input_key_inject_release(key);
 
 		/// <summary>Returns the next text character from the list of
 		/// characters that have been entered this frame! Will return '\0' if
@@ -460,11 +580,66 @@ namespace StereoKit
 		/// in the frame, you would read everything with `TextConsume`, and
 		/// then `TextReset` afterwards to reset the read list for the 
 		/// following `UI.Input`.</summary>
-		public static void TextReset() 
+		public static void TextReset()
 			=> NativeAPI.input_text_reset();
+		/// <summary>This will inject a UTF32 Unicode text character into
+		/// StereoKit's text input queue. It will be available at the start of
+		/// the next frame, and will be indistinguishable from normal text
+		/// entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="unicodeCharUTF32">An unsigned integer representing a
+		/// single UTF32 character.</param>
+		public static void TextInjectChar(uint unicodeCharUTF32) => NativeAPI.input_text_inject_char(unicodeCharUTF32);
+		/// <summary>This will convert a C# string into a number of UTF32
+		/// Unicode text characters, and inject them into StereoKit's text
+		/// input queue. It will be available at the start of the next frame,
+		/// and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A collection of characters to submit as text
+		/// input.</param>
+		public static void TextInjectChar(string chars) {
+			byte[] bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF32, Encoding.Unicode.GetBytes(chars));
+			for (int i = 0; i+4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
+		/// <summary>This will convert a byte array string into a number of
+		/// UTF32 Unicode text characters, and inject them into StereoKit's
+		/// text input queue. It will be available at the start of the next
+		/// frame, and will be indistinguishable from normal text entry.
+		/// 
+		/// This will _not_ submit key press/release events to StereoKit's
+		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// <param name="chars">A byte array representing a string in some
+		/// encoded format.</param>
+		/// <param name="charEncoding">The encoding format of the byte array.
+		/// Note that an encoding of UTF32 will skip converting bytes to UTF32.
+		/// </param>
+		public static void TextInjectChar(byte[] chars, Encoding charEncoding)
+		{
+			byte[] bytes = charEncoding == Encoding.UTF32 && chars.Length % 4 == 0
+				? chars
+				: Encoding.Convert(charEncoding, Encoding.UTF32, chars);
+			for (int i = 0; i + 4 <= bytes.Length; i += 4)
+				NativeAPI.input_text_inject_char(BitConverter.ToUInt32(bytes, i));
+		}
 
+		/// <summary>The number of Pointer inputs that StereoKit is tracking
+		/// that match the given filter.
+		/// </summary>
+		/// <param name="filter">You can filter input sources using this bit
+		/// flag.</param>
+		/// <returns>The number of Pointers StereoKit knows about that matches
+		/// the given filter.</returns>
 		public static int PointerCount(InputSource filter = InputSource.Any) 
 			=> NativeAPI.input_pointer_count(filter);
+		/// <summary>This gets the pointer by filter based index.</summary>
+		/// <param name="index">Index of the pointer.</param>
+		/// <param name="filter">Filter used to search for the Pointer.</param>
+		/// <returns>The Pointer data.</returns>
 		public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
 			=> NativeAPI.input_pointer(index, filter);
 
@@ -474,20 +649,30 @@ namespace StereoKit
 			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
 			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
 		}
-		static void OnEvent(InputSource source, BtnState evt, IntPtr pointer)
+		static void OnEvent(InputSource source, BtnState evt, in Pointer pointer)
 		{
-			Pointer ptr = Marshal.PtrToStructure<Pointer>(pointer);
 			for (int i = 0; i < listeners.Count; i++)
 			{
 				if ((listeners[i].source & source) > 0 &&
 					(listeners[i].type   & evt) > 0)
 				{
-					listeners[i].callback(source, evt, ptr);
+					listeners[i].callback(source, evt, pointer);
 				}
 			}
 		}
 
-		public static void Subscribe  (InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
+		/// <summary>You can subscribe to input events from Pointer sources
+		/// here. StereoKit will call your callback and pass along a Pointer
+		/// that matches the position of that pointer at the moment the event
+		/// occurred. This can be more accurate than polling for input data,
+		/// since polling happens specifically at frame start.</summary>
+		/// <param name="eventSource">What input sources do we want to listen
+		/// for. This is a bit flag.</param>
+		/// <param name="eventTypes">What events do we want to listen for. This
+		/// is a bit flag.</param>
+		/// <param name="onEvent">The callback to call when the event occurs!
+		/// </param>
+		public static void Subscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
 			if (!initialized)
 				Initialize();
@@ -498,6 +683,13 @@ namespace StereoKit
 			item.type     = eventTypes;
 			listeners.Add(item);
 		}
+		/// <summary>Unsubscribes a listener from input events.</summary>
+		/// <param name="eventSource">The source this listener was originally
+		/// registered for.</param>
+		/// <param name="eventTypes">The events this listener was originally
+		/// registered for.</param>
+		/// <param name="onEvent">The callback this listener originally used.
+		/// </param>
 		public static void Unsubscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
 			if (!initialized)
@@ -512,6 +704,15 @@ namespace StereoKit
 				}
 			}
 		}
+		/// <summary>This function allows you to artifically insert an input
+		/// event, simulating any device source and event type you want.
+		/// </summary>
+		/// <param name="eventSource">The event source to simulate, this is a
+		/// bit flag.</param>
+		/// <param name="eventTypes">The event type to simulate, this is a bit
+		/// flag.</param>
+		/// <param name="pointer">The pointer data to pass along with this
+		/// simulated input event.</param>
 		public static void FireEvent  (InputSource eventSource, BtnState eventTypes, Pointer pointer)
 		{
 			IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());

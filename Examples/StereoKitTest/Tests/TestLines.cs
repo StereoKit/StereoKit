@@ -4,7 +4,7 @@ class TestLines : ITest
 {
 	public void Initialize(){}
 	public void Shutdown(){}
-	public void Update() {
+	public void Step() {
 		Tests.Screenshot("Tests/LineRenderer.jpg", 600, 600, V.XYZ(0,0,0.5f), Vec3.Zero);
 
 		// A ring of lines that goes out past the edge of the screen

@@ -120,6 +120,8 @@ void demo_picker_update() {
 void demo_picker_shutdown() {
 	free(picker_filename);
 	picker_filename = nullptr;
+	model_release(picker_model);
+	picker_model = nullptr;
 
 	platform_file_picker_close();
 }

@@ -6,57 +6,102 @@
 #include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
 
+///////////////////////////////////////////
+
+using namespace sk;
+
+struct hierarchy_item_t {
+	matrix   transform;
+	matrix   transform_inv;
+	bool32_t has_inverse;
+};
+
+struct hierarchy_state_t {
+	array_t<hierarchy_item_t> stack;
+	bool32_t                  enabled;
+	bool32_t                  userenabled;
+};
+static hierarchy_state_t _local = {};
+static hierarchy_state_t *local = {};
+
+///////////////////////////////////////////
+
 namespace sk {
 
 ///////////////////////////////////////////
 
-array_t<hierarchy_item_t> hierarchy_stack       = {};
-bool32_t                  hierarchy_enabled     = false;
-bool32_t                  hierarchy_userenabled = true;
+void hierarchy_init() {
+	local = &_local;
+	*local = {};
+	local->userenabled = true;
+}
 
 ///////////////////////////////////////////
 
-void hierarchy_push(const matrix &transform) {
-	hierarchy_stack.add(hierarchy_item_t{transform, matrix_identity, false});
-	hierarchy_enabled = hierarchy_userenabled;
+void hierarchy_shutdown() {
+	local->stack.free();
+	*local = {};
+	local = nullptr;
+}
 
-	int32_t size = hierarchy_stack.count;
-	if (size > 1)
-		matrix_mul(hierarchy_stack[size - 1].transform, hierarchy_stack[size - 2].transform, hierarchy_stack[size - 1].transform);
+///////////////////////////////////////////
+
+void hierarchy_step() {
+	if (local->stack.count > 0) {
+		log_err("Render transform stack doesn't have matching begin/end calls!");
+		local->stack.clear();
+	}
+}
+
+///////////////////////////////////////////
+
+void hierarchy_push(const matrix &transform, hierarchy_parent_ parent_behavior) {
+	local->stack.add(hierarchy_item_t{transform, matrix_identity, false});
+	local->enabled = local->userenabled;
+
+	int32_t size = local->stack.count;
+	if (size > 1 && parent_behavior == hierarchy_parent_inherit)
+		matrix_mul(local->stack[size - 1].transform, local->stack[size - 2].transform, local->stack[size - 1].transform);
 }
 
 ///////////////////////////////////////////
 
 void hierarchy_pop() {
-	hierarchy_stack.pop();
-	if (hierarchy_stack.count == 0)
-		hierarchy_enabled = false;
+	local->stack.pop();
+	if (local->stack.count == 0)
+		local->enabled = false;
 }
 
 ///////////////////////////////////////////
 
 void hierarchy_set_enabled(bool32_t enabled) {
-	hierarchy_userenabled = enabled;
-	hierarchy_enabled = hierarchy_stack.count != 0 && hierarchy_userenabled;
+	local->userenabled = enabled;
+	local->enabled     = local->stack.count != 0 && local->userenabled == (bool32_t)true;
 }
 
 ///////////////////////////////////////////
 
 bool32_t hierarchy_is_enabled() {
-	return hierarchy_userenabled;
+	return local->userenabled;
+}
+
+///////////////////////////////////////////
+
+bool32_t hierarchy_use_top() {
+	return local->enabled;
 }
 
 ///////////////////////////////////////////
 
 const matrix *hierarchy_to_world() {
-	return hierarchy_enabled ? &hierarchy_stack.last().transform : &matrix_identity;
+	return local->enabled ? &local->stack.last().transform : &matrix_identity;
 }
 
 ///////////////////////////////////////////
 
 const matrix *hierarchy_to_local() {
-	if (hierarchy_enabled) {
-		hierarchy_item_t &item = hierarchy_stack.last();
+	if (local->enabled) {
+		hierarchy_item_t &item = local->stack.last();
 		if (!item.has_inverse)
 			matrix_inverse(item.transform, item.transform_inv);
 		return &item.transform_inv;
@@ -91,6 +136,12 @@ pose_t hierarchy_to_local_pose(const pose_t &world_pose) {
 
 ///////////////////////////////////////////
 
+ray_t hierarchy_to_local_ray(ray_t world_ray) {
+	return matrix_transform_ray(*hierarchy_to_local(), world_ray);
+}
+
+///////////////////////////////////////////
+
 vec3 hierarchy_to_world_point(const vec3 &local_pt) {
 	return matrix_transform_pt(*hierarchy_to_world(), local_pt);
 }
@@ -111,6 +162,18 @@ quat hierarchy_to_world_rotation(const quat &local_orientation) {
 
 pose_t hierarchy_to_world_pose(const pose_t &local_pose) {
 	return matrix_transform_pose(*hierarchy_to_world(), local_pose);
+}
+
+///////////////////////////////////////////
+
+ray_t hierarchy_to_world_ray(ray_t local_ray) {
+	return matrix_transform_ray(*hierarchy_to_world(), local_ray);
+}
+
+///////////////////////////////////////////
+
+matrix hierarchy_top() {
+	return local->stack.last().transform;
 }
 
 } // namespace sk

@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -25,6 +30,11 @@ namespace StereoKit
 		/// <param name="y">Y component of the vector.</param>
 		public Vec2(float x, float y) => v = new Vector2(x, y);
 
+		/// <summary>Initialize from a System.Numerics vector, this can also be
+		/// done by an implicit or explicit cast/assignment.</summary>
+		/// <param name="v">A System.Numerics vector.</param>
+		public Vec2(Vector2 v) => this.v = v;
+
 		/// <summary>A short hand constructor, just sets all values as the same!</summary>
 		/// <param name="xy">X and Y component of the vector.</param>
 		public Vec2(float xy) => v = new Vector2(xy, xy);
@@ -33,7 +43,7 @@ namespace StereoKit
 		/// to StereoKit.Vec2.</summary>
 		/// <param name="v">Any System.Numerics Vector2.</param>
 		/// <returns>A StereoKit compatible vector.</returns>
-		public static implicit operator Vec2(Vector2 v) => new Vec2(v.X, v.Y);
+		public static implicit operator Vec2(Vector2 v) => new Vec2(v);
 		/// <summary>Allows implicit conversion from StereoKit.Vec2 to
 		/// System.Numerics.Vector2</summary>
 		/// <param name="v">Any StereoKit.Vec2.</param>
@@ -45,12 +55,22 @@ namespace StereoKit
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector from the added components.</returns>
 		public static Vec2 operator +(Vec2 a, Vec2 b) => a.v+b.v;
+		/// <summary>Adds the float to each component of the vector.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector from the added components.</returns>
+		public static Vec2 operator +(Vec2 a, float b) => a.v + new Vector2(b, b);
 		/// <summary>Subtracts matching components from eachother. Not
 		/// commutative.</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
 		/// <returns>A new vector from the subtracted components.</returns>
 		public static Vec2 operator -(Vec2 a, Vec2 b) => a.v-b.v;
+		/// <summary>Subtracts the float to each component of the vector.</summary>
+		/// <param name="a">Any vector.</param>
+		/// <param name="b">Any scalar.</param>
+		/// <returns>A new vector from the subtracted components.</returns>
+		public static Vec2 operator -(Vec2 a, float b) => a.v - new Vector2(b, b);
 		/// <summary>A component-wise vector multiplication, same thing as
 		/// a non-uniform scale. NOT a dot product! Commutative.</summary>
 		/// <param name="a">Any vector.</param>
@@ -128,7 +148,7 @@ namespace StereoKit
 		/// <summary>Creates a normalized vector (vector with a length of 1) 
 		/// from the current vector. Will not work properly if the vector has 
 		/// a length of zero.</summary>
-		public Vec2 Normalized => v / v.Length();
+		public Vec2 Normalized => Vector2.Normalize(v);
 
 		/// <summary>The dot product is an extremely useful operation! One
 		/// major use is to determine how similar two vectors are. If the
@@ -173,7 +193,7 @@ namespace StereoKit
 		/// a length of 1) from the current vector. Will not work properly if
 		/// the vector has a length of zero.</summary>
 		/// <returns>The normalized (length of 1) vector!</returns>
-		public void Normalize() => v = v / v.Length();
+		public void Normalize() => v = Vector2.Normalize(v);
 
 		/// <summary>Checks if a point is within a certain radius of this one.
 		/// This is an easily readable shorthand of the squared distance check.
@@ -201,6 +221,15 @@ namespace StereoKit
 		/// B is clockwise (right) of A.</returns>
 		public static float AngleBetween(Vec2 a, Vec2 b)
 			=> (float)Math.Atan2(a.v.X*b.v.Y - a.v.Y*b.v.X, Vector2.Dot(a.v, b.v)) * Units.rad2deg;
+
+		/// <summary>Creates a normalized delta vector that points out from
+		/// an origin point to a target point!</summary>
+		/// <param name="to">The target point.</param>
+		/// <param name="from">And the origin point!</param>
+		/// <returns>Direction from one point to another.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec2 Direction(Vec2 to, Vec2 from)
+			=> Vector2.Normalize(to.v - from.v);
 
 		/// <summary>Calculates the distance between two points in space!
 		/// Make sure they're in the same coordinate space! Uses a Sqrt, so

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+
 #include "assets.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -10,16 +15,23 @@
 #include "font.h"
 #include "sprite.h"
 #include "sound.h"
-#include "../systems/physics.h"
+#include "anchor.h"
+#include "../platforms/platform.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
-#include "../libraries/tinycthread.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/atomic_util.h"
+#include "../libraries/ferr_thread.h"
+#include "../systems/render_.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+
+#if defined(SK_OS_WEB)
+#include <emscripten/threading.h>
+#endif
 
 namespace sk {
 
@@ -32,19 +44,19 @@ struct asset_load_callback_t {
 };
 
 struct asset_thread_t {
-	thrd_id_t id;
-	bool32_t  running;
+	ft_id_t  id;
+	bool32_t running;
 };
 
 ///////////////////////////////////////////
 
 array_t<asset_header_t *>      assets = {};
+ft_mutex_t                     assets_lock = {};
 array_t<asset_header_t *>      assets_multithread_destroy = {};
-mtx_t                          assets_multithread_destroy_lock;
-thrd_id_t                      assets_gpu_thread = {};
-mtx_t                          assets_job_lock;
+ft_mutex_t                     assets_multithread_destroy_lock = {};
+ft_mutex_t                     assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
-mtx_t                          assets_load_event_lock;
+ft_mutex_t                     assets_load_event_lock = {};
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
 
@@ -53,10 +65,11 @@ array_t<asset_header_t *>      assets_load_events = {};
 array_t<asset_thread_t>asset_threads         = {};
 bool32_t               asset_thread_enabled  = false;
 array_t<asset_task_t*> asset_thread_tasks    = {};
-mtx_t                  asset_thread_task_mtx = {};
+ft_mutex_t             asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
 int32_t                asset_tasks_processing= 0;
 int32_t                asset_tasks_priority  = INT_MAX;
+ft_condition_t         asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
 int32_t asset_thread   (void *);
@@ -71,12 +84,16 @@ void *assets_find(const char *id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void *assets_find(uint64_t id, asset_type_ type) {
-	int32_t count = assets.count;
-	for (int32_t i = 0; i < count; i++) {
-		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0)
-			return assets[i];
+	void* result = nullptr;
+	ft_mutex_lock(assets_lock);
+	for (int32_t i = 0; i < assets.count; i++) {
+		if (assets[i]->id == id && assets[i]->type == type && assets[i]->refs > 0) {
+			result = assets[i];
+			break;
+		}
 	}
-	return nullptr;
+	ft_mutex_unlock(assets_lock);
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -97,29 +114,34 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 void *assets_allocate(asset_type_ type) {
 	size_t size = sizeof(asset_header_t);
 	switch(type) {
-	case asset_type_mesh:     size = sizeof(_mesh_t );    break;
-	case asset_type_tex:      size = sizeof(_tex_t);      break;
-	case asset_type_shader:   size = sizeof(_shader_t);   break;
-	case asset_type_material: size = sizeof(_material_t); break;
-	case asset_type_model:    size = sizeof(_model_t);    break;
-	case asset_type_font:     size = sizeof(_font_t);     break;
-	case asset_type_sprite:   size = sizeof(_sprite_t);   break;
-	case asset_type_sound:    size = sizeof(_sound_t);    break;
-	case asset_type_solid:    size = sizeof(_solid_t);    break;
+	case asset_type_mesh:        size = sizeof(_mesh_t );       break;
+	case asset_type_tex:         size = sizeof(_tex_t);         break;
+	case asset_type_shader:      size = sizeof(_shader_t);      break;
+	case asset_type_material:    size = sizeof(_material_t);    break;
+	case asset_type_model:       size = sizeof(_model_t);       break;
+	case asset_type_font:        size = sizeof(_font_t);        break;
+	case asset_type_sprite:      size = sizeof(_sprite_t);      break;
+	case asset_type_sound:       size = sizeof(_sound_t);       break;
+	case asset_type_anchor:      size = sizeof(_anchor_t);      break;
+	case asset_type_render_list: size = sizeof(_render_list_t); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
-	char name[64];
-	snprintf(name, sizeof(name), "auto/asset_%d", assets.count);
-
 	asset_header_t *header = (asset_header_t *)sk_malloc(size);
 	memset(header, 0, size);
-	header->type  = type;
-	header->id    = hash_fnv64_string(name);
-	header->index = assets.count;
-	header->state = asset_state_none;
+	header->type    = type;
+	header->state   = asset_state_none;
 	assets_addref(header);
+
+	ft_mutex_lock(assets_lock);
+	char name[64];
+	snprintf(name, sizeof(name), "auto/asset_%d", assets.count);
+	header->id      = hash_fnv64_string(name);
+	header->id_text = string_copy(name);
+	header->index   = assets.count;
+
 	assets.add(header);
+	ft_mutex_unlock(assets_lock);
 	return header;
 }
 
@@ -127,6 +149,7 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
+	sk_free(header->id_text);
 	header->id_text = string_copy(id);
 }
 
@@ -146,22 +169,22 @@ void assets_set_id(asset_header_t *header, uint64_t id) {
 ///////////////////////////////////////////
 
 void assets_addref(asset_header_t *asset) {
-	asset->refs += 1;
+	atomic_increment(&asset->refs);
 }
 
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
 	// Manage the reference count
-	asset->refs -= 1;
-	if (asset->refs < 0) {
-		log_err("Released too many references to asset!");
+	if (atomic_decrement(&asset->refs) == 0) {
+		assets_destroy(asset);
+	} else if (asset->refs < 0) {
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset->type, 
+			asset->id_text!=nullptr?": "          :"",
+			asset->id_text!=nullptr?asset->id_text:"");
 		abort();
 	}
-	if (asset->refs != 0)
-		return;
-
-	assets_destroy(asset);
 }
 
 ///////////////////////////////////////////
@@ -169,52 +192,63 @@ void assets_releaseref(asset_header_t *asset) {
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
 
-	// Manage the reference count
-	asset_header->refs -= 1;
-	if (asset_header->refs < 0) {
-		log_err("Released too many references to asset!");
-		abort();
-	}
-	if (asset_header->refs != 0)
+	if (!asset_thread_enabled)
 		return;
 
-	mtx_lock(&assets_multithread_destroy_lock);
-	assets_multithread_destroy.add(asset_header);
-	mtx_unlock(&assets_multithread_destroy_lock);
+	// Manage the reference count
+	if (atomic_decrement(&asset_header->refs) == 0) {
+		ft_mutex_lock(assets_multithread_destroy_lock);
+		assets_multithread_destroy.add(asset_header);
+		ft_mutex_unlock(assets_multithread_destroy_lock);
+	} else if (asset_header->refs < 0) {
+		log_errf("Released too many references to asset[%d]%s%s",
+			asset_header->type, 
+			asset_header->id_text!=nullptr?": "                 :"",
+			asset_header->id_text!=nullptr?asset_header->id_text:"");
+		abort();
+	}
 }
 
 ///////////////////////////////////////////
 
 void assets_destroy(asset_header_t *asset) {
 	if (asset->refs != 0) {
-		log_errf("Destroying asset '%s' that still has references!", asset->id_text);
+		// If something else picked up a reference to this between submission
+		// for destruction and now, that's actually just fine! We can just
+		// break out of here.
 		return;
 	}
 
+	// destroy functions will often zero out their contents for safety, so we
+	// need to free the id text first
+	sk_free(asset->id_text);
+
 	// Call asset specific destroy function
 	switch(asset->type) {
-	case asset_type_mesh:     mesh_destroy    ((mesh_t    )asset); break;
-	case asset_type_tex:      tex_destroy     ((tex_t     )asset); break;
-	case asset_type_shader:   shader_destroy  ((shader_t  )asset); break;
-	case asset_type_material: material_destroy((material_t)asset); break;
-	case asset_type_model:    model_destroy   ((model_t   )asset); break;
-	case asset_type_font:     font_destroy    ((font_t    )asset); break;
-	case asset_type_sprite:   sprite_destroy  ((sprite_t  )asset); break;
-	case asset_type_sound:    sound_destroy   ((sound_t   )asset); break;
-	case asset_type_solid:    solid_destroy   ((solid_t   )asset); break;
+	case asset_type_mesh:        mesh_destroy       ((mesh_t       )asset); break;
+	case asset_type_tex:         tex_destroy        ((tex_t        )asset); break;
+	case asset_type_shader:      shader_destroy     ((shader_t     )asset); break;
+	case asset_type_material:    material_destroy   ((material_t   )asset); break;
+	case asset_type_model:       model_destroy      ((model_t      )asset); break;
+	case asset_type_font:        font_destroy       ((font_t       )asset); break;
+	case asset_type_sprite:      sprite_destroy     ((sprite_t     )asset); break;
+	case asset_type_sound:       sound_destroy      ((sound_t      )asset); break;
+	case asset_type_anchor:      anchor_destroy     ((anchor_t     )asset); break;
+	case asset_type_render_list: render_list_destroy((render_list_t)asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
 	// Remove it from our list of assets
+	ft_mutex_lock(assets_lock);
 	for (int32_t i = 0; i < assets.count; i++) {
 		if (assets[i] == asset) {
 			assets.remove(i);
 			break;
 		}
 	}
+	ft_mutex_unlock(assets_lock);
 
 	// And at last, free the memory we allocated for it!
-	sk_free(asset->id_text);
 	sk_free(asset);
 }
 
@@ -275,6 +309,7 @@ void  assets_shutdown_check() {
 			case asset_type_sprite:   type_name = "sprite_t";   break;
 			case asset_type_sound:    type_name = "sound_t";    break;
 			case asset_type_solid:    type_name = "solid_t";    break;
+			case asset_type_anchor:   type_name = "anchor_t";   break;
 			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
@@ -288,7 +323,9 @@ void  assets_shutdown_check() {
 ///////////////////////////////////////////
 
 char *assets_file(const char *file_name) {
-	if (file_name == nullptr || sk_settings.assets_folder == nullptr || sk_settings.assets_folder[0] == '\0')
+	const sk_settings_t* settings = sk_get_settings_ref();
+
+	if (file_name == nullptr || settings->assets_folder == nullptr || settings->assets_folder[0] == '\0')
 		return string_copy(file_name);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
@@ -306,20 +343,21 @@ char *assets_file(const char *file_name) {
 		return string_copy(file_name);
 #endif
 
-	int   count  = snprintf(nullptr, 0, "%s/%s", sk_settings.assets_folder, file_name);
+	int   count  = snprintf(nullptr, 0, "%s/%s", settings->assets_folder, file_name);
 	char *result = sk_malloc_t(char, count + 1);
-	snprintf(result, count+1, "%s/%s", sk_settings.assets_folder, file_name);
+	snprintf(result, count+1, "%s/%s", settings->assets_folder, file_name);
 	return result;
 }
 
 ///////////////////////////////////////////
 
 bool assets_init() {
-	assets_gpu_thread = thrd_id_current();
-	mtx_init(&assets_multithread_destroy_lock, mtx_plain);
-	mtx_init(&assets_job_lock,                 mtx_plain);
-	mtx_init(&asset_thread_task_mtx,           mtx_plain);
-	mtx_init(&assets_load_event_lock,          mtx_plain);
+	assets_lock                     = ft_mutex_create();
+	assets_multithread_destroy_lock = ft_mutex_create();
+	assets_job_lock                 = ft_mutex_create();
+	asset_thread_task_mtx           = ft_mutex_create();
+	assets_load_event_lock          = ft_mutex_create();
+	asset_tasks_available           = ft_condition_create();
 
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);
@@ -329,8 +367,7 @@ bool assets_init() {
 	{
 		asset_threads.add({});
 		asset_thread_t* th = &asset_threads.last();
-		thrd_t thread = {};
-		thrd_create(&thread, asset_thread, th);
+		ft_thread_create(asset_thread, th);
 	}
 
 	return true;
@@ -339,7 +376,7 @@ bool assets_init() {
 ///////////////////////////////////////////
 
 array_t<asset_load_callback_t> assets_load_call_list = {};
-void assets_update() {
+void assets_step() {
 	// If we have no asset threads for some reason (like WASM), then we'll need
 	// to make sure assets still get loaded here!
 	if (asset_threads.count <= 0) {
@@ -347,24 +384,24 @@ void assets_update() {
 	}
 
 	// destroy objects where the request came from another thread
-	mtx_lock(&assets_multithread_destroy_lock);
+	ft_mutex_lock(assets_multithread_destroy_lock);
 	for (int32_t i = 0; i < assets_multithread_destroy.count; i++) {
 		assets_destroy(assets_multithread_destroy[i]);
 	}
 	assets_multithread_destroy.clear();
-	mtx_unlock(&assets_multithread_destroy_lock);
+	ft_mutex_unlock(assets_multithread_destroy_lock);
 
 	// Do any jobs the assets need on the main thread, like GPU buffer uploads
-	mtx_lock(&assets_job_lock);
+	ft_mutex_lock(assets_job_lock);
 	for (int32_t i = 0; i < assets_gpu_jobs.count; i++) {
 		assets_gpu_jobs[i]->success  = assets_gpu_jobs[i]->asset_job(assets_gpu_jobs[i]->data);
 		assets_gpu_jobs[i]->finished = true;
 	}
 	assets_gpu_jobs.clear();
-	mtx_unlock(&assets_job_lock);
+	ft_mutex_unlock(assets_job_lock);
 
 	// Update any on_load event callbacks
-	mtx_lock(&assets_load_event_lock);
+	ft_mutex_lock(assets_load_event_lock);
 	for (int32_t i = 0; i < assets_load_events.count; i++) {
 		for (int32_t c = 0; c < assets_load_callbacks.count; c++) {
 			asset_load_callback_t *callback = &assets_load_callbacks[c];
@@ -377,37 +414,50 @@ void assets_update() {
 		}
 	}
 	assets_load_events.clear();
-	mtx_unlock(&assets_load_event_lock);
+	ft_mutex_unlock(assets_load_event_lock);
 	assets_load_call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
 	assets_load_call_list.clear();
+
+#if defined(SK_DEBUG_MEM)
+	if (input_key(key_p) & button_state_just_active) {
+		sk_mem_log_allocations();
+	}
+#endif
 }
 
 ///////////////////////////////////////////
 
 void assets_shutdown() {
 	asset_thread_enabled = false;
+	ft_condition_broadcast(asset_tasks_available);
 	for (int32_t i = 0; i < asset_threads.count; i++) {
 		while (asset_threads[i].running) {
-			assets_update();
-			thrd_yield();
+			assets_step();
+			ft_yield();
 		}
 	}
 	asset_threads.free();
 
+#if defined(SK_DEBUG_MEM)
+	assets_shutdown_check();
+#endif
 
-	mtx_destroy(&asset_thread_task_mtx);
+	ft_mutex_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
 	asset_active_tasks.free();
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
-	mtx_destroy(&assets_multithread_destroy_lock);
-	mtx_destroy(&assets_job_lock);
-	mtx_destroy(&assets_load_event_lock);
+	ft_mutex_destroy(&assets_multithread_destroy_lock);
+	ft_mutex_destroy(&assets_job_lock);
+	ft_mutex_destroy(&assets_load_event_lock);
+	ft_mutex_destroy(&assets_lock);
+	ft_condition_destroy(&asset_tasks_available);
 
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
+	assets               .free();
 
 	asset_tasks_processing = 0;
 	asset_tasks_finished   = 0;
@@ -417,7 +467,7 @@ void assets_shutdown() {
 ///////////////////////////////////////////
 
 bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (thrd_id_equal(thrd_id_current(), assets_gpu_thread)) {
+	if (ft_id_matches(sk_main_thread())) {
 		return asset_job(data);
 	} else {
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
@@ -425,19 +475,19 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		job->asset_job = asset_job;
 		job->data      = data;
 
-		mtx_lock(&assets_job_lock);
+		ft_mutex_lock(assets_job_lock);
 		assets_gpu_jobs.add(job);
-		mtx_unlock(&assets_job_lock);
+		ft_mutex_unlock(assets_job_lock);
 
 		// Block until the GPU thread has had a chance to take care of the job.
 		uint64_t start      = stm_now();
 		bool     has_warned = false;
 		while (job->finished == false) {
-			thrd_yield();
+			ft_yield();
 
 			// if the app hasn't started stepping yet and this takes too long,
 			// the application may be off the gpu thread unintentionally.
-			if (sk_first_step == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
+			if (sk_has_stepped() == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
 				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
 				has_warned = true;
 			}
@@ -529,7 +579,7 @@ void assets_add_task(asset_task_t src_task) {
 	memcpy(task, &src_task, sizeof(asset_task_t));
 	assets_addref(task->asset);
 
-	mtx_lock(&asset_thread_task_mtx);
+	ft_mutex_lock(asset_thread_task_mtx);
 
 	// This array_t function has some strange behavior on 32 bit builds related
 	// to render sort items. We're duplicating it here without templating to
@@ -549,7 +599,10 @@ void assets_add_task(asset_task_t src_task) {
 	if (idx < 0) idx = ~idx;
 	asset_thread_tasks.insert(idx, task);
 	asset_tasks_processing += 1;
-	mtx_unlock(&asset_thread_task_mtx);
+	ft_mutex_unlock(asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) ft_condition_broadcast(asset_tasks_available);
+	else                              ft_condition_signal   (asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -570,8 +623,8 @@ int32_t assets_calculate_current_priority() {
 
 asset_task_t* assets_acquire_task() {
 	// Pop out the task we want to work on
-	mtx_lock(&asset_thread_task_mtx);
-	if (asset_thread_tasks.count <= 0) { mtx_unlock(&asset_thread_task_mtx); return nullptr; }
+	ft_mutex_lock(asset_thread_task_mtx);
+	if (asset_thread_tasks.count <= 0) { ft_mutex_unlock(asset_thread_task_mtx); return nullptr; }
 	asset_task_t* result = nullptr;
 
 	// Find a task that's ready for work
@@ -586,7 +639,7 @@ asset_task_t* assets_acquire_task() {
 			break;
 		}
 	}
-	mtx_unlock(&asset_thread_task_mtx);
+	ft_mutex_unlock(asset_thread_task_mtx);
 
 	return result;
 }
@@ -594,10 +647,13 @@ asset_task_t* assets_acquire_task() {
 ///////////////////////////////////////////
 
 void assets_return_task(asset_task_t *task) {
-	mtx_lock(&asset_thread_task_mtx);
+	ft_mutex_lock(asset_thread_task_mtx);
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
 	asset_thread_tasks.insert(0, task);
-	mtx_unlock(&asset_thread_task_mtx);
+	ft_mutex_unlock(asset_thread_task_mtx);
+
+	if (asset_thread_tasks.count > 1) ft_condition_broadcast(asset_tasks_available);
+	else                              ft_condition_signal   (asset_tasks_available);
 }
 
 ///////////////////////////////////////////
@@ -605,19 +661,19 @@ void assets_return_task(asset_task_t *task) {
 void assets_complete_task(asset_task_t* task) {
 	// Skip putting it back if it's complete :)
 
-	mtx_lock(&asset_thread_task_mtx);
+	ft_mutex_lock(asset_thread_task_mtx);
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
 	asset_tasks_finished   += 1;
 	asset_tasks_processing -= 1;
 	asset_tasks_priority    = assets_calculate_current_priority();
-	mtx_unlock(&asset_thread_task_mtx);
+	ft_mutex_unlock(asset_thread_task_mtx);
 
 	// If it was successfully loaded, we'll want to notify on_load, but we do
 	// want to skip this if it was removed because of an issue during load.
 	if (task->asset->state >= asset_state_loaded) {
-		mtx_lock(&assets_load_event_lock);
+		ft_mutex_lock(assets_load_event_lock);
 		assets_load_events.add(task->asset);
-		mtx_unlock(&assets_load_event_lock);
+		ft_mutex_unlock(assets_load_event_lock);
 	}
 
 	if (task->free_data != nullptr) task->free_data(task->asset, task->load_data);
@@ -666,9 +722,9 @@ void asset_step_task() {
 			};
 
 			// Add the job to the list
-			mtx_lock(&assets_job_lock);
+			ft_mutex_lock(assets_job_lock);
 			assets_gpu_jobs.add(&task->gpu_job);
-			mtx_unlock(&assets_job_lock);
+			ft_mutex_unlock(assets_job_lock);
 		} else if (task->gpu_job.finished) {
 			if (task->gpu_job.success == false) {
 				// On failure, send an error message, and move to
@@ -698,14 +754,23 @@ void asset_step_task() {
 
 int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
-	thread->id      = thrd_id_current();
+	thread->id      = ft_id_current();
 	thread->running = true;
+
+	// Don't start processing assets until initialization is finished
+	while (asset_thread_enabled && !sk_is_initialized())
+		platform_sleep(1);
+
+	ft_mutex_t wait_mtx = ft_mutex_create();
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
 		asset_step_task();
-		thrd_yield();
+
+		if (asset_thread_enabled && asset_thread_tasks.count == 0)
+			ft_condition_wait(asset_tasks_available, wait_mtx);
 	}
 
+	ft_mutex_destroy(&wait_mtx);
 	thread->running = false;
 	return 0;
 }
@@ -713,13 +778,16 @@ int32_t asset_thread(void *thread_inst_obj) {
 ///////////////////////////////////////////
 
 void assets_block_until(asset_header_t *asset, asset_state_ state) {
-	if (asset->state >= state || asset->state < 0)
+	// If we're past the required state already, drop out. asset_state_none and
+	// below (error states) means no loading is happening, so blocking will
+	// only put us in an infinite loop.
+	if (asset->state >= state || asset->state <= asset_state_none)
 		return;
 
-	thrd_id_t curr_id = thrd_id_current();
+	ft_id_t curr_id = ft_id_current();
 	for (int32_t i = 0; i < asset_threads.count; i++)
 	{
-		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
+		if (ft_id_equal(curr_id, asset_threads[i].id)) {
 			log_err("assets_block_ should not be called on the assets thread!");
 			return;
 		}
@@ -728,18 +796,17 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 	while (asset->state < state && asset->state >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
-		thrd_yield();
+		assets_step();
 	}
 }
 
 ///////////////////////////////////////////
 
 void assets_block_for_priority(int32_t priority) {
-	thrd_id_t curr_id = thrd_id_current();
+	ft_id_t curr_id = ft_id_current();
 	for (int32_t i = 0; i < asset_threads.count; i++)
 	{
-		if (thrd_id_equal(curr_id, asset_threads[i].id)) {
+		if (ft_id_equal(curr_id, asset_threads[i].id)) {
 			log_err("assets_block_ should not be called on the assets thread!");
 			return;
 		}
@@ -750,8 +817,7 @@ void assets_block_for_priority(int32_t priority) {
 	while (curr_priority <= priority && curr_priority != INT_MAX) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
-		assets_update();
-		thrd_yield();
+		assets_step();
 		curr_priority = assets_current_task_priority();
 	}
 }

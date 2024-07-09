@@ -16,22 +16,31 @@ extern tex_t        sk_default_tex_devtex;
 extern tex_t        sk_default_tex_error;
 extern tex_t        sk_default_cubemap;
 extern mesh_t       sk_default_quad;
+extern mesh_t       sk_default_sphere;
+extern mesh_t       sk_default_cube;
 extern shader_t     sk_default_shader;
 extern shader_t     sk_default_shader_blit;
 extern shader_t     sk_default_shader_pbr;
 extern shader_t     sk_default_shader_unlit;
+extern shader_t     sk_default_shader_lightmap;
 extern shader_t     sk_default_shader_font;
 extern shader_t     sk_default_shader_equirect;
 extern shader_t     sk_default_shader_ui;
+extern shader_t     sk_default_shader_ui_aura;
 extern shader_t     sk_default_shader_sky;
 extern shader_t     sk_default_shader_lines;
 extern material_t   sk_default_material;
 extern material_t   sk_default_material_equirect;
 extern material_t   sk_default_material_font;
 extern material_t   sk_default_material_ui;
+extern material_t   sk_default_material_ui_aura;
 extern font_t       sk_default_font;
 extern text_style_t sk_default_text_style;
 extern sound_t      sk_default_click;
 extern sound_t      sk_default_unclick;
+extern model_t      sk_default_controller_l;
+extern model_t      sk_default_controller_r;
+
+extern const spherical_harmonics_t sk_default_lighting;
 
 } // namespace sk
