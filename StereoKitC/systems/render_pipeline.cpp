@@ -1,8 +1,8 @@
 #include "render_pipeline.h"
 #include "render.h"
 #include "../asset_types/texture.h"
-#include "../libraries/sk_gpu.h"
 
+#include <sk_gpu.h>
 #include <stdio.h>
 
 namespace sk {
