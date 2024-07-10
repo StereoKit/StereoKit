@@ -58,7 +58,7 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t *buffer) {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_position, color32 color) {
+void sprite_draw(sprite_t sprite, matrix at, text_align_ anchor_position, color32 color) {
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		vec3 offset = vec3_zero;
@@ -75,12 +75,11 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 		float            width  = sprite->size * sprite->aspect;
 		float            height = sprite->size;
 
-
-		vec3 offset = vec3_zero;
-		if      (anchor_position & text_align_x_left  ) offset.x = -width /2.0f;
-		else if (anchor_position & text_align_x_right ) offset.x =  width /2.0f;
-		if      (anchor_position & text_align_y_bottom) offset.y =  height/2.0f;
-		else if (anchor_position & text_align_y_top   ) offset.y = -height/2.0f;
+		vec3 offset = { -width / 2.0f, -height / 2.0f };
+		if      (anchor_position & text_align_x_left  ) offset.x = -width;
+		else if (anchor_position & text_align_x_right ) offset.x = 0;
+		if      (anchor_position & text_align_y_bottom) offset.y = 0;
+		else if (anchor_position & text_align_y_top   ) offset.y = -height;
 
 		// Resize array if we need more room for this
 		sprite_buffer_ensure_capacity(buffer);
@@ -131,7 +130,7 @@ bool sprite_drawer_init() {
 
 void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
 	render_bind_target_push(target, -1, 0);
-	for (size_t i = 0; i < sprites.count; i++) {
+	for (int32_t i = 0; i < sprites.count; i++) {
 		material_set_texture(sprite_blit_mat, "source", sprites[i]->texture);
 		material_set_vector4(sprite_blit_mat, "blit_to", {
 			sprites[i]->uvs[0].x, 
@@ -146,7 +145,7 @@ void sprite_drawer_update_atlas(tex_t target, array_t<sprite_t> sprites) {
 ///////////////////////////////////////////
 
 void sprite_drawer_step() {
-	for (size_t i = 0; i < sprite_atlases.count; i++) {
+	for (int32_t i = 0; i < sprite_atlases.count; i++) {
 		sprite_atlas_t* atlas = &sprite_atlases[i];
 		if (atlas->rects.w != tex_get_width (atlas->texture) ||
 			atlas->rects.h != tex_get_height(atlas->texture)) {
@@ -166,7 +165,7 @@ void sprite_drawer_step() {
 		}
 	}
 
-	for (size_t i = 0; i < sprite_buffers.count; i++) {
+	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)
 			continue;

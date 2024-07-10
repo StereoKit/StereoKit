@@ -972,7 +972,7 @@ void render_blit_to_bound(material_t material) {
 ///////////////////////////////////////////
 
 void render_blit(tex_t to, material_t material) {
-	for (size_t i = 0; i < to->tex.array_count; i++) {
+	for (int32_t i = 0; i < to->tex.array_count; i++) {
 		render_bind_target_push(to, i, 0);
 		render_blit_to_bound(material);
 		render_bind_target_pop(false);

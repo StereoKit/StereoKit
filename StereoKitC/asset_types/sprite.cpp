@@ -67,14 +67,6 @@ material_t sprite_create_material(int index_id) {
 ///////////////////////////////////////////
 
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
-	if (type == sprite_type_atlased) {
-		if (sprite_warning == false) {
-			sprite_warning = true;
-			log_diag("sprite_create: Atlased sprites not implemented yet! All atlased sprites will be switched to single.");
-		}
-		type = sprite_type_single;
-	}
-
 	// Make an id for the sprite
 	const char* image_id = tex_get_id(image);
 	char sprite_id[256];
@@ -109,7 +101,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	} else {
 		// Find the atlas for this id
 		uint64_t map_id = hash_fnv64_string(atlas_id);
-		int64_t  index  = sprite_atlases.index_where(&sprite_atlas_t::id, map_id);
+		int32_t  index  = sprite_atlases.index_where(&sprite_atlas_t::id, map_id);
 		
 		// No atlas yet? Make one!
 		if (index == -1) {
@@ -119,15 +111,16 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 			new_atlas.rects      = rect_atlas_create(0, 0); // This will get upscaled in sprite_atlas_place
 			new_atlas.texture    = tex_create(tex_type_rendertarget);
 			new_atlas.dirty_full = true;
-			tex_set_address(new_atlas.texture, tex_address_clamp);
+			tex_set_address         (new_atlas.texture, tex_address_clamp);
 			sprite_drawer_add_buffer(new_atlas.material);
-			material_set_texture(new_atlas.material, "diffuse", new_atlas.texture);
+			material_set_texture    (new_atlas.material, "diffuse", new_atlas.texture);
 
 			index = sprite_atlases.add(new_atlas);
 		}
 
 		sprite_atlas_place(&sprite_atlases[index], result);
 		result->buffer_index = index;
+		//result->size         = fabsf(result->uvs[0].y - result->uvs[1].y);
 	}
 
 	sprite_index += 1;
@@ -172,8 +165,8 @@ void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite) {
 		// than the sprite we're trying to add!
 		int32_t new_w = atlas->rects.w;
 		int32_t new_h = atlas->rects.h;
-		if (new_w < tex_get_width (sprite->texture)) { new_w = 1 << (int)ceilf(log2f(tex_get_width (sprite->texture))); }
-		if (new_h < tex_get_height(sprite->texture)) { new_h = 1 << (int)ceilf(log2f(tex_get_height(sprite->texture))); }
+		if (new_w < tex_get_width (sprite->texture)) { new_w = 1 << (int32_t)ceilf(log2f((float)tex_get_width (sprite->texture))); }
+		if (new_h < tex_get_height(sprite->texture)) { new_h = 1 << (int32_t)ceilf(log2f((float)tex_get_height(sprite->texture))); }
 		if (new_w == atlas->rects.w && new_h == atlas->rects.h) {
 			if (new_w == new_h) { new_w = new_w * 2; }
 			else                { new_h = new_h * 2; }
@@ -189,7 +182,7 @@ void sprite_atlas_place(sprite_atlas_t *atlas, sprite_t sprite) {
 
 		// Add all the sprites back
 		full = false;
-		for (size_t i = 0; i < atlas->sprites.count; i++)
+		for (int32_t i = 0; i < atlas->sprites.count; i++)
 		{
 			sprite_t curr      = atlas->sprites[i];
 			int32_t  curr_rect = rect_atlas_add(&atlas->rects, tex_get_width(curr->texture), tex_get_height(curr->texture));
@@ -259,10 +252,10 @@ void sprite_destroy(sprite_t sprite) {
 	if (sprite->buffer_index != -1) {
 		sprite_atlas_t *atlas = &sprite_atlases[sprite->buffer_index];
 
-		int32_t x   = sprite->uvs[0].x * atlas->rects.w;
-		int32_t y   = sprite->uvs[0].y * atlas->rects.h;
+		int32_t x   = (int32_t)(sprite->uvs[0].x * atlas->rects.w);
+		int32_t y   = (int32_t)(sprite->uvs[0].y * atlas->rects.h);
 		int32_t idx = -1;
-		for (size_t i = 0; i < atlas->rects.packed.count; i++)
+		for (int32_t i = 0; i < atlas->rects.packed.count; i++)
 		{
 			if (atlas->rects.packed[i].x == x && atlas->rects.packed[i].y == y) {
 				idx = i;
@@ -281,12 +274,5 @@ void sprite_destroy(sprite_t sprite) {
 	material_release(sprite->material);
 	*sprite = {};
 }
-
-///////////////////////////////////////////
-
-void sprite_draw(sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color) {
-	sprite_drawer_add_at(sprite, transform, anchor_position, color);
-}
-
 
 } // namespace sk
