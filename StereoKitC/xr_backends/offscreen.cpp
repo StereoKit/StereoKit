@@ -12,7 +12,6 @@
 #include "../systems/render.h"
 #include "../systems/render_pipeline.h"
 #include "../libraries/stref.h"
-#include "../libraries/sk_gpu.h"
 
 ///////////////////////////////////////////
 

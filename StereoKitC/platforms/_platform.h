@@ -5,7 +5,7 @@
 
 #pragma once
 #include "platform.h"
-#include "../libraries/sk_gpu.h"
+#include <sk_gpu.h>
 
 namespace sk {
 

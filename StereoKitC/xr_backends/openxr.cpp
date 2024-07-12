@@ -21,12 +21,13 @@
 #include "../device.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
-#include "../libraries/sk_gpu.h"
 #include "../systems/render.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
+
+#include <sk_gpu.h>
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
