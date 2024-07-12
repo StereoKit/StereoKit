@@ -14,8 +14,9 @@
 #include "../systems/render.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
+
+#include <sk_gpu.h>
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
