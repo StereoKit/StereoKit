@@ -109,7 +109,8 @@ $dependencies = @(
         'sk_gpu', 
         'https://github.com/StereoKit/sk_gpu/releases/download/v[version]/sk_gpu.v[version].zip',
         @(), 
-        @([FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null)),
+        @(  [FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null),
+            [FolderCopy]::new('..\src\*', '[libfolder]\include\sk_gpu\', $false, @('h'))),
         'skshaderc\win32_x64\skshaderc.exe'
     )
     [Dependency]::new(

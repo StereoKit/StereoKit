@@ -210,11 +210,12 @@ if (basis_universal_ADDED)
 endif()
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.3.31
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.3.31/sk_gpu.v2024.3.31.zip
-  OPTIONS
-  "SKG_HEADER OFF"
+  NAME sk_gpu # 2024.7.12
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.12/sk_gpu.v2024.7.12.zip
 )
+# For building directly with in-progress sk_gpu changes, point this to your
+# local sk_gpu clone, and use it instead of CPM.
+#add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
 
 ###########################################
 ## StereoKitC                            ##
@@ -291,7 +292,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/miniaudio.cpp
   StereoKitC/libraries/qoi.h
   StereoKitC/libraries/qoi.cpp
-  StereoKitC/libraries/sk_gpu.h
   StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sk_fontfile.h
   StereoKitC/libraries/sk_fontfile.cpp

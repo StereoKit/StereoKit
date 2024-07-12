@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../stereokit.h"
-#include "../libraries/sk_gpu.h"
+#include <sk_gpu.h>
 #include "assets.h"
 
 namespace sk {

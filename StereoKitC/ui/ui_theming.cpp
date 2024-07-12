@@ -844,7 +844,7 @@ uint32_t _lathe_corner_root_index(uint32_t corner, ui_corner_ rounded_corners, u
 
 ///////////////////////////////////////////
 
-void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, bool32_t quadrantified, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
 	float     angle_step = 90 / (float)(corner_resolution - 1);
 	uint32_t  lathe_step = 0;
 	for (size_t i = 0; i < lathe_pt_count; i++)
@@ -867,7 +867,7 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 		float u = c == 0 || c == 3 ? 1.f : -1.f;
 		float v = c == 0 || c == 1 ? 1.f : -1.f;
 
-		vec3     offset       = { -u * corner_radius, -v * corner_radius, 0 };
+		vec3     offset       = quadrantified > 0 ? vec3{ -u * corner_radius, -v * corner_radius, 0 } : vec3{ 0,0,0 };
 		uint32_t corner_count = corner_resolution;
 		float    angle_start  = c * 90.f;
 		float    curr_radius  = corner_radius;
@@ -982,15 +982,16 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 
 ///////////////////////////////////////////
 
-mesh_t ui_gen_quadrant_mesh(ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
+mesh_t ui_gen_quadrant_mesh(ui_corner_ rounded_corners, float corner_radius, uint32_t corner_resolution, bool32_t delete_flat_sides, bool32_t quadrantified, const ui_lathe_pt_t* lathe_pts, int32_t lathe_pt_count) {
 	mesh_t result = nullptr;
-	_ui_gen_quadrant_mesh(&result, rounded_corners, corner_radius, corner_resolution, delete_flat_sides, lathe_pts, lathe_pt_count);
+	_ui_gen_quadrant_mesh(&result, rounded_corners, corner_radius, corner_resolution, delete_flat_sides, quadrantified, lathe_pts, lathe_pt_count);
 	return result;
 }
 
 ///////////////////////////////////////////
 
 mesh_t theme_mesh_button       = nullptr;
+mesh_t theme_mesh_button_round = nullptr;
 mesh_t theme_mesh_input        = nullptr;
 mesh_t theme_mesh_plane        = nullptr;
 mesh_t theme_mesh_panel        = nullptr;
@@ -1005,11 +1006,12 @@ mesh_t theme_mesh_separator    = nullptr;
 mesh_t theme_mesh_aura         = nullptr;
 mesh_t theme_mesh_carat        = nullptr;
 
-material_t theme_mat_opaque        = nullptr;
-material_t theme_mat_opaque_same_z = nullptr;
-material_t theme_mat_transparent   = nullptr;
-material_t theme_mat_aura          = nullptr;
-material_t theme_mat_carat         = nullptr;
+material_t theme_mat_opaque          = nullptr;
+material_t theme_mat_opaque_same_z   = nullptr;
+material_t theme_mat_transparent     = nullptr;
+material_t theme_mat_transparent_noq = nullptr;
+material_t theme_mat_aura            = nullptr;
+material_t theme_mat_carat           = nullptr;
 
 void ui_theme_visuals_update() {
 	color32 white        = {255,255,255,255};
@@ -1062,21 +1064,22 @@ void ui_theme_visuals_update() {
 
 	bool needs_id = theme_mesh_button == nullptr;
 
-	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all,    skui_settings.rounding, 8, false, lathe_button, _countof(lathe_button));
-	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_input,  _countof(lathe_input ));
-	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all,    skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, lathe_plane, _countof(lathe_plane));
+	_ui_gen_quadrant_mesh(&theme_mesh_button_round, ui_corner_all,    0.5f,                   8, false, false, lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all,    skui_settings.rounding, 8, false, true,  lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all,    skui_settings.rounding, 8, false, true,  lathe_input,  _countof(lathe_input ));
+	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all,    skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, true, lathe_plane, _countof(lathe_plane));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    skui_settings.rounding, 8, false, lathe_panel, _countof(lathe_panel));
-	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
-	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    skui_settings.rounding, 8, false, true, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, true,  lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.35f, 5, false, true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.35f, 5, true,  true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.35f, 5, true,  true, lathe_slider, _countof(lathe_slider));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding * 0.25f, 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding * 0.5f,  5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
 	ui_default_aura_mesh(&theme_mesh_aura, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
@@ -1089,6 +1092,12 @@ void ui_theme_visuals_update() {
 		material_set_transparency(theme_mat_transparent, transparency_blend);
 		material_set_depth_test  (theme_mat_transparent, depth_test_less_or_eq);
 		material_set_queue_offset(theme_mat_transparent, -20);
+
+		theme_mat_transparent_noq = material_copy_id(default_id_material_ui);
+		material_set_id          (theme_mat_transparent_noq, "sk/ui/mat_transparent_noq");
+		material_set_transparency(theme_mat_transparent_noq, transparency_blend);
+		material_set_depth_test  (theme_mat_transparent_noq, depth_test_less_or_eq);
+		material_set_queue_offset(theme_mat_transparent_noq, -20);
 
 		theme_mat_opaque = material_copy_id(default_id_material_ui_quadrant);
 		material_set_id          (theme_mat_opaque, "sk/ui/mat_opaque");
@@ -1103,6 +1112,7 @@ void ui_theme_visuals_update() {
 	}
 
 	if (needs_id) {
+		mesh_set_id(theme_mesh_button_round, "sk/ui/mesh_button_round");
 		mesh_set_id(theme_mesh_button,       "sk/ui/mesh_button");
 		mesh_set_id(theme_mesh_input,        "sk/ui/mesh_input");
 		mesh_set_id(theme_mesh_plane,        "sk/ui/mesh_plane");
@@ -1124,7 +1134,7 @@ void ui_theme_visuals_assign() {
 	ui_set_element_visual(ui_vis_default,              theme_mesh_panel,        theme_mat_opaque);
 	ui_set_element_visual(ui_vis_button,               theme_mesh_button,       theme_mat_transparent);
 	ui_set_element_visual(ui_vis_toggle,               theme_mesh_button,       theme_mat_transparent);
-	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button,       theme_mat_transparent);
+	ui_set_element_visual(ui_vis_button_round,         theme_mesh_button_round, theme_mat_transparent_noq);
 	ui_set_element_visual(ui_vis_input,                theme_mesh_input,        theme_mat_transparent);
 	ui_set_element_visual(ui_vis_panel,                theme_mesh_plane,        theme_mat_opaque_same_z);
 	ui_set_element_visual(ui_vis_window_head,          theme_mesh_panel_top,    theme_mat_opaque);
@@ -1144,6 +1154,7 @@ void ui_theme_visuals_assign() {
 ///////////////////////////////////////////
 
 void ui_theme_visuals_release() {
+	mesh_release(theme_mesh_button_round); theme_mesh_button_round  = nullptr;
 	mesh_release(theme_mesh_button      ); theme_mesh_button       = nullptr;
 	mesh_release(theme_mesh_input       ); theme_mesh_input        = nullptr;
 	mesh_release(theme_mesh_plane       ); theme_mesh_plane        = nullptr;
@@ -1159,11 +1170,12 @@ void ui_theme_visuals_release() {
 	mesh_release(theme_mesh_aura        ); theme_mesh_aura         = nullptr;
 	mesh_release(theme_mesh_carat       ); theme_mesh_carat        = nullptr;
 
-	material_release(theme_mat_opaque       ); theme_mat_opaque        = nullptr;
-	material_release(theme_mat_opaque_same_z); theme_mat_opaque_same_z = nullptr;
-	material_release(theme_mat_transparent  ); theme_mat_transparent   = nullptr;
-	material_release(theme_mat_aura         ); theme_mat_aura          = nullptr;
-	material_release(theme_mat_carat        ); theme_mat_carat         = nullptr;
+	material_release(theme_mat_opaque         ); theme_mat_opaque          = nullptr;
+	material_release(theme_mat_opaque_same_z  ); theme_mat_opaque_same_z   = nullptr;
+	material_release(theme_mat_transparent    ); theme_mat_transparent     = nullptr;
+	material_release(theme_mat_transparent_noq); theme_mat_transparent_noq = nullptr;
+	material_release(theme_mat_aura           ); theme_mat_aura            = nullptr;
+	material_release(theme_mat_carat          ); theme_mat_carat           = nullptr;
 }
 
 }

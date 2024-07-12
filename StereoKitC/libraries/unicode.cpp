@@ -5,38 +5,58 @@
 
 ///////////////////////////////////////////
 
-// Source:
+// Previously:
 // https://github.com/skeeto/branchless-utf8
 // Should switch this to a SIMD implementation later, possibly:
 // https://dirtyhandscoding.github.io/posts/utf8lut-vectorized-utf-8-converter-decoding-utf-8.html
-char32_t utf8_decode_fast(const char *utf8_str, const char **out_next_char) {
-	static const uint32_t lengths[] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0
-	};
-	static const int32_t  masks[]  = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
-	static const uint32_t mins[]   = {4194304, 0, 128, 2048, 65536};
-	static const int32_t  shiftc[] = {0, 18, 12, 6, 0};
-	static const int32_t  shifte[] = {0, 6, 4, 2, 0};
 
-	const unsigned char *s   = (unsigned char *)utf8_str;
-	int32_t              len = lengths[s[0] >> 3];
+// Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+// See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
+#define UTF8_ACCEPT 0
+#define UTF8_REJECT 12
+static const uint8_t utf8d[] = {
+	// The first part of the table maps bytes to character classes that
+	// to reduce the size of the transition table and create bitmasks.
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,  9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+	 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	 8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
 
-	// Compute the pointer to the next character early so that the next
-	// iteration can start working on the next character. Neither Clang
-	// nor GCC figure out this reordering on their own.
-	const unsigned char *next = s + len + !len;
+	// The second part is a transition table that maps a combination
+	// of a state of the automaton and a character class to a state.
+	 0,12,24,36,60,96,84,12,12,12,48,72, 12,12,12,12,12,12,12,12,12,12,12,12,
+	12, 0,12,12,12,12,12, 0,12, 0,12,12, 12,24,12,12,12,12,12,24,12,24,12,12,
+	12,12,12,12,12,12,12,24,12,12,12,12, 12,24,12,12,12,12,12,12,12,24,12,12,
+	12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
+	12,36,12,12,12,12,12,12,12,12,12,12,
+};
 
-	// Assume a four-byte character and load four bytes. Unused bits are
-	// shifted out.
-	char32_t result = (char32_t)(s[0] & masks[len]) << 18;
-	result |= (char32_t)(s[1] & 0x3f) << 12;
-	result |= (char32_t)(s[2] & 0x3f) <<  6;
-	result |= (char32_t)(s[3] & 0x3f) <<  0;
-	result >>= shiftc[len];
+int32_t inline utf8_decode_byte(uint32_t* state, uint32_t* codep, uint8_t byte) {
+	uint32_t type = utf8d[byte];
 
-	*out_next_char = (const char *)next;
-	return result;
+	*codep = (*state != UTF8_ACCEPT)
+		? (byte & 0x3fu) | (*codep << 6)
+		: (0xff >> type) & (byte);
+
+	*state = utf8d[256 + *state + type];
+	return *state;
+}
+
+char32_t utf8_decode_fast(const char* utf8_str, const char** out_next_char) {
+	uint32_t codepoint;
+	uint32_t state = UTF8_ACCEPT;
+	for (; *utf8_str; utf8_str += 1)
+		if (!utf8_decode_byte(&state, &codepoint, *utf8_str)) {
+			*out_next_char = utf8_str+1;
+			return codepoint;
+		}
+
+	*out_next_char = nullptr;
+	return 0;
 }
 
 ///////////////////////////////////////////

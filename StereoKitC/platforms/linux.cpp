@@ -19,6 +19,8 @@
 #include <libgen.h>
 #include <fontconfig/fontconfig.h>
 
+#include <sk_gpu.h>
+
 #include "../xr_backends/openxr.h"
 #include "../systems/render.h"
 #include "../systems/input_keyboard.h"
@@ -28,7 +30,6 @@
 #include "../log.h"
 #include "../sk_math.h"
 #include "../asset_types/texture.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
