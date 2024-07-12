@@ -107,7 +107,7 @@ namespace StereoKit
 		public OriginMode origin;
 
 		/// <summary>If StereoKit has nothing to render for this frame, it
-		/// skips submitting a proojection layer to OpenXR entirely.</summary>
+		/// skips submitting a projection layer to OpenXR entirely.</summary>
 		public bool omitEmptyFrames { get { return _omitEmptyFrames > 0; } set { _omitEmptyFrames = value ? 1 : 0; } }
 		private int _omitEmptyFrames;
 

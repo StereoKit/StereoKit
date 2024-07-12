@@ -23,8 +23,8 @@
 #include "../systems/input.h"
 #include "../systems/system.h"
 #include "../libraries/sokol_time.h"
-#include "../libraries/sk_gpu.h"
 
+#include <sk_gpu.h>
 #include <stdio.h>
 
 namespace sk {

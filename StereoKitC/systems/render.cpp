@@ -4,7 +4,6 @@
 #include "defaults.h"
 #include "../_stereokit.h"
 #include "../device.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
@@ -20,6 +19,7 @@
 #include "../systems/input.h"
 #include "../platforms/platform.h"
 
+#include <sk_gpu.h>
 #include <limits.h>
 
 #define STBIW_WINDOWS_UTF8
