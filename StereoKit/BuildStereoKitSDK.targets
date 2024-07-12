@@ -61,21 +61,22 @@
 	</ItemGroup>
 
 	<!-- Make sure the native binaries are built before we try and build this C# project. -->
-	<PropertyGroup>
-		<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
-		<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'">$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)\CMakeCache.txt</SKSDKCacheFile>
-		<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"                               >$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)\CMakeCache.txt</SKSDKCacheFile>
-
-		<SKBuildCommand                                         >cd $(SKSDKFolder)</SKBuildCommand>
-		<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
-		<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
-	</PropertyGroup>
 	<ItemGroup>
 		<UpToDateCheckInput Include="$(SKSDKFolder)\StereoKitC\**\*.cpp;$(SKSDKFolder)\StereoKitC\**\*.h;$(SKSDKFolder)\StereoKitC\**\*.hlsl" />
 	</ItemGroup>
 	<!-- This needs to be a Target instead of a PreBuildEvent, otherwise it won't
 	     run unless the consuming project has dirty code.-->
 	<Target Name="SKPreBuildEvent" BeforeTargets="PreBuildEvent">
+		<PropertyGroup>
+			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
+			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'">$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)\CMakeCache.txt</SKSDKCacheFile>
+			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"                               >$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)\CMakeCache.txt</SKSDKCacheFile>
+
+			<SKBuildCommand                                         >cd $(SKSDKFolder)</SKBuildCommand>
+			<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
+			<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
+		</PropertyGroup>
+
 		<Exec Command="$(SKBuildCommand)" />
 	</Target>
 	
