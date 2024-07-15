@@ -113,6 +113,7 @@ struct render_state_t {
 	spherical_harmonics_t   lighting_src;
 	color128                clear_col;
 	render_list_t           list_primary;
+	float                   viewport_scale;
 	float                   scale;
 	int32_t                 multisample;
 	render_layer_           primary_filter;
@@ -174,6 +175,7 @@ bool render_init() {
 	local.ortho_viewport_height = 1.0f;
 	local.clear_col             = color128{0,0,0,0};
 	local.list_primary          = nullptr;
+	local.viewport_scale        = 1;
 	local.scale                 = sk_get_settings_ref()->render_scaling;
 	local.multisample           = sk_get_settings_ref()->render_multisample;
 	local.primary_filter        = render_layer_all_first_person;
@@ -571,6 +573,18 @@ void render_set_scaling(float texture_scale) {
 
 float render_get_scaling() {
 	return local.scale;
+}
+
+///////////////////////////////////////////
+
+void render_set_viewport_scaling(float viewport_rect_scale) {
+	local.viewport_scale = fmaxf(0,fminf(1,viewport_rect_scale));
+}
+
+///////////////////////////////////////////
+
+float render_get_viewport_scaling(void) {
+	return local.viewport_scale;
 }
 
 ///////////////////////////////////////////

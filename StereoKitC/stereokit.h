@@ -1529,6 +1529,8 @@ SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
 SK_API void                  render_set_scaling    (float display_tex_scale);
 SK_API float                 render_get_scaling    (void);
+SK_API void                  render_set_viewport_scaling(float viewport_rect_scale);
+SK_API float                 render_get_viewport_scaling(void);
 SK_API void                  render_set_multisample(int32_t display_tex_multisample);
 SK_API int32_t               render_get_multisample(void);
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
