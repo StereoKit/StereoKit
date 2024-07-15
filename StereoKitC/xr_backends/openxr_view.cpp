@@ -945,8 +945,9 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	if (xr_draw_to_swapchain)
 		render_pipeline_surface_set_tex(display->swapchain_color.render_surface, display->swapchain_color.textures[color_id]);
 	display->swapchain_color.render_surface_tex = color_id;
-	render_pipeline_surface_set_clear(display->swapchain_color.render_surface, color);
-	render_pipeline_surface_set_layer(display->swapchain_color.render_surface, render_filter);
+	render_pipeline_surface_set_clear         (display->swapchain_color.render_surface, color);
+	render_pipeline_surface_set_layer         (display->swapchain_color.render_surface, render_filter);
+	render_pipeline_surface_set_viewport_scale(display->swapchain_color.render_surface, render_get_viewport_scaling());
 }
 
 ///////////////////////////////////////////

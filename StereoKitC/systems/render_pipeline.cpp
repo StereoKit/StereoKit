@@ -13,6 +13,7 @@ struct pipeline_surface_t {
 	tex_format_   color;
 	tex_format_   depth;
 	render_layer_ layer;
+	float         viewport_scale;
 	int32_t       array_count;
 	int32_t       quilt_width;
 	int32_t       quilt_height;
@@ -59,8 +60,8 @@ void render_pipeline_draw() {
 		pipeline_surface_t* s = &local.surfaces[i];
 		if (s->enabled == false) continue;
 
-		int32_t width  = s->tex->width  / s->quilt_width;
-		int32_t height = s->tex->height / s->quilt_height;
+		int32_t width  = (int32_t)fmaxf(1, (float)(s->tex->width  / s->quilt_width ) * s->viewport_scale);
+		int32_t height = (int32_t)fmaxf(1, (float)(s->tex->height / s->quilt_height) * s->viewport_scale);
 
 		skg_event_begin("Draw Surface");
 		{
@@ -70,7 +71,7 @@ void render_pipeline_draw() {
 				
 			for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
 			for (int32_t quilt_x = 0; quilt_x < s->quilt_width;  quilt_x += 1) {
-				int32_t viewport[4] = {quilt_x*width, quilt_y*height, width, height};
+				int32_t viewport[4] = {quilt_x*width, quilt_y*height, width, height };
 				skg_viewport(viewport);
 
 				int32_t idx = quilt_x + quilt_y * s->quilt_width;
@@ -116,15 +117,16 @@ void render_pipeline_shutdown() {
 
 pipeline_surface_id render_pipeline_surface_create(tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height) {
 	pipeline_surface_t result = {};
-	result.enabled       = false; // shouldn't be enabled until the tex is sized
-	result.color         = color;
-	result.depth         = depth;
-	result.layer         = render_layer_all;
-	result.array_count   = array_count;
-	result.quilt_width   = quilt_width;
-	result.quilt_height  = quilt_height;
-	result.view_matrices = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
-	result.proj_matrices = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
+	result.enabled        = false; // shouldn't be enabled until the tex is sized
+	result.color          = color;
+	result.depth          = depth;
+	result.layer          = render_layer_all;
+	result.viewport_scale = 1;
+	result.array_count    = array_count;
+	result.quilt_width    = quilt_width;
+	result.quilt_height   = quilt_height;
+	result.view_matrices  = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
+	result.proj_matrices  = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
 	return local.surfaces.add(result);
 }
 
@@ -224,8 +226,8 @@ void render_pipeline_surface_get_surface_info(pipeline_surface_id surface_id, in
 	int32_t x = array_based_idx % surface->quilt_width;
 
 	*out_array_idx = arr;
-	out_xywh_rect[2] = surface->tex ? surface->tex->width  / surface->quilt_width : 0;
-	out_xywh_rect[3] = surface->tex ? surface->tex->height / surface->quilt_height: 0;
+	out_xywh_rect[2] = surface->tex ? (int32_t)fmaxf(1, (float)(surface->tex->width  / surface->quilt_width ) * surface->viewport_scale) : 0;
+	out_xywh_rect[3] = surface->tex ? (int32_t)fmaxf(1, (float)(surface->tex->height / surface->quilt_height) * surface->viewport_scale) : 0;
 	out_xywh_rect[0] = x * out_xywh_rect[2];
 	out_xywh_rect[1] = y * out_xywh_rect[3];
 }
@@ -263,6 +265,12 @@ bool32_t render_pipeline_surface_get_enabled(pipeline_surface_id surface) {
 
 void render_pipeline_surface_set_layer(pipeline_surface_id surface, render_layer_ layer) {
 	local.surfaces[surface].layer = layer;
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_surface_set_viewport_scale(pipeline_surface_id surface, float viewport_rect_scale) {
+	local.surfaces[surface].viewport_scale = viewport_rect_scale;
 }
 
 ///////////////////////////////////////////
