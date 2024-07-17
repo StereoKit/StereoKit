@@ -57,7 +57,7 @@ namespace StereoKit
         {
             return Distance(a, b) == 0;
         }
-
+ 
         /// <summary>Override of the not equals operator for the Vec3 class.</summary>
         /// <param name="a">Any vector.</param>
         /// <param name="b">Any vector.</param>
