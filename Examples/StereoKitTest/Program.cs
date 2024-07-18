@@ -26,8 +26,8 @@ class Program
 	static bool   windowDemoShow = false;
 	static Sprite powerButton;
 
-	static List<string> demoNames    = new List<string>();
-	static float        demoWinWidth = 50 * U.cm;
+	static Tests.Category testCategory = Tests.Category.Demo;
+	static float          demoWinWidth = 50 * U.cm;
 
 	public static LogWindow logWindow;
 
@@ -123,9 +123,6 @@ class Program
 		Tests.SetTestActive(startTest);
 		Tests.Initialize();
 
-		for (int i = 0; i < Tests.DemoCount; i++)
-			demoNames.Add(Tests.GetDemoName(i).Substring("Demo".Length));
-
 		if (Tests.IsTesting)
 		{
 			UI.EnableFarInteract = false;
@@ -177,21 +174,48 @@ class Program
 
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(demoWinWidth, 0));
+
+		// Display the different categories of tests we have available
+		for (int i = 0; i < (int)Tests.Category.MAX; i++)
+		{
+			string categoryName = "";
+			switch ((Tests.Category)i)
+			{
+				case Tests.Category.Demo:          categoryName = "Demos"; break;
+				case Tests.Category.Test:          categoryName = "Tests"; break;
+				case Tests.Category.Documentation: categoryName = "Docs"; break;
+				default: categoryName = ((Tests.Category)i).ToString(); break;
+			}
+			if (UI.Radio(categoryName, (Tests.Category)i == testCategory))
+				testCategory = (Tests.Category)i;
+			UI.SameLine();
+		}
+		// Display a quit button on the far right side
+		Vec2 exitSize = new Vec2(0.06f, 0);
+		UI.HSpace(UI.LayoutRemaining.x - exitSize.x);
+		if (UI.ButtonImg("Exit", powerButton, UIBtnLayout.Left, exitSize))
+			SK.Quit();
+
+		UI.HSeparator();
+
+		// Now display a nice, lined-up collection of buttons for each
+		// demo/test in the current category.
 		int        start          = 0;
 		float      currWidthTotal = 0;
 		UISettings uiSettings     = UI.Settings;
 		TextStyle  style          = UI.TextStyle;
-		for (int i = 0; i < demoNames.Count; i++)
+		for (int i = 0; i < Tests.Count(testCategory); i++)
 		{
-			float width = Text.Size(demoNames[i], style).x + uiSettings.padding * 2;
+			float width = Text.Size(Tests.GetTestName(testCategory,i), style).x + uiSettings.padding * 2;
 			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth)
 			{
 				float inflate = (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
 				for (int t = start; t < i; t++)
 				{
-					float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2 + inflate;
-					if (UI.Button(demoNames[t], new Vec2(currWidth, 0)))
-						Tests.SetDemoActive(t);
+					string name      = Tests.GetTestName(testCategory,t);
+					float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2 + inflate;
+					if (UI.Radio(name, Tests.IsActive(testCategory,t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
+						Tests.SetTestActive(testCategory, t);
 					UI.SameLine();
 				}
 				start = i;
@@ -200,17 +224,15 @@ class Program
 				currWidthTotal = uiSettings.margin * 2;
 			currWidthTotal += width + uiSettings.gutter;
 		}
-		for (int t = start; t < demoNames.Count; t++)
+		for (int t = start; t < Tests.Count(testCategory); t++)
 		{
-			float currWidth = Text.Size(demoNames[t], style).x + uiSettings.padding * 2;
-			if (UI.Button(demoNames[t], new Vec2(currWidth, 0)))
-				Tests.SetDemoActive(t);
+			string name      = Tests.GetTestName(testCategory, t);
+			float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2;
+			if (UI.Radio(name, Tests.IsActive(testCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
+				Tests.SetTestActive(testCategory, t);
 			UI.SameLine();
 		}
-		UI.NextLine();
-		UI.HSeparator();
-		if (UI.ButtonImg("Exit", powerButton))
-			SK.Quit();
+
 		UI.WindowEnd();
 	}
 
