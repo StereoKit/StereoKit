@@ -467,8 +467,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	int32_t quilt_height = 1;
 #if defined(SKG_OPENGL)
 	array_count  = 1;
-	quilt_width  = 1;
-	quilt_height = display->view_cap;
+	quilt_width  = display->view_cap;
+	quilt_height = 1;
 #endif
 	w = w * quilt_width;
 	h = h * quilt_height;
