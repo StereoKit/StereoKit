@@ -196,8 +196,8 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.7.12
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.12/sk_gpu.v2024.7.12.zip
+  NAME sk_gpu # 2024.7.18
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.18/sk_gpu.v2024.7.18.zip
 )
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
