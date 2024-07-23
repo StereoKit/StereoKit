@@ -119,7 +119,6 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	rect.right  = win_rect.x + win_rect.w;
 	rect.top    = win_rect.y;
 	rect.bottom = win_rect.y + win_rect.h;
-	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	if (rect.right == rect.left)   rect.right  = rect.left + win_rect.w;
 	if (rect.top   == rect.bottom) rect.bottom = rect.top  + win_rect.h;
 
@@ -127,8 +126,10 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 		win.title,
 		win.title,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		maxi(0, rect.left),
-		maxi(0, rect.top),
+		// 8px outside of screen seems common in maximized windows? This is
+		// consistently true on my PC, even with various resolution scaling.
+		maxi(-8, rect.left),
+		maxi(-8, rect.top),
 		rect.right - rect.left,
 		rect.bottom - rect.top,
 		0, 0,
