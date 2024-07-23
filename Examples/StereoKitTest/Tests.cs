@@ -46,8 +46,9 @@ public static class Tests
 	{
 		allTests = Assembly.GetExecutingAssembly()
 			.GetTypes()
-			.Where ( a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
-			.ToList();
+			.Where  (a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
+			.OrderBy(a => a.Name )
+			.ToList ();
 
 		categoryTests[(int)Category.Demo] = allTests
 			.Where(t=>t.Name.StartsWith("Demo"))

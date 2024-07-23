@@ -224,16 +224,16 @@ namespace sk {
 ///////////////////////////////////////////
 
 #define DEFINE_PROC_MEMBER(name) PFN_##name name;
-struct XrExtTable {
+struct xr_ext_table_t {
 	FOR_EACH_EXTENSION_FUNCTION(DEFINE_PROC_MEMBER);
 	FOR_EACH_PLATFORM_FUNCTION(DEFINE_PROC_MEMBER);
 	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
 };
-extern XrExtTable xr_extensions;
+extern xr_ext_table_t xr_extensions;
 
 #define GET_INSTANCE_PROC_ADDRESS(name) (void)xrGetInstanceProcAddr(instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&result.name)));
-inline XrExtTable xrCreateExtensionTable(XrInstance instance) {
-	XrExtTable result = {};
+inline xr_ext_table_t openxr_create_extension_table(XrInstance instance) {
+	xr_ext_table_t result = {};
 	FOR_EACH_EXTENSION_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
 	FOR_EACH_PLATFORM_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
 	(void)xrGetInstanceProcAddr(instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction*)((PFN_xrGetGraphicsRequirementsKHR)(&result.xrGetGraphicsRequirementsKHR)));
@@ -248,17 +248,28 @@ inline XrExtTable xrCreateExtensionTable(XrInstance instance) {
 
 ///////////////////////////////////////////
 
-#define DEFINE_EXT_INFO(name, available) bool name;
-typedef struct XrExtInfo {
-	bool gfx_extension;
-	bool time_extension;
+typedef enum xr_state_ {
+	// EXT is not available on this system
+	xr_ext_unavailable =  0,
+	// EXT is available and used by StereoKit
+	xr_ext_active      =  1,
+	// EXT is available, but rejected by StereoKit due to some issue
+	xr_ext_rejected    = -1,
+	// EXT is available, but has reported that it won't work for this session
+	xr_ext_disabled    = -2,
+} xr_state_;
+
+#define DEFINE_EXT_INFO(name, available) xr_state_ name;
+typedef struct xr_ext_info_t {
+	xr_state_ gfx_extension;
+	xr_state_ time_extension;
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_UWP    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
 	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_DEBUG  (DEFINE_EXT_INFO);
-} XrExtInfo;
-extern XrExtInfo xr_ext_available;
+} xr_ext_info_t;
+extern xr_ext_info_t xr_ext;
 
 inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_exts, array_t<const char*> exclude_exts, bool minimum_exts, void (*on_available)(const char *name)) {
 	array_t<const char *> result = {};
@@ -326,9 +337,9 @@ inline array_t<const char *> openxr_list_extensions(array_t<const char*> extra_e
 	}
 
 	// Mark each extension that made it to this point as available in the
-	// xr_ext_available struct
+	// xr_ext struct
 	for (int32_t i = 0; i < result.count; i++) {
-#define CHECK_EXT(name, available) else if (strcmp("XR_"#name, result[i]) == 0) {xr_ext_available.name = true;}
+#define CHECK_EXT(name, available) else if (strcmp("XR_"#name, result[i]) == 0) {xr_ext.name = xr_ext_active;}
 		if (false) {}
 		FOR_EACH_EXT_ALL    (CHECK_EXT)
 		FOR_EACH_EXT_UWP    (CHECK_EXT)

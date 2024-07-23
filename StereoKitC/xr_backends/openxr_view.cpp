@@ -117,7 +117,7 @@ bool openxr_preferred_blend  (XrViewConfigurationType view_type, display_blend_ 
 bool openxr_display_create           (XrViewConfigurationType view_type, device_display_t* out_display);
 bool openxr_display_locate           (device_display_t* display, XrTime at_time);
 bool openxr_display_swapchain_update (device_display_t* display);
-void openxr_display_swapchain_acquire(device_display_t* display, color128 color, render_layer_ render_filter);
+bool openxr_display_swapchain_acquire(device_display_t* display, color128 color, render_layer_ render_filter);
 void openxr_display_swapchain_release(device_display_t* display);
 
 ///////////////////////////////////////////
@@ -260,7 +260,7 @@ bool openxr_views_create() {
 	openxr_preferred_format(&xr_preferred_color_format, &xr_preferred_depth_format);
 
 	// Tell OpenXR what sort of color space we're rendering in
-	if (xr_ext_available.FB_color_space) {
+	if (xr_ext.FB_color_space == xr_ext_active) {
 		const char    *colorspace_str = "XR_COLOR_SPACE_REC709_FB";
 		XrColorSpaceFB colorspace     =  XR_COLOR_SPACE_REC709_FB;
 		skg_tex_fmt_   fmt            = skg_tex_fmt_from_native(xr_preferred_color_format);
@@ -748,9 +748,13 @@ bool openxr_render_frame() {
 			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
-			if (!openxr_display_locate(display, xr_time))
+			if (!openxr_display_locate           (display, xr_time) ||
+				!openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_filter()))
+			{
+				render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, false);
 				continue;
-			openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_filter());
+			}
+			;
 
 			if (i == xr_display_primary_idx) {
 				device_data.display_fov.right  = display->view_xr[0].fov.angleRight * rad2deg;
@@ -770,9 +774,12 @@ bool openxr_render_frame() {
 			render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, display->active);
 			if (!display->active) continue;
 
-			if (!openxr_display_locate(display, xr_time))
+			if (!openxr_display_locate           (display, xr_time) ||
+				!openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_capture_filter()))
+			{
+				render_pipeline_surface_set_enabled(display->swapchain_color.render_surface, false);
 				continue;
-			openxr_display_swapchain_acquire(display, render_get_clear_color_ln(), render_get_capture_filter());
+			}
 
 			xr_compositor_2nd_layer_ptrs.add((XrCompositionLayerBaseHeader*)&display->projection_layer);
 
@@ -888,7 +895,7 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 		view->subImage.imageRect.offset = { view_rect[0], view_rect[1] };
 		view->subImage.imageRect.extent = { view_rect[2], view_rect[3] };
 
-		if (xr_ext_available.KHR_composition_layer_depth) {
+		if (xr_ext.KHR_composition_layer_depth == xr_ext_active) {
 			XrCompositionLayerDepthInfoKHR *depth = &display->view_depths[i];
 			depth->minDepth = 0;
 			depth->maxDepth = 1;
@@ -924,20 +931,22 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 
 ///////////////////////////////////////////
 
-void openxr_display_swapchain_acquire(device_display_t* display, color128 color, render_layer_ render_filter) {
+bool openxr_display_swapchain_acquire(device_display_t* display, color128 color, render_layer_ render_filter) {
 	// We need to ask which swapchain image to use for rendering! Which one
 	// will we get? Who knows! It's up to the runtime to decide.
 	uint32_t                    color_id, depth_id;
 	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-	if (XR_SUCCEEDED(xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id))) display->swapchain_color.acquired = true;
-	if (XR_SUCCEEDED(xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id))) display->swapchain_depth.acquired = true;
+	if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id))) return false;
+	display->swapchain_color.acquired = true;
+	if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id))) return false;
+	display->swapchain_depth.acquired = true;
 
 	// Wait until the image is available to render to. The compositor could
 	// still be reading from it.
 	XrSwapchainImageWaitInfo wait_info = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
 	wait_info.timeout = XR_INFINITE_DURATION;
-	xrWaitSwapchainImage(display->swapchain_color.handle, &wait_info);
-	xrWaitSwapchainImage(display->swapchain_depth.handle, &wait_info);
+	if (XR_FAILED(xrWaitSwapchainImage(display->swapchain_color.handle, &wait_info))) return false;
+	if (XR_FAILED(xrWaitSwapchainImage(display->swapchain_depth.handle, &wait_info))) return false;
 
 	if (xr_draw_to_swapchain)
 		render_pipeline_surface_set_tex(display->swapchain_color.render_surface, display->swapchain_color.textures[color_id]);
@@ -945,6 +954,8 @@ void openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	render_pipeline_surface_set_clear         (display->swapchain_color.render_surface, color);
 	render_pipeline_surface_set_layer         (display->swapchain_color.render_surface, render_filter);
 	render_pipeline_surface_set_viewport_scale(display->swapchain_color.render_surface, render_get_viewport_scaling());
+
+	return true;
 }
 
 ///////////////////////////////////////////

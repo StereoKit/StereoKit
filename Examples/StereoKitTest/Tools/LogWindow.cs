@@ -53,6 +53,8 @@ namespace StereoKit.Framework
 
 		void OnLog(LogLevel level, string logText)
 		{
+			if (level == LogLevel.Error)
+				level = LogLevel.Error;
 			if (items.Count>0 && items[items.Count-1].text == logText) {
 				LogItem item = items[items.Count - 1];
 				item.count++;
