@@ -8,6 +8,7 @@ class DemoRenderList : ITest
 	Tex        renderTex = Tex.RenderTarget(128, 128);
 	Material   renderMat = Material.Unlit.Copy();
 	RenderList list      = new RenderList();
+	Color oldClear;
 
 	public void Step()
 	{
@@ -24,6 +25,7 @@ class DemoRenderList : ITest
 		list.Add(model, Matrix.R(0,180,0), Color.White);
 
 		renderMat[MatParamName.DiffuseTex] = renderTex;
+		oldClear = Renderer.ClearColor;
 	}
 	public void Shutdown() { }
 
@@ -38,6 +40,7 @@ class DemoRenderList : ITest
 			?  Vec3.Up
 			: -Vec3.Up;
 		list.DrawNow(renderTex, Matrix.LookAt(Vec3.AngleXZ(Time.Totalf * 90, 0.2f) * 2.0f, Vec3.Zero, up), Matrix.Perspective(90, 1, 0.01f, 50), new Rect(0, 0, 1, 1));
+		Renderer.ClearColor = oldClear;
 
 		UI.WindowBegin("Render Lists", ref winPose);
 		UI.Label($"Render items: {RenderList.Primary.PrevCount}");
