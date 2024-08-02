@@ -29,6 +29,8 @@
 #include <assert.h>
 #include <limits.h>
 
+#include <basisu_transcoder.h>
+
 #if defined(SK_OS_WEB)
 #include <emscripten/threading.h>
 #endif
@@ -358,6 +360,8 @@ bool assets_init() {
 	asset_thread_task_mtx           = ft_mutex_create();
 	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
+
+	basist::basisu_transcoder_init();
 
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);

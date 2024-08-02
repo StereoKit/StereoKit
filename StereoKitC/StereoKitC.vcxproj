@@ -131,6 +131,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
+    <ClCompile Include="asset_types\texture_compression.cpp" />
     <ClCompile Include="backend.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="device.cpp" />
@@ -217,6 +218,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
     <ClInclude Include="asset_types\texture_.h" />
+    <ClInclude Include="asset_types\texture_compression.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="hands\hand_mouse.h" />
     <ClInclude Include="hands\hand_override.h" />
@@ -238,7 +240,6 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\qoi.h" />
     <ClInclude Include="libraries\sk_fontfile.h" />
-    <ClInclude Include="libraries\sk_gpu.h" />
     <ClInclude Include="libraries\sokol_time.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />

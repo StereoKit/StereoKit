@@ -209,13 +209,13 @@ if (basis_universal_ADDED)
   target_include_directories(basis_universal PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
 endif()
 
-CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.7.12
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.12/sk_gpu.v2024.7.12.zip
-)
+#CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+#  NAME sk_gpu # 2024.7.12
+#  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.12/sk_gpu.v2024.7.12.zip
+#)
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
-#add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
 
 ###########################################
 ## StereoKitC                            ##
@@ -273,7 +273,9 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/sprite.cpp
   StereoKitC/asset_types/texture.h
   StereoKitC/asset_types/texture_.h
-  StereoKitC/asset_types/texture.cpp )
+  StereoKitC/asset_types/texture.cpp
+  StereoKitC/asset_types/texture_compression.h
+  StereoKitC/asset_types/texture_compression.cpp )
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h

@@ -13,6 +13,7 @@
 #include "../spherical_harmonics.h"
 #include "texture.h"
 #include "texture_.h"
+#include "texture_compression.h"
 
 #define STBI_NO_STDIO
 #include "../libraries/stb_image.h"
@@ -23,13 +24,10 @@
 #include <limits.h>
 #include <stdio.h>
 
-#include <basisu_transcoder.h>
-using namespace basist;
-
 namespace sk {
 
-void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height);
-bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format);
+void* tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count);
+bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void  tex_update_label   (tex_t texture);
 void _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
 
@@ -86,9 +84,11 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 	data->file_sizes = sk_malloc_t(size_t, data->file_count);
 
 	// Load all files
-	int32_t     width  = 0;
-	int32_t     height = 0;
-	tex_format_ format = tex_format_none;
+	int32_t     width       = 0;
+	int32_t     height      = 0;
+	int32_t     array_count = 0;
+	int32_t     mip_count   = 0;
+	tex_format_ format      = tex_format_none;
 	for (int32_t i = 0; i < data->file_count; i++) {
 		// Read from file
 
@@ -101,16 +101,19 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 
 		// Grab the image metadata
 		tex_format_ color_format = tex_format_none;
-		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &data->color_width, &data->color_height, &color_format)) {
+		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &color_format, &data->color_width, &data->color_height, &array_count, &mip_count)) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
 		}
 
 		// Check if there were issues, or one of the images is the wrong size!
+		// We also don't support array images or pre-mipped images here either.
 		if ((width  != 0               && width  != data->color_width ) ||
 			(height != 0               && height != data->color_height) ||
-			(format != tex_format_none && format != color_format)) {
+			(format != tex_format_none && format != color_format) ||
+			array_count != 1 ||
+			mip_count   != 1) {
 			log_warnf(tex_msg_mismatched_images, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
@@ -135,10 +138,12 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 
 	// Parse all files
 	for (int32_t i = 0; i < data->file_count; i++) {
-		int         width  = 0;
-		int         height = 0;
-		tex_format_ format = tex_format_none;
-		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height);
+		int32_t     width       = 0;
+		int32_t     height      = 0;
+		int32_t     array_count = 0;
+		int32_t     mip_count   = 0;
+		tex_format_ format      = tex_format_none;
+		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height, &array_count, &mip_count);
 
 		if (data->color_data[i] == nullptr) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
@@ -168,10 +173,12 @@ bool32_t tex_set_arr_parse(tex_t tex, tex_load_t* data) {
 
 	// Parse all files
 	for (int32_t i = 0; i < data->file_count; i++) {
-		int         width = 0;
-		int         height = 0;
-		tex_format_ format = tex_format_none;
-		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height);
+		int32_t     width       = 0;
+		int32_t     height      = 0;
+		int32_t     array_count = 0;
+		int32_t     mip_count   = 0;
+		tex_format_ format      = tex_format_none;
+		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height, &array_count, &mip_count);
 
 		if (data->color_data[i] == nullptr) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
@@ -181,7 +188,7 @@ bool32_t tex_set_arr_parse(tex_t tex, tex_load_t* data) {
 
 		// This shouldn't happen, tex_load_image_data and tex_load_image_info
 		// should always agree with eachother
-		if (tex->width != width ||
+		if (tex->width  != width  ||
 			tex->height != height ||
 			tex->format != format) {
 			log_warnf("Texture data mismatch: %s", data->file_names[i]);
@@ -213,8 +220,10 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 		return false;
 	}
 
+	int32_t     array_count;
+	int32_t     mip_count;
 	tex_format_ format;
-	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &data->color_width, &data->color_height, &format)) {
+	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &format, &data->color_width, &data->color_height, &array_count, &mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
 		tex->header.state = asset_state_error_unsupported;
 		return false;
@@ -234,8 +243,10 @@ bool32_t tex_load_equirect_parse(asset_task_t *, asset_header_t *asset, void *jo
 
 	data->color_data = sk_malloc_t(void*, 1);
 
-	tex_format_ format = tex_format_none;
-	data->color_data[0] = tex_load_image_data(data->file_data[0], data->file_sizes[0], data->is_srgb, &format, &data->color_width, &data->color_height);
+	tex_format_ format      = tex_format_none;
+	int32_t     array_count = 0;
+	int32_t     mip_count   = 0;
+	data->color_data[0] = tex_load_image_data(data->file_data[0], data->file_sizes[0], data->is_srgb, &format, &data->color_width, &data->color_height, &array_count, &mip_count);
 
 	if (data->color_data[0] == nullptr) {
 		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
@@ -256,8 +267,8 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 	tex_t       tex  = (tex_t)asset;
 
 	const vec3 up   [6] = { vec3_up, vec3_up, -vec3_forward, vec3_forward, vec3_up, vec3_up };
-	const vec3 fwd  [6] = { {1,0,0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, {0,0,-1} };
-	const vec3 right[6] = { {0,0,-1}, {0,0,1}, {1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0} };
+	const vec3 fwd  [6] = { {1,0, 0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, { 0,0,-1} };
+	const vec3 right[6] = { {0,0,-1}, { 0,0,1}, {1, 0,0}, {1,0,0}, {1,0,0}, {-1,0, 0} };
 
 	tex_t equirect = tex_create(tex_type_image_nomips, tex->format);
 	tex_set_color_arr(equirect, data->color_width, data->color_height, data->color_data, data->file_count);
@@ -268,7 +279,7 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 
 	tex_t    face         = tex_create(tex_type_rendertarget, equirect->format);
 	void    *face_data[6] = {};
-	size_t   size         = (size_t)tex->width*(size_t)tex->height*tex_format_size(equirect->format);
+	size_t   size         = tex_format_size(equirect->format, tex->width, tex->height);
 	tex_set_colors(face, tex->width, tex->height, nullptr);
 	for (int32_t i = 0; i < 6; i++) {
 		material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
@@ -340,86 +351,86 @@ void tex_load_on_failure(asset_header_t *asset, void *) {
 
 ///////////////////////////////////////////
 
-bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, int32_t *out_width, int32_t *out_height, tex_format_ *out_format) {
+bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count) {
 	// Check STB image formats
 	int32_t comp;
 	bool success = stbi_info_from_memory((const stbi_uc*)data, (int)data_size, out_width, out_height, &comp) == 1;
 	if (success) {
+		*out_mip_count   = 1;
+		*out_array_count = 1;
 		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rgba128;
 		else                                                          *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		return true;
 	}
 
 	// Check QOI
-	qoi_desc qoi = {};
-	success = qoi_info(data, (int)data_size, &qoi);
+	qoi_desc q_desc = {};
+	success = qoi_info(data, (int)data_size, &q_desc);
 	if (success) {
-		*out_width  = qoi.width;
-		*out_height = qoi.height;
-		if (qoi.colorspace == QOI_LINEAR) *out_format = tex_format_rgba32_linear;
+		*out_width       = q_desc.width;
+		*out_height      = q_desc.height;
+		*out_mip_count   = 1;
+		*out_array_count = 1;
+		if (q_desc.colorspace == QOI_LINEAR) *out_format = tex_format_rgba32_linear;
 		else                              *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		return true;
 	}
 
-	ktx2_transcoder ktx_transcoder;
-	if (ktx_transcoder.init(data, data_size)) {
-		ktx2_header header = ktx_transcoder.get_header();
-		*out_width  = header.m_pixel_width;
-		*out_height = header.m_pixel_height;
-		*out_format = tex_format_rgba32;
-		ktx_transcoder.clear();
+	if (ktx2_info(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count))
 		return true;
-	}
+
+	if (ktx2_info(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count))
+		return true;
 
 	return false;
 }
 
 ///////////////////////////////////////////
 
-void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height) {
+void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count) {
 	int32_t channels = 0;
-	*out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 
 	// Check for an stbi HDR image
 	if (stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size)) {
-		*out_format = tex_format_rgba128;
+		*out_format      = tex_format_rgba128;
+		*out_array_count = 1;
+		*out_mip_count   = 1;
 		return (uint8_t *)stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
 	}
 
 	// Check through stbi's list of image formats
 	void *result = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
-	if (result != nullptr)
+	if (result != nullptr) {
+		*out_format      = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
+		*out_array_count = 1;
+		*out_mip_count   = 1;
 		return result;
+	}
 
 	// Check for qoi images
 	qoi_desc q_desc = {};
 	result = qoi_decode(data, (int)data_size, &q_desc, 4);
 	if (result != nullptr) {
-		*out_width    = q_desc.width;
-		*out_height   = q_desc.height;
+		*out_width       = q_desc.width;
+		*out_height      = q_desc.height;
+		*out_array_count = 1;
+		*out_mip_count   = 1;
 		// If QOI claims it's linear, then we'll go with that!
-		if (q_desc.colorspace == QOI_LINEAR)
-			*out_format = tex_format_rgba32_linear;
+		if (q_desc.colorspace == QOI_LINEAR) *out_format = tex_format_rgba32_linear;
+		else                                 *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		return result;
 	}
 
-	// Check for a basisu image
-	basisu_transcoder_init();
-
 	// Check for KTX2
-	ktx2_transcoder ktx_transcoder;
-	if (ktx_transcoder.init(data, data_size)) {
-		ktx2_header header = ktx_transcoder.get_header();
-		*out_width  = header.m_pixel_width;
-		*out_height = header.m_pixel_height;
-		*out_format = tex_format_rgba32;
-		color32 *data = sk_malloc_t(color32, *out_width * *out_height);
-		ktx2_transcoder_state state = {};
-		ktx_transcoder.start_transcoding();
-		bool result = ktx_transcoder.transcode_image_level(0, 0, 0, data, *out_width * *out_height, transcoder_texture_format::cTFRGBA32, 0, *out_width, *out_width, 0, 0, &state);
-		ktx_transcoder.clear();
-		return result ? data : nullptr;
-	}
+	result = ktx2_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count);
+	if (result != nullptr)
+		return result;
+
+	// Check for basisu
+	result = basisu_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count);
+	if (result != nullptr)
+		return result;
+
 	return nullptr;
 }
 
@@ -496,10 +507,12 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 
 	// Grab the file meta right away since we already have the file data, no
 	// point in delaying that until the task.
-	int32_t     width  = 0;
-	int32_t     height = 0;
-	tex_format_ format = tex_format_none;
-	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &width, &height, &format)) {
+	int32_t     width       = 0;
+	int32_t     height      = 0;
+	int32_t     array_count = 0;
+	int32_t     mip_count   = 0;
+	tex_format_ format      = tex_format_none;
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &format, &width, &height, &array_count, &mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
 		result->header.state = asset_state_error_unsupported;
 		return result;
@@ -967,10 +980,12 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 
 	// Grab the file meta right away since we already have the file data, no
 	// point in delaying that until the task.
-	int32_t     width = 0;
-	int32_t     height = 0;
-	tex_format_ format = tex_format_none;
-	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &width, &height, &format)) {
+	int32_t     width       = 0;
+	int32_t     height      = 0;
+	int32_t     array_count = 0;
+	int32_t     mip_count   = 0;
+	tex_format_ format      = tex_format_none;
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &format, &width, &height, &array_count, &mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
 		texture->header.state = asset_state_error_unsupported;
 		return;
@@ -979,8 +994,8 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 
 	if (blocking) {
 		bool32_t success = tex_set_arr_parse(texture, load_data);
-		if (!success)	tex_set_fallback(texture, tex_error_texture);
-		else			tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
+		if (!success) tex_set_fallback (texture, tex_error_texture);
+		else          tex_set_color_arr(texture, texture->width, texture->height, load_data->color_data, load_data->file_count);
 		tex_load_free(nullptr, load_data);
 	} else {
 		static const asset_load_action_t actions[] = {
@@ -1017,7 +1032,7 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 		int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(tex->width, tex->height) - 6);
 		int32_t  mip_w, mip_h;
 		skg_mip_dimensions(tex->width, tex->height, mip_level, &mip_w, &mip_h);
-		size_t   face_size       = skg_tex_fmt_size(tex->format) * mip_w * mip_h;
+		size_t   face_size       = skg_tex_fmt_memory(tex->format, mip_w, mip_h);
 		size_t   cube_size       = face_size * 6;
 		uint8_t *cube_color_data = (uint8_t*)sk_malloc(cube_size);
 		void    *data[6];
@@ -1143,22 +1158,9 @@ int32_t tex_get_mips(tex_t texture) {
 
 ///////////////////////////////////////////
 
-size_t tex_format_size(tex_format_ format) {
-	switch (format) {
-	case tex_format_depth32:
-	case tex_format_depthstencil:
-	case tex_format_r32:
-	case tex_format_rgba32:
-	case tex_format_rgba32_linear: return sizeof(color32);
-	case tex_format_rgba64:        return sizeof(uint16_t)*4;
-	case tex_format_rgba128:       return sizeof(color128);
-	case tex_format_r16:
-	case tex_format_depth16:       return sizeof(uint16_t);
-	case tex_format_r8:            return sizeof(uint8_t);
-	default: return sizeof(color32);
-	}
+size_t tex_format_size(tex_format_ format, int32_t width, int32_t height) {
+	return skg_tex_fmt_memory((skg_tex_fmt_)format, width, height);
 }
-
 
 ///////////////////////////////////////////
 

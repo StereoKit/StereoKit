@@ -962,6 +962,26 @@ typedef enum tex_format_ {
 	  channel and 8 bits for the green channel.*/
 	tex_format_r8g8 = 19,
 
+	tex_format_bc1_rgb_srgb,
+	tex_format_bc1_rgb,
+	tex_format_bc3_rgba_srgb,
+	tex_format_bc3_rgba,
+	tex_format_bc4_r,
+	tex_format_bc5_rg,
+	tex_format_bc7_rgba_srgb,
+	tex_format_bc7_rgba,
+	tex_format_etc1_rgb,
+	tex_format_etc2_rgba,
+	tex_format_etc2_rgba_srgb,
+	tex_format_etc2_r11,
+	tex_format_etc2_rg11,
+	tex_format_pvrtc1_rgb,
+	tex_format_pvrtc1_rgba,
+	tex_format_pvrtc2_rgba,
+	tex_format_astc4x4_rgba,
+	tex_format_astc4x4_rgba_srgb,
+	tex_format_atc_rgb,
+	tex_format_atc_rgba,
 } tex_format_;
 
 /*How does the shader grab pixels from the texture? Or more
