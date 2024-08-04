@@ -119,7 +119,7 @@ void* ktx2_decode(void* data, size_t data_size, tex_format_* out_format, int32_t
 	transcoder_texture_format tc_fmt = texture_transcode_format((skg_tex_fmt_)*out_format);
 
 	log_infof("Loading KTX2 with %s %s data. %dx%d * %d%s",
-		is_srgb ? "srgb":"linear", 
+		is_srgb ? "srgb":"linear",
 		ktx_transcoder.get_format() == basis_tex_format::cUASTC4x4 ? "UASTC" : "ETC1S",
 		*out_width,
 		*out_height,
@@ -133,20 +133,17 @@ void* ktx2_decode(void* data, size_t data_size, tex_format_* out_format, int32_t
 		skg_mip_dimensions(*out_width, *out_height, mip, &mip_width, &mip_height);
 		layer_size += skg_tex_fmt_memory((skg_tex_fmt_)*out_format, mip_width, mip_height);
 	}
-	//int32_t top_level_size = block_width * block_height * skg_tex_fmt_block_size((skg_tex_fmt_)*out_format);
-	//int32_t mipped_size    = top_level_size
-	void*   result = sk_malloc(layer_size * *out_array_count);
+	void* result = sk_malloc(layer_size * *out_array_count);
 
 	ktx2_transcoder_state state = {};
 	ktx_transcoder.start_transcoding();
 	bool    success    = true;
 	int32_t mip_offset = 0;
-	//for (uint32_t mip = 0; success && mip < ktx_transcoder.get_levels(); mip++) {
-	for (uint32_t mip = 0; success && mip < 1; mip++) {
+	for (uint32_t mip = 0; success && mip < ktx_transcoder.get_levels(); mip++) {
 		int32_t mip_width, mip_height;
 		skg_mip_dimensions(*out_width, *out_height, mip, &mip_width, &mip_height);
-		int32_t mip_block_width  = mip_width  / block_px;
-		int32_t mip_block_height = mip_height / block_px;
+		int32_t mip_block_width  = (mip_width +(block_px-1)) / block_px;
+		int32_t mip_block_height = (mip_height+(block_px-1)) / block_px;
 
 		int32_t layer_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
 		for (uint32_t layer = 0; success && layer < layer_count; layer++) {
