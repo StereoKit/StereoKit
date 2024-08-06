@@ -26,8 +26,8 @@
 
 namespace sk {
 
-void* tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count);
-bool  tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
+bool  tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr);
+bool  tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void  tex_update_label   (tex_t texture);
 void _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
 
@@ -109,7 +109,7 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 		int32_t     curr_array_count = 0;
 		int32_t     curr_mip_count   = 0;
 		tex_format_ curr_format      = tex_format_none;
-		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &curr_format, &curr_width, &curr_height, &curr_array_count, &curr_mip_count)) {
+		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &curr_format, &curr_width, &curr_height, &curr_array_count, &curr_mip_count)) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
@@ -155,21 +155,22 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	data->color_data = sk_malloc_t(void*, data->file_count);
+	data->color_data = sk_malloc_t(void*, data->file_count * data->color_array_count);
 
 	// Parse all files
+	int32_t array_index = 0;
 	for (int32_t i = 0; i < data->file_count; i++) {
 		int32_t     width       = 0;
 		int32_t     height      = 0;
 		int32_t     array_count = 0;
 		int32_t     mip_count   = 0;
 		tex_format_ format      = tex_format_none;
-		data->color_data[i] = tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &format, &width, &height, &array_count, &mip_count);
-		if (data->color_data[i] == nullptr) {
+		if (!tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[array_index])) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			return false;
 		}
+		array_index += array_count;
 
 		// Make sure the data in this image matches what we extracted in
 		// earlier phases of texture creation. If it doesn't, then something
@@ -208,7 +209,7 @@ bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void 
 	}
 
 	tex_format_ format;
-	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &format, &data->color_width, &data->color_height, &data->color_array_count, &data->color_mip_count)) {
+	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &tex->type, &format, &data->color_width, &data->color_height, &data->color_array_count, &data->color_mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
 		tex->header.state = asset_state_error_unsupported;
 		return false;
@@ -226,14 +227,18 @@ bool32_t tex_load_equirect_parse(asset_task_t *, asset_header_t *asset, void *jo
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
+	if (data->color_array_count != 1) {
+		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
+		tex->header.state = asset_state_error_unsupported;
+		return false;
+	}
+
 	data->color_data = sk_malloc_t(void*, 1);
 
 	tex_format_ format      = tex_format_none;
 	int32_t     array_count = 0;
 	int32_t     mip_count   = 0;
-	data->color_data[0] = tex_load_image_data(data->file_data[0], data->file_sizes[0], data->is_srgb, &format, &data->color_width, &data->color_height, &array_count, &mip_count);
-
-	if (data->color_data[0] == nullptr) {
+	if (!tex_load_image_data(data->file_data[0], data->file_sizes[0], data->is_srgb, &tex->type, &format, &data->color_width, &data->color_height, &array_count, &mip_count, &data->color_data[0])) {
 		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
 		tex->header.state = asset_state_error_unsupported;
 		return false;
@@ -336,7 +341,7 @@ void tex_load_on_failure(asset_header_t *asset, void *) {
 
 ///////////////////////////////////////////
 
-bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count) {
 	// Check STB image formats
 	int32_t comp;
 	bool success = stbi_info_from_memory((const stbi_uc*)data, (int)data_size, out_width, out_height, &comp) == 1;
@@ -361,7 +366,7 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_f
 		return true;
 	}
 
-	if (ktx2_info(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count))
+	if (ktx2_info(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count))
 		return true;
 
 	if (basisu_info(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count))
@@ -372,7 +377,7 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_f
 
 ///////////////////////////////////////////
 
-void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count) {
+bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count, void **out_data_arr) {
 	int32_t channels = 0;
 
 	// Check for an stbi HDR image
@@ -380,22 +385,23 @@ void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_
 		*out_format      = tex_format_rgba128;
 		*out_array_count = 1;
 		*out_mip_count   = 1;
-		return (uint8_t *)stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
+		*out_data_arr    = stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
+		return *out_data_arr != nullptr;
 	}
 
 	// Check through stbi's list of image formats
-	void *result = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
-	if (result != nullptr) {
+	*out_data_arr = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
+	if (*out_data_arr != nullptr) {
 		*out_format      = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		*out_array_count = 1;
 		*out_mip_count   = 1;
-		return result;
+		return *out_data_arr != nullptr;
 	}
 
 	// Check for qoi images
 	qoi_desc q_desc = {};
-	result = qoi_decode(data, (int)data_size, &q_desc, 4);
-	if (result != nullptr) {
+	*out_data_arr = qoi_decode(data, (int)data_size, &q_desc, 4);
+	if (*out_data_arr != nullptr) {
 		*out_width       = q_desc.width;
 		*out_height      = q_desc.height;
 		*out_array_count = 1;
@@ -403,20 +409,18 @@ void *tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_
 		// If QOI claims it's linear, then we'll go with that!
 		if (q_desc.colorspace == QOI_LINEAR) *out_format = tex_format_rgba32_linear;
 		else                                 *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
-		return result;
+		return *out_data_arr != nullptr;
 	}
 
 	// Check for KTX2
-	result = ktx2_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count);
-	if (result != nullptr)
-		return result;
+	if (ktx2_decode(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count, out_data_arr))
+		return true;
 
 	// Check for basisu
-	result = basisu_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count);
-	if (result != nullptr)
-		return result;
+	if (basisu_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count, out_data_arr))
+		return true;
 
-	return nullptr;
+	return false;
 }
 
 ///////////////////////////////////////////
@@ -488,7 +492,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 	// Grab the file meta right away since we already have the file data, no
 	// point in delaying that until the task.
 	tex_format_ format = tex_format_none;
-	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &format, &load_data->color_width, &load_data->color_height, &load_data->color_array_count, &load_data->color_mip_count)) {
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &result->type, &format, &load_data->color_width, &load_data->color_height, &load_data->color_array_count, &load_data->color_mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
 		result->header.state = asset_state_error_unsupported;
 		return result;
@@ -952,7 +956,7 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 	// Grab the file meta right away since we already have the file data, no
 	// point in delaying that until the task.
 	tex_format_ format = tex_format_none;
-	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &format, &load_data->color_width, &load_data->color_height, &load_data->color_array_count, &load_data->color_mip_count)) {
+	if (!tex_load_image_info(load_data->file_data[0], load_data->file_sizes[0], load_data->is_srgb, &texture->type, &format, &load_data->color_width, &load_data->color_height, &load_data->color_array_count, &load_data->color_mip_count)) {
 		log_warnf(tex_msg_invalid_fmt, load_data->file_names[0]);
 		texture->header.state = asset_state_error_unsupported;
 		return;

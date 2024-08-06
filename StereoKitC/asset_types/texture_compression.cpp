@@ -80,7 +80,7 @@ transcoder_texture_format texture_transcode_format(skg_tex_fmt_ format) {
 
 ///////////////////////////////////////////
 
-bool ktx2_info(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+bool ktx2_info(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
 	ktx2_transcoder ktx_transcoder;
 	if (!ktx_transcoder.init(data, (uint32_t)data_size)) return false;
 
@@ -89,8 +89,10 @@ bool ktx2_info(void* data, size_t data_size, tex_format_* out_format, int32_t* o
 	*out_height      = ktx_transcoder.get_height();
 	*out_mip_count   = ktx_transcoder.get_levels() == 0 ? 1 : ktx_transcoder.get_levels();
 	*out_array_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-	if (ktx_transcoder.get_faces() > 1) // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
+	if (ktx_transcoder.get_faces() > 1) { // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
 		*out_array_count = ktx_transcoder.get_faces();
+		*ref_image_type  = tex_type_cubemap;
+	}
 
 	int32_t channels = ktx_transcoder.get_has_alpha() ? 4 : 3;
 	bool    is_srgb  = ktx_transcoder.get_dfd_transfer_func() == KTX2_KHR_DF_TRANSFER_SRGB;
@@ -101,30 +103,24 @@ bool ktx2_info(void* data, size_t data_size, tex_format_* out_format, int32_t* o
 
 ///////////////////////////////////////////
 
-void* ktx2_decode(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr) {
 	ktx2_transcoder ktx_transcoder;
-	if (!ktx_transcoder.init(data, (uint32_t)data_size)) return nullptr;
+	if (!ktx_transcoder.init(data, (uint32_t)data_size)) return false;
 
 	ktx2_header header = ktx_transcoder.get_header();
 	*out_width       = ktx_transcoder.get_width ();
 	*out_height      = ktx_transcoder.get_height();
 	*out_mip_count   = ktx_transcoder.get_levels();
 	*out_array_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-	if (ktx_transcoder.get_faces() > 1) // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
+	if (ktx_transcoder.get_faces() > 1) { // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
 		*out_array_count = ktx_transcoder.get_faces();
+		*ref_image_type  = tex_type_cubemap;
+	}
 
 	int32_t channels = ktx_transcoder.get_has_alpha() ? 4 : 3;
 	bool    is_srgb  = ktx_transcoder.get_dfd_transfer_func() == KTX2_KHR_DF_TRANSFER_SRGB;
 	*out_format = (tex_format_)texture_preferred_compressed_format(channels, is_srgb);
 	transcoder_texture_format tc_fmt = texture_transcode_format((skg_tex_fmt_)*out_format);
-
-	log_infof("Loading KTX2 with %s %s data. %dx%d * %d%s",
-		is_srgb ? "srgb":"linear",
-		ktx_transcoder.get_format() == basis_tex_format::cUASTC4x4 ? "UASTC" : "ETC1S",
-		*out_width,
-		*out_height,
-		*out_array_count,
-		*out_mip_count > 1 ? " (+mips)":"");
 
 	int32_t block_px   = skg_tex_fmt_block_px((skg_tex_fmt_)*out_format);
 	int32_t layer_size = 0;
@@ -133,9 +129,12 @@ void* ktx2_decode(void* data, size_t data_size, tex_format_* out_format, int32_t
 		skg_mip_dimensions(*out_width, *out_height, mip, &mip_width, &mip_height);
 		layer_size += skg_tex_fmt_memory((skg_tex_fmt_)*out_format, mip_width, mip_height);
 	}
-	void* result = sk_malloc(layer_size * *out_array_count);
+	for (int32_t i = 0; i < *out_array_count; i++) {
+		out_data_arr[i] = sk_malloc(layer_size);
+	}
 
 	ktx2_transcoder_state state = {};
+	state.clear();
 	ktx_transcoder.start_transcoding();
 	bool    success    = true;
 	int32_t mip_offset = 0;
@@ -146,18 +145,22 @@ void* ktx2_decode(void* data, size_t data_size, tex_format_* out_format, int32_t
 		int32_t mip_block_height = (mip_height+(block_px-1)) / block_px;
 
 		int32_t layer_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-		for (uint32_t layer = 0; success && layer < layer_count; layer++) {
+		for (int32_t layer = 0; success && layer < layer_count; layer++) {
 			for (uint32_t face = 0; success && face < ktx_transcoder.get_faces(); face++) {
 				int32_t layer_idx = layer + face;
 
-				success = ktx_transcoder.transcode_image_level(mip, layer, face, ((uint8_t*)result) + layer_size*layer_idx + mip_offset, mip_block_width * mip_block_height, tc_fmt, 0, mip_block_width, mip_block_height, 0, 0, &state);
+				success = ktx_transcoder.transcode_image_level(mip, layer, face, ((uint8_t*)out_data_arr[layer_idx]) + mip_offset, mip_block_width * mip_block_height, tc_fmt, 0, mip_block_width, mip_block_height, 0, 0, &state);
 			}
 		}
-
 		mip_offset += skg_tex_fmt_memory((skg_tex_fmt_)*out_format, mip_width, mip_height);
 	}
 	ktx_transcoder.clear();
-	return success ? result : nullptr;
+	if (!success) {
+		for (int32_t i = 0; i < *out_array_count; i++) {
+			sk_free(out_data_arr[i]);
+		}
+	}
+	return success;
 }
 
 ///////////////////////////////////////////
@@ -168,22 +171,22 @@ bool basisu_info(void* data, size_t data_size, tex_format_* out_format, int32_t*
 
 ///////////////////////////////////////////
 
-void* basisu_decode(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+bool basisu_decode(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr) {
 	basisu_transcoder transcoder;
-	if (!transcoder.validate_header(data, (uint32_t)data_size)) return nullptr;
+	if (!transcoder.validate_header(data, (uint32_t)data_size)) return false;
 
 	basisu_file_info file_info = {};
 	if (!transcoder.get_file_info(data, (uint32_t)data_size, file_info))
-		return nullptr;
+		return false;
 
 	if (file_info.m_tex_type != cBASISTexType2D)
-		return nullptr;
+		return false;
 	file_info.m_tex_format; // cETC1S = 0, or cUASTC4x4 = 1
 	file_info.m_tex_type;
 
 	basisu_image_info image_info = {};
 	if (!transcoder.get_image_info(data, (uint32_t)data_size, image_info, 0)) {
-		return nullptr;
+		return false;
 	}
 
 	*out_width  = image_info.m_width;
@@ -193,7 +196,7 @@ void* basisu_decode(void* data, size_t data_size, tex_format_* out_format, int32
 		std::cerr << "Failed to transcode image!" << std::endl;
 		return -1;
 	}*/
-	return nullptr;
+	return false;
 }
 
 }
