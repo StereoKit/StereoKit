@@ -424,6 +424,7 @@ set(SK_SRC_SHADERS_H
 # the cmake options provided.
 if (SK_BUILD_SHARED_LIBS)
   set(LIBRARY_TYPE SHARED)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 else()
   set(LIBRARY_TYPE STATIC)
 endif()
