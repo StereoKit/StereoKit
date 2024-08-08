@@ -24,7 +24,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
 - Model formats: .gltf, .glb, .obj, .stl, ASCII .ply
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, cubemaps
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, ktx2, cubemaps
 - Flexible shader/material system with built-in PBR
 - Performance-by-default instanced render pipeline
 - Skeletal/skinned animation
