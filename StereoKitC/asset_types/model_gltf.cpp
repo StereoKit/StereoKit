@@ -518,9 +518,10 @@ void gltf_apply_sampler(tex_t to_tex, cgltf_sampler *sampler) {
 ///////////////////////////////////////////
 
 tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data, int32_t priority, array_t<const char*>* warnings) {
-	cgltf_image *image = tex->image;
+	cgltf_image *image = tex->has_basisu
+		? tex->basisu_image
+		: tex->image;
 	if (image == nullptr) {
-		if (tex->has_basisu) gltf_add_warning(warnings, "basisu textures not supported");
 		return nullptr;
 	}
 

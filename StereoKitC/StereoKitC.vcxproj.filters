@@ -253,6 +253,11 @@
     <ClCompile Include="libraries\sk_fontfile.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="lib\include\basisu\basisu_transcoder.cpp" />
+    <ClCompile Include="lib\include\zstd\zstd.c" />
+    <ClCompile Include="asset_types\texture_compression.cpp">
+      <Filter>asset_types</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -344,9 +349,6 @@
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="libraries\array.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\sk_gpu.h">
       <Filter>libraries</Filter>
     </ClInclude>
     <ClInclude Include="sk_math.h">
@@ -534,6 +536,9 @@
     </ClInclude>
     <ClInclude Include="libraries\sk_fontfile.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="asset_types\texture_compression.h">
+      <Filter>asset_types</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -84,7 +84,7 @@ class Dependency {
     }
 
     [string] Path() {
-        if ($this.VerifyFile -ne '' -and $null -ne $this.VerifyFile) {return $this.VerifyFile}
+        if ($this.VerifyFile -ne '' -and $null -ne $this.VerifyFile) {return FormatPath($this.VerifyFile)}
 
         if ($script:plat -eq 'Win32') {return "$PSScriptRoot\$script:libOut\bin\$script:arch\$script:config\$($this.Name).lib"}
         else                          {return "$PSScriptRoot\$script:libOut\bin\$($script:arch)_UWP\$script:config\$($this.Name).lib"}
@@ -120,6 +120,15 @@ $dependencies = @(
         @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\src\*', "[libfolder]\include\meshoptimizer\", $false, @('h')) ),
         $null
+    )
+    [Dependency]::new(
+        'basis_universal',
+        'https://github.com/BinomialLLC/basis_universal.git',
+        $null,
+        @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\transcoder\*', "[libfolder]\include\basisu\", $false, @('h', 'cpp', 'inc')),
+            [FolderCopy]::new('..\zstd\*', "[libfolder]\include\zstd\", $false, @('h', 'c')) ),
+        "[libfolder]\include\basisu\basisu_transcoder.h"
     )
 )
 

@@ -817,7 +817,7 @@ void render_check_screenshots() {
 		skg_tex_copy_to(&render_capture_surface->tex, -1, &resolve_tex->tex, -1);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
-		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
+		int32_t line_size = skg_tex_fmt_pitch(resolve_tex->tex.format, resolve_tex->tex.width);
 		void* tmp = sk_malloc(line_size);
 		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
 			void* top_line = ((uint8_t*)buffer) + line_size * y;

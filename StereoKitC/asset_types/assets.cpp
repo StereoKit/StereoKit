@@ -9,6 +9,7 @@
 
 #include "mesh.h"
 #include "texture.h"
+#include "texture_compression.h"
 #include "shader.h"
 #include "material.h"
 #include "model.h"
@@ -358,6 +359,8 @@ bool assets_init() {
 	asset_thread_task_mtx           = ft_mutex_create();
 	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
+
+	texture_compression_init();
 
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);

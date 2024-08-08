@@ -43,7 +43,7 @@ namespace StereoKit
 		/// <summary>A list of supported texture format extensions. This pairs
 		/// pretty well with `Platform.FilePicker` when attempting to load a
 		/// `Tex`!</summary>
-		public static readonly string[] TextureFormats = { ".jpg", ".png", ".hdr", ".tga", ".bmp", ".psd", ".pic", ".qoi", ".gif" };
+		public static readonly string[] TextureFormats = { ".jpg", ".png", ".hdr", ".tga", ".bmp", ".psd", ".pic", ".qoi", ".gif", ".ktx2" };
 
 		private static AssetType TypeToAssetType(Type t)
 		{
