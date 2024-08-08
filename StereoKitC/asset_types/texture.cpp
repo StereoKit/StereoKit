@@ -26,10 +26,11 @@
 
 namespace sk {
 
-bool  tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr);
-bool  tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
-void  tex_update_label   (tex_t texture);
-void _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
+bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr);
+bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
+void   tex_update_label   (tex_t texture);
+size_t tex_format_pitch   (tex_format_ format, int32_t width);
+void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -295,7 +296,7 @@ bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *j
 		
 		
 #if defined(SKG_OPENGL)
-		size_t line_size = tex_format_size(equirect->format) * tex->width;
+		size_t line_size = tex_format_pitch(equirect->format, tex->width);
 		void*  tmp       = sk_malloc(line_size);
 		for (int32_t y = 0; y < tex->height/2; y++) {
 			void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
@@ -1129,6 +1130,12 @@ int32_t tex_get_mips(tex_t texture) {
 
 size_t tex_format_size(tex_format_ format, int32_t width, int32_t height) {
 	return skg_tex_fmt_memory((skg_tex_fmt_)format, width, height);
+}
+
+///////////////////////////////////////////
+
+size_t tex_format_pitch(tex_format_ format, int32_t width) {
+	return skg_tex_fmt_pitch((skg_tex_fmt_)format, width);
 }
 
 ///////////////////////////////////////////

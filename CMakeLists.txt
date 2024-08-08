@@ -25,9 +25,6 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
@@ -443,6 +440,14 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
+
+if (ANDROID)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 11)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
+else()
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 17)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
+endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders

@@ -10,6 +10,12 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+void texture_compression_init() {
+	basist::basisu_transcoder_init();
+}
+
+///////////////////////////////////////////
+
 skg_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb) {
 #if defined(SKG_DIRECT3D11)
 	// D3D's block compression formats are generally pretty clear about what
@@ -42,10 +48,26 @@ skg_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb)
 	// - Otherwise, select the compression format as follows :
 	//   - ATC if using alpha
 	//   - ETC if not using alpha
-	if      (                 skg_tex_fmt_supported(skg_tex_fmt_atsc4x4_rgba)) return skg_tex_fmt_atsc4x4_rgba;
-	else if (                 skg_tex_fmt_supported(skg_tex_fmt_etc2)) return skg_tex_fmt_etc2;
-	else if (channels == 4 && skg_tex_fmt_supported(skg_tex_fmt_atc )) return skg_tex_fmt_atc;
-	else if (                 skg_tex_fmt_supported(skg_tex_fmt_etc )) return skg_tex_fmt_etc;
+
+	if (channels == 1) {
+		if      (skg_tex_fmt_supported(skg_tex_fmt_etc2_r11   ))  return skg_tex_fmt_etc2_r11;
+		else if (skg_tex_fmt_supported(skg_tex_fmt_bc4_r      ))  return skg_tex_fmt_bc4_r;
+		else                                                      return skg_tex_fmt_r8;
+	} else if (channels == 2) {
+		if      (skg_tex_fmt_supported(skg_tex_fmt_etc2_rg11   )) return skg_tex_fmt_etc2_rg11;
+		else if (skg_tex_fmt_supported(skg_tex_fmt_bc5_rg      )) return skg_tex_fmt_bc5_rg;
+		else                                                      return skg_tex_fmt_r8g8;
+	} else if (channels == 3) {
+		if      (skg_tex_fmt_supported(skg_tex_fmt_astc4x4_rgba)) return (is_srgb ? skg_tex_fmt_astc4x4_rgba_srgb : skg_tex_fmt_astc4x4_rgba);
+		//else if (skg_tex_fmt_supported(skg_tex_fmt_atc_rgb     )) return skg_tex_fmt_atc_rgb;
+		else if (skg_tex_fmt_supported(skg_tex_fmt_bc1_rgb     )) return (is_srgb ? skg_tex_fmt_bc1_rgb_srgb      : skg_tex_fmt_bc1_rgb);
+		else                                                      return (is_srgb ? skg_tex_fmt_rgba32            : skg_tex_fmt_rgba32_linear);
+	} else if (channels == 4) {
+		if      (skg_tex_fmt_supported(skg_tex_fmt_astc4x4_rgba)) return (is_srgb ? skg_tex_fmt_astc4x4_rgba_srgb : skg_tex_fmt_astc4x4_rgba);
+		//else if (skg_tex_fmt_supported(skg_tex_fmt_atc_rgba    )) return skg_tex_fmt_atc_rgba;
+		else if (skg_tex_fmt_supported(skg_tex_fmt_bc3_rgba    )) return (is_srgb ? skg_tex_fmt_bc3_rgba_srgb     : skg_tex_fmt_bc3_rgba);
+		else                                                      return (is_srgb ? skg_tex_fmt_rgba32            : skg_tex_fmt_rgba32_linear);
+	}
 #endif
 	log_err("Shouldn't get here!");
 	return skg_tex_fmt_none;
@@ -73,9 +95,12 @@ transcoder_texture_format texture_transcode_format(skg_tex_fmt_ format) {
 	case skg_tex_fmt_pvrtc2_rgba:      return transcoder_texture_format::cTFPVRTC2_4_RGBA;
 	case skg_tex_fmt_etc2_r11:         return transcoder_texture_format::cTFETC2_EAC_R11;
 	case skg_tex_fmt_etc2_rg11:        return transcoder_texture_format::cTFETC2_EAC_RG11;
+	case skg_tex_fmt_etc2_rgba:
+	case skg_tex_fmt_etc2_rgba_srgb:   return transcoder_texture_format::cTFETC2_RGBA;
+	default:
+		log_err("Shouldn't get here!");
+		return transcoder_texture_format::cTFRGBA32;
 	}
-	log_err("Shouldn't get here!");
-	return transcoder_texture_format::cTFRGBA32;
 }
 
 ///////////////////////////////////////////
@@ -181,8 +206,6 @@ bool basisu_decode(void* data, size_t data_size, tex_format_* out_format, int32_
 
 	if (file_info.m_tex_type != cBASISTexType2D)
 		return false;
-	file_info.m_tex_format; // cETC1S = 0, or cUASTC4x4 = 1
-	file_info.m_tex_type;
 
 	basisu_image_info image_info = {};
 	if (!transcoder.get_image_info(data, (uint32_t)data_size, image_info, 0)) {
