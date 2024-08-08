@@ -197,14 +197,8 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   NAME basis_universal # 1.16.4
   GITHUB_REPOSITORY BinomialLLC/basis_universal
   GIT_TAG           900e40fb5d2502927360fe2f31762bdbb624455f
-  DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we need to build one here
+  DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
-if (basis_universal_ADDED)
-  add_library(basis_universal STATIC
-    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
-    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
-  target_include_directories(basis_universal PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
-endif()
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.8.7
@@ -417,6 +411,12 @@ set(SK_SRC_UI
   StereoKitC/ui/ui_theming.h
   StereoKitC/ui/ui_theming.cpp )
 
+if (basis_universal_ADDED)
+  set(SK_SRC_BASISU
+    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
+    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+endif()
+
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
@@ -440,6 +440,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_XR_BACKENDS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
+  ${SK_SRC_BASISU}
   ${SK_SRC_SHADERS_H} )
 
 if (ANDROID)
@@ -481,6 +482,7 @@ source_group("platform"        FILES ${SK_SRC_PLATFORMS})
 source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
 source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
+source_group("basisu"          FILES ${SK_SRC_BASISU})
 source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (NOT MSVC)
@@ -515,6 +517,9 @@ target_include_directories(StereoKitC
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
 )
+if (basis_universal_ADDED)
+  target_include_directories(StereoKitC PRIVATE ${basis_universal_SOURCE_DIR}/transcoder)
+endif()
 
 target_link_libraries( StereoKitC
   PRIVATE
@@ -524,7 +529,6 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
-    basis_universal
   PUBLIC
     sk_gpu
     ${ANDROID_LIBS}
