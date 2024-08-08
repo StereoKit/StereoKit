@@ -197,6 +197,10 @@ public static class Tests
 		=> runFrames = frames;
 	public static void RunForSeconds(float seconds)
 		=> runSeconds = seconds;
+	public static void RunContinue()
+		=> runFrames += 1;
+	public static void RunStop()
+		=> runFrames = -1;
 
 	public static void Screenshot(string name, int width, int height, float fov, Vec3 from, Vec3 at)
 		=> Screenshot(name, 0, width, height, fov, from, at);

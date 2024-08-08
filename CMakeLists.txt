@@ -24,9 +24,6 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
@@ -218,9 +215,17 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
 )
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+#### basis_universal - https://github.com/BinomialLLC/basis_universal ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.7.18
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.18/sk_gpu.v2024.7.18.zip
+  NAME basis_universal # 1.16.4
+  GITHUB_REPOSITORY BinomialLLC/basis_universal
+  GIT_TAG           900e40fb5d2502927360fe2f31762bdbb624455f
+  DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
+)
+
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME sk_gpu # 2024.8.7
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.8.7/sk_gpu.v2024.8.7.zip
 )
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
@@ -283,7 +288,9 @@ set(SK_SRC_ASSET_TYPES
   StereoKitC/asset_types/sprite.cpp
   StereoKitC/asset_types/texture.h
   StereoKitC/asset_types/texture_.h
-  StereoKitC/asset_types/texture.cpp )
+  StereoKitC/asset_types/texture.cpp
+  StereoKitC/asset_types/texture_compression.h
+  StereoKitC/asset_types/texture_compression.cpp )
 
 set(SK_SRC_LIBRARIES
   StereoKitC/libraries/aileron_font_data.h
@@ -422,6 +429,12 @@ set(SK_SRC_UI
   StereoKitC/ui/ui_theming.h
   StereoKitC/ui/ui_theming.cpp )
 
+if (basis_universal_ADDED)
+  set(SK_SRC_BASISU
+    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
+    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+endif()
+
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
 
@@ -429,6 +442,7 @@ set(SK_SRC_SHADERS_H
 # the cmake options provided.
 if (SK_BUILD_SHARED_LIBS)
   set(LIBRARY_TYPE SHARED)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 else()
   set(LIBRARY_TYPE STATIC)
 endif()
@@ -444,7 +458,16 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_XR_BACKENDS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
+  ${SK_SRC_BASISU}
   ${SK_SRC_SHADERS_H} )
+
+if (ANDROID)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 11)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
+else()
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 17)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
+endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders
@@ -477,6 +500,7 @@ source_group("platform"        FILES ${SK_SRC_PLATFORMS})
 source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
 source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
+source_group("basisu"          FILES ${SK_SRC_BASISU})
 source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (NOT MSVC)
@@ -511,6 +535,9 @@ target_include_directories(StereoKitC
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
 )
+if (basis_universal_ADDED)
+  target_include_directories(StereoKitC PRIVATE ${basis_universal_SOURCE_DIR}/transcoder)
+endif()
 
 target_link_libraries( StereoKitC
   PRIVATE

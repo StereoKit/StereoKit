@@ -6,8 +6,9 @@ namespace StereoKit
 {
 	/// <summary>This is the texture asset class! This encapsulates 2D images,
 	/// texture arrays, cubemaps, and rendertargets! It can load any image
-	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
-	/// plus more later on, and you can also create textures procedurally.
+	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic,
+	/// ktx2) plus more later on, and you can also create textures
+	/// procedurally.
 	/// </summary>
 	public class Tex : IAsset
 	{
@@ -265,7 +266,7 @@ namespace StereoKit
 
 		/// <summary>Loads an image file stored in memory directly into
 		/// the created texture! Supported formats are: jpg, png, tga,
-		/// bmp, psd, gif, hdr, pic. This method introduces a blocking 
+		/// bmp, psd, gif, hdr, pic, ktx2. This method introduces a blocking
 		/// boolean parameter, which allows you to specify whether this
 		/// method blocks until the image fully loads! The default case
 		/// is to have it as part of the asynchronous asset pipeline, in
@@ -507,11 +508,11 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads an image file directly into a texture! Supported
-		/// formats are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id
+		/// formats are: jpg, png, tga, bmp, psd, gif, hdr, pic, ktx2. Asset Id
 		/// will be the same as the filename.</summary>
 		/// <param name="file">An absolute filename, or a filename relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
-		/// pic</param>
+		/// pic, ktx2.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -532,11 +533,11 @@ namespace StereoKit
 		/// array texture! Array textures are often useful for shader
 		/// effects, layering, material merging, weird stuff, and will
 		/// generally need a specific shader to support it. Supported formats
-		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the
-		/// hash of all the filenames merged consecutively.</summary>
+		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic, ktx2. Asset Id will be
+		/// the hash of all the filenames merged consecutively.</summary>
 		/// <param name="files">Absolute filenames, or a filenames relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
-		/// pic</param>
+		/// pic, ktx2.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -554,7 +555,8 @@ namespace StereoKit
 
 		/// <summary>Loads an image file stored in memory directly into a
 		/// texture! Supported formats are: jpg, png, tga, bmp, psd, gif,
-		/// hdr, pic. Asset Id will be the same as the filename.</summary>
+		/// hdr, pic, ktx2. Asset Id will be the same as the filename.
+		/// </summary>
 		/// <param name="imageFileData">The binary data of an image file,
 		/// this is NOT a raw RGB color array!</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,

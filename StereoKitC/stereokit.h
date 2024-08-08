@@ -1014,6 +1014,30 @@ typedef enum tex_format_ {
 	  channel and 8 bits for the green channel.*/
 	tex_format_r8g8 = 19,
 
+	tex_format_bc1_rgb_srgb,
+	tex_format_bc1_rgb,
+	tex_format_bc3_rgba_srgb,
+	tex_format_bc3_rgba,
+	tex_format_bc4_r,
+	tex_format_bc5_rg,
+	tex_format_bc7_rgba_srgb,
+	tex_format_bc7_rgba,
+
+	tex_format_etc1_rgb,
+	tex_format_etc2_rgba_srgb,
+	tex_format_etc2_rgba,
+	tex_format_etc2_r11,
+	tex_format_etc2_rg11,
+	tex_format_pvrtc1_rgb_srgb,
+	tex_format_pvrtc1_rgb,
+	tex_format_pvrtc1_rgba_srgb,
+	tex_format_pvrtc1_rgba,
+	tex_format_pvrtc2_rgba_srgb,
+	tex_format_pvrtc2_rgba,
+	tex_format_astc4x4_rgba_srgb,
+	tex_format_astc4x4_rgba,
+	tex_format_atc_rgb,
+	tex_format_atc_rgba,
 } tex_format_;
 
 /*How does the shader grab pixels from the texture? Or more
@@ -1075,7 +1099,8 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
