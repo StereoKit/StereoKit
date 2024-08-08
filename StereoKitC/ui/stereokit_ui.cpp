@@ -705,7 +705,6 @@ template<typename C>
 bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min, float max, float step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) {
 	id_hash_t id = ui_stack_hash(id_text);
 
-	float button_depth  = confirm_method == ui_confirm_push ? skui_settings.depth : skui_settings.depth * 1.5f;
 	float size_min    = vertical ? size.x : size.y;
 	float rule_size   = fmaxf(skui_settings.padding, size_min / 6.f);
 	vec2  button_size = confirm_method == ui_confirm_push
