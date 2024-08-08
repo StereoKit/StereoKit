@@ -50,7 +50,7 @@ bool hand_oxra_available() {
 	return
 		sk_active_display_mode() == display_mode_mixedreality &&
 		xr_session               != XR_NULL_HANDLE            &&
-		xr_has_articulated_hands == true                      &&
+		xr_ext.EXT_hand_tracking == xr_ext_active             &&
 		oxra_hand_active         == true;
 }
 
@@ -87,7 +87,7 @@ bool hand_oxra_is_tracked() {
 void hand_oxra_init() {
 	if (sk_active_display_mode() != display_mode_mixedreality ||
 		xr_session               == XR_NULL_HANDLE            ||
-		xr_has_articulated_hands == false)
+		xr_ext.EXT_hand_tracking != xr_ext_active)
 		return;
 
 	for (int32_t h = 0; h < handed_max; h++) {
@@ -102,13 +102,13 @@ void hand_oxra_init() {
 		XrHandTrackingDataSourceInfoEXT data_source  = { XR_TYPE_HAND_TRACKING_DATA_SOURCE_INFO_EXT };
 		data_source.requestedDataSourceCount = 1;
 		data_source.requestedDataSources     = &unobstructed;
-		if (xr_ext_available.EXT_hand_tracking_data_source)
+		if (xr_ext.EXT_hand_tracking_data_source == xr_ext_active)
 			info.next = &data_source;
 
 		XrResult result = xr_extensions.xrCreateHandTrackerEXT(xr_session, &info, &oxra_hand_tracker[h]);
 		if (XR_FAILED(result)) {
 			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
-			xr_has_articulated_hands = false;
+			xr_ext.EXT_hand_tracking = xr_ext_disabled;
 			input_hand_refresh_system();
 			return;
 		}
@@ -116,7 +116,7 @@ void hand_oxra_init() {
 	oxra_hand_active        = hand_oxra_is_tracked();
 	oxra_system_initialized = true;
 
-	if (xr_has_hand_meshes) {
+	if (xr_ext.MSFT_hand_tracking_mesh == xr_ext_active) {
 		// Pre-allocate memory for the hand mesh structure
 		XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
 		XrSystemHandTrackingMeshPropertiesMSFT  properties_handmesh = { XR_TYPE_SYSTEM_HAND_TRACKING_MESH_PROPERTIES_MSFT };

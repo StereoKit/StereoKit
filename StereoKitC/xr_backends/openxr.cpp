@@ -67,14 +67,11 @@ const char *xr_request_layers[] = {
 	"",
 #endif
 };
-bool xr_has_articulated_hands = false;
-bool xr_has_hand_meshes       = false;
-bool xr_has_single_pass       = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
-XrExtTable     xr_extensions    = {};
-XrExtInfo      xr_ext_available = {};
+xr_ext_table_t xr_extensions    = {};
+xr_ext_info_t  xr_ext           = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
 bool           xr_running       = false;
 XrSpace        xr_app_space     = {};
@@ -109,6 +106,7 @@ bool32_t             openxr_try_get_app_space(XrSession session, origin_mode_ mo
 void                 openxr_preferred_layers (uint32_t &out_layer_count, const char **out_layers);
 XrTime               openxr_acquire_time     ();
 bool                 openxr_blank_frame      ();
+bool                 is_ext_explicitly_requested(const char* extension_name);
 
 ///////////////////////////////////////////
 
@@ -260,7 +258,7 @@ bool openxr_create_system() {
 		XR_VERSION_PATCH(inst_properties.runtimeVersion));
 
 	// Create links to the extension functions
-	xr_extensions = xrCreateExtensionTable(xr_instance);
+	xr_extensions = openxr_create_extension_table(xr_instance);
 
 #if defined(SK_DEBUG)
 	// Set up a really verbose debug log! Great for dev, but turn this off or
@@ -282,7 +280,7 @@ bool openxr_create_system() {
 
 	debug_info.userCallback = openxr_debug_messenger_callback;
 	// Start up the debug utils!
-	if (xr_ext_available.EXT_debug_utils)
+	if (xr_ext.EXT_debug_utils == xr_ext_active)
 		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
 #endif
 
@@ -423,7 +421,7 @@ bool openxr_init() {
 	session_info.systemId = xr_system_id;
 	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
 	const sk_settings_t *settings = sk_get_settings_ref();
-	if (xr_ext_available.EXTX_overlay && settings->overlay_app) {
+	if (xr_ext.EXTX_overlay == xr_ext_active && settings->overlay_app) {
 		overlay_info.sessionLayersPlacement = settings->overlay_priority;
 		gfx_binding.next = &overlay_info;
 		sys_info->overlay_app = true;
@@ -441,7 +439,7 @@ bool openxr_init() {
 	// important on Android systems so we don't get treated as a low priority
 	// thread by accident.
 #if defined(SK_OS_ANDROID)
-	if (xr_ext_available.KHR_android_thread_settings) {
+	if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
 		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
 	}
 #endif
@@ -459,15 +457,15 @@ bool openxr_init() {
 	// Validation layer does not seem to like 'next' chaining beyond a depth of
 	// 1, so we'll just call these one at a time.
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
-	if (xr_ext_available.EXT_hand_tracking) {
+	if (xr_ext.EXT_hand_tracking == xr_ext_active) {
 		properties.next = &properties_tracking;
 		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
-	if (xr_ext_available.MSFT_hand_tracking_mesh) {
+	if (xr_ext.MSFT_hand_tracking_mesh == xr_ext_active) {
 		properties.next = &properties_handmesh;
 		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
-	if (xr_ext_available.EXT_eye_gaze_interaction) {
+	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active) {
 		properties.next = &properties_gaze;
 		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
@@ -475,27 +473,24 @@ bool openxr_init() {
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
 	device_data.name = string_copy(properties.systemName);
 
-	xr_has_single_pass                = true;
-	xr_has_articulated_hands          = xr_ext_available.EXT_hand_tracking        && properties_tracking.supportsHandTracking;
-	xr_has_hand_meshes                = xr_ext_available.MSFT_hand_tracking_mesh  && properties_handmesh.supportsHandTrackingMesh;
-	device_data.has_eye_gaze          = xr_ext_available.EXT_eye_gaze_interaction && properties_gaze    .supportsEyeGazeInteraction;
-	sys_info->perception_bridge_present = xr_ext_available.MSFT_perception_anchor_interop;
-	sys_info->spatial_bridge_present    = xr_ext_available.MSFT_spatial_graph_bridge;
+	if (xr_ext.EXT_hand_tracking        == xr_ext_active && properties_tracking.supportsHandTracking       == false) xr_ext.EXT_hand_tracking        = xr_ext_disabled;
+	if (xr_ext.MSFT_hand_tracking_mesh  == xr_ext_active && properties_handmesh.supportsHandTrackingMesh   == false) xr_ext.MSFT_hand_tracking_mesh  = xr_ext_disabled;
+	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active && properties_gaze    .supportsEyeGazeInteraction == false) xr_ext.EXT_eye_gaze_interaction = xr_ext_disabled;
+	sys_info->perception_bridge_present = xr_ext.MSFT_perception_anchor_interop == xr_ext_active;
+	sys_info->spatial_bridge_present    = xr_ext.MSFT_spatial_graph_bridge      == xr_ext_active;
 
-	if (skg_capability(skg_cap_tex_layer_select) && xr_has_single_pass) log_diagf("Platform supports single-pass rendering");
-	else                                                                log_diagf("Platform does not support single-pass rendering");
-
-	// Exception for the articulated WMR hand simulation, and the Vive Index
-	// controller equivalent. These simulations are insufficient to treat them
-	// like true articulated hands.
+	// Exception for the articulated Vive Index hand simulation. This
+	// simulation is insufficient to treat it like true articulated hands.
 	//
-	// Key indicators are Windows+x64+(WMR or SteamVR), and skip if Ultraleap's hand
-	// tracking layer is present.
+	// We can skip this exception if Ultraleap's hand tracking layer is
+	// present.
 	//
 	// TODO: Remove this when the hand tracking data source extension is more
 	// generally available.
 #if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
-	if (xr_ext_available.EXT_hand_tracking_data_source == false) {
+	if (xr_ext.EXT_hand_tracking_data_source != xr_ext_active &&
+		(strcmp(device_get_runtime(), "Windows Mixed Reality Runtime") == 0 || strcmp(device_get_runtime(), "SteamVR/OpenXR") == 0)) {
+
 		// We don't need to ask for the Ultraleap layer above so we don't have it
 		// stored anywhere. Gotta check it again.
 		bool     has_leap_layer = false;
@@ -513,39 +508,63 @@ bool openxr_init() {
 		sk_free(xr_layers);
 
 		// The Leap hand tracking layer seems to supercede the built-in extensions.
-		if (xr_ext_available.EXT_hand_tracking && has_leap_layer == false) {
-			if (strcmp(device_get_runtime(), "Windows Mixed Reality Runtime") == 0 ||
-				strcmp(device_get_runtime(), "SteamVR/OpenXR") == 0) {
-				log_diag("Rejecting OpenXR's provided hand tracking extension due to the suspicion that it is inadequate for StereoKit.");
-				xr_has_articulated_hands = false;
-				xr_has_hand_meshes       = false;
-			}
+		if (has_leap_layer == false && xr_ext.EXT_hand_tracking == xr_ext_active && is_ext_explicitly_requested("XR_EXT_hand_tracking") == false) {
+			log_diag("XR_EXT_hand_tracking - Rejected - Incompatible implementations on WMR and SteamVR.");
+			xr_ext.EXT_hand_tracking = xr_ext_rejected;
+		}
+		if (has_leap_layer == false && xr_ext.MSFT_hand_tracking_mesh == xr_ext_active && is_ext_explicitly_requested("XR_MSFT_hand_tracking_mesh") == false) {
+			log_diag("XR_MSFT_hand_tracking_mesh - Rejected - Incompatible implementations on WMR and SteamVR.");
+			xr_ext.MSFT_hand_tracking_mesh = xr_ext_rejected;
 		}
 	}
 #endif
 
 	// Snapdragon Spaces advertises the palm pose extension, but provides bad
 	// data for it. Only enable it if it's explicitly requested.
-	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && xr_exts_user.index_where([](const char* const& ext) {return strcmp(ext, "XR_EXT_palm_pose") == 0; }) < 0) {
-		xr_ext_available.EXT_palm_pose = false;
-		log_diag("Rejecting Snapdragon's XR_EXT_palm_pose due to implementation issues.");
+	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && is_ext_explicitly_requested("XR_EXT_palm_pose") == false) {
+		xr_ext.EXT_palm_pose = xr_ext_rejected;
+		log_diag("XR_EXT_palm_pose - Rejected - Not fully implemented on Snapdragon Spaces.");
 	}
 
-	device_data.has_hand_tracking = xr_has_articulated_hands;
+	// Quest has a menu button that is always shown when hand tracking, but the
+	// hand interaction EXTs don't support actions for it. This can lead to a
+	// mismatch where users see the menu button, but SK _can't_ react to the
+	// button events. hand_interaction EXTs are disabled on Quest so that input
+	// falls back to the simple_controller interaction profile. We will only
+	// enable it if it's explicitly requested.
+	//
+	// Quest does not implement XR_EXT_hand_interaction, so we only need to do
+	// this for the MSFT one.
+	if (strstr(device_get_runtime(), "Oculus") != nullptr && is_ext_explicitly_requested("XR_MSFT_hand_interaction") == false) {
+		xr_ext.MSFT_hand_interaction = xr_ext_rejected;
+		log_diag("XR_MSFT_hand_interaction - Rejected - Hides menu button events on Quest.");
+	}
+
+	// SK's hand_interaction implementations use XR_EXT_hand_tracking for some
+	// data, so we can't rely on these interaction profiles unless
+	// XR_EXT_hand_tracking is available.
+	if (xr_ext.EXT_hand_interaction == xr_ext_active && is_ext_explicitly_requested("XR_EXT_hand_interaction") == false && xr_ext.EXT_hand_tracking != xr_ext_active) {
+		log_diag("EXT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
+		xr_ext.EXT_hand_interaction = xr_ext_disabled;
+	}
+	if (xr_ext.MSFT_hand_interaction == xr_ext_active && is_ext_explicitly_requested("XR_MSFT_hand_interaction") == false && xr_ext.EXT_hand_tracking != xr_ext_active) {
+		log_diag("XR_MSFT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
+		xr_ext.MSFT_hand_interaction = xr_ext_disabled;
+	}
+
+	device_data.has_hand_tracking = xr_ext.EXT_hand_tracking == xr_ext_active;
 	device_data.tracking          = device_tracking_none;
 	if      (properties.trackingProperties.positionTracking)    device_data.tracking = device_tracking_6dof;
 	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
 
 
-	if (xr_has_articulated_hands)            log_diag("OpenXR articulated hands ext enabled!");
-	if (xr_has_hand_meshes)                  log_diag("OpenXR hand mesh ext enabled!");
-	if (device_data.has_eye_gaze)            log_diag("OpenXR gaze ext enabled!");
-	if (sys_info->spatial_bridge_present)    log_diag("OpenXR spatial bridge ext enabled!");
-	if (sys_info->perception_bridge_present) log_diag("OpenXR perception anchor interop ext enabled!");
+	if (xr_ext.EXT_hand_tracking        == xr_ext_active) log_diag("XR_EXT_hand_tracking is ready.");
+	if (xr_ext.MSFT_hand_tracking_mesh  == xr_ext_active) log_diag("XR_MSFT_hand_tracking_mesh is ready.");
+	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active) log_diag("XR_EXT_eye_gaze_interaction is ready.");
 
 	// Check scene understanding features, these may be dependant on Session
 	// creation in the context of Holographic Remoting.
-	if (xr_ext_available.MSFT_scene_understanding) {
+	if (xr_ext.MSFT_scene_understanding == xr_ext_active) {
 		uint32_t count = 0;
 		xr_extensions.xrEnumerateSceneComputeFeaturesMSFT(xr_instance, xr_system_id, 0, &count, nullptr);
 		XrSceneComputeFeatureMSFT *features = sk_malloc_t(XrSceneComputeFeatureMSFT, count);
@@ -556,8 +575,8 @@ bool openxr_init() {
 		}
 		sk_free(features);
 	}
-	if (sys_info->world_occlusion_present) log_diag("OpenXR world occlusion enabled! (Scene Understanding)");
-	if (sys_info->world_raycast_present)   log_diag("OpenXR world raycast enabled! (Scene Understanding)");
+	if (sys_info->world_occlusion_present) log_diag("XR_MSFT_scene_understanding supports world occlusion.");
+	if (sys_info->world_raycast_present)   log_diag("XR_MSFT_scene_understanding supports world raycast.");
 
 	if (!openxr_views_create()) {
 		openxr_cleanup();
@@ -636,7 +655,7 @@ bool openxr_init() {
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	if (xr_ext_available.OCULUS_audio_device_guid) {
+	if (xr_ext.OCULUS_audio_device_guid == xr_ext_active) {
 		wchar_t device_guid[128];
 		if (XR_SUCCEEDED(xr_extensions.xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) {
 			audio_set_default_device_out(device_guid);
@@ -647,7 +666,7 @@ bool openxr_init() {
 	}
 #endif
 
-	if (xr_ext_available.MSFT_spatial_anchor)
+	if (xr_ext.MSFT_spatial_anchor == xr_ext_active)
 		anchors_init(anchor_system_openxr_msft);
 
 	return true;
@@ -764,7 +783,7 @@ bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime t
 		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: has_local_floor = true; break;
 		// It's possible runtimes may be providing this despite the extension
 		// not being enabled? So we're forcing it here.
-		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext_available.MSFT_unbounded_reference_space; break;
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext.MSFT_unbounded_reference_space == xr_ext_active; break;
 		default: break;
 		}
 	}
@@ -938,7 +957,7 @@ void openxr_step_end() {
 	if (xr_session_state == XR_SESSION_STATE_IDLE) {
 		log_diagf("Sleeping until OpenXR session wakes");
 #if defined(SK_OS_ANDROID)
-		if (xr_ext_available.KHR_android_thread_settings) {
+		if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
 		}
 #endif
@@ -949,7 +968,7 @@ void openxr_step_end() {
 		}
 		audio_resume();
 #if defined(SK_OS_ANDROID)
-		if (xr_ext_available.KHR_android_thread_settings) {
+		if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
 		}
 #endif
@@ -988,7 +1007,7 @@ bool openxr_poll_events() {
 				// typically the HoloLens video recording or streaming feature.
 				XrSecondaryViewConfigurationSessionBeginInfoMSFT secondary      = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SESSION_BEGIN_INFO_MSFT };
 				XrViewConfigurationType                          secondary_type = XR_VIEW_CONFIGURATION_TYPE_SECONDARY_MONO_FIRST_PERSON_OBSERVER_MSFT;
-				if (xr_ext_available.MSFT_first_person_observer && xr_view_type_valid(secondary_type)) {
+				if (xr_ext.MSFT_first_person_observer == xr_ext_active && xr_view_type_valid(secondary_type)) {
 					secondary.viewConfigurationCount        = 1;
 					secondary.enabledViewConfigurationTypes = &secondary_type;
 					begin_info.next = &secondary;
@@ -1350,6 +1369,15 @@ void backend_openxr_ext_request(const char *extension_name) {
 	}
 
 	xr_exts_user.add(string_copy(extension_name));
+}
+
+///////////////////////////////////////////
+
+bool is_ext_explicitly_requested(const char* extension_name) {
+	for (size_t i = 0; i < xr_exts_user.count; i++) {
+		if (strcmp(xr_exts_user[i], extension_name) == 0) return true;
+	}
+	return false;
 }
 
 ///////////////////////////////////////////

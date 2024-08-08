@@ -26,12 +26,12 @@ oxr_msft_world_anchor_sys_t oxr_msft_anchor_sys = {};
 ///////////////////////////////////////////
 
 bool32_t anchor_oxr_msft_init() {
-	if (!xr_ext_available.MSFT_spatial_anchor) return false;
+	if (xr_ext.MSFT_spatial_anchor != xr_ext_active) return false;
 
 	oxr_msft_anchor_sys = {};
 
 	// Check on the anchor store for any persisted anchors
-	if (!xr_ext_available.MSFT_spatial_anchor_persistence) return true;
+	if (xr_ext.MSFT_spatial_anchor_persistence != xr_ext_active) return true;
 
 	XrResult result = xr_extensions.xrCreateSpatialAnchorStoreConnectionMSFT(xr_session, &oxr_msft_anchor_sys.store);
 	if (XR_FAILED(result)) {
@@ -112,15 +112,15 @@ void anchor_oxr_msft_step() {
 
 anchor_caps_ anchor_oxr_msft_capabilities() {
 	anchor_caps_ result = {};
-	if (xr_ext_available.MSFT_spatial_anchor            ) result |= anchor_caps_stability;
-	if (xr_ext_available.MSFT_spatial_anchor_persistence) result |= anchor_caps_storable;
+	if (xr_ext.MSFT_spatial_anchor             == xr_ext_active) result |= anchor_caps_stability;
+	if (xr_ext.MSFT_spatial_anchor_persistence == xr_ext_active) result |= anchor_caps_storable;
 	return result;
 }
 
 ///////////////////////////////////////////
 
 void anchor_oxr_msft_clear_stored() {
-	if (xr_ext_available.MSFT_spatial_anchor_persistence)
+	if (xr_ext.MSFT_spatial_anchor_persistence == xr_ext_active)
 		xr_extensions.xrClearSpatialAnchorStoreMSFT(oxr_msft_anchor_sys.store);
 }
 
@@ -181,7 +181,7 @@ void anchor_oxr_msft_destroy(anchor_t anchor) {
 ///////////////////////////////////////////
 
 bool32_t anchor_oxr_msft_persist(anchor_t anchor, bool32_t persist) {
-	if (anchor->persisted == persist || !xr_ext_available.MSFT_spatial_anchor_persistence) return anchor->persisted == persist;
+	if (anchor->persisted == persist || xr_ext.MSFT_spatial_anchor_persistence != xr_ext_active) return anchor->persisted == persist;
 
 	if (persist) {
 		oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
@@ -210,7 +210,7 @@ bool32_t anchor_oxr_msft_persist(anchor_t anchor, bool32_t persist) {
 
 bool32_t anchor_oxr_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor) {
 #if defined(SK_OS_WINDOWS_UWP)
-	if (!xr_ext_available.MSFT_perception_anchor_interop) return false;
+	if (xr_ext.MSFT_perception_anchor_interop != xr_ext_active) return false;
 	oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
 	XrResult result = xr_extensions.xrTryGetPerceptionAnchorFromSpatialAnchorMSFT(xr_session, anchor_data->anchor, (IUnknown**)perception_spatial_anchor);
 	if (XR_FAILED(result)) {

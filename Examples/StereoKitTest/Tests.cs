@@ -7,8 +7,22 @@ using System.Reflection;
 
 public static class Tests
 {
+	public enum Category
+	{
+		Demo,
+		Test,
+		Documentation,
+		MAX
+	}
+
+	struct TestItem
+	{
+		public Type   type;
+		public string name;
+	}
+
 	static List<Type> allTests  = new List<Type>();
-	static List<Type> demoTests = new List<Type>();
+	static List<TestItem>[] categoryTests = new List<TestItem>[(int)Category.MAX];
 	static ITest activeScene;
 	static ITest nextScene;
 	static int   testIndex  = 0;
@@ -20,7 +34,6 @@ public static class Tests
 	static HashSet<string> screens = new HashSet<string>();
 
 	private static Type ActiveTest { set { nextScene = (ITest)Activator.CreateInstance(value); } }
-	public  static int  DemoCount => demoTests.Count;
 	public  static bool IsTesting { get; set; }
 	public  static bool TestSingle { get; set; }
 
@@ -33,12 +46,26 @@ public static class Tests
 	{
 		allTests = Assembly.GetExecutingAssembly()
 			.GetTypes()
-			.Where ( a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
+			.Where  (a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
+			.OrderBy(a => a.Name )
+			.ToList ();
+
+		categoryTests[(int)Category.Demo] = allTests
+			.Where(t=>t.Name.StartsWith("Demo"))
+			.Select(t=>new TestItem { type = t, name=t.Name.Substring("Demo".Length) })
 			.ToList();
-		demoTests = allTests
-			.Where(a=>a.Name.StartsWith("Demo"))
+		categoryTests[(int)Category.Test] = allTests
+			.Where(t => t.Name.StartsWith("Test"))
+			.Select(t => new TestItem { type = t, name = t.Name.Substring("Test".Length) })
+			.ToList();
+		categoryTests[(int)Category.Documentation] = allTests
+			.Where(t => t.Name.StartsWith("Doc"))
+			.Select(t => new TestItem { type = t, name = t.Name.Substring("Doc".Length) })
 			.ToList();
 	}
+
+	public static int Count(Category category) => categoryTests[(int)category].Count;
+	public static bool IsActive(Category category, int i) => categoryTests[(int)category][i].type == activeScene.GetType();
 
 	public static void Initialize()
 	{
@@ -48,6 +75,7 @@ public static class Tests
 		if (nextScene == null)
 			nextScene = (ITest)Activator.CreateInstance(allTests[testIndex]);
 	}
+
 	public static void Update()
 	{
 		if (IsTesting && runSeconds != 0)
@@ -114,16 +142,18 @@ public static class Tests
 		}
 	}
 
-	public static string GetDemoName  (int index)
+	public static string GetTestName(Category category, int index)
 	{
-		return demoTests[index].Name;
+		return categoryTests[(int)category][index].name;
 	}
-	public static void   SetDemoActive(int index)
+
+	public static void SetTestActive(Category category, int index)
 	{
-		Log.Info($"Starting Scene: {demoTests[index].Name}");
-		ActiveTest = demoTests[index];
+		Log.Info($"Starting Scene: {categoryTests[(int)category][index].name}");
+		ActiveTest = categoryTests[(int)category][index].type;
 	}
-	public static void   SetTestActive(string name)
+
+	public static void SetTestActive(string name)
 	{
 		name = name.ToLower();
 		Type result = allTests.OrderBy( a => {

@@ -119,8 +119,8 @@ bool oxri_init() {
 	if (!_make_action_rl("button_x1",   "Button X1",   XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_x1         )) return false;
 	if (!_make_action_rl("button_x2",   "Button X2",   XR_ACTION_TYPE_BOOLEAN_INPUT,  &local.hand_subaction, &local.action_x2         )) return false;
 
-	if (xr_ext_available.EXT_palm_pose && !_make_action_rl("palm_pose", "Palm Pose", XR_ACTION_TYPE_POSE_INPUT, &local.hand_subaction, &local.action_palm_pose)) return false;
-	if (device_has_eye_gaze()          && !_make_action   ("eye_gaze",  "Eye Gaze",  XR_ACTION_TYPE_POSE_INPUT,                        &local.action_eyes     )) return false;
+	if (xr_ext.EXT_palm_pose == xr_ext_active && !_make_action_rl("palm_pose", "Palm Pose", XR_ACTION_TYPE_POSE_INPUT, &local.hand_subaction, &local.action_palm_pose)) return false;
+	if (device_has_eye_gaze()                                 && !_make_action   ("eye_gaze",  "Eye Gaze",  XR_ACTION_TYPE_POSE_INPUT,                        &local.action_eyes     )) return false;
 
 	// Bind the actions we just created to specific locations on the Khronos simple_controller
 	// definition! These are labeled as 'suggested' because they may be overridden by the runtime
@@ -143,10 +143,10 @@ bool oxri_init() {
 	XrRLPath path_a_click       = _bind_paths("a/click");
 	XrRLPath path_b_click       = _bind_paths("b/click");
 
-	XrRLPath path_pinch_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("pinch_ext/value")     : XrRLPath{};
-	XrRLPath path_pinch_ready   = xr_ext_available.EXT_hand_interaction ? _bind_paths("pinch_ext/ready_ext") : XrRLPath{};
-	XrRLPath path_grasp_val     = xr_ext_available.EXT_hand_interaction ? _bind_paths("grasp_ext/value") : XrRLPath{};
-	XrRLPath path_palm_pose     = xr_ext_available.EXT_palm_pose        ? _bind_paths("palm_ext/pose"  ) : XrRLPath{};
+	XrRLPath path_pinch_val     = xr_ext.EXT_hand_interaction == xr_ext_active ? _bind_paths("pinch_ext/value")     : XrRLPath{};
+	XrRLPath path_pinch_ready   = xr_ext.EXT_hand_interaction == xr_ext_active ? _bind_paths("pinch_ext/ready_ext") : XrRLPath{};
+	XrRLPath path_grasp_val     = xr_ext.EXT_hand_interaction == xr_ext_active ? _bind_paths("grasp_ext/value") : XrRLPath{};
+	XrRLPath path_palm_pose     = xr_ext.EXT_palm_pose        == xr_ext_active ? _bind_paths("palm_ext/pose"  ) : XrRLPath{};
 
 	// OpenXR's ideal situation is that you provide bindings for the
 	// controllers that you know and use. Runtimes are then supposed to remap
@@ -171,7 +171,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_stick_xy,    path_stick_xy     );
 		_bind_rl(&bind_arr, local.action_stick_click, path_stick_click  );
 		_bind_rl(&bind_arr, local.action_menu,        path_menu_click   );
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset = device_display_get_blend() == display_blend_opaque
 			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
@@ -182,7 +182,7 @@ bool oxri_init() {
 
 	// hp/mixed_reality_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hp_mixed_reality_controller
-	if (xr_ext_available.EXT_hp_mixed_reality_controller) {
+	if (xr_ext.EXT_hp_mixed_reality_controller == xr_ext_active) {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose,   path_grip_pose  );
 		_bind_rl(&bind_arr, local.action_aim_pose,    path_aim_pose   );
@@ -193,7 +193,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_menu,        path_menu_click );
 		_bind_rl(&bind_arr, local.action_x1,          {path_x_click.left, path_a_click.right});
 		_bind_rl(&bind_arr, local.action_x2,          {path_y_click.left, path_b_click.right});
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset = device_display_get_blend() == display_blend_opaque
 			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
@@ -204,14 +204,14 @@ bool oxri_init() {
 
 	// ext/hand_interaction_ext
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
-	if (xr_ext_available.EXT_hand_interaction) {
+	if (xr_ext.EXT_hand_interaction == xr_ext_active) {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose, path_grip_pose);
 		_bind_rl(&bind_arr, local.action_aim_pose,  path_aim_pose );
 		_bind_rl(&bind_arr, local.action_trigger,   path_pinch_val);
 		_bind_rl(&bind_arr, local.action_aim_ready, path_pinch_ready);
 		_bind_rl(&bind_arr, local.action_grip,      path_grasp_val);
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		if (_bind_suggest("ext/hand_interaction_ext", true, bind_arr, pose_identity, pose_identity, &bind_info))
 			local.profiles.add(bind_info);
@@ -219,13 +219,13 @@ bool oxri_init() {
 
 	// microsoft/hand_interaction
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
-	if (xr_ext_available.MSFT_hand_interaction) {
+	if (xr_ext.MSFT_hand_interaction == xr_ext_active) {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose, path_grip_pose);
 		_bind_rl(&bind_arr, local.action_aim_pose,  path_aim_pose);
 		_bind_rl(&bind_arr, local.action_trigger,   path_select_val);
 		_bind_rl(&bind_arr, local.action_grip,      path_squeeze_val);
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		if (_bind_suggest("microsoft/hand_interaction", true, bind_arr, pose_identity, pose_identity, &bind_info))
 			local.profiles.add(bind_info);
@@ -233,7 +233,7 @@ bool oxri_init() {
 
 	// Bytedance PICO Neo3
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
-	if (xr_ext_available.BD_controller_interaction) {
+	if (xr_ext.BD_controller_interaction == xr_ext_active) {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose,  path_grip_pose  );
 		_bind_rl(&bind_arr, local.action_aim_pose,   path_aim_pose   );
@@ -244,7 +244,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_menu,       path_menu_click );
 		_bind_rl(&bind_arr, local.action_x1,         {path_x_click.left, path_a_click.right});
 		_bind_rl(&bind_arr, local.action_x2,         {path_y_click.left, path_b_click.right});
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
@@ -256,7 +256,7 @@ bool oxri_init() {
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 	// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 	// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
-	if (xr_ext_available.BD_controller_interaction) {
+	if (xr_ext.BD_controller_interaction == xr_ext_active) {
 		bind_arr.clear();
 		_bind_rl(&bind_arr, local.action_grip_pose,  path_grip_pose  );
 		_bind_rl(&bind_arr, local.action_aim_pose,   path_aim_pose   );
@@ -267,7 +267,7 @@ bool oxri_init() {
 		_bind   (&bind_arr, local.action_menu,       path_menu_click.left);
 		_bind_rl(&bind_arr, local.action_x1,         {path_x_click.left, path_a_click.right});
 		_bind_rl(&bind_arr, local.action_x2,         {path_y_click.left, path_b_click.right});
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
@@ -284,7 +284,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_trigger,     path_trigger_val  );
 		_bind_rl(&bind_arr, local.action_grip,        path_squeeze_click);
 		_bind_rl(&bind_arr, local.action_menu,        path_menu_click   );
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset_left  = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		pose_t palm_offset_right = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
@@ -305,7 +305,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_menu,        path_system_click);
 		_bind_rl(&bind_arr, local.action_x1,          path_a_click     );
 		_bind_rl(&bind_arr, local.action_x2,          path_b_click     );
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset_left  = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		pose_t palm_offset_right = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
@@ -326,7 +326,7 @@ bool oxri_init() {
 		_bind   (&bind_arr, local.action_menu,        path_menu_click.left);
 		_bind_rl(&bind_arr, local.action_x1,          {path_x_click.left, path_a_click.right} );
 		_bind_rl(&bind_arr, local.action_x2,          {path_y_click.left, path_b_click.right} );
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		pose_t palm_offset_left  = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		pose_t palm_offset_right = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
@@ -334,7 +334,6 @@ bool oxri_init() {
 			local.profiles.add(bind_info);
 	}
 
-#if !defined(SK_OS_ANDROID)
 	// khr/simple_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_khronos_simple_controller_profile
 	{
@@ -343,12 +342,11 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_aim_pose,    path_aim_pose     );
 		_bind_rl(&bind_arr, local.action_trigger,     path_select_click );
 		_bind_rl(&bind_arr, local.action_menu,        path_menu_click   );
-		if (xr_ext_available.EXT_palm_pose) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
+		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
 
 		if (_bind_suggest("khr/simple_controller", false, bind_arr, pose_identity, pose_identity, &bind_info))
 			local.profiles.add(bind_info);
 	}
-#endif
 
 	// Eye tracking
 	if (device_has_eye_gaze()) {
@@ -393,7 +391,7 @@ bool oxri_init() {
 			return false;
 		}
 
-		if (xr_ext_available.EXT_palm_pose) {
+		if (xr_ext.EXT_palm_pose == xr_ext_active) {
 			action_space_info = { XR_TYPE_ACTION_SPACE_CREATE_INFO };
 			action_space_info.poseInActionSpace = { {0,0,0,1}, {0,0,0} };
 			action_space_info.subactionPath     = local.hand_subaction.paths[i];
@@ -519,7 +517,7 @@ void oxri_update_poses() {
 
 		// Get the palm position from either the extension, or our previous
 		// fallback offsets from the grip pose.
-		if (xr_ext_available.EXT_palm_pose) {
+		if (xr_ext.EXT_palm_pose == xr_ext_active) {
 			space_location = { XR_TYPE_SPACE_LOCATION };
 			res = xrLocateSpace(local.space_palm[hand], xr_app_space, xr_time, &space_location);
 			if (XR_UNQUALIFIED_SUCCESS(res)) {
