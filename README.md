@@ -93,6 +93,7 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [OpenXR](https://www.khronos.org/openxr/)
 - [cgltf](https://github.com/jkuhlmann/cgltf) - Gltf format support.
 - [meshoptimizer](https://github.com/zeux/meshoptimizer) - Gltf decompression and mesh optimization.
+- [basis_universal](https://github.com/BinomialLLC/basis_universal) - Texture compression support.
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - Image and font format support.
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.
 - [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.
