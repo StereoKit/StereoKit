@@ -206,13 +206,13 @@ if (basis_universal_ADDED)
   target_include_directories(basis_universal PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
 endif()
 
-#CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-#  NAME sk_gpu # 2024.7.18
-#  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.7.18/sk_gpu.v2024.7.18.zip
-#)
+CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+  NAME sk_gpu # 2024.8.7
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.8.7/sk_gpu.v2024.8.7.zip
+)
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
-add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+#add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
 
 ###########################################
 ## StereoKitC                            ##
