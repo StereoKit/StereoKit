@@ -709,10 +709,10 @@ bool32_t ui_slider_at_g(bool vertical, const C *id_text, float &value, float min
 	float size_min    = vertical ? size.x : size.y;
 	float rule_size   = fmaxf(skui_settings.padding, size_min / 6.f);
 	vec2  button_size = confirm_method == ui_confirm_push
-		? vec2{ size_min / 2, size_min / 2 }
+		? vec2{ size_min * 0.55f, size_min * 0.55f }
 		: (vertical
-			? vec2{ size_min, size_min / 4 }
-			: vec2{ size_min / 4, size_min });
+			? vec2{ size_min, size_min / 2 }
+			: vec2{ size_min / 2, size_min});
 
 	button_state_ active_state;
 	button_state_ focus_state;
