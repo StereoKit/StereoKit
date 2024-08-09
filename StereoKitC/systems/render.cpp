@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "render.h"
 #include "render_.h"
 #include "world.h"
@@ -127,6 +133,7 @@ struct render_state_t {
 	material_t              sky_mat;
 	material_t              sky_mat_default;
 	bool32_t                sky_show;
+	tex_t                   sky_pending_tex;
 
 	material_t              last_material;
 	shader_t                last_shader;
@@ -148,6 +155,8 @@ const skg_bind_t render_list_blit_bind   = { 3,  skg_stage_vertex | skg_stage_pi
 void          render_set_material     (material_t material);
 skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
+
+void          _render_check_pending_skytex();
 
 void          render_list_prep        (render_list_t list);
 void          render_list_add         (const render_item_t *item);
@@ -253,6 +262,7 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	tex_release            (local.sky_pending_tex);
 	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
 	mesh_release           (local.sky_mesh);
@@ -272,6 +282,7 @@ void render_shutdown() {
 
 void render_step() {
 	hierarchy_step();
+	_render_check_pending_skytex();
 
 	if (local.sky_show && device_display_get_blend() == display_blend_opaque) {
 		render_add_mesh(local.sky_mesh, local.sky_mat, matrix_identity, {1,1,1,1}, render_layer_vfx);
@@ -496,24 +507,65 @@ void render_set_sim_head(pose_t pose) {
 
 ///////////////////////////////////////////
 
-void render_set_skytex(tex_t sky_texture) {
-	if (sky_texture != nullptr && !(sky_texture->type & tex_type_cubemap)) {
-		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
+void _render_check_pending_skytex() {
+	if (local.sky_pending_tex == nullptr) return;
+
+	asset_state_ state = tex_asset_state(local.sky_pending_tex);
+
+	// Check if it's errored out
+	if (state < 0) {
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
 		return;
 	}
 
-	if (sky_texture != nullptr && local.global_textures[render_skytex_register] != nullptr) {
-		tex_set_fallback(sky_texture, local.global_textures[render_skytex_register]);
+	// Check if it's a valid asset, we'll know for sure once the metadata is
+	// loaded.
+	if (state >= asset_state_loaded_meta && (local.sky_pending_tex->type & tex_type_cubemap) == 0) {
+		log_warnf("Skytex must be a cubemap, ignoring %s", tex_get_id(local.sky_pending_tex));
+
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
+		return;
 	}
-	render_global_texture(render_skytex_register, sky_texture);
+
+	// Check if it's loaded
+	if (state >= asset_state_loaded) {
+		render_global_texture(render_skytex_register, local.sky_pending_tex);
+
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_set_skytex(tex_t sky_texture) {
+	if (sky_texture == nullptr) return;
+
+	tex_addref(sky_texture);
+	local.sky_pending_tex = sky_texture;
+
+	// This is also checked every step, but if the texture is already valid, we
+	// can set it up right away and avoid any potential frame delays.
+	_render_check_pending_skytex();
 }
 
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
-	if (local.global_textures[render_skytex_register] != nullptr)
+	if (local.sky_pending_tex != nullptr) {
+		tex_addref(local.sky_pending_tex);
+		return local.sky_pending_tex;
+	}
+
+	if (local.global_textures[render_skytex_register] != nullptr) {
 		tex_addref(local.global_textures[render_skytex_register]);
-	return local.global_textures[render_skytex_register];
+		return local.global_textures[render_skytex_register];
+	}
+
+	return nullptr;
 }
 
 ///////////////////////////////////////////
