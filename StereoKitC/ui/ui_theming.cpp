@@ -1073,12 +1073,12 @@ void ui_theme_visuals_update() {
 	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
 	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.75f, 5, false, true, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.75f, 5, true,  true, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.75f, 5, true,  true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.65f, 5, false, true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.65f, 5, true,  true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.65f, 5, true,  true, lathe_slider, _countof(lathe_slider));
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding, 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding,  5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding, 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
