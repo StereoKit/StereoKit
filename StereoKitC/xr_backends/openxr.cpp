@@ -1374,7 +1374,7 @@ void backend_openxr_ext_request(const char *extension_name) {
 ///////////////////////////////////////////
 
 bool is_ext_explicitly_requested(const char* extension_name) {
-	for (size_t i = 0; i < xr_exts_user.count; i++) {
+	for (int32_t i = 0; i < xr_exts_user.count; i++) {
 		if (strcmp(xr_exts_user[i], extension_name) == 0) return true;
 	}
 	return false;

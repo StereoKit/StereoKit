@@ -175,16 +175,15 @@ void log_write(log_ level, const char *text) {
 
 ///////////////////////////////////////////
 
-void _log_writef(log_ level, const char* text, va_list args) {
+char *make_variadic_string(const char* text, va_list args) {
 	va_list copy;
-	va_copy(copy, args);
-	size_t length = vsnprintf(nullptr, 0, text, args);
-	char*  buffer = sk_malloc_t(char, length + 2);
-	vsnprintf(buffer, length + 2, text, copy);
-
-	log_write(level, buffer);
-	sk_free(buffer);
+	va_copy (copy, args);
+	size_t length = vsnprintf(nullptr, 0, text, args) + 1;
+	char*  buffer = sk_malloc_t(char, length);
+	vsnprintf(buffer, length, text, copy);
 	va_end(copy);
+
+	return buffer;
 }
 
 ///////////////////////////////////////////
@@ -192,8 +191,11 @@ void _log_writef(log_ level, const char* text, va_list args) {
 void log_writef(log_ level, const char *text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(level, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(level, buffer);
+	sk_free(buffer);
 }
 
 ///////////////////////////////////////////
@@ -205,26 +207,38 @@ void log_err (const char* text) { log_write(log_error,      text); }
 void log_diagf(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_diagnostic, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_diagnostic, buffer);
+	sk_free(buffer);
 }
 void log_infof(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_inform, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_inform, buffer);
+	sk_free(buffer);
 }
 void log_warnf(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_warning, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_warning, buffer);
+	sk_free(buffer);
 }
 void log_errf (const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_error, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_error, buffer);
+	sk_free(buffer);
 }
 
 ///////////////////////////////////////////
