@@ -27,6 +27,7 @@
 
 #include <sk_gpu.h>
 #include <limits.h>
+#include <stdio.h>
 
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
@@ -76,7 +77,7 @@ struct render_screenshot_t {
 	int32_t       height;
 	render_layer_ layer_filter;
 	render_clear_ clear;
-	tex_format_	  tex_format;
+	tex_format_   tex_format;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -90,11 +91,23 @@ struct render_viewpoint_t {
 
 ///////////////////////////////////////////
 
+typedef enum inst_pool_size_ {
+	inst_pool_size_1,
+	inst_pool_size_8,
+	inst_pool_size_32,
+	inst_pool_size_128,
+	inst_pool_size_512,
+	inst_pool_size_819,
+	inst_pool_size_max,
+} inst_pool_size_;
+const int32_t inst_pool_sizes[] = { 1,8,32,128,512,819 };
+
 struct render_state_t {
 	bool32_t                initialized;
 
 	array_t<render_transform_buffer_t> instance_list;
-	skg_buffer_t                       instance_buffer;
+	array_t<skg_buffer_t>              instance_pool     [inst_pool_size_max];
+	int32_t                            instance_pool_used[inst_pool_size_max];
 
 	material_buffer_t       shader_globals;
 	skg_buffer_t            shader_blit;
@@ -153,7 +166,8 @@ const skg_bind_t render_list_blit_bind   = { 3,  skg_stage_vertex | skg_stage_pi
 ///////////////////////////////////////////
 
 void          render_set_material     (material_t material);
-skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count);
+void          render_reset_buffer_pool();
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 
 void          _render_check_pending_skytex();
@@ -196,10 +210,6 @@ bool render_init() {
 	skg_buffer_name(&local.shader_blit, "sk/render/blit_buffer");
 #endif
 	
-	local.instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-	skg_buffer_name(&local.instance_buffer, "sk/render/instance_buffer");
-#endif
 	local.instance_list.resize(render_instance_max);
 
 	// Setup a default camera
@@ -269,7 +279,14 @@ void render_shutdown() {
 	mesh_release           (local.blit_quad);
 	material_buffer_release(local.shader_globals);
 
-	skg_buffer_destroy(&local.instance_buffer);
+	for (int32_t pool_idx = 0; pool_idx < inst_pool_size_max; pool_idx++) {
+		array_t<skg_buffer_t>* pool = &local.instance_pool[pool_idx];
+		for (int32_t i = 0; i < pool->count; i++) {
+			skg_buffer_destroy(&pool->get(i));
+		}
+		pool->free();
+	}
+
 	skg_buffer_destroy(&local.shader_blit);
 
 	local = {};
@@ -281,6 +298,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_step() {
+	render_reset_buffer_pool();
+
 	hierarchy_step();
 	_render_check_pending_skytex();
 
@@ -1093,24 +1112,63 @@ void render_set_material(material_t material) {
 
 ///////////////////////////////////////////
 
-skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
-	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = list.count - offset;
-	int32_t start = offset;
+inst_pool_size_ inst_pool_from_size(int32_t size) {
+	if      (size <= inst_pool_sizes[inst_pool_size_1  ]) return inst_pool_size_1;
+	else if (size <= inst_pool_sizes[inst_pool_size_8  ]) return inst_pool_size_8;
+	else if (size <= inst_pool_sizes[inst_pool_size_32 ]) return inst_pool_size_32;
+	else if (size <= inst_pool_sizes[inst_pool_size_128]) return inst_pool_size_128;
+	else if (size <= inst_pool_sizes[inst_pool_size_512]) return inst_pool_size_512;
+	else if (size <= inst_pool_sizes[inst_pool_size_819]) return inst_pool_size_819;
+	else { log_err("Bad pool size"); return inst_pool_size_1; }
+}
 
-	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
+///////////////////////////////////////////
+
+void render_reset_buffer_pool() {
+	for (int32_t i = 0; i < inst_pool_size_max; i++) {
+		int32_t buffer_id = local.instance_pool_used[i] = 0;
+	}
+}
+
+///////////////////////////////////////////
+
+skg_buffer_t *render_fill_inst_buffer(const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count) {
+	// Find a buffer that can contain this list! Or the biggest one
+	int32_t size  = list->count - *ref_offset;
+	int32_t start = *ref_offset;
+
+	// Check if it fits, if it doesn't, then set up data so we only fill what we have! 
 	if (size > render_instance_max) {
-		offset   += render_instance_max;
-		out_count = render_instance_max;
+		*ref_offset += render_instance_max;
+		*out_count   = render_instance_max;
 	} else {
 		// this means we've gotten through the whole list :)
-		offset    = 0;
-		out_count = size;
+		*ref_offset = 0;
+		*out_count  = size;
 	}
 
+	// Get the appropriate pool for this size
+	inst_pool_size_        pool_idx  = inst_pool_from_size(*out_count);
+	array_t<skg_buffer_t>* pool      = &local.instance_pool     [pool_idx];
+	int32_t*               pool_used = &local.instance_pool_used[pool_idx];
+	// If our pool for this size is empty, add a new buffer
+	if (*pool_used >= pool->count) {
+		skg_buffer_t new_buffer = skg_buffer_create(nullptr, inst_pool_sizes[pool_idx], sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+		char name[64];
+		snprintf(name, sizeof(name), "sk/render/instance_pool_%d_%d", inst_pool_sizes[pool_idx], *pool_used);
+		skg_buffer_name(&new_buffer, name);
+#endif
+		pool->add(new_buffer);
+	}
+
+	// Fetch the buffer at the top of the pool
+	skg_buffer_t* buffer = &pool->get(*pool_used);
+	*pool_used += 1;
+
 	// Copy data into the buffer, and return it!
-	skg_buffer_set_contents(&local.instance_buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
-	return &local.instance_buffer;
+	skg_buffer_set_contents(buffer, &list->data[start], sizeof(render_transform_buffer_t) * *out_count);
+	return buffer;
 }
 
 ///////////////////////////////////////////
@@ -1226,7 +1284,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 	// Collect and draw instances
 	int32_t offsets = 0, inst_count = 0;
 	do {
-		skg_buffer_t *instances = render_fill_inst_buffer(local.instance_list, offsets, inst_count);
+		skg_buffer_t *instances = render_fill_inst_buffer(&local.instance_list, &offsets, &inst_count);
 		skg_buffer_bind(instances, render_list_inst_bind, 0);
 
 		skg_draw(0, 0, mesh_inds, inst_count * view_count);
@@ -1242,7 +1300,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered; 
+		list->state = render_list_state_rendered;
 		return;
 	}
 	render_list_prep(list);
