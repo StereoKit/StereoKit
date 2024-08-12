@@ -100,11 +100,6 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
-	result->aspect = tex_get_width(image) / (float)tex_get_height(image);
-	if (result->aspect > 1) // Width is larger than height
-		result->dimensions_normalized = { 1, 1.f / result->aspect };
-	else                    // Height is larger than, or equal to width
-		result->dimensions_normalized = { result->aspect, 1 };
 
 	if (type == sprite_type_single) {
 		result->size         = 1;
@@ -181,7 +176,7 @@ void sprite_release(sprite_t sprite) {
 ///////////////////////////////////////////
 
 float sprite_get_aspect(sprite_t sprite) {
-	return sprite->aspect;
+	return tex_get_width(sprite->texture) / (float)tex_get_height(sprite->texture);
 }
 
 ///////////////////////////////////////////
@@ -199,7 +194,10 @@ int32_t sprite_get_height(sprite_t sprite) {
 ///////////////////////////////////////////
 
 vec2 sprite_get_dimensions_normalized(sprite_t sprite) {
-	return sprite->dimensions_normalized;
+	float aspect = sprite_get_aspect(sprite);
+	return aspect > 1
+		? vec2{ 1, 1.0f / aspect }
+		: vec2{ aspect, 1 };
 }
 
 ///////////////////////////////////////////
