@@ -1064,25 +1064,28 @@ void ui_theme_visuals_update() {
 
 	bool needs_id = theme_mesh_button == nullptr;
 
-	_ui_gen_quadrant_mesh(&theme_mesh_button_round, ui_corner_all,    0.5f,                   8, false, false, lathe_button, _countof(lathe_button));
-	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all,    skui_settings.rounding, 8, false, true,  lathe_button, _countof(lathe_button));
-	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all,    skui_settings.rounding, 8, false, true,  lathe_input,  _countof(lathe_input ));
-	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all,    skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, true, lathe_plane, _countof(lathe_plane));
+	float button_rounding = fminf(ui_line_height() * 0.5f, skui_settings.rounding);
+	_ui_gen_quadrant_mesh(&theme_mesh_button_round, ui_corner_all, 0.5f,            8, false, false, lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_button,       ui_corner_all, button_rounding, 8, false, true,  lathe_button, _countof(lathe_button));
+	_ui_gen_quadrant_mesh(&theme_mesh_input,        ui_corner_all, button_rounding, 8, false, true,  lathe_input,  _countof(lathe_input ));
+	_ui_gen_quadrant_mesh(&theme_mesh_plane,        ui_corner_all, skui_settings.rounding - (skui_settings.margin - skui_settings.gutter), 8, false, true, lathe_plane, _countof(lathe_plane));
+	
+	float panel_rounding = fminf(ui_line_height(), skui_settings.rounding);
+	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    panel_rounding, 8, false, true, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    panel_rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
+	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, panel_rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_panel,        ui_corner_all,    skui_settings.rounding, 8, false, true, lathe_panel, _countof(lathe_panel));
-	_ui_gen_quadrant_mesh(&theme_mesh_panel_top,    ui_corner_top,    skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
-	_ui_gen_quadrant_mesh(&theme_mesh_panel_bot,    ui_corner_bottom, skui_settings.rounding, 8, true,  true, lathe_panel, _countof(lathe_panel));
+	float slider_rounding = fminf(fmaxf(skui_settings.padding, ui_line_height() / 6.f) / 2.f, skui_settings.rounding * 0.65f);
+	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,   slider_rounding, 5, false, true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,  slider_rounding, 5, true,  true, lathe_slider, _countof(lathe_slider));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right, slider_rounding, 5, true,  true, lathe_slider, _countof(lathe_slider));
 
-	_ui_gen_quadrant_mesh(&theme_mesh_slider,       ui_corner_all,    skui_settings.rounding * 0.65f, 5, false, true, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_left,  ui_corner_left,   skui_settings.rounding * 0.65f, 5, true,  true, lathe_slider, _countof(lathe_slider));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_right, ui_corner_right,  skui_settings.rounding * 0.65f, 5, true,  true, lathe_slider, _countof(lathe_slider));
-
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all,    skui_settings.rounding, 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all,    skui_settings.rounding, 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all,    skui_settings.rounding * 0.1f,  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all, fminf((ui_line_height() * 0.5f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all, fminf((ui_line_height() * 0.55f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all, fminf((text_style_get_char_height(ui_get_text_style()) * 0.4f)/2.f, skui_settings.rounding * 0.1f),  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
-	ui_default_aura_mesh(&theme_mesh_aura, 0, skui_settings.rounding + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
+	ui_default_aura_mesh(&theme_mesh_aura, 0, fminf(ui_line_height(), skui_settings.rounding) + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
 
 	if (theme_mesh_carat == nullptr) theme_mesh_carat = mesh_find(default_id_mesh_cube);
 
