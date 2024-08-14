@@ -199,6 +199,13 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   GIT_TAG           900e40fb5d2502927360fe2f31762bdbb624455f
   DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
+add_compile_definitions(BASISD_SUPPORT_FXT1=0)
+add_compile_definitions(BASISD_SUPPORT_PVRTC1=0)
+add_compile_definitions(BASISD_SUPPORT_PVRTC2=0)
+add_compile_definitions(BASISD_SUPPORT_ATC=0)
+add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
+add_compile_definitions(BASISD_SUPPORT_BC7=0)
+add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.8.12
@@ -540,8 +547,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
   set(SK_WARNING_FLAG    -w)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy)
-  set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
+  # /OPT settings need to be specified explicitly because we're also generating
+  # /DEBUG pdbs, which disables them by default.
+  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy /Gw /GL)
+  set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:LBR /OPT:ICF=2 /LTCG ) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
   set(SK_WARNING_FLAG    /W0)
 endif()
 
