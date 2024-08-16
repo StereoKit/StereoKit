@@ -639,7 +639,7 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 			if (j < SK_FINGERJOINTS-1 && j > 0 && (f != 0 || j > 1)) {
 				vec3  fwd_a = pose_prev.orientation * vec3_forward;
 				vec3  fwd_b = pose.orientation      * vec3_forward;
-				float angle = fminf(MATH_PI/2.5f, acosf(vec3_dot(fwd_a, fwd_b)) / 2.0f);
+				float angle = fminf(MATH_PI/2.5f, acosf(fminf(1,vec3_dot(fwd_a, fwd_b))) / 2.0f);
 				skew_scale = 1.0f / cosf(angle);
 			}
 
