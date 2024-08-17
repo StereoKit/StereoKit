@@ -831,8 +831,9 @@ void tex_destroy(tex_t tex) {
 	assets_on_load_remove(&tex->header, nullptr);
 
 	sk_free(tex->light_info);
-	if(tex->owned)
+	if (tex->owned && skg_tex_is_valid(&tex->tex)) {
 		skg_tex_destroy(&tex->tex);
+	}
 	if (tex->depth_buffer != nullptr) tex_release(tex->depth_buffer);
 	
 	*tex = {};
@@ -880,7 +881,8 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skg_tex_set_contents_arr(&new_tex, (const void**)array_data, array_count, mip_count, width, height, multisample);
 		skg_tex_t old_tex = texture->tex;
 		texture->tex = new_tex;
-		skg_tex_destroy(&old_tex);
+		if (skg_tex_is_valid(&old_tex))
+			skg_tex_destroy (&old_tex);
 
 		tex_set_meta(texture, width, height, texture->format);
 
