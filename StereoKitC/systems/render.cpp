@@ -809,7 +809,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	// Activate any material buffers we have
 	for (int32_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
+			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
 	}
 
 	// Activate any global textures we have
@@ -846,12 +846,9 @@ void render_check_screenshots() {
 		// Create the screenshot surface
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
-
-		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
-		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_release(tex_add_zbuffer(render_capture_surface));
-
+		
 		// Setup to render the screenshot
+		tex_t render_capture_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_depthstencil);
 		skg_tex_target_bind(&render_capture_surface->tex, -1, 0);
 
 		// Set up the viewport if we've got one!
@@ -880,8 +877,7 @@ void render_check_screenshots() {
 		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
-		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
-		tex_set_colors(resolve_tex, w, h, nullptr);
+		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
 		skg_tex_copy_to(&render_capture_surface->tex, -1, &resolve_tex->tex, -1);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
@@ -896,8 +892,8 @@ void render_check_screenshots() {
 		}
 		sk_free(tmp);
 #endif
-		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
+		tex_release(render_capture_surface);
 
 		// Notify that the color data is ready!
 		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
@@ -979,7 +975,7 @@ void render_blit_to_bound(material_t material) {
 
 	// Setup render states for blitting
 	skg_buffer_set_contents(&local.shader_blit, &data, sizeof(render_blit_data_t));
-	skg_buffer_bind        (&local.shader_blit, render_list_blit_bind, 0);
+	skg_buffer_bind        (&local.shader_blit, render_list_blit_bind);
 	render_set_material(material);
 	skg_mesh_bind(&local.blit_quad->gpu_mesh);
 	
@@ -1093,7 +1089,7 @@ void render_set_material(material_t material) {
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
-		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0);
+		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind);
 	}
 
 	// Bind the material textures
@@ -1285,7 +1281,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 	int32_t offsets = 0, inst_count = 0;
 	do {
 		skg_buffer_t *instances = render_fill_inst_buffer(&local.instance_list, &offsets, &inst_count);
-		skg_buffer_bind(instances, render_list_inst_bind, 0);
+		skg_buffer_bind(instances, render_list_inst_bind);
 
 		skg_draw(0, 0, mesh_inds, inst_count * view_count);
 		list->stats.draw_calls     += 1;
