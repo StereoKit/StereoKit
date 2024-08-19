@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "android.h"
@@ -27,7 +27,6 @@
 
 #include <unistd.h>
 #include <dlfcn.h>
-#include <syslog.h>
 
 namespace sk {
 
@@ -546,22 +545,6 @@ void platform_print_callstack() {
 
 		sk_free(demangled);
 	}
-}
-
-///////////////////////////////////////////
-
-void platform_debug_output(log_ level, const char *text) {
-	static bool opened = false;
-	if (!opened) {
-		opened = true;
-		openlog("StereoKit", LOG_CONS | LOG_NOWAIT, LOG_USER);
-	}
-	int32_t priority = LOG_INFO;
-	if      (level == log_diagnostic) priority = LOG_DEBUG;
-	else if (level == log_inform    ) priority = LOG_INFO;
-	else if (level == log_warning   ) priority = LOG_WARNING;
-	else if (level == log_error     ) priority = LOG_ERR;
-	syslog(priority, "%s", text);
 }
 
 ///////////////////////////////////////////

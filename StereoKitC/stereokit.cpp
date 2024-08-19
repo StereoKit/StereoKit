@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
 
 #include "stereokit.h"
 #include "_stereokit.h"
@@ -22,6 +22,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 
 ///////////////////////////////////////////
 
@@ -116,6 +117,19 @@ bool32_t sk_init(sk_settings_t settings) {
 	// don't allow flatscreen fallback on Android
 	local.settings.no_flatscreen_fallback = true;
 #endif
+
+	// Make a nice name for the logs, something that is identifiable as
+	// StereoKit, but also can distinguish between different SK apps. This
+	// isn't used on all platforms, but can be particularly helpful on Android.
+	char  log_name[64];
+	char* log_char = log_name;
+	snprintf(log_name, sizeof(log_name), "SK_%s", local.settings.app_name);
+	while (*log_char != '\0') {
+		if (*log_char == ' ') *log_char = '_';
+		log_char++;
+	}
+	log_set_name(log_name);
+	ft_thread_name(ft_thread_current(), log_name);
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "web.h"
@@ -437,15 +437,6 @@ void platform_iterate_dir(const char* directory_path, void* callback_data, void 
 
 char* platform_working_dir() {
 	return string_copy("/");
-}
-
-///////////////////////////////////////////
-
-void platform_debug_output(log_ level, const char *text) {
-	if      (level == log_diagnostic) emscripten_console_log(text);
-	else if (level == log_inform    ) emscripten_console_log(text);
-	else if (level == log_warning   ) emscripten_console_warn(text);
-	else if (level == log_error     ) emscripten_console_error(text);
 }
 
 ///////////////////////////////////////////

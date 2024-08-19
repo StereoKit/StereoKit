@@ -68,45 +68,45 @@ const char *xr_request_layers[] = {
 #endif
 };
 
-XrInstance     xr_instance      = {};
-XrSession      xr_session       = {};
-xr_ext_table_t xr_extensions    = {};
-xr_ext_info_t  xr_ext           = {};
-XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
-bool           xr_running       = false;
-XrSpace        xr_app_space     = {};
-XrReferenceSpaceType xr_app_space_type = {};
-XrSpace        xr_stage_space   = {};
-XrSpace        xr_head_space    = {};
-XrSystemId     xr_system_id     = XR_NULL_SYSTEM_ID;
-XrTime         xr_time          = 0;
-XrTime         xr_eyes_sample_time = 0;
-bool           xr_system_created = false;
-bool           xr_system_success = false;
+XrInstance           xr_instance          = {};
+XrSession            xr_session           = {};
+xr_ext_table_t       xr_extensions        = {};
+xr_ext_info_t        xr_ext               = {};
+XrSessionState       xr_session_state     = XR_SESSION_STATE_UNKNOWN;
+bool                 xr_has_session       = false;
+XrSpace              xr_app_space         = {};
+XrReferenceSpaceType xr_app_space_type    = {};
+XrSpace              xr_stage_space       = {};
+XrSpace              xr_head_space        = {};
+XrSystemId           xr_system_id         = XR_NULL_SYSTEM_ID;
+XrTime               xr_time              = 0;
+XrTime               xr_eyes_sample_time  = 0;
+bool                 xr_system_created    = false;
+bool                 xr_system_success    = false;
 
-array_t<const char*> xr_exts_user    = {};
-array_t<const char*> xr_exts_exclude = {};
-array_t<uint64_t>    xr_exts_loaded  = {};
-bool32_t             xr_minimum_exts = false;
+array_t<const char*> xr_exts_user         = {};
+array_t<const char*> xr_exts_exclude      = {};
+array_t<uint64_t>    xr_exts_loaded       = {};
+bool32_t             xr_minimum_exts      = false;
+
+bool                 xr_has_bounds        = false;
+vec2                 xr_bounds_size       = {};
+pose_t               xr_bounds_pose       = pose_identity;
+pose_t               xr_bounds_pose_local = pose_identity;
 
 array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
 array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
-
-bool   xr_has_bounds        = false;
-vec2   xr_bounds_size       = {};
-pose_t xr_bounds_pose       = pose_identity;
-pose_t xr_bounds_pose_local = pose_identity;
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
 
-bool32_t             openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
-void                 openxr_preferred_layers (uint32_t &out_layer_count, const char **out_layers);
-XrTime               openxr_acquire_time     ();
-bool                 openxr_blank_frame      ();
-bool                 is_ext_explicitly_requested(const char* extension_name);
+bool32_t openxr_try_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
+void     openxr_preferred_layers    (uint32_t &out_layer_count, const char **out_layers);
+XrTime   openxr_acquire_time        ();
+bool     openxr_blank_frame         ();
+bool     is_ext_explicitly_requested(const char* extension_name);
 
 ///////////////////////////////////////////
 
@@ -544,7 +544,7 @@ bool openxr_init() {
 	// data, so we can't rely on these interaction profiles unless
 	// XR_EXT_hand_tracking is available.
 	if (xr_ext.EXT_hand_interaction == xr_ext_active && is_ext_explicitly_requested("XR_EXT_hand_interaction") == false && xr_ext.EXT_hand_tracking != xr_ext_active) {
-		log_diag("EXT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
+		log_diag("XR_EXT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
 		xr_ext.EXT_hand_interaction = xr_ext_disabled;
 	}
 	if (xr_ext.MSFT_hand_interaction == xr_ext_active && is_ext_explicitly_requested("XR_MSFT_hand_interaction") == false && xr_ext.EXT_hand_tracking != xr_ext_active) {
@@ -558,9 +558,9 @@ bool openxr_init() {
 	else if (properties.trackingProperties.orientationTracking) device_data.tracking = device_tracking_3dof;
 
 
-	if (xr_ext.EXT_hand_tracking        == xr_ext_active) log_diag("XR_EXT_hand_tracking is ready.");
-	if (xr_ext.MSFT_hand_tracking_mesh  == xr_ext_active) log_diag("XR_MSFT_hand_tracking_mesh is ready.");
-	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active) log_diag("XR_EXT_eye_gaze_interaction is ready.");
+	if (xr_ext.EXT_hand_tracking        == xr_ext_active) log_diag("XR_EXT_hand_tracking - Ready.");
+	if (xr_ext.MSFT_hand_tracking_mesh  == xr_ext_active) log_diag("XR_MSFT_hand_tracking_mesh - Ready.");
+	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active) log_diag("XR_EXT_eye_gaze_interaction - Ready.");
 
 	// Check scene understanding features, these may be dependant on Session
 	// creation in the context of Holographic Remoting.
@@ -575,8 +575,8 @@ bool openxr_init() {
 		}
 		sk_free(features);
 	}
-	if (sys_info->world_occlusion_present) log_diag("XR_MSFT_scene_understanding supports world occlusion.");
-	if (sys_info->world_raycast_present)   log_diag("XR_MSFT_scene_understanding supports world raycast.");
+	if (sys_info->world_occlusion_present) log_diag("XR_MSFT_scene_understanding - Supports world occlusion.");
+	if (sys_info->world_raycast_present)   log_diag("XR_MSFT_scene_understanding - Supports world raycast.");
 
 	if (!openxr_views_create()) {
 		openxr_cleanup();
@@ -930,7 +930,7 @@ void openxr_shutdown() {
 
 void openxr_step_begin() {
 	openxr_poll_events();
-	if (xr_running)
+	if (xr_has_session)
 		openxr_poll_actions();
 	input_step();
 	
@@ -942,8 +942,8 @@ void openxr_step_begin() {
 void openxr_step_end() {
 	anchors_step_end();
 
-	if (xr_running) { openxr_render_frame(); }
-	else            { render_clear(); platform_sleep(33); }
+	if (xr_has_session) { openxr_render_frame(); }
+	else                { render_clear(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
 
@@ -978,6 +978,22 @@ void openxr_step_end() {
 
 ///////////////////////////////////////////
 
+const char* openxr_state_name(XrSessionState state) {
+	switch (state) {
+	case XR_SESSION_STATE_IDLE:         return "idle";
+	case XR_SESSION_STATE_READY:        return "ready";
+	case XR_SESSION_STATE_SYNCHRONIZED: return "synchronized";
+	case XR_SESSION_STATE_VISIBLE:      return "visible";
+	case XR_SESSION_STATE_FOCUSED:      return "focused";
+	case XR_SESSION_STATE_STOPPING:     return "stopping";
+	case XR_SESSION_STATE_EXITING:      return "exiting";
+	case XR_SESSION_STATE_LOSS_PENDING: return "loss pending";
+	default:                            return "unknown";
+	}
+}
+
+///////////////////////////////////////////
+
 bool openxr_poll_events() {
 	XrEventDataBuffer event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	bool result = true;
@@ -986,6 +1002,7 @@ bool openxr_poll_events() {
 		switch (event_buffer.type) {
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
 			XrEventDataSessionStateChanged *changed = (XrEventDataSessionStateChanged*)&event_buffer;
+			log_diagf("OpenXR state: <~WHT>%s<~BLK> -> <~WHT>%s<~clr>", openxr_state_name(xr_session_state), openxr_state_name(changed->state));
 			xr_session_state = changed->state;
 
 			if      (xr_session_state == XR_SESSION_STATE_FOCUSED) sk_set_app_focus(app_focus_active);
@@ -994,9 +1011,9 @@ bool openxr_poll_events() {
 
 			// Session state change is where we can begin and end sessions, as well as find quit messages!
 			switch (xr_session_state) {
-			// The runtime should never return this: https://www.khronos.org/registry/OpenXR/specs/1.0/man/html/XrSessionState.html
-			case XR_SESSION_STATE_UNKNOWN: log_errf("Runtime gave us a XR_SESSION_STATE_UNKNOWN! Bad runtime!"); break;
-			case XR_SESSION_STATE_IDLE: break; // Wait till we get XR_SESSION_STATE_READY.
+			// The runtime should never return unknown: https://www.khronos.org/registry/OpenXR/specs/1.0/man/html/XrSessionState.html
+			case XR_SESSION_STATE_UNKNOWN: abort(); break;
+			case XR_SESSION_STATE_IDLE:             break; // Wait till we get XR_SESSION_STATE_READY.
 			case XR_SESSION_STATE_READY: {
 				// Get the session started!
 				XrSessionBeginInfo begin_info = { XR_TYPE_SESSION_BEGIN_INFO };
@@ -1018,23 +1035,23 @@ bool openxr_poll_events() {
 					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
 					sk_quit(quit_reason_session_lost);
 					result = false;
+				} else {
+					xr_has_session = true;
+					log_diag("OpenXR session began.");
+
+					// FoV normally updates right before drawing, but we need it to
+					// be available as soon as the session begins, for apps that
+					// are listening to sk_app_focus changing to determine if FoV
+					// is ready.
+					openxr_views_update_fov();
 				}
-
-				// FoV normally updates right before drawing, but we need it to
-				// be available as soon as the session begins, for apps that
-				// are listening to sk_app_focus changing to determine if FoV
-				// is ready.
-				openxr_views_update_fov();
-
-				xr_running = true;
-				log_diag("OpenXR session begin.");
 			} break;
-			case XR_SESSION_STATE_SYNCHRONIZED: break;
-			case XR_SESSION_STATE_STOPPING    : xrEndSession(xr_session); xr_running = false; result = false; break;
-			case XR_SESSION_STATE_VISIBLE     : break; // In this case, we can't recieve input. For now pretend it's not happening.
-			case XR_SESSION_STATE_FOCUSED     : break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost); result = false; break;
-			case XR_SESSION_STATE_EXITING     : sk_quit(quit_reason_session_lost); result = false; break;
+			case XR_SESSION_STATE_SYNCHRONIZED: break; // We're connected to a session, but not visible to users yet.
+			case XR_SESSION_STATE_VISIBLE:      break; // We're visible to users, but not in focus or receiving input. Modal OS dialogs could be visible here.
+			case XR_SESSION_STATE_FOCUSED:      break; // We're visible and focused. This is the "normal" operating state of an app.
+			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_has_session = false; result = false; break; // We should not render in this state. We may be minimized, suspended, or otherwise out of action for the moment.
+			case XR_SESSION_STATE_EXITING:      sk_quit(quit_reason_user);                        result = false; break; // Runtime wants us to terminate the app, usually from a user's request.
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost);                result = false; break; // The OpenXR runtime may have had some form of failure. It is theoretically possible to recover from this state by occasionally attempting to xrGetSystem, but we don't currently do this.
 			default: break;
 			}
 		} break;

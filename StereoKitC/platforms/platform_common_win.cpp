@@ -1,7 +1,7 @@
 ﻿/* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #ifndef _CRT_SECURE_NO_WARNINGS
@@ -24,25 +24,6 @@
 #include <windows.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-void platform_debug_output(log_ level, const char *text) {
-	const char* tag = "";
-	switch (level) {
-	case log_diagnostic: tag = "diagnostic"; break;
-	case log_inform:     tag = "info";       break;
-	case log_warning:    tag = "warning";    break;
-	case log_error:      tag = "error";      break;
-	default: break;
-	}
-
-	size_t expand_size = strlen(text) + _countof("[SK diagnostic] \n");
-	char*  expanded    = sk_stack_alloc_t(char, expand_size);
-	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
-
-	OutputDebugStringA(expanded);
-}
 
 ///////////////////////////////////////////
 
