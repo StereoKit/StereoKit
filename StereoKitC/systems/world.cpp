@@ -25,7 +25,7 @@ material_t   world_occlusion_material = {};
 
 bool world_init() {
 	world_occlusion_material = material_copy_id(default_id_material_unlit);
-	material_set_id   (world_occlusion_material, "default/world_mat");
+	material_set_id   (world_occlusion_material, "sk/world/material");
 	material_set_color(world_occlusion_material, "color", { 0,0,0,0 });
 
 	switch (backend_xr_get_type()) {

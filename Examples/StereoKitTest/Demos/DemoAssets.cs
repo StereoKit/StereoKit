@@ -135,7 +135,7 @@ class DemoAssets : ITest
 
 	void VisualizeSound(Sound item)
 	{
-		if (UI.Button(">", V.XX(UI.LineHeight)))
+		if (UI.ButtonImg(">", Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
 			item.Play(Hierarchy.ToWorld(UI.LayoutLast.center));
 		UI.SameLine();
 	}

@@ -575,7 +575,7 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "sk_arr::%" PRIu64, hash);
+	snprintf(file_id, sizeof(file_id), "sk/tex/array/%" PRIu64, hash);
 
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
@@ -622,7 +622,7 @@ tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_
 
 tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
 	char equirect_id[64];
-	snprintf(equirect_id, sizeof(equirect_id), "sk_equi::%" PRIu64, hash_fnv64_string(equirectangular_file));
+	snprintf(equirect_id, sizeof(equirect_id), "sk/tex/equirect/%" PRIu64, hash_fnv64_string(equirectangular_file));
 
 	tex_t result = tex_find(equirect_id);
 	if (result != nullptr) {
@@ -684,7 +684,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	}
 
 	char id[64];
-	assets_unique_name(asset_type_tex, "zbuffer/", id, sizeof(id));
+	assets_unique_name(asset_type_tex, "sk/tex/zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
 	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);

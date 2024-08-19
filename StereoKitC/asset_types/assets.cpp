@@ -113,18 +113,19 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 ///////////////////////////////////////////
 
 void *assets_allocate(asset_type_ type) {
-	size_t size = sizeof(asset_header_t);
+	size_t      size      = sizeof(asset_header_t);
+	const char* type_name = "asset";
 	switch(type) {
-	case asset_type_mesh:        size = sizeof(_mesh_t );       break;
-	case asset_type_tex:         size = sizeof(_tex_t);         break;
-	case asset_type_shader:      size = sizeof(_shader_t);      break;
-	case asset_type_material:    size = sizeof(_material_t);    break;
-	case asset_type_model:       size = sizeof(_model_t);       break;
-	case asset_type_font:        size = sizeof(_font_t);        break;
-	case asset_type_sprite:      size = sizeof(_sprite_t);      break;
-	case asset_type_sound:       size = sizeof(_sound_t);       break;
-	case asset_type_anchor:      size = sizeof(_anchor_t);      break;
-	case asset_type_render_list: size = sizeof(_render_list_t); break;
+	case asset_type_mesh:        size = sizeof(_mesh_t );       type_name = "mesh";        break;
+	case asset_type_tex:         size = sizeof(_tex_t);         type_name = "tex";         break;
+	case asset_type_shader:      size = sizeof(_shader_t);      type_name = "shader";      break;
+	case asset_type_material:    size = sizeof(_material_t);    type_name = "material";    break;
+	case asset_type_model:       size = sizeof(_model_t);       type_name = "model";       break;
+	case asset_type_font:        size = sizeof(_font_t);        type_name = "font";        break;
+	case asset_type_sprite:      size = sizeof(_sprite_t);      type_name = "sprite";      break;
+	case asset_type_sound:       size = sizeof(_sound_t);       type_name = "sound";       break;
+	case asset_type_anchor:      size = sizeof(_anchor_t);      type_name = "anchor";      break;
+	case asset_type_render_list: size = sizeof(_render_list_t); type_name = "render_list"; break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -136,7 +137,7 @@ void *assets_allocate(asset_type_ type) {
 
 	ft_mutex_lock(assets_lock);
 	char name[64];
-	snprintf(name, sizeof(name), "auto/asset_%d", assets.count);
+	snprintf(name, sizeof(name), "auto/%s_%d", type_name, assets.count);
 	header->id      = hash_fnv64_string(name);
 	header->id_text = string_copy(name);
 	header->index   = assets.count;

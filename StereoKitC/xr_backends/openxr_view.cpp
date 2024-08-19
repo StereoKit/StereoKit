@@ -494,9 +494,9 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 			char           name[64];
 			static int32_t target_index = 0;
 			target_index++;
-			snprintf(name, sizeof(name), "renderer/colortarget_%d", target_index);
+			snprintf(name, sizeof(name), "sk/render/colortarget_%d", target_index);
 			tex_set_id(sc_color->textures[i], name);
-			snprintf(name, sizeof(name), "renderer/depthtarget_%d", target_index);
+			snprintf(name, sizeof(name), "sk/render/depthtarget_%d", target_index);
 			tex_set_id(sc_depth->textures[i], name);
 		}
 

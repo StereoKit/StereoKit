@@ -86,7 +86,7 @@ sprite_t sdf_create_sprite(const char* name, int32_t width, int32_t height, floa
 	tex_set_address(tex, tex_address_clamp);
 
 	char id[128];
-	snprintf(id, sizeof(id), "%s_tex", name);
+	snprintf(id, sizeof(id), "%s/tex", name);
 	tex_set_id(tex, id);
 
 	sprite_t spr = sprite_create(tex, sprite_type_single);

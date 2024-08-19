@@ -29,7 +29,11 @@ bool line_drawer_init() {
 	local.line_material = material_create(line_shader);
 	shader_release(line_shader);
 
-	material_set_id          (local.line_material, "render/line_material");
+	local.line_mesh = mesh_create();
+	mesh_set_id       (local.line_mesh, "sk/render/line_mesh");
+	mesh_set_keep_data(local.line_mesh, false);
+
+	material_set_id          (local.line_material, "sk/render/line_material");
 	material_set_transparency(local.line_material, transparency_blend);
 	material_set_cull        (local.line_material, cull_none);
 	return true;
@@ -52,15 +56,7 @@ void line_drawer_step() {
 	if (local.line_inds.count <= 0)
 		return;
 
-	if (local.line_mesh) {
-		mesh_set_data(local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
-	} else {
-		local.line_mesh = mesh_create();
-		mesh_set_keep_data(local.line_mesh, false);
-		mesh_set_id       (local.line_mesh, "render/line_mesh");
-		mesh_set_data     (local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
-	}
-
+	mesh_set_data     (local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
 	mesh_set_draw_inds(local.line_mesh, local.line_inds.count);
 	render_add_mesh   (local.line_mesh, local.line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 

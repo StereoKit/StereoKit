@@ -174,13 +174,13 @@ bool font_setup(font_t font) {
 ///////////////////////////////////////////
 
 font_t font_create_default() { 
-	font_t result = font_find("sk_font::default");
+	font_t result = font_find("default/font");
 	if (result != nullptr)
 		return result;
 	result = (font_t)assets_allocate(asset_type_font);
-	assets_set_id(&result->header, "sk_font::default");
+	assets_set_id(&result->header, "default/font");
 
-	int32_t id = font_source_add_data("sk_font::default", aileron_font_ttf, aileron_font_ttf_len);
+	int32_t id = font_source_add_data("default/font", aileron_font_ttf, aileron_font_ttf_len);
 	if (id >= 0)
 		result->font_ids.add(id);
 
@@ -207,7 +207,7 @@ font_t font_create_files(const char **files, int32_t file_count) {
 		hash = hash_fnv64_string(files[i], hash);
 	}
 	char file_id[64];
-	snprintf(file_id, sizeof(file_id), "sk_font::%" PRIu64, hash);
+	snprintf(file_id, sizeof(file_id), "sk/font/%" PRIu64, hash);
 
 	font_t result = font_find(file_id);
 	if (result != nullptr)
@@ -466,7 +466,7 @@ void font_upsize_texture(font_t font) {
 void font_update_texture(font_t font) {
 	if (font->font_tex == nullptr) {
 		font->font_tex = tex_create(tex_type_image, tex_format_r8);
-		char* tex_id = string_append(nullptr, 2, font_get_id(font), "/atlas_tex");
+		char* tex_id = string_append(nullptr, 2, font_get_id(font), "/atlas");
 		tex_set_id(font->font_tex, tex_id);
 		sk_free(tex_id);
 	}
