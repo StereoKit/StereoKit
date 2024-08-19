@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "linux.h"
@@ -594,7 +594,6 @@ bool platform_xr_keyboard_visible()          { return false; }
 
 ///////////////////////////////////////////
 
-void platform_debug_output   (log_, const char*) { }
 void platform_print_callstack() { }
 
 } // namespace sk

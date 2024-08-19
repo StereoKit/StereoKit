@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -130,7 +130,6 @@ bool   platform_get_cursor        (vec2 *out_pos);
 void   platform_set_cursor        (vec2 window_pos);
 float  platform_get_scroll        ();
 void   platform_msgbox_err        (const char *text, const char *header);
-void   platform_debug_output      (log_ level, const char *text);
 void   platform_print_callstack   ();
 void   platform_sleep             (int ms);
 font_t platform_default_font      ();
