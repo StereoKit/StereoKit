@@ -350,8 +350,8 @@ bool defaults_init() {
 	sound_set_id(sk_default_grab,    default_id_sound_grab);
 	sound_set_id(sk_default_ungrab,  default_id_sound_ungrab);
 
-	sk_default_controller_l = model_create_mem("sk::default_controller_l.glb", default_controller_l_glb, sizeof(default_controller_l_glb), sk_default_shader);
-	sk_default_controller_r = model_create_mem("sk::default_controller_r.glb", default_controller_r_glb, sizeof(default_controller_r_glb), sk_default_shader);
+	sk_default_controller_l = model_create_mem("default/controller_l.glb", default_controller_l_glb, sizeof(default_controller_l_glb), sk_default_shader);
+	sk_default_controller_r = model_create_mem("default/controller_r.glb", default_controller_r_glb, sizeof(default_controller_r_glb), sk_default_shader);
 	model_set_id(sk_default_controller_l, default_id_model_controller_l);
 	model_set_id(sk_default_controller_r, default_id_model_controller_r);
 

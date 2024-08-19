@@ -10,6 +10,7 @@
 #include "../libraries/unicode.h"
 
 #include <ctype.h>
+#include <stdio.h>
 
 #include <DirectXMath.h> // Matrix math functions and objects
 using namespace DirectX;
@@ -101,6 +102,10 @@ text_style_t text_make_style(font_t font, float character_height, color128 color
 	material_t   material = material_create    (shader);
 	text_style_t result   = text_make_style_mat(font, character_height, material, color);
 
+	char mat_id[64];
+	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
+	material_set_id(material, mat_id);
+
 	// The style now references the material if creation was successful, so
 	// we need to let go of things from here.
 	material_release(material);
@@ -113,6 +118,10 @@ text_style_t text_make_style(font_t font, float character_height, color128 color
 text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader, color128 color) {
 	material_t   material = material_create(shader);
 	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+
+	char mat_id[64];
+	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
+	material_set_id(material, mat_id);
 
 	// The style now references the material if creation was successful, so
 	// we need to let go of it from here.
@@ -149,6 +158,10 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 		buffer->material = material;
 		font_addref    (font);
 		material_addref(material);
+
+		char mesh_id[64];
+		snprintf(mesh_id, sizeof(mesh_id), "sk/text_style/%d/mesh", index);
+		mesh_set_id(buffer->mesh, mesh_id);
 
 		tex_t font_tex = font_get_tex(font);
 		material_set_texture     (material, "diffuse", font_tex);

@@ -124,7 +124,7 @@ bool sprite_drawer_init() {
 		{ vec3{0,-1,0}, vec3{0,0,-1}, vec2{1,1}, color32{255,255,255,255} },
 	};	
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_id       (sprite_quad_old, "render/sprite_quad");
+	mesh_set_id       (sprite_quad_old, "sk/render/sprite_quad");
 	mesh_set_keep_data(sprite_quad_old, false);
 	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, false);
 

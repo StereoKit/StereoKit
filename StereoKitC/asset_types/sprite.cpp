@@ -44,6 +44,11 @@ sprite_t sprite_find(const char* id) {
 
 void sprite_set_id(sprite_t sprite, const char *id) {
 	assets_set_id(&sprite->header, id);
+	if (sprite->buffer_index == -1 && sprite->material != nullptr) {
+		char mat_id[128];
+		snprintf(mat_id, sizeof(mat_id), "%s/material", id);
+		material_set_id(sprite->material, mat_id);
+	}
 }
 
 ///////////////////////////////////////////
@@ -55,11 +60,8 @@ const char* sprite_get_id(const sprite_t sprite) {
 ///////////////////////////////////////////
 
 material_t sprite_create_material(int index_id) {
-	char id[64];
-	snprintf(id, sizeof(id), "render/sprite_mat_%d", index_id);
 	shader_t   shader = shader_find(default_id_shader_unlit_clip);
 	material_t result = material_create(shader);
-	material_set_id          (result, id);
 	material_set_transparency(result, transparency_blend);
 	material_set_cull        (result, cull_none);
 	material_set_depth_test  (result, depth_test_less_or_eq);
@@ -83,9 +85,9 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	const char* image_id = tex_get_id(image);
 	char sprite_id[256];
 	if (type == sprite_type_single) {
-		snprintf(sprite_id, sizeof(sprite_id), "%s/spr", image_id);
+		snprintf(sprite_id, sizeof(sprite_id), "%s/sprite", image_id);
 	} else {
-		snprintf(sprite_id, sizeof(sprite_id), "atlas_spr/%s/%s", atlas_id, image_id);
+		snprintf(sprite_id, sizeof(sprite_id), "%s/sprite/atlas/%s", image_id, atlas_id);
 	}
 	// Check if the id already exists
 	sprite_t result = sprite_find(sprite_id);
