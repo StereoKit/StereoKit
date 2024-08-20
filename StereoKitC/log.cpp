@@ -357,6 +357,7 @@ void log_clear_subscribers() {
 
 #if defined(SK_OS_ANDROID)
 static bool log_opened = false;
+static char log_name[64];
 #endif
 
 void log_set_name(const char* name) {
@@ -365,7 +366,10 @@ void log_set_name(const char* name) {
 		closelog();
 	}
 	log_opened = true;
-	openlog(name, LOG_CONS | LOG_NOWAIT, LOG_USER);
+	// openlog does not seem to copy the string, it uses _our_ memory, so we
+	// need to ensure that memory stays alive.
+	snprintf(log_name, sizeof(log_name), "%s", name);
+	openlog (log_name, LOG_CONS | LOG_NOWAIT, LOG_USER);
 #endif
 }
 
