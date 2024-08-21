@@ -170,14 +170,14 @@ void sk_shutdown() {
 void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
-	systems_shutdown();
+	systems_shutdown      ();
 	sk_mem_log_allocations();
-	log_clear_subscribers();
-	quit_reason_ local_quit_reason = local.quit_reason;
+	log_clear_subscribers ();
 
+	quit_reason_ temp_quit_reason = local.quit_reason;
 	local = {};
 	local.disallow_user_shutdown = true;
-	local.quit_reason = local_quit_reason;
+	local.quit_reason            = temp_quit_reason;
 }
 
 
