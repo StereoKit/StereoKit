@@ -138,20 +138,19 @@ bool systems_initialize() {
 
 	for (int32_t i = 0; i < systems.count; i++) {
 		int32_t index = system_init_order[i];
-		if (systems[index].func_initialize != nullptr) {
-			log_diagf("Initializing %s", systems[index].name);
+		if (systems[index].func_initialize == nullptr) continue;
+		log_diagf("Initializing %s", systems[index].name);
 
-			// start timing
-			uint64_t start = stm_now();
+		// start timing
+		uint64_t start = stm_now();
 
-			if (!systems[index].func_initialize()) {
-				log_errf("System %s failed to initialize!", systems[index].name);
-				return false;
-			}
-
-			// end timing
-			systems[index].profile_start_duration = stm_since(start);
+		if (!systems[index].func_initialize()) {
+			log_errf("System %s failed to initialize!", systems[index].name);
+			return false;
 		}
+
+		// end timing
+		systems[index].profile_start_duration = stm_since(start);
 	}
 	systems_initialized = true;
 	log_info("Initialization successful");
@@ -174,13 +173,6 @@ void system_execute(system_t *sys) {
 	sys->profile_step_duration += sys->profile_frame_duration;
 	sys->profile_step_count    += 1;
 	sys->profile_frame_duration = 0;
-}
-
-///////////////////////////////////////////
-
-void systems_step() {
-	for (int32_t i = 0; i < systems.count; i++)
-		system_execute(&systems[i]);
 }
 
 ///////////////////////////////////////////
