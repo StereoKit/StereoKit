@@ -735,6 +735,11 @@ bool openxr_render_frame() {
 	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
 
+	// Execute any code that's dependent on the predicted time, such as
+	// updating the location of controller models. This often includes drawing,
+	// which means this must come before our render usage check.
+	input_step_late();
+
 	// If there's nothing to render, we may want to totally skip all projection
 	// layers entirely.
 	bool render_displays =
@@ -801,14 +806,6 @@ bool openxr_render_frame() {
 		for (int32_t i = 0; i < xr_displays.count; i++)
 			render_pipeline_surface_set_enabled(xr_displays[i].swapchain_color.render_surface, false);
 	}
-
-	// Execute any code that's dependent on the predicted time, such as
-	// updating the location of controller models.
-	// 
-	// Input can be costly to look at on some systems, so this happens _after_
-	// swapchains are acquired, so they're in close time proximity to
-	// xrWaitFrame. Theoretically better?
-	input_step_late();
 
 	render_pipeline_draw();
 
