@@ -4,6 +4,7 @@
 // Copyright (c) 2024 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using System;
 
 internal class TestCustomButton : ITest
 {
@@ -14,9 +15,15 @@ internal class TestCustomButton : ITest
 	public void Step()
 	{
 		UI.WindowBegin("Custom UI Elements", ref windowPose, V.XY(0.2f,0));
-		CustomButtonMesh   ("Custom Button Mesh");
+
+		CustomButtonMesh("Custom Button Mesh");
+		Tooltip("Small tip");
+
 		CustomButtonElement("Custom Button Element");
-		UI.Button          ("Standard Button");
+		Tooltip("Larger tooltip for a custom button!");
+
+		UI.Button("Standard Button");
+		Tooltip("Very standard");
 
 		UI.PushEnabled(false);
 		CustomButtonMesh("Custom Button Disabled");
@@ -60,5 +67,20 @@ internal class TestCustomButton : ITest
 		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, TextAlign.Center);
 
 		return state.IsJustInactive();
+	}
+
+	static void Tooltip(string text)
+	{
+		if (!UI.LastElementFocused.IsActive()) return;
+
+		Bounds     parent = UI.LayoutLast;
+		UISettings s      = UI.Settings;
+		float      size   = Math.Min(parent.dimensions.x, Text.Size(text, UI.TextStyle).x + s.padding*2);
+
+		UI.LayoutPush(new Vec3(parent.center.x + size/2, parent.center.y-parent.dimensions.y/2 - s.gutter, -s.depth*1.5f ), new Vec2(size, 0));
+		UI.PanelBegin(UIPad.Inside);
+		UI.Text(text);
+		UI.PanelEnd();
+		UI.LayoutPop();
 	}
 }
