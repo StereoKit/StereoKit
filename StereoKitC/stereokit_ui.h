@@ -101,6 +101,11 @@ typedef enum ui_cut_ {
 	ui_cut_bottom,
 } ui_cut_;
 
+typedef enum ui_dir_ {
+	ui_dir_horizontal,
+	ui_dir_vertical,
+} ui_dir_;
+
 typedef enum ui_corner_ {
 	ui_corner_none         = 0,
 	ui_corner_top_left     = 1 << 0,
@@ -281,8 +286,9 @@ SK_API bool32_t ui_input_at_16       (const char16_t* id, char16_t *buffer, int3
 SK_API void     ui_image             (sprite_t image, vec2 size);
 SK_API void     ui_model             (model_t model, vec2 ui_size, float model_scale);
 SK_API void     ui_model_at          (model_t model, vec3 start, vec3 size, color128 color);
-SK_API void     ui_progress_bar      (float percent, float width sk_default(0));
-SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size);
+SK_API void     ui_hprogress_bar     (float percent, float width  sk_default(0), bool32_t flip_fill_dir sk_default(false));
+SK_API void     ui_vprogress_bar     (float percent, float height sk_default(0), bool32_t flip_fill_dir sk_default(false));
+SK_API void     ui_progress_bar_at   (float percent, vec3 window_relative_pos, vec2 size, ui_dir_ bar_direction sk_default(ui_dir_horizontal), bool32_t flip_fill_dir sk_default(false));
 SK_API void     ui_hseparator        (void);
 SK_API void     ui_hspace            (float horizontal_space);
 SK_API void     ui_vspace            (float vertical_space);

@@ -60,7 +60,7 @@ void demo_ui_update() {
 		ui_button("DYNAMIC BUTTON!!");
 	}
 
-	ui_progress_bar(sinf(time_totalf())*0.5f+0.5f);
+	ui_hprogress_bar(sinf(time_totalf())*0.5f+0.5f);
 
 	ui_text(u8"古池や\n蛙飛び込む\n水の音\n- Matsuo Basho");
 	ui_text(u8"Съешь же ещё этих мягких французских булок да выпей чаю. Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства. В чащах юга жил бы цитрус? Да, но фальшивый экземпляр!");
