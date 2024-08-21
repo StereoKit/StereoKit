@@ -49,7 +49,7 @@ class DemoPicker : ITest
 		/// :End:
 
 		float percent = (Assets.CurrentTask - modelTask) / (float)(Assets.TotalTasks - modelTask);
-		UI.ProgressBar(percent);
+		UI.HProgressBar(percent);
 
 		UI.Label("Scale");
 		UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);

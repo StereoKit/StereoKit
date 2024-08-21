@@ -782,6 +782,18 @@ namespace StereoKit
 		Bottom,
 	}
 
+	/// <summary>For UI elements that can be oriented horizontally or
+	/// vertically, this specifies that orientation.</summary>
+	public enum UIDir
+	{
+		/// <summary>The element should be layed out along the horizontal axis.
+		/// </summary>
+		Horizontal,
+		/// <summary>The element should be layed out along the vertical axis.
+		/// </summary>
+		Vertical,
+	}
+
 	/// <summary>For elements that contain corners, this bit flag allows you to
 	/// specify which corners.</summary>
 	public enum UICorner

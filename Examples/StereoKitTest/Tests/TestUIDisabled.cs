@@ -85,7 +85,7 @@ class TestUIDisabled : ITest
 			controlsEnabled++;
 			Log.Err("Text Input field value modified.");
 		}
-		UI.ProgressBar(percent);
+		UI.HProgressBar(percent);
 		UI.Text("UI.Text", TextAlign.TopLeft);
 		if (UI.VSlider("UI.VSlider", ref vSliderVal, 0, 1, 0, 0.15f, UIConfirm.Push))
 		{

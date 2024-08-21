@@ -27,7 +27,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AppFocus    sk_app_focus();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern QuitReason    sk_get_quit_reason();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern QuitReason  sk_get_quit_reason();
 
 		///////////////////////////////////////////
 
@@ -794,7 +794,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_at_16      (string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec3 window_relative_pos, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_toggle_img_at_16  (string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void     ui_progress_bar_at   (float percent, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void     ui_progress_bar_at   (float percent, Vec3 window_relative_pos, Vec2 size, UIDir bar_direction, [MarshalAs(UnmanagedType.Bool)] bool flip_fill_dir);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool     ui_hslider_at_16     (string id,   ref float  value, float  min, float  max, float  step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -846,7 +846,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_16        (string id,   StringBuilder buffer, int buffer_size, Vec2 size, TextContext type);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_input_at_16     (string id,   StringBuilder buffer, int buffer_size, Vec3 window_relative_pos, Vec2 size, TextContext type);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_progress_bar    (float percent, float width);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_hprogress_bar   (float percent, float width, [MarshalAs(UnmanagedType.Bool)] bool flip_fill_direction);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_vprogress_bar   (float percent, float width, [MarshalAs(UnmanagedType.Bool)] bool flip_fill_direction);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_hslider_16      (string id,   ref float  value, float  min, float  max, float  step, float width,  UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]

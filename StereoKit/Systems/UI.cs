@@ -942,8 +942,35 @@ namespace StereoKit
 		/// from 0% to 100%.</param>
 		/// <param name="width">Physical width of the slider on the window. 0
 		/// will fill the remaining amount of window space.</param>
+		[Obsolete("Use HProgressBar instead")]
 		public static void ProgressBar(float percent, float width = 0)
-			=> NativeAPI.ui_progress_bar(percent, width);
+			=> HProgressBar(percent, width, false);
+
+		/// <summary>This is a simple horizontal progress indicator bar. This
+		/// is used by the HSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="width">Physical width of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="flipFillDirection">By default, this fills from left to
+		/// right. This allows you to flip the fill direction to right to left.
+		/// </param>
+		public static void HProgressBar(float percent, float width = 0, bool flipFillDirection = false)
+			=> NativeAPI.ui_hprogress_bar(percent, width, flipFillDirection);
+
+		/// <summary>This is a simple vertical progress indicator bar. This
+		/// is used by the VSlider to draw the slider bar beneath the
+		/// interactive element. Does not include any text or label.</summary>
+		/// <param name="percent">A value between 0 and 1 indicating progress
+		/// from 0% to 100%.</param>
+		/// <param name="height">Physical height of the slider on the window. 0
+		/// will fill the remaining amount of window space.</param>
+		/// <param name="flipFillDirection">By default, this fills from top to
+		/// bottom. This allows you to flip the fill direction to bottom to 
+		/// top.</param>
+		public static void VProgressBar(float percent, float height = 0, bool flipFillDirection = false)
+			=> NativeAPI.ui_vprogress_bar(percent, height, flipFillDirection);
 
 		/// <summary>This is a simple horizontal progress indicator bar. This
 		/// is used by the HSlider to draw the slider bar beneath the
@@ -954,8 +981,8 @@ namespace StereoKit
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
-		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size);
+		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size, UIDir barDirection = UIDir.Horizontal, bool flipFillDirection = false)
+			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size, barDirection, flipFillDirection);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>

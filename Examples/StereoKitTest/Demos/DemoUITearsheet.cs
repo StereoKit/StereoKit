@@ -82,25 +82,31 @@ class DemoUITearsheet : ITest
 	double sliderVald  = 0;
 	void ShowSliderWindow()
 	{
+		float sliderTime = (Time.Totalf % 3.0f) / 3.0f;
 		UI.WindowBegin("Slides & Separators", ref sliderWindowPose, new Vec2(0.25f, 0.2f));
 
-		UI.LayoutPushCut(UICut.Right, UI.LineHeight*2 + UI.Settings.gutter);
+		UI.LayoutPushCut(UICut.Right, UI.LineHeight*4 + UI.Settings.gutter*3);
 		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf2, 0, 1, 0, 0, UIConfirm.Push));
 		UI.SameLine();
 		Unique(() => UI.VSlider("UI.VSlider", ref sliderValf3, 0, 1, 0, 0, UIConfirm.VariablePinch));
+		UI.SameLine();
+		UI.VProgressBar(sliderTime);
+		UI.SameLine();
+		UI.VProgressBar(sliderTime, 0, true);
 		UI.LayoutPop();
 
 		Unique(() => UI.HSlider("UI.HSlider", ref sliderValf1, 0, 1, 0, 0, UIConfirm.Push));
 		Unique(() => UI.HSlider("UI.HSlider", ref sliderVald,  0, 1, 0, 0, UIConfirm.VariablePinch));
 		UI.HSeparator();
-		UI.ProgressBar((Time.Totalf%3.0f)/3.0f);
+		UI.HProgressBar(sliderTime);
+		UI.HProgressBar(sliderTime, 0, true);
 
 		UI.WindowEnd();
 	}
 
 	Pose   textWindowPose = new Pose(-0.15f, 0, 0);
-	string textInput = "Text here please :)";
-	string textPassword = "Text here please :)";
+	string textInput      = "Text here please :)";
+	string textPassword   = "Password";
 	void ShowTextWindow()
 	{
 		UI.WindowBegin("Text", ref textWindowPose, V.XY(0.25f,0));
