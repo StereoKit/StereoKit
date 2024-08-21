@@ -40,6 +40,7 @@
     {
       "name":     "Uwp_x64_Debug_Fast",
       "inherits": "Uwp_x64_Debug",
+      "binaryDir":"${sourceDir}/bin/intermediate/UWP_x64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -63,6 +64,7 @@
     {
       "name":     "Uwp_Arm32_Debug_Fast",
       "inherits": "Uwp_Arm32_Debug",
+      "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -78,6 +80,7 @@
     {
       "name":     "Uwp_Arm64_Debug_Fast",
       "inherits": "Uwp_Arm64_Debug",
+      "binaryDir":"${sourceDir}/bin/intermediate/UWP_ARM64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -102,6 +105,7 @@
     {
       "name":        "Uwp_x64_Release_Fast",
       "inherits":    "Uwp_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/UWP_x64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -125,6 +129,7 @@
     {
       "name":     "Uwp_Arm32_Release_Fast",
       "inherits": "Uwp_Arm32_Release",
+      "binaryDir":"${sourceDir}/bin/intermediate/UWP_ARM_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -140,6 +145,7 @@
     {
       "name":     "Uwp_Arm64_Release_Fast",
       "inherits": "Uwp_Arm64_Release",
+      "binaryDir":"${sourceDir}/bin/intermediate/UWP_ARM64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -153,6 +159,7 @@
     {
       "name":        "Win32_x64_Release_Fast",
       "inherits":    "Win32_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -166,6 +173,7 @@
     {
       "name":     "Win32_x64_Debug_Fast",
       "inherits": "Win32_x64_Debug",
+      "binaryDir":"${sourceDir}/bin/intermediate/Win32_x64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -180,6 +188,7 @@
     {
       "name":     "Win32_Arm64_Debug_Fast",
       "inherits": "Win32_Arm64_Debug",
+      "binaryDir":"${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -194,6 +203,7 @@
     {
       "name":     "Win32_Arm64_Release_Fast",
       "inherits": "Win32_Arm64_Release",
+      "binaryDir":"${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -231,6 +241,7 @@
     {
       "name":        "Linux_x64_Release_Fast",
       "inherits":    "Linux_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Release_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -248,6 +259,7 @@
     {
       "name":        "Linux_x64_Debug_Fast",
       "inherits":    "Linux_x64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -277,6 +289,7 @@
     {
       "name":        "Linux_Arm64_Release_Fast",
       "inherits":    "Linux_Arm64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_ARM64_Release_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -302,6 +315,7 @@
     {
       "name":        "Linux_Arm64_Debug_Fast",
       "inherits":    "Linux_Arm64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Debug_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -336,6 +350,7 @@
     {
       "name":        "Android_Arm64_Debug_Fast",
       "inherits":    "Android_Arm64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Debug_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -356,6 +371,7 @@
     {
       "name":        "Android_Arm64_Release_Fast",
       "inherits":    "Android_Arm64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Release_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -376,6 +392,7 @@
     {
       "name":        "Android_x64_Release_Fast",
       "inherits":    "Android_x64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Release_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
@@ -396,6 +413,7 @@
     {
       "name":        "Android_x64_Debug_Fast",
       "inherits":    "Android_x64_Debug",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Debug_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
       }
