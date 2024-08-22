@@ -1049,9 +1049,9 @@ bool openxr_poll_events() {
 			case XR_SESSION_STATE_SYNCHRONIZED: break; // We're connected to a session, but not visible to users yet.
 			case XR_SESSION_STATE_VISIBLE:      break; // We're visible to users, but not in focus or receiving input. Modal OS dialogs could be visible here.
 			case XR_SESSION_STATE_FOCUSED:      break; // We're visible and focused. This is the "normal" operating state of an app.
-			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_session = {}; xr_has_session = false; result = false; break; // We should not render in this state. We may be minimized, suspended, or otherwise out of action for the moment.
-			case XR_SESSION_STATE_EXITING:      sk_quit(quit_reason_user);                                         result = false; break; // Runtime wants us to terminate the app, usually from a user's request.
-			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost);                                 result = false; break; // The OpenXR runtime may have had some form of failure. It is theoretically possible to recover from this state by occasionally attempting to xrGetSystem, but we don't currently do this.
+			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_has_session = false; result = false; break; // We should not render in this state. We may be minimized, suspended, or otherwise out of action for the moment.
+			case XR_SESSION_STATE_EXITING:      sk_quit(quit_reason_user);                        result = false; break; // Runtime wants us to terminate the app, usually from a user's request.
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost);                result = false; break; // The OpenXR runtime may have had some form of failure. It is theoretically possible to recover from this state by occasionally attempting to xrGetSystem, but we don't currently do this.
 			default: break;
 			}
 		} break;
