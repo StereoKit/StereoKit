@@ -3287,6 +3287,59 @@ int32_t gl_init_emscripten() {
 
 ///////////////////////////////////////////
 
+void convert_gl_error(EGLint gl_error, char* error_str) {
+	switch (gl_error) {
+		case EGL_SUCCESS:
+			snprintf(error_str, sizeof(error_str), "EGL_SUCCESS");
+			break;
+		case EGL_NOT_INITIALIZED:
+			snprintf(error_str, sizeof(error_str), "EGL_NOT_INITIALIZED");
+			break;
+		case EGL_BAD_ACCESS:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_ACCESS");
+			break;
+		case EGL_BAD_ALLOC:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_ALLOC");
+			break;
+		case EGL_BAD_ATTRIBUTE:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_ATTRIBUTE");
+			break;
+		case EGL_BAD_CONTEXT:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_CONTEXT");
+			break;
+		case EGL_BAD_CONFIG:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_CONFIG");
+			break;
+		case EGL_BAD_CURRENT_SURFACE:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_CURRENT_SURFACE");
+			break;
+		case EGL_BAD_DISPLAY:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_DISPLAY");
+			break;
+		case EGL_BAD_SURFACE:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_SURFACE");
+			break;
+		case EGL_BAD_MATCH:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_MATCH");
+			break;
+		case EGL_BAD_PARAMETER:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_PARAMETER");
+			break;
+		case EGL_BAD_NATIVE_PIXMAP:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_NATIVE_PIXMAP");
+			break;
+		case EGL_BAD_NATIVE_WINDOW:
+			snprintf(error_str, sizeof(error_str), "EGL_BAD_NATIVE_WINDOW");
+			break;
+		case EGL_CONTEXT_LOST:
+			snprintf(error_str, sizeof(error_str), "EGL_CONTEXT_LOST");
+			break;
+		default:
+			snprintf(error_str, sizeof(error_str), "%d", egl_error);
+			break;
+	}
+}
+
 int32_t gl_init_egl() {
 #ifdef _SKG_GL_LOAD_EGL
 	const EGLint attribs[] = {
@@ -3308,7 +3361,13 @@ int32_t gl_init_egl() {
 	// No display means no overrides
 	if (egl_display == EGL_NO_DISPLAY) {
 		egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-		if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetDisplay"); return 0; }
+		EGLint egl_error = eglGetError();
+		if (egl_error != EGL_SUCCESS) {
+			char error_str[128];
+			convert_gl_error(egl_error, error_str);
+			skg_log(skg_log_critical, "Err eglGetDisplay: %s", error_str);
+			return 0;
+		}
 	}
 
 	int32_t major=0, minor=0;
@@ -3339,18 +3398,42 @@ int32_t gl_init_egl() {
 	}
 	#endif
 
-	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglInitialize"); return 0; }
+	EGLint egl_error = eglGetError();
+	if (egl_error != EGL_SUCCESS) {
+		char error_str[128];
+		convert_gl_error(egl_error, error_str);
+		skg_log(skg_log_critical, "Err eglInitialize: %s", error_str);
+		return 0;
+	}
 	char version[128];
 	snprintf(version, sizeof(version), "EGL version %d.%d", major, minor);
 	skg_log(skg_log_info, version);
 
 	eglChooseConfig   (egl_display, attribs, &egl_config, 1, &numConfigs);
-	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglChooseConfig"   ); return 0; }
+	egl_error = eglGetError();
+	if (egl_error != EGL_SUCCESS) {
+		char error_str[128];
+		convert_gl_error(egl_error, error_str);
+		skg_log(skg_log_critical, "Err eglChooseConfig: %s", error_str);
+		return 0;
+	}
 	eglGetConfigAttrib(egl_display, egl_config, EGL_NATIVE_VISUAL_ID, &format);
-	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglGetConfigAttrib"); return 0; }
+	egl_error = eglGetError();
+	if (eglGetError() != EGL_SUCCESS) {
+		char error_str[128];
+		convert_gl_error(egl_error, error_str);
+		skg_log(skg_log_critical, "Err eglGetConfigAttrib: %s", error_str);
+		return 0;
+	}
 
 	egl_context = eglCreateContext      (egl_display, egl_config, nullptr, context_attribs);
-	if (eglGetError() != EGL_SUCCESS) { skg_log(skg_log_critical, "Err eglCreateContext"  ); return 0; }
+	egl_error = eglGetError();
+	if (eglGetError() != EGL_SUCCESS) {
+		char error_str[128];
+		convert_gl_error(egl_error, error_str);
+		skg_log(skg_log_critical, "Err eglCreateContext: %s", error_str);
+		return 0;
+	}
 
 	const char* egl_extensions       = eglQueryString(egl_display, EGL_EXTENSIONS);
 	bool        supports_surfaceless = egl_extensions != nullptr && strstr(egl_extensions, "EGL_KHR_surfaceless_context") != nullptr;
@@ -4280,7 +4363,12 @@ skg_swapchain_t skg_swapchain_create(void *hwnd, skg_tex_fmt_ format, skg_tex_fm
 		EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
 		EGL_NONE };
 	result._egl_surface = eglCreateWindowSurface(egl_display, egl_config, (EGLNativeWindowType)hwnd, attribs);
-	if (eglGetError() != EGL_SUCCESS) skg_log(skg_log_critical, "Err eglCreateWindowSurface");
+	EGLint egl_error = eglGetError();
+	if (egl_error != EGL_SUCCESS) {
+		char error_str[128];
+		convert_gl_error(egl_error, error_str);
+		skg_log(skg_log_critical, "Err eglCreateWindowSurface: %s", error_str);
+	}
 	
 	if (eglMakeCurrent(egl_display, result._egl_surface, result._egl_surface, egl_context) == EGL_FALSE)
 		skg_log(skg_log_critical, "Unable to eglMakeCurrent for swapchain");
