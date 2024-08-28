@@ -1161,6 +1161,16 @@ typedef enum transparency_ {
 	  can be used as input to important Mixed Reality features like
 	  Late Stage Reprojection that'll make your view more stable!*/
 	transparency_none = 1,
+	/*Also known as Alpha To Coverage, this mode uses MSAA samples to
+	  create transparency. This works with a z-buffer and therefore
+	  functionally behaves more like an opaque material, but has a
+	  quantized number of "transparent values" it supports rather than
+	  a full range of  0-255 or 0-1. For 4x MSAA, this will give only
+	  4 different transparent values, 8x MSAA only 8, etc.
+	  From a performance perspective, MSAA usually is only costly
+	  around triangle edges, but using this mode, MSAA is used for the
+	  whole triangle.*/
+	transparency_msaa = 2,
 	/*This will blend with the pixels behind it. This is 
 	  transparent! You may not want to write to the z-buffer, and it's
 	  slower than opaque materials.*/
