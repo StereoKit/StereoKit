@@ -67,6 +67,7 @@ display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState
 color128 Color
+transparency_msaa MSAA
 
 sk_settings_t SKSettings
 vind_t uint

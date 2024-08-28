@@ -519,6 +519,16 @@ namespace StereoKit
 		/// can be used as input to important Mixed Reality features like
 		/// Late Stage Reprojection that'll make your view more stable!</summary>
 		None         = 1,
+		/// <summary>Also known as Alpha To Coverage, this mode uses MSAA samples to
+		/// create transparency. This works with a z-buffer and therefore
+		/// functionally behaves more like an opaque material, but has a
+		/// quantized number of "transparent values" it supports rather than
+		/// a full range of  0-255 or 0-1. For 4x MSAA, this will give only
+		/// 4 different transparent values, 8x MSAA only 8, etc.
+		/// From a performance perspective, MSAA usually is only costly
+		/// around triangle edges, but using this mode, MSAA is used for the
+		/// whole triangle.</summary>
+		MSAA         = 2,
 		/// <summary>This will blend with the pixels behind it. This is 
 		/// transparent! You may not want to write to the z-buffer, and it's
 		/// slower than opaque materials.</summary>
