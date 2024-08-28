@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -283,16 +284,18 @@ namespace StereoKit
 		/// <param name="style">The visual style of the text, see
 		/// Text.MakeStyle or the TextStyle object for more details.</param>
 		/// <returns>The width and height of the text in meters.</returns>
+		[Obsolete("Use UI.SizeLayout")]
 		public static Vec2 Size(string text, TextStyle style)
-			=> NativeAPI.text_size_16(text, style);
+			=> NativeAPI.text_size_layout_16(text, style);
 
 		/// <summary>Sometimes you just need to know how much room some text
 		/// takes up! This finds the size of the text in meters when using the
 		/// default style!</summary>
 		/// <param name="text">Text you want to find the size of.</param>
 		/// <returns>The width and height of the text in meters.</returns>
+		[Obsolete("Use UI.SizeLayout")]
 		public static Vec2 Size(string text)
-			=> NativeAPI.text_size_16(text, TextStyle.Default);
+			=> NativeAPI.text_size_layout_16(text, TextStyle.Default);
 
 		/// <summary>Need to know how much space text will take when
 		/// constrained to a certain width? This will find it using the default
@@ -302,8 +305,9 @@ namespace StereoKit
 		/// <returns>The size that this text will take up, in meters! Width
 		/// will be the same as maxWidth as long as the text takes more than
 		/// one line, and height will be the total height of the text.</returns>
+		[Obsolete("Use UI.SizeLayout")]
 		public static Vec2 Size(string text, float maxWidth)
-			=> NativeAPI.text_size_constrained_16(text, TextStyle.Default, maxWidth);
+			=> NativeAPI.text_size_layout_constrained_16(text, TextStyle.Default, maxWidth);
 
 		/// <summary>Need to know how much space text will take when
 		/// constrained to a certain width? This will find it using the
@@ -313,7 +317,42 @@ namespace StereoKit
 		/// <returns>The size that this text will take up, in meters! Width
 		/// will be the same as maxWidth as long as the text takes more than
 		/// one line, and height will be the total height of the text.</returns>
+		[Obsolete("Use UI.SizeLayout")]
 		public static Vec2 Size(string text, TextStyle style, float maxWidth)
-			=> NativeAPI.text_size_constrained_16(text, style, maxWidth);
+			=> SizeLayout(text, style, maxWidth);
+
+		/// <summary>Sometimes you just need to know how much room some text
+		/// takes up! This finds the layout size of the text in meters when
+		/// using the indicated style!  This does not include ascender and
+		/// descender size, so rendering using this as a clipping size will
+		/// result in ascenders and descenders getting clipped.</summary>
+		/// <param name="text">Text you want to find the size of.</param>
+		/// <param name="style">The visual style of the text, see
+		/// Text.MakeStyle or the TextStyle object for more details.</param>
+		/// <returns>The width and height of the text in meters.</returns>
+		public static Vec2 SizeLayout(string text, TextStyle style)
+			=> NativeAPI.text_size_layout_16(text, style);
+
+		/// <summary>Need to know how much layout space text will take when
+		/// constrained to a certain width? This will find it using the
+		/// indicated text style! This does not include ascender and descender
+		/// size, so rendering using this as a clipping size will result in
+		/// ascenders and descenders getting clipped.</summary>
+		/// <param name="text">Text to measure the size of.</param>
+		/// <param name="maxWidth">Width of the available space in meters.</param>
+		/// <returns>The layoutsize that this text will take up, in meters!
+		/// Width will be the same as maxWidth as long as the text takes more
+		/// than one line, and height will be the total layout height of the
+		/// text.</returns>
+		public static Vec2 SizeLayout(string text, TextStyle style, float maxWidth)
+			=> NativeAPI.text_size_layout_constrained_16(text, style, maxWidth);
+
+		/// <summary>This modifies a text layout size with information related</summary>
+		/// <param name="sizeLayout"></param>
+		/// <param name="style"></param>
+		/// <param name="yOffset"></param>
+		/// <returns></returns>
+		public static Vec2 SizeRender(Vec2 sizeLayout, TextStyle style, out float yOffset)
+			=> NativeAPI.text_size_render(sizeLayout, style, out yOffset);
 	}
 }

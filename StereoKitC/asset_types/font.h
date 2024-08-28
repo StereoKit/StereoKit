@@ -24,8 +24,6 @@ struct _font_t {
 	font_char_t characters[128];
 	float       character_ascend;
 	float       character_descend;
-	float       line_gap;
-	float       space_width;
 
 	hashmap_t<font_glyph_t, font_char_t> glyph_map;
 	hashmap_t<char32_t,     font_char_t> character_map;

@@ -310,13 +310,14 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style       (IntPtr font, float character_height, Color color);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_shader(IntPtr font, float character_height, IntPtr shader, Color color);
-		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_mat   (IntPtr font, float character_height, IntPtr material, Color color);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void      text_add_at_16        (string text, in Matrix transform, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern float     text_add_in_16        (string text, in Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_16          (string text, TextStyle style);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_constrained_16 (string text, TextStyle style, float max_width);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style                (IntPtr font, float character_height, Color color);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_shader         (IntPtr font, float character_height, IntPtr shader, Color color);
+		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_mat            (IntPtr font, float character_height, IntPtr material, Color color);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void      text_add_at_16                 (string text, in Matrix transform, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern float     text_add_in_16                 (string text, in Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_layout_16            (string text, TextStyle style);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_layout_constrained_16(string text, TextStyle style, float max_width);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_render               (Vec2 layout_size, TextStyle style, out float out_y_offset);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_char_height(TextStyle style);

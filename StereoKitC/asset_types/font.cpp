@@ -22,7 +22,9 @@ typedef struct font_source_t {
 	stbtt_fontinfo info;
 	void          *file;
 	float          scale;
-	float          char_height;
+	float          char_height; // also known as cap height
+	float          descender;
+	float          ascender;
 } font_source_t;
 
 array_t<font_t>        font_list       = {};
@@ -64,6 +66,12 @@ int32_t font_source_add(const char *filename) {
 		} else {
 			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
 			font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+
+			int32_t ascender, descender, line_gap;
+			stbtt_GetFontVMetrics(&font_sources[id].info, &ascender, &descender, &line_gap);
+			font_sources[id].descender = fabsf(descender) * font_sources[id].scale;
+			font_sources[id].ascender  = ascender * font_sources[id].scale;
+
 			int32_t x0, y0, x1, y1;
 			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
 			font_sources[id].char_height = y1 * font_sources[id].scale;
@@ -95,6 +103,12 @@ int32_t font_source_add_data(const char *name, const void *data, size_t data_siz
 
 		stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
 		font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+
+		int32_t ascender, descender, line_gap;
+		stbtt_GetFontVMetrics(&font_sources[id].info, &ascender, &descender, &line_gap);
+		font_sources[id].descender = fabsf(descender) * font_sources[id].scale;
+		font_sources[id].ascender  = ascender * font_sources[id].scale;
+
 		int32_t x0, y0, x1, y1;
 		stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
 		font_sources[id].char_height = y1 * font_sources[id].scale;
@@ -158,15 +172,12 @@ bool font_setup(font_t font) {
 	font_source_t *src = &font_sources[font->font_ids[0]];
 	int32_t x0, y0, x1, y1;
 	stbtt_GetCodepointBox(&src->info, 'T', &x0, &y0, &x1, &y1);
-	int32_t ascend, descend, gap;
-	stbtt_GetFontVMetrics(&src->info, &ascend, &descend, &gap);
-	int32_t advance, lsb; 
+	int32_t advance, lsb;
 	stbtt_GetGlyphHMetrics(&src->info, ' ', &advance, &lsb);
-	font->space_width       = advance / (float)y1;
-	font->character_ascend  = ascend  / (float)y1;
-	font->character_descend = descend / (float)y1;
-	font->line_gap          = gap     / (float)y1;
-	font->characters['\t'].xadvance = font->space_width * 2;
+	font->characters['\t'].xadvance = (advance / (float)y1) * 2;
+	font->character_ascend  = (src->ascender - src->char_height) / src->char_height;
+	font->character_descend = fabsf(src->descender) / src->char_height;
+	// Browsers use cap height for their line gap, so we're following that convention.
 
 	return true;
 }

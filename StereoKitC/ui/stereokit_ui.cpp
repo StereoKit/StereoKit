@@ -145,8 +145,8 @@ void ui_hseparator() {
 
 ///////////////////////////////////////////
 
-vec2 text_size            (const char16_t* text_utf16, text_style_t style)                  { return text_size_16(text_utf16, style); }
-vec2 text_size_constrained(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_constrained_16(text_utf16, style, max_width); }
+vec2 text_size_layout            (const char16_t* text_utf16, text_style_t style)                  { return text_size_layout_16(text_utf16, style); }
+vec2 text_size_layout_constrained(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_layout_constrained_16(text_utf16, style, max_width); }
 
 float ui_text_in  (const char*     text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in   (text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
 float ui_text_in  (const char16_t* text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in_16(text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
@@ -167,8 +167,8 @@ void ui_label_sz_g(const C *text, vec2 size, bool32_t use_padding) {
 void ui_label_sz   (const char     *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char    >(text, size, use_padding); }
 void ui_label_sz_16(const char16_t *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char16_t>(text, size, use_padding); }
 
-void ui_label   (const char     *text, bool32_t use_padding) { ui_label_sz_g<char    >(text, text_size(text, ui_get_text_style()) + (use_padding ? vec2{ skui_settings.padding, skui_settings.padding }*2 : vec2{ 0, skui_settings.padding }*2), use_padding); }
-void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_sz_g<char16_t>(text, text_size(text, ui_get_text_style()) + (use_padding ? vec2{ skui_settings.padding, skui_settings.padding }*2 : vec2{ 0, skui_settings.padding }*2), use_padding); }
+void ui_label   (const char     *text, bool32_t use_padding) { ui_label_sz_g<char    >(text, text_size_layout(text, ui_get_text_style()) + (use_padding ? vec2{ skui_settings.padding, skui_settings.padding }*2 : vec2{ 0, skui_settings.padding }*2), use_padding); }
+void ui_label_16(const char16_t *text, bool32_t use_padding) { ui_label_sz_g<char16_t>(text, text_size_layout(text, ui_get_text_style()) + (use_padding ? vec2{ skui_settings.padding, skui_settings.padding }*2 : vec2{ 0, skui_settings.padding }*2), use_padding); }
 
 ///////////////////////////////////////////
 
@@ -255,14 +255,14 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 
 template<typename C>
 vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_layout) {
-	vec2 size = {};
+	vec2  size      = {};
 	float font_size = text_style_get_char_height(ui_get_text_style());
 	if (image_layout == font_size || image_layout == ui_btn_layout_center_no_text) {
 		size = { font_size, font_size };
 	} else if (image_layout == ui_btn_layout_none) {
-		size = text_size(text, ui_get_text_style());
+		size = text_size_layout(text, ui_get_text_style());
 	} else {
-		vec2  txt_size   = text_size(text, ui_get_text_style());
+		vec2  txt_size   = text_size_layout(text, ui_get_text_style());
 		float aspect     = image != nullptr ? sprite_get_aspect(image) : 1;
 		float image_size = font_size * aspect;
 		size = vec2{ txt_size.x + image_size + skui_settings.gutter, font_size };
@@ -808,8 +808,8 @@ bool32_t ui_text_at_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_dir
 		text_style_t style       = ui_get_text_style();
 
 		vec2 txt_size = (fit & text_fit_wrap) > 0
-			? text_size_constrained(text, style, size.x - scroll_size)
-			: text_size            (text, style);
+			? text_size_layout_constrained(text, style, size.x - scroll_size)
+			: text_size_layout            (text, style);
 
 		bool show_vertical   = txt_size.y > size.y && (scroll_direction & ui_scroll_vertical)   > 0;
 		bool show_horizontal = txt_size.x > size.x && (scroll_direction & ui_scroll_horizontal) > 0;
@@ -845,8 +845,8 @@ template<typename C>
 bool32_t ui_text_sz_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align, text_fit_ fit) {
 	if (size.x == 0) size.x = ui_layout_remaining().x;
 	if (size.y == 0) size.y = (fit & text_fit_wrap) > 0
-		? text_size_constrained(text, ui_get_text_style(), size.x).y
-		: text_size            (text, ui_get_text_style()).y;
+		? text_size_layout_constrained(text, ui_get_text_style(), size.x).y
+		: text_size_layout            (text, ui_get_text_style()).y;
 
 	vec3 final_pos;
 	vec2 final_size;
@@ -903,7 +903,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	if (win->type & ui_win_head) {
 		ui_layout_t* layout = ui_layout_curr();
 
-		vec2 txt_size = text_size(text, ui_get_text_style());
+		vec2 txt_size = text_size_layout(text, ui_get_text_style());
 		vec2 size     = vec2{ window_size.x == 0 ? txt_size.x : window_size.x-(skui_settings.margin*2), ui_line_height() };
 		vec3 at       = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
 
