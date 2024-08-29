@@ -139,6 +139,7 @@ public static class Tests
 				Log.Info($"Testing <~GRN>passed!<~clr>");
 			}
 		}
+		Log.Info($"Quit reason: <~WHT>{SK.QuitReason}<~clr>");
 	}
 
 	public static string GetTestName(Category category, int index)

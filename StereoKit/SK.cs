@@ -3,6 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -339,6 +340,13 @@ namespace StereoKit
 			if (result == null) result = _steppers.Add(type);
 			return result;
 		}
+
+		/// <summary>An enumerable list of all currently active ISteppers
+		/// registered with StereoKit. This does not include Steppers that have
+		/// been added, but are not yet initialized. Stepper initialization
+		/// happens at the beginning of the frame, before the app's Step.
+		/// </summary>
+		public static IEnumerable<IStepper> Steppers => _steppers.steppers;
 
 		/// <summary>This will queue up some code to be run on StereoKit's main
 		/// thread! Immediately after StereoKit's Step, all callbacks

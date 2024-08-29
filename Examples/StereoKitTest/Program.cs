@@ -97,12 +97,6 @@ class Program
 		Init();
 
 		SK.Run(Step, Tests.Shutdown);
-
-		if (SK.QuitReason != QuitReason.None)
-		{
-			Log.Info("QuitReason is " + SK.QuitReason);
-		}
-
 	}
 
 	static void Init()
