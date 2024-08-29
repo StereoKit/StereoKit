@@ -17,6 +17,8 @@ namespace StereoKit.Framework
 		List           <IStepper>      _steppers    = new List<IStepper>();
 		ConcurrentQueue<StepperAction> _actions     = new ConcurrentQueue<StepperAction>();
 
+		public IEnumerable<IStepper> steppers { get { return _steppers; } }
+
 		// Add steppers via the threadsafe action queue
 		public T Add<T>() where T : IStepper
 		{ 
