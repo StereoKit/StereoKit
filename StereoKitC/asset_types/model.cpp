@@ -273,6 +273,11 @@ bounds_t model_get_bounds(model_t model) {
 ///////////////////////////////////////////
 
 bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt) {
+	model_node_id intersected_model_nodeid = (model_node_id)-1;
+	return model_node_ray_intersect(model, model_space_ray, cull_mode, out_pt, &intersected_model_nodeid);
+}
+
+bool32_t model_node_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, model_node_id* intersected_model_nodeid) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -280,11 +285,11 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mo
 	float closest = FLT_MAX;
 	*out_pt = {};
 	for (int32_t i = 0; i < model->nodes.count; i++) {
-		model_node_t *n = &model->nodes[i];
+		model_node_t* n = &model->nodes[i];
 		if (!n->solid || n->visual == -1)
 			continue;
 
-		matrix inverse   = matrix_invert(n->transform_model);
+		matrix inverse = matrix_invert(n->transform_model);
 		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
 		ray_t  at;
 		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, cull_mode, &at, nullptr)) {
@@ -292,6 +297,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mo
 			if (d < closest) {
 				closest = d;
 				*out_pt = matrix_transform_ray(n->transform_model, at);
+				*intersected_model_nodeid = (model_node_id)i;
 			}
 		}
 	}

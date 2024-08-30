@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -164,6 +165,16 @@ namespace StereoKit
 		/// default would be Cull.Back.</param>
 		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt)
 			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt);
+
+		/// <inheritdoc cref="Intersect(Model, Cull, out Ray)"/>
+		/// <param name="modelNode">ModelNode that intersects with ray.</param>
+		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt, out ModelNode modelNode)
+		{
+			int modelNodeId = -1;
+			bool intersects = NativeAPI.model_node_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt, out modelNodeId);
+			modelNode = modelNodeId >= 0 ? new ModelNode(model, modelNodeId) : null;
+			return intersects;
+		}
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's

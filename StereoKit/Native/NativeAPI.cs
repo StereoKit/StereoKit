@@ -339,6 +339,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   model_set_bounds        (IntPtr model, in Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds model_get_bounds        (IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool   model_ray_intersect     (IntPtr model, Ray model_space_ray, Cull cull_mode, out Ray out_pt);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool model_node_ray_intersect(IntPtr model, Ray model_space_ray, Cull cull_mode, out Ray out_pt, out int model_node_id);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     model_step_anim             (IntPtr model);
 		[return: MarshalAs(UnmanagedType.Bool)]
