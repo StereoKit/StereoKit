@@ -22,10 +22,55 @@ typedef struct font_source_t {
 	stbtt_fontinfo info;
 	void          *file;
 	float          scale;
-	float          char_height; // also known as cap height
-	float          descender;
-	float          ascender;
+	float          total_height; // height from descender to ascender
+	float          cap_height;   // height of baseline to the top of a normal capital letter 'T'
+	float          descender;    // layout (positive) depth below the baseline
+	float          ascender;     // layout height above baseline
+	float          render_descender; // Maximum possible height above baseline
+	float          render_ascender;  // Maximum (positive) depth below the baseline
 } font_source_t;
+
+/*
+Here's how a number of these typography terms look on text. Note that ascenders
+and descenders are not quite so clear cut, as plenty of characters go above and
+below! In SK here, we separate this into layout and render ascender/descenders.
+Layout asc/desc values come from the font vertical metrics, and render asc/desc
+comes from the font's reported bounding box.
+
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ll¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ascender
+¯¯¯¯TTTTTTTTTT¯¯¯ll¯¯¯¯¯¯¯¯¯¯¯¯¯¯ cap_height
+        TT       ll              
+        TT       ll  vy    yy    
+        TT       ll   vy  yy     
+        TT       ll    vyyy      
+________TT_______ll_____yy_______ baseline
+                       yy        
+______________________yy_________ descender
+
+Note that when font size is specified (like 16px), this is refering to the
+total height from the layout ascender to the descender.
+
+Spacing between lines of text varies between different text rendering engines,
+and here SK opts to follow the browser model for familiarity. In browsers, the
+next line's ascender starts right after the current line's descender. Line
+spacing is then a result of defining the line's total height as a multiple of
+the text size.
+
+Line height: 1    Line height: 1.4
+
+ ¯¯¯¯l¯¯¯¯¯¯¯¯     ¯¯¯¯l¯¯¯¯¯¯¯¯
+     l                 l        
+     l y y             l y y    
+     l  y              l  y     
+ ______y______           y      
+ ¯¯¯¯l¯¯¯¯¯¯¯¯                  
+     l             _____________
+     l y y         ¯¯¯¯l¯¯¯¯¯¯¯¯
+     l  y              l        
+ ______y______         l y y    
+                       l  y     
+                   ______y______
+*/
 
 array_t<font_t>        font_list       = {};
 array_t<font_source_t> font_sources    = {};
@@ -57,28 +102,40 @@ int32_t font_source_add(const char *filename) {
 		new_file.name      = string_copy(filename);
 		id = font_sources.add(new_file);
 	}
-	font_sources[id].references += 1;
+	font_source_t* font = &font_sources[id];
+	font->references += 1;
 
-	if (font_sources[id].references == 1) {
+	if (font->references == 1) {
 		size_t length;
-		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
+		if (!platform_read_file(filename, (void **)&font->file, &length)) {
 			log_warnf("Font file failed to load: %s", filename);
 		} else {
-			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
-			font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+			stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
+			font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
 
 			int32_t ascender, descender, line_gap;
-			stbtt_GetFontVMetrics(&font_sources[id].info, &ascender, &descender, &line_gap);
-			font_sources[id].descender = fabsf(descender) * font_sources[id].scale;
-			font_sources[id].ascender  = ascender * font_sources[id].scale;
+			stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
+			font->ascender     = ascender               * font->scale;
+			font->descender    = fabsf(descender)       * font->scale;
+			font->total_height = (ascender - descender) * font->scale;
+
+			if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
+				font->ascender     = ascender               * font->scale;
+				font->descender    = fabsf(descender)       * font->scale;
+				font->total_height = (ascender - descender) * font->scale;
+			}
 
 			int32_t x0, y0, x1, y1;
-			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
-			font_sources[id].char_height = y1 * font_sources[id].scale;
+			stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
+			font->render_ascender  = y1        * font->scale;
+			font->render_descender = fabsf(y0) * font->scale;
+
+			stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
+			font->cap_height = y1 * font->scale;
 		}
 	}
 
-	return font_sources[id].file == nullptr
+	return font->file == nullptr
 		? -1
 		: id;
 }
@@ -95,26 +152,38 @@ int32_t font_source_add_data(const char *name, const void *data, size_t data_siz
 		new_file.name      = string_copy(name);
 		id = font_sources.add(new_file);
 	}
-	font_sources[id].references += 1;
+	font_source_t* font = &font_sources[id];
+	font->references += 1;
 
-	if (font_sources[id].references == 1) {
-		font_sources[id].file = sk_malloc(data_size);
-		memcpy(font_sources[id].file, data, data_size);
+	if (font->references == 1) {
+		font->file = sk_malloc(data_size);
+		memcpy(font->file, data, data_size);
 
-		stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
-		font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
+		stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
+		font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
 
 		int32_t ascender, descender, line_gap;
-		stbtt_GetFontVMetrics(&font_sources[id].info, &ascender, &descender, &line_gap);
-		font_sources[id].descender = fabsf(descender) * font_sources[id].scale;
-		font_sources[id].ascender  = ascender * font_sources[id].scale;
+		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
+		font->ascender     = ascender               * font->scale;
+		font->descender    = fabsf(descender)       * font->scale;
+		font->total_height = (ascender - descender) * font->scale;
+
+		if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
+			font->ascender     = ascender               * font->scale;
+			font->descender    = fabsf(descender)       * font->scale;
+			font->total_height = (ascender - descender) * font->scale;
+		}
 
 		int32_t x0, y0, x1, y1;
-		stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
-		font_sources[id].char_height = y1 * font_sources[id].scale;
+		stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
+		font->render_ascender  = y1        * font->scale;
+		font->render_descender = fabsf(y0) * font->scale;
+
+		stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
+		font->cap_height = y1 * font->scale;
 	}
 
-	return font_sources[id].file == nullptr
+	return font->file == nullptr
 		? -1
 		: id;
 }
@@ -170,14 +239,18 @@ bool font_setup(font_t font) {
 
 	// Get information about character sizes for this font
 	font_source_t *src = &font_sources[font->font_ids[0]];
+	float total_height = src->ascender + src->descender;
+
 	int32_t x0, y0, x1, y1;
 	stbtt_GetCodepointBox(&src->info, 'T', &x0, &y0, &x1, &y1);
 	int32_t advance, lsb;
 	stbtt_GetGlyphHMetrics(&src->info, ' ', &advance, &lsb);
 	font->characters['\t'].xadvance = (advance / (float)y1) * 2;
-	font->character_ascend  = (src->ascender - src->char_height) / src->char_height;
-	font->character_descend = fabsf(src->descender) / src->char_height;
-	// Browsers use cap height for their line gap, so we're following that convention.
+	font->cap_height_pct     = src->cap_height              / total_height;
+	font->layout_ascend_pct  = src->ascender                / total_height;
+	font->layout_descend_pct = fabsf(src->descender)        / total_height;
+	font->render_ascend_pct  = src->render_ascender         / total_height;
+	font->render_descend_pct = fabsf(src->render_descender) / total_height;
 
 	return true;
 }
@@ -322,7 +395,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	stbtt_GetGlyphHMetrics (&source->info, glyph.idx, &advance, &lsb);
 
 	font_char_t char_info = {};
-	char_info.xadvance = (advance/source->char_height) * source->scale;
+	char_info.xadvance = (advance/source->total_height) * source->scale;
 
 	if (x1-x0 <= 0) return char_info;
 
@@ -342,10 +415,10 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		rect.w - (pad_empty*2 + pad_content*2),
 		rect.h - (pad_empty*2 + pad_content*2)};
 
-	char_info.x0 = ( x0-0.5f) / source->char_height;
-	char_info.y0 = (-y0-0.5f) / source->char_height;
-	char_info.x1 = ( x1+0.5f) / source->char_height;
-	char_info.y1 = (-y1+0.5f) / source->char_height;
+	char_info.x0 = ( x0-0.5f) / source->total_height;
+	char_info.y0 = (-y0-0.5f) / source->total_height;
+	char_info.x1 = ( x1+0.5f) / source->total_height;
+	char_info.y1 = (-y1+0.5f) / source->total_height;
 	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
 	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
 	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;

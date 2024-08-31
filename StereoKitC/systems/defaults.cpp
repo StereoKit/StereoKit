@@ -304,7 +304,10 @@ bool defaults_init() {
 		return false;
 	}
 	font_set_id(sk_default_font, default_id_font);
-	sk_default_text_style = text_make_style_mat(sk_default_font, 20 * mm2m, sk_default_material_font, color128{ 1,1,1,1 });
+	sk_default_text_style = text_make_style_mat(sk_default_font, 0.02f, sk_default_material_font, color128{ 1,1,1,1 });
+	// TODO: v0.4, switch these to something more intentional instead of backwards compatible
+	text_style_set_size       (sk_default_text_style, 0.02f * (0.02f / text_style_get_ascender(sk_default_text_style))); // This matches the original SK size for compat, for now.
+	text_style_set_line_height(sk_default_text_style, 1.2f);
 
 	// Sounds
 	sk_default_click = sound_generate([](float t){

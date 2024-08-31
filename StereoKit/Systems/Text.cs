@@ -22,9 +22,29 @@ namespace StereoKit
 		/// this style, in meters.</summary>
 		public float CharHeight
 		{
-			get => NativeAPI.text_style_get_char_height(this);
-			set => NativeAPI.text_style_set_char_height(this, value);
-		} 
+			get => NativeAPI.text_style_get_size(this);
+			set => NativeAPI.text_style_set_size(this, value);
+		}
+
+		public float Size
+		{
+			get => NativeAPI.text_style_get_size(this);
+			set => NativeAPI.text_style_set_size(this, value);
+		}
+
+		public float CapHeight => NativeAPI.text_style_get_cap_height(this);
+		public float Ascender => NativeAPI.text_style_get_ascender(this);
+		public float Descender => NativeAPI.text_style_get_descender(this);
+
+		/// <summary>This is the space a full line of text takes, from baseline
+		/// to baseline, as a 0-1 percentage of the font's character height.
+		/// This is similar to CSS line-height, a value of 1.0 means the line
+		/// takes _only_</summary>
+		public float LineHeight
+		{
+			get => NativeAPI.text_style_get_line_height(this);
+			set => NativeAPI.text_style_set_line_height(this, value);
+		}
 
 		/// <summary>This is the default text style used by StereoKit.</summary>
 		public static TextStyle Default { get => new TextStyle { _id = 0 }; }
