@@ -439,5 +439,16 @@ namespace StereoKit
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
 			=> NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
 
+		/// <summary>This attaches a texture resource globally across all
+		/// shaders. StereoKit uses this to attach the sky cubemap for use in
+		/// reflections across all materials (register 11). It can be used for
+		/// things like shadowmaps, wind data, etc. Prefer a higher registers
+		/// (11+) to prevent conflicting with normal Material textures.</summary>
+		/// <param name="textureRegister">The texture resource register the
+		/// texture will bind to. SK uses register 11 already, so values above
+		/// that should be fine.</param>
+		/// <param name="tex">The texture to assign globally. Setting null here
+		/// will clear any texture that is currently bound.</param>
+		public static void SetGlobalTexture(int textureRegister, Tex tex) => NativeAPI.render_global_texture(textureRegister, tex?._inst ?? IntPtr.Zero);
 	}
 }

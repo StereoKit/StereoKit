@@ -51,15 +51,15 @@ public static class Tests
 			.ToList ();
 
 		categoryTests[(int)Category.Demo] = allTests
-			.Where(t=>t.Name.StartsWith("Demo"))
-			.Select(t=>new TestItem { type = t, name=t.Name.Substring("Demo".Length) })
+			.Where (t => t.Name.StartsWith("Demo"))
+			.Select(t => new TestItem { type = t, name=t.Name.Substring("Demo".Length) })
 			.ToList();
 		categoryTests[(int)Category.Test] = allTests
-			.Where(t => t.Name.StartsWith("Test"))
+			.Where (t => t.Name.StartsWith("Test"))
 			.Select(t => new TestItem { type = t, name = t.Name.Substring("Test".Length) })
 			.ToList();
 		categoryTests[(int)Category.Documentation] = allTests
-			.Where(t => t.Name.StartsWith("Doc"))
+			.Where (t => t.Name.StartsWith("Doc"))
 			.Select(t => new TestItem { type = t, name = t.Name.Substring("Doc".Length) })
 			.ToList();
 	}

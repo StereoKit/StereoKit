@@ -101,6 +101,20 @@ namespace StereoKit
 		/// but subsequent calls will pull from a cached value.</summary>
 		public SphericalHarmonics CubemapLighting => NativeAPI.tex_get_cubemap_lighting(_inst);
 
+		/// <summary>This allows you to attach or retreive a z/depth buffer
+		/// from a rendertarget texture. This texture _must_ be a rendertarget
+		/// to set this, and the zbuffer texture _must_ be a depth format (or
+		/// null). For no-rendertarget textures, this will always be null.
+		/// </summary>
+		public Tex ZBuffer {
+			get {
+				IntPtr result = NativeAPI.tex_get_zbuffer(_inst);
+				return result == IntPtr.Zero
+					? null
+					: new Tex(result);
+			}
+			set => NativeAPI.tex_set_zbuffer(_inst, value._inst == IntPtr.Zero ? IntPtr.Zero : value._inst);
+		}
 		#endregion
 
 		#region Constructors
@@ -404,8 +418,8 @@ namespace StereoKit
 		/// <param name="depthFormat">The format of the depth texture, must
 		/// be a depth format type!</param>
 		/// <returns>A new Tex asset with the specified depth.</returns>
-		public Tex AddZBuffer(TexFormat depthFormat)
-			=> new Tex(NativeAPI.tex_add_zbuffer(_inst, depthFormat));
+		public void AddZBuffer(TexFormat depthFormat)
+			=> NativeAPI.tex_add_zbuffer(_inst, depthFormat);
 		#endregion
 
 		#region Static Methods

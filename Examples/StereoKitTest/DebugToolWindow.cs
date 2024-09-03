@@ -209,7 +209,7 @@ class DebugToolWindow : IStepper
 
 	void TakeScreenshots()
 	{
-		if (Input.Key(Key.Printscreen).IsJustActive() || Input.Key(Key.F12).IsJustActive())
+		if (Input.Key(Key.Printscreen).IsJustActive() || Input.Key(Key.F9).IsJustActive())
 		{
 			Renderer.Screenshot("Screenshot" + screenshotId + ".jpg", Input.Head.position, Input.Head.Forward, 1920 * 2, 1080 * 2);
 			screenshotId += 1;
