@@ -17,7 +17,7 @@ class DocText : ITest
 		Text.Add(text, Matrix.Identity, style, TextAlign.TopLeft, TextAlign.TopLeft);
 
 		// Show the bounding regions for the size of the text
-		Color colLayoutArea = Color.Black;
+		Color colLayoutArea = new Color(0.1f,  0.1f, 0.1f);
 		Color colRenderArea = new Color(0.25f, 0.5f, 0.25f);
 
 		Vec2 size  = Text.SizeLayout(text, style);
@@ -27,10 +27,10 @@ class DocText : ITest
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(sizeR.XY0/-2 + V.XYZ(0, yOff, 0.002f), sizeR.XY0 + V.XYZ(0, 0, 0.001f)), colRenderArea);
 
 		// Show lines representing the typography units for this style
-		Color32 colCapHeight  = new Color32(150, 255, 150, 255);
+		Color32 colCapHeight  = new Color32( 50, 255,  50, 255);
 		Color32 colBaseline   = new Color32(255, 255, 255, 255);
-		Color32 colAscender   = new Color32(255, 100, 100, 255);
-		Color32 colDescender  = new Color32(100, 100, 255, 255);
+		Color32 colAscender   = new Color32(255,  50,  50, 255);
+		Color32 colDescender  = new Color32( 50,  50, 255, 255);
 		Color32 colLineHeight = new Color32(255, 255, 255, 255);
 
 		float ascenderAt   =  0;
@@ -39,11 +39,11 @@ class DocText : ITest
 		float descenderAt  = -style.Size;
 		float lineHeightAt = -style.LineHeight * style.Size;
 
-		Lines.Add(V.XY0(0,     ascenderAt  ), V.XY0(-size.x,       ascenderAt  ), colAscender,   0.005f);
-		Lines.Add(V.XY0(0,     baselineAt  ), V.XY0(-size.x,       baselineAt  ), colBaseline,   0.005f);
-		Lines.Add(V.XY0(0,     capHeightAt ), V.XY0(-size.x,       capHeightAt ), colCapHeight,  0.005f);
-		Lines.Add(V.XY0(0,     descenderAt ), V.XY0(-size.x,       descenderAt ), colDescender,  0.005f);
-		Lines.Add(V.XY0(0.01f, lineHeightAt), V.XY0(-size.x-0.01f, lineHeightAt), colLineHeight, 0.005f);
+		Lines.Add(V.XY0(0, ascenderAt  ), V.XY0(-size.x, ascenderAt  ), colAscender,   0.003f);
+		Lines.Add(V.XY0(0, baselineAt  ), V.XY0(-size.x, baselineAt  ), colBaseline,   0.003f);
+		Lines.Add(V.XY0(0, capHeightAt ), V.XY0(-size.x, capHeightAt ), colCapHeight,  0.003f);
+		Lines.Add(V.XY0(0, descenderAt ), V.XY0(-size.x, descenderAt ), colDescender,  0.003f);
+		Lines.Add(V.XY0(0, lineHeightAt), V.XY0(-size.x, lineHeightAt), colLineHeight, 0.003f);
 	}
 
 	public void Step()
@@ -54,7 +54,7 @@ class DocText : ITest
 		Hierarchy.Pop();
 
 		Vec2 s = Text.SizeLayout("lÔTy", style);
-		Tests.Screenshot("TextStyleInfo.jpg", 200, 200, V.XYZ(s.x/2, s.y/-2, -0.25f), V.XYZ(s.x/2, s.y/-2, -0.5f));
+		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.25f), V.XYZ(s.x/2, s.y/-2, -0.5f));
 	}
 
 	public void Initialize() {}
