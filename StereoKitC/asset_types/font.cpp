@@ -154,12 +154,12 @@ void font_source_load_data(font_source_t* font) {
 
 	int32_t ascender, descender, line_gap;
 	if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
-		font->ascender  = ceilf(ascender               * font->scale);
-		font->descender = ceilf(fabsf(descender)       * font->scale);
+		font->ascender  = ceilf(      ascender   * font->scale);
+		font->descender = ceilf(fabsf(descender) * font->scale);
 	} else {
 		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
-		font->ascender  = ceilf(ascender               * font->scale);
-		font->descender = ceilf(fabsf(descender)       * font->scale);
+		font->ascender  = ceilf(      ascender   * font->scale);
+		font->descender = ceilf(fabsf(descender) * font->scale);
 	}
 	font->total_height = font->ascender + font->descender;
 
