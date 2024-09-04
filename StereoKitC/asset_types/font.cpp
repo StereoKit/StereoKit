@@ -22,12 +22,12 @@ typedef struct font_source_t {
 	stbtt_fontinfo info;
 	void          *file;
 	float          scale;
-	float          total_height; // height from descender to ascender
-	float          cap_height;   // height of baseline to the top of a normal capital letter 'T'
-	float          descender;    // layout (positive) depth below the baseline
-	float          ascender;     // layout height above baseline
-	float          render_descender; // Maximum possible height above baseline
-	float          render_ascender;  // Maximum (positive) depth below the baseline
+	float          total_height; // px height from descender to ascender
+	float          cap_height;   // px height of baseline to the top of a normal capital letter 'T'
+	float          descender;    // px layout (positive) depth below the baseline
+	float          ascender;     // px layout height above baseline
+	float          render_descender; // px maximum possible height above baseline
+	float          render_ascender;  // px maximum (positive) depth below the baseline
 } font_source_t;
 
 /*
@@ -152,26 +152,24 @@ void font_source_load_data(font_source_t* font) {
 	stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
 	font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
 
-#define METHOD (int)
-
 	int32_t ascender, descender, line_gap;
 	if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
-		font->ascender     = METHOD(ascender               * font->scale);
-		font->descender    = METHOD(fabsf(descender)       * font->scale);
+		font->ascender  = ceilf(ascender               * font->scale);
+		font->descender = ceilf(fabsf(descender)       * font->scale);
 	} else {
 		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
-		font->ascender     = METHOD(ascender               * font->scale);
-		font->descender    = METHOD(fabsf(descender)       * font->scale);
+		font->ascender  = ceilf(ascender               * font->scale);
+		font->descender = ceilf(fabsf(descender)       * font->scale);
 	}
 	font->total_height = font->ascender + font->descender;
 
 	int32_t x0, y0, x1, y1;
 	stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
-	font->render_ascender  = METHOD(y1        * font->scale);
-	font->render_descender = METHOD(fabsf(y0) * font->scale);
+	font->render_ascender  = ceilf(y1        * font->scale);
+	font->render_descender = ceilf(fabsf(y0) * font->scale);
 
-	stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
-	font->cap_height = METHOD(y1 * font->scale);
+	stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
+	font->cap_height = y1-y0;
 }
 
 ///////////////////////////////////////////
@@ -381,7 +379,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	stbtt_GetGlyphHMetrics (&source->info, glyph.idx, &advance, &lsb);
 
 	font_char_t char_info = {};
-	char_info.xadvance = (METHOD(advance * source->scale)) / source->total_height;
+	char_info.xadvance = (advance * source->scale) / source->total_height;
 
 	if (x1-x0 <= 0) return char_info;
 
@@ -401,25 +399,34 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		rect.w - (pad_empty*2 + pad_content*2),
 		rect.h - (pad_empty*2 + pad_content*2)};
 
-	char_info.x0 = ( x0-0.5f) / source->total_height;
-	char_info.y0 = (-y0-0.5f) / source->total_height;
-	char_info.x1 = ( x1+0.5f) / source->total_height;
-	char_info.y1 = (-y1-0.5f) / source->total_height;
-	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
-	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
-	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
-	char_info.v1 = (rect_unpad.y+rect_unpad.h+0.5f) * to_v;
+	// Add half a pixel to the outside of the glyph's mesh, so when we're
+	// sampling from the texture, we have some room for interpolation. Without
+	// this, pixels adjacent to the edge of the mesh will look sharper, or like
+	// they're cut off too early.
+	const float half_pixel = 0.5f;
+	char_info.x0 = ( x0-half_pixel) / source->total_height;
+	char_info.y0 = (-y0+half_pixel) / source->total_height;
+	char_info.x1 = ( x1+half_pixel) / source->total_height;
+	char_info.y1 = (-y1-half_pixel) / source->total_height;
+	char_info.u0 = (rect_unpad.x             -half_pixel) * to_u;
+	char_info.v0 = (rect_unpad.y             -half_pixel) * to_v;
+	char_info.u1 = (rect_unpad.x+rect_unpad.w+half_pixel) * to_u;
+	char_info.v1 = (rect_unpad.y+rect_unpad.h+half_pixel) * to_v;
 	return char_info;
 }
 
 ///////////////////////////////////////////
 
 void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
+	// We don't store the pixel rect of the glyph frm font_place_glyph. Instead
+	// we're recalculating the pixel rect from the UVs, which do directly map
+	// to the rect, but also include some padding and other extra space.
 	const int32_t pad_content = PAD_SIZE;
-	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f)-pad_content;
-	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f)-pad_content;
-	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
-	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
+	const float   half_pixel  = 0.5f;
+	int32_t x = (int32_t) (ch->u0 * font->atlas.w      + half_pixel)-pad_content;
+	int32_t y = (int32_t) (ch->v0 * font->atlas.h      + half_pixel)-pad_content;
+	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - half_pixel);
+	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - half_pixel);
 	font_source_t *source = &font_sources[glyph.font];
 
 	stbtt__bitmap gbm;
