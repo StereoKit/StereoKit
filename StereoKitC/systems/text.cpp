@@ -398,7 +398,7 @@ float text_step_height(const C *text, int32_t *out_length, const _text_style_t *
 	}
 
 	*out_length = length;
-	return (height + (height-1)*style->line_spacing) * style->scale;
+	return (height*style->line_baseline + (height-1)*style->line_spacing) * style->scale;
 }
 
 ///////////////////////////////////////////
@@ -593,15 +593,15 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	vec3 normal = matrix_mul_direction(tr, vec3_forward);
 
 	// Debug draw bounds
-	/*vec2 dbg_start = step.start;
-	if      (position & text_align_x_center) dbg_start.x += step.bounds.x / 2.f;
-	else if (position & text_align_x_right)  dbg_start.x += step.bounds.x;
-	if      (position & text_align_y_center) dbg_start.y += step.bounds.y / 2.f;
-	else if (position & text_align_y_bottom) dbg_start.y += step.bounds.y;
-	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
-	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);*/
+	/*vec3 dbg_start = matrix_transform_pt(transform, {off_x, off_y, off_z});
+	if      (position & text_align_x_center) dbg_start.x += size.x / 2.f;
+	else if (position & text_align_x_right)  dbg_start.x += size.x;
+	if      (position & text_align_y_center) dbg_start.y += size.y / 2.f;
+	else if (position & text_align_y_bottom) dbg_start.y += size.y;
+	line_add({ dbg_start.x,          dbg_start.y,          dbg_start.z }, { dbg_start.x - size.x, dbg_start.y,          dbg_start.z }, { 255,0,  255,255 }, { 255,0,255,  255 }, 0.0005f);
+	line_add({ dbg_start.x,          dbg_start.y - size.y, dbg_start.z }, { dbg_start.x - size.x, dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);
+	line_add({ dbg_start.x,          dbg_start.y,          dbg_start.z }, { dbg_start.x,          dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);
+	line_add({ dbg_start.x - size.x, dbg_start.y,          dbg_start.z }, { dbg_start.x - size.x, dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);*/
 
 	// Ensure scale is right for our fit
 	vec2 bounds = size;

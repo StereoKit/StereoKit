@@ -86,9 +86,10 @@ void         font_upsize_texture(font_t font);
 void         font_update_texture(font_t font);
 void         font_update_cache  (font_t font);
 
-int32_t      font_source_add     (const char *filename);
-int32_t      font_source_add_data(const char *name, const void *data, size_t data_size);
-void         font_source_release (int32_t id);
+int32_t      font_source_add      (const char *filename);
+int32_t      font_source_add_data (const char *name, const void *data, size_t data_size);
+void         font_source_load_data(font_source_t* font);
+void         font_source_release  (int32_t id);
 
 ///////////////////////////////////////////
 
@@ -107,31 +108,10 @@ int32_t font_source_add(const char *filename) {
 
 	if (font->references == 1) {
 		size_t length;
-		if (!platform_read_file(filename, (void **)&font->file, &length)) {
-			log_warnf("Font file failed to load: %s", filename);
+		if (platform_read_file(filename, (void **)&font->file, &length)) {
+			font_source_load_data(font);
 		} else {
-			stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
-			font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
-
-			int32_t ascender, descender, line_gap;
-			stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
-			font->ascender     = ascender               * font->scale;
-			font->descender    = fabsf(descender)       * font->scale;
-			font->total_height = (ascender - descender) * font->scale;
-
-			if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
-				font->ascender     = ascender               * font->scale;
-				font->descender    = fabsf(descender)       * font->scale;
-				font->total_height = (ascender - descender) * font->scale;
-			}
-
-			int32_t x0, y0, x1, y1;
-			stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
-			font->render_ascender  = y1        * font->scale;
-			font->render_descender = fabsf(y0) * font->scale;
-
-			stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
-			font->cap_height = y1 * font->scale;
+			log_warnf("Font file failed to load: %s", filename);
 		}
 	}
 
@@ -158,34 +138,40 @@ int32_t font_source_add_data(const char *name, const void *data, size_t data_siz
 	if (font->references == 1) {
 		font->file = sk_malloc(data_size);
 		memcpy(font->file, data, data_size);
-
-		stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
-		font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
-
-		int32_t ascender, descender, line_gap;
-		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
-		font->ascender     = ascender               * font->scale;
-		font->descender    = fabsf(descender)       * font->scale;
-		font->total_height = (ascender - descender) * font->scale;
-
-		if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
-			font->ascender     = ascender               * font->scale;
-			font->descender    = fabsf(descender)       * font->scale;
-			font->total_height = (ascender - descender) * font->scale;
-		}
-
-		int32_t x0, y0, x1, y1;
-		stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
-		font->render_ascender  = y1        * font->scale;
-		font->render_descender = fabsf(y0) * font->scale;
-
-		stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
-		font->cap_height = y1 * font->scale;
+		font_source_load_data(font);
 	}
 
 	return font->file == nullptr
 		? -1
 		: id;
+}
+
+///////////////////////////////////////////
+
+void font_source_load_data(font_source_t* font) {
+	stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
+	font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
+
+#define METHOD (int)
+
+	int32_t ascender, descender, line_gap;
+	if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
+		font->ascender     = METHOD(ascender               * font->scale);
+		font->descender    = METHOD(fabsf(descender)       * font->scale);
+	} else {
+		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
+		font->ascender     = METHOD(ascender               * font->scale);
+		font->descender    = METHOD(fabsf(descender)       * font->scale);
+	}
+	font->total_height = font->ascender + font->descender;
+
+	int32_t x0, y0, x1, y1;
+	stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
+	font->render_ascender  = METHOD(y1        * font->scale);
+	font->render_descender = METHOD(fabsf(y0) * font->scale);
+
+	stbtt_GetCodepointBox(&font->info, 'T', &x0, &y0, &x1, &y1);
+	font->cap_height = METHOD(y1 * font->scale);
 }
 
 ///////////////////////////////////////////
@@ -395,7 +381,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	stbtt_GetGlyphHMetrics (&source->info, glyph.idx, &advance, &lsb);
 
 	font_char_t char_info = {};
-	char_info.xadvance = (advance/source->total_height) * source->scale;
+	char_info.xadvance = (METHOD(advance * source->scale)) / source->total_height;
 
 	if (x1-x0 <= 0) return char_info;
 
@@ -418,7 +404,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	char_info.x0 = ( x0-0.5f) / source->total_height;
 	char_info.y0 = (-y0-0.5f) / source->total_height;
 	char_info.x1 = ( x1+0.5f) / source->total_height;
-	char_info.y1 = (-y1+0.5f) / source->total_height;
+	char_info.y1 = (-y1-0.5f) / source->total_height;
 	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
 	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
 	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
@@ -638,13 +624,9 @@ font_t font_create_family(const char* font_family) {
 		log_errf("No font files provided for the font_family %s.", font_family);
 		return nullptr;
 	}
-	const char** files = (const char **)malloc(sizeof(char **) * info_count);
+	const char** files = sk_malloc_t(const char*, info_count);
 	for (int32_t i = 0; i < info_count; i++) {
-#ifdef _WIN32
-		files[i] = _strdup(info[i].filepath);
-#else
-		files[i] = strdup(info[i].filepath);
-#endif
+		files[i] = string_copy(info[i].filepath);
 	}
 
 	free(info);
