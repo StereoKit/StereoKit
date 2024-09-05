@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DocText : ITest
 {
@@ -54,7 +59,7 @@ class DocText : ITest
 		Hierarchy.Pop();
 
 		Vec2 s = Text.SizeLayout("lÔTy", style);
-		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.2f), V.XYZ(s.x/2, s.y/-2, -0.5f));
+		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.18f), V.XYZ(s.x/2, s.y/-2, -0.5f));
 	}
 
 	public void Initialize() {}
