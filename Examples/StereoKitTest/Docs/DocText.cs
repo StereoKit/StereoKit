@@ -33,11 +33,11 @@ class DocText : ITest
 		Color32 colDescender  = new Color32( 50,  50, 255, 255);
 		Color32 colLineHeight = new Color32(255, 255, 255, 255);
 
-		float ascenderAt   =  0;
-		float baselineAt   = -style.Ascender;
-		float capHeightAt  = -style.Ascender + style.CapHeight;
-		float descenderAt  = -style.TotalHeight;
-		float lineHeightAt = -style.LineHeightPct * style.TotalHeight;
+		float baselineAt   = -style.CapHeight;
+		float ascenderAt   = baselineAt + style.Ascender;
+		float capHeightAt  = baselineAt + style.CapHeight;
+		float descenderAt  = baselineAt - style.Descender;
+		float lineHeightAt = ascenderAt - style.LineHeightPct * style.TotalHeight;
 
 		Lines.Add(V.XY0(0, ascenderAt  ), V.XY0(-size.x, ascenderAt  ), colAscender,   0.003f);
 		Lines.Add(V.XY0(0, baselineAt  ), V.XY0(-size.x, baselineAt  ), colBaseline,   0.003f);

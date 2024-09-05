@@ -1384,6 +1384,7 @@ SK_API material_t    text_style_get_material        (text_style_t style);
 SK_API float         text_style_get_ascender        (text_style_t style);
 SK_API float         text_style_get_descender       (text_style_t style);
 SK_API float         text_style_get_cap_height      (text_style_t style);
+SK_API float         text_style_get_baseline        (text_style_t style);
 
 ///////////////////////////////////////////
 

@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using System;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -28,11 +33,10 @@ namespace StereoKit
 		}
 
 		/// <summary>(meters) Layout height is the height of the font's
-		/// ascender, which is used for calculating the vertical height of the
+		/// CapHeight, which is used for calculating the vertical height of the
 		/// text when doing text layouts. This does _not_ include the height of
-		/// the descender (use TotalHeight), nor does it represent the maximum
-		/// possible height a glyph may extend upwards (use Text.SizeRender).
-		/// </summary>
+		/// the descender, nor does it represent the maximum possible height a
+		/// glyph may extend upwards (use Text.SizeRender).</summary>
 		public float LayoutHeight
 		{
 			get => NativeAPI.text_style_get_layout_height(this);
@@ -62,13 +66,15 @@ namespace StereoKit
 		/// Text.SizeRender), but this is not used when laying out characters.
 		/// </summary>
 		public float Ascender => NativeAPI.text_style_get_ascender(this);
-		/// <summary>(meters) The layout descender of the font, this is the positive height below the baseline</summary>
+		/// <summary>(meters) The layout descender of the font, this is the
+		/// positive height below the baseline</summary>
 		public float Descender => NativeAPI.text_style_get_descender(this);
 
 		/// <summary>This is the space a full line of text takes, from baseline
-		/// to baseline, as a 0-1 percentage of the font's character height.
-		/// This is similar to CSS line-height, a value of 1.0 means the line
-		/// takes _only_</summary>
+		/// to baseline, as a 0-1 percentage of the font's TotalHeight. This
+		/// is similar to CSS line-height, a value of 1.0 means this line's
+		/// descenders will squish up adjacent to the next line's tallest
+		/// ascenders.</summary>
 		public float LineHeightPct
 		{
 			get => NativeAPI.text_style_get_line_height_pct(this);
@@ -88,7 +94,7 @@ namespace StereoKit
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
 		/// <param name="layoutHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on layout ascender height.
+		/// meters. StereoKit currently bases this on CapHeight.
 		/// </param>
 		/// <param name="colorGamma">The gamma space color of the text
 		/// style. This will be embedded in the vertex color of the text
@@ -108,7 +114,7 @@ namespace StereoKit
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
 		/// <param name="layoutHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on layout ascender height.
+		/// meters. StereoKit currently bases this on CapHeight.
 		/// </param>
 		/// <param name="shader">This style will create and use a unique
 		/// Material based on the Shader that you provide here.</param>
@@ -133,7 +139,7 @@ namespace StereoKit
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
 		/// <param name="layoutHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on layout ascender height.
+		/// meters. StereoKit currently bases this on CapHeight.
 		/// </param>
 		/// <param name="material">Which material should be used to render
 		/// the text with? Note that this does NOT duplicate the material, so
@@ -164,15 +170,16 @@ namespace StereoKit
 		/// on Default.ShaderFont.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="layoutHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on CapHeight.
+		/// </param>
 		/// <param name="colorGamma">The gamma space color of the text
 		/// style. This will be embedded in the vertex color of the text
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Color colorGamma)
-			=> NativeAPI.text_make_style(font._inst, characterHeightMeters, colorGamma);
+		public static TextStyle MakeStyle(Font font, float layoutHeightMeters, Color colorGamma)
+			=> NativeAPI.text_make_style(font._inst, layoutHeightMeters, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -183,8 +190,9 @@ namespace StereoKit
 		/// on the provided Shader.</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="layoutHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on CapHeight.
+		/// </param>
 		/// <param name="shader">This style will create and use a unique
 		/// Material based on the Shader that you provide here.</param>
 		/// <param name="colorGamma">The gamma space color of the text
@@ -192,8 +200,8 @@ namespace StereoKit
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Shader shader, Color colorGamma)
-			=> NativeAPI.text_make_style_shader(font._inst, characterHeightMeters, shader._inst, colorGamma);
+		public static TextStyle MakeStyle(Font font, float layoutHeightMeters, Shader shader, Color colorGamma)
+			=> NativeAPI.text_make_style_shader(font._inst, layoutHeightMeters, shader._inst, colorGamma);
 
 		/// <summary>Create a text style for use with other text functions! A
 		/// text style is a font plus size/color/material parameters, and are
@@ -207,8 +215,9 @@ namespace StereoKit
 		/// Shader, or takes neither a Shader nor a Material!</summary>
 		/// <param name="font">Font asset you want attached to this style.
 		/// </param>
-		/// <param name="characterHeightMeters">Height of a text glyph in
-		/// meters. StereoKit currently bases this on the letter 'T'.</param>
+		/// <param name="layoutHeightMeters">Height of a text glyph in
+		/// meters. StereoKit currently bases this on CapHeight.
+		/// </param>
 		/// <param name="material">Which material should be used to render
 		/// the text with? Note that this does NOT duplicate the material, so
 		/// some parameters of this Material instance will get overwritten, 
@@ -220,8 +229,8 @@ namespace StereoKit
 		/// mesh.</param>
 		/// <returns>A text style id for use with text rendering functions.
 		/// </returns>
-		public static TextStyle MakeStyle(Font font, float characterHeightMeters, Material material, Color colorGamma)
-			=> NativeAPI.text_make_style_mat(font._inst, characterHeightMeters, material._inst, colorGamma);
+		public static TextStyle MakeStyle(Font font, float layoutHeightMeters, Material material, Color colorGamma)
+			=> NativeAPI.text_make_style_mat(font._inst, layoutHeightMeters, material._inst, colorGamma);
 
 		/// <summary>Renders text at the given location! Must be called every
 		/// frame you want this text to be visible.</summary>

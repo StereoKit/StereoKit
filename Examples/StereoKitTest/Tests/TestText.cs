@@ -10,6 +10,7 @@ class TestText : ITest
 
 	public void Initialize() {
 		style = TextStyle.FromFont(Font.FromFile("aileron_font.ttf"), 0.02f, Color.White);
+		style.LineHeightPct = 1.2f;
 	}
 	public void Shutdown() { }
 	public void Step()
@@ -62,15 +63,17 @@ class TestText : ITest
 
 	static void DrawTextLineGuides(Vec3 at, float width, TextStyle style)
 	{
-		Color32 capHeight = new Color32( 50, 255,  50, 255);
-		Color32 baseline  = new Color32(255, 255, 255, 255);
-		Color32 ascender  = new Color32(255,  50,  50, 255);
-		Color32 descender = new Color32( 50,  50, 255, 255);
+		Color32 colCapHeight = new Color32( 50, 255,  50, 255);
+		Color32 colBaseline  = new Color32(255, 255, 255, 255);
+		Color32 colAscender  = new Color32(255,  50,  50, 255);
+		Color32 colDescender = new Color32( 50,  50, 255, 255);
 
-		Lines.Add(at+V.XYZ(-0.01f, -style.LineHeightPct * style.TotalHeight, 0), at + V.XYZ(width+0.01f, -style.LineHeightPct * style.TotalHeight, 0), baseline, 0.002f);
-		Lines.Add(at+V.XY0(0, 0                              ), at + V.XY0(width, 0                              ), ascender,  0.002f);
-		Lines.Add(at+V.XY0(0, -style.Ascender                ), at + V.XY0(width, -style.Ascender                ), baseline,  0.002f);
-		Lines.Add(at+V.XY0(0, -style.Ascender+style.CapHeight), at + V.XY0(width, -style.Ascender+style.CapHeight), capHeight, 0.002f);
-		Lines.Add(at+V.XY0(0, -style.TotalHeight             ), at + V.XY0(width, -style.TotalHeight             ), descender, 0.002f);
+		float baseline = -style.CapHeight;
+		float top      = baseline+style.Ascender;
+		Lines.Add(at+V.XYZ(-0.01f, top-style.LineHeightPct*style.TotalHeight, 0), at + V.XYZ(width+0.01f, top-style.LineHeightPct*style.TotalHeight, 0), colBaseline, 0.002f);
+		Lines.Add(at+V.XY0(0, baseline                ), at + V.XY0(width, baseline                ), colBaseline,  0.0005f);
+		Lines.Add(at+V.XY0(0, baseline+style.CapHeight), at + V.XY0(width, baseline+style.CapHeight), colCapHeight, 0.0005f);
+		Lines.Add(at+V.XY0(0, baseline+style.Ascender ), at + V.XY0(width, baseline+style.Ascender ), colAscender,  0.0005f);
+		Lines.Add(at+V.XY0(0, baseline-style.Descender), at + V.XY0(width, baseline-style.Descender), colDescender, 0.0005f);
 	}
 }
