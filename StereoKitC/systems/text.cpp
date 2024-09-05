@@ -209,13 +209,13 @@ void text_style_set_total_height(text_style_t style, float height_meters) {
 
 ///////////////////////////////////////////
 
-float text_style_get_layout_height_pct(text_style_t style) {
+float text_style_get_layout_height(text_style_t style) {
 	return text_styles[style].line_baseline * text_styles[style].scale;
 }
 
 ///////////////////////////////////////////
 
-void text_style_set_layout_height_pct(text_style_t style, float height_meters) {
+void text_style_set_layout_height(text_style_t style, float height_meters) {
 	text_styles[style].scale = height_meters / text_styles[style].line_baseline;
 }
 
