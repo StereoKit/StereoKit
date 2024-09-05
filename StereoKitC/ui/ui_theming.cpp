@@ -106,8 +106,8 @@ void ui_theming_init() {
 	skui_font       = font_find(default_id_font);
 	text_style_t style = text_make_style_mat(skui_font, 0.01f, skui_font_mat, { 1,1,1,1 });
 	// TODO: v0.4, switch these to something more intentional instead of backwards compatible (like lineheight 1.4)
-	text_style_set_size       (style, 0.01f    * (0.01f / text_style_get_ascender(style))); // This matches the original SK size for compat, for now.
-	text_style_set_line_height(style, 1.2f);
+	// This matches the original SK size for compat, for now.
+	text_style_set_line_height_pct(style, 1.18f);
 	skui_font_stack.add(style);
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a

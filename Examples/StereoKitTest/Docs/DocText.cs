@@ -8,7 +8,7 @@ class DocText : ITest
 	{
 		// Some representative characters:
 		// l frequently goes above CapHeight all the way to the Ascender.
-		// Ô will go past the Ascender outside the layout bounds.
+		// Ô will go past the Ascender outside the layout bounds, and slightly below the baseline.
 		// T goes the whole way from Baseline to CapHeight.
 		// y will go all the way down to the descender.
 		string text = "lÔTy";
@@ -36,8 +36,8 @@ class DocText : ITest
 		float ascenderAt   =  0;
 		float baselineAt   = -style.Ascender;
 		float capHeightAt  = -style.Ascender + style.CapHeight;
-		float descenderAt  = -style.Size;
-		float lineHeightAt = -style.LineHeight * style.Size;
+		float descenderAt  = -style.TotalHeight;
+		float lineHeightAt = -style.LineHeightPct * style.TotalHeight;
 
 		Lines.Add(V.XY0(0, ascenderAt  ), V.XY0(-size.x, ascenderAt  ), colAscender,   0.003f);
 		Lines.Add(V.XY0(0, baselineAt  ), V.XY0(-size.x, baselineAt  ), colBaseline,   0.003f);
@@ -54,7 +54,7 @@ class DocText : ITest
 		Hierarchy.Pop();
 
 		Vec2 s = Text.SizeLayout("lÔTy", style);
-		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.25f), V.XYZ(s.x/2, s.y/-2, -0.5f));
+		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.2f), V.XYZ(s.x/2, s.y/-2, -0.5f));
 	}
 
 	public void Initialize() {}

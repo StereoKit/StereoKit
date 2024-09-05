@@ -23,7 +23,6 @@ struct _text_style_t {
 	font_t         font;
 	uint32_t       buffer_index;
 	color32        color;
-	float          height;
 	float          ascender;
 	float          scender_extra;
 	float          cap_height;
@@ -97,10 +96,10 @@ void text_buffer_check_dirty_inds(text_buffer_t& buffer) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, color128 color) {
+text_style_t text_make_style(font_t font, float layout_height, color128 color) {
 	shader_t     shader   = shader_find        (default_id_shader_font);
 	material_t   material = material_create    (shader);
-	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
 
 	char mat_id[64];
 	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
@@ -115,9 +114,9 @@ text_style_t text_make_style(font_t font, float character_height, color128 color
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader, color128 color) {
+text_style_t text_make_style_shader(font_t font, float layout_height, shader_t shader, color128 color) {
 	material_t   material = material_create(shader);
-	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
 
 	char mat_id[64];
 	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
@@ -131,7 +130,7 @@ text_style_t text_make_style_shader(font_t font, float character_height, shader_
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
+text_style_t text_make_style_mat(font_t font, float layout_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
 	int32_t        index  = 0;
 	text_buffer_t *buffer = nullptr;
@@ -179,10 +178,9 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
 	style.color           = color_to_32( color_to_linear( color ) );
-	style.height          = character_height;
-	style.scale           = character_height;
-	style.cap_height      = font->cap_height_pct;
 	style.line_baseline   = font->layout_ascend_pct;
+	style.scale           = layout_height / style.line_baseline;
+	style.cap_height      = font->cap_height_pct;
 	style.scender_extra   = font->layout_descend_pct;
 	style.line_spacing    = style.scender_extra + 0.4f;
 	
@@ -199,15 +197,26 @@ material_t text_style_get_material(text_style_t style) {
 
 ///////////////////////////////////////////
 
-float text_style_get_size(text_style_t style) {
-	return text_styles[style].height;
+float text_style_get_total_height(text_style_t style) {
+	return text_styles[style].scale;
 }
 
 ///////////////////////////////////////////
 
-void text_style_set_size(text_style_t style, float height_meters) {
-	text_styles[style].height = height_meters;
-	text_styles[style].scale = height_meters;
+void text_style_set_total_height(text_style_t style, float height_meters) {
+	text_styles[style].scale  = height_meters;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_layout_height_pct(text_style_t style) {
+	return text_styles[style].line_baseline * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_layout_height_pct(text_style_t style, float height_meters) {
+	text_styles[style].scale = height_meters / text_styles[style].line_baseline;
 }
 
 ///////////////////////////////////////////
@@ -230,13 +239,13 @@ float text_style_get_cap_height(text_style_t style) {
 
 ///////////////////////////////////////////
 
-float text_style_get_line_height(text_style_t style) {
+float text_style_get_line_height_pct(text_style_t style) {
 	return (text_styles[style].line_spacing - text_styles[style].scender_extra) + 1.0f;
 }
 
 ///////////////////////////////////////////
 
-void text_style_set_line_height(text_style_t style, float height_percentage) {
+void text_style_set_line_height_pct(text_style_t style, float height_percentage) {
 	text_styles[style].line_spacing = (height_percentage + text_styles[style].scender_extra) - 1.0f;
 }
 

@@ -319,14 +319,16 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_layout_constrained_16(string text, TextStyle style, float max_width);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_render               (Vec2 layout_size, TextStyle style, out float out_y_offset);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material   (TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_size       (TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_size       (TextStyle style, float height_meters);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_line_height(TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_line_height(TextStyle style, float height_percent);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_ascender   (TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_descender  (TextStyle style);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_cap_height (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_line_height_pct(TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_line_height_pct(TextStyle style, float height_percent);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_layout_height  (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_layout_height  (TextStyle style, float height_meters);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_total_height   (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      text_style_set_total_height   (TextStyle style, float height_meters);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr    text_style_get_material       (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_ascender       (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_descender      (TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     text_style_get_cap_height     (TextStyle style);
 
 
 		///////////////////////////////////////////
