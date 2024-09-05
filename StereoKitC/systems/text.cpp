@@ -23,8 +23,12 @@ struct _text_style_t {
 	font_t         font;
 	uint32_t       buffer_index;
 	color32        color;
-	float          char_height;
+	float          ascender;
+	float          scender_extra;
+	float          cap_height;
+	float          scale;
 	float          line_spacing;
+	float          line_baseline;
 };
 
 struct text_buffer_t {
@@ -36,11 +40,6 @@ struct text_buffer_t {
 	int32_t        vert_count;
 	int32_t        vert_cap;
 	bool32_t       dirty_inds;
-};
-
-struct text_stepper_t {
-	bool32_t       wrap;
-	vec2           bounds;
 };
 
 ///////////////////////////////////////////
@@ -97,10 +96,10 @@ void text_buffer_check_dirty_inds(text_buffer_t& buffer) {
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style(font_t font, float character_height, color128 color) {
+text_style_t text_make_style(font_t font, float layout_height, color128 color) {
 	shader_t     shader   = shader_find        (default_id_shader_font);
 	material_t   material = material_create    (shader);
-	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
 
 	char mat_id[64];
 	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
@@ -115,9 +114,9 @@ text_style_t text_make_style(font_t font, float character_height, color128 color
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style_shader(font_t font, float character_height, shader_t shader, color128 color) {
+text_style_t text_make_style_shader(font_t font, float layout_height, shader_t shader, color128 color) {
 	material_t   material = material_create(shader);
-	text_style_t result   = text_make_style_mat(font, character_height, material, color);
+	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
 
 	char mat_id[64];
 	snprintf(mat_id, sizeof(mat_id), "sk/text_style/%d/material", result);
@@ -131,7 +130,7 @@ text_style_t text_make_style_shader(font_t font, float character_height, shader_
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style_mat(font_t font, float character_height, material_t material, color128 color) {
+text_style_t text_make_style_mat(font_t font, float layout_height, material_t material, color128 color) {
 	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
 	int32_t        index  = 0;
 	text_buffer_t *buffer = nullptr;
@@ -179,8 +178,11 @@ text_style_t text_make_style_mat(font_t font, float character_height, material_t
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
 	style.color           = color_to_32( color_to_linear( color ) );
-	style.line_spacing    = 0.5f;
-	style.char_height     = character_height;
+	style.line_baseline   = font->layout_ascend_pct;
+	style.scale           = layout_height / style.line_baseline;
+	style.cap_height      = font->cap_height_pct;
+	style.scender_extra   = font->layout_descend_pct;
+	style.line_spacing    = style.scender_extra + 0.4f;
 	
 	return (text_style_t)text_styles.add(style);
 }
@@ -195,14 +197,56 @@ material_t text_style_get_material(text_style_t style) {
 
 ///////////////////////////////////////////
 
-float text_style_get_char_height(text_style_t style) {
-	return text_styles[style].char_height;
+float text_style_get_total_height(text_style_t style) {
+	return text_styles[style].scale;
 }
 
 ///////////////////////////////////////////
 
-void text_style_set_char_height(text_style_t style, float height_meters) {
-	text_styles[style].char_height = height_meters;
+void text_style_set_total_height(text_style_t style, float height_meters) {
+	text_styles[style].scale  = height_meters;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_layout_height(text_style_t style) {
+	return text_styles[style].line_baseline * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_layout_height(text_style_t style, float height_meters) {
+	text_styles[style].scale = height_meters / text_styles[style].line_baseline;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_ascender(text_style_t style) {
+	return text_styles[style].font->layout_ascend_pct * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_descender(text_style_t style) {
+	return text_styles[style].font->layout_descend_pct * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_cap_height(text_style_t style) {
+	return text_styles[style].font->cap_height_pct * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_line_height_pct(text_style_t style) {
+	return (text_styles[style].line_spacing - text_styles[style].scender_extra) + 1.0f;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_line_height_pct(text_style_t style, float height_percentage) {
+	text_styles[style].line_spacing = (height_percentage + text_styles[style].scender_extra) - 1.0f;
 }
 
 ///////////////////////////////////////////
@@ -221,7 +265,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		}
 		*out_char_count = ch == '\n' ? count + 1 : count;
 		*out_next_start = curr;
-		return width * style->char_height;
+		return width * style->scale;
 	}
 
 	// If we _are_ wrapping, we gotta do it the tricky way
@@ -253,7 +297,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 
 		// Advance by character width
 		const font_char_t *char_info  = font_get_glyph(style->font, curr);
-		float              next_width = char_info->xadvance*style->char_height + curr_width;
+		float              next_width = char_info->xadvance*style->scale + curr_width;
 
 		// Check if it steps out of bounds
 		if (!is_break && next_width > max_width) {
@@ -282,7 +326,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
-inline vec2 text_size_constrained_g(const C* text, text_style_t style_id, float max_width) {
+inline vec2 text_size_layout_constrained_g(const C* text, text_style_t style_id, float max_width) {
 	const _text_style_t* style = &text_styles[style_id];
 
 	if (max_width <= 0) return {};
@@ -298,19 +342,20 @@ inline vec2 text_size_constrained_g(const C* text, text_style_t style_id, float 
 		line_count += 1;
 	}
 
-	return {line_count > 1 ? max_width : largest_width, (line_count + (line_count - 1) * style->line_spacing) * style->char_height };
+	return {line_count > 1 ? max_width : largest_width, (line_count * style->line_baseline + (line_count - 1) * style->line_spacing) * style->scale };
 }
 
-vec2 text_size_constrained   (const char     *text_utf8,  text_style_t style, float max_width) { return text_size_constrained_g<char,     utf8_decode_fast_b >(text_utf8,  style, max_width); }
-vec2 text_size_constrained_16(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_constrained_g<char16_t, utf16_decode_fast_b>(text_utf16, style, max_width); }
+vec2 text_size_layout_constrained   (const char     *text_utf8,  text_style_t style, float max_width) { return text_size_layout_constrained_g<char,     utf8_decode_fast_b >(text_utf8,  style, max_width); }
+vec2 text_size_layout_constrained_16(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_layout_constrained_g<char16_t, utf16_decode_fast_b>(text_utf16, style, max_width); }
 
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-inline vec2 text_size_g(const C *text, text_style_t style) {
+inline vec2 text_size_layout_g(const C *text, text_style_t style_id) {
 	if (text == nullptr) return {};
 
-	font_t      font  = text_styles[style].font;
+	const _text_style_t* style = &text_styles[style_id];
+	font_t      font  = style->font;
 	char32_t    curr  = 0;
 	float       x     = 0;
 	int         y     = 1;
@@ -320,17 +365,28 @@ inline vec2 text_size_g(const C *text, text_style_t style) {
 
 		// Do spacing for whitespace characters
 		if (curr == '\n') {
-			if (x > max_x) max_x = x; 
+			if (x > max_x) max_x = x;
 			x  = 0;
 			y += 1;
-		} else x += ch->xadvance * text_styles[style].char_height;
+		} else x += ch->xadvance * style->scale;
 	}
 	if (x > max_x) max_x = x;
-	return vec2{ max_x, (y + (y - 1) * text_styles[style].line_spacing) * text_styles[style].char_height };
+	return vec2{ max_x, (y * style->line_baseline + (y - 1) * (style->line_spacing)) * style->scale };
 }
 
-vec2 text_size   (const char     *text_utf8,  text_style_t style) { return text_size_g<char,     utf8_decode_fast_b >(text_utf8,  style); }
-vec2 text_size_16(const char16_t *text_utf16, text_style_t style) { return text_size_g<char16_t, utf16_decode_fast_b>(text_utf16, style); }
+vec2 text_size_layout   (const char     *text_utf8,  text_style_t style) { return text_size_layout_g<char,     utf8_decode_fast_b >(text_utf8,  style); }
+vec2 text_size_layout_16(const char16_t *text_utf16, text_style_t style) { return text_size_layout_g<char16_t, utf16_decode_fast_b>(text_utf16, style); }
+
+///////////////////////////////////////////
+
+vec2 text_size_render(vec2 layout_size, text_style_t style_id, float* out_y_offset) {
+	_text_style_t* style        = &text_styles[style_id];
+	font_t         font         = style->font;
+	float          additional_y = font->render_ascend_pct - font->layout_ascend_pct;
+	vec2           result       = { layout_size.x, layout_size.y + (additional_y + font->render_descend_pct) * style->scale };
+	if (out_y_offset) *out_y_offset = additional_y * style->scale;
+	return result;
+}
 
 ///////////////////////////////////////////
 
@@ -348,7 +404,7 @@ float text_step_height(const C *text, int32_t *out_length, const _text_style_t *
 	}
 
 	*out_length = length;
-	return (height + (height-1)*style->line_spacing) * style->char_height;
+	return (height*style->line_baseline + (height-1)*style->line_spacing) * style->scale;
 }
 
 ///////////////////////////////////////////
@@ -361,7 +417,7 @@ void text_step_next_line(const C* start, const _text_style_t* style, text_align_
 	if (align & text_align_x_center) align_x = ((max_width - line_size) / 2.f);
 	if (align & text_align_x_right)  align_x = (max_width - line_size);
 	ref_pos->x = start_x - align_x;
-	ref_pos->y -= style->char_height;
+	ref_pos->y -= style->line_baseline * style->scale;
 }
 
 ///////////////////////////////////////////
@@ -371,12 +427,12 @@ void text_step_position(char32_t ch, const font_char_t* char_info, const C* next
 	*ref_line_remaining = *ref_line_remaining - 1;
 	if (*ref_line_remaining <= 0) {
 		text_step_next_line<C, char_decode_b_T>(next, style, align, wrap, max_width, start_x, ref_line_remaining, ref_pos);
-		ref_pos->y -= style->char_height * style->line_spacing;
+		ref_pos->y -= style->line_spacing * style->scale;
 		return;
 	}
 
 	if (ch != '\n') {
-		ref_pos->x -= char_info->xadvance * style->char_height;
+		ref_pos->x -= char_info->xadvance * style->scale;
 	}
 }
 
@@ -386,13 +442,13 @@ template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
 inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) {
 	if (text == nullptr) return {};
 	vec2 size = opt_size == nullptr
-		? text_size_g<C, char_decode_b_T>(text, style_id)
+		? text_size_layout_g<C, char_decode_b_T>(text, style_id)
 		: *opt_size;
 
 	// Ensure scale is right for our fit
 	vec2 bounds = size;
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
-		vec2 txt_size = text_size_g<C, char_decode_b_T>(text, style_id);
+		vec2 txt_size = text_size_layout_g<C, char_decode_b_T>(text, style_id);
 		vec2 scale_xy = {
 			size.x / txt_size.x,
 			size.y / txt_size.y };
@@ -416,7 +472,7 @@ inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_in
 		bounds.y = text_height;
 
 	// Align the start based on the size of the bounds
-	vec2 start = { 0, style->char_height };
+	vec2 start = { 0, style->scale };
 	if      (position & text_align_x_center) start.x += bounds.x / 2.f;
 	else if (position & text_align_x_right)  start.x += bounds.x;
 	if      (position & text_align_y_center) start.y += bounds.y / 2.f;
@@ -443,9 +499,9 @@ inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_in
 		line_remaining--;
 		if (line_remaining <= 0 && *text != '\0') {
 			text_step_next_line<C, char_decode_b_T>(text, style, align, wrap, bounds.x, start.x, &line_remaining, &pos);
-			pos.y -= style->char_height * style->line_spacing;
+			pos.y -= style->line_spacing * style->scale;
 		} else if (c != '\n') {
-			pos.x -= char_info->xadvance * style->char_height;
+			pos.x -= char_info->xadvance * style->scale;
 		}
 		
 		count += 1;
@@ -460,10 +516,10 @@ vec2 text_char_at_16(const char16_t* text_utf16, text_style_t style, int32_t cha
 
 void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, const _text_style_t *style_data, color32 color, text_buffer_t &buffer, vec3 base, vec3 normal, vec3 up, vec3 right) {
 	base -= normal * off_z;
-	vec3 x_min = base + (x - char_info->x0 * style_data->char_height) * right;
-	vec3 x_max = base + (x - char_info->x1 * style_data->char_height) * right;
-	vec3 y_min =        (y + char_info->y0 * style_data->char_height) * up;
-	vec3 y_max =        (y + char_info->y1 * style_data->char_height) * up;
+	vec3 x_min = base + (x - char_info->x0 * style_data->scale) * right;
+	vec3 x_max = base + (x - char_info->x1 * style_data->scale) * right;
+	vec3 y_min =        (y + char_info->y0 * style_data->scale) * up;
+	vec3 y_max =        (y + char_info->y1 * style_data->scale) * up;
 
 	buffer.verts[buffer.vert_count++] = { x_min + y_min, normal, vec2{ char_info->u0, char_info->v0 }, color };
 	buffer.verts[buffer.vert_count++] = { x_max + y_min, normal, vec2{ char_info->u1, char_info->v0 }, color };
@@ -474,10 +530,10 @@ void text_add_quad(float x, float y, float off_z, const font_char_t *char_info, 
 ///////////////////////////////////////////
 
 void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 bounds_max, const font_char_t *char_info, const _text_style_t *style_data, color32 color, text_buffer_t &buffer, const XMMATRIX &tr, vec3 normal, vec3 up, vec3 right) {
-	float x_max = x - char_info->x0 * style_data->char_height;
-	float x_min = x - char_info->x1 * style_data->char_height;
-	float y_max = y + char_info->y0 * style_data->char_height;
-	float y_min = y + char_info->y1 * style_data->char_height;
+	float x_max = x - char_info->x0 * style_data->scale;
+	float x_min = x - char_info->x1 * style_data->scale;
+	float y_max = y + char_info->y0 * style_data->scale;
+	float y_min = y + char_info->y1 * style_data->scale;
 
 	// Ditch out if it's completely out of bounds
 	if (x_min > bounds_max.x ||
@@ -518,13 +574,13 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 ///////////////////////////////////////////
 
 void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
-	text_add_in(text, transform, text_size(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
+	text_add_in(text, transform, text_size_layout(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
 
 void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
-	text_add_in_16(text, transform, text_size_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
+	text_add_in_16(text, transform, text_size_layout_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
@@ -543,20 +599,20 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 	vec3 normal = matrix_mul_direction(tr, vec3_forward);
 
 	// Debug draw bounds
-	/*vec2 dbg_start = step.start;
-	if      (position & text_align_x_center) dbg_start.x += step.bounds.x / 2.f;
-	else if (position & text_align_x_right)  dbg_start.x += step.bounds.x;
-	if      (position & text_align_y_center) dbg_start.y += step.bounds.y / 2.f;
-	else if (position & text_align_y_bottom) dbg_start.y += step.bounds.y;
-	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { 255,0,255,255 }, { 255,0,255,255 }, 0.002f);
-	line_add({ dbg_start.x, dbg_start.y - step.bounds.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x, dbg_start.y,                 off_z }, { dbg_start.x,                 dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);
-	line_add({ dbg_start.x - step.bounds.x, dbg_start.y, off_z }, { dbg_start.x - step.bounds.x, dbg_start.y - step.bounds.y, off_z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.002f);*/
+	/*vec3 dbg_start = matrix_transform_pt(transform, {off_x, off_y, off_z});
+	if      (position & text_align_x_center) dbg_start.x += size.x / 2.f;
+	else if (position & text_align_x_right)  dbg_start.x += size.x;
+	if      (position & text_align_y_center) dbg_start.y += size.y / 2.f;
+	else if (position & text_align_y_bottom) dbg_start.y += size.y;
+	line_add({ dbg_start.x,          dbg_start.y,          dbg_start.z }, { dbg_start.x - size.x, dbg_start.y,          dbg_start.z }, { 255,0,  255,255 }, { 255,0,255,  255 }, 0.0005f);
+	line_add({ dbg_start.x,          dbg_start.y - size.y, dbg_start.z }, { dbg_start.x - size.x, dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);
+	line_add({ dbg_start.x,          dbg_start.y,          dbg_start.z }, { dbg_start.x,          dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);
+	line_add({ dbg_start.x - size.x, dbg_start.y,          dbg_start.z }, { dbg_start.x - size.x, dbg_start.y - size.y, dbg_start.z }, { 255,255,255,255 }, { 255,255,255,255 }, 0.0005f);*/
 
 	// Ensure scale is right for our fit
 	vec2 bounds = size;
 	if (fit & (text_fit_squeeze | text_fit_exact)) {
-		vec2 txt_size = text_size_g<C, char_decode_b_T>(text, style_id);
+		vec2 txt_size = text_size_layout_g<C, char_decode_b_T>(text, style_id);
 		vec2 scale_xy = {
 			size.x / txt_size.x,
 			size.y / txt_size.y };
@@ -627,7 +683,7 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 			text_step_position<C, char_decode_b_T>(c, char_info, text, style, align, wrap, bounds.x, start.x, &line_remaining, &pos);
 		}
 	}
-	return (start.y - pos.y) - style->char_height;
+	return (start.y - pos.y) - style->scale;
 }
 
 

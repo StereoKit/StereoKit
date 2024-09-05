@@ -104,7 +104,11 @@ void ui_theming_init() {
 	skui_font_mat   = material_find(default_id_material_font);
 	material_set_queue_offset(skui_font_mat, -12);
 	skui_font       = font_find(default_id_font);
-	skui_font_stack.add(text_make_style_mat(skui_font, 10 * mm2m, skui_font_mat, {1,1,1,1}));
+	text_style_t style = text_make_style_mat(skui_font, 0.01f, skui_font_mat, { 1,1,1,1 });
+	// TODO: v0.4, switch these to something more intentional instead of backwards compatible (like lineheight 1.4)
+	// This matches the original SK size for compat, for now.
+	text_style_set_line_height_pct(style, 1.18f);
+	skui_font_stack.add(style);
 
 	// TODO: v0.4, this sets up default values when zeroed out, with a
 	// ui_get_settings, this isn't really necessary anymore!
@@ -1082,7 +1086,7 @@ void ui_theme_visuals_update() {
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all, fminf((ui_line_height() * 0.5f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all, fminf((ui_line_height() * 0.55f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all, fminf((text_style_get_char_height(ui_get_text_style()) * 0.4f)/2.f, skui_settings.rounding * 0.1f),  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all, fminf((text_style_get_ascender(ui_get_text_style()) * 0.4f)/2.f, skui_settings.rounding * 0.1f),  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 	
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
 	ui_default_aura_mesh(&theme_mesh_aura, 0, fminf(ui_line_height(), skui_settings.rounding) + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);

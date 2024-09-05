@@ -426,7 +426,7 @@ void file_picker_update() {
 		// That's the fragment we'll start with
 		if (fp_path.fragments.count > 0) {
 			for (int32_t i = start; i >= 0; i--) {
-				float curr_size = fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2);
+				float curr_size = fminf(max_width / 4, text_size_layout(fp_path.fragments[i]).x + padding * 2);
 				if (width + curr_size > max_width) {
 					break;
 				}
@@ -438,7 +438,7 @@ void file_picker_update() {
 		if (fp_path.fragments.count == 0) ui_layout_reserve(vec2{ max_width, line_height });
 		for (int32_t i = start; i < fp_path.fragments.count; i++) {
 			ui_push_idi(i);
-			vec2 curr_size = { fminf(max_width / 4, text_size(fp_path.fragments[i]).x + padding * 2), line_height };
+			vec2 curr_size = { fminf(max_width / 4, text_size_layout(fp_path.fragments[i]).x + padding * 2), line_height };
 			if (ui_button_sz(fp_path.fragments[i], curr_size) && i < fp_path.fragments.count - 1) {
 				char* new_path = string_copy(fp_path.folder);
 				for (int32_t p = i; p < fp_path.fragments.count - 1; p++)

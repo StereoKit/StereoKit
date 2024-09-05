@@ -415,7 +415,7 @@ ui_layout_t* ui_layout_curr() {
 ///////////////////////////////////////////
 
 float ui_line_height() {
-	return skui_settings.padding * 2 + text_style_get_char_height(ui_get_text_style());
+	return skui_settings.padding * 2 + text_style_get_ascender(ui_get_text_style());
 }
 
 ///////////////////////////////////////////

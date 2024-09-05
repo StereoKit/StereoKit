@@ -22,8 +22,55 @@ typedef struct font_source_t {
 	stbtt_fontinfo info;
 	void          *file;
 	float          scale;
-	float          char_height;
+	float          total_height; // px height from descender to ascender
+	float          cap_height;   // px height of baseline to the top of a normal capital letter 'T'
+	float          descender;    // px layout (positive) depth below the baseline
+	float          ascender;     // px layout height above baseline
+	float          render_descender; // px maximum possible height above baseline
+	float          render_ascender;  // px maximum (positive) depth below the baseline
 } font_source_t;
+
+/*
+Here's how a number of these typography terms look on text. Note that ascenders
+and descenders are not quite so clear cut, as plenty of characters go above and
+below! In SK here, we separate this into layout and render ascender/descenders.
+Layout asc/desc values come from the font vertical metrics, and render asc/desc
+comes from the font's reported bounding box.
+
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯ll¯¯¯¯¯¯¯¯¯¯¯¯¯¯ ascender
+¯¯¯¯TTTTTTTTTT¯¯¯ll¯¯¯¯¯¯¯¯¯¯¯¯¯¯ cap_height
+        TT       ll              
+        TT       ll  vy    yy    
+        TT       ll   vy  yy     
+        TT       ll    vyyy      
+________TT_______ll_____yy_______ baseline
+                       yy        
+______________________yy_________ descender
+
+Note that when font size is specified (like 16px), this is refering to the
+total height from the layout ascender to the descender.
+
+Spacing between lines of text varies between different text rendering engines,
+and here SK opts to follow the browser model for familiarity. In browsers, the
+next line's ascender starts right after the current line's descender. Line
+spacing is then a result of defining the line's total height as a multiple of
+the text size.
+
+Line height: 1    Line height: 1.4
+
+ ¯¯¯¯l¯¯¯¯¯¯¯¯     ¯¯¯¯l¯¯¯¯¯¯¯¯
+     l                 l        
+     l y y             l y y    
+     l  y              l  y     
+ ______y______           y      
+ ¯¯¯¯l¯¯¯¯¯¯¯¯                  
+     l             _____________
+     l y y         ¯¯¯¯l¯¯¯¯¯¯¯¯
+     l  y              l        
+ ______y______         l y y    
+                       l  y     
+                   ______y______
+*/
 
 array_t<font_t>        font_list       = {};
 array_t<font_source_t> font_sources    = {};
@@ -39,9 +86,10 @@ void         font_upsize_texture(font_t font);
 void         font_update_texture(font_t font);
 void         font_update_cache  (font_t font);
 
-int32_t      font_source_add     (const char *filename);
-int32_t      font_source_add_data(const char *name, const void *data, size_t data_size);
-void         font_source_release (int32_t id);
+int32_t      font_source_add      (const char *filename);
+int32_t      font_source_add_data (const char *name, const void *data, size_t data_size);
+void         font_source_load_data(font_source_t* font);
+void         font_source_release  (int32_t id);
 
 ///////////////////////////////////////////
 
@@ -55,22 +103,19 @@ int32_t font_source_add(const char *filename) {
 		new_file.name      = string_copy(filename);
 		id = font_sources.add(new_file);
 	}
-	font_sources[id].references += 1;
+	font_source_t* font = &font_sources[id];
+	font->references += 1;
 
-	if (font_sources[id].references == 1) {
+	if (font->references == 1) {
 		size_t length;
-		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
-			log_warnf("Font file failed to load: %s", filename);
+		if (platform_read_file(filename, (void **)&font->file, &length)) {
+			font_source_load_data(font);
 		} else {
-			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
-			font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
-			int32_t x0, y0, x1, y1;
-			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
-			font_sources[id].char_height = y1 * font_sources[id].scale;
+			log_warnf("Font file failed to load: %s", filename);
 		}
 	}
 
-	return font_sources[id].file == nullptr
+	return font->file == nullptr
 		? -1
 		: id;
 }
@@ -87,22 +132,44 @@ int32_t font_source_add_data(const char *name, const void *data, size_t data_siz
 		new_file.name      = string_copy(name);
 		id = font_sources.add(new_file);
 	}
-	font_sources[id].references += 1;
+	font_source_t* font = &font_sources[id];
+	font->references += 1;
 
-	if (font_sources[id].references == 1) {
-		font_sources[id].file = sk_malloc(data_size);
-		memcpy(font_sources[id].file, data, data_size);
-
-		stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
-		font_sources[id].scale = stbtt_ScaleForPixelHeight(&font_sources[id].info, (float)font_resolution);
-		int32_t x0, y0, x1, y1;
-		stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
-		font_sources[id].char_height = y1 * font_sources[id].scale;
+	if (font->references == 1) {
+		font->file = sk_malloc(data_size);
+		memcpy(font->file, data, data_size);
+		font_source_load_data(font);
 	}
 
-	return font_sources[id].file == nullptr
+	return font->file == nullptr
 		? -1
 		: id;
+}
+
+///////////////////////////////////////////
+
+void font_source_load_data(font_source_t* font) {
+	stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
+	font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
+
+	int32_t ascender, descender, line_gap;
+	if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
+		font->ascender  = ceilf(      ascender   * font->scale);
+		font->descender = ceilf(fabsf(descender) * font->scale);
+	} else {
+		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
+		font->ascender  = ceilf(      ascender   * font->scale);
+		font->descender = ceilf(fabsf(descender) * font->scale);
+	}
+	font->total_height = font->ascender + font->descender;
+
+	int32_t x0, y0, x1, y1;
+	stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
+	font->render_ascender  = ceilf(y1        * font->scale);
+	font->render_descender = ceilf(fabsf(y0) * font->scale);
+
+	stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
+	font->cap_height = y1-y0;
 }
 
 ///////////////////////////////////////////
@@ -156,17 +223,18 @@ bool font_setup(font_t font) {
 
 	// Get information about character sizes for this font
 	font_source_t *src = &font_sources[font->font_ids[0]];
+	float total_height = src->ascender + src->descender;
+
 	int32_t x0, y0, x1, y1;
 	stbtt_GetCodepointBox(&src->info, 'T', &x0, &y0, &x1, &y1);
-	int32_t ascend, descend, gap;
-	stbtt_GetFontVMetrics(&src->info, &ascend, &descend, &gap);
-	int32_t advance, lsb; 
+	int32_t advance, lsb;
 	stbtt_GetGlyphHMetrics(&src->info, ' ', &advance, &lsb);
-	font->space_width       = advance / (float)y1;
-	font->character_ascend  = ascend  / (float)y1;
-	font->character_descend = descend / (float)y1;
-	font->line_gap          = gap     / (float)y1;
-	font->characters['\t'].xadvance = font->space_width * 2;
+	font->characters['\t'].xadvance = (advance / (float)y1) * 2;
+	font->cap_height_pct     = src->cap_height              / total_height;
+	font->layout_ascend_pct  = src->ascender                / total_height;
+	font->layout_descend_pct = fabsf(src->descender)        / total_height;
+	font->render_ascend_pct  = src->render_ascender         / total_height;
+	font->render_descend_pct = fabsf(src->render_descender) / total_height;
 
 	return true;
 }
@@ -311,7 +379,7 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 	stbtt_GetGlyphHMetrics (&source->info, glyph.idx, &advance, &lsb);
 
 	font_char_t char_info = {};
-	char_info.xadvance = (advance/source->char_height) * source->scale;
+	char_info.xadvance = (advance * source->scale) / source->total_height;
 
 	if (x1-x0 <= 0) return char_info;
 
@@ -331,25 +399,34 @@ font_char_t font_place_glyph(font_t font, font_glyph_t glyph) {
 		rect.w - (pad_empty*2 + pad_content*2),
 		rect.h - (pad_empty*2 + pad_content*2)};
 
-	char_info.x0 = ( x0-0.5f) / source->char_height;
-	char_info.y0 = (-y0-0.5f) / source->char_height;
-	char_info.x1 = ( x1+0.5f) / source->char_height;
-	char_info.y1 = (-y1+0.5f) / source->char_height;
-	char_info.u0 = (rect_unpad.x-0.5f) * to_u;
-	char_info.v0 = (rect_unpad.y-0.5f) * to_v;
-	char_info.u1 = (rect_unpad.x+rect_unpad.w+0.5f) * to_u;
-	char_info.v1 = (rect_unpad.y+rect_unpad.h+0.5f) * to_v;
+	// Add half a pixel to the outside of the glyph's mesh, so when we're
+	// sampling from the texture, we have some room for interpolation. Without
+	// this, pixels adjacent to the edge of the mesh will look sharper, or like
+	// they're cut off too early.
+	const float half_pixel = 0.5f;
+	char_info.x0 = ( x0-half_pixel) / source->total_height;
+	char_info.y0 = (-y0+half_pixel) / source->total_height;
+	char_info.x1 = ( x1+half_pixel) / source->total_height;
+	char_info.y1 = (-y1-half_pixel) / source->total_height;
+	char_info.u0 = (rect_unpad.x             -half_pixel) * to_u;
+	char_info.v0 = (rect_unpad.y             -half_pixel) * to_v;
+	char_info.u1 = (rect_unpad.x+rect_unpad.w+half_pixel) * to_u;
+	char_info.v1 = (rect_unpad.y+rect_unpad.h+half_pixel) * to_v;
 	return char_info;
 }
 
 ///////////////////////////////////////////
 
 void font_render_glyph(font_t font, font_glyph_t glyph, const font_char_t *ch) {
+	// We don't store the pixel rect of the glyph frm font_place_glyph. Instead
+	// we're recalculating the pixel rect from the UVs, which do directly map
+	// to the rect, but also include some padding and other extra space.
 	const int32_t pad_content = PAD_SIZE;
-	int32_t x = (int32_t)(ch->u0 * font->atlas.w + 0.5f)-pad_content;
-	int32_t y = (int32_t)(ch->v0 * font->atlas.h + 0.5f)-pad_content;
-	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - 0.5f);
-	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - 0.5f);
+	const float   half_pixel  = 0.5f;
+	int32_t x = (int32_t) (ch->u0 * font->atlas.w      + half_pixel)-pad_content;
+	int32_t y = (int32_t) (ch->v0 * font->atlas.h      + half_pixel)-pad_content;
+	int32_t w = (int32_t)((ch->u1 * font->atlas.w) - x - half_pixel);
+	int32_t h = (int32_t)((ch->v1 * font->atlas.h) - y - half_pixel);
 	font_source_t *source = &font_sources[glyph.font];
 
 	stbtt__bitmap gbm;
@@ -554,13 +631,9 @@ font_t font_create_family(const char* font_family) {
 		log_errf("No font files provided for the font_family %s.", font_family);
 		return nullptr;
 	}
-	const char** files = (const char **)malloc(sizeof(char **) * info_count);
+	const char** files = sk_malloc_t(const char*, info_count);
 	for (int32_t i = 0; i < info_count; i++) {
-#ifdef _WIN32
-		files[i] = _strdup(info[i].filepath);
-#else
-		files[i] = strdup(info[i].filepath);
-#endif
+		files[i] = string_copy(info[i].filepath);
 	}
 
 	free(info);

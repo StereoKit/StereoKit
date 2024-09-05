@@ -21,11 +21,11 @@ struct font_glyph_t {
 struct _font_t {
 	asset_header_t header;
 	tex_t       font_tex;
-	font_char_t characters[128];
-	float       character_ascend;
-	float       character_descend;
-	float       line_gap;
-	float       space_width;
+	float       layout_ascend_pct;
+	float       layout_descend_pct;
+	float       render_ascend_pct;
+	float       render_descend_pct;
+	float       cap_height_pct;
 
 	hashmap_t<font_glyph_t, font_char_t> glyph_map;
 	hashmap_t<char32_t,     font_char_t> character_map;
@@ -34,6 +34,8 @@ struct _font_t {
 
 	rect_atlas_t   atlas;
 	uint8_t       *atlas_data;
+
+	font_char_t    characters[128];
 };
 
 font_t font_create_default();
