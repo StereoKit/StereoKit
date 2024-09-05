@@ -178,10 +178,10 @@ text_style_t text_make_style_mat(font_t font, float layout_height, material_t ma
 	style.font            = font;
 	style.buffer_index    = (uint32_t)index;
 	style.color           = color_to_32( color_to_linear( color ) );
-	style.line_baseline   = font->layout_ascend_pct;
+	style.line_baseline   = font->cap_height_pct;
 	style.scale           = layout_height / style.line_baseline;
 	style.cap_height      = font->cap_height_pct;
-	style.scender_extra   = font->layout_descend_pct;
+	style.scender_extra   = font->layout_descend_pct + (font->layout_ascend_pct-font->cap_height_pct);
 	style.line_spacing    = style.scender_extra + 0.4f;
 	
 	return (text_style_t)text_styles.add(style);
@@ -235,6 +235,12 @@ float text_style_get_descender(text_style_t style) {
 
 float text_style_get_cap_height(text_style_t style) {
 	return text_styles[style].font->cap_height_pct * text_styles[style].scale;
+}
+
+///////////////////////////////////////////
+
+float text_style_get_baseline(text_style_t style) {
+	return text_styles[style].line_baseline * text_styles[style].scale;
 }
 
 ///////////////////////////////////////////
@@ -382,7 +388,7 @@ vec2 text_size_layout_16(const char16_t *text_utf16, text_style_t style) { retur
 vec2 text_size_render(vec2 layout_size, text_style_t style_id, float* out_y_offset) {
 	_text_style_t* style        = &text_styles[style_id];
 	font_t         font         = style->font;
-	float          additional_y = font->render_ascend_pct - font->layout_ascend_pct;
+	float          additional_y = font->render_ascend_pct - font->cap_height_pct;
 	vec2           result       = { layout_size.x, layout_size.y + (additional_y + font->render_descend_pct) * style->scale };
 	if (out_y_offset) *out_y_offset = additional_y * style->scale;
 	return result;

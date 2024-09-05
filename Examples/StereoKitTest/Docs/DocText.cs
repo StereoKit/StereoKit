@@ -1,4 +1,9 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2024 Nick Klingensmith
+// Copyright (c) 2024 Qualcomm Technologies, Inc.
+
+using StereoKit;
 
 class DocText : ITest
 {
@@ -33,11 +38,11 @@ class DocText : ITest
 		Color32 colDescender  = new Color32( 50,  50, 255, 255);
 		Color32 colLineHeight = new Color32(255, 255, 255, 255);
 
-		float ascenderAt   =  0;
-		float baselineAt   = -style.Ascender;
-		float capHeightAt  = -style.Ascender + style.CapHeight;
-		float descenderAt  = -style.TotalHeight;
-		float lineHeightAt = -style.LineHeightPct * style.TotalHeight;
+		float baselineAt   = -style.CapHeight;
+		float ascenderAt   = baselineAt + style.Ascender;
+		float capHeightAt  = baselineAt + style.CapHeight;
+		float descenderAt  = baselineAt - style.Descender;
+		float lineHeightAt = ascenderAt - style.LineHeightPct * style.TotalHeight;
 
 		Lines.Add(V.XY0(0, ascenderAt  ), V.XY0(-size.x, ascenderAt  ), colAscender,   0.003f);
 		Lines.Add(V.XY0(0, baselineAt  ), V.XY0(-size.x, baselineAt  ), colBaseline,   0.003f);
@@ -54,7 +59,7 @@ class DocText : ITest
 		Hierarchy.Pop();
 
 		Vec2 s = Text.SizeLayout("lÔTy", style);
-		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.2f), V.XYZ(s.x/2, s.y/-2, -0.5f));
+		Tests.Screenshot("TextStyleInfo.jpg", 400, 400, V.XYZ(s.x/2, s.y/-2, -0.18f), V.XYZ(s.x/2, s.y/-2, -0.5f));
 	}
 
 	public void Initialize() {}

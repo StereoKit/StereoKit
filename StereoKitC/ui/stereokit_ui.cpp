@@ -138,7 +138,7 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 void ui_hseparator() {
 	vec3 pos;
 	vec2 size;
-	ui_layout_reserve_sz({ 0, text_style_get_ascender(ui_get_text_style())*0.4f }, false, &pos, &size);
+	ui_layout_reserve_sz({ 0, text_style_get_baseline(ui_get_text_style())*0.4f }, false, &pos, &size);
 
 	ui_draw_element(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
 }
@@ -200,7 +200,7 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 	vec2  text_size;
 	text_align_ text_align;
 	float aspect = image != nullptr ? sprite_get_aspect(image) : 1.0f;
-	float font_size = text_style_get_ascender(ui_get_text_style());
+	float font_size = text_style_get_baseline(ui_get_text_style());
 	switch (image_layout) {
 	default:
 	case ui_btn_layout_left:
@@ -257,7 +257,7 @@ template<typename C>
 vec2 _ui_button_img_size(const C* text, sprite_t image, ui_btn_layout_ image_layout) {
 	text_style_t style   = ui_get_text_style();
 	vec2         size    = {};
-	float        text_sz = text_style_get_ascender(style);
+	float        text_sz = text_style_get_baseline(style);
 	if (image_layout == ui_btn_layout_center_no_text) {
 		size = { text_sz, text_sz };
 	} else if (image_layout == ui_btn_layout_none) {
@@ -590,7 +590,7 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 
 		int32_t carat_at      = skui_input_carat;
 		vec2    carat_pos     = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
-		float   scroll_margin = text_bounds.x - text_style_get_ascender(ui_get_text_style());
+		float   scroll_margin = text_bounds.x - text_style_get_baseline(ui_get_text_style());
 		while (carat_pos.x < -scroll_margin && *draw_text != '\0' && carat_at >= 0) {
 			draw_text += 1;
 			carat_at  -= 1;
