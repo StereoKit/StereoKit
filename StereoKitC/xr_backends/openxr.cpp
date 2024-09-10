@@ -961,12 +961,21 @@ void openxr_step_end() {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
 		}
 #endif
-		audio_pause();
+		// Add a small delay before pausing audio since the sleeping path can
+		// be triggered by a regular shutdown, and it would be a waste to stop
+		// and resume audio when we're just going to shut down later.
+		int32_t       timer      = 0;
+		const int32_t timer_time = 5; // timer_time * 100ms == 500ms
+
 		while (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
+			if (timer == timer_time) audio_pause();
+			timer += 1;
+
 			platform_sleep(100);
 			openxr_poll_events();
 		}
-		audio_resume();
+		if (timer > timer_time) audio_resume();
+
 #if defined(SK_OS_ANDROID)
 		if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
 			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
