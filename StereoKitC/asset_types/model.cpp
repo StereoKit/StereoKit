@@ -272,12 +272,7 @@ bounds_t model_get_bounds(model_t model) {
 
 ///////////////////////////////////////////
 
-bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt) {
-	model_node_id intersected_model_nodeid = (model_node_id)-1;
-	return model_node_ray_intersect(model, model_space_ray, cull_mode, out_pt, &intersected_model_nodeid);
-}
-
-bool32_t model_node_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, model_node_id* intersected_model_nodeid) {
+bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, model_node_id* out_opt_node) {
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
@@ -297,7 +292,9 @@ bool32_t model_node_ray_intersect(model_t model, ray_t model_space_ray, cull_ cu
 			if (d < closest) {
 				closest = d;
 				*out_pt = matrix_transform_ray(n->transform_model, at);
-				*intersected_model_nodeid = (model_node_id)i;
+				if (out_opt_node != nullptr) {
+					*out_opt_node = (model_node_id)i;
+				}
 			}
 		}
 	}

@@ -6,10 +6,10 @@ class TestNodes : ITest
 	Pose      _modelPose = Pose.Identity;
 	Model     _model;
 	ModelNode _surfaceNode;
-	ModelNode modelRay2Node;
-	ModelNode modelRay3Node;
-	ModelNode ray2ModelNode;
-	ModelNode ray3ModelNode;
+	ModelNode _modelRay2Node;
+	ModelNode _modelRay3Node;
+	ModelNode _ray2ModelNode;
+	ModelNode _ray3ModelNode;
 
 	public void Initialize() {
 		/// :CodeSample: Model Model.AddNode Model.FindNode ModelNode.AddChild
@@ -143,8 +143,8 @@ class TestNodes : ITest
 
 	bool TestModelNodeRayIntersections()
 	{
-		return modelRay2Node.Name == "Sub" && modelRay3Node.Name == "[Invisible]"
-			&& modelRay2Node.Name == ray2ModelNode.Name && modelRay3Node.Name == ray3ModelNode.Name;
+		return _modelRay2Node.Name == "Sub" && _modelRay3Node.Name == "[Invisible]"
+			&& _modelRay2Node.Name == _ray2ModelNode.Name && _modelRay3Node.Name == _ray3ModelNode.Name;
 	}
 
 	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent
@@ -222,20 +222,20 @@ class TestNodes : ITest
 			Lines.Add(at, 0.3f, new Color32(0, 255, 0, 255), 0.005f);
 
 		Ray r2 = new Ray(V.XYZ(0.15f, 1, 0), -Vec3.Up);
-		if (_model.Intersect(r2, Cull.None, out Ray at2, out modelRay2Node))
+		if (_model.Intersect(r2, Cull.None, out Ray at2, out _modelRay2Node))
 		{
 			Mesh.Sphere.Draw(Material.Default, Matrix.TS(at2.position, 0.005f), Color.HSV(1, 0.8f, 1));
 			Lines.Add(at2, 0.3f, new Color32(0, 255, 0, 255), 0.005f);
 		}
-		r2.Intersect(_model, Cull.None, out at2, out ray2ModelNode);
+		r2.Intersect(_model, Cull.None, out at2, out _ray2ModelNode);
 
 		Ray r3 = new Ray(V.XYZ(0.0f, -1, 0), Vec3.Up);
-		if (_model.Intersect(r3, Cull.None, out Ray at3, out modelRay3Node))
+		if (_model.Intersect(r3, Cull.None, out Ray at3, out _modelRay3Node))
 		{
 			Mesh.Sphere.Draw(Material.Default, Matrix.TS(at3.position, 0.005f), Color.HSV(0, 0.8f, 1));
 			Lines.Add(at3, 0.3f, new Color32(0, 255, 0, 255), 0.005f);
 		}
-		r3.Intersect(_model, Cull.None, out at3, out ray3ModelNode);
+		r3.Intersect(_model, Cull.None, out at3, out _ray3ModelNode);
 
 		Tests.Screenshot("Tests/NodeUI.jpg", 400, 400, center+Vec3.One*0.15f, center);
 	}

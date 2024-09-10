@@ -1412,8 +1412,7 @@ SK_API void          model_recalculate_bounds      (model_t model);
 SK_API void          model_recalculate_bounds_exact(model_t model);
 SK_API void          model_set_bounds              (model_t model, const sk_ref(bounds_t) bounds);
 SK_API bounds_t      model_get_bounds              (model_t model);
-SK_API bool32_t      model_ray_intersect             (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
-SK_API bool32_t      model_node_ray_intersect(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, model_node_id* model_node_id);
+SK_API bool32_t      model_ray_intersect             (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, model_node_id* out_opt_node sk_default(nullptr));
 SK_API bool32_t      model_ray_intersect_bvh         (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
 SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, mesh_t *out_mesh sk_default(nullptr), matrix *out_matrix sk_default(nullptr), uint32_t* out_start_inds sk_default(nullptr));
 
