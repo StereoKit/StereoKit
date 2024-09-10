@@ -25,7 +25,7 @@ namespace StereoKit
 
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
-		[Obsolete("Use LayoutHeight")]
+		[Obsolete("Use TextStyle.LayoutHeight")]
 		public float CharHeight
 		{
 			get => NativeAPI.text_style_get_layout_height(this);
@@ -345,7 +345,7 @@ namespace StereoKit
 		/// <param name="style">The visual style of the text, see
 		/// Text.MakeStyle or the TextStyle object for more details.</param>
 		/// <returns>The width and height of the text in meters.</returns>
-		[Obsolete("Use UI.SizeLayout")]
+		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text, TextStyle style)
 			=> NativeAPI.text_size_layout_16(text, style);
 
@@ -354,7 +354,7 @@ namespace StereoKit
 		/// default style!</summary>
 		/// <param name="text">Text you want to find the size of.</param>
 		/// <returns>The width and height of the text in meters.</returns>
-		[Obsolete("Use UI.SizeLayout")]
+		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text)
 			=> NativeAPI.text_size_layout_16(text, TextStyle.Default);
 
@@ -366,7 +366,7 @@ namespace StereoKit
 		/// <returns>The size that this text will take up, in meters! Width
 		/// will be the same as maxWidth as long as the text takes more than
 		/// one line, and height will be the total height of the text.</returns>
-		[Obsolete("Use UI.SizeLayout")]
+		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text, float maxWidth)
 			=> NativeAPI.text_size_layout_constrained_16(text, TextStyle.Default, maxWidth);
 
@@ -378,7 +378,7 @@ namespace StereoKit
 		/// <returns>The size that this text will take up, in meters! Width
 		/// will be the same as maxWidth as long as the text takes more than
 		/// one line, and height will be the total height of the text.</returns>
-		[Obsolete("Use UI.SizeLayout")]
+		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text, TextStyle style, float maxWidth)
 			=> SizeLayout(text, style, maxWidth);
 
