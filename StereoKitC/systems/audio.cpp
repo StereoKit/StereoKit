@@ -454,7 +454,8 @@ void audio_pause() {
 	if (au_paused) return;
 
 	au_paused = true;
-	ma_device_stop(&au_device);
+	ma_device_stop  (&au_device);
+	ma_device_uninit(&au_device);
 }
 
 ///////////////////////////////////////////
@@ -463,6 +464,7 @@ void audio_resume() {
 	if (!au_paused) return;
 
 	au_paused = false;
+	ma_device_init (&au_context, &au_config, &au_device);
 	ma_device_start(&au_device);
 }
 
