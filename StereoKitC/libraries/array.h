@@ -134,6 +134,7 @@ struct array_t {
 
 	int32_t     add        (const T &item)              { if (count+1   > capacity) { resize(capacity * 2 < 4         ? 4         : capacity * 2); } data[count] = item; count += 1; return count - 1; }
 	void        add_range  (const T *list, int32_t num) { if (count+num > capacity) { resize(capacity * 2 < count+num ? count+num : capacity * 2); } ARRAY_MEMCPY(&data[count], list, sizeof(T)*num); count += num; }
+	void        add_empties(               int32_t num) { if (count+num > capacity) { resize(capacity * 2 < count+num ? count+num : capacity * 2); } memset(&data[count],0, sizeof(T) * num); count += num; }
 	void        insert     (int32_t at, const T &item);
 	void        resize     (int32_t to_capacity);
 	void        trim       ()                         { resize(count); }

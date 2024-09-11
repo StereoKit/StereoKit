@@ -197,7 +197,9 @@ namespace StereoKit
 		/// used by many different UI elements. This will automatically
 		/// generate colors for different UI element states.</summary>
 		/// <param name="colorCategory">The category of UI elements that will
-		/// be affected by this theme color.</param>
+		/// be affected by this theme color. This can be a value _past_
+		/// UIColor.Max if you need extra UIColor slots for your own custom UI
+		/// elements.</param>
 		/// <param name="colorGamma">The gamma corrected color that should be
 		/// applied to this theme color category in its normal resting state.
 		/// Active and disabled colors will be generated based on this color.
@@ -209,7 +211,9 @@ namespace StereoKit
 		/// one state of this color category, and does not modify the others.
 		/// </summary>
 		/// <param name="colorCategory">The category of UI elements that will
-		/// be affected by this theme color.</param>
+		/// be affected by this theme color. This can be a value _past_
+		/// UIColor.Max if you need extra UIColor slots for your own custom UI
+		/// elements.</param>
 		/// <param name="colorState">The state of the UI element this color
 		/// should apply to.</param>
 		/// <param name="colorGamma">The gamma corrected color that should be
@@ -221,7 +225,10 @@ namespace StereoKit
 		/// this will be one of the generated colors, and not necessarily the
 		/// color that was provided there.</summary>
 		/// <param name="colorCategory">The category of UI elements that are
-		/// affected by this theme color.</param>
+		/// affected by this theme color. This can be a value _past_
+		/// UIColor.Max if you need extra UIColor slots for your own custom UI
+		/// elements. If the theme slot is empty, the color will be pulled from
+		/// UIColor.None.</param>
 		/// <returns>The gamma space color for the theme color category in its
 		/// normal state.</returns>
 		public static Color GetThemeColor(UIColor colorCategory) => NativeAPI.ui_get_theme_color(colorCategory);
@@ -231,7 +238,10 @@ namespace StereoKit
 		/// generated color, and not necessarily the color that was provided
 		/// there.</summary>
 		/// <param name="colorCategory">The category of UI elements that are
-		/// affected by this theme color.</param>
+		/// affected by this theme color. This can be a value _past_
+		/// UIColor.Max if you need extra UIColor slots for your own custom UI
+		/// elements. If the theme slot is empty, the color will be pulled from
+		/// UIColor.None.</param>
 		/// <param name="colorState">The state of the UI element this color
 		/// applies to.</param>
 		/// <returns>The gamma space color for the theme color category in the
@@ -1431,7 +1441,9 @@ namespace StereoKit
 		/// [here](https://playdeck.net/blog/quadrant-sizing-efficient-ui-rendering).
 		/// You may also find UI.QuadrantSizeVerts and UI.QuadrantSizeMesh to
 		/// be helpful.</summary>
-		/// <param name="visual">Which UI visual element to override.</param>
+		/// <param name="visual">Which UI visual element to override. This can
+		/// be a value _past_ UIVisual.Max if you need extra UIVisual slots for
+		/// your own custom UI elements.</param>
 		/// <param name="mesh">The Mesh to use for the UI element's visual
 		/// component. The Mesh will be scaled to match the dimensions of the
 		/// UI element.</param>
@@ -1448,17 +1460,21 @@ namespace StereoKit
 		/// <summary>This allows you to override the color category that a UI
 		/// element is assigned to.</summary>
 		/// <param name="visual">The UI element type to set the color category
-		/// of.</param>
+		/// of. This can be a value _past_ UIVisual.Max if you need extra
+		/// UIVisual slots for your own custom UI elements.</param>
 		/// <param name="colorCategory">The category of color to assign to this
 		/// UI element. Use UI.SetThemeColor in combination with this to assign
-		/// a specific color.</param>
+		/// a specific color. This can be a value _past_ UIColor.Max if you
+		/// need extra UIColor slots for your own custom UI elements.</param>
 		public static void SetElementColor(UIVisual visual, UIColor colorCategory)
 			=> NativeAPI.ui_set_element_color(visual, colorCategory);
 
 		/// <summary>This sets the sound that a particulat UI element will make
 		/// when you interact with it. One sound when the interaction starts,
 		/// and one when it ends.</summary>
-		/// <param name="visual">The UI element to apply the sounds to.</param>
+		/// <param name="visual">The UI element to apply the sounds to. This
+		/// can be a value _past_ UIVisual.Max if you need extra UIVisual slots
+		/// for your own custom UI elements.</param>
 		/// <param name="activate">The sound made when the interaction begins.
 		/// A null sound will fall back to the default sound.</param>
 		/// <param name="deactivate">The sound made when the interaction ends.
@@ -1469,10 +1485,15 @@ namespace StereoKit
 		/// <summary>This will draw a visual element from StereoKit's theming
 		/// system, while paying attention to certain factors such as enabled/
 		/// disabled, tinting and more.</summary>
-		/// <param name="elementVisual">The element type to draw.</param>
+		/// <param name="elementVisual">The element type to draw. This can
+		/// be a value _past_ UIVisual.Max to use extra UIVisual slots for
+		/// your own custom UI elements. If these slots are empty, SK will fall
+		/// back to UIVisual.Default.</param>
 		/// <param name="elementColor">If you wish to use the coloring from a
 		/// different element, you can use this to override the theme color
-		/// used when drawing.</param>
+		/// used when drawing. This can be a value _past_ UIVisual.Max to use
+		/// extra UIVisual slots for your own custom UI elements. If these
+		/// slots are empty, SK will fall back to UIVisual.Default.</param>
 		/// <param name="start">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -1491,7 +1512,9 @@ namespace StereoKit
 		/// UI element type with a particular focus value. This obeys the
 		/// current hierarchy of tinting and enabled states.</summary>
 		/// <param name="elementVisual">Get the color from this element type.
-		/// </param>
+		/// This can be a value _past_ UIVisual.Max to use extra UIVisual slots
+		/// for your own custom UI elements. If these slots are empty, SK will
+		/// fall back to UIVisual.Default.</param>
 		/// <param name="focus">The amount of visual focus this element
 		/// currently has, where 0 is unfocused, and 1 is active. You can
 		/// acquire a good focus value from `UI.GetAnimFocus`</param>
