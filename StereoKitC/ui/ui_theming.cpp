@@ -30,54 +30,53 @@ struct ui_theme_color_t {
 
 ///////////////////////////////////////////
 
-font_t          skui_font;
+font_t                    skui_font;
 
-ui_el_visual_t  skui_visuals[ui_vis_max];
+material_t                skui_mat;
+material_t                skui_mat_dbg;
+material_t                skui_font_mat;
 
-material_t      skui_mat;
-material_t      skui_mat_dbg;
-material_t      skui_font_mat;
+sprite_t                  skui_toggle_off;
+sprite_t                  skui_toggle_on;
+sprite_t                  skui_radio_off;
+sprite_t                  skui_radio_on;
+sprite_t                  skui_arrow_left;
+sprite_t                  skui_arrow_right;
+sprite_t                  skui_arrow_up;
+sprite_t                  skui_arrow_down;
+sprite_t                  skui_spr_close;
+sprite_t                  skui_spr_backspace;
+sprite_t                  skui_spr_shift;
+sprite_t                  skui_spr_list;
+sprite_t                  skui_spr_grid;
 
-sprite_t        skui_toggle_off;
-sprite_t        skui_toggle_on;
-sprite_t        skui_radio_off;
-sprite_t        skui_radio_on;
-sprite_t        skui_arrow_left;
-sprite_t        skui_arrow_right;
-sprite_t        skui_arrow_up;
-sprite_t        skui_arrow_down;
-sprite_t        skui_spr_close;
-sprite_t        skui_spr_backspace;
-sprite_t        skui_spr_shift;
-sprite_t        skui_spr_list;
-sprite_t        skui_spr_grid;
+sound_t                   skui_snd_interact;
+sound_t                   skui_snd_uninteract;
+sound_t                   skui_snd_grab;
+sound_t                   skui_snd_ungrab;
+sound_t                   skui_snd_tick;
 
-sound_t         skui_snd_interact;
-sound_t         skui_snd_uninteract;
-sound_t         skui_snd_grab;
-sound_t         skui_snd_ungrab;
-sound_t         skui_snd_tick;
+mesh_t                    skui_box_dbg;
 
-mesh_t          skui_box_dbg;
+id_hash_t                 skui_anim_id[3];
+float                     skui_anim_time[3];
 
-id_hash_t       skui_anim_id[3];
-float           skui_anim_time[3];
+color128                  skui_tint;
 
-ui_theme_color_t skui_palette[ui_color_max];
-color128         skui_tint;
+array_t<ui_el_visual_t>   skui_visuals;
+array_t<ui_theme_color_t> skui_palette;
+array_t<text_style_t>     skui_font_stack;
+array_t<color128>         skui_tint_stack;
+array_t<bool32_t>         skui_grab_aura_stack;
 
-array_t<text_style_t> skui_font_stack;
-array_t<color128>     skui_tint_stack;
-array_t<bool32_t>     skui_grab_aura_stack;
+sound_t                   skui_active_sound_off        = nullptr;
+sound_inst_t              skui_active_sound_inst       = {};
+vec3                      skui_active_sound_pos        = vec3_zero;
+id_hash_t                 skui_active_sound_element_id = 0;
 
-sound_t       skui_active_sound_off        = nullptr;
-sound_inst_t  skui_active_sound_inst       = {};
-vec3          skui_active_sound_pos        = vec3_zero;
-id_hash_t     skui_active_sound_element_id = 0;
-
-const float    skui_anim_duration  = 0.2f;
-const float    skui_anim_overshoot = 10;
-const float    skui_anim_focus_duration = 0.1f;
+const float               skui_anim_duration           = 0.2f;
+const float               skui_anim_overshoot          = 10;
+const float               skui_anim_focus_duration     = 0.1f;
 
 ///////////////////////////////////////////
 
@@ -94,8 +93,8 @@ void ui_theming_init() {
 	skui_font_stack      = {};
 	skui_tint_stack      = {};
 	skui_grab_aura_stack = {};
-	memset(skui_visuals,   0, sizeof(skui_visuals));
-	memset(skui_palette,   0, sizeof(skui_palette));
+	skui_visuals.add_empties(ui_vis_max);
+	skui_palette.add_empties(ui_color_max);
 	memset(skui_anim_id,   0, sizeof(skui_anim_id));
 	memset(skui_anim_time, 0, sizeof(skui_anim_time));
 
@@ -276,13 +275,15 @@ void ui_theming_shutdown() {
 	skui_tint_stack     .free();
 	skui_grab_aura_stack.free();
 
-	for (int32_t i = 0; i < ui_vis_max; i++) {
+	for (int32_t i = 0; i < skui_visuals.count; i++) {
 		mesh_release    (skui_visuals[i].mesh);
 		material_release(skui_visuals[i].material);
 		sound_release   (skui_visuals[i].snd_activate);
 		sound_release   (skui_visuals[i].snd_deactivate);
 		skui_visuals[i] = {};
 	}
+	skui_visuals.free();
+	skui_palette.free();
 
 	ui_theme_visuals_release();
 
@@ -344,6 +345,7 @@ void ui_theming_update() {
 ///////////////////////////////////////////
 
 void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t material, vec2 min_size) {
+	if (element_visual >= skui_visuals.count) skui_visuals.add_empties(element_visual + 1 - skui_visuals.count);
 	ui_el_visual_t *vis = &skui_visuals[element_visual];
 
 	if (mesh          != nullptr) mesh_addref     (mesh);
@@ -359,12 +361,17 @@ void ui_set_element_visual(ui_vis_ element_visual, mesh_t mesh, material_t mater
 ///////////////////////////////////////////
 
 void ui_set_element_color(ui_vis_ element, ui_color_ color_category) {
+	if (element        >= skui_visuals.count) skui_visuals.add_empties(element        + 1 - skui_visuals.count);
+	if (color_category >= skui_palette.count) skui_palette.add_empties(color_category + 1 - skui_palette.count);
+
 	skui_visuals[element].color_category = color_category;
 }
 
 ///////////////////////////////////////////
 
 void ui_set_element_sound(ui_vis_ element, sound_t activate, sound_t deactivate) {
+	if (element >= skui_visuals.count) skui_visuals.add_empties(element + 1 - skui_visuals.count);
+
 	if (activate   != nullptr) sound_addref(activate);
 	if (deactivate != nullptr) sound_addref(deactivate);
 	if (skui_visuals[element].snd_activate   != nullptr) sound_release(skui_visuals[element].snd_activate);
@@ -377,7 +384,7 @@ void ui_set_element_sound(ui_vis_ element, sound_t activate, sound_t deactivate)
 ///////////////////////////////////////////
 
 mesh_t ui_get_mesh(ui_vis_ element_visual) {
-	return skui_visuals[element_visual].mesh
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].mesh
 		? skui_visuals[element_visual].mesh
 		: skui_visuals[ui_vis_default].mesh;
 }
@@ -385,7 +392,7 @@ mesh_t ui_get_mesh(ui_vis_ element_visual) {
 ///////////////////////////////////////////
 
 vec2 ui_get_mesh_minsize(ui_vis_ element_visual) {
-	return skui_visuals[element_visual].mesh
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].mesh
 		? skui_visuals[element_visual].min_size
 		: skui_visuals[ui_vis_default].min_size;
 }
@@ -393,7 +400,7 @@ vec2 ui_get_mesh_minsize(ui_vis_ element_visual) {
 ///////////////////////////////////////////
 
 material_t ui_get_material(ui_vis_ element_visual) {
-	return skui_visuals[element_visual].material
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].material
 		? skui_visuals[element_visual].material
 		: skui_visuals[ui_vis_default].material;
 }
@@ -401,16 +408,15 @@ material_t ui_get_material(ui_vis_ element_visual) {
 ///////////////////////////////////////////
 
 ui_color_ ui_get_color(ui_vis_ element_visual) {
-	ui_color_ category = skui_visuals[element_visual].color_category;
-	return category != ui_color_none
-		? category
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].color_category != ui_color_none
+		? skui_visuals[element_visual].color_category
 		: skui_visuals[ui_vis_default].color_category;
 }
 
 ///////////////////////////////////////////
 
 sound_t ui_get_sound_on(ui_vis_ element_visual) {
-	return skui_visuals[element_visual].snd_activate
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].snd_activate
 		? skui_visuals[element_visual].snd_activate
 		: skui_visuals[ui_vis_default].snd_activate;
 }
@@ -418,7 +424,7 @@ sound_t ui_get_sound_on(ui_vis_ element_visual) {
 ///////////////////////////////////////////
 
 sound_t ui_get_sound_off(ui_vis_ element_visual) {
-	return skui_visuals[element_visual].snd_deactivate
+	return element_visual < skui_visuals.count && skui_visuals[element_visual].snd_deactivate
 		? skui_visuals[element_visual].snd_deactivate
 		: skui_visuals[ui_vis_default].snd_deactivate;
 }
@@ -541,6 +547,8 @@ void ui_set_color(color128 color) {
 ///////////////////////////////////////////
 
 void ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color128 color_gamma) {
+	if (color_type >= skui_palette.count) skui_palette.add_empties(color_type + 1 - skui_palette.count);
+
 	color128 linear = color_to_linear(color_gamma);
 
 	switch (state) {
@@ -553,6 +561,8 @@ void ui_set_theme_color_state(ui_color_ color_type, ui_color_state_ state, color
 ///////////////////////////////////////////
 
 color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state) {
+	if (color_type >= skui_palette.count) color_type = ui_color_none;
+
 	switch (state) {
 	case ui_color_state_normal:   return color_to_gamma(skui_palette[color_type].normal);
 	case ui_color_state_active:   return color_to_gamma(skui_palette[color_type].active);
@@ -564,6 +574,8 @@ color128 ui_get_theme_color_state(ui_color_ color_type, ui_color_state_ state) {
 ///////////////////////////////////////////
 
 void ui_set_theme_color(ui_color_ color_type, color128 color_gamma) {
+	if (color_type >= skui_palette.count) skui_palette.add_empties(color_type + 1 - skui_palette.count);
+
 	color128 linear = color_to_linear(color_gamma);
 	skui_palette[color_type].normal   = linear;
 	skui_palette[color_type].active   = linear*color128{ 2,2,2,1 };
@@ -573,6 +585,8 @@ void ui_set_theme_color(ui_color_ color_type, color128 color_gamma) {
 ///////////////////////////////////////////
 
 color128 ui_get_theme_color(ui_color_ color_type) {
+	if (color_type >= skui_palette.count) color_type = ui_color_none;
+
 	return color_to_gamma(skui_palette[color_type].normal);
 }
 

@@ -77,7 +77,7 @@ typedef struct vec4 {
 typedef struct quat {
 	float x;
 	float y;
-	float z; 
+	float z;
 	float w;
 } quat;
 typedef union matrix {
