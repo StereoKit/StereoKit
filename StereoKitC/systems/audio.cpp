@@ -91,13 +91,16 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 
 		//// Mix the sound samples in
 
-		// Calculate the volume based on distance using the 1/d^2 law
+		// Calculate the volume based on distance using 1/d. While sound
+		// "intensity" is best modeled with 1/d^2, sound percieved loudness
+		// comes from sound amplitude/pressure, which falls off as 1/d.
 		vec3  dir    = head_pos - inst.position;
 		float dist2  = vec3_magnitude_sq(dir);
-		float volume = fminf(1,(1.f / dist2) * inst.volume);
+		float dist   = sqrtf(dist2);
+		float volume = fminf(1,(1.f / dist) * inst.volume);
 
 		// Find the direction of the sound in relation to the head
-		dir = dir / sqrtf(dist2);
+		dir = dir / dist;
 		float dot = vec3_dot(dir, head_right);
 
 		// Calculate a panning volume where a sound source directly in front
