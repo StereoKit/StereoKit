@@ -1665,6 +1665,8 @@ SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_arr_sa
 SK_API uint64_t     sound_unread_samples (sound_t sound);
 SK_API uint64_t     sound_total_samples  (sound_t sound);
 SK_API uint64_t     sound_cursor_samples (sound_t sound);
+SK_API float        sound_get_decibels   (sound_t sound);
+SK_API void         sound_set_decibels   (sound_t sound, float decibels);
 SK_API sound_inst_t sound_play           (sound_t sound, vec3 at, float volume);
 SK_API float        sound_duration       (sound_t sound);
 SK_API void         sound_addref         (sound_t sound);

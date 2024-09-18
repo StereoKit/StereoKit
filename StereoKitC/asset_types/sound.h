@@ -23,6 +23,7 @@ typedef enum sound_type_ {
 struct _sound_t {
 	asset_header_t header;
 	sound_type_    type;
+	float          decibels;
 	ma_decoder     decoder;
 	buffer_t       buffer;
 	ma_pcm_rb      stream_buffer;
