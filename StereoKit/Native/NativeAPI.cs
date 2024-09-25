@@ -519,6 +519,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong     sound_unread_samples(IntPtr sound);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong     sound_total_samples (IntPtr sound);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong     sound_cursor_samples(IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     sound_get_decibels  (IntPtr sound);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      sound_set_decibels  (IntPtr sound, float decibels);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SoundInst sound_play          (IntPtr sound, Vec3 at, float volume);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float     sound_duration      (IntPtr sound);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void      sound_release       (IntPtr sound);

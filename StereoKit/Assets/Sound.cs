@@ -33,6 +33,8 @@ namespace StereoKit
 		/// seconds.</summary>
 		public float Duration { get => NativeAPI.sound_duration(_inst); }
 
+		public float Decibels { get => NativeAPI.sound_get_decibels(_inst); set => NativeAPI.sound_set_decibels(_inst, value); }
+
 		/// <summary>This will return the total number of audio samples used
 		/// by the sound! StereoKit currently uses 48,000 samples per second
 		/// for all audio.</summary>
