@@ -49,12 +49,26 @@ void audio_set_default_device_in(const wchar_t *device_id) {
 
 ///////////////////////////////////////////
 
+float low_pass_filter(float input, float cutoff_freq, float previous_output) {
+	float RC = 1.0f / (2.0f * 3.14159265359f * cutoff_freq);
+	float dt = 1.0f / AU_SAMPLE_RATE;
+	float alpha = dt / (RC + dt);
+
+	// Calculate the new output based on the previous output
+	float output = previous_output + alpha * (input - previous_output);
+
+	return output;
+}
+
+///////////////////////////////////////////
+
 ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
 	// The way mixing works is that we just read into a temporary buffer,
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
-	vec3 head_pos   = input_head()->position;
-	vec3 head_right = vec3_normalize(input_head()->orientation * vec3_right);
+	vec3 head_pos     = input_head()->position;
+	vec3 head_right   = vec3_normalize(input_head()->orientation * vec3_right);
+	vec3 head_forward = vec3_normalize(input_head()->orientation * vec3{0,0,1});
 
 	// Calculate the volume based on distance using 1/d. While sound
 	// "intensity" is best modeled with 1/d^2, sound percieved loudness
@@ -65,8 +79,9 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	float volume = fminf(1, (1.f / dist) * inst.volume);
 
 	// Find the direction of the sound in relation to the head, these vectors
-	// are normalized so the result is -1 to +1
-	float dot = vec3_dot(dir / dist, head_right);
+	// are normalized so the result is -1 to +1, and made to be more "linear"
+	float dot_pan   = asinf(vec3_dot(dir / dist, head_right  )) / (3.14159f*0.5f);
+	float dot_front = asinf(vec3_dot(dir / dist, head_forward)) / (3.14159f*0.5f);
 
 	// Calculate a panning volume where a sound source directly in front
 	// will have a volume of 1 for both ears, and a sound directly to
@@ -74,8 +89,8 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// frequencies and high frequencies drop at different rates in head shadow,
 	// but we're using a single simple approximate instead. (low freq 10-20%
 	// loss, high freq 50-60% loss?)
-	const float pan_loss = 0.6f;
-	float pan_volume[2] = { fminf(1,1+(dot*pan_loss)) * volume, fminf(1,1-(dot*pan_loss)) * volume };
+	const float pan_loss = 0.4f;
+	float pan_volume[2] = { fminf(1,1+(dot_pan*pan_loss)) * volume, fminf(1,1-(dot_pan*pan_loss)) * volume };
 
 	// Make sure we have enough room for all our samples.
 	if (au_mix_temp_size < frame_count + AU_SAMPLE_BUFFER_SIZE * 2) {
@@ -137,11 +152,29 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// relevant range, otherwise it sparkles!!
 	// The speed of sound is 343 m/s, and average head width is .15m
 	// (head_width/speed_of_sound)*48,000 samples/s = 21 audio samples wide
-	int32_t offset[2] = { (int32_t)(10 * dot), (int32_t)(-10 * dot) };
+	int32_t offset[2] = { (int32_t)(10 * dot_pan), (int32_t)(-10 * dot_pan) };
 	int32_t start [2] = { maxi(0,     start_at + inst.prev_offset[0]), maxi(0,     start_at + inst.prev_offset[1]) };
 	int32_t end   [2] = { mini(total, end_at   + offset[0]),           mini(total, end_at   + offset[1]) };
 	float   step  [2] = { (float)(end[0]-start[0]) / frame_count, (float)(end[1]-start[1]) / frame_count };
 	float   curr  [2] = { (float)start[0], (float)start[1] };
+
+	// Sounds behind the user should get a low pass filter
+	float prev   = au_mix_temp[maxi(0, new_at - 1)];
+	//float cutoff = 2500;
+	float cutoff = fminf(
+		fmaxf(1000, -4000.f * log(fmaxf(1,dist-3.5f)) + 22200), // distance diminishes higher frequencies: https://www.desmos.com/calculator/h5tssewqbl
+		math_lerp(2500, 30000, fminf(1, 1 + dot_front))); // So does being behind the listener
+	float RC     = 1.0f / (2.0f * 3.14159265359f * cutoff);
+	float dt     = 1.0f / AU_SAMPLE_RATE;
+	//float alpha  = math_lerp(dt / (RC + dt), 1, fminf(1, 1 + dot_front));
+	float alpha  = dt / (RC + dt);
+	for (int32_t i = new_at; i < total; i++) {
+		if (inst.intensity_max_last_read < au_mix_temp[i])
+			inst.intensity_max_last_read = au_mix_temp[i];
+
+		au_mix_temp[i] = prev + alpha * (au_mix_temp[i] - prev);
+		prev = au_mix_temp[i];
+	}
 
 	// Mix the frames together.
 	for (int32_t sample = 0; sample < mix_count; sample+=1) {
