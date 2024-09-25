@@ -89,7 +89,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// frequencies and high frequencies drop at different rates in head shadow,
 	// but we're using a single simple approximate instead. (low freq 10-20%
 	// loss, high freq 50-60% loss?)
-	const float pan_loss = 0.4f;
+	const float pan_loss = 0.6f;
 	float pan_volume[2] = { fminf(1,1+(dot_pan*pan_loss)) * volume, fminf(1,1-(dot_pan*pan_loss)) * volume };
 
 	// Make sure we have enough room for all our samples.
@@ -160,13 +160,11 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 
 	// Sounds behind the user should get a low pass filter
 	float prev   = au_mix_temp[maxi(0, new_at - 1)];
-	//float cutoff = 2500;
 	float cutoff = fminf(
 		fmaxf(1000, -4000.f * log(fmaxf(1,dist-3.5f)) + 22200), // distance diminishes higher frequencies: https://www.desmos.com/calculator/h5tssewqbl
 		math_lerp(2500, 30000, fminf(1, 1 + dot_front))); // So does being behind the listener
 	float RC     = 1.0f / (2.0f * 3.14159265359f * cutoff);
 	float dt     = 1.0f / AU_SAMPLE_RATE;
-	//float alpha  = math_lerp(dt / (RC + dt), 1, fminf(1, 1 + dot_front));
 	float alpha  = dt / (RC + dt);
 	for (int32_t i = new_at; i < total; i++) {
 		if (inst.intensity_max_last_read < au_mix_temp[i])

@@ -224,7 +224,8 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == sound) {
-			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, decibels_to_signal(sound->decibels * volume) };
+			//au_active_sounds[i] = {sound, au_active_sounds[i].id, at, decibels_to_signal(sound->decibels * volume) };
+			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, volume };
 
 			result._id   = au_active_sounds[i].id;
 			result._slot = (int16_t)i;
@@ -235,7 +236,8 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == nullptr) {
 			sound_addref(sound);
-			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, decibels_to_signal(sound->decibels * volume) };
+			//au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, decibels_to_signal(sound->decibels * volume) };
+			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
 
 			result._id   = au_active_sounds[i].id;
 			result._slot = (int16_t)i;
