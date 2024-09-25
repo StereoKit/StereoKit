@@ -453,6 +453,11 @@ bool audio_init() {
 void audio_step() {
 	matrix head = pose_matrix(*input_head());
 	matrix_inverse(head, au_head_transform);
+
+	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
+		au_active_sounds[i].intensity_max_frame     = au_active_sounds[i].intensity_max_last_read;
+		au_active_sounds[i].intensity_max_last_read = 0;
+	}
 }
 
 ///////////////////////////////////////////

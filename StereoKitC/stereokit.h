@@ -1672,12 +1672,13 @@ SK_API float        sound_duration       (sound_t sound);
 SK_API void         sound_addref         (sound_t sound);
 SK_API void         sound_release        (sound_t sound);
 
-SK_API void         sound_inst_stop      (sound_inst_t sound_inst);
-SK_API bool32_t     sound_inst_is_playing(sound_inst_t sound_inst);
-SK_API void         sound_inst_set_pos   (sound_inst_t sound_inst, vec3 pos);
-SK_API vec3         sound_inst_get_pos   (sound_inst_t sound_inst);
-SK_API void         sound_inst_set_volume(sound_inst_t sound_inst, float volume);
-SK_API float        sound_inst_get_volume(sound_inst_t sound_inst);
+SK_API void         sound_inst_stop         (sound_inst_t sound_inst);
+SK_API bool32_t     sound_inst_is_playing   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_pos      (sound_inst_t sound_inst, vec3 pos);
+SK_API vec3         sound_inst_get_pos      (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_volume   (sound_inst_t sound_inst, float volume);
+SK_API float        sound_inst_get_volume   (sound_inst_t sound_inst);
+SK_API float        sound_inst_get_intensity(sound_inst_t sound_inst);
 
 ///////////////////////////////////////////
 

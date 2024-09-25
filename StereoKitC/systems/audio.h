@@ -16,6 +16,8 @@ struct _sound_inst_t {
 	float    prev_buffer[AU_SAMPLE_BUFFER_SIZE*2];
 	int32_t  prev_buffer_ct;
 	int32_t  prev_offset[2];
+	float    intensity_max_frame;
+	float    intensity_max_last_read;
 };
 
 bool audio_init    ();

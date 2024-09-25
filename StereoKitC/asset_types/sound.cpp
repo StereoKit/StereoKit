@@ -361,4 +361,11 @@ float sound_inst_get_volume(sound_inst_t sound_inst) {
 	return au_active_sounds[sound_inst._slot].volume;
 }
 
+///////////////////////////////////////////
+
+float sound_inst_get_intensity(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
+	return au_active_sounds[sound_inst._slot].intensity_max_frame;
+}
+
 }
