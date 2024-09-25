@@ -60,6 +60,8 @@ sound_t sound_create(const char *filename) {
 		assets_releaseref(&result->header);
 		return nullptr;
 	}
+
+	result->decibels = 80;
 	return result;
 }
 
@@ -75,6 +77,7 @@ sound_t sound_create_stream(float buffer_duration) {
 	memset(result->buffer.data, 0, (size_t)(result->buffer.capacity * sizeof(float)));
 	ma_pcm_rb_init(AU_SAMPLE_FORMAT, 1, (ma_uint32)result->buffer.capacity, result->buffer.data, nullptr, &result->stream_buffer);
 
+	result->decibels = 80;
 	return result;
 }
 
@@ -89,6 +92,7 @@ sound_t sound_create_samples(const float *samples_at_48000s, uint64_t sample_cou
 	result->buffer.data     = sk_malloc_t(float, (size_t)sample_count);
 	memcpy(result->buffer.data, samples_at_48000s, (size_t)(sample_count * sizeof(float)));
 
+	result->decibels = 80;
 	return result;
 }
 
@@ -105,6 +109,7 @@ sound_t sound_generate(float (*function)(float sample_time), float duration) {
 		result->buffer.data[i] = function((float)i / (float)AU_SAMPLE_RATE);
 	}
 
+	result->decibels = 80;
 	return result;
 }
 
@@ -176,6 +181,39 @@ uint64_t sound_unread_samples(sound_t sound) {
 
 ///////////////////////////////////////////
 
+float sound_get_decibels(sound_t sound) {
+	return sound->decibels;
+}
+
+///////////////////////////////////////////
+
+void sound_set_decibels(sound_t sound, float decibels) {
+	sound->decibels = decibels;
+}
+
+///////////////////////////////////////////
+
+float decibels_to_signal(float decibel) {
+	// North American standard uses reference levels of 83db as -20dbfs, which
+	// basically means that an 83db sound will result in a dbfs of -20, which
+	// in turn is a digital signal value of 0.1. A dbfs of 0 will result in a
+	// digital signal value of 1, and a -inf will result in a digital signal of
+	// 0. The -20 reference level then provides a 20db headroom above 83 before
+	// clipping starts happening.
+	const float reference_dbfs = -20;
+	const float reference_db   =  83;
+	float dbfs = reference_dbfs + (decibel - reference_db);
+
+	// This converts dbfs to a digital signal +-1 representation
+	// return powf(10, dbfs / 20.0f);
+
+	// This is the same as the powf call, but faster
+	const float LN10_DIV_20 = 0.115129254f;
+	return expf(dbfs * LN10_DIV_20);
+}
+
+///////////////////////////////////////////
+
 sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 	ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
 	sound->buffer.cursor = 0;
@@ -186,6 +224,7 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == sound) {
+			//au_active_sounds[i] = {sound, au_active_sounds[i].id, at, decibels_to_signal(sound->decibels * volume) };
 			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, volume };
 
 			result._id   = au_active_sounds[i].id;
@@ -197,6 +236,7 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
 		if (au_active_sounds[i].sound == nullptr) {
 			sound_addref(sound);
+			//au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, decibels_to_signal(sound->decibels * volume) };
 			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
 
 			result._id   = au_active_sounds[i].id;
@@ -321,6 +361,13 @@ void sound_inst_set_volume(sound_inst_t sound_inst, float volume) {
 float sound_inst_get_volume(sound_inst_t sound_inst) {
 	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
 	return au_active_sounds[sound_inst._slot].volume;
+}
+
+///////////////////////////////////////////
+
+float sound_inst_get_intensity(sound_inst_t sound_inst) {
+	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
+	return au_active_sounds[sound_inst._slot].intensity_max_frame;
 }
 
 }

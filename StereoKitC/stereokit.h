@@ -1665,17 +1665,20 @@ SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_arr_sa
 SK_API uint64_t     sound_unread_samples (sound_t sound);
 SK_API uint64_t     sound_total_samples  (sound_t sound);
 SK_API uint64_t     sound_cursor_samples (sound_t sound);
+SK_API float        sound_get_decibels   (sound_t sound);
+SK_API void         sound_set_decibels   (sound_t sound, float decibels);
 SK_API sound_inst_t sound_play           (sound_t sound, vec3 at, float volume);
 SK_API float        sound_duration       (sound_t sound);
 SK_API void         sound_addref         (sound_t sound);
 SK_API void         sound_release        (sound_t sound);
 
-SK_API void         sound_inst_stop      (sound_inst_t sound_inst);
-SK_API bool32_t     sound_inst_is_playing(sound_inst_t sound_inst);
-SK_API void         sound_inst_set_pos   (sound_inst_t sound_inst, vec3 pos);
-SK_API vec3         sound_inst_get_pos   (sound_inst_t sound_inst);
-SK_API void         sound_inst_set_volume(sound_inst_t sound_inst, float volume);
-SK_API float        sound_inst_get_volume(sound_inst_t sound_inst);
+SK_API void         sound_inst_stop         (sound_inst_t sound_inst);
+SK_API bool32_t     sound_inst_is_playing   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_pos      (sound_inst_t sound_inst, vec3 pos);
+SK_API vec3         sound_inst_get_pos      (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_volume   (sound_inst_t sound_inst, float volume);
+SK_API float        sound_inst_get_volume   (sound_inst_t sound_inst);
+SK_API float        sound_inst_get_intensity(sound_inst_t sound_inst);
 
 ///////////////////////////////////////////
 

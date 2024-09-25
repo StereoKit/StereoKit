@@ -15,7 +15,7 @@ namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
 matrix            au_head_transform;
-const int32_t     au_mix_temp_size = 4096;
+int32_t           au_mix_temp_size = 4096;
 float*            au_mix_temp;
 
 ma_context        au_context        = {};
@@ -49,92 +49,155 @@ void audio_set_default_device_in(const wchar_t *device_id) {
 
 ///////////////////////////////////////////
 
-ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
-	const uint64_t channel_count = 2;
+float low_pass_filter(float input, float cutoff_freq, float previous_output) {
+	float RC = 1.0f / (2.0f * 3.14159265359f * cutoff_freq);
+	float dt = 1.0f / AU_SAMPLE_RATE;
+	float alpha = dt / (RC + dt);
 
-	// The way mixing works is that we just read into a temporary buffer, 
+	// Calculate the new output based on the previous output
+	float output = previous_output + alpha * (input - previous_output);
+
+	return output;
+}
+
+///////////////////////////////////////////
+
+ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uint64 frame_count) {
+	// The way mixing works is that we just read into a temporary buffer,
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
-	vec3      head_pos          = input_head()->position;
-	vec3      head_right        = vec3_normalize(input_head()->orientation * vec3_right);
-	ma_uint64 frame_cap         = au_mix_temp_size / channel_count;
-	ma_uint64 total_frames_read = 0;
+	vec3 head_pos     = input_head()->position;
+	vec3 head_right   = vec3_normalize(input_head()->orientation * vec3_right);
+	vec3 head_forward = vec3_normalize(input_head()->orientation * vec3{0,0,1});
 
-	while (total_frames_read < frame_count) {
-		ma_uint64 frames_remaining = frame_count - total_frames_read;
-		ma_uint64 frames_to_read   = frame_cap;
-		if (frames_to_read > frames_remaining) {
-			frames_to_read = frames_remaining;
-		}
+	// Calculate the volume based on distance using 1/d. While sound
+	// "intensity" is best modeled with 1/d^2, sound percieved loudness
+	// comes from sound amplitude/pressure, which falls off as 1/d.
+	vec3  dir    = head_pos - inst.position;
+	float dist2  = vec3_magnitude_sq(dir);
+	float dist   = fmaxf(0.001f, sqrtf(dist2));
+	float volume = fminf(1, (1.f / dist) * inst.volume);
 
-		// Grab sound samples!
-		ma_uint64 frames_read = 0;
-		switch (inst.sound->type) {
-		case sound_type_decode: {
-			if (ma_decoder_read_pcm_frames(&inst.sound->decoder, au_mix_temp, frames_to_read, &frames_read) != MA_SUCCESS) {
-				log_err("Failed to read PCM frames for mixing!");
-			}
-		} break;
-		case sound_type_stream: {
-			frames_read = sound_read_samples(inst.sound, au_mix_temp, frames_to_read);
-		} break;
-		case sound_type_buffer: {
-			frames_read = mini(frames_to_read, inst.sound->buffer.count - inst.sound->buffer.cursor);
-			memcpy(au_mix_temp, inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
-			inst.sound->buffer.cursor += frames_read;
-		} break;
-		case sound_type_none: {
-			log_errf("Got a sound_type_none?");
-		} break;
-		}
-		if (frames_read <= 1) break;
+	// Find the direction of the sound in relation to the head, these vectors
+	// are normalized so the result is -1 to +1, and made to be more "linear"
+	float dot_pan   = asinf(vec3_dot(dir / dist, head_right  )) / (3.14159f*0.5f);
+	float dot_front = asinf(vec3_dot(dir / dist, head_forward)) / (3.14159f*0.5f);
 
-		//// Mix the sound samples in
+	// Calculate a panning volume where a sound source directly in front
+	// will have a volume of 1 for both ears, and a sound directly to
+	// either side will have a volume of 40% opposite it. Technically low
+	// frequencies and high frequencies drop at different rates in head shadow,
+	// but we're using a single simple approximate instead. (low freq 10-20%
+	// loss, high freq 50-60% loss?)
+	const float pan_loss = 0.6f;
+	float pan_volume[2] = { fminf(1,1+(dot_pan*pan_loss)) * volume, fminf(1,1-(dot_pan*pan_loss)) * volume };
 
-		// Calculate the volume based on distance using the 1/d^2 law
-		vec3  dir    = head_pos - inst.position;
-		float dist2  = vec3_magnitude_sq(dir);
-		float volume = fminf(1,(1.f / dist2) * inst.volume);
-
-		// Find the direction of the sound in relation to the head
-		dir = dir / sqrtf(dist2);
-		float dot = vec3_dot(dir, head_right);
-
-		// Calculate a panning volume where a sound source directly in front
-		// will have a volume of 1 for both ears, and a sound directly to 
-		// either side will have a volume of zero opposite it
-		float channel[2] = { fminf(1,dot+1), fminf(1,2-(dot+1)) };
-
-		// Create a sample offset to simulate sound arrival time difference
-		// between left and right ears.
-		// NOTE: This needs a buffer of 10 samples before and after the
-		// relevant range, otherwise it sparkles!!
-		// The speed of sound is 343 m/s, and average head width is .15m
-		// (head_width/speed_of_sound)*48,000 samples/s = 21 audio samples wide
-		//int64_t offset[2] = { (int64_t)(10 * dot), (int64_t)(-10 * dot) };
-
-		// Mix the frames together.
-		for (ma_uint64 sample = 0; sample < frames_read; ++sample) {
-			ma_uint64 i = total_frames_read * channel_count + sample*channel_count;
-			float     s = au_mix_temp[sample] * volume;
-
-			// Right channel
-			//float     s = au_mix_temp[mini((int64_t)_countof(au_mix_temp)-1,maxi((int64_t)0,sample+offset[c]))] * volume *  channel[0];
-			output[i] = fmaxf(-1, fminf(1, output[i] + s*channel[0]));
-
-			// Left channel
-			//s = au_mix_temp[mini((int64_t)_countof(au_mix_temp)-1,maxi((int64_t)0,sample+offset[c]))] * volume *  channel[1];
-			i += 1;
-			output[i] = fmaxf(-1, fminf(1, output[i] + s*channel[1]));
-		}
-
-		total_frames_read += frames_read;
-		if (frames_read < frames_to_read) {
-			break;  // Reached EOF.
-		}
+	// Make sure we have enough room for all our samples.
+	if (au_mix_temp_size < frame_count + AU_SAMPLE_BUFFER_SIZE * 2) {
+		au_mix_temp_size = frame_count + AU_SAMPLE_BUFFER_SIZE * 2;
+		sk_free(au_mix_temp);
+		au_mix_temp = sk_malloc_t(float, au_mix_temp_size);
 	}
 
-	return (ma_uint32)total_frames_read;
+	// Reading samples is a bit odd here because we can only read forward from
+	// some of our audio sources, and we need about 10 extra samples on either
+	// side of our audio in order to do proper 3D audio panning. So we cache a
+	// few samples from the previous read, and read a bit extra at the end as
+	// well.
+	//
+	// Here, | is the audio start/end, O is the extra padding at the end, and v
+	// is pulled from the last step's cache.
+	// 
+	// |====O         |
+	// |   vv===O     |
+	// |       vv===O |
+	// |           vv=|
+	int32_t new_at   = 0;
+	int32_t start_at = 0;
+	if (inst.prev_buffer_ct > 0) {
+		memcpy(au_mix_temp, inst.prev_buffer, sizeof(float) * inst.prev_buffer_ct);
+		new_at   = inst.prev_buffer_ct;
+		start_at = mini(inst.prev_buffer_ct, AU_SAMPLE_BUFFER_SIZE);
+	}
+
+	// Grab sound samples!
+	ma_uint64 frames_read   = 0;
+	ma_uint64 frames_needed = (frame_count+AU_SAMPLE_BUFFER_SIZE) - (new_at-start_at);
+	switch (inst.sound->type) {
+	case sound_type_decode: {
+		if (ma_decoder_read_pcm_frames(&inst.sound->decoder, &au_mix_temp[new_at], frames_needed, &frames_read) != MA_SUCCESS) {
+			log_err("Failed to read PCM frames for mixing!");
+		}
+	} break;
+	case sound_type_stream: {
+		frames_read = sound_read_samples(inst.sound, &au_mix_temp[new_at], frames_needed);
+	} break;
+	case sound_type_buffer: {
+		frames_read = mini(frames_needed, inst.sound->buffer.count - inst.sound->buffer.cursor);
+		memcpy(&au_mix_temp[new_at], inst.sound->buffer.data+inst.sound->buffer.cursor, (size_t)frames_read * sizeof(float));
+		inst.sound->buffer.cursor += frames_read;
+	} break;
+	case sound_type_none: {
+		log_errf("Got a sound_type_none?");
+	} break;
+	}
+
+	int32_t mix_count = mini((int32_t)frame_count, (int32_t)(new_at+frames_read) - start_at);
+	int32_t end_at    = start_at + mix_count;
+	int32_t total     = new_at + frames_read;
+
+	// Create a sample offset to simulate sound arrival time difference
+	// between left and right ears.
+	// NOTE: This needs a buffer of 10 samples before and after the
+	// relevant range, otherwise it sparkles!!
+	// The speed of sound is 343 m/s, and average head width is .15m
+	// (head_width/speed_of_sound)*48,000 samples/s = 21 audio samples wide
+	int32_t offset[2] = { (int32_t)(10 * dot_pan), (int32_t)(-10 * dot_pan) };
+	int32_t start [2] = { maxi(0,     start_at + inst.prev_offset[0]), maxi(0,     start_at + inst.prev_offset[1]) };
+	int32_t end   [2] = { mini(total, end_at   + offset[0]),           mini(total, end_at   + offset[1]) };
+	float   step  [2] = { (float)(end[0]-start[0]) / frame_count, (float)(end[1]-start[1]) / frame_count };
+	float   curr  [2] = { (float)start[0], (float)start[1] };
+
+	// Sounds behind the user should get a low pass filter
+	float prev   = au_mix_temp[maxi(0, new_at - 1)];
+	float cutoff = fminf(
+		fmaxf(1000, -4000.f * log(fmaxf(1,dist-3.5f)) + 22200), // distance diminishes higher frequencies: https://www.desmos.com/calculator/h5tssewqbl
+		math_lerp(2500, 30000, fminf(1, 1 + dot_front))); // So does being behind the listener
+	float RC     = 1.0f / (2.0f * 3.14159265359f * cutoff);
+	float dt     = 1.0f / AU_SAMPLE_RATE;
+	float alpha  = dt / (RC + dt);
+	for (int32_t i = new_at; i < total; i++) {
+		if (inst.intensity_max_last_read < au_mix_temp[i])
+			inst.intensity_max_last_read = au_mix_temp[i];
+
+		au_mix_temp[i] = prev + alpha * (au_mix_temp[i] - prev);
+		prev = au_mix_temp[i];
+	}
+
+	// Mix the frames together.
+	for (int32_t sample = 0; sample < mix_count; sample+=1) {
+		// Right channel
+		float   sr = au_mix_temp[(int32_t)curr[0]];
+		int32_t ir = sample * 2;
+		output[ir] = fmaxf(-1, fminf(1, output[ir] + sr*pan_volume[0]));
+
+		// Left channel
+		float   sl = au_mix_temp[(int32_t)curr[1]];
+		int32_t il = sample * 2 + 1;
+		output[il] = fmaxf(-1, fminf(1, output[il] + sl*pan_volume[1]));
+
+		curr[0] += step[0];
+		curr[1] += step[1];
+	}
+
+	// Cache the last few samples for implementing our sample buffer
+	int64_t count = mini((int64_t)AU_SAMPLE_BUFFER_SIZE*2, (int64_t)(new_at+frames_read));
+	memcpy(inst.prev_buffer, &au_mix_temp[(new_at + frames_read) - count], count * sizeof(float));
+	inst.prev_buffer_ct = count;
+	inst.prev_offset[0] = offset[0];
+	inst.prev_offset[1] = offset[1];
+
+	return (ma_uint32)mix_count;
 }
 
 ///////////////////////////////////////////
@@ -421,6 +484,11 @@ bool audio_init() {
 void audio_step() {
 	matrix head = pose_matrix(*input_head());
 	matrix_inverse(head, au_head_transform);
+
+	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
+		au_active_sounds[i].intensity_max_frame     = au_active_sounds[i].intensity_max_last_read;
+		au_active_sounds[i].intensity_max_last_read = 0;
+	}
 }
 
 ///////////////////////////////////////////

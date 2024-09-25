@@ -29,6 +29,8 @@ namespace StereoKit
 			set => NativeAPI.sound_inst_set_volume(this, value);
 		}
 
+		public float Intensity => NativeAPI.sound_inst_get_intensity(this);
+
 		/// <summary>Is this Sound instance currently playing? For streaming
 		/// assets, this will be true even if they don't have any new data
 		/// in them, and they're just idling at the end of their data.</summary>
