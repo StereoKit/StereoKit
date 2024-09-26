@@ -1032,6 +1032,7 @@ material_t theme_mat_aura            = nullptr;
 material_t theme_mat_carat           = nullptr;
 
 void ui_theme_visuals_update() {
+	color32 white_corner = {255,255,255,255};
 	color32 white        = {255,255,255,255};
 	color32 black        = {0,0,0,0};
 	color32 gray         = {200, 200, 200, 255};
@@ -1039,8 +1040,8 @@ void ui_theme_visuals_update() {
 	color32 shadow_edge   = {0, 0, 0, 50 };
 	const ui_lathe_pt_t lathe_button[] = {
 		{ {0,    -0.5f},  {0, 1}, white,         true  },
-		{ {0.95f,-0.5f},  {0, 1}, white,         true  },
-		{ {1,    -0.45f}, {1, 0}, white,         true  },
+		{ {1,    -0.5f},  {0, 1}, white,         false },
+		{ {1,    -0.5f},  {1, 0}, white,         true  },
 		{ {1,    -0.1f},  {1, 0}, white,         false },
 		{ {1.2f,  0.49f}, {0, 1}, black,         true, true },
 		{ {0.0f,  0.49f}, {0, 1}, shadow_center, true, true } };
@@ -1050,8 +1051,8 @@ void ui_theme_visuals_update() {
 		{ {0.8f, -0.1f }, {-1, 0}, gray,          true  },
 		{ {0.8f, -0.5f }, {-1, 0}, white,         false },
 		{ {0.8f, -0.5f }, { 0, 1}, white,         true  },
-		{ {0.95f,-0.5f }, { 0, 1}, white,         true  },
-		{ {1,    -0.45f}, { 1, 0}, white,         true  },
+		{ {1,    -0.5f }, { 0, 1}, white,         false },
+		{ {1,    -0.5f }, { 1, 0}, white,         true  },
 		{ {1,    -0.1f }, { 1, 0}, white,         false },
 		{ {1.2f,  0.49f}, { 0, 1}, black,         true, true },
 		{ {0,     0.49f}, { 0, 1}, shadow_center, true, true }, };
@@ -1069,14 +1070,14 @@ void ui_theme_visuals_update() {
 		{ {0,    -0.5f},  {0, 1}, white,       true  },
 		{ {1,    -0.5f},  {0, 1}, white,       false },
 		{ {1,    -0.5f},  {1, 0}, white,       true  },
-		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.5f},  {1, 0}, white_corner,false },
 		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
 		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
 	const ui_lathe_pt_t lathe_slider_btn[] = {
 		{ {0,    -0.5f},  {0, 1}, white,       true  },
 		{ {0.8f, -0.5f},  {0, 1}, white,       true  },
 		{ {1,    -0.4f},  {1, 0}, white,       true  },
-		{ {1,     0.5f},  {1, 0}, white,       false },
+		{ {1,     0.5f},  {1, 0}, white_corner,false },
 		{ {1,     0.49f}, {0, 1}, shadow_edge, true  },
 		{ {2.0f,  0.49f}, {0, 1}, black,       false } };
 
@@ -1100,7 +1101,7 @@ void ui_theme_visuals_update() {
 
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_pinch, ui_corner_all, fminf((ui_line_height() * 0.5f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
 	_ui_gen_quadrant_mesh(&theme_mesh_slider_push,  ui_corner_all, fminf((ui_line_height() * 0.55f)/2.f, skui_settings.rounding), 5, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
-	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all, fminf((text_style_get_baseline(ui_get_text_style()) * 0.4f)/2.f, skui_settings.rounding * 0.1f),  3, false, true, lathe_slider_btn, _countof(lathe_slider_btn));
+	_ui_gen_quadrant_mesh(&theme_mesh_separator,    ui_corner_all, fminf((text_style_get_baseline(ui_get_text_style()) * 0.4f)/2.f, skui_settings.rounding * 0.1f),  3, false, true, lathe_slider, _countof(lathe_slider));
 	
 	float aura_mesh_radius = skui_aura_radius * 0.75f;
 	ui_default_aura_mesh(&theme_mesh_aura, 0, fminf(ui_line_height(), skui_settings.rounding) + aura_mesh_radius, skui_aura_radius - aura_mesh_radius, 7, 5);
