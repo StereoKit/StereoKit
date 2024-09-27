@@ -163,14 +163,14 @@ void openxr_show_ext_table(array_t<const char*> exts_request, array_t<const char
 	log_diag("<~BLK>___________________________________<~clr>");
 	log_diag("<~BLK>|     <~YLW>Usage <~BLK>| <~YLW>Extension<~clr>");
 	log_diag("<~BLK>|-----------|----------------------<~clr>");
-	for (uint32_t i = 0; i < exts_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       exts_available[i]);
-	for (uint32_t i = 0; i < exts_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", exts_request  [i]);
+	for (int32_t i = 0; i < exts_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       exts_available[i]);
+	for (int32_t i = 0; i < exts_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", exts_request  [i]);
 	if (layers_request.count != 0 || layers_available.count != 0) {
 		log_diag("<~BLK>|-----------|----------------------<~clr>");
 		log_diag("<~BLK>|           | <~YLW>Layers<~clr>");
 		log_diag("<~BLK>|-----------|----------------------<~clr>");
-		for (uint32_t i = 0; i < layers_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       layers_available[i]);
-		for (uint32_t i = 0; i < layers_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", layers_request  [i]);
+		for (int32_t i = 0; i < layers_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       layers_available[i]);
+		for (int32_t i = 0; i < layers_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", layers_request  [i]);
 	}
 	log_diag("<~BLK>|___________|______________________<~clr>");
 }
@@ -224,7 +224,7 @@ bool openxr_create_system() {
 	array_t<const char*> layers_available = {};
 	openxr_list_layers(&layers_available, &layers_request);
 
-	for (uint32_t i = 0; i < exts_request.count; i++)
+	for (int32_t i = 0; i < exts_request.count; i++)
 		xr_exts_loaded.add(hash_fnv64_string(exts_request[i]));
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
@@ -748,7 +748,7 @@ void openxr_list_layers(array_t<const char*>* ref_available_layers, array_t<cons
 			}
 		}
 		if (is_requested != -1) ref_request_layers  ->add(xr_request_layers[is_requested]);
-		else                    ref_available_layers->add(strdup(layers[i].layerName));
+		else                    ref_available_layers->add(_strdup(layers[i].layerName));
 	}
 
 	sk_free(layers);

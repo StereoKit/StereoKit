@@ -330,7 +330,7 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 		FOR_EACH_EXT_DEBUG  (ADD_NAME)
 		else {
 			// We got to the end, and no-one loves this extension.
-			ref_all_available_exts->add(strdup(exts[i].extensionName));
+			ref_all_available_exts->add(_strdup(exts[i].extensionName));
 		}
 #undef ADD_NAME
 	}
