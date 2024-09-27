@@ -103,7 +103,7 @@ XrReferenceSpaceType     xr_refspace;
 ///////////////////////////////////////////
 
 bool32_t openxr_try_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
-void     openxr_preferred_layers    (uint32_t &out_layer_count, const char **out_layers);
+void     openxr_list_layers    (array_t<const char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
 XrTime   openxr_acquire_time        ();
 bool     openxr_blank_frame         ();
 bool     is_ext_explicitly_requested(const char* extension_name);
@@ -153,6 +153,30 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
+void openxr_show_ext_table(array_t<const char*> exts_request, array_t<const char*> exts_available, array_t<const char*> layers_request, array_t<const char*> layers_available) {
+	if (exts_request    .count == 0 &&
+		exts_available  .count == 0 &&
+		layers_request  .count == 0 &&
+		layers_available.count == 0) return;
+
+	log_diag("OpenXR extensions:");
+	log_diag("<~BLK>___________________________________<~clr>");
+	log_diag("<~BLK>|     <~YLW>Usage <~BLK>| <~YLW>Extension<~clr>");
+	log_diag("<~BLK>|-----------|----------------------<~clr>");
+	for (uint32_t i = 0; i < exts_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       exts_available[i]);
+	for (uint32_t i = 0; i < exts_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", exts_request  [i]);
+	if (layers_request.count != 0 || layers_available.count != 0) {
+		log_diag("<~BLK>|-----------|----------------------<~clr>");
+		log_diag("<~BLK>|           | <~YLW>Layers<~clr>");
+		log_diag("<~BLK>|-----------|----------------------<~clr>");
+		for (uint32_t i = 0; i < layers_available.count; i++) log_diagf("<~BLK>|   <~clr>present <~BLK>| <~clr>%s",       layers_available[i]);
+		for (uint32_t i = 0; i < layers_request  .count; i++) log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", layers_request  [i]);
+	}
+	log_diag("<~BLK>|___________|______________________<~clr>");
+}
+
+///////////////////////////////////////////
+
 #if defined(SK_DEBUG)
 XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFlagsEXT severity,
                                                    XrDebugUtilsMessageTypeFlagsEXT,
@@ -192,27 +216,22 @@ bool openxr_create_system() {
 	}
 #endif
 
-	log_diag("Runtime OpenXR Extensions:");
-	log_diag("<~BLK>___________________________________<~clr>");
-	log_diag("<~BLK>|     <~YLW>Usage <~BLK>| <~YLW>Extension<~clr>");
-	log_diag("<~BLK>|-----------|----------------------<~clr>");
-	array_t<const char *> extensions = openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, [](const char *ext) {log_diagf("<~BLK>|   present | <~clr>%s", ext);});
-	extensions.each([](const char *&ext) {
-		log_diagf("<~BLK>| <~CYN>ACTIVATED <~BLK>| <~GRN>%s<~clr>", ext); 
-		xr_exts_loaded.add(hash_fnv64_string(ext));
-	});
-	log_diag("<~BLK>|___________|______________________<~clr>");
+	array_t<const char*> exts_request   = {};
+	array_t<const char*> exts_available = {};
+	openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, &exts_available, &exts_request);
 
-	uint32_t layer_count = 0;
-	openxr_preferred_layers(layer_count, nullptr);
-	const char **layers = sk_malloc_t(const char *, layer_count);
-	openxr_preferred_layers(layer_count, layers);
+	array_t<const char*> layers_request   = {};
+	array_t<const char*> layers_available = {};
+	openxr_list_layers(&layers_available, &layers_request);
+
+	for (uint32_t i = 0; i < exts_request.count; i++)
+		xr_exts_loaded.add(hash_fnv64_string(exts_request[i]));
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
-	create_info.enabledExtensionCount = (uint32_t)extensions.count;
-	create_info.enabledExtensionNames = extensions.data;
-	create_info.enabledApiLayerCount  = layer_count;
-	create_info.enabledApiLayerNames  = layers;
+	create_info.enabledExtensionCount = (uint32_t)exts_request.count;
+	create_info.enabledExtensionNames =           exts_request.data;
+	create_info.enabledApiLayerCount  = (uint32_t)layers_request.count;
+	create_info.enabledApiLayerNames  =           layers_request.data;
 	create_info.applicationInfo.applicationVersion = 1;
 
 	// Use a version Id formatted as 0xMMMiiPPP
@@ -221,7 +240,7 @@ bool openxr_create_system() {
 		(SK_VERSION_MINOR << 12 & 0x000FF000) |
 		(SK_VERSION_PATCH       & 0x00000FFF);
 
-	create_info.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	create_info.applicationInfo.apiVersion = XR_MAKE_VERSION(1,0,XR_VERSION_PATCH(XR_CURRENT_API_VERSION));
 	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_get_settings_ref()->app_name);
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
 #if defined(SK_OS_ANDROID)
@@ -232,30 +251,43 @@ bool openxr_create_system() {
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
-	extensions.free();
-	sk_free(layers);
+	// If we succeeded, log some infor about our setup.
+	if (XR_SUCCEEDED(result) && xr_instance != XR_NULL_HANDLE) {
+		log_diagf("OpenXR API:     %u.%u.%u",
+			XR_VERSION_MAJOR(create_info.applicationInfo.apiVersion),
+			XR_VERSION_MINOR(create_info.applicationInfo.apiVersion),
+			XR_VERSION_PATCH(create_info.applicationInfo.apiVersion));
 
-	// Check if OpenXR is on this system, if this is null here, the user needs
-	// to install an OpenXR runtime and ensure it's active!
+		// Fetch the runtime name/info, for logging and for a few other checks
+		XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
+		xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
+			"xrGetInstanceProperties");
+
+		device_data.runtime = string_copy(inst_properties.runtimeName);
+		log_diagf("OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+			inst_properties.runtimeName,
+			XR_VERSION_MAJOR(inst_properties.runtimeVersion),
+			XR_VERSION_MINOR(inst_properties.runtimeVersion),
+			XR_VERSION_PATCH(inst_properties.runtimeVersion));
+	}
+
+	// Always log the extension table, this may contain information about why
+	// we failed to load.
+	openxr_show_ext_table(exts_request, exts_available, layers_request, layers_available);
+	for(int32_t e=0; e<exts_available.count; e+=1) free((void*)exts_available[e]);
+	exts_request  .free();
+	exts_available.free();
+	for(int32_t e=0; e<layers_available.count; e+=1) free((void*)layers_available[e]);
+	layers_request  .free();
+	layers_available.free();
+
+	// If the instance is null here, the user needs to install an OpenXR
+	// runtime and ensure it's active!
 	if (XR_FAILED(result) || xr_instance == XR_NULL_HANDLE) {
-		const char *err_name = openxr_string(result);
-
-		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", err_name);
+		log_fail_reasonf(90, log_inform, "Couldn't create OpenXR instance [%s], is OpenXR installed and set as the active runtime?", openxr_string(result));
 		openxr_cleanup();
 		return false;
 	}
-
-	// Fetch the runtime name/info, for logging and for a few other checks
-	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
-	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
-		"xrGetInstanceProperties");
-
-	device_data.runtime = string_copy(inst_properties.runtimeName);
-	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
-		inst_properties.runtimeName,
-		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
-		XR_VERSION_MINOR(inst_properties.runtimeVersion),
-		XR_VERSION_PATCH(inst_properties.runtimeVersion));
 
 	// Create links to the extension functions
 	xr_extensions = openxr_create_extension_table(xr_instance);
@@ -697,7 +729,7 @@ bool openxr_blank_frame() {
 
 ///////////////////////////////////////////
 
-void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers) {
+void openxr_list_layers(array_t<const char*>* ref_available_layers, array_t<const char*>* ref_request_layers) {
 	// Find what extensions are available on this system!
 	uint32_t layer_count = 0;
 	xrEnumerateApiLayerProperties(0, &layer_count, nullptr);
@@ -705,23 +737,18 @@ void openxr_preferred_layers(uint32_t &out_layer_count, const char **out_layers)
 	for (uint32_t i = 0; i < layer_count; i++) layers[i] = { XR_TYPE_API_LAYER_PROPERTIES };
 	xrEnumerateApiLayerProperties(layer_count, &layer_count, layers);
 
-	if (out_layers == nullptr) {
-		for (uint32_t i = 0; i < layer_count; i++) {
-			log_diagf("OpenXR layer found: %s", layers[i].layerName);
-		}
-	}
-
-	// Count how many there are, and copy them out
-	out_layer_count = 0;
-	for (int32_t e = 0; e < _countof(xr_request_layers); e++) {
-		for (uint32_t i = 0; i < layer_count; i++) {
+	// Fill up our arrays based on if we want to request them, or if they're
+	// just available.
+	for (uint32_t i = 0; i < layer_count; i++) {
+		int32_t is_requested = -1;
+		for (int32_t e = 0; e < _countof(xr_request_layers); e++) {
 			if (strcmp(layers[i].layerName, xr_request_layers[e]) == 0) {
-				if (out_layers != nullptr)
-					out_layers[out_layer_count] = xr_request_layers[e];
-				out_layer_count += 1;
+				is_requested = e;
 				break;
 			}
 		}
+		if (is_requested != -1) ref_request_layers  ->add(xr_request_layers[is_requested]);
+		else                    ref_available_layers->add(strdup(layers[i].layerName));
 	}
 
 	sk_free(layers);
