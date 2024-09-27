@@ -6,8 +6,7 @@
 #include "openxr.h"
 #include "../stereokit.h"
 #include "../libraries/array.h"
-
-#include <string.h>
+#include "../libraries/stref.h"
 
 #if defined(XR_USE_GRAPHICS_API_D3D11)
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -330,7 +329,7 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 		FOR_EACH_EXT_DEBUG  (ADD_NAME)
 		else {
 			// We got to the end, and no-one loves this extension.
-			ref_all_available_exts->add(_strdup(exts[i].extensionName));
+			ref_all_available_exts->add(string_copy(exts[i].extensionName));
 		}
 #undef ADD_NAME
 	}

@@ -274,10 +274,10 @@ bool openxr_create_system() {
 	// Always log the extension table, this may contain information about why
 	// we failed to load.
 	openxr_show_ext_table(exts_request, exts_available, layers_request, layers_available);
-	for(int32_t e=0; e<exts_available.count; e+=1) free((void*)exts_available[e]);
+	for(int32_t e=0; e<exts_available.count; e+=1) _sk_free((void*)exts_available[e]);
 	exts_request  .free();
 	exts_available.free();
-	for(int32_t e=0; e<layers_available.count; e+=1) free((void*)layers_available[e]);
+	for(int32_t e=0; e<layers_available.count; e+=1) _sk_free((void*)layers_available[e]);
 	layers_request  .free();
 	layers_available.free();
 
@@ -748,7 +748,7 @@ void openxr_list_layers(array_t<const char*>* ref_available_layers, array_t<cons
 			}
 		}
 		if (is_requested != -1) ref_request_layers  ->add(xr_request_layers[is_requested]);
-		else                    ref_available_layers->add(_strdup(layers[i].layerName));
+		else                    ref_available_layers->add(string_copy(layers[i].layerName));
 	}
 
 	sk_free(layers);
