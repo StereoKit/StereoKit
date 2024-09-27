@@ -172,9 +172,9 @@ include("cmake/CPM.cmake")
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.0.34
+    NAME openxr_loader # 1.1.41
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG 288d3a7ebc1ad959f62d51da75baa3d27438c499
+    GIT_TAG 7d1c0961351bac61fd7bb72d402649d5ac3f2935
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
