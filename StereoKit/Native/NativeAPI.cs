@@ -498,10 +498,12 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 hierarchy_to_local_direction(in Vec3 world_dir);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat hierarchy_to_local_rotation (in Quat world_orientation);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose hierarchy_to_local_pose     (in Pose world_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Ray  hierarchy_to_local_ray      (   Ray  world_ray);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 hierarchy_to_world_point    (in Vec3 local_pt);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3 hierarchy_to_world_direction(in Vec3 local_dir);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat hierarchy_to_world_rotation (in Quat local_orientation);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose hierarchy_to_world_pose     (in Pose local_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Ray  hierarchy_to_world_ray      (   Ray  local_ray);
 
 		///////////////////////////////////////////
 
