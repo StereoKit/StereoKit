@@ -729,32 +729,28 @@ bool32_t ui_slider_at_g(ui_dir_ bar_direction, const C *id_text, float &value, f
 			? vec2{ size_min, size_min / 2 }
 			: vec2{ size_min / 2, size_min});
 
-	button_state_ active_state;
-	button_state_ focus_state;
-	int32_t       interactor;
-	vec2          button_center;
-	float         finger_offset;
-	float         old_value = value;
+	float old_value = value;
+	ui_slider_data_t slider;
 
 	vec2 vmin, vmax, vstep, vval;
 	if (bar_direction == ui_dir_vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
 	else                                  { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
-	ui_slider_behavior(id, &vval, vmin, vmax, vstep, window_relative_pos, size, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, & button_center, & finger_offset, & focus_state, & active_state, & interactor);
+	ui_slider_behavior(window_relative_pos, size, id, &vval, vmin, vmax, vstep, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, &slider);
 	value = bar_direction == ui_dir_vertical ? vval.y : vval.x;
 
 	// Draw the UI
 	float percent   = (value - min) / (max - min);
-	float vis_focus = ui_get_anim_focus(id, focus_state, active_state);
+	float vis_focus = ui_get_anim_focus(id, slider.focus_state, slider.active_state);
 	ui_progress_bar_at_ex(percent, window_relative_pos, size, vis_focus, bar_direction, false);
 	ui_draw_element(confirm_method == ui_confirm_push ? ui_vis_slider_push : ui_vis_slider_pinch,
-		vec3{ button_center.x+button_size.x/2, button_center.y+button_size.y/2, window_relative_pos.z },
-		vec3{ button_size.x, button_size.y, fmaxf(finger_offset,rule_size * skui_pressed_depth + mm2m) },
+		vec3{ slider.button_center.x+button_size.x/2, slider.button_center.y+button_size.y/2, window_relative_pos.z },
+		vec3{ button_size.x, button_size.y, fmaxf(slider.finger_offset,rule_size * skui_pressed_depth + mm2m) },
 		vis_focus);
 	
-	if (active_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ button_center.x, button_center.y,0 }));
+	if (slider.active_state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y,0 }));
 
-	if (notify_on == ui_notify_finalize) return active_state & button_state_just_inactive;
+	if (notify_on == ui_notify_finalize) return slider.active_state & button_state_just_inactive;
 	else                                 return old_value != value;
 }
 bool32_t ui_hslider_at       (const char     *id_text, float  &value, float  min, float  max, float  step, vec3 window_relative_pos, vec2 size, ui_confirm_ confirm_method, ui_notify_ notify_on) { return ui_slider_at_g<char    >(ui_dir_horizontal, id_text, value, min, max, step, window_relative_pos, size, confirm_method, notify_on); }

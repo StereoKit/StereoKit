@@ -46,6 +46,7 @@
 		<Compile Include="..\Demos\*.cs" Visible="false" />
 		<Compile Include="..\Tools\*.cs" Visible="false" />
 		<Compile Include="..\Tests\*.cs" Visible="false" />
+		<Compile Include="..\Docs\*.cs" Visible="false" />
 	</ItemGroup>
 
 </Project>

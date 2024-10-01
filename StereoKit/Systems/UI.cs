@@ -1533,7 +1533,7 @@ namespace StereoKit
 		/// UI element.</param>
 		/// <returns>A focus value in the realm of 0-1, where 0 is unfocused,
 		/// and 1 is active.</returns>
-		public static float GetAnimFocus(ulong id, BtnState focusState, BtnState activationState)
+		public static float GetAnimFocus(IdHash id, BtnState focusState, BtnState activationState)
 			=> NativeAPI.ui_get_anim_focus(id, focusState, activationState);
 
 		/// <summary>This creates a Pose that is friendly towards UI popup
@@ -1674,5 +1674,41 @@ namespace StereoKit
 		/// This will be -1 if no interaction has occurred.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
 			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, out hand);
+
+		/// <summary>This is the core functionality of StereoKit's slider
+		/// elements, without any of the rendering parts! If you're trying to
+		/// create your own sliding UI elements, or do more extreme
+		/// customization of the look and feel of slider UI elements, then this
+		/// function will provide a lot of complex pressing functionality for
+		/// you!</summary>
+		/// <param name="windowRelativePos">The layout position of the
+		/// pressable area.</param>
+		/// <param name="size">The size of the pressable area.</param>
+		/// <param name="id">The id for this pressable element to track its
+		/// state with.</param>
+		/// <param name="value">The value that the slider will store slider
+		/// state in.</param>
+		/// <param name="min">The minimum value the slider can set, left side
+		/// of the slider.</param>
+		/// <param name="max">The maximum value the slider can set, right 
+		/// side of the slider.</param>
+		/// <param name="step">Locks the value to increments of step. Starts
+		/// at min, and increments by step. 0 is valid, and means "don't lock
+		/// to increments".</param>
+		/// <param name="buttonSizeVisual">This is the visual size of the
+		/// element representing the touchable area of the slider. This is used
+		/// to calculate the center of the button's placement without going
+		/// outside the provided bounds.</param>
+		/// <param name="buttonSizeInteract">The size of the interactive touch
+		/// element of the slider. Set this to zero to use the entire area as a
+		/// touchable surface.</param>
+		/// <param name="confirmMethod">How should the slider be activated?
+		/// Push will be a push-button the user must press first, and pinch
+		/// will be a tab that the user must pinch and drag around.</param>
+		/// <param name="data">This is data about the slider interaction, you
+		/// can use this for visualizing the slider behavior, or reacting to
+		/// its events.</param>
+		public static void SliderBehavior(Vec3 windowRelativePos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 step, Vec2 buttonSizeVisual, Vec2 buttonSizeInteract, UIConfirm confirmMethod, out UISliderData data)
+			=> NativeAPI.ui_slider_behavior(windowRelativePos, size, id, ref value, min, max, step, buttonSizeVisual, buttonSizeInteract, confirmMethod, out data);
 	}
 }

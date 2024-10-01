@@ -891,4 +891,23 @@ namespace StereoKit
 		public override int GetHashCode()
 			=> id.GetHashCode();
 	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct IdHash
+	{
+		ulong hash;
+
+		public static implicit operator ulong(IdHash h) => h.hash;
+		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct UISliderData
+	{
+		public Vec2     buttonCenter;
+		public float    fingerOffset;
+		public BtnState focusState;
+		public BtnState activeState;
+		public int      interactor;
+	}
 }
