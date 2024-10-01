@@ -24,7 +24,7 @@ class DocSliderBehavior : ITest
 		Vec3   btnSize   = new Vec3(btnHeight, btnHeight, depth);
 
 		Vec2 prev = pt;
-		UI.SliderBehavior(bounds.TLB, bounds.dimensions.XY, hash, ref pt, Vec2.Zero, Vec2.One, Vec2.Zero, btnSize.XY, Vec2.Zero, UIConfirm.Push, out UISliderData slider);
+		UI.SliderBehavior(bounds.TLB, bounds.dimensions.XY, hash, ref pt, Vec2.Zero, Vec2.One, btnSize.XY, Vec2.Zero, UIConfirm.Push, out UISliderData slider);
 		float focus = UI.GetAnimFocus(hash, slider.focusState, slider.activeState);
 		UI.DrawElement(UIVisual.SliderLine, bounds.TLB, new Vec3(bounds.dimensions.x, bounds.dimensions.y, depth*0.1f), slider.focusState.IsActive() ? 0.5f:0);
 		UI.DrawElement(UIVisual.SliderPush, slider.buttonCenter.XY0 + btnSize.XY0/2.0f, btnSize, focus);

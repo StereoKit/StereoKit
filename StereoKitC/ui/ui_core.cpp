@@ -364,7 +364,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 
 ///////////////////////////////////////////
 
-void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step, vec2 button_size_visual, vec2 button_size_interact, ui_confirm_ confirm_method, ui_slider_data_t* out) {
+void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 button_size_visual, vec2 button_size_interact, ui_confirm_ confirm_method, ui_slider_data_t* out) {
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
 
@@ -439,8 +439,6 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 			(float)fmin(1, fmax(0, ((window_relative_pos.x-button_size_visual.x/2)-finger_at.x) / (size.x-button_size_visual.x))),
 			(float)fmin(1, fmax(0, ((window_relative_pos.y-button_size_visual.y/2)-finger_at.y) / (size.y-button_size_visual.y)))};
 		vec2 new_val = min + pos_in_slider*range;
-		if (step.x != 0) new_val.x = min.x + ((int)(((new_val.x - min.x) / step.x) + 0.5f)) * step.x;
-		if (step.y != 0) new_val.y = min.y + ((int)(((new_val.y - min.x) / step.y) + 0.5f)) * step.y;
 
 		new_percent = {
 			range.x == 0 ? 0.5f : (new_val.x - min.x) / range.x,
@@ -448,26 +446,6 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		out->button_center = {
 			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x/2.0f),
 			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y/2.0f) };
-
-		// Play tick sound as the value updates
-		if (value->x != new_val.x || value->y != new_val.y) {
-			
-			if (step.x != 0 || step.y != 0) {
-				// Play on every change if there's a user specified step value
-				ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out->button_center.x, out->button_center.y, window_relative_pos.z }));
-			} else {
-				// If no user specified step, then we'll do a set number of
-				// clicks across the whole bar.
-				const int32_t click_steps = 10;
-
-				int32_t old_quantize = (int32_t)(percent    .x * click_steps + 0.5f) + (int32_t)(percent    .y * click_steps + 0.5f) * 7000;
-				int32_t new_quantize = (int32_t)(new_percent.x * click_steps + 0.5f) + (int32_t)(new_percent.y * click_steps + 0.5f) * 7000;
-
-				if (old_quantize != new_quantize) {
-					ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ out->button_center.x, out->button_center.y, window_relative_pos.z }));
-				}
-			}
-		}
 
 		// Do this down here so we can calculate old_percent above
 		*value = new_val;
