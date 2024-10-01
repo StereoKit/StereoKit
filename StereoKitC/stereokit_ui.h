@@ -146,6 +146,14 @@ typedef struct ui_settings_t {
 	float backplate_border;
 } ui_settings_t;
 
+typedef struct ui_slider_data_t {
+	vec2          button_center;
+	float         finger_offset;
+	button_state_ focus_state;
+	button_state_ active_state;
+	int32_t       interactor;
+} ui_slider_data_t;
+
 typedef uint64_t id_hash_t;
 
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_vertices, int32_t vertex_count, float overflow_percent);
@@ -220,6 +228,7 @@ SK_API float    ui_line_height   (void);
 SK_API bool32_t ui_is_interacting       (handed_ hand);
 SK_API void     ui_button_behavior      (vec3 window_relative_pos, vec2 size, id_hash_t id, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
 SK_API void     ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, sk_ref(float) out_finger_offset, sk_ref(button_state_) out_button_state, sk_ref(button_state_) out_focus_state, int32_t* out_opt_hand sk_default(nullptr));
+SK_API void     ui_slider_behavior      (vec3 window_relative_pos, vec2 size, id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 step, vec2 button_size_visual, vec2 button_size_interact, ui_confirm_ confirm_method, ui_slider_data_t* out);
 
 SK_API button_state_ ui_volume_at        (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
 SK_API button_state_ ui_volume_at_16     (const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
