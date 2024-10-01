@@ -1690,11 +1690,8 @@ namespace StereoKit
 		/// state in.</param>
 		/// <param name="min">The minimum value the slider can set, left side
 		/// of the slider.</param>
-		/// <param name="max">The maximum value the slider can set, right 
+		/// <param name="max">The maximum value the slider can set, right
 		/// side of the slider.</param>
-		/// <param name="step">Locks the value to increments of step. Starts
-		/// at min, and increments by step. 0 is valid, and means "don't lock
-		/// to increments".</param>
 		/// <param name="buttonSizeVisual">This is the visual size of the
 		/// element representing the touchable area of the slider. This is used
 		/// to calculate the center of the button's placement without going
@@ -1708,7 +1705,7 @@ namespace StereoKit
 		/// <param name="data">This is data about the slider interaction, you
 		/// can use this for visualizing the slider behavior, or reacting to
 		/// its events.</param>
-		public static void SliderBehavior(Vec3 windowRelativePos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 step, Vec2 buttonSizeVisual, Vec2 buttonSizeInteract, UIConfirm confirmMethod, out UISliderData data)
-			=> NativeAPI.ui_slider_behavior(windowRelativePos, size, id, ref value, min, max, step, buttonSizeVisual, buttonSizeInteract, confirmMethod, out data);
+		public static void SliderBehavior(Vec3 windowRelativePos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 buttonSizeVisual, Vec2 buttonSizeInteract, UIConfirm confirmMethod, out UISliderData data)
+			=> NativeAPI.ui_slider_behavior(windowRelativePos, size, id, ref value, min, max, buttonSizeVisual, buttonSizeInteract, confirmMethod, out data);
 	}
 }

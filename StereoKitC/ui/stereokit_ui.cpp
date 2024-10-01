@@ -736,6 +736,8 @@ bool32_t ui_slider_at_g(ui_dir_ bar_direction, const C *id_text, float &value, f
 	if (bar_direction == ui_dir_vertical) { vmin = { 0,min }; vmax = { 0,max }; vstep = { 0,step }; vval = { 0,value }; }
 	else                                  { vmin = { min,0 }; vmax = { max,0 }; vstep = { step,0 }; vval = { value,0 }; }
 	ui_slider_behavior(window_relative_pos, size, id, &vval, vmin, vmax, vstep, button_size, button_size + vec2{skui_settings.padding, skui_settings.padding}*2, confirm_method, &slider);
+	if (vstep.x != 0) vval.x = vmin.x + ((int32_t)(((vval.x - vmin.x) / vstep.x) + 0.5f)) * vstep.x;
+	if (vstep.y != 0) vval.y = vmin.y + ((int32_t)(((vval.y - vmin.x) / vstep.y) + 0.5f)) * vstep.y;
 	value = bar_direction == ui_dir_vertical ? vval.y : vval.x;
 
 	// Draw the UI
@@ -749,6 +751,26 @@ bool32_t ui_slider_at_g(ui_dir_ bar_direction, const C *id_text, float &value, f
 	
 	if (slider.active_state & button_state_just_active)
 		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y,0 }));
+
+	// Play tick sound as the value updates
+	if (slider.active_state & button_state_active && old_value != value) {
+		if (step != 0) {
+			// Play on every change if there's a user specified step value
+			ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y, window_relative_pos.z }));
+		} else {
+			// If no user specified step, then we'll do a set number of
+			// clicks across the whole bar.
+			const int32_t click_steps = 10;
+
+			float   old_percent  = (old_value - min) / (max - min);
+			int32_t old_quantize = (int32_t)(old_percent * click_steps + 0.5f);
+			int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
+
+			if (old_quantize != new_quantize) {
+				ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y, window_relative_pos.z }));
+			}
+		}
+	}
 
 	if (notify_on == ui_notify_finalize) return slider.active_state & button_state_just_inactive;
 	else                                 return old_value != value;

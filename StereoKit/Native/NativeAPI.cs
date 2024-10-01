@@ -797,7 +797,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool ui_is_interacting       (Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_button_behavior      (Vec3 window_relative_pos, Vec2 size, IdHash id, out float finger_offset, out BtnState button_state, out BtnState focus_state, out int hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_button_behavior_depth(Vec3 window_relative_pos, Vec2 size, IdHash id, float button_depth, float button_activation_depth, out float finger_offset, out BtnState button_state, out BtnState focus_state, out int hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_slider_behavior      (Vec3 window_relative_pos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 step, Vec2 button_size_visual, Vec2 button_size_interact, UIConfirm confirm_method, out UISliderData data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_slider_behavior      (Vec3 window_relative_pos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 button_size_visual, Vec2 button_size_interact, UIConfirm confirm_method, out UISliderData data);
 
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState ui_volume_at_16      (string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_hand, IntPtr out_opt_focus_state);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState ui_volume_at_16      (string id, Bounds bounds, UIConfirm interact_type, out Handed out_opt_hand, IntPtr out_opt_focus_state);
