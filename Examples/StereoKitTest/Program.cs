@@ -200,14 +200,14 @@ class Program
 		TextStyle  style          = UI.TextStyle;
 		for (int i = 0; i < Tests.Count(testCategory); i++)
 		{
-			float width = Text.Size(Tests.GetTestName(testCategory,i), style).x + uiSettings.padding * 2;
+			float width = Text.SizeLayout(Tests.GetTestName(testCategory,i), style).x + uiSettings.padding * 2;
 			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth)
 			{
 				float inflate = (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
 				for (int t = start; t < i; t++)
 				{
 					string name      = Tests.GetTestName(testCategory,t);
-					float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2 + inflate;
+					float  currWidth = Text.SizeLayout(name, style).x + uiSettings.padding * 2 + inflate;
 					if (UI.Radio(name, Tests.IsActive(testCategory,t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
 						Tests.SetTestActive(testCategory, t);
 					UI.SameLine();
@@ -221,7 +221,7 @@ class Program
 		for (int t = start; t < Tests.Count(testCategory); t++)
 		{
 			string name      = Tests.GetTestName(testCategory, t);
-			float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2;
+			float  currWidth = Text.SizeLayout(name, style).x + uiSettings.padding * 2;
 			if (UI.Radio(name, Tests.IsActive(testCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
 				Tests.SetTestActive(testCategory, t);
 			UI.SameLine();
