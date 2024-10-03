@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
 
 #include "../stereokit.h"
@@ -20,18 +26,20 @@ struct _sound_inst_t {
 	float    intensity_max_last_read;
 };
 
-bool audio_init    ();
-void audio_step    ();
-void audio_shutdown();
+bool           audio_init          ();
+void           audio_step          ();
+void           audio_shutdown      ();
 
-void audio_pause ();
-void audio_resume();
+void           audio_pause         ();
+void           audio_resume        ();
+
+_sound_inst_t* audio_get_inst_slot (int32_t idx);
+_sound_inst_t* audio_get_inst_gen  (int32_t idx, uint16_t generation);
+int32_t        audio_get_inst_count();
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 void audio_set_default_device_in (const wchar_t *id);
 void audio_set_default_device_out(const wchar_t *id);
 #endif
-
-extern _sound_inst_t au_active_sounds[8];
 
 } // namespace sk

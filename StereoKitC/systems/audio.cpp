@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "audio.h"
 #include "../asset_types/sound.h"
 
@@ -534,6 +540,28 @@ void audio_resume() {
 	au_paused = false;
 	ma_device_init (&au_context, &au_config, &au_device);
 	ma_device_start(&au_device);
+}
+
+///////////////////////////////////////////
+
+_sound_inst_t* audio_get_inst_slot(int32_t idx) {
+	return idx >= 0 && idx < _countof(au_active_sounds)
+		? &au_active_sounds[idx]
+		: nullptr;
+}
+
+///////////////////////////////////////////
+
+_sound_inst_t* audio_get_inst_gen(int32_t idx, uint16_t generation) {
+	return idx >= 0 && idx < _countof(au_active_sounds) && au_active_sounds[idx].id == generation
+		? &au_active_sounds[idx]
+		: nullptr;
+}
+
+///////////////////////////////////////////
+
+int32_t audio_get_inst_count() {
+	return _countof(au_active_sounds);
 }
 
 }

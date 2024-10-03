@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "sound.h"
 #include "assets.h"
 #include "../stereokit.h"
@@ -218,34 +224,23 @@ sound_inst_t sound_play(sound_t sound, vec3 at, float volume) {
 	ma_decoder_seek_to_pcm_frame(&sound->decoder, 0);
 	sound->buffer.cursor = 0;
 
-	sound_inst_t result;
-	result._id   = 0;
-	result._slot = -1;
-
-	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
-		if (au_active_sounds[i].sound == sound) {
-			//au_active_sounds[i] = {sound, au_active_sounds[i].id, at, decibels_to_signal(sound->decibels * volume) };
-			au_active_sounds[i] = {sound, au_active_sounds[i].id, at, volume };
-
-			result._id   = au_active_sounds[i].id;
-			result._slot = (int16_t)i;
-			return result;
-		}
+	int16_t slot = -1;
+	for (int32_t i = 0; i < audio_get_inst_count(); i++) {
+		_sound_inst_t* inst = audio_get_inst_slot(i);
+		if (              inst->sound == sound)   { slot = i; break; }
+		if (slot == -1 && inst->sound == nullptr) { slot = i; }
 	}
+	if (slot == -1) return sound_inst_t{0, -1};
 
-	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
-		if (au_active_sounds[i].sound == nullptr) {
-			sound_addref(sound);
-			//au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, decibels_to_signal(sound->decibels * volume) };
-			au_active_sounds[i] = { sound, (uint16_t)(au_active_sounds[i].id+1), at, volume };
+	_sound_inst_t* dest = audio_get_inst_slot(slot);
+	sound_addref (sound);
+	sound_release(dest->sound);
 
-			result._id   = au_active_sounds[i].id;
-			result._slot = (int16_t)i;
-			return result;
-		}
-	}
-	return result;
+	//*dest = {sound, (uint16_t)(dest->id+1), at, decibels_to_signal(sound->decibels * volume) };
+	*dest = { sound, (uint16_t)(dest->id + 1), at, volume };
+	return sound_inst_t{dest->id, slot};
 }
+
 ///////////////////////////////////////////
 
 uint64_t sound_total_samples(sound_t sound) {
@@ -322,52 +317,63 @@ void sound_destroy(sound_t sound) {
 ///////////////////////////////////////////
 
 void sound_inst_stop(sound_inst_t sound_inst) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	if (!inst) return;
 
-	sound_t sound = au_active_sounds[sound_inst._slot].sound;
-	au_active_sounds[sound_inst._slot].sound = nullptr;
+	sound_t sound = inst->sound;
+	inst->sound = nullptr;
 	sound_release(sound);
 }
 
 ///////////////////////////////////////////
 
 bool32_t sound_inst_is_playing(sound_inst_t sound_inst) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return false;
-	return au_active_sounds[sound_inst._slot].sound != nullptr;
+	_sound_inst_t *inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	return inst
+		? inst->sound != nullptr
+		: false;
 }
 
 ///////////////////////////////////////////
 void sound_inst_set_pos(sound_inst_t sound_inst, vec3 pos) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
-	au_active_sounds[sound_inst._slot].position = pos;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	if (inst)
+		inst->position = pos;
 }
 
 ///////////////////////////////////////////
 
 vec3 sound_inst_get_pos(sound_inst_t sound_inst) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return vec3_zero;
-	return au_active_sounds[sound_inst._slot].position;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	return inst
+		? inst->position
+		: vec3_zero;
 }
 
 ///////////////////////////////////////////
 
 void sound_inst_set_volume(sound_inst_t sound_inst, float volume) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return;
-	au_active_sounds[sound_inst._slot].volume = volume;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	if (inst)
+		inst->volume = volume;
 }
 
 ///////////////////////////////////////////
 
 float sound_inst_get_volume(sound_inst_t sound_inst) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
-	return au_active_sounds[sound_inst._slot].volume;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	return inst
+		? inst->volume
+		: 0;
 }
 
 ///////////////////////////////////////////
 
 float sound_inst_get_intensity(sound_inst_t sound_inst) {
-	if (sound_inst._slot < 0 || au_active_sounds[sound_inst._slot].id != sound_inst._id) return 0;
-	return au_active_sounds[sound_inst._slot].intensity_max_frame;
+	_sound_inst_t* inst = audio_get_inst_gen(sound_inst._slot, sound_inst._id);
+	return inst
+		? inst->intensity_max_frame
+		: 0;
 }
 
 }
