@@ -40,10 +40,13 @@ struct window_t {
 
 ///////////////////////////////////////////
 
-array_t<window_t> win32_windows = {};
-HINSTANCE         win32_hinst   = nullptr;
-HICON             win32_icon    = nullptr;
-float             win32_scroll  = 0;
+struct win32_state_t {
+	array_t<window_t> windows;
+	HINSTANCE         hinst;
+	HICON             icon;
+	float             scroll;
+};
+static win32_state_t local = {};
 
 ///////////////////////////////////////////
 
@@ -53,12 +56,13 @@ LRESULT platform_message_callback  (HWND hwnd, UINT message, WPARAM wParam, LPAR
 ///////////////////////////////////////////
 
 bool platform_impl_init() {
-	win32_hinst = GetModuleHandle(NULL);
+	local = {};
+	local.hinst = GetModuleHandle(nullptr);
 
 	// Find the icon from the exe itself
 	wchar_t path[MAX_PATH];
-	if (GetModuleFileNameW(GetModuleHandle(nullptr), path, MAX_PATH) != 0)
-		ExtractIconExW(path, 0, &win32_icon, nullptr, 1);
+	if (GetModuleFileNameW(local.hinst, path, MAX_PATH) != 0)
+		ExtractIconExW(path, 0, &local.icon, nullptr, 1);
 
 	return true;
 }
@@ -66,13 +70,12 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
-	for (int32_t i = 0; i < win32_windows.count; i++) {
+	for (int32_t i = 0; i < local.windows.count; i++) {
 		platform_win_destroy(i);
 	}
-	win32_windows.free();
-	win32_hinst  = nullptr;
-	win32_icon   = nullptr;
-	win32_scroll = 0;
+	local.windows.free();
+	DestroyIcon(local.icon);
+	local = {};
 }
 
 ///////////////////////////////////////////
@@ -84,8 +87,8 @@ void platform_impl_step() {
 ///////////////////////////////////////////
 
 void *win32_hwnd() {
-	return win32_windows.count > 0
-		? win32_windows[0].handle
+	return local.windows.count > 0
+		? local.windows[0].handle
 		: nullptr;
 }
 
@@ -107,8 +110,8 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 
 	WNDCLASSW wc = {};
 	wc.lpszClassName = win.title;
-	wc.hInstance     = win32_hinst;
-	wc.hIcon         = win32_icon;
+	wc.hInstance     = local.hinst;
+	wc.hIcon         = local.icon;
 	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND);
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	wc.lpfnWndProc   = platform_message_callback;
@@ -165,21 +168,21 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 		log_diagf("Created swapchain: <~grn>%d<~clr>x<~grn>%d<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
 	}
 
-	win32_windows.add(win);
-	return win32_windows.count - 1;
+	local.windows.add(win);
+	return local.windows.count - 1;
 }
 
 ///////////////////////////////////////////
 
 void platform_win_destroy(platform_win_t window) {
-	window_t* win = &win32_windows[window];
+	window_t* win = &local.windows[window];
 
 	if (win->has_swapchain) {
 		skg_swapchain_destroy(&win->swapchain);
 	}
 
 	if (win->handle) DestroyWindow   (win->handle);
-	if (win->title)  UnregisterClassW(win->title, win32_hinst);
+	if (win->title)  UnregisterClassW(win->title, local.hinst);
 
 	win->events.free();
 	sk_free(win->title);
@@ -189,7 +192,7 @@ void platform_win_destroy(platform_win_t window) {
 ///////////////////////////////////////////
 
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
-	window_t* win = &win32_windows[window_id];
+	window_t* win = &local.windows[window_id];
 
 	width  = maxi(1, width);
 	height = maxi(1, height);
@@ -220,9 +223,9 @@ void platform_check_events() {
 LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	window_t      *win       = nullptr;
 	platform_win_t window_id = -1;
-	for (int32_t i = 0; i < win32_windows.count; i++) {
-		if (hwnd == win32_windows[i].handle) {
-			win       = &win32_windows[i];
+	for (int32_t i = 0; i < local.windows.count; i++) {
+		if (hwnd == local.windows[i].handle) {
+			win       = &local.windows[i];
 			window_id = i;
 			break;
 		}
@@ -230,6 +233,7 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	if (win == nullptr)
 		return DefWindowProcW(hwnd, message, wParam, lParam);
 
+	bool processed = true;
 	window_event_t e = {};
 	switch(message) {
 	case WM_LBUTTONDOWN: e.type = platform_evt_mouse_press;   e.data.press_release = key_mouse_left;                                                              win->events.add(e); return true;
@@ -252,7 +256,7 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); PostQuitMessage(0); break;
 	case WM_SETFOCUS:    e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_active;     win->events.add(e); break;
 	case WM_KILLFOCUS:   e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_background; win->events.add(e); break;
-	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
+	case WM_MOUSEWHEEL:  local.scroll += (short)HIWORD(wParam); return true;
 	case WM_SYSCOMMAND: {
 		// Has the user pressed the restore/'un-maximize' button? WM_SIZE
 		// happens -after- this event, and contains the new size.
@@ -276,14 +280,14 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 		// Don't check every time the size changes, this can lead to ugly
 		// memory alloc. If a restore event, a maximize, or something else says
 		// we should resize, check it!
-		if (win->check_resize || wParam == SIZE_MAXIMIZED) {
+		//if (win->check_resize || wParam == SIZE_MAXIMIZED) {
 			win->check_resize = false;
 
 			platform_win_resize(window_id, win->resize_x, win->resize_y);
 			e.type        = platform_evt_resize;
 			e.data.resize = { win->resize_x, win->resize_y };
 			win->events.add(e);
-		}
+		//}
 	} break;
 	case WM_EXITSIZEMOVE: {
 		// If the user was dragging the window around, WM_SIZE is called
@@ -293,15 +297,17 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 		e.data.resize = { win->resize_x, win->resize_y };
 		win->events.add(e);
 	}break;
-	default: break;
+	default: processed = false; break;
 	}
+
+	//log_infof("Window event: 0x%x %s", message, processed?"(used)":"(not used)");
 	return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
 ///////////////////////////////////////////
 
 bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
-	window_t *window = &win32_windows[window_id];
+	window_t *window = &local.windows[window_id];
 	if (window->events.count > 0) {
 		*out_event      = window->events[0].type;
 		*out_event_data = window->events[0].data;
@@ -312,12 +318,12 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return win32_windows[window].has_swapchain ? &win32_windows[window].swapchain : nullptr; }
+skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return local.windows[window].has_swapchain ? &local.windows[window].swapchain : nullptr; }
 
 ///////////////////////////////////////////
 
 recti_t platform_win_rect(platform_win_t window_id) {
-	window_t* win = &win32_windows[window_id];
+	window_t* win = &local.windows[window_id];
 
 	// See if we can update it real quick
 	RECT r = {};
@@ -363,7 +369,7 @@ void platform_set_cursor(vec2 window_pos) {
 ///////////////////////////////////////////
 
 float platform_get_scroll() {
-	return win32_scroll;
+	return local.scroll;
 }
 
 ///////////////////////////////////////////

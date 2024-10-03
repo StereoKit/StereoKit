@@ -10,8 +10,6 @@
 #if defined(SK_OS_WINDOWS)
 namespace sk {
 
-extern float win32_scroll;
-
 void *win32_hwnd();
 
 } // namespace sk
