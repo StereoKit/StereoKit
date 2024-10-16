@@ -170,7 +170,7 @@ class DemoLighting : ITest
 	void LoadSkyImage(string file)
 	{
 		cubemapFile = Path.GetFileName(file);
-		cubemap     = Tex.FromCubemapEquirectangular(file);
+		cubemap     = Tex.FromCubemap(file);
 
 		Renderer.SkyTex = cubemap;
 		cubelightDirty  = true;
