@@ -141,13 +141,14 @@ elseif(WIN32)
     set(SK_SHADER_TARGETS "x")
   endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
+  if (MSVC)
+    set(WINDOWS_LIBS
     Comdlg32
     DXGI
     D3D11)
-    if (MSVC)
-      list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
-    endif()
+
+    list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
+  endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
