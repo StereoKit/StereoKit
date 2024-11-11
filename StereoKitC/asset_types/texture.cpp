@@ -34,6 +34,7 @@ void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ 
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
+const char *tex_msg_invalid_cubemap       = "Texture not recognized as valid cubemap format: %s";
 const char *tex_msg_nested_arrays         = "Texture array cannot contain nested array texture: %s";
 const char *tex_msg_mismatched_images     = "Texture array mismatched format or size: %s";
 const char *tex_msg_inconsistent_parse    = "Texture data doesn't match earlier parse: %s";
@@ -48,18 +49,19 @@ tex_t tex_loading_texture = nullptr;
 ///////////////////////////////////////////
 
 struct tex_load_t {
-	bool32_t  is_srgb;
-	char    **file_names;
-	int32_t   file_count;
+	bool32_t    is_srgb;
+	char      **file_names;
+	int32_t     file_count;
 
-	void    **file_data;
-	size_t   *file_sizes;
+	void      **file_data;
+	size_t     *file_sizes;
 
-	void    **color_data;
-	int32_t   color_width;
-	int32_t   color_height;
-	int32_t   color_array_count;
-	int32_t   color_mip_count;
+	void      **color_data;
+	int32_t     color_width;
+	int32_t     color_height;
+	int32_t     color_array_count;
+	int32_t     color_mip_count;
+	tex_format_ color_format;
 };
 
 ///////////////////////////////////////////
@@ -81,7 +83,7 @@ void tex_load_free(asset_header_t *, void *job_data) {
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job_data) {
+bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, void* job_data) {
 	tex_load_t* data = (tex_load_t*)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -144,9 +146,23 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 	data->color_height      = final_height;
 	data->color_array_count = final_array_count * data->file_count;
 	data->color_mip_count   = final_mip_count;
+	data->color_format      = final_format;
+	return true;
+}
 
-	tex_set_meta(tex, data->color_width, data->color_height, final_format);
-	assets_task_set_complexity(task, data->color_width * data->color_width * data->color_array_count);
+///////////////////////////////////////////
+
+bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job_data) {
+	bool32_t result = tex_load_arr_files_shared(task, asset, job_data);
+
+	if (!result)
+		return false;
+
+	tex_load_t* data = (tex_load_t*)job_data;
+	tex_t       tex  = (tex_t)asset;
+
+	tex_set_meta(tex, data->color_width, data->color_height, data->color_format);
+	assets_task_set_complexity(task, data->color_width * data->color_height * data->color_array_count);
 	return true;
 }
 
@@ -191,134 +207,6 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 		sk_free(data->file_data[i]);
 	}
 	tex->header.state = asset_state_loaded_meta;
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool32_t tex_load_equirect_file(asset_task_t *task, asset_header_t *asset, void *job_data) {
-	tex_load_t* data = (tex_load_t*)job_data;
-	tex_t       tex  = (tex_t)asset;
-
-	data->file_data  = sk_malloc_t(void *, data->file_count);
-	data->file_sizes = sk_malloc_t(size_t, data->file_count);
-
-	if (!platform_read_file(data->file_names[0], &data->file_data[0], &data->file_sizes[0])) {
-		log_warnf(tex_msg_load_failed, data->file_names[0]);
-		tex->header.state = asset_state_error_not_found;
-		return false;
-	}
-
-	tex_format_ format;
-	if (!tex_load_image_info(data->file_data[0], data->file_sizes[0], data->is_srgb, &tex->type, &format, &data->color_width, &data->color_height, &data->color_array_count, &data->color_mip_count)) {
-		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
-		tex->header.state = asset_state_error_unsupported;
-		return false;
-	}
-
-	int32_t tex_size = data->color_height / 2;
-	tex_set_meta(tex, tex_size, tex_size, format);
-	assets_task_set_complexity(task, tex_size * 6);
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool32_t tex_load_equirect_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
-	tex_load_t *data = (tex_load_t *)job_data;
-	tex_t       tex  = (tex_t)asset;
-
-	if (data->color_array_count != 1) {
-		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
-		tex->header.state = asset_state_error_unsupported;
-		return false;
-	}
-
-	data->color_data = sk_malloc_t(void*, 1);
-
-	tex_format_ format      = tex_format_none;
-	int32_t     array_count = 0;
-	int32_t     mip_count   = 0;
-	if (!tex_load_image_data(data->file_data[0], data->file_sizes[0], data->is_srgb, &tex->type, &format, &data->color_width, &data->color_height, &array_count, &mip_count, &data->color_data[0])) {
-		log_warnf(tex_msg_invalid_fmt, data->file_names[0]);
-		tex->header.state = asset_state_error_unsupported;
-		return false;
-	}
-
-	// Release file memory as soon as we're done with it
-	sk_free(data->file_data[0]);
-
-	return true;
-}
-
-///////////////////////////////////////////
-
-bool32_t tex_load_equirect_upload(asset_task_t *, asset_header_t *asset, void *job_data) {
-	tex_load_t *data = (tex_load_t *)job_data;
-	tex_t       tex  = (tex_t)asset;
-
-	const vec3 up   [6] = { vec3_up, vec3_up, -vec3_forward, vec3_forward, vec3_up, vec3_up };
-	const vec3 fwd  [6] = { {1,0, 0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, { 0,0,-1} };
-	const vec3 right[6] = { {0,0,-1}, { 0,0,1}, {1, 0,0}, {1,0,0}, {1,0,0}, {-1,0, 0} };
-
-	tex_t equirect = tex_create(tex_type_image_nomips, tex->format);
-	tex_set_color_arr(equirect, data->color_width, data->color_height, data->color_data, data->file_count);
-	tex_set_address  (equirect, tex_address_clamp);
-	
-	material_t convert_material = material_find(default_id_material_equirect);
-	material_set_texture(convert_material, "source", equirect);
-
-	tex_t    face         = tex_create(tex_type_rendertarget, equirect->format);
-	void    *face_data[6] = {};
-	size_t   size         = tex_format_size(equirect->format, tex->width, tex->height);
-	tex_set_colors(face, tex->width, tex->height, nullptr);
-	for (int32_t i = 0; i < 6; i++) {
-		material_set_vector(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
-		material_set_vector(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
-		material_set_vector(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
-
-		face_data[i] = sk_malloc(size);
-
-		// Blit conversion _definitely_ needs executed on the GPU thread
-		struct blit_t {
-			tex_t      face;
-			material_t material;
-			void      *face_data;
-			size_t     size;
-		};
-		blit_t blit_data = { face, convert_material, face_data[i], size };
-		assets_execute_gpu([](void *data) {
-			blit_t *blit_data = (blit_t *)data;
-			render_blit (blit_data->face, blit_data->material);
-			tex_get_data(blit_data->face, blit_data->face_data, blit_data->size);
-			return (bool32_t)true;
-		}, &blit_data);
-		
-		
-#if defined(SKG_OPENGL)
-		size_t line_size = tex_format_pitch(equirect->format, tex->width);
-		void*  tmp       = sk_malloc(line_size);
-		for (int32_t y = 0; y < tex->height/2; y++) {
-			void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
-			void *bot_line = ((uint8_t*)face_data[i]) + line_size * ((tex->height-1) - y);
-			memcpy(tmp,      top_line, line_size);
-			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp,      line_size);
-		}
-		sk_free(tmp);
-#endif
-	}
-
-	tex_release(face);
-	material_release(convert_material);
-	tex_release(equirect);
-
-	tex_set_color_arr(tex, tex->width, tex->height, (void**)&face_data, 6);
-	for (int32_t i = 0; i < 6; i++) {
-		sk_free(face_data[i]);
-	}
-
-	tex->header.state = asset_state_loaded;
 	return true;
 }
 
@@ -568,7 +456,7 @@ tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_
 
 ///////////////////////////////////////////
 
-tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
+tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, int32_t priority) {
 	// Hash the names of all of the files together
 	uint64_t hash = HASH_FNV64_START;
 	for (int32_t i = 0; i < file_count; i++) {
@@ -580,8 +468,6 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	// And see if it's already been loaded
 	tex_t result = tex_find(file_id);
 	if (result != nullptr) {
-		if (out_sh_lighting_info != nullptr)
-			*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 		return result;
 	}
 
@@ -604,10 +490,6 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
 
-	// NOTE: this will block execution if it occurs, as it requires the cubemap
-	// to be loaded!
-	if (out_sh_lighting_info != nullptr)
-		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 
 	return result;
 }
@@ -615,51 +497,151 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 ///////////////////////////////////////////
 
 tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_data, int32_t priority) {
-	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, nullptr, priority);
+	return _tex_create_file_arr(tex_type_image, files, file_count, srgb_data, priority);
 }
-
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_file(const char *equirectangular_file, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
-	char equirect_id[64];
-	snprintf(equirect_id, sizeof(equirect_id), "sk_equi::%" PRIu64, hash_fnv64_string(equirectangular_file));
+tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int32_t priority) {
+	char cubemap_id[64];
+	snprintf(cubemap_id, sizeof(cubemap_id), "sk/tex/cubemap/%" PRIu64, hash_fnv64_string(cubemap_file));
 
-	tex_t result = tex_find(equirect_id);
+	tex_t result = tex_find(cubemap_id);
 	if (result != nullptr) {
-		if (out_sh_lighting_info != nullptr)
-			*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 		return result;
 	}
 
 	result = tex_create(tex_type_image | tex_type_cubemap);
-	tex_set_id(result, equirect_id);
+	tex_set_id(result, cubemap_id);
 	result->header.state = asset_state_loading;
 
 	tex_load_t *load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
 	load_data->file_names    = sk_malloc_t(char *, 1);
-	load_data->file_names[0] = string_copy(equirectangular_file);
+	load_data->file_names[0] = string_copy(cubemap_file);
+
+	///////////////////////////////////////////
+
+	bool32_t (*load)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t* asset, void* job_data) {
+		if (!tex_load_arr_files_shared(task, asset, job_data))
+			return (bool32_t)false;
+
+		tex_load_t* data = (tex_load_t*)job_data;
+		tex_t       tex = (tex_t)asset;
+
+		int32_t size_w, size_h;
+		if (data->color_array_count == 6) { // file contains a pre-built cubemap
+			size_w = data->color_width;
+			size_h = data->color_height;
+		/*} else if (data->color_array_count == 1 && data->color_width / 4 == data->color_height / 3) { // Cubemap crosses are 4x3 aspect ratio
+			size_w = size_h = data->color_height / 3;
+		} else if (data->color_array_count == 1 && data->color_width / 6 == data->color_height    ) { // Cubemap lists are 6x1 aspect ratio
+			size_w = size_h = data->color_height;*/
+		} else if (data->color_array_count == 1) { // We'll treat this like an equirect, generally they're 2x1, but anything could work.
+			size_w = size_h = data->color_height / 2;
+		} else {
+			log_warnf(tex_msg_invalid_cubemap, data->file_names[0]);
+			tex->header.state = asset_state_error_unsupported;
+			return (bool32_t)false;
+		}
+
+		tex_set_meta(tex, size_w, size_h, data->color_format);
+		assets_task_set_complexity(task, size_w * size_h * 6);
+		return (bool32_t)true;
+	};
+
+	///////////////////////////////////////////
+
+	bool32_t(*upload)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t * asset, void* job_data) {
+		tex_load_t *data = (tex_load_t *)job_data;
+		tex_t       tex  = (tex_t)asset;
+
+		// If this is already a cubemap, we don't need to do anything fancy
+		// here, just pass it along to our normal texture upload code.
+		if (data->color_array_count == 6) {
+			return tex_load_arr_upload(task, asset, job_data);
+		}
+
+		const vec3 up   [6] = { vec3_up, vec3_up, -vec3_forward, vec3_forward, vec3_up, vec3_up };
+		const vec3 fwd  [6] = { {1,0, 0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, { 0,0,-1} };
+		const vec3 right[6] = { {0,0,-1}, { 0,0,1}, {1, 0,0}, {1,0,0}, {1,0,0}, {-1,0, 0} };
+
+		tex_t equirect = tex_create(tex_type_image_nomips, tex->format);
+		tex_set_color_arr(equirect, data->color_width, data->color_height, data->color_data, data->file_count);
+		tex_set_address  (equirect, tex_address_clamp);
+	
+		material_t convert_material = material_find(default_id_material_equirect);
+		material_set_texture(convert_material, "source", equirect);
+
+		tex_t    face         = tex_create(tex_type_rendertarget, equirect->format);
+		void    *face_data[6] = {};
+		size_t   size         = tex_format_size(equirect->format, tex->width, tex->height);
+		tex_set_colors(face, tex->width, tex->height, nullptr);
+		for (int32_t i = 0; i < 6; i++) {
+			material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
+			material_set_vector4(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
+			material_set_vector4(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
+
+			face_data[i] = sk_malloc(size);
+
+			// Blit conversion _definitely_ needs executed on the GPU thread
+			struct blit_t {
+				tex_t      face;
+				material_t material;
+				void      *face_data;
+				size_t     size;
+			};
+			blit_t blit_data = { face, convert_material, face_data[i], size };
+			assets_execute_gpu([](void *data) {
+				blit_t *blit_data = (blit_t *)data;
+				render_blit (blit_data->face, blit_data->material);
+				tex_get_data(blit_data->face, blit_data->face_data, blit_data->size);
+				return (bool32_t)true;
+			}, &blit_data);
+
+#if defined(SKG_OPENGL)
+			size_t line_size = tex_format_pitch(equirect->format, tex->width);
+			void*  tmp       = sk_malloc(line_size);
+			for (int32_t y = 0; y < tex->height/2; y++) {
+				void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
+				void *bot_line = ((uint8_t*)face_data[i]) + line_size * ((tex->height-1) - y);
+				memcpy(tmp,      top_line, line_size);
+				memcpy(top_line, bot_line, line_size);
+				memcpy(bot_line, tmp,      line_size);
+			}
+			sk_free(tmp);
+#endif
+		}
+
+		tex_release(face);
+		material_release(convert_material);
+		tex_release(equirect);
+
+		tex_set_color_arr(tex, tex->width, tex->height, (void**)&face_data, 6);
+		for (int32_t i = 0; i < 6; i++) {
+			sk_free(face_data[i]);
+		}
+
+		tex->header.state = asset_state_loaded;
+		return (bool32_t)true;
+	};
+
+	///////////////////////////////////////////
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {tex_load_equirect_file,   asset_thread_asset},
-		asset_load_action_t {tex_load_equirect_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_equirect_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+		asset_load_action_t {load,               asset_thread_asset},
+		asset_load_action_t {tex_load_arr_parse, asset_thread_asset},
+		asset_load_action_t {upload,             backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
-
-	// NOTE: this will block execution if it occurs, as it requires the cubemap
-	// to be loaded!
-	if (out_sh_lighting_info != nullptr)
-		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 
 	return result;
 }
 
 ///////////////////////////////////////////
 
-tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, spherical_harmonics_t *out_sh_lighting_info, int32_t priority) {
-	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, out_sh_lighting_info, priority);
+tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, int32_t priority) {
+	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, priority);
 }
 
 ///////////////////////////////////////////
