@@ -39,8 +39,8 @@ class DemoMaterial : ITest
 		/// great way to instantly get a particular feel to your scene! A neat
 		/// place to find compatible equirectangular images for this is
 		/// [Poly Haven](https://polyhaven.com/hdris)
-		Renderer.SkyTex   = Tex.FromCubemapEquirectangular("old_depot.hdr", out SphericalHarmonics lighting);
-		Renderer.SkyLight = lighting;
+		Renderer.SkyTex   = Tex.FromCubemap("old_depot.hdr");
+		Renderer.SkyLight = Renderer.SkyTex.CubemapLighting;
 		/// And here's what it looks like applied to the default Material!
 		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
 		/// :End:

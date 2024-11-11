@@ -43,7 +43,6 @@ pose_t input_eyes_pose_world;
 ///////////////////////////////////////////
 
 void input_mouse_update();
-void input_hand_update_fallback_meshes(hand_mesh_t hand_mesh_2[]);
 
 ///////////////////////////////////////////
 

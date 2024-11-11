@@ -26,7 +26,7 @@ class DemoPBR : ITest
 		oldSkyTex   = Renderer.SkyTex;
 		oldSkyLight = Renderer.SkyLight;
 		sphereMesh  = Mesh.GenerateSphere(1, 7);
-		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"old_depot.hdr");
+		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
 		selectionMat = new Material("interactable.hlsl");
 		selectionMat.Transparency = Transparency.Add;

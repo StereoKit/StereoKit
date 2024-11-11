@@ -158,7 +158,7 @@ bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_fo
 		out_data_arr[i] = sk_malloc(layer_size);
 	}
 
-	ktx2_transcoder_state state = {};
+	ktx2_transcoder_state state;
 	state.clear();
 	ktx_transcoder.start_transcoding();
 	bool    success    = true;
