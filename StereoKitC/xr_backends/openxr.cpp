@@ -76,7 +76,7 @@ XrSession      xr_session       = {};
 XrExtTable     xr_extensions    = {};
 XrExtInfo      xr_ext_available = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
-bool           xr_running       = false;
+bool           xr_has_session   = false;
 XrSpace        xr_app_space     = {};
 XrReferenceSpaceType xr_app_space_type = {};
 XrSpace        xr_stage_space   = {};
@@ -904,7 +904,7 @@ void openxr_shutdown() {
 
 void openxr_step_begin() {
 	openxr_poll_events();
-	if (xr_running)
+	if (xr_has_session)
 		openxr_poll_actions();
 	input_step();
 	
@@ -916,8 +916,8 @@ void openxr_step_begin() {
 void openxr_step_end() {
 	anchors_step_end();
 
-	if (xr_running) { openxr_render_frame(); }
-	else            { render_clear(); platform_sleep(33); }
+	if (xr_has_session) { openxr_render_frame(); }
+	else                { render_clear(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
 
@@ -1009,7 +1009,7 @@ bool openxr_poll_events() {
 				// is ready.
 				openxr_views_update_fov();
 
-				xr_running = true;
+				xr_has_session = true;
 				log_diag("OpenXR session begin.");
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break; // We're connected to a session, but not visible to users yet.
