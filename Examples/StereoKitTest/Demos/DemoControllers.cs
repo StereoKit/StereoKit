@@ -111,9 +111,5 @@ class DemoControllers : ITest
 		LineItem("Grip",        controller.grip.ToString());
 		LineItem("X1",          controller.x1.ToString());
 		LineItem("X2",          controller.x2.ToString());
-
-		UI.HSeparator();
-
-		LineItem("Menu (both)", Input.ControllerMenuButton.ToString());
 	}
 }
