@@ -170,8 +170,6 @@ skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>*
 void          render_reset_buffer_pool();
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 
-void          _render_check_pending_skytex();
-
 void          render_list_prep        (render_list_t list);
 void          render_list_add         (const render_item_t *item);
 void          render_list_add_to      (render_list_t list, const render_item_t *item);
@@ -301,7 +299,6 @@ void render_step() {
 	render_reset_buffer_pool();
 
 	hierarchy_step();
-	_render_check_pending_skytex();
 
 	if (local.sky_show && device_display_get_blend() == display_blend_opaque) {
 		render_add_mesh(local.sky_mesh, local.sky_mat, matrix_identity, {1,1,1,1}, render_layer_vfx);
@@ -526,7 +523,7 @@ void render_set_sim_head(pose_t pose) {
 
 ///////////////////////////////////////////
 
-void _render_check_pending_skytex() {
+void render_check_pending_skytex() {
 	if (local.sky_pending_tex == nullptr) return;
 
 	asset_state_ state = tex_asset_state(local.sky_pending_tex);
@@ -568,7 +565,7 @@ void render_set_skytex(tex_t sky_texture) {
 
 	// This is also checked every step, but if the texture is already valid, we
 	// can set it up right away and avoid any potential frame delays.
-	_render_check_pending_skytex();
+	render_check_pending_skytex();
 }
 
 ///////////////////////////////////////////
