@@ -185,29 +185,42 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 		if (!tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[array_index])) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
-			return false;
+			goto end;
 		}
 		array_index += array_count;
 
 		// Make sure the data in this image matches what we extracted in
 		// earlier phases of texture creation. If it doesn't, then something
 		// has gone very wrong!
-		if (tex->format             != format      ||
-			data->color_width       != width       ||
-			data->color_height      != height      ||
-			data->color_array_count != array_count ||
-			data->color_mip_count   != mip_count) {
+		if (tex->format           != format ||
+			data->color_width     != width  ||
+			data->color_height    != height ||
+			data->color_mip_count != mip_count) {
 			log_warnf(tex_msg_inconsistent_parse, data->file_names[i]);
-			tex_set_fallback(tex, tex_error_texture);
 			tex->header.state = asset_state_error;
-			return false;
+			goto end;
 		}
-
-		// Release file memory as soon as we're done with it
-		sk_free(data->file_data[i]);
 	}
-	tex->header.state = asset_state_loaded_meta;
-	return true;
+
+	if (data->color_array_count != array_index) {
+		log_warnf(tex_msg_inconsistent_parse, data->file_names[0]);
+		tex->header.state = asset_state_error;
+		goto end;
+	}
+
+end:
+
+	// Release file memory now that we're done with it
+	for (int32_t i = 0; i < data->file_count; i++)
+		sk_free(data->file_data[i]);
+
+	if (tex->header.state >= asset_state_none) {
+		tex->header.state = asset_state_loaded_meta;
+		return true;
+	} else {
+		tex_set_fallback(tex, tex_error_texture);
+		return false;
+	}
 }
 
 ///////////////////////////////////////////
