@@ -57,6 +57,8 @@ internal class TestTextures : ITest
 		Tests.Test(CheckTextureRead);
 		Tests.Test(CheckBlankTex);
 		Tests.Test(CheckBlockingSize);
+		Tests.Test(CheckArrayTex);
+		Tests.Test(CheckArrayCubemap);
 
 		Tests.Screenshot("TexFormats.jpg", 0, 400, 400, 50, V.XYZ(0,-0.15f, 0), V.XYZ(0,-0.15f,-0.5f) );
 	}
@@ -158,6 +160,20 @@ internal class TestTextures : ITest
 			return false;
 
 		return true;
+	}
+
+	bool CheckArrayTex()
+	{
+		Tex t = Tex.FromFiles(new string[]{"test.png", "test_normal.png", "metal_plate_diff.jpg", "metal_plate_metal.jpg" });
+		Assets.BlockForPriority(int.MaxValue);
+		return t.AssetState == AssetState.Loaded;
+	}
+
+	bool CheckArrayCubemap()
+	{
+		Tex t = Tex.FromCubemapFile(new string[] { "UVTex.png", "UVTex.png", "UVTex.png", "UVTex.png", "UVTex.png", "UVTex.png" });
+		Assets.BlockForPriority(int.MaxValue);
+		return t.AssetState == AssetState.Loaded;
 	}
 
 	public void Step()
