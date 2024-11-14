@@ -36,7 +36,7 @@ class DemoControllers : ITest
 		ShowControllerUI(activeHand);
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
+		Demo.ShowSummary(title, description, new Bounds(new Vec3(0,-.27f,0), new Vec3(.5f, .7f, 0)));
 	}
 
 	/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose

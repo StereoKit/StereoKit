@@ -17,7 +17,7 @@ class DemoTextInput : ITest
 		ShowTextInputWindow();
 		ShowRawInputWindow();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.19f), V.XYZ(.4f, .5f, 0)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(-.12f, -0.22f), V.XYZ(.6f, .56f, 0)));
 	}
 
 	Pose   uiWinPose = Pose.Identity;

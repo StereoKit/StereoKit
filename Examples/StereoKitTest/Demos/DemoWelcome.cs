@@ -24,7 +24,7 @@ class DemoWelcome : ITest
 		Text.Add(message, Matrix.S(1.25f), V.XY(.6f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
 		Hierarchy.Pop();
 
-		Demo.ShowSummary("", "", new Bounds(1, .6f, 0.1f));
+		Demo.ShowSummary("", "", new Bounds(new Vec3(0,-0.05f,0), new Vec3(1, .7f, 0.1f)));
 	}
 
 	public void Shutdown()
