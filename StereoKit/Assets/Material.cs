@@ -292,7 +292,15 @@ namespace StereoKit
 		/// shader! The presence of this parameter may vary from shader to
 		/// shader, especially if using custom shaders.</param>
 		/// <returns>This is a set only.</returns>
-		public object this[MatParamName parameter] { set { this[MaterialParamString(parameter)] = value; } }
+		public object this[MatParamName parameter]
+		{
+			set
+			{
+				// TODO: v0.4 Remove this backwards compatibility code
+				if (parameter == MatParamName.TexScale) this["tex_trans"] = new Vec4( 0, 0, (float)value, (float)value);
+				else                                    this[MaterialParamString(parameter)] = value;
+			}
+		}
 		private string MaterialParamString(MatParamName parameter)
 		{
 			switch (parameter)
