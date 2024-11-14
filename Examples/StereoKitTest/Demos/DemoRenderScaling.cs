@@ -70,7 +70,7 @@ class DemoRenderScaling : ITest
 
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.11f), V.XYZ(.3f, .32f, 0.1f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.16f), V.XYZ(.34f, .42f, 0.1f)));
 	}
 
 }

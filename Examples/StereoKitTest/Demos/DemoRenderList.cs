@@ -14,7 +14,7 @@ class DemoRenderList : ITest
 	{
 		ShowRenderListWindow();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.19f), V.XYZ(.4f, .5f, 0)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.105f), V.XYZ(.2f, .31f, 0)));
 	}
 
 	public void Initialize()
