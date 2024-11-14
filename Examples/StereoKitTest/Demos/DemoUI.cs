@@ -227,7 +227,7 @@ class DemoUI : ITest
 		/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoUI.cs)!
 		/// :End:
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.16f), V.XYZ(.8f, .8f, 0.1f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(-.02f,0.1f), V.XYZ(.7f, .46f, 0.1f)));
 	}
 
 	public void Initialize() {

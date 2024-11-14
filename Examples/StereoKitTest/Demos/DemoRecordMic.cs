@@ -85,7 +85,7 @@ class DemoRecordMic : ITest
 
 		Tests.Screenshot("RecordAudioSnippet.jpg", 1, 400, 400, 90, recordingWindow.position + V.XYZ(0, -0.04f, 0.08f), recordingWindow.position - V.XYZ(0, 0.04f, 0));
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.7f, .36f, 0.1f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(-0.03f,-0.11f), V.XYZ(.56f, .34f, 0.1f)));
 	}
 
 	Pose     micSelectPose   = (Demo.contentPose * Matrix.T(0.15f,0,0)).Pose;
