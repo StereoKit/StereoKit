@@ -127,7 +127,9 @@ namespace StereoKit.Framework
 		/// A good all-around default would be Ease.SoftOut. A number of easing
 		/// functions can be found in the Ease class.</param>
 		public void AnimTo(Vec3 destination, float duration, EaseFn easeFn) { begin = Resolve(); start = Time.Totalf; end = destination; ease = easeFn; this.duration = duration; }
-		/// <inheritdoc cref="AnimTo(Vec3, float, EaseFn)"/>
+		/// <summary>This sets up an easing animation for this value. It will
+		/// now ease from its current state, to its destination state over a
+		/// duration of time.</summary>
 		/// <param name="x">X component of a Vec3</param>
 		/// <param name="y">Y component of a Vec3</param>
 		/// <param name="z">Z component of a Vec3</param>
@@ -141,6 +143,7 @@ namespace StereoKit.Framework
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>
+		/// <returns>The eased value for the current time.</returns>
 		public static implicit operator Vec3(EaseVec3 value) => value.Resolve();
 	}
 
@@ -198,6 +201,7 @@ namespace StereoKit.Framework
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>
+		/// <returns>The eased value for the current time.</returns>
 		public static implicit operator Color(EaseColor value) => value.Resolve();
 	}
 
@@ -253,6 +257,7 @@ namespace StereoKit.Framework
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>
+		/// <returns>The eased value for the current time.</returns>
 		public static implicit operator Pose(EasePose value) => value.Resolve();
 	}
 }
