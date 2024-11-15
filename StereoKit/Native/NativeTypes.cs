@@ -905,11 +905,13 @@ namespace StereoKit
 		/// into a ulong, which may still be used in some parts of the older
 		/// API.</summary>
 		/// <param name="h">Source id.</param>
+		/// <returns>An older style ulong hash.</returns>
 		[Obsolete]
 		public static implicit operator ulong(IdHash h) => h.hash;
 		/// <summary>For back compatibility, allows old ulong hashes to auto
 		/// convert to the newer opaque IdHash representation.</summary>
 		/// <param name="h">Source id.</param>
+		/// <returns>A new style IdHash hash.</returns>
 		[Obsolete]
 		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
 	}
