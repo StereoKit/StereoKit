@@ -29,6 +29,11 @@ namespace StereoKit
 			set => NativeAPI.sound_inst_set_volume(this, value);
 		}
 
+		/// <summary>
+		/// The maximum intensity of the sound data since the last frame, as a
+		/// value from 0-1. This is unaffected by its 3d position or volume
+		/// settings, and is straight from the audio file's data.
+		/// </summary>
 		public float Intensity => NativeAPI.sound_inst_get_intensity(this);
 
 		/// <summary>Is this Sound instance currently playing? For streaming
