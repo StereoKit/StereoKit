@@ -914,13 +914,26 @@ namespace StereoKit
 		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
 	}
 
+	/// <summary>Information about the current state of the UI's
+	/// SliderBehavior. You can use this information to draw or react to the
+	/// slider's activities.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct UISliderData
 	{
+		/// <summary>The center location of where the slider's interaction
+		/// element is.</summary>
 		public Vec2     buttonCenter;
+		/// <summary>The current distance of the finger, within the pressable
+		/// volume of the slider, from the bottom of the slider.</summary>
 		public float    fingerOffset;
+		/// <summary>This is the current frame's "focus" state for the button.
+		/// </summary>
 		public BtnState focusState;
+		/// <summary>This is the current frame's "active" state for the button.
+		/// </summary>
 		public BtnState activeState;
+		/// <summary>The interactor that is currently driving the activity or
+		/// focus of the slider. Or -1 if there is no interaction.</summary>
 		public int      interactor;
 	}
 }
