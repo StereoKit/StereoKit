@@ -892,12 +892,25 @@ namespace StereoKit
 			=> id.GetHashCode();
 	}
 
+	/// <summary>This represents an identifier for some item, calculated by
+	/// hashing some or all of that item's data! StereoKit frequently uses id
+	/// hashes to represent UI elements. See `UI.StackHash` for creating a UI
+	/// identifier.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct IdHash
 	{
 		ulong hash;
 
+		/// <summary>For back compatibility, allows conversion from an IdHash
+		/// into a ulong, which may still be used in some parts of the older
+		/// API.</summary>
+		/// <param name="h">Source id.</param>
+		[Obsolete]
 		public static implicit operator ulong(IdHash h) => h.hash;
+		/// <summary>For back compatibility, allows old ulong hashes to auto
+		/// convert to the newer opaque IdHash representation.</summary>
+		/// <param name="h">Source id.</param>
+		[Obsolete]
 		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
 	}
 

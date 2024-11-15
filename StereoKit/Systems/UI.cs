@@ -1618,7 +1618,7 @@ namespace StereoKit
 		/// <param name="id">Text to hash along with the current id stack.
 		/// </param>
 		/// <returns>An integer based hash id for use with SK UI.</returns>
-		public static ulong StackHash(string id)
+		public static IdHash StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
 		/// <summary>This is the core functionality of StereoKit's buttons,
