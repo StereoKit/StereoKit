@@ -242,9 +242,6 @@ class DemoHands : ITest
 		LineItem("Grip %",      $"{hand.gripActivation:0.00}");
 		LineItem("Gripped",     hand.grip.IsActive().ToString());
 
-		LineItem("Aim Pose",    hand.aim.ToString());
-		LineItem("Aim Ready",   hand.aimReady.IsActive().ToString());
-
 		LineItem("Palm",        hand.palm.ToString());
 		LineItem("Wrist",       hand.wrist.ToString());
 		LineItem("Size",        $"{hand.size*100:0.00}cm");
