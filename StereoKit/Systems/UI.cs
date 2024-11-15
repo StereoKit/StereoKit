@@ -1613,22 +1613,22 @@ namespace StereoKit
 		/// <param name="deleteFlatSides">If two adjacent corners are sharp, should
 		/// we skip connecting them with triangles? If this edge will always be
 		/// covered, then deleting these faces may save you some performance.</param>
+		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
+		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
+		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
+		{
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, true, lathePts, lathePts.Length);
+			return result != IntPtr.Zero ? new Mesh(result) : null;
+		}
+
+		/// <inheritdoc cref="GenQuadrantMesh(UICorner, float, uint, bool, UILathePt[])"/>
 		/// <param name="quadrantify">Does this generate a mesh compatible with
 		/// StereoKit's quadrant shader system, or is this just a traditional
 		/// mesh? In most cases, this should be true, but UI elements such as
 		/// the rounded button may be exceptions.</param>
-		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
-		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
 		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, bool quadrantify, params UILathePt[] lathePts)
 		{
 			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, quadrantify, lathePts, lathePts.Length);
-			return result != IntPtr.Zero ? new Mesh(result) : null;
-		}
-
-		/// <inheritdoc cref="GenQuadrantMesh(UICorner, float, uint, bool, bool, UILathePt[])"/>
-		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
-		{
-			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, true, lathePts, lathePts.Length);
 			return result != IntPtr.Zero ? new Mesh(result) : null;
 		}
 
