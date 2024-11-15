@@ -408,11 +408,19 @@ namespace StereoKit
 		public static Vec2 SizeLayout(string text, TextStyle style, float maxWidth)
 			=> NativeAPI.text_size_layout_constrained_16(text, style, maxWidth);
 
-		/// <summary>This modifies a text layout size with information related</summary>
-		/// <param name="sizeLayout"></param>
-		/// <param name="style"></param>
-		/// <param name="yOffset"></param>
-		/// <returns></returns>
+		/// <summary>This modifies a text layout size to include the tallest
+		/// and lowest possible values for the glyphs in this font. This is for
+		/// when you need to be careful about avoiding clipping that would
+		/// happen if you only used the layout size.</summary>
+		/// <param name="sizeLayout">A size previously calculated using
+		/// `Text.SizeLayout`.</param>
+		/// <param name="style">The same style as used for calculating the
+		/// sizeLayout.</param>
+		/// <param name="yOffset">Since the render size will ascend from the
+		/// initial position, this will be the offset from the initial position
+		/// upwards. You should add it to your Y position.</param>
+		/// <returns>The sizeLayout modified to account for the size of the
+		/// most extreme glyphs.</returns>
 		public static Vec2 SizeRender(Vec2 sizeLayout, TextStyle style, out float yOffset)
 			=> NativeAPI.text_size_render(sizeLayout, style, out yOffset);
 	}
