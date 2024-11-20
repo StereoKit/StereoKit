@@ -224,8 +224,20 @@ void hand_oxra_update_joints() {
 			(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[1 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
+		// Vive XR Elite will mark joints as valid, but then send invalid joint
+		// data such as 0,0,0,0 quats which will crash math functions.
+		// Unfortunately, it seems impossible to restrict this to specific
+		// joints, so all joints must be checked.
+		for (uint32_t j = 0; j < locations.jointCount; j++) {
+			XrHandJointLocationEXT jt = locations.jointLocations[j];
+			float sum = jt.pose.orientation.x + jt.pose.orientation.y + jt.pose.orientation.z + jt.pose.orientation.w;
+			if (sum == 0) {
+				valid_joints = false;
+				break;
+			}
+		}
 		hand_t *inp_hand     = (hand_t*)input_hand((handed_)h);
-		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, valid_joints);
+		inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
 		pointer->tracked = inp_hand->tracked_state;
 
 		// If both hands aren't active at all, we'll want to to switch back
