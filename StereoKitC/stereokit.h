@@ -373,6 +373,32 @@ typedef enum memory_ {
 	memory_copy,
 } memory_;
 
+/*When the device StereoKit is running on goes into standby mode, how should
+  StereoKit react? Typically the app should pause, stop playing sound, and
+  consume as little power as possible, but some scenarios such as multiplayer
+  games may need the app to continue running.*/
+typedef enum standby_mode_ {
+	/*This will let StereoKit pick a mode based on its own preferences. On v0.3
+	  and lower, this will be Slow, and on v0.4 and higher, this will be Pause.
+	  */
+	standby_mode_default = 0,
+	/*The entire main thread will pause, and wait until the device has come out
+	  of standby. This is the most power efficient mode for the device to take
+	  when the device is in standby, and is recommended for the vast majority
+	  of apps. This will also disable sound.*/
+	standby_mode_pause = 1,
+	/*The main thread will continue to execute, but with 100ms sleeps each
+	  frame. This allows the app to continue polling and processing, but
+	  reduces power consumption by throttling a bit. This will not disable
+	  sound. In the Simulator, this will behave as Slow.*/
+	standby_mode_slow = 2,
+	/*The main thread will continue to execute, but with a very short sleep
+	  each frame. This allows the app to continue polling and processing, but
+	  without flooding the CPU with polling work while vsync is no longer the
+	  throttle. This will not disable sound.*/
+	standby_mode_none = 3
+};
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -393,6 +419,7 @@ typedef struct sk_settings_t {
 	int32_t        render_multisample;
 	origin_mode_   origin;
 	bool32_t       omit_empty_frames;
+	standby_mode_  standby_mode;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
