@@ -367,7 +367,7 @@ void ui_layout_pop() {
 	float max_x = fmaxf(layout->child_max.x, layout->offset_initial.x) + layout->margin;
 	float min_y = fminf(layout->child_min.y, layout->furthest.y      ) - layout->margin;
 	float max_y = fmaxf(layout->child_max.y, layout->offset_initial.y) + layout->margin;
-	if (layout->parent != -1) {
+	if (layout->parent != -1  && skui_layouts.count > 0) {
 		ui_layout_t* parent = &skui_layouts[layout->parent];
 		if (min_x < parent->child_min.x) parent->child_min.x = min_x;
 		if (max_x > parent->child_max.x) parent->child_max.x = max_x;
