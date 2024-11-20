@@ -116,7 +116,7 @@ class DemoHands : ITest
 
 		Tests.Screenshot("HandAxes.jpg", 1, 600, 600, 90, new Vec3(-0.508f, -0.082f, -0.061f), new Vec3(-1.219f, -0.651f, -0.474f));
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.14f), V.XYZ(.34f, .4f, 0)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(-.02f,-0.21f), V.XYZ(.8f, .54f, 0)));
 	}
 
 	Pose optionsPose = new Pose(-0.2f, 0, 0);

@@ -85,7 +85,7 @@ class DemoAnchors : ITest
 			Log.Info($"New anchor: {a.Name}");
 
 		Demo.ShowSummary(title, description,
-			new Bounds(V.XY0(-0.1f, 0.02f), V.XYZ(.4f, .36f, 0.1f)));
+			new Bounds(V.XY0(-0.075f, 0.02f), V.XYZ(.45f, .38f, 0.1f)));
 	}
 
 

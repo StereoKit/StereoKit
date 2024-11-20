@@ -39,6 +39,7 @@ void          render_set_sim_head         (pose_t pose);
 void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, render_layer_ filter);
 void          render_check_screenshots    ();
 void          render_check_viewpoints     ();
+void          render_check_pending_skytex ();
 
 void          render_list_destroy         (      render_list_t list);
 void          render_list_execute         (      render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end);

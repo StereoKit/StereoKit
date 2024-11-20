@@ -468,9 +468,29 @@ namespace StereoKit
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
+		[Obsolete("Use FromCubemap instead")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
+			=> FromCubemap(equirectangularCubemap, sRGBData, loadPriority);
+
+		/// <summary>Creates a cubemap texture from a single file! This will
+		/// load KTX2 files with 6 surfaces, or convert equirectangular images
+		/// into cubemap images. KTX2 files are the _fastest_ way to load a
+		/// cubemap, but equirectangular images can be acquired quite easily!
+		/// Equirectangular images look like an unwrapped globe with the poles
+		/// all stretched out, and are sometimes referred to as HDRIs.</summary>
+		/// <param name="cubemapFile">Filename of the cubemap image.</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.
+		/// </param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Cubemap texture asset!</returns>
+		public static Tex FromCubemap(string cubemapFile, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(cubemapFile), sRGBData, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -493,10 +513,13 @@ namespace StereoKit
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
+		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, out lightingInfo, loadPriority);
-			return tex == IntPtr.Zero ? null : new Tex(tex);
+			IntPtr tex    = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, loadPriority);
+			Tex    result = tex == IntPtr.Zero ? null : new Tex(tex);
+			lightingInfo = result == null ? default : result.CubemapLighting;
+			return result;
 		}
 
 		/// <summary>Loads an image file directly into a texture! Supported
@@ -640,7 +663,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -662,12 +685,15 @@ namespace StereoKit
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given files, or null if any failed 
 		/// to load.</returns>
+		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
 		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, out SphericalHarmonics lightingInfo, bool sRGBData = true, int priority = 10)
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo, priority);
-			return inst == IntPtr.Zero ? null : new Tex(inst);
+			IntPtr inst   = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
+			Tex    result = inst == IntPtr.Zero ? null : new Tex(inst);
+			lightingInfo = result == null ? default : result.CubemapLighting;
+			return result;
 		}
 
 		/// <summary>This will assemble a texture ready for rendering to! It

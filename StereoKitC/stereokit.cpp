@@ -103,7 +103,15 @@ bool32_t sk_init(sk_settings_t settings) {
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
 	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
-
+#if SK_VERSION_MINOR >= 4
+	if (local.settings.standby_mode == standby_mode_default) local.settings.standby_mode = standby_mode_pause;
+#else
+	if (local.settings.standby_mode == standby_mode_default)
+		local.settings.standby_mode = local.settings.disable_unfocused_sleep
+			? standby_mode_none
+			: standby_mode_slow;
+#endif
+	
 	// HoloLens (UWP) can't handle MSAA and a resolve, so we set MSAA to 1 by
 	// default there. Fortunately it looks great without it, so we don't really
 	// need MSAA there. This setting is still explicitly assignable.
@@ -224,7 +232,7 @@ bool32_t sk_step_end() {
 
 	systems_step_partial(system_run_from, local.app_system_idx+1);
 
-	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && !local.settings.disable_unfocused_sleep)
+	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
 		platform_sleep(100);
 	local.in_step = false;
 	return local.running;

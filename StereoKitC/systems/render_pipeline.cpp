@@ -34,6 +34,7 @@ static render_pipeline_state_t local = {};
 ///////////////////////////////////////////
 
 void render_pipeline_begin() {
+	render_check_pending_skytex();
 	skg_event_begin("Setup");
 	{
 		skg_draw_begin();
