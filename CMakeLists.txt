@@ -544,9 +544,15 @@ target_link_libraries( StereoKitC
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-  set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
-  set(SK_WARNING_FLAG    -w)
+  if (__MINGW32__)
+    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id )
+    set(SK_WARNING_FLAG    -w)
+  else()
+    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
+    set(SK_WARNING_FLAG    -w)
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   # /OPT settings need to be specified explicitly because we're also generating
   # /DEBUG pdbs, which disables them by default.
