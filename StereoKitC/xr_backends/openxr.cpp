@@ -929,33 +929,38 @@ void openxr_step_end() {
 	// This happens at the end of step_end so that the app still can receive a
 	// message about the app going into a hidden state.
 	if (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
-		log_diagf("Sleeping until OpenXR session wakes");
+		const sk_settings_t* settings = sk_get_settings_ref();
+		if (settings->standby_mode == standby_mode_pause) {
+			log_diagf("Sleeping until OpenXR session wakes");
 #if defined(SK_OS_ANDROID)
-		if (xr_ext_available.KHR_android_thread_settings) {
-			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
-		}
+			if (xr_ext_available.KHR_android_thread_settings) {
+				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
+			}
 #endif
-		// Add a small delay before pausing audio since the sleeping path can
-		// be triggered by a regular shutdown, and it would be a waste to stop
-		// and resume audio when we're just going to shut down later.
-		int32_t       timer      = 0;
-		const int32_t timer_time = 5; // timer_time * 100ms == 500ms
+			// Add a small delay before pausing audio since the sleeping path can
+			// be triggered by a regular shutdown, and it would be a waste to stop
+			// and resume audio when we're just going to shut down later.
+			int32_t       timer      = 0;
+			const int32_t timer_time = 5; // timer_time * 100ms == 500ms
 
-		while (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
-			if (timer == timer_time) audio_pause();
-			timer += 1;
+			while (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
+				if (timer == timer_time) audio_pause();
+				timer += 1;
 
-			platform_sleep(100);
-			openxr_poll_events();
-		}
-		if (timer > timer_time) audio_resume();
+				platform_sleep(100);
+				openxr_poll_events();
+			}
+			if (timer > timer_time) audio_resume();
 
 #if defined(SK_OS_ANDROID)
-		if (xr_ext_available.KHR_android_thread_settings) {
-			xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
-		}
+			if (xr_ext_available.KHR_android_thread_settings) {
+				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
+			}
 #endif
-		log_diagf("Resuming from sleep");
+			log_diagf("Resuming from sleep");
+		} else if (settings->standby_mode == standby_mode_slow) {
+			platform_sleep(77);
+		}
 	}
 }
 
