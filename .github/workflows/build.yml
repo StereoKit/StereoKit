@@ -106,6 +106,13 @@ jobs:
         path: |
           .deps_cache
 
+    # UWP ARM32 builds no longer work in Windows SDK 26100 and onwards, so we
+    # need to explicitly use 22621, the last version that supported it.
+    - name: Get compatible Windows SDK
+      uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+      with:
+        sdk-version: 22621
+
     - name: Set Version
       shell: pwsh
       run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
