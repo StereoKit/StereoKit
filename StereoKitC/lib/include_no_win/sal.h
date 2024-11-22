@@ -142,12 +142,6 @@
    specifying a _Success_ annotation locally.
 
 ============================================================================*/
-
-#ifdef __MINGW32__ 
-    #undef _GLIBCXX_USE_STD_SPEC_FUNCS 
-    #define PAL_STDCPP_COMPAT "we don't want an empty __null"
-#endif
-
 #define __ATTR_SAL
 
 #ifndef _SAL_VERSION /*IFSTRIP=IGN*/
