@@ -207,7 +207,9 @@ add_compile_definitions(BASISD_SUPPORT_ATC=0)
 add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
 add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
-
+if (__MINGW32__)
+  add_compile_definitions(PAL_STDCPP_COMPAT="needed for mingw")
+endif()
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.9.26
   URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.9.26/sk_gpu.v2024.9.26.zip
