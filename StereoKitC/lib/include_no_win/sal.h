@@ -142,6 +142,7 @@
    specifying a _Success_ annotation locally.
 
 ============================================================================*/
+
 #define __ATTR_SAL
 
 #ifndef _SAL_VERSION /*IFSTRIP=IGN*/
