@@ -135,7 +135,7 @@ jobs:
         cmake --build --preset Uwp_Arm64_Release
     - name: Build Native UWP ARM32
       run: |
-        cmake --preset Uwp_Arm32_Release -DCMAKE_SYSTEM_VERSION=10.0.22621.0
+        cmake --preset Uwp_Arm32_Release
         cmake --build --preset Uwp_Arm32_Release
 
     - name: Upload Artifacts
