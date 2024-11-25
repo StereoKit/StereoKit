@@ -397,7 +397,7 @@ typedef enum standby_mode_ {
 	  without flooding the CPU with polling work while vsync is no longer the
 	  throttle. This will not disable sound.*/
 	standby_mode_none = 3
-};
+} standby_mode_;
 
 typedef struct sk_settings_t {
 	const char    *app_name;
