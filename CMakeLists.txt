@@ -141,13 +141,14 @@ elseif(WIN32)
     set(SK_SHADER_TARGETS "x")
   endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
-  set(WINDOWS_LIBS
+  if (MSVC)
+    set(WINDOWS_LIBS
     Comdlg32
     DXGI
     D3D11)
-    if (MSVC)
-      list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
-    endif()
+
+    list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
+  endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
@@ -206,7 +207,9 @@ add_compile_definitions(BASISD_SUPPORT_ATC=0)
 add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
 add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
-
+if (__MINGW32__)
+  add_compile_definitions(PAL_STDCPP_COMPAT="needed for mingw")
+endif()
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME sk_gpu # 2024.9.26
   URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.9.26/sk_gpu.v2024.9.26.zip
@@ -543,9 +546,15 @@ target_link_libraries( StereoKitC
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-  set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
-  set(SK_WARNING_FLAG    -w)
+  if (__MINGW32__)
+    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id )
+    set(SK_WARNING_FLAG    -w)
+  else()
+    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
+    set(SK_WARNING_FLAG    -w)
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   # /OPT settings need to be specified explicitly because we're also generating
   # /DEBUG pdbs, which disables them by default.
@@ -615,7 +624,7 @@ add_custom_command(TARGET StereoKitC POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 add_custom_command(TARGET StereoKitC POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${sk_gpu_SOURCE_DIR}/tools" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc" )
-if (SK_SEPARATE_DBG)
+if (SK_SEPARATE_DBG AND EXISTS "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}")
   add_custom_command(TARGET StereoKitC POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_LIB_PREFIX}$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
 endif()

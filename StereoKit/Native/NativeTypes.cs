@@ -72,6 +72,7 @@ namespace StereoKit
 		/// power while the app is out-of-focus, but may not always be
 		/// desired. In particular, running multiple copies of a SK app for
 		/// testing networking code may benefit from this setting.</summary>
+		[Obsolete("Use SKSettings.standbyMode with StandbyMode.None instead.")]
 		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
 		private int _disableUnfocusedSleep;
 
@@ -101,6 +102,12 @@ namespace StereoKit
 		/// skips submitting a projection layer to OpenXR entirely.</summary>
 		public bool omitEmptyFrames { get { return _omitEmptyFrames > 0; } set { _omitEmptyFrames = value ? 1 : 0; } }
 		private int _omitEmptyFrames;
+
+		/// <summary>Configures StereoKit's behavior during device standby. By
+		/// default in v0.4, SK will completely pause the main thread and
+		/// disable audio. In v0.3, SK will continue to execute at a throttled
+		/// pace, and audio will remain on.</summary>
+		public StandbyMode standbyMode;
 
 		/// <summary>A pointer to the JNI's JavaVM structure, only used for
 		/// Android applications. This is optional, even for Android.</summary>
