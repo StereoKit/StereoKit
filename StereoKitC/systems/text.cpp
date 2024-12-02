@@ -218,18 +218,18 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 	const C *last_at    = start;
 	const C *ch         = start;
 	char32_t curr       = 0;
-	bool     was_break  = false;
+	bool     prev_break = false;
 	int32_t  count      = 0;
 
 	while (true) {
 		const C *next_char = start;
 		char_decode_b_T(ch, &next_char, &curr);
-		bool is_break = text_is_breakable(curr);
+		bool curr_break = text_is_breakable(curr);
 
-		// We prefer to line break at spaces and other breakable characters, 
+		// We prefer to line break at spaces and other breakable characters,
 		// rather than in the middle of words
-		if (is_break || curr == '\0') {
-			if (!was_break)
+		if (curr_break || curr == '\0') {
+			if (!prev_break)
 				last_width = curr_width;
 			last_at    = curr != '\0' ? next_char : ch;
 			last_count = curr != '\0' ? count + 1 : count;
@@ -243,12 +243,21 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 		float              next_width = char_info->xadvance*style->char_height + curr_width;
 
 		// Check if it steps out of bounds
-		if (!is_break && next_width > max_width) {
-			// If there were no breaks in this line, set to the previous character
+		if (!curr_break && next_width > max_width) {
+			// If there were no breaks in this line, set to the previous
+			// character.
 			if (last_width == 0) {
-				last_width = curr_width;
-				last_at    = ch;
-				last_count = count;
+				// If there is no previous character, then use the current one
+				// to prevent infinite loops.
+				if (curr_width == 0) {
+					last_width = next_width;
+					last_at    = next_char;
+					last_count = count + 1;
+				} else {
+					last_width = curr_width;
+					last_at    = ch;
+					last_count = count;
+				}
 			}
 			// Exit the line
 			break;
@@ -256,7 +265,7 @@ float text_step_line_length(const C *start, int32_t *out_char_count, const C **o
 
 		// Next character!
 		curr_width = next_width;
-		was_break  = is_break;
+		prev_break = curr_break;
 		ch         = next_char;
 		count     += 1;
 	}
