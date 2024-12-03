@@ -161,10 +161,10 @@ class GuideUI : ITest
 		UI.LayoutArea(V.XY0(.13f, .15f), new Vec2(.26f, .3f));
 
 		// Since the Handle does not draw anything, we must draw our own
-		// visual! We can draw this at Identity because HandleBegin pushes
-		// its pose onto the transform hierarchy. This is _not_ a UI
-		// element, it's just a regular Model asset and does not use any of
-		// the UI's layout tools.
+		// visual! We can draw this at Identity because HandleBegin
+		// pushes its pose onto the transform hierarchy. This is _not_ a
+		// UI element, it's just a regular Model asset and does not use
+		// any of the UI's layout tools.
 		clipboard.Draw(Matrix.Identity);
 
 		UI.Image(logoSprite, V.XY(.22f, 0));
@@ -222,8 +222,8 @@ class GuideUI : ITest
 		               new Vec2(.2f, 0));
 
 		// Explicit sizes on labels can be really useful for forcing the
-		// text into visual columns, rather than ragged edges of auto-sized
-		// text.
+		// text into visual columns, rather than ragged edges of auto
+		// sized text.
 		UI.Label("Red", new Vec2(.06f, 0));
 		UI.SameLine();
 		UI.HSlider("slideId1", ref slider1, 0, 1);
@@ -308,9 +308,9 @@ class GuideUI : ITest
 		UI.LayoutPop();
 
 		// Fill the remaining uncut area with text.
-		UI.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit" +
-		        ". Aenean consectetur, sem in feugiat auctor, enim urna " +
-		        "semper justo, ut iaculis odio dui sit amet arcu.");
+		UI.Text("Lorem ipsum dolor sit amet, consectetur adipiscing "   +
+		        "elit. Aenean consectetur, sem in feugiat auctor, enim "+
+		        "urna semper justo, ut iaculis odio dui sit amet arcu.");
 
 		UI.WindowEnd();
 	}
