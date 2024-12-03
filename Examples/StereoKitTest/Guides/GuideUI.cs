@@ -237,6 +237,49 @@ class GuideUI : ITest
 
 		UI.WindowEnd();
 	}
+	/// ## Layout Cuts and Hierarchy
+	///
+	/// StereoKit also has a hierarchical layout area system, so you can always
+	/// push and pop Layout areas onto the Layout stack, and fill them with
+	/// elements. This can be arbitrary rectangles within the current Surface,
+	/// rectangles reserved on the current Layout via `UI.LayoutReserve`, or
+	/// areas "cut" from the current Layout with `UI.LayoutPushCut`.
+	///
+	/// > See `UI.Push/PopSurface` to create new UI Surfaces with different
+	/// > origins and orientations. `UI.WindowBegin/End` internally calls
+	/// > `UI.Push/PopSurface` with the Window's Pose, but you can do the same
+	/// > at any point as well!
+	///
+	/// ![Layout Cuts]({{site.url}}/img/screenshots/Guides/UIWindowCuts.jpg)
+	///
+	void LayoutCutsWindow(ref Pose windowPose)
+	{
+		UI.WindowBegin("Layout Cuts Window", ref windowPose, new Vec2(0.3f,0));
+
+		UI.LayoutPushCut(UICut.Top, UI.LineHeight);
+		// Center some text in this "Cut". We can do this by filling the
+		// current layout by specifying a size of UI.LayoutRemaining, and then
+		// setting the text to align to the center of its element region.
+		UI.Text("Lorem Ipsum", TextAlign.Center, TextFit.None, UI.LayoutRemaining);
+		UI.LayoutPop();
+
+		UI.LayoutPushCut(UICut.Left, 0.1f);
+		// We can use a non-layout "At" panel element to add a decorative
+		// background to this entire layout area, without affecting the layout
+		// of the elements in it.
+		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
+		// Explicit size these buttons to ensure they all take the same width,
+		// instead of sizing to fit their text.
+		UI.Button("Home",    V.XY(0.1f, 0));
+		UI.Button("About",   V.XY(0.1f, 0));
+		UI.Button("Contact", V.XY(0.1f, 0));
+		UI.LayoutPop();
+
+		// Fill the remaining uncut area with text.
+		UI.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean consectetur, sem in feugiat auctor, enim urna semper justo, ut iaculis odio dui sit amet arcu.");
+
+		UI.WindowEnd();
+	}
 	/// ## An Important Note About IDs
 	/// 
 	/// StereoKit does store a small amount of information about the UI's state
@@ -280,8 +323,8 @@ class GuideUI : ITest
 	}
 	/// ## What's Next?
 	/// 
-	/// And there you go! That's how UI works in StereoKit, pretty simple, huh?
-	/// For further reference, and more UI methods, checkout the [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
+	/// And there you go! That's how UI works in StereoKit, pretty reasonable,
+	/// huh? For further reference, and more UI methods, checkout the [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
 	/// 
 	/// If you'd like to see the complete code for this sample,
 	/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideUI.cs)!
@@ -293,10 +336,11 @@ class GuideUI : ITest
 	Pose poseWinCustom = new Pose(3,0,-0.5f, Quat.LookDir(-Vec3.Forward));
 	Pose poseWinSize   = new Pose(4,0,-0.5f, Quat.LookDir(-Vec3.Forward));
 	Pose poseWinSpace  = new Pose(5,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinId     = new Pose(6,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinCuts   = new Pose(6,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinId     = new Pose(7,0,-0.5f, Quat.LookDir(-Vec3.Forward));
 
-	int   option = 1;
-	float slider = 0.25f;
+	int   option  = 1;
+	float slider  = 0.25f;
 	float slider1 = 0.25f;
 	float slider2 = 0.75f;
 
@@ -327,6 +371,10 @@ class GuideUI : ITest
 		SpaceWindow(ref poseWinSpace);
 		screenshotY = UI.LayoutLast.center.y;
 		Tests.Screenshot("Guides/UIWindowSpace.jpg", 1, 600, 400, 45, poseWinSpace.position + V.XYZ(0, screenshotY, 0.25f), poseWinSpace.position + V.XYZ(0, screenshotY, 0));
+
+		LayoutCutsWindow(ref poseWinCuts);
+		screenshotY = UI.LayoutLast.center.y;
+		Tests.Screenshot("Guides/UIWindowCuts.jpg", 1, 600, 400, 45, poseWinCuts.position + V.XYZ(0, screenshotY, 0.25f), poseWinCuts.position + V.XYZ(0, screenshotY, 0));
 
 		IdWindow(ref poseWinId, ref option);
 		screenshotY = UI.LayoutLast.center.y;
