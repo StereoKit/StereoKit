@@ -85,6 +85,23 @@ class GuideUI : ITest
 
 		UI.WindowEnd();
 	}
+	/// Adding an image to a button is pretty easy too, `UI.ButtonImg` takes a
+	/// sprite and an optional layout to make your buttons a little snazzier!
+	/// Here we're using one of StereoKit's built-in default sprites, but you
+	/// can swap that out with a Sprite you've loaded from file too!
+	///
+	/// ![Button Image UI]({{site.url}}/img/screenshots/Guides/UIWindowButtonImg.jpg)
+	///
+	void ButtonImgWindow(ref Pose windowPose, ref int counter)
+	{
+		UI.WindowBegin("Button Image Window", ref windowPose);
+
+		UI.Label($"Count {counter}");
+		if (UI.ButtonImg("Increment Counter", Sprite.ArrowUp))
+			counter++;
+
+		UI.WindowEnd();
+	}
 	/// ## Making a Toggle
 	/// 
 	/// Just to drive home the idea of how immediate mode state management
@@ -95,7 +112,9 @@ class GuideUI : ITest
 	bool header = false;
 	void ToggleWindow(ref Pose windowPose)
 	{
-		UI.WindowBegin("Toggle Window", ref windowPose, header ? UIWin.Normal : UIWin.Body);
+		UI.WindowBegin("Toggle Window",
+		               ref windowPose,
+		               header ? UIWin.Normal : UIWin.Body);
 
 		UI.Toggle("Show Header", ref header);
 
@@ -135,19 +154,20 @@ class GuideUI : ITest
 	void CustomWindow(ref Pose windowPose, ref float slider)
 	{
 		UI.HandleBegin("Clip", ref windowPose, clipboard.Bounds);
-		// Handle also does not specify the valid layout area for the UI, so
-		// we do this explicitly here. In this case, I know in advace that the
-		// clipboard GLTF file has a usable surface that's about 26x30cm.
-		UI.LayoutArea(new Vec3(.13f, .15f, 0), new Vec2(.26f, .3f));
+		// Handle also does not specify the valid layout area for the UI,
+		// so we do this explicitly here. In this case, I know in advace
+		// that the clipboard GLTF file has a usable surface that's about
+		// 26x30cm.
+		UI.LayoutArea(V.XY0(.13f, .15f), new Vec2(.26f, .3f));
 
 		// Since the Handle does not draw anything, we must draw our own
 		// visual! We can draw this at Identity because HandleBegin pushes
-		// its pose onto the transform hierarchy. This is _not_ a UI element,
-		// it's just a regular Model asset and does not use any of the UI's
-		// layout tools.
+		// its pose onto the transform hierarchy. This is _not_ a UI
+		// element, it's just a regular Model asset and does not use any of
+		// the UI's layout tools.
 		clipboard.Draw(Matrix.Identity);
 
-		UI.Image(logoSprite, new Vec2(.22f, 0));
+		UI.Image(logoSprite, V.XY(.22f, 0));
 
 		UI.HSeparator();
 
@@ -185,20 +205,25 @@ class GuideUI : ITest
 	/// system are named differently, `UI.ButtonAt`, `UI.HSliderAt`, etc.,
 	/// rather than just being overloads.
 	///
-	/// > UI.__At functions are useful when designing custom elements, element
-	/// > groups, or if you want to design your own layout system, but are
-	/// > generally not used at top level.
+	/// > `UI.___At` functions are useful when designing custom elements,
+	/// > element groups, or your own layout system, but are not often used at
+	/// > top level.
 	/// 
 	/// ![Explicitly sized element window]({{site.url}}/img/screenshots/Guides/UIWindowExplicitSize.jpg)
 	///
 	/// Here's how explicitly sized UI elements work.
 	///
-	void ExplicitSizeWindow(ref Pose windowPose, ref float slider1, ref float slider2)
+	void ExplicitSizeWindow(ref Pose  windowPose,
+	                        ref float slider1,
+	                        ref float slider2)
 	{
-		UI.WindowBegin("Explicit Size Window", ref windowPose, new Vec2(.2f,0));
+		UI.WindowBegin("Explicit Size Window",
+		               ref windowPose,
+		               new Vec2(.2f, 0));
 
-		// Explicit sizes on labels can be really useful for forcing the text
-		// into visual columns, rather than ragged edges of auto-sized text.
+		// Explicit sizes on labels can be really useful for forcing the
+		// text into visual columns, rather than ragged edges of auto-sized
+		// text.
 		UI.Label("Red", new Vec2(.06f, 0));
 		UI.SameLine();
 		UI.HSlider("slideId1", ref slider1, 0, 1);
@@ -225,15 +250,16 @@ class GuideUI : ITest
 	{
 		UI.WindowBegin("Spaced Window", ref windowPose);
 
-		// Add horizontal space in front of the label equal to the height of
-		// one standard UI line.
+		// Add horizontal space in front of the label equal to the height
+		// of one standard UI line.
 		UI.HSpace(UI.LineHeight);
 		UI.Label("Hello!");
 
-		// Reserve a full UI line, and draw a cube there using non-UI drawing
-		// functions.
+		// Reserve a full UI line, and draw a cube there using non-UI
+		// drawing functions.
 		Bounds layout = UI.LayoutReserve(Vec2.Zero, false, 0.001f);
-		Mesh.Cube.Draw(Material.Default, Matrix.TS(layout.center, layout.dimensions));
+		Mesh.Cube.Draw(Material.Default,
+		               Matrix.TS(layout.center, layout.dimensions));
 
 		UI.WindowEnd();
 	}
@@ -254,29 +280,37 @@ class GuideUI : ITest
 	///
 	void LayoutCutsWindow(ref Pose windowPose)
 	{
-		UI.WindowBegin("Layout Cuts Window", ref windowPose, new Vec2(0.3f,0));
+		UI.WindowBegin("Layout Cuts Window",
+		               ref windowPose,
+		               new Vec2(0.3f, 0));
 
 		UI.LayoutPushCut(UICut.Top, UI.LineHeight);
 		// Center some text in this "Cut". We can do this by filling the
-		// current layout by specifying a size of UI.LayoutRemaining, and then
-		// setting the text to align to the center of its element region.
-		UI.Text("Lorem Ipsum", TextAlign.Center, TextFit.None, UI.LayoutRemaining);
+		// current layout by specifying a size of UI.LayoutRemaining, and
+		// then setting the text to align to the center of its element
+		// region.
+		UI.Text("Lorem Ipsum",
+		        TextAlign.Center,
+		        TextFit  .None,
+		        UI       .LayoutRemaining);
 		UI.LayoutPop();
 
 		UI.LayoutPushCut(UICut.Left, 0.1f);
 		// We can use a non-layout "At" panel element to add a decorative
-		// background to this entire layout area, without affecting the layout
-		// of the elements in it.
+		// background to this entire layout area, without affecting the
+		// layout of the elements in it.
 		UI.PanelAt(UI.LayoutAt, UI.LayoutRemaining);
-		// Explicit size these buttons to ensure they all take the same width,
-		// instead of sizing to fit their text.
+		// Explicit size these buttons to ensure they all take the same
+		// width, instead of sizing to fit their text.
 		UI.Button("Home",    V.XY(0.1f, 0));
 		UI.Button("About",   V.XY(0.1f, 0));
 		UI.Button("Contact", V.XY(0.1f, 0));
 		UI.LayoutPop();
 
 		// Fill the remaining uncut area with text.
-		UI.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean consectetur, sem in feugiat auctor, enim urna semper justo, ut iaculis odio dui sit amet arcu.");
+		UI.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit" +
+		        ". Aenean consectetur, sem in feugiat auctor, enim urna " +
+		        "semper justo, ut iaculis odio dui sit amet arcu.");
 
 		UI.WindowEnd();
 	}
@@ -330,15 +364,17 @@ class GuideUI : ITest
 	/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideUI.cs)!
 	/// 
 	/// :End:
-	Pose poseWinSimple = new Pose(0,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinButton = new Pose(1,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinToggle = new Pose(2,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinCustom = new Pose(3,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinSize   = new Pose(4,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinSpace  = new Pose(5,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinCuts   = new Pose(6,0,-0.5f, Quat.LookDir(-Vec3.Forward));
-	Pose poseWinId     = new Pose(7,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinSimple    = new Pose(-4,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinButton    = new Pose(-3,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinButtonImg = new Pose(-2,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinToggle    = new Pose(-1,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinCustom    = new Pose( 0,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinSize      = new Pose( 1,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinSpace     = new Pose( 2,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinCuts      = new Pose( 3,0,-0.5f, Quat.LookDir(-Vec3.Forward));
+	Pose poseWinId        = new Pose( 4,0,-0.5f, Quat.LookDir(-Vec3.Forward));
 
+	int   counter = 3;
 	int   option  = 1;
 	float slider  = 0.25f;
 	float slider1 = 0.25f;
@@ -355,6 +391,10 @@ class GuideUI : ITest
 		ButtonWindow(ref poseWinButton);
 		screenshotY = UI.LayoutLast.center.y;
 		Tests.Screenshot("Guides/UIWindowButton.jpg", 1, 600, 400, 45, poseWinButton.position + V.XYZ(0, screenshotY, 0.25f), poseWinButton.position + V.XYZ(0, screenshotY, 0));
+
+		ButtonImgWindow(ref poseWinButtonImg, ref counter);
+		screenshotY = UI.LayoutLast.center.y;
+		Tests.Screenshot("Guides/UIWindowButtonImg.jpg", 1, 600, 400, 45, poseWinButtonImg.position + V.XYZ(0, screenshotY, 0.25f), poseWinButtonImg.position + V.XYZ(0, screenshotY, 0));
 
 		ToggleWindow(ref poseWinToggle);
 		screenshotY = UI.LayoutLast.center.y;
