@@ -90,9 +90,33 @@ class DocPose : ITest
 		Tests.Screenshot("Docs/PoseDraw.jpg", 400, 400, 55, Hierarchy.ToWorld(V.XYZ(0, 0, 0.5f)), Hierarchy.ToWorld(V.XYZ(0, 0, -0.5f)));
 	}
 
+	Model model = Model.FromFile("DamagedHelmet.gltf");
+	void PoseDirections()
+	{
+		/// :CodeSample: Pose Pose.Right Pose.Up Pose.Forward
+		/// ### Pose Directions
+		/// 
+		/// ![Pose direction lines]({{site.screen_url}}/Docs/PoseDirections.jpg)
+		/// 
+		/// `Pose` provides a few handy vector properties to help working with
+		/// `Pose` relative directions! `Forward`, `Right`, and `Up` are all
+		/// derived from the `Pose`'s orientation, and represent the -Z, +X and
+		/// +Y directions of the `Pose`.
+		/// 
+		Pose p = new Pose(0,0,-0.5f);
+		model.Draw(p.ToMatrix(0.03f));
+
+		Lines.Add(p.position, p.position + 0.1f*p.Right,   new Color32(255,0,0,255), 0.005f);
+		Lines.Add(p.position, p.position + 0.1f*p.Up,      new Color32(0,255,0,255), 0.005f);
+		Lines.Add(p.position, p.position + 0.1f*p.Forward, Color32.White,            0.005f);
+		/// :End:
+
+		Tests.Screenshot("Docs/PoseDirections.jpg", 400, 400, 55, Hierarchy.ToWorld(p.position+V.XYZ(0.15f,0.15f,-0.15f)), Hierarchy.ToWorld(p.position));
+	}
+
 	public void Step()
 	{
-		Hierarchy.Push(Tests.IsTesting? Matrix.T(0,-100,0) : Matrix.T(-1,0,-0.5f));
+		Hierarchy.Push(Tests.IsTesting ? Matrix.T(0, -100, 0) : Matrix.T(-1,0,-0.5f));
 		IdentityPose();
 		Hierarchy.Pop();
 
@@ -102,6 +126,10 @@ class DocPose : ITest
 
 		Hierarchy.Push(Tests.IsTesting ? Matrix.T(-100, -100, 0) : Matrix.T(1, 0, -0.5f));
 		DrawPose();
+		Hierarchy.Pop();
+
+		Hierarchy.Push(Tests.IsTesting ? Matrix.T(-200, -100, 0) : Matrix.T(2, 0, -0.5f));
+		PoseDirections();
 		Hierarchy.Pop();
 	}
 
