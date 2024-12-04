@@ -75,8 +75,8 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			settings.mode                  = headless ? AppMode.Offscreen : AppMode.Simulator;
-			settings.disableUnfocusedSleep = true;
+			settings.mode        = headless ? AppMode.Offscreen : AppMode.Simulator;
+			settings.standbyMode = StandbyMode.None;
 		}
 
 		// Preload the StereoKit library for access to Time.Scale before
