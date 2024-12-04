@@ -15,7 +15,7 @@ namespace sk {
 
 _sound_inst_t     au_active_sounds[8] = {};
 matrix            au_head_transform;
-int32_t           au_mix_temp_size = 4096;
+uint64_t          au_mix_temp_size = 4096;
 float*            au_mix_temp;
 
 ma_context        au_context        = {};
@@ -142,9 +142,9 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	} break;
 	}
 
-	int32_t mix_count = mini((int32_t)frame_count, (int32_t)(new_at+frames_read) - start_at);
+	int32_t mix_count = (int32_t)mini(frame_count, (uint64_t)((new_at+frames_read) - start_at));
 	int32_t end_at    = start_at + mix_count;
-	int32_t total     = new_at + frames_read;
+	int32_t total     = new_at   + (int32_t)frames_read;
 
 	// Create a sample offset to simulate sound arrival time difference
 	// between left and right ears.
@@ -161,7 +161,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// Sounds behind the user should get a low pass filter
 	float prev   = au_mix_temp[maxi(0, new_at - 1)];
 	float cutoff = fminf(
-		fmaxf(1000, -4000.f * log(fmaxf(1,dist-3.5f)) + 22200), // distance diminishes higher frequencies: https://www.desmos.com/calculator/h5tssewqbl
+		fmaxf(1000, -4000.f * logf(fmaxf(1,dist-3.5f)) + 22200), // distance diminishes higher frequencies: https://www.desmos.com/calculator/h5tssewqbl
 		math_lerp(2500, 30000, fminf(1, 1 + dot_front))); // So does being behind the listener
 	float RC     = 1.0f / (2.0f * 3.14159265359f * cutoff);
 	float dt     = 1.0f / AU_SAMPLE_RATE;
@@ -191,7 +191,7 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	}
 
 	// Cache the last few samples for implementing our sample buffer
-	int64_t count = mini((int64_t)AU_SAMPLE_BUFFER_SIZE*2, (int64_t)(new_at+frames_read));
+	int32_t count = mini(AU_SAMPLE_BUFFER_SIZE*2, (int32_t)(new_at+frames_read));
 	memcpy(inst.prev_buffer, &au_mix_temp[(new_at + frames_read) - count], count * sizeof(float));
 	inst.prev_buffer_ct = count;
 	inst.prev_offset[0] = offset[0];
