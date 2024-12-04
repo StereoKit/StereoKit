@@ -18,7 +18,6 @@ struct vsIn {
 };
 struct psIn {
 	float4 pos   : SV_POSITION;
-	float3 normal: NORMAL0;
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
 	float4 world : TEXCOORD1;
@@ -43,30 +42,27 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 	else if (abs(input.norm.x) > 0.75) o.scale = scale.zy;
 	else                               o.scale = scale.xy;
 
-	o.world  = mul(input .pos, sk_inst    [id].world);
-	o.pos    = mul(o.world,    sk_viewproj[o.view_id]);
-	o.normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
+	o.world = mul(input .pos, sk_inst    [id].world);
+	o.pos   = mul(o.world,    sk_viewproj[o.view_id]);
 
-	o.uv     = input.uv-0.5;
-	o.color  = color * input.col * sk_inst[id].color;
+	o.uv    = input.uv-0.5;
+	o.color = color * input.col * sk_inst[id].color;
 	return o;
 }
 float4 ps(psIn input) : SV_TARGET {
-	float2 glow = sk_finger_glow_ex(input.world.xyz, input.normal);
-	glow.y = (1-min(1,glow.x / 0.12)) * glow.y;
-	glow.x = max(0,1-(glow.x / border_affect_radius));
+	float  glow = pow(1 - saturate(sk_finger_distance(input.world.xyz) / 0.12), 10);
 	
-	float  border_grow = glow.x * border_size_grow + border_size;
+	float  border_grow = glow * border_size_grow + border_size;
 	float2 border_pos  = (0.5-abs(input.uv)) * input.scale;
-	float  corner      = min(border_pos.x, border_pos.y)-border_grow;
+	float  corner      = -(min(border_pos.x, border_pos.y)-border_grow);
 
-	if (corner > 0.0) discard;
+	if (max(glow, corner) <= 0.0)
+		discard;
 
-	// Can be used to antialias the edges. Should be paired with alpha blending
-	// on the associated material. This creates artifacts with depth write on.
-	// input.color.a *= abs(corner)/fwidth(corner);
+	// corner / fwidth(corner) will antialias the edges. This requires some
+	// kind of transparency on the material, alpha to coverage, or
+	// Transparency.MSAA seems to work pretty nicely here.
+	input.color.a *= max(glow*2, corner / fwidth(corner));
 
-	float4 col  = float4(lerp(input.color.rgb, float3(2,2,2), glow.y), 1);
-
-	return col;
+	return float4(lerp(input.color.rgb, float3(1, 1, 1), glow), input.color.a);
 }

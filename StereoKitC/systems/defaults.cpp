@@ -290,12 +290,9 @@ bool defaults_init() {
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
 	material_set_id(sk_default_material_ui_aura,     default_id_material_ui_aura);
 
-	material_set_texture(sk_default_material_font, "diffuse", sk_default_tex);
-	material_set_cull(sk_default_material_ui_box, cull_none);
-
-	// These can be paired with changes in the shader for antialiased edges.
-	// material_set_transparency(sk_default_material_ui_box, transparency_blend);
-	// material_set_depth_write(sk_default_material_ui_box, false);
+	material_set_texture     (sk_default_material_font, "diffuse", sk_default_tex);
+	material_set_cull        (sk_default_material_ui_box, cull_none);
+	material_set_transparency(sk_default_material_ui_box, transparency_msaa);
 
 	// Text!
 	sk_default_font = platform_default_font();
