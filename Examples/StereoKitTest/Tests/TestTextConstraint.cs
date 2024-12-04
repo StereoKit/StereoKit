@@ -14,10 +14,10 @@ class TestTextConstraint : ITest
 
 	static void Show(string text, Vec2 at, float width)
 	{
-		Vec2 size = Text.SizeLayout(text, TextStyle.Default, width);
+		Vec2 size = Text.Size(text, TextStyle.Default, width);
 		Text.Add(text, Matrix.T(at.x, at.y, 0), new Vec2(width, 0), TextFit.Wrap | TextFit.Clip, TextAlign.TopLeft, TextAlign.TopLeft);
-		Lines.Add(new Vec3(at.XY0), new Vec3(at.x, at.y - size.y,0), Color.Black, 0.001f);
-		Lines.Add(new Vec3(at.x-size.x, at.y, 0), new Vec3((at-size).XY0), Color.Black, 0.001f);
+		Lines.Add(at.XY0, new Vec3(at.x, at.y - size.y,0), Color.Black, 0.001f);
+		Lines.Add(new Vec3(at.x-size.x, at.y, 0), (at-size).XY0, Color.Black, 0.001f);
 	}
 
 	public void Initialize() { }

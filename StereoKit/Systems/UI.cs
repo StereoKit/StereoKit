@@ -504,10 +504,30 @@ namespace StereoKit
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
 
-		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <summary>A scrolling text element! This is for reading large chunks
+		/// of text that may be too long to fit in the available space. It
+		/// requires a height, as well as a place to store the current scroll
+		/// value. Text uses the UI's current font settings, which can be
+		/// changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="scroll">This is the current scroll value of the text,
+		/// in meters, _not_ percent.</param>
+		/// <param name="scrollDirection">What scroll bars are allowed to show
+		/// on this text? Vertical, horizontal, both?</param>
 		/// <param name="height">The vertical height of this Text element,
 		/// width will automatically take the remainder of the current layout
 		/// width.</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default, and this scrolling
+		/// overload will always add `TextFit.Clip` internally.</param>
+		/// <returns>Returns true if any of the scroll bars have changed this
+		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
 

@@ -430,16 +430,16 @@ namespace StereoKit
 		/// the position of the 'camera'.</param>
 		/// <param name="at">The location the transform is looking towards, or
 		/// the subject of the 'camera'.</param>
+		/// <returns>A common camera-like transform matrix.</returns>
+		public static Matrix LookAt(Vec3 from, Vec3 at)
+			=> Matrix4x4.CreateLookAt(from, at, Vec3.Up);
+
+		/// <inheritdoc cref="LookAt(Vec3, Vec3)"/>
 		/// <param name="up">This controlls the roll value of the lookat
 		/// transform, this would be the direction the top of the camera is
 		/// facing. In most cases, this is just Vec3.Up.</param>
-		/// <returns>A common camera-like transform matrix.</returns>
 		public static Matrix LookAt(Vec3 from, Vec3 at, Vec3 up)
 			=> Matrix4x4.CreateLookAt(from, at, up);
-
-		/// <inheritdoc cref="LookAt(Vec3, Vec3, Vec3)"/>
-		public static Matrix LookAt(Vec3 from, Vec3 at)
-			=> Matrix4x4.CreateLookAt(from, at, Vec3.Up);
 
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. With the known camera 
