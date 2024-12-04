@@ -66,7 +66,7 @@ internal class DemoRoundedUI : ITest
 
 	static bool UIRoundedButton(string idText, float height, RoundedSprite roundedSprite)
 	{
-		ulong id = UI.StackHash(idText);
+		IdHash id = UI.StackHash(idText);
 
 		Vec2   size   = new Vec2(roundedSprite.aspect * height, height);
 		Bounds layout = UI.LayoutReserve(size);

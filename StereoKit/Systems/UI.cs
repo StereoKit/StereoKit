@@ -447,10 +447,30 @@ namespace StereoKit
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
 
-		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <summary>A scrolling text element! This is for reading large chunks
+		/// of text that may be too long to fit in the available space. It
+		/// requires a height, as well as a place to store the current scroll
+		/// value. Text uses the UI's current font settings, which can be
+		/// changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="scroll">This is the current scroll value of the text,
+		/// in meters, _not_ percent.</param>
+		/// <param name="scrollDirection">What scroll bars are allowed to show
+		/// on this text? Vertical, horizontal, both?</param>
 		/// <param name="height">The vertical height of this Text element,
 		/// width will automatically take the remainder of the current layout
 		/// width.</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default, and this scrolling
+		/// overload will always add `TextFit.Clip` internally.</param>
+		/// <returns>Returns true if any of the scroll bars have changed this
+		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
 
@@ -1489,11 +1509,6 @@ namespace StereoKit
 		/// be a value _past_ UIVisual.Max to use extra UIVisual slots for
 		/// your own custom UI elements. If these slots are empty, SK will fall
 		/// back to UIVisual.Default.</param>
-		/// <param name="elementColor">If you wish to use the coloring from a
-		/// different element, you can use this to override the theme color
-		/// used when drawing. This can be a value _past_ UIVisual.Max to use
-		/// extra UIVisual slots for your own custom UI elements. If these
-		/// slots are empty, SK will fall back to UIVisual.Default.</param>
 		/// <param name="start">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -1501,12 +1516,17 @@ namespace StereoKit
 		/// <param name="focus">The amount of visual focus this element
 		/// currently has, where 0 is unfocused, and 1 is active. You can
 		/// acquire a good focus value from `UI.GetAnimFocus`.</param>
-		public static void DrawElement(UIVisual elementVisual, UIVisual elementColor, Vec3 start, Vec3 size, float focus)
-			=> NativeAPI.ui_draw_element_color(elementVisual, elementColor, start, size, focus);
-
-		/// <inheritdoc cref="DrawElement(UIVisual, UIVisual, Vec3, Vec3, float)"/>
 		public static void DrawElement(UIVisual elementVisual, Vec3 start, Vec3 size, float focus)
 			=> NativeAPI.ui_draw_element(elementVisual, start, size, focus);
+
+		/// <inheritdoc cref="DrawElement(UIVisual, Vec3, Vec3, float)"/>
+		/// <param name="elementColor">If you wish to use the coloring from a
+		/// different element, you can use this to override the theme color
+		/// used when drawing. This can be a value _past_ UIVisual.Max to use
+		/// extra UIVisual slots for your own custom UI elements. If these
+		/// slots are empty, SK will fall back to UIVisual.Default.</param>
+		public static void DrawElement(UIVisual elementVisual, UIVisual elementColor, Vec3 start, Vec3 size, float focus)
+			=> NativeAPI.ui_draw_element_color(elementVisual, elementColor, start, size, focus);
 
 		/// <summary>This will get a final linear draw color for a particular
 		/// UI element type with a particular focus value. This obeys the
@@ -1593,22 +1613,22 @@ namespace StereoKit
 		/// <param name="deleteFlatSides">If two adjacent corners are sharp, should
 		/// we skip connecting them with triangles? If this edge will always be
 		/// covered, then deleting these faces may save you some performance.</param>
+		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
+		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
+		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
+		{
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, true, lathePts, lathePts.Length);
+			return result != IntPtr.Zero ? new Mesh(result) : null;
+		}
+
+		/// <inheritdoc cref="GenQuadrantMesh(UICorner, float, uint, bool, UILathePt[])"/>
 		/// <param name="quadrantify">Does this generate a mesh compatible with
 		/// StereoKit's quadrant shader system, or is this just a traditional
 		/// mesh? In most cases, this should be true, but UI elements such as
 		/// the rounded button may be exceptions.</param>
-		/// <param name="lathePts">The lathe points to sweep around the edge.</param>
-		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
 		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, bool quadrantify, params UILathePt[] lathePts)
 		{
 			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, quadrantify, lathePts, lathePts.Length);
-			return result != IntPtr.Zero ? new Mesh(result) : null;
-		}
-
-		/// <inheritdoc cref="GenQuadrantMesh(UICorner, float, uint, bool, bool, UILathePt[])"/>
-		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
-		{
-			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, true, lathePts, lathePts.Length);
 			return result != IntPtr.Zero ? new Mesh(result) : null;
 		}
 
@@ -1618,7 +1638,7 @@ namespace StereoKit
 		/// <param name="id">Text to hash along with the current id stack.
 		/// </param>
 		/// <returns>An integer based hash id for use with SK UI.</returns>
-		public static ulong StackHash(string id)
+		public static IdHash StackHash(string id)
 			=> NativeAPI.ui_stack_hash_16(id);
 
 		/// <summary>This is the core functionality of StereoKit's buttons,

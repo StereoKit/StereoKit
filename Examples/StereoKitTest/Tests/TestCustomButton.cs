@@ -62,7 +62,7 @@ internal class TestCustomButton : ITest
 
 	static bool CustomButtonMesh(string text)
 	{
-		ulong id = UI.StackHash(text);
+		IdHash id = UI.StackHash(text);
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
@@ -78,7 +78,7 @@ internal class TestCustomButton : ITest
 
 	static bool CustomButtonElement(string text)
 	{
-		ulong id = UI.StackHash(text);
+		IdHash id = UI.StackHash(text);
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
@@ -94,7 +94,7 @@ internal class TestCustomButton : ITest
 
 	static bool CustomButtonTheme(string text)
 	{
-		ulong id = UI.StackHash(text);
+		IdHash id = UI.StackHash(text);
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
@@ -110,7 +110,7 @@ internal class TestCustomButton : ITest
 
 	static bool CustomButtonNonexistentTheme(string text)
 	{
-		ulong id = UI.StackHash(text);
+		IdHash id = UI.StackHash(text);
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
