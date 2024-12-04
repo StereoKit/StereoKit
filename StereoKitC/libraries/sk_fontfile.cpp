@@ -146,6 +146,7 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 			data[count].scale = 1;
 			count += 1;
 
+			free(folder);
 			free(file);
 
 			int32_t               link_count;
@@ -189,7 +190,7 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 char* fontfile_folder() {
 #ifdef WINDOWS_UWP
 	// Hard code for now until UWP replacement for shlobj library.
-	return "C:\\Windows\\System32";
+	return _strdup("C:\\Windows\\System32");
 #else
 	// We have a valid font name now, prefix the windows font folder to it.
 	wchar_t font_folder_path[MAX_PATH];
@@ -316,6 +317,7 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 
 		char* folder = fontfile_folder();
 		snprintf(info[count].filepath, 256, "%s/%s", folder, filename);
+		free(folder);
 
 		info[count].scale = numerator / (float)denominator;
 
@@ -351,7 +353,7 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 
 char* fontfile_folder() {
 	// Androids fonts are located here
-	return "/system/fonts";
+	return strdup("/system/fonts");
 }
 
 ///////////////////////////////////////////
