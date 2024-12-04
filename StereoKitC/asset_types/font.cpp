@@ -154,22 +154,22 @@ void font_source_load_data(font_source_t* font) {
 
 	int32_t ascender, descender, line_gap;
 	if (stbtt_GetFontVMetricsOS2(&font->info, &ascender, &descender, &line_gap)) {
-		font->ascender  = ceilf(      ascender   * font->scale);
-		font->descender = ceilf(fabsf(descender) * font->scale);
+		font->ascender  = ceilf(    ascender   * font->scale);
+		font->descender = ceilf(abs(descender) * font->scale);
 	} else {
 		stbtt_GetFontVMetrics(&font->info, &ascender, &descender, &line_gap);
-		font->ascender  = ceilf(      ascender   * font->scale);
-		font->descender = ceilf(fabsf(descender) * font->scale);
+		font->ascender  = ceilf(    ascender   * font->scale);
+		font->descender = ceilf(abs(descender) * font->scale);
 	}
 	font->total_height = font->ascender + font->descender;
 
 	int32_t x0, y0, x1, y1;
 	stbtt_GetFontBoundingBox(&font->info, &x0, &y0, &x1, &y1);
-	font->render_ascender  = ceilf(y1        * font->scale);
-	font->render_descender = ceilf(fabsf(y0) * font->scale);
+	font->render_ascender  = ceilf(y1      * font->scale);
+	font->render_descender = ceilf(abs(y0) * font->scale);
 
 	stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
-	font->cap_height = y1-y0;
+	font->cap_height = (float)(y1-y0);
 }
 
 ///////////////////////////////////////////
