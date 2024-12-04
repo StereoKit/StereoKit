@@ -61,7 +61,7 @@ namespace StereoKit.Framework
 		{
 			if (image != null)
 			{
-				float height = TextStyle.Default.CharHeight;
+				float height = TextStyle.Default.LayoutHeight;
 				Vec3  offset = new Vec3(0, height * 0.75f, 0);
 				Hierarchy.Push(Matrix.TS(at, focused ? 1.2f : 1));
 					image.Draw(Matrix.TS(offset, height), TextAlign.Center);
