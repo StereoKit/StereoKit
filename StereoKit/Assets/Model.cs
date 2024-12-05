@@ -29,7 +29,7 @@ namespace StereoKit
 		private ModelAnimCollection   _animCollection;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id
 		{

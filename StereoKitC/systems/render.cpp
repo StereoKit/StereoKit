@@ -246,7 +246,8 @@ bool render_init() {
 	tex_release(sky_cubemap);
 	
 	local.list_primary = render_list_create();
-	render_list_push(local.list_primary);
+	render_list_set_id(local.list_primary, "sk/render/primary_renderlist");
+	render_list_push  (local.list_primary);
 
 	radix_sort_init();
 	hierarchy_init();
@@ -1201,9 +1202,32 @@ void render_get_device(void **device, void **context) {
 // Render List                           //
 ///////////////////////////////////////////
 
+render_list_t render_list_find(const char* id) {
+	render_list_t result = (render_list_t)assets_find(id, asset_type_render_list);
+	if (result != nullptr) {
+		render_list_addref(result);
+		return result;
+	}
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 render_list_t render_list_create() {
 	render_list_t result = (render_list_t)assets_allocate(asset_type_render_list);
 	return result;
+}
+
+///////////////////////////////////////////
+
+void render_list_set_id(render_list_t list, const char* id) {
+	assets_set_id(&list->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* render_list_get_id(const render_list_t list) {
+	return list->header.id_text;
 }
 
 ///////////////////////////////////////////

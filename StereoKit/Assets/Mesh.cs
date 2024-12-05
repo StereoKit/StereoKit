@@ -23,7 +23,7 @@ namespace StereoKit
 		internal IntPtr _inst;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id
 		{
@@ -466,7 +466,7 @@ namespace StereoKit
 			=> new Mesh(NativeAPI.mesh_gen_cylinder(diameter, depth, direction, subdivisions));
 
 		/// <summary>Finds the Mesh with the matching id, and returns a 
-		/// reference to it. If no Mesh it found, it returns null.</summary>
+		/// reference to it. If no Mesh is found, it returns null.</summary>
 		/// <param name="meshId">Id of the Mesh we're looking for.</param>
 		/// <returns>A Mesh with a matching id, or null if none is found.
 		/// </returns>

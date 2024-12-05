@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -10,9 +11,18 @@ namespace StereoKit
 	/// Manually working with a RenderList can be useful for "baking down
 	/// matrices" or caching a scene of objects. Or for drawing a separate
 	/// scene to an offscreen surface, like for thumbnails of Models.</summary>
-	public class RenderList
+	public class RenderList : IAsset
 	{
 		internal IntPtr _inst;
+
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managing your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.render_list_get_id(_inst));
+			set => NativeAPI.render_list_set_id(_inst, value);
+		}
 
 		/// <summary>The number of Mesh/Material pairs that have been submitted
 		/// to the render list so far this frame.</summary>
@@ -28,9 +38,9 @@ namespace StereoKit
 		{
 			_inst = NativeAPI.render_list_create();
 		}
-		internal RenderList(IntPtr material)
+		internal RenderList(IntPtr list)
 		{
-			_inst = material;
+			_inst = list;
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty RenderList!");
 		}
@@ -132,5 +142,18 @@ namespace StereoKit
 		/// <summary>This removes the current top of the RenderList stack,
 		/// making the next list as active</summary>
 		public static void Pop() => NativeAPI.render_list_pop();
+
+		/// <summary>Finds the RenderList with the matching id, and returns a
+		/// reference to it. If no RenderList is found, it returns null.
+		/// </summary>
+		/// <param name="listId">Id of the RenderList we're looking for.
+		/// </param>
+		/// <returns>A RenderList with a matching id, or null if none is found.
+		/// </returns>
+		public static RenderList Find(string listId)
+		{
+			IntPtr list = NativeAPI.render_list_find(listId);
+			return list == IntPtr.Zero ? null : new RenderList(list);
+		}
 	}
 }
