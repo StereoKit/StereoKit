@@ -151,7 +151,7 @@ class DemoAssets : ITest
 		/// Assets! Here's a quick example of iterating through all assets and
 		/// dumping a quick summary to the log.
 		foreach (var asset in Assets.All)
-			Log.Info($"{asset.GetType().Name} - {asset.Id}");
+			Log.Info($"{asset.GetType().Name,-10} - {asset.Id}");
 		/// :End:
 
 		Tests.RunForFrames(2);
