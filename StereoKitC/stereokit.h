@@ -1623,11 +1623,15 @@ SK_API void                  render_screenshot_viewpoint(void (*render_on_screen
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
-SK_API render_list_t         render_get_primary_list();
+SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
-SK_API render_list_t         render_list_create       ();
+
+SK_API render_list_t         render_list_find         (const char* id);
+SK_API render_list_t         render_list_create       (void);
+SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
+SK_API const char*           render_list_get_id       (const render_list_t list);
 SK_API void                  render_list_addref       (      render_list_t list);
 SK_API void                  render_list_release      (      render_list_t list);
 SK_API void                  render_list_clear        (      render_list_t list);
@@ -1639,7 +1643,7 @@ SK_API void                  render_list_add_model_mat(      render_list_t list,
 SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport_px sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all));
 
 SK_API void                  render_list_push         (      render_list_t list);
-SK_API void                  render_list_pop          ();
+SK_API void                  render_list_pop          (void);
 
 ///////////////////////////////////////////
 

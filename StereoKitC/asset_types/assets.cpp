@@ -151,8 +151,9 @@ void *assets_allocate(asset_type_ type) {
 
 void assets_set_id(asset_header_t *header, const char *id) {
 	assets_set_id(header, hash_fnv64_string(id));
-	sk_free(header->id_text);
+	char* old_text = header->id_text;
 	header->id_text = string_copy(id);
+	sk_free(old_text);
 }
 
 ///////////////////////////////////////////
