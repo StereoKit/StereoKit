@@ -164,8 +164,15 @@ class GuideDrawing : ITest
 		/// a 3D modeling tool such as Blender, then this is basically a full
 		/// representation of the scene you've created there.
 		/// 
-		/// Since a model already has all its information within it, all you
-		/// need to do is provide it with a location!
+		/// Just put your 3D model in the project's Assets folder, then load it
+		/// like this _once_ during initialization!
+		/// 
+		/// ```csharp
+		/// Model model = Model.FromFile("DamagedHelmet.gltf");
+		/// ```
+		/// 
+		/// And since a model already has all its information within it, all
+		/// you need to do is provide it with a location!
 		model.Draw(Matrix.T(10, 10, 0));
 		/// ![Drawing a model]({{site.screen_url}}/Drawing_Model.jpg)
 		/// _StereoKit's main format is the .gltf file._
@@ -173,7 +180,7 @@ class GuideDrawing : ITest
 		/// So... that was also pretty simple! The only real trick with Models
 		/// is getting one in the first place, but even that's not too hard.
 		/// There's a lot you can do with a Model beyond just drawing it, so
-		/// for more details on that, check out [the Model guide](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoNodes.cs) (coming soon)!
+		/// for more details on that, check out [the 3D Asset guide]({{site.url}}/Guides/Working-with-3D-Assets.html)!
 		/// 
 		/// But here's the quick list of where you can get a Model to begin
 		/// with:

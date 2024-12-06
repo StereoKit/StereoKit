@@ -88,13 +88,14 @@ SK.Run(() => {
 /// 220 lines of code! It's well commented, and is a good example to pick
 /// through.
 /// 
-/// For additional learning resources, you can check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
-/// page for a couple of repositories and links that may help you out. In
-/// particular, the GitHub repository does contain a [number of small demo scenes](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitTest/Demos)
-/// that are excellent reference for a number of different StereoKit features!
+/// For additional learning resources, you can check out the SDK source, which
+/// does contain a [number of small demo scenes]({{site.url}}/Pages/Guides/Sample-Code.html) 
+/// that are excellent reference for a variety of different StereoKit features!
+/// You can also check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
+/// page for a couple of repositories and links that may help you out.
 /// 
-/// And don't forget to peek in the docs here! Most pages contain sample code
-/// that illustrates how a particular function or property is used
+/// And don't forget to peek in the API docs here! Most pages contain sample
+/// code that illustrates how a particular function or property is used
 /// in-context. The ultimate goal is to have a sample for 100% of the docs,
 /// so if you're looking for one and it isn't there, use the 'Create an Issue'
 /// link at the bottom of the web page to get it prioritized!
