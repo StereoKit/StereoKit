@@ -12,7 +12,7 @@ class DocsRenderList : ITest
 	static Sprite MakeIcon(Model model, int resolution)
 	{
 		RenderList list   = new RenderList();
-		Tex        result = Tex.RenderTarget(resolution, resolution, 8);
+		Tex        result = Tex.RenderTarget(resolution, resolution, 1);
 
 		// Calculate a standard size that will fill the icon to the edges,
 		// based on the camera parameters we pass to DrawNow.
