@@ -5,6 +5,8 @@ class DocsRenderList : ITest
 	/// :CodeSample: RenderList RenderList.Add RenderList.DrawNow
 	/// ### Render Icon From a Model
 	///
+	/// ![UI with a custom rendererd icon]({{site.screen_url}}/Docs/RenderListIcon.jpg)
+	/// 
 	/// One place where RenderList excels, is at rendering icons or previews of
 	/// Models or scenes! This snippet of code will take a Model asset, and
 	/// render a preview of it into a small Sprite.
@@ -43,7 +45,7 @@ class DocsRenderList : ITest
 	}
 
 	Pose windowPose = new Pose(0,0,-0.5f, Quat.LookDir(0,0,1));
-	public void Step()
+	void ShowWindow()
 	{
 		UI.WindowBegin("RenderList Icons", ref windowPose);
 		UI.ButtonImg("Icon", icon, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight*2));
@@ -51,5 +53,10 @@ class DocsRenderList : ITest
 	}
 	/// :End:
 
+	public void Step()
+	{
+		ShowWindow();
+		Tests.Screenshot("Docs/RenderListIcon.jpg", 1, 400, 400, 45, new Vec3(0,-0.02f,-0.3f), new Vec3(0,-0.02f,-0.5f));
+	}
 	public void Shutdown() {}
 }
