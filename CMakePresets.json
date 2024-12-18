@@ -50,7 +50,7 @@
       "description":  "Debug build for UWP ARM32",
       "inherits":     "Uwp_Debug",
       "hidden":       false,
-      "architecture": "ARM",
+      "architecture": "ARM,version=10.0.22621.0",
       "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM"
     },
     {
@@ -100,7 +100,7 @@
       "description":  "Release build for UWP ARM32",
       "inherits":     "Uwp_Release",
       "hidden":       false,
-      "architecture": "ARM",
+      "architecture": "ARM,version=10.0.22621.0",
       "binaryDir":    "${sourceDir}/bin/intermediate/UWP_ARM"
     },
     {
