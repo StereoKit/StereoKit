@@ -791,7 +791,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
-		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_hand_get_visible((handed_)i) 
+		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_get_finger_glow()
 			? hand->fingers[1][4].position
 			: vec3{ 0,-1000,0 };
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };

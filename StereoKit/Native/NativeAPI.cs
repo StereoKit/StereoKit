@@ -598,6 +598,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_text_inject_char(uint character);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_visible (Handed hand, [MarshalAs(UnmanagedType.Bool)] bool visible);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_hand_material(Handed hand, IntPtr material);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool     input_get_finger_glow();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void     input_set_finger_glow([MarshalAs(UnmanagedType.Bool)] bool visible);
 
 		///////////////////////////////////////////
 
