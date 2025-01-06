@@ -119,6 +119,7 @@ float               hand_size_update = 0;
 int32_t             input_hand_pointer_id[handed_max] = {-1, -1};
 array_t<hand_sim_t> hand_sim_poses   = {};
 hand_sim_id_t       hand_sim_next_id = 1;
+bool32_t            hand_finger_glow_visible = true;
 
 void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
 
@@ -169,6 +170,7 @@ void input_hand_refresh_system() {
 void input_hand_init() {
 	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
+	hand_finger_glow_visible = true;
 
 	float blend = 1;
 	for (int32_t i = 0; i < _countof(hand_sources); i++) {
@@ -688,6 +690,18 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 	}
 
 	hand_state[hand].visible = visible;
+}
+
+///////////////////////////////////////////
+
+bool32_t input_get_finger_glow(void) {
+	return hand_finger_glow_visible;
+}
+
+///////////////////////////////////////////
+
+void input_set_finger_glow(bool32_t visible) {
+	hand_finger_glow_visible = visible;
 }
 
 } // namespace sk
