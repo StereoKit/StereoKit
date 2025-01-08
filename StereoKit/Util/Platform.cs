@@ -104,13 +104,21 @@ namespace StereoKit
 		/// should filter for. This is in the format of ".glb" and is case
 		/// insensitive.</param>
 		public static void FilePicker(PickerMode mode, Action<string> onSelectFile, Action onCancel, params string[] filters)
+			=> FilePicker(mode, null, onSelectFile, onCancel, filters);
+
+		/// <inheritdoc cref="FilePicker(PickerMode, Action{string}, Action, string[])"/>
+		/// <param name="startDirectory">When specified, the File Picker dialog
+		/// will start browsing from this directory. If null is specified, the
+		/// picker will find a reasonable default location for the OS!</param>
+		public static void FilePicker(PickerMode mode, string startDirectory, Action<string> onSelectFile, Action onCancel, params string[] filters)
 		{
 			_filePickerCallback   = FilePickerCallback;
 			_filePickerOnSelect   = onSelectFile;
 			_filePickerOnCancel   = onCancel;
 			_filePickerOnComplete = null;
-			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_folder(mode, NativeHelper.ToUtf8(startDirectory), IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
+
 		/// <summary>Starts a file picker window! This will create a native
 		/// file picker window if one is available in the current setup, and
 		/// if it is not, it'll create a fallback filepicker build using
@@ -141,13 +149,21 @@ namespace StereoKit
 		/// should filter for. This is in the format of ".glb" and is case
 		/// insensitive.</param>
 		public static void FilePicker(PickerMode mode, Action<bool, string> onComplete, params string[] filters)
+			=> FilePicker(mode, null, onComplete, filters);
+
+		/// <inheritdoc cref="FilePicker(PickerMode, Action{bool, string}, string[])"/>
+		/// <param name="startDirectory">When specified, the File Picker dialog
+		/// will start browsing from this directory. If null is specified, the
+		/// picker will find a reasonable default location for the OS!</param>
+		public static void FilePicker(PickerMode mode, string startDirectory, Action<bool, string> onComplete, params string[] filters)
 		{
-			_filePickerCallback = FilePickerCallback;
-			_filePickerOnSelect = null;
-			_filePickerOnCancel = null;
+			_filePickerCallback   = FilePickerCallback;
+			_filePickerOnSelect   = null;
+			_filePickerOnCancel   = null;
 			_filePickerOnComplete = onComplete;
-			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_folder(mode, NativeHelper.ToUtf8(startDirectory), IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
 		}
+
 		/// <summary>If the picker is visible, this will close it and 
 		/// immediately trigger a cancel event for the active picker.</summary>
 		public static void FilePickerClose() => NativeAPI.platform_file_picker_close();

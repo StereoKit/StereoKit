@@ -126,12 +126,18 @@ void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_conf
 
 	// Call the file picker that does all the real work, and pass the callback
 	// along to _our_ callback.
-	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
+	platform_file_picker_folder(mode, nullptr, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
 		callback_t *data = (callback_t *)callback_data;
 		if (data->on_confirm)
 			data->on_confirm(data->callback_data, confirmed, filename);
 		sk_free(data);
 	}, filters, filter_count);
+}
+
+///////////////////////////////////////////
+
+void platform_file_picker_sz(picker_mode_ mode, void* callback_data, void (*picker_callback_sz)(void* callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
+	platform_file_picker_folder(mode, nullptr, callback_data, picker_callback_sz, in_arr_filters, filter_count);
 }
 
 ///////////////////////////////////////////
@@ -147,7 +153,7 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 ///////////////////////////////////////////
 
-void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
+void platform_file_picker_folder(picker_mode_ mode, const char* start_dir_utf8, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
 	if (device_display_get_type() == display_type_flatscreen) {
 		fp_wfilename[0] = '\0';
@@ -162,13 +168,18 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 		wchar_t *w_filter = platform_to_wchar(filter);
 		for (size_t i = 0; i < len; i++) if (w_filter[i] == '\1') w_filter[i] = '\0';
 
+		wchar_t* w_start_dir = start_dir_utf8
+			? platform_to_wchar(start_dir_utf8)
+			: nullptr;
+
 		OPENFILENAMEW settings = {};
-		settings.lStructSize  = sizeof(settings);
-		settings.nMaxFile     = sizeof(fp_filename);
-		settings.hwndOwner    = (HWND)win32_hwnd();
-		settings.lpstrFile    = fp_wfilename;
-		settings.lpstrFilter  = w_filter;
-		settings.nFilterIndex = 1;
+		settings.lStructSize     = sizeof(settings);
+		settings.nMaxFile        = sizeof(fp_filename);
+		settings.hwndOwner       = (HWND)win32_hwnd();
+		settings.lpstrFile       = fp_wfilename;
+		settings.lpstrFilter     = w_filter;
+		settings.nFilterIndex    = 1;
+		settings.lpstrInitialDir = w_start_dir;
 
 		if (mode == picker_mode_open) {
 			settings.Flags      = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
@@ -192,6 +203,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 			}
 		}
 
+		sk_free(w_start_dir);
 		sk_free(w_filter);
 		sk_free(filter);
 		return;
@@ -243,7 +255,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 	// Set up the fallback file picker
 
 	// Make the title text for the window
-	sk_free(fp_title); 
+	sk_free(fp_title);
 	fp_title = nullptr;
 	switch (mode) {
 	case picker_mode_save:   fp_title = string_append(fp_title, 1, "Save As"); break;
@@ -259,7 +271,9 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 	fp_filters = sk_malloc_t(file_filter_t, fp_filter_count);
 	memcpy(fp_filters, in_arr_filters, sizeof(file_filter_t) * fp_filter_count);
 
-	file_picker_open_folder(fp_path.folder);
+	file_picker_open_folder(start_dir_utf8
+		? start_dir_utf8
+		: fp_path.folder);
 
 	fp_win_pose  = matrix_transform_pose( matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	fp_call_data = callback_data;
