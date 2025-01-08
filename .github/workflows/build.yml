@@ -94,17 +94,24 @@ jobs:
       CPM_SOURCE_CACHE: .deps_cache
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         key: DependencyCache
         path: |
           .deps_cache
+
+    # UWP ARM32 builds no longer work in Windows SDK 26100 and onwards, so we
+    # need to explicitly use 22621, the last version that supported it.
+    - name: Get compatible Windows SDK
+      uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+      with:
+        sdk-version: 22621
 
     - name: Set Version
       shell: pwsh
@@ -132,9 +139,9 @@ jobs:
         cmake --build --preset Uwp_Arm32_Release
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: binaries
+        name: binaries-windows
         path: bin/distribute/
 
 ###########################################
@@ -145,13 +152,13 @@ jobs:
       CPM_SOURCE_CACHE: .deps_cache
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.branch }}
     - uses: lukka/get-cmake@v3.26.3
 
     - name: Get Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         key: DependencyCache
         path: |
@@ -216,17 +223,17 @@ jobs:
         cmake --build --preset Linux_Arm64_Release
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: binaries
+        name: binaries-linux
         path: bin/distribute/
 
     - name: Upload Tools
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: tools
         path: tools/skshaderc/
-  
+
   ###########################################
 
   build-package:
@@ -234,22 +241,23 @@ jobs:
     needs: [build-windows, build-linux]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.branch }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with: 
         dotnet-version: 7.0.x
-    
+
     - name: Get Artifacts from Previous
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
-        name: binaries
+        merge-multiple: true
+        pattern: binaries-*
         path: bin/distribute/
 
     - name: Get Tools from Previous
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: tools
         path: tools/skshaderc/
@@ -283,7 +291,7 @@ jobs:
         git push origin v${{inputs.major}}.${{inputs.minor}}.${{inputs.patch}}
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package
         path: bin/StereoKit.*.nupkg
