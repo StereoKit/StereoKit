@@ -1525,21 +1525,24 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 
 ///////////////////////////////////////////
 
-void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, rect_t viewport, render_layer_ layer_filter, render_clear_ clear) {
+void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter) {
 	skg_tex_t* old_target = skg_tex_target_get();
 	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
 
 	if (clear != render_clear_none) {
 		skg_target_clear(
 			(clear & render_clear_depth),
-			(clear & render_clear_color) ? &local.clear_col.r : (float*)nullptr);
+			(clear & render_clear_color) ? &clear_color.r : (float*)nullptr);
 	}
 
+	if (viewport_pct.w == 0) viewport_pct.w = 1;
+	if (viewport_pct.h == 0) viewport_pct.h = 1;
+
 	int32_t viewport_i[4] = {
-		(int32_t)(viewport.x * to_rendertarget->width),
-		(int32_t)(viewport.y * to_rendertarget->height),
-		(int32_t)(viewport.w * to_rendertarget->width),
-		(int32_t)(viewport.h * to_rendertarget->height) };
+		(int32_t)(viewport_pct.x * to_rendertarget->width ),
+		(int32_t)(viewport_pct.y * to_rendertarget->height),
+		(int32_t)(viewport_pct.w * to_rendertarget->width ),
+		(int32_t)(viewport_pct.h * to_rendertarget->height) };
 	skg_viewport(viewport_i);
 
 	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
