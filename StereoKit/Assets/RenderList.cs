@@ -111,7 +111,14 @@ namespace StereoKit
 		/// geometry is flattened onto the draw surface. Normally, you'd use
 		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
 		/// helpful as well.</param>
-		/// <param name="viewport">Allows you to specify a region of the
+		/// <param name="clearColor">If the `clear` parameter is set to clear
+		/// the color of `toRenderTarget`, then this is the color it will clear
+		/// to. `default` would be a transparent black.</param>
+		/// <param name="clear">Describes if and how the rendertarget should
+		/// be cleared before rendering. Note that clearing the target is
+		/// unaffected by the viewport, so this will clean the entire
+		/// surface!</param>
+		/// <param name="viewportPct">Allows you to specify a region of the
 		/// rendertarget to draw to! This is in normalized coordinates, 0-1.
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
@@ -119,12 +126,8 @@ namespace StereoKit
 		/// change which layers StereoKit renders for this particular render
 		/// viewpoint. To change what layers a visual is on, use a Draw
 		/// method that includes a RenderLayer as a parameter.</param>
-		/// <param name="clear">Describes if and how the rendertarget should
-		/// be cleared before rendering. Note that clearing the target is
-		/// unaffected by the viewport, so this will clean the entire 
-		/// surface!</param>
-		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Rect viewport, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All)
-			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, viewport, layerFilter, clear);
+		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All)
+			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, clearColor, clear, viewportPct, layerFilter);
 
 		/// <summary>The default RenderList used by the Renderer for the
 		/// primary display surface.</summary>
