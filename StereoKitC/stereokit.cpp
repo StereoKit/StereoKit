@@ -99,6 +99,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Set some default values
 	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
+	if (local.settings.assets_folder      == nullptr) local.settings.assets_folder      = "Assets";
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;

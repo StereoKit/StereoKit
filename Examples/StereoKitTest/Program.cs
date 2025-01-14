@@ -13,7 +13,6 @@ class Program
 	static string startTest = "welcome";
 	static SKSettings settings = new SKSettings {
 		appName         = "StereoKit C#",
-		assetsFolder    = "Assets",
 		blendPreference = DisplayBlend.AnyTransparent,
 		mode            = AppMode.XR,
 		logFilter       = LogLevel.Diagnostic,
