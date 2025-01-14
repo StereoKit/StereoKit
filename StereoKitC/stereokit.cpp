@@ -147,8 +147,12 @@ bool32_t sk_init(sk_settings_t settings) {
 	rand_set_seed((uint32_t)stm_now());
 
 	local.initialized = stereokit_systems_register();
-	if (!local.initialized) log_show_any_fail_reason();
-	else                    log_clear_any_fail_reason();
+	if (!local.initialized) {
+		log_show_any_fail_reason();
+		sk_quit(quit_reason_initialization_failed);
+	} else {
+		log_clear_any_fail_reason();
+	}
 
 	local.app_system     = systems_find    ("App");
 	local.app_system_idx = systems_find_idx("App");
@@ -182,6 +186,7 @@ void sk_shutdown_unsafe(void) {
 	sk_mem_log_allocations();
 	log_clear_subscribers ();
 
+	// Persist the quit reason after everything has been shut down and cleared.
 	quit_reason_ temp_quit_reason = local.quit_reason;
 	local = {};
 	local.disallow_user_shutdown = true;
@@ -295,7 +300,7 @@ void sk_app_step() {
 
 void sk_quit(quit_reason_ quit_reason) {
 	local.quit_reason = quit_reason;
-	local.running = false;
+	local.running     = false;
 }
 
 ///////////////////////////////////////////

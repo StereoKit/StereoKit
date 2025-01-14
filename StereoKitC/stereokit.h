@@ -441,12 +441,16 @@ typedef struct system_info_t {
 typedef enum quit_reason_ {
 	/*Default state when SK has not quit.*/
 	quit_reason_none,
-	/*User has selected to quit the application using application controls.*/
+	/*The user (or possibly the OS) has explicitly asked to exit the
+	  application under normal circumstances.*/
 	quit_reason_user,
-	/* Runtime Error SESSION_LOST*/
+	/*Some runtime error occurred, causing the application to quit
+	  gracefully.*/
+	quit_reason_error,
+	/*If initialization failed, StereoKit won't run to begin with!*/
+	quit_reason_initialization_failed,
+	/*The runtime under StereoKit has encountered an issue and has been lost.*/
 	quit_reason_session_lost,
-	/* User has closed the application from outside of the application.*/
-	quit_reason_system_close,
 } quit_reason_;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
