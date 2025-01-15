@@ -1,76 +1,46 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 using System;
-using System.Collections.Generic;
 using StereoKit;
 using StereoKit.Framework;
 
 class Program
 {
+	// This is the starting scene, and can be overridden by passing
+	// -start <testname> via the CLI.
 	static string startTest = "welcome";
-	static SKSettings settings = new SKSettings {
+
+	// The base settings we use for this test app. Some of these, like mode,
+	// are overridden, particularly when running tests.
+	static SKSettings     settings  = new SKSettings {
 		appName         = "StereoKit C#",
 		blendPreference = DisplayBlend.AnyTransparent,
 		mode            = AppMode.XR,
-		logFilter       = LogLevel.Diagnostic,
-		//origin          = OriginMode.Floor,
 	};
 
-	static Model  floorMesh;
-	static Matrix floorTr;
-	static Pose   windowDemoPose = new Pose();
-	static bool   windowDemoShow = false;
-	static Sprite powerButton;
-
+	static Mesh           floorMesh;
+	static Material       floorMat;
+	static Pose           windowDemoPose = new Pose(-0.7f, 0, -0.3f, Quat.LookDir(1, 0, 1));
+	static Sprite         powerButton;
 	static Tests.Category testCategory = Tests.Category.Demo;
 	static float          demoWinWidth = 50 * U.cm;
 
-	public static LogWindow logWindow;
-
-	public static bool WindowDemoShow
-	{
-		get => windowDemoShow;
-		set {
-			if (windowDemoShow == value) return;
-			windowDemoShow = value;
-			if (windowDemoShow)
-			{
-				windowDemoPose.position    = new Vec3(-0.7f, 0, -0.3f);
-				windowDemoPose.orientation = Quat.LookDir(1, 0, 1);
-			}
-		}
-	}
-
-	public static bool WindowConsoleShow
-	{
-		get => logWindow.Enabled;
-		set {
-			if (logWindow.Enabled == value) return;
-			logWindow.Enabled = value;
-			if (logWindow.Enabled)
-				logWindow.pose = UI.PopupPose();
-		}
-	}
+	public static LogWindow WindowLog;
+	public static bool      WindowDemoShow = false;
 
 	static void Main(string[] args)
 	{
-		bool headless         = Array.IndexOf(args, "-headless") != -1;
-		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
-		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
-		if (Array.IndexOf(args, "-screenfolder") != -1)
-			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
-		if (Array.IndexOf(args, "-gltf") != -1)
-			Tests.GltfFolders = args[Array.IndexOf(args, "-gltf") + 1];
-		if (Array.IndexOf(args, "-gltfscreenfolder") != -1)
-			Tests.GltfScreenshotRoot = args[Array.IndexOf(args, "-gltfscreenfolder") + 1];
-		if (Array.IndexOf(args, "-start") != -1)
-		{
-			startTest = args[Array.IndexOf(args, "-start") + 1];
-			Tests.TestSingle = true;
-		}
+		bool headless            =  ParamPresent(args, "-headless");
+		Tests.IsTesting          =  ParamPresent(args, "-test");
+		Tests.MakeScreenshots    = !ParamPresent(args, "-noscreens");
+		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     null);
+		Tests.GltfFolders        =  ParamVal    (args, "-gltf",             null);
+		Tests.GltfScreenshotRoot =  ParamVal    (args, "-gltfscreenfolder", null);
+		Tests.TestSingle         =  ParamPresent(args, "-start");
+		startTest                =  ParamVal    (args, "-start",            startTest);
 
 		if (Tests.IsTesting)
 		{
@@ -78,14 +48,10 @@ class Program
 			settings.standbyMode = StandbyMode.None;
 		}
 
-		// Preload the StereoKit library for access to Time.Scale before
-		// initialization occurs.
-		SK.PreLoadLibrary();
-
 		SK.AddStepper<PassthroughFBExt>();
-		//SK.AddStepper<Win32PerformanceCounterExt>();
-		logWindow = SK.AddStepper<LogWindow>();
-		logWindow.Enabled = false;
+		SK.AddStepper<Win32PerformanceCounterExt>();
+		WindowLog = SK.AddStepper<LogWindow>();
+		WindowLog.Enabled = false;
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
@@ -100,14 +66,12 @@ class Program
 
 	static void Init()
 	{
-		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
+		floorMat = new Material("Shaders/floor_shader.hlsl");
 		floorMat.Transparency = Transparency.Blend;
-		floorMat.SetVector("radius", new Vec4(5,10,0,0));
-		floorMat.QueueOffset = -11;
+		floorMat.QueueOffset  = -11;
+		floorMat["radius"]    = new Vec4(5, 10, 0, 0);
 
-		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
-		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
-
+		floorMesh   = Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward);
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
 
 		WindowDemoShow = true;
@@ -152,7 +116,7 @@ class Program
 
 		// If we can't see the world, we'll draw a floor!
 		if (Device.DisplayBlend == DisplayBlend.Opaque)
-			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
+			floorMesh.Draw(floorMat, World.HasBounds ? World.BoundsPose.ToMatrix() : Matrix.T(0, -1.5f, 0), Color.White);
 
 		// Skip selection window if we're in test mode
 		if (Tests.IsTesting)
@@ -163,7 +127,7 @@ class Program
 
 	static void WindowDemoStep()
 	{
-		if (!windowDemoShow) return;
+		if (!WindowDemoShow) return;
 
 		// Make a window for demo selection
 		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(demoWinWidth, 0));
@@ -241,4 +205,14 @@ class Program
 		}
 	}
 	/// :End:
+
+	static bool ParamPresent(string[] args, string param) 
+		=> Array.IndexOf(args, param) != -1;
+	static string ParamVal(string[] args, string param, string defaultVal)
+	{
+		int index = Array.IndexOf(args, param);
+		return (index == -1 || index + 1 >= args.Length)
+			? defaultVal 
+			: args[index + 1];
+	}
 }

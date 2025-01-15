@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2023-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,8 @@ namespace StereoKit.Framework
 			public string   text;
 			public int      count;
 		}
-		public bool Enabled { get; set; } = true;
+		private bool enabled = false;
+		public  bool Enabled { get => enabled; set { enabled = value; pose = UI.PopupPose(); } }
 
 		public Pose pose = Pose.Identity;
 
@@ -36,7 +37,10 @@ namespace StereoKit.Framework
 		ulong lastMemPoll = 0;
 
 		public LogWindow()
-			=> Log.Subscribe(OnLog);
+		{
+			Log.Subscribe(OnLog);
+			Enabled = true;
+		}
 
 		public bool Initialize()
 		{
