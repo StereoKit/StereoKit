@@ -86,8 +86,9 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
-	if (local.settings.log_filter != log_none)
-		log_set_filter(local.settings.log_filter);
+	log_set_filter(local.settings.log_filter != log_none
+		? local.settings.log_filter
+		: log_diagnostic);
 
 	// Manual positioning happens when _any_ of the flascreen positioning
 	// settings are set.
