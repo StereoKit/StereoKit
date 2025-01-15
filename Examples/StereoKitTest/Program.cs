@@ -21,23 +21,23 @@ class Program
 		mode            = AppMode.XR,
 	};
 
-	static Mesh           floorMesh;
-	static Material       floorMat;
-	static Pose           windowDemoPose = new Pose(-0.7f, 0, -0.3f, Quat.LookDir(1, 0, 1));
-	static Sprite         powerButton;
-	static Tests.Category testCategory = Tests.Category.Demo;
-	static float          demoWinWidth = 50 * U.cm;
+	static Mesh      floorMesh;
+	static Material  floorMat;
+	static Pose      windowDemoPose = new Pose(-0.7f, 0, -0.3f, Quat.LookDir(1, 0, 1));
+	static Sprite    powerButton;
+	static SceneType sceneCategory = SceneType.Demos;
 
 	public static LogWindow WindowLog;
 	public static bool      WindowDemoShow = false;
 
 	static void Main(string[] args)
 	{
+		// CLI arguments
 		bool headless            =  ParamPresent(args, "-headless");
 		Tests.IsTesting          =  ParamPresent(args, "-test");
 		Tests.MakeScreenshots    = !ParamPresent(args, "-noscreens");
-		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     null);
-		Tests.GltfFolders        =  ParamVal    (args, "-gltf",             null);
+		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     "../../../docs/img/screenshots");
+		Tests.GltfFolders        =  ParamVal    (args, "-gltf",             null); // "C:\\Tools\\glTF-Sample-Models-master\\2.0";
 		Tests.GltfScreenshotRoot =  ParamVal    (args, "-gltfscreenfolder", null);
 		Tests.TestSingle         =  ParamPresent(args, "-start");
 		startTest                =  ParamVal    (args, "-start",            startTest);
@@ -48,6 +48,8 @@ class Program
 			settings.standbyMode = StandbyMode.None;
 		}
 
+		// OpenXR extensions need added before SK.Initialize, so does
+		// LogWindow for early log registration!
 		SK.AddStepper<PassthroughFBExt>();
 		SK.AddStepper<Win32PerformanceCounterExt>();
 		WindowLog = SK.AddStepper<LogWindow>();
@@ -56,8 +58,6 @@ class Program
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
-
-		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		Init();
 
@@ -71,10 +71,8 @@ class Program
 		floorMat.QueueOffset  = -11;
 		floorMat["radius"]    = new Vec4(5, 10, 0, 0);
 
-		floorMesh   = Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward);
+		floorMesh   = Mesh.GeneratePlane(V.XY(40,40), Vec3.Up, Vec3.Forward);
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
-
-		WindowDemoShow = true;
 
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
@@ -82,10 +80,13 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			UI.EnableFarInteract = false;
+			UI  .EnableFarInteract = false;
+			Time.Scale             = 0;
+			WindowDemoShow         = false;
 		}
 		else
 		{
+			WindowDemoShow = true;
 			SK.AddStepper<DebugToolWindow>();
 		}
 	}
@@ -94,10 +95,6 @@ class Program
 
 	static void Step()
 	{
-		CheckFocus();
-
-		Tests.Update();
-
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
 
@@ -118,33 +115,25 @@ class Program
 		if (Device.DisplayBlend == DisplayBlend.Opaque)
 			floorMesh.Draw(floorMat, World.HasBounds ? World.BoundsPose.ToMatrix() : Matrix.T(0, -1.5f, 0), Color.White);
 
-		// Skip selection window if we're in test mode
-		if (Tests.IsTesting)
-			return;
-
+		CheckFocus    ();
+		Tests.Update  ();
 		WindowDemoStep();
 	}
 
 	static void WindowDemoStep()
 	{
+		// Skip the window if we're in test mode
 		if (!WindowDemoShow) return;
 
 		// Make a window for demo selection
-		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(demoWinWidth, 0));
+		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(50 * U.cm, 0));
 
 		// Display the different categories of tests we have available
-		for (int i = 0; i < (int)Tests.Category.MAX; i++)
+		for (int i = 0; i < (int)SceneType.MAX; i++)
 		{
-			string categoryName = "";
-			switch ((Tests.Category)i)
-			{
-				case Tests.Category.Demo:          categoryName = "Demos"; break;
-				case Tests.Category.Test:          categoryName = "Tests"; break;
-				case Tests.Category.Documentation: categoryName = "Docs"; break;
-				default: categoryName = ((Tests.Category)i).ToString(); break;
-			}
-			if (UI.Radio(categoryName, (Tests.Category)i == testCategory))
-				testCategory = (Tests.Category)i;
+			SceneType category = (SceneType)i;
+			if (UI.Radio(category.ToString(), category == sceneCategory))
+				sceneCategory = category;
 			UI.SameLine();
 		}
 		// Display a quit button on the far right side
@@ -161,32 +150,33 @@ class Program
 		float      currWidthTotal = 0;
 		UISettings uiSettings     = UI.Settings;
 		TextStyle  style          = UI.TextStyle;
-		for (int i = 0; i < Tests.Count(testCategory); i++)
+		float      windowWidth    = UI.LayoutRemaining.x;
+		for (int i = 0; i < Tests.Count(sceneCategory); i++)
 		{
-			float width = Text.SizeLayout(Tests.GetTestName(testCategory,i), style).x + uiSettings.padding * 2;
-			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth)
+			float width = Text.SizeLayout(Tests.GetTestName(sceneCategory,i), style).x + uiSettings.padding * 2;
+			if (currWidthTotal + (width+uiSettings.gutter) > windowWidth)
 			{
-				float inflate = (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
+				float inflate = (windowWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
 				for (int t = start; t < i; t++)
 				{
-					string name      = Tests.GetTestName(testCategory,t);
+					string name      = Tests.GetTestName(sceneCategory,t);
 					float  currWidth = Text.SizeLayout(name, style).x + uiSettings.padding * 2 + inflate;
-					if (UI.Radio(name, Tests.IsActive(testCategory,t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
-						Tests.SetTestActive(testCategory, t);
+					if (UI.Radio(name, Tests.IsActive(sceneCategory, t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
+						Tests.SetTestActive(sceneCategory, t);
 					UI.SameLine();
 				}
 				start = i;
 			}
 			if (start == i)
-				currWidthTotal = uiSettings.margin * 2;
+				currWidthTotal = 0;
 			currWidthTotal += width + uiSettings.gutter;
 		}
-		for (int t = start; t < Tests.Count(testCategory); t++)
+		for (int t = start; t < Tests.Count(sceneCategory); t++)
 		{
-			string name      = Tests.GetTestName(testCategory, t);
+			string name      = Tests.GetTestName(sceneCategory, t);
 			float  currWidth = Text.SizeLayout(name, style).x + uiSettings.padding * 2;
-			if (UI.Radio(name, Tests.IsActive(testCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
-				Tests.SetTestActive(testCategory, t);
+			if (UI.Radio(name, Tests.IsActive(sceneCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
+				Tests.SetTestActive(sceneCategory, t);
 			UI.SameLine();
 		}
 
