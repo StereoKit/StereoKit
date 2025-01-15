@@ -72,7 +72,7 @@ jobs:
             Write-Output "shouldBuild=false" >> $env:GITHUB_OUTPUT
         }
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ vars.NIGHTLY_BRANCH }}
       if: steps.check.outputs.shouldBuild == 'true'
