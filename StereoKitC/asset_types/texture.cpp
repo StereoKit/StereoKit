@@ -630,7 +630,22 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		material_release(convert_material);
 		tex_release(equirect);
 
-		tex_set_color_arr(tex, tex->width, tex->height, (void**)&face_data, 6);
+		// When tex_set_color_arr is called on _mipped_ textures from a non-gpu
+		// thread, it uses the deferred context! This can lead to things
+		// happening out of order when listening to asset_state_loaded, so we
+		// force this call to happen on the GPU thread.
+		struct set_tex_t {
+			tex_t   tex;
+			void**  data;
+		};
+		set_tex_t set_data = {};
+		set_data.tex  = tex;
+		set_data.data = (void**)&face_data;
+		assets_execute_gpu([](void* data) {
+			set_tex_t* set_data = (set_tex_t*)data;
+			tex_set_color_arr(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6);
+			return (bool32_t)true;
+		}, &set_data);
 		for (int32_t i = 0; i < 6; i++) {
 			sk_free(face_data[i]);
 		}

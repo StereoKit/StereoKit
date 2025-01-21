@@ -49,14 +49,14 @@ class DemoPBR : ITest
 		// Iterate using a foreach
 		Log.Info("Builtin PBR Materials contain these parameters:");
 		foreach (MatParamInfo info in Material.PBR.GetAllParamInfo())
-			Log.Info($"- {info.name} : {info.type}");
+			Log.Info($"- {info.type,8}: {info.name}");
 
 		// Or with a normal for loop
 		Log.Info("Builtin Unlit Materials contain these parameters:");
 		for (int i=0; i<Material.Unlit.ParamCount; i+=1)
 		{
 			MatParamInfo info = Material.Unlit.GetParamInfo(i);
-			Log.Info($"- {info.name} : {info.type}");
+			Log.Info($"- {info.type,8}: {info.name}");
 		}
 		/// :End:
 	}
