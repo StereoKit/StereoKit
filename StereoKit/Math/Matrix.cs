@@ -260,6 +260,13 @@ namespace StereoKit
 		/// <returns>A non-uniform scaling matrix.</returns>
 		public static Matrix S(Vec3 scale)
 			=> Matrix4x4.CreateScale(scale.x, scale.y, scale.z);
+		/// <summary>Creates a scaling Matrix, where scale can be different
+		/// on each axis (non-uniform).</summary>
+		/// <param name="x">How much larger or smaller this transform makes
+		/// things. 1 is a good default, as 0 will shrink it to nothing!</param>
+		/// <returns>A non-uniform scaling matrix.</returns>
+		public static Matrix S(float x, float y, float z)
+			=> Matrix4x4.CreateScale(x, y, z);
 		/// <summary>Creates a scaling Matrix, where the scale is the same on
 		/// each axis (uniform).</summary>
 		/// <param name="scale">How much larger or smaller this transform

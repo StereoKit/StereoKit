@@ -155,6 +155,14 @@ namespace StereoKit
 		#endregion
 
 		#region Methods
+		public Tex Copy(TexType textureType = TexType.Image, TexFormat textureFormat = TexFormat.None)
+		{
+			IntPtr result = NativeAPI.tex_copy(_inst, textureType, textureFormat);
+			return result == IntPtr.Zero
+				? null
+				: new Tex(result);
+		}
+
 		/// <summary>Set the texture's pixels using a pointer to a chunk of
 		/// memory! This is great if you're pulling in some color data from
 		/// native code, and don't want to pay the cost of trying to marshal
