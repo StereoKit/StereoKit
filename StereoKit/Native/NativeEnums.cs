@@ -290,12 +290,16 @@ namespace StereoKit
 	public enum QuitReason {
 		/// <summary>Default state when SK has not quit.</summary>
 		None,
-		/// <summary>User has selected to quit the application using application controls.</summary>
+		/// <summary>The user (or possibly the OS) has explicitly asked to exit the
+		/// application under normal circumstances.</summary>
 		User,
-		/// <summary>Runtime Error SESSION_LOST</summary>
+		/// <summary>Some runtime error occurred, causing the application to quit
+		/// gracefully.</summary>
+		Error,
+		/// <summary>If initialization failed, StereoKit won't run to begin with!</summary>
+		InitializationFailed,
+		/// <summary>The runtime under StereoKit has encountered an issue and has been lost.</summary>
 		SessionLost,
-		/// <summary>User has closed the application from outside of the application.</summary>
-		SystemClose,
 	}
 
 	/// <summary>What type of user motion is the device capable of tracking? For the normal

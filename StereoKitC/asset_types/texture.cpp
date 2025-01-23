@@ -630,7 +630,22 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		material_release(convert_material);
 		tex_release(equirect);
 
-		tex_set_color_arr(tex, tex->width, tex->height, (void**)&face_data, 6);
+		// When tex_set_color_arr is called on _mipped_ textures from a non-gpu
+		// thread, it uses the deferred context! This can lead to things
+		// happening out of order when listening to asset_state_loaded, so we
+		// force this call to happen on the GPU thread.
+		struct set_tex_t {
+			tex_t   tex;
+			void**  data;
+		};
+		set_tex_t set_data = {};
+		set_data.tex  = tex;
+		set_data.data = (void**)&face_data;
+		assets_execute_gpu([](void* data) {
+			set_tex_t* set_data = (set_tex_t*)data;
+			tex_set_color_arr(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6);
+			return (bool32_t)true;
+		}, &set_data);
 		for (int32_t i = 0; i < 6; i++) {
 			sk_free(face_data[i]);
 		}
@@ -655,6 +670,44 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 
 tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb_data, int32_t priority) {
 	return _tex_create_file_arr(tex_type_image | tex_type_cubemap, cube_face_file_xxyyzz, 6, srgb_data, priority);
+}
+
+///////////////////////////////////////////
+
+tex_t tex_copy(const tex_t texture, tex_type_ type, tex_format_ format) {
+	tex_t result = tex_create(type, format == tex_format_none ? texture->format : format);
+	tex_set_color_arr_mips(result, texture->width, texture->height, nullptr, 1, skg_mip_count(texture->width, texture->height));
+
+	bool wants_mips = (type          & tex_type_mips) > 0;
+	bool has_mips   = (texture->type & tex_type_mips) > 0;
+	bool generate_mips = has_mips == false && wants_mips == true;
+
+	if (generate_mips) {
+		if (type & tex_type_rendertarget || backend_graphics_get() != backend_graphics_d3d11) {
+			skg_tex_copy_to (&texture->tex, 0, &result->tex, 0);
+			skg_tex_gen_mips(&result->tex);
+		} else {
+			// D3D11 needs a rendertarget to generate mips!
+			skg_tex_t intermediate = skg_tex_create(skg_tex_type_rendertarget, skg_use_static, result->tex.format, skg_mip_generate);
+			skg_tex_set_contents_arr(&intermediate, nullptr, texture->tex.array_count, skg_mip_count(texture->width, texture->height), texture->width, texture->height, 1);
+			skg_tex_copy_to (&texture->tex, 0, &intermediate, 0);
+			skg_tex_gen_mips(&intermediate);
+			skg_tex_copy_to (&intermediate, -1, &result->tex, -1);
+			skg_tex_destroy (&intermediate);
+		}
+	} else {
+		skg_tex_copy_to(&texture->tex, 0, &result->tex, 0);
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t tex_gen_mips(tex_t texture) {
+	if ((texture->type & tex_type_mips        ) == 0 ||
+		(texture->type & tex_type_rendertarget) == 0)
+		return false;
+	return false;
 }
 
 ///////////////////////////////////////////

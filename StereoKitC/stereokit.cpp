@@ -86,8 +86,9 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
-	if (local.settings.log_filter != log_none)
-		log_set_filter(local.settings.log_filter);
+	log_set_filter(local.settings.log_filter != log_none
+		? local.settings.log_filter
+		: log_diagnostic);
 
 	// Manual positioning happens when _any_ of the flascreen positioning
 	// settings are set.
@@ -99,6 +100,7 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Set some default values
 	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
+	if (local.settings.assets_folder      == nullptr) local.settings.assets_folder      = "Assets";
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
@@ -147,8 +149,12 @@ bool32_t sk_init(sk_settings_t settings) {
 	rand_set_seed((uint32_t)stm_now());
 
 	local.initialized = stereokit_systems_register();
-	if (!local.initialized) log_show_any_fail_reason();
-	else                    log_clear_any_fail_reason();
+	if (!local.initialized) {
+		log_show_any_fail_reason();
+		sk_quit(quit_reason_initialization_failed);
+	} else {
+		log_clear_any_fail_reason();
+	}
 
 	local.app_system     = systems_find    ("App");
 	local.app_system_idx = systems_find_idx("App");
@@ -182,6 +188,7 @@ void sk_shutdown_unsafe(void) {
 	sk_mem_log_allocations();
 	log_clear_subscribers ();
 
+	// Persist the quit reason after everything has been shut down and cleared.
 	quit_reason_ temp_quit_reason = local.quit_reason;
 	local = {};
 	local.disallow_user_shutdown = true;
@@ -295,7 +302,7 @@ void sk_app_step() {
 
 void sk_quit(quit_reason_ quit_reason) {
 	local.quit_reason = quit_reason;
-	local.running = false;
+	local.running     = false;
 }
 
 ///////////////////////////////////////////

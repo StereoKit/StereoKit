@@ -1,6 +1,6 @@
 ﻿using StereoKit;
 
-class DocsRenderList : ITest
+class DocRenderList : ITest
 {
 	/// :CodeSample: RenderList RenderList.Add RenderList.DrawNow
 	/// ### Render Icon From a Model
@@ -14,15 +14,21 @@ class DocsRenderList : ITest
 	static Sprite MakeIcon(Model model, int resolution)
 	{
 		RenderList list   = new RenderList();
-		Tex        result = Tex.RenderTarget(resolution, resolution, 1);
+		Tex        result = Tex.RenderTarget(resolution, resolution, 8);
 
 		// Calculate a standard size that will fill the icon to the edges,
 		// based on the camera parameters we pass to DrawNow.
 		float scale = 1/model.Bounds.dimensions.Length;
 
 		list.Add(model, Matrix.TS(-model.Bounds.center*scale, scale), Color.White);
+
+		// OpenGL renders upside-down to rendertargets, so this is a simple fix
+		// for our case here, we just flip the camera upside down.
+		Vec3 up = Backend.Graphics == BackendGraphics.D3D11
+			?  Vec3.Up
+			: -Vec3.Up;
 		list.DrawNow(result,
-			Matrix.LookAt(V.XYZ(0,0,-1), Vec3.Zero),
+			Matrix.LookAt(V.XYZ(0,0,-1), Vec3.Zero, up),
 			Matrix.Perspective(45, 1, 0.01f, 10));
 
 		// Clearing isn't _necessary_ here, but DrawNow does not clear the list
@@ -30,7 +36,7 @@ class DocsRenderList : ITest
 		// list without waiting for GC to destroy the RenderList object.
 		list.Clear();
 
-		return Sprite.FromTex(result);
+		return Sprite.FromTex(result.Copy());
 	}
 	/// From there, it's pretty easy to load a Model up, and draw it on a button
 	/// in the UI.

@@ -441,12 +441,16 @@ typedef struct system_info_t {
 typedef enum quit_reason_ {
 	/*Default state when SK has not quit.*/
 	quit_reason_none,
-	/*User has selected to quit the application using application controls.*/
+	/*The user (or possibly the OS) has explicitly asked to exit the
+	  application under normal circumstances.*/
 	quit_reason_user,
-	/* Runtime Error SESSION_LOST*/
+	/*Some runtime error occurred, causing the application to quit
+	  gracefully.*/
+	quit_reason_error,
+	/*If initialization failed, StereoKit won't run to begin with!*/
+	quit_reason_initialization_failed,
+	/*The runtime under StereoKit has encountered an issue and has been lost.*/
 	quit_reason_session_lost,
-	/* User has closed the application from outside of the application.*/
-	quit_reason_system_close,
 } quit_reason_;
 
 SK_API bool32_t      sk_init               (sk_settings_t settings);
@@ -1063,6 +1067,8 @@ SK_API tex_t        tex_create_file         (const char *file_utf8,             
 SK_API tex_t        tex_create_file_arr     (const char **in_arr_files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_file (const char *cubemap_file_utf8,                 bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_copy                (const tex_t texture, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_none));
+SK_API bool32_t     tex_gen_mips            (tex_t texture);
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
