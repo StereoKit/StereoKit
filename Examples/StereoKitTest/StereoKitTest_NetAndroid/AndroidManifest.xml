@@ -32,6 +32,11 @@
 		<intent> <action android:name="org.khronos.openxr.OpenXRApiLayerService" /> </intent>
 	</queries>
 
+	<!-- AndroidXR items -->
+	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+	<uses-permission android:name="android.permission.HAND_TRACKING" />
+	<uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
+
 	<!-- Vive specific items  -->
 	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
 	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
