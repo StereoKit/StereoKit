@@ -370,14 +370,19 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 
 	// Input comes from the developer and could be any value, so we want to
 	// ensure it's clamped to the correct range.
-	if (value->x < min.x) value->x = min.x;
-	if (value->y < min.y) value->y = min.y;
-	if (value->x > max.x) value->x = max.x;
-	if (value->y > max.y) value->y = max.y;
+	vec2 smallest = min;
+	vec2 largest  = max;
+	if (min.x > max.x) { smallest.x = max.x; largest.x = min.x; }
+	if (min.y > max.y) { smallest.y = max.y; largest.y = min.y; }
+	if (value->x < smallest.x) value->x = smallest.x;
+	if (value->y < smallest.y) value->y = smallest.y;
+	if (value->x > largest .x) value->x = largest .x;
+	if (value->y > largest .y) value->y = largest .y;
 
 	// Find sizes of slider elements
 	vec2  range        = max - min;
-	vec2  percent      = { range.x == 0 ? 0.5f : (value->x - min.x)/range.x,  range.y == 0 ? 0.5f : (value->y - min.y)/range.y };
+	vec2  percent      = { range.x == 0 ? 0.5f : (value->x - min.x)/range.x,
+	                       range.y == 0 ? 0.5f : (value->y - min.y)/range.y };
 	float button_depth = skui_settings.depth;
 
 	// Set up for getting the state of the sliders.
