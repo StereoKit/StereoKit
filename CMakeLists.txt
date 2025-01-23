@@ -691,7 +691,7 @@ if (SK_BUILD_TESTS)
   endif()
 
   skshaderc_compile_headers( StereoKitCTest
-    ${CMAKE_BINARY_DIR}/test_shaders
+    ${CMAKE_BINARY_DIR}/test_shaders/
     "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
