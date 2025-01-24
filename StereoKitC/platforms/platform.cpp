@@ -286,6 +286,12 @@ bool platform_file_exists(const char *filename) {
 
 ///////////////////////////////////////////
 
+bool platform_file_delete(const char* filename) {
+	return remove(filename) == 0;
+}
+
+///////////////////////////////////////////
+
 char *platform_push_path_ref(char *path, const char *directory) {
 	char *result = platform_push_path_new(path, directory);
 	sk_free(path);
