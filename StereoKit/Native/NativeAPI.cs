@@ -23,6 +23,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool        sk_is_stepping();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayMode sk_active_display_mode();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SKSettings  sk_get_settings();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SystemInfo  sk_system_info();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr      sk_version_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong       sk_version_id();
