@@ -2,15 +2,7 @@
 
 class TestUILayoutCuts : ITest
 {
-	public void Initialize() { Tests.RunForFrames(2); }
-	public void Shutdown() { }
-
-	public void Step()
-	{
-		EmptyParentTest();
-		BasicTests();
-		PracticalTest();
-	}
+	Sprite img = Sprite.FromFile("floor.png");
 
 	static void BasicTests()
 	{
@@ -57,12 +49,9 @@ class TestUILayoutCuts : ITest
 		UI.WindowEnd();
 	}
 
-	static Sprite img = null;
-	static void PracticalTest()
+	void PracticalTest()
 	{
 		Tests.Screenshot("Tests/LayoutCuts2.jpg", 1, 400, 400, 90, V.XYZ(0.5f, -0.17f, 0.22f), V.XYZ(0.5f, -0.17f, 0));
-
-		if (img == null) img = Sprite.FromFile("floor.png");
 
 		Pose windowPose = new Pose(0.5f, 0, 0, Quat.LookDir(-Vec3.Forward));
 		UI.WindowBegin("Window Panel", ref windowPose);
@@ -98,5 +87,14 @@ class TestUILayoutCuts : ITest
 		UI.HSeparator();
 		UI.LayoutPop();
 		UI.WindowEnd();
+	}
+
+	public void Initialize() { Tests.RunForFrames(2); }
+	public void Shutdown() { }
+	public void Step()
+	{
+		EmptyParentTest();
+		BasicTests();
+		PracticalTest();
 	}
 }
