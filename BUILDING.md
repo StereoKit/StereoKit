@@ -30,7 +30,7 @@ Set StereoKitTest as the startup project, set the platform to x64, and you shoul
 
 - Install [cmake](https://cmake.org/) 3.21+.
 - Install [ninja](https://ninja-build.org/): `winget install Ninja-build.Ninja` on Windows. This is technically optional, but is used in the cmake presets.
-- Install the Android NDK r25c, either via Android's SDK Manager in Android Studio, or [here](https://developer.android.com/ndk/downloads/revision_history).
+- Install the Android NDK r27c, either via Android's SDK Manager in Android Studio, or [here](https://developer.android.com/ndk/downloads/revision_history).
 - Add `NDK` with your NDK path to your environment variables.
 
 ```shell
@@ -38,13 +38,13 @@ Set StereoKitTest as the startup project, set the platform to x64, and you shoul
 # Panel.
 
 # Windows Command Line, '/' seems more reliable for something in cmake
-set NDK C:/Users/[user]/AppData/Local/Android/Sdk/ndk/25.2.9519653
+set NDK C:/Users/[user]/AppData/Local/Android/Sdk/ndk/27.2.12479018
 
 # Powershell
-[Environment]::SetEnvironmentVariable('NDK', 'C:/Users/[user]/AppData/Local/Android/Sdk/ndk/25.2.9519653', 'User')
+[Environment]::SetEnvironmentVariable('NDK', 'C:/Users/[user]/AppData/Local/Android/Sdk/ndk/27.2.12479018', 'User')
 
 # Linux
-sudo echo "NDK=~/Android/Sdk/ndk/25.2.9519653" >> ~/.profile
+sudo echo "NDK=~/Android/Sdk/ndk/27.2.12479018" >> ~/.profile
 ```
 
 The Visual Studio projects `StereoKitTest_NetAndroid` and `StereoKitTest_Xamarin` will now automatically trigger Android cmake builds before compiling their C# code.
