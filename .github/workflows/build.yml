@@ -168,7 +168,7 @@ jobs:
       uses: nttld/setup-ndk@v1.4.2
       id: setup-ndk
       with:
-        ndk-version: r27c
+        ndk-version: r25c
         local-cache: true
 
     - name: Restore Android Symlinks
