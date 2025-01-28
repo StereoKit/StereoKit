@@ -236,14 +236,23 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt);
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out int modelNode);
 
 		/// <inheritdoc cref="Intersect(Ray, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
 		/// to the direction the triangles are facing? Should we skip triangles
 		/// that are facing away from the ray, or don't skip anything?</param>
 		public bool Intersect(Ray modelSpaceRay, Cull cullFaces, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt);
+			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt, out int modelNode);
+
+		/// <inheritdoc cref="Intersect(Ray, Cull, out Ray)"/>
+		/// <param name="modelNode">Model Node with which the Ray intersects.</param>
+		public bool Intersect(Ray modelSpaceRay, Cull cullFaces, out Ray modelSpaceAt, out ModelNode modelNode)
+		{
+			bool intersects = NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt, out int modelNodeId);
+			modelNode = modelNodeId >= 0 ? new ModelNode(this, modelNodeId) : null;
+			return intersects;
+		}
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a

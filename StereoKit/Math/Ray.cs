@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -155,7 +156,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Model model, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, Cull.Back, out modelSpaceAt);
+			=> NativeAPI.model_ray_intersect(model._inst, this, Cull.Back, out modelSpaceAt, out int modelNode);
 
 		/// <inheritdoc cref="Intersect(Model, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
@@ -163,7 +164,16 @@ namespace StereoKit
 		/// that are facing away from the ray, or don't skip anything? A good
 		/// default would be Cull.Back.</param>
 		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt);
+			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt, out int modelNode);
+
+		/// <inheritdoc cref="Intersect(Model, Cull, out Ray)"/>
+		/// <param name="modelNode">ModelNode that intersects with ray.</param>
+		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt, out ModelNode modelNode)
+		{
+			bool intersects = NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt, out int modelNodeId);
+			modelNode = modelNodeId >= 0 ? new ModelNode(model, modelNodeId) : null;
+			return intersects;
+		}
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This can be in front of, or behind the ray's
