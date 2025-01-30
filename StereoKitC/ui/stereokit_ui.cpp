@@ -614,6 +614,8 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		draw_text = password_txt;
 	}
 
+	float text_depth = skui_settings.depth / 2 + 2 * mm2m;
+
 	// If the input is focused, display text selection information
 	if (skui_input_target == id_hash) {
 		// Confirm that the input target still exists
@@ -621,10 +623,12 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 
 		// Advance the displayed text if it's off the right side of the input
 		text_style_t style = ui_get_text_style();
+		float baseline = text_style_get_char_height(style);
+		float carat_sz = baseline * 0.1f;
 
 		int32_t carat_at      = skui_input_carat;
 		vec2    carat_pos     = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
-		float   scroll_margin = text_bounds.x - text_style_get_char_height(ui_get_text_style());
+		float   scroll_margin = text_bounds.x - baseline;
 		while (carat_pos.x < -scroll_margin && *draw_text != '\0' && carat_at >= 0) {
 			draw_text += 1;
 			carat_at  -= 1;
@@ -632,25 +636,24 @@ bool32_t ui_input_g(const C *id, C *buffer, int32_t buffer_size, vec2 size, text
 		}
 
 		// Display a selection box for highlighted text
-		float line = ui_line_height() * 0.5f;
 		if (skui_input_carat != skui_input_carat_end) {
 			int32_t end       = maxi(0, carat_at + (skui_input_carat_end - skui_input_carat));
 			vec2    carat_end = text_char_at_o(draw_text, style, end, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
-			float   left      = fmaxf(carat_pos.x, carat_end.x);
+			float   left      =       fmaxf(carat_pos.x, carat_end.x);
 			float   right     = fmaxf(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
 
-			vec3 sz  = vec3{ -(right - left), line, line * 0.01f };
-			vec3 pos = (final_pos - vec3{ skui_settings.padding - left, -carat_pos.y, skui_settings.depth / 2 + 1 * mm2m }) - sz / 2;
+			vec3 sz  = vec3{ -(right - left), baseline, baseline * 0.01f };
+			vec3 pos = (final_pos + vec3{ left - skui_settings.padding, carat_pos.y, -(text_depth - carat_sz*0.5f) });
 			ui_draw_cube(pos, sz, ui_color_complement, 0);
-		} 
+		}
 
 		// Show a blinking text carat
 		if ((int)((time_totalf_unscaled()-skui_input_blink)*2)%2==0) {
-			ui_draw_el(ui_vis_carat, final_pos - vec3{ skui_settings.padding - carat_pos.x, -carat_pos.y, skui_settings.depth/2 }, vec3{ line * 0.1f, line, line * 0.1f }, 0);
+			ui_draw_el(ui_vis_carat, final_pos + vec3{ carat_pos.x - skui_settings.padding, carat_pos.y, -(text_depth) }, vec3{ carat_sz, baseline, carat_sz }, 0);
 		}
 	}
 
-	ui_text_in(draw_text, text_align_top_left, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, skui_settings.depth / 2 + 2 * mm2m }, text_bounds, vec2_zero);
+	ui_text_in(draw_text, text_align_top_left, text_align_center_left, text_fit_clip, final_pos - vec3{ skui_settings.padding, 0, text_depth }, text_bounds, vec2_zero);
 
 	return result;
 }
