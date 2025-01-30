@@ -62,7 +62,7 @@ class TestText : ITest
 		s = Text.SizeRender(s, style, out offset);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2 + offset, at.z - 0.002f, new Vec3(s.x, s.y, 0.001f)), colRender);
 
-		Tests.Screenshot("Tests/TextSize.jpg", 1, 800, 500, 75, V.XYZ(s.x/2, 0.14f, -0.13f), V.XYZ(s.x/2, 0.14f, -0.5f));
+		Tests.Screenshot("Tests/TextSize.jpg", 1, 800, 500, 75, V.XYZ(s.x/2, 0.14f, -0.1f), V.XYZ(s.x/2, 0.14f, -0.5f));
 	}
 
 	static void DrawTextLineGuides(Vec3 at, float width, TextStyle style)

@@ -195,6 +195,6 @@ class DemoUITearsheet : ITest
 		Hierarchy.Pop();
 
 		Tests.Screenshot("Tests/UITearsheet.jpg", 1, 1000, 500, 60, from, at);
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(.02f,-.23f), V.XYZ(1.26f, .6f, 0)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(.02f,-.23f), V.XYZ(1.4f, .6f, 0)));
 	}
 }
