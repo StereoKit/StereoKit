@@ -20,9 +20,7 @@ class TestUIDisabled : ITest
 
 	public void Step()
 	{
-		Tests.Screenshot("Tests/DisabledUI.jpg", 1, 600, 600, 90, V.XYZ(0, -0.20f, 0.15f), V.XYZ(0, -0.25f, 0));
-
-		Pose pose = new Pose(-.2f, 0, -0.6f, Quat.LookDir(0, 0, 1));
+		Pose pose = new Pose(0, 0, -0.5f, Quat.LookDir(0, 0, 1));
 		UI.WindowBegin("Text Style", ref pose);
 
 		UI.PushEnabled(false);
@@ -100,5 +98,8 @@ class TestUIDisabled : ITest
 			SK.Quit();
 		}
 		UI.WindowEnd();
+
+		float y = UI.LayoutLast.center.y;
+		Tests.Screenshot("Tests/DisabledUI.jpg", 1, 400, 600, 70, V.XYZ(0, y, 0.0f), V.XYZ(0, y, -0.5f));
 	}
 }

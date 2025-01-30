@@ -88,6 +88,6 @@ class DemoPBR : ITest
 		Text.Add("Roughness -->", Matrix.TRS(new Vec3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
 		Hierarchy.Pop();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0, 0, 0.5f), V.XYZ(2.2f, 2.2f, .5f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0.1f, .2f, 0.65f), V.XYZ(2.0f, 2.0f, .2f)));
 	}
 }

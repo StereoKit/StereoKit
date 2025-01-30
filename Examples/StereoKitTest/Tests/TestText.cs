@@ -34,6 +34,6 @@ class TestText : ITest
 		Text.Add(longText, Matrix.TR(at, r), new Vec2(0.5f,s.y), TextFit.Wrap, style, TextAlign.TopLeft, TextAlign.TopLeft);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), Color.Black);
 
-		Tests.Screenshot("Tests/TextSize.jpg", 1, 800, 300, 75, V.XYZ(0.85f, 0.3f, 0.0f), V.XYZ(0.85f, 0.3f, -0.5f));
+		Tests.Screenshot("Tests/TextSize.jpg", 1, 800, 500, 75, V.XYZ(s.x/2, 0.14f, -0.1f), V.XYZ(s.x/2, 0.14f, -0.5f));
 	}
 }
