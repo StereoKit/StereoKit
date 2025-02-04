@@ -539,7 +539,9 @@ if (NOT MSVC)
   endif()
 else()
   set(SK_BIN_DEBUG_EXT ".pdb")
-  set(SK_SEPARATE_DBG ON)
+  if (SK_BUILD_SHARED_LIBS)
+    set(SK_SEPARATE_DBG ON)
+  endif()
 endif()
 
 target_include_directories(StereoKitC
