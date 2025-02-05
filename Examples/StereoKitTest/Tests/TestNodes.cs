@@ -96,6 +96,7 @@ class TestNodes : ITest
 		Tests.Test(TestEmptyVisuals);
 		Tests.Test(TestEmptyModel);
 		Tests.Test(TestNodeInfo);
+		Tests.Test(TestAddNode);
 	}
 
 	bool TestEmptyVisuals()
@@ -135,6 +136,28 @@ class TestNodes : ITest
 			&& n.GetInfo("c") == null
 			&& n.GetInfo("d") == null
 			&& n.GetInfo("e") == null;
+	}
+
+	bool TestAddNode()
+	{
+		Model model = Model.FromFile("Radio.glb").Copy();
+		int count       = model.Nodes.Count;
+		int visualCount = model.Visuals.Count;
+		ModelNode node1 = model.AddNode("New Node 1", Matrix.Identity);
+		ModelNode node2 = model.AddNode("New Node 2", Matrix.Identity, Mesh.Cube, Material.Default);
+		ModelNode node3 = model.AddNode("New Node 3", Matrix.Identity);
+
+		// This causes a Visual to be added to Node 1, where previously it had
+		// none.
+		node1.Material = Material.Default;
+		node1.Mesh     = Mesh.Cube;
+
+		Log.Info("Add nodes to existing:");
+		RecursiveTraversal(model.RootNode);
+
+		return
+			count       + 3 == model.Nodes  .Count &&
+			visualCount + 2 == model.Visuals.Count;
 	}
 
 	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent
