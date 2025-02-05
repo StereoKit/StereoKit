@@ -147,6 +147,8 @@ class TestNodes : ITest
 		ModelNode node2 = model.AddNode("New Node 2", Matrix.Identity, Mesh.Cube, Material.Default);
 		ModelNode node3 = model.AddNode("New Node 3", Matrix.Identity);
 
+		// This causes a Visual to be added to Node 1, where previously it had
+		// none.
 		node1.Material = Material.Default;
 		node1.Mesh     = Mesh.Cube;
 
