@@ -16,8 +16,10 @@
 		<SKSDKBuildOS Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(TargetPlatformIdentifier)'=='UAP'"            >Uwp</SKSDKBuildOS>
+		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(UseUwp)'=='true'"                             >Uwp</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'=='Windows_NT'"                           >Win32</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'!='Windows_NT'"                           >Linux</SKSDKBuildOS>
+
 
 		<!-- Find what architecture we'll want to build. -->
 		<SKSDKBuildMode Condition="'$(SKSDKBuildMode)'=='' and '$(Platform)'=='AnyCPU' and '$(SKSDKBuildOS)'=='Android'">ARM64</SKSDKBuildMode>
