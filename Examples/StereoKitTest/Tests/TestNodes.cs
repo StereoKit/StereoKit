@@ -143,14 +143,13 @@ class TestNodes : ITest
 		Model model = Model.FromFile("Radio.glb").Copy();
 		int count       = model.Nodes.Count;
 		int visualCount = model.Visuals.Count;
-		ModelNode node1 = model.AddNode("New Node 1", Matrix.Identity);
-		ModelNode node2 = model.AddNode("New Node 2", Matrix.Identity, Mesh.Cube, Material.Default);
-		ModelNode node3 = model.AddNode("New Node 3", Matrix.Identity);
+		ModelNode node1 = model.AddNode("New Node", Matrix.Identity);
+		ModelNode node2 = model.AddNode("New Node", Matrix.Identity, Mesh.Cube, Material.Default);
+		ModelNode node3 = model.AddNode("New Node", Matrix.Identity);
 
 		// This causes a Visual to be added to Node 1, where previously it had
 		// none.
 		node1.Material = Material.Default;
-		node1.Mesh     = Mesh.Cube;
 
 		Log.Info("Add nodes to existing:");
 		RecursiveTraversal(model.RootNode);
