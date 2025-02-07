@@ -94,6 +94,8 @@ void log_platform_output(log_ level, const char* text);
 ///////////////////////////////////////////
 
 int32_t log_count_color_tags(const char* ch, int32_t *out_len) {
+	if (ch == nullptr) return 0;
+
 	*out_len = 0;
 	int32_t tags = 0;
 	int32_t curr = 0;
@@ -376,6 +378,8 @@ void log_set_name(const char* name) {
 ///////////////////////////////////////////
 
 void log_platform_output(log_ level, const char *text) {
+	if (text == nullptr) text = "(null)";
+
 #if defined(SK_OS_ANDROID)
 	if (log_opened == false) {
 		log_opened = true;
