@@ -616,9 +616,14 @@ void mesh_draw(mesh_t mesh, material_t material, matrix transform, color128 colo
 
 ///////////////////////////////////////////
 
-bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_start_inds) {
+bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t *out_pt, uint32_t* out_opt_start_inds) {
+	*out_pt = {};
+	if (out_opt_start_inds) *out_opt_start_inds = 0;
+
 	vec3 result = {};
 
+	if (mesh == nullptr)
+		return false;
 	const mesh_collision_t *data = mesh_get_collision_data(mesh);
 	if (data == nullptr)
 		return false;
@@ -679,11 +684,9 @@ bool32_t mesh_ray_intersect(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode,
 		// Check if point is in triangle
 		if ((u >= 0) && (v >= 0) && (u + v < 1)) {
 			float dist = vec3_magnitude_sq(pt - model_space_ray.pos);
-			if (dist < nearest_dist) {
+			if (nearest_dist > dist) {
 				nearest_dist = dist;
-				if (out_start_inds != nullptr) {
-					*out_start_inds = i;
-				}
+				if (out_opt_start_inds) *out_opt_start_inds = i;
 				*out_pt = {pt, data->planes[i / 3].normal};
 			}
 		}

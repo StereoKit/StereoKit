@@ -1494,7 +1494,7 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 	anim_update_model(model);
 	for (int32_t i = 0; i < model->visuals.count; i++) {
 		const model_visual_t *vis = &model->visuals[i];
-		if (vis->visible == false) continue;
+		if (vis->visible == false || vis->mesh == nullptr || vis->material == nullptr) continue;
 		
 		render_item_t item;
 		item.mesh      = vis->mesh;
