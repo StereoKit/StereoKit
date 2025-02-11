@@ -6,7 +6,7 @@
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
-	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android' and '$(UseUwp)'!='true'">
+	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="('$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android') and '$(UseUwp)'!='true'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
 		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
 		<Error Condition="'$(SKBuildPlatform)'=='Android' and '$(SKOpenXRLoader)'!='None' and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/libopenxr_loader.so') and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/x64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/arm64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/libopenxr_loader.so')" Text="StereoKit could not find the Android OpenXR Loader indicated by &lt;SKOpenXRLoader&gt;! Please copy your platform specific libopenxr_loader.so file in this folder: $(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/[x64|arm64]/" />
