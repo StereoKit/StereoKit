@@ -34,9 +34,9 @@ class TestFromThread : ITest
 			material        = Material.Default.Copy();
 			mesh            = Mesh.GenerateSphere(1);
 
-			Color32[] colors = new Color32[1] { Color.White };
-			Tex tex = Tex.FromColors(colors, 1, 1);
-			tex.SetColors(1, 1, colors);
+			Color32[] colors = new Color32[]{ Color.White, Color.White, Color.White, Color.White };
+			Tex tex = Tex.FromColors(colors, 2, 2);
+			tex.SetColors(2, 2, colors);
 
 			material[MatParamName.DiffuseTex] = tex;
 

@@ -110,7 +110,7 @@ namespace StereoKit
 		/// trailing '/' is unnecessary.</param>
 		/// <returns>Returns true if all systems are successfully 
 		/// initialized!</returns>
-		public static bool Initialize(string projectName = null, string assetsFolder = "")
+		public static bool Initialize(string projectName = null, string assetsFolder = null)
 			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
 
 		/// <summary>If you need to call StereoKit code before calling

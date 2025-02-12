@@ -40,7 +40,7 @@ namespace StereoKit
 		/// <summary> The default log filtering level. This can be changed at
 		/// runtime, but this allows you to set the log filter before
 		/// Initialization occurs, so you can choose to get information from
-		/// that. Default is LogLevel.Info.</summary>
+		/// that. Default is LogLevel.Diagnostic.</summary>
 		public LogLevel     logFilter;
 		/// <summary>If the runtime supports it, should this application run
 		/// as an overlay above existing applications? Check

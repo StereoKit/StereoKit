@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2024 Nick Klingensmith
-// Copyright (c) 2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2024-2025 Nick Klingensmith
+// Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
 
 using System;
 
@@ -112,7 +112,7 @@ namespace StereoKit.Framework
 		/// <returns>The current easing value.</returns>
 		public Vec3 Resolve()
 		{
-			float t = Math.Min(1, (Time.Totalf - start) / duration);
+			float t = duration == 0 ? 1 : Math.Min(1, (Time.Totalf - start) / duration);
 			return Vec3.Lerp(begin, end, ease(t));
 		}
 
@@ -139,7 +139,7 @@ namespace StereoKit.Framework
 		/// the provided value.</summary>
 		/// <param name="value">The new value that should be assigned right now
 		/// without animation.</param>
-		public void SetTo (Vec3 value) { begin = value; start = 0; end = value; ease = Ease.Linear; this.duration = 1; }
+		public void SetTo (Vec3 value) { begin = value; start = 0; end = value; ease = Ease.Linear; this.duration = 0; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>
@@ -177,7 +177,7 @@ namespace StereoKit.Framework
 		/// <returns>The current easing value.</returns>
 		public Color Resolve()
 		{
-			float t = Math.Min(1, (Time.Totalf - start) / duration);
+			float t = duration == 0 ? 1 : Math.Min(1, (Time.Totalf - start) / duration);
 			return Color.Lerp(begin, end, ease(t));
 		}
 
@@ -191,13 +191,13 @@ namespace StereoKit.Framework
 		/// <param name="easeFn">An easing function the animation will follow.
 		/// A good all-around default would be Ease.SoftOut. A number of easing
 		/// functions can be found in the Ease class.</param>
-		public void AnimTo(Color destination, float duration, EaseFn easeFn) { begin = Resolve(); start = Time.Totalf; end = destination; ease = easeFn;      this.duration = duration; }
+		public void AnimTo(Color destination, float duration, EaseFn easeFn) { begin = Resolve(); start = Time.Totalf; end = destination; ease = easeFn; this.duration = duration; }
 		/// <summary>Sets this to a specific value with no easing animation.
 		/// This will cancel any in-progress animations, and jump straight to
 		/// the provided value.</summary>
 		/// <param name="value">The new value that should be assigned right now
 		/// without animation.</param>
-		public void SetTo (Color value)                                      { begin = value;     start = 0;           end = value;       ease = Ease.Linear; this.duration = 1; }
+		public void SetTo (Color value) { begin = value; start = 0; end = value; ease = Ease.Linear; duration = 0; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>
@@ -233,7 +233,7 @@ namespace StereoKit.Framework
 		/// <returns>The current easing value.</returns>
 		public Pose Resolve()
 		{
-			float t = Math.Min(1, (Time.Totalf - start) / duration);
+			float t = duration == 0 ? 1 : Math.Min(1, (Time.Totalf - start) / duration);
 			return Pose.Lerp(begin, end, ease(t));
 		}
 
@@ -247,13 +247,13 @@ namespace StereoKit.Framework
 		/// <param name="easeFn">An easing function the animation will follow.
 		/// A good all-around default would be Ease.SoftOut. A number of easing
 		/// functions can be found in the Ease class.</param>
-		public void AnimTo(Pose destination, float duration, EaseFn easeFn) { begin = Resolve(); start = Time.Totalf; end = destination; ease = easeFn;      this.duration = duration; }
+		public void AnimTo(Pose destination, float duration, EaseFn easeFn) { begin = Resolve(); start = Time.Totalf; end = destination; ease = easeFn; this.duration = duration; }
 		/// <summary>Sets this to a specific value with no easing animation.
 		/// This will cancel any in-progress animations, and jump straight to
 		/// the provided value.</summary>
 		/// <param name="value">The new value that should be assigned right now
 		/// without animation.</param>
-		public void SetTo (Pose value)                                      { begin = value;     start = 0;           end = value;       ease = Ease.Linear; this.duration = 1; }
+		public void SetTo (Pose value) { begin = value; start = 0; end = value; ease = Ease.Linear; duration = 0; }
 
 		/// <summary>An implicit "Resolve" of this easing type to its value.</summary>
 		/// <param name="value">The easing value.</param>

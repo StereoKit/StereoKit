@@ -3,7 +3,7 @@
 /// 
 /// The minimum prerequisite for StereoKit is the .NET SDK! You can use `dotnet --version` to check if this is already present.
 /// 
-/// Open up your Terminal, and run the following:
+/// If it is not, open up your Terminal, and run the following:
 /// ```bash
 /// winget install Microsoft.DotNet.SDK.9
 /// # Restart the Terminal to refresh your Path variable
@@ -18,7 +18,7 @@
 /// # Install the StereoKit templates!
 /// dotnet new install StereoKit.Templates
 /// 
-/// # Create a .NET Core based StereoKit project, and run it
+/// # Create a multiplatform StereoKit project, and run it
 /// mkdir SKProjectName
 /// cd    SKProjectName
 /// 

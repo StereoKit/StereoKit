@@ -30,7 +30,7 @@ struct ui_id_t {
 
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius;
-uint64_t        skui_last_element;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 bool32_t        skui_show_volumes;
 
 array_t<bool32_t>    skui_enabled_stack;
@@ -73,6 +73,7 @@ void ui_core_shutdown() {
 	skui_preserve_keyboard_ids[1].free();
 	skui_preserve_keyboard_ids_read  = nullptr;
 	skui_preserve_keyboard_ids_write = nullptr;
+	skui_last_element = 0xFFFFFFFFFFFFFFFF;
 }
 
 ///////////////////////////////////////////

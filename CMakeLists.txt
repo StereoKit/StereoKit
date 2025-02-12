@@ -151,6 +151,10 @@ elseif(WIN32)
     endif()
 endif()
 
+if (__MINGW32__)
+  add_compile_definitions(PAL_STDCPP_COMPAT="needed for mingw")
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
   add_definitions("-DWINDOWS_UWP")
 endif()
@@ -230,9 +234,10 @@ add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
 add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
+#### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2024.9.26
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2024.9.26/sk_gpu.v2024.9.26.zip
+  NAME sk_gpu # 2025.2.11
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.2.11/sk_gpu.v2025.2.11.zip
 )
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
@@ -478,7 +483,7 @@ endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-O3 -f -e -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -700,11 +705,11 @@ if (SK_BUILD_TESTS)
   )
 
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-    target_compile_options(StereoKitCTest PRIVATE "/MP")
+    target_compile_options(StereoKitCTest PRIVATE "/MP8")
   endif()
 
   skshaderc_compile_headers( StereoKitCTest
-    ${CMAKE_BINARY_DIR}/test_shaders
+    ${CMAKE_BINARY_DIR}/test_shaders/
     "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
@@ -728,12 +733,12 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-  add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+  add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP8>)
   if(SK_PHYSICS)
-    target_compile_options(reactphysics3d PRIVATE "/MP")
+    target_compile_options(reactphysics3d PRIVATE "/MP8")
   endif()
-  target_compile_options(openxr_loader PRIVATE "/MP")
-  target_compile_options(StereoKitC PRIVATE "/MP")
+  target_compile_options(openxr_loader PRIVATE "/MP8")
+  target_compile_options(StereoKitC PRIVATE "/MP8")
 endif()
 
 ###########################################

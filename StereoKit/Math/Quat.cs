@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2025 Qualcomm Technologies, Inc.
+
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -132,8 +137,22 @@ namespace StereoKit
 		/// <returns>A rotation that describes looking from a point, towards
 		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint, Vec3 upDirection) 
-			=> NativeAPI.quat_lookat_up(lookFromPoint, lookAtPoint, upDirection);
+		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint, Vec3 upDirection)
+		{
+			// StereoKit's C code uses XMMatrixLookAtRH, see:
+			// https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixlookatrh
+			// Using a C# implementation allows us to do math like this without
+			// loading the SK DLL, or paying PInvoke costs.
+
+			Vector3 dir   = Vector3.Normalize(lookFromPoint - lookAtPoint);
+			Vector3 right = Vector3.Normalize(Vector3.Cross(upDirection.v, dir));
+			Vector3 up    = Vector3.Cross(dir, right);
+			return Quaternion.CreateFromRotationMatrix(
+				new Matrix(right.X, right.Y, right.Z, 0,
+				           up   .X, up   .Y, up   .Z, 0,
+				           dir  .X, dir  .Y, dir  .Z, 0,
+				                 0,       0,       0, 0));
+		}
 
 		/// <summary>Creates a rotation that describes looking from a point,
 		/// to another point! This is a great function for camera style
@@ -153,8 +172,8 @@ namespace StereoKit
 		/// <returns>A rotation that describes looking from a point, towards
 		/// another point.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint) 
-			=> NativeAPI.quat_lookat_up(lookFromPoint, lookAtPoint, Vec3.Up);
+		public static Quat LookAt(Vec3 lookFromPoint, Vec3 lookAtPoint)
+			=> LookDir(lookAtPoint - lookFromPoint);
 
 		/// <summary>Creates a rotation that describes looking towards a
 		/// direction. This is great for quickly describing facing behavior!
@@ -165,8 +184,8 @@ namespace StereoKit
 		/// <returns>A rotation that describes looking towards a direction.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookDir(Vec3 direction) 
-			=> NativeAPI.quat_lookat(Vec3.Zero, direction);
+		public static Quat LookDir(Vec3 direction)
+			=> LookDir(direction.x, direction.y, direction.z);
 
 		/// <summary>Creates a rotation that describes looking towards a
 		/// direction. This is great for quickly describing facing behavior!
@@ -181,8 +200,22 @@ namespace StereoKit
 		/// <returns>A rotation that describes looking towards a direction.
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat LookDir(float x, float y, float z) 
-			=> NativeAPI.quat_lookat(Vec3.Zero, new Vec3(x, y, z));
+		public static Quat LookDir(float x, float y, float z)
+		{
+			// StereoKit's C code uses XMMatrixLookAtRH, see:
+			// https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixlookatrh
+			// Using a C# implementation allows us to do math like this without
+			// loading the SK DLL, or paying PInvoke costs.
+
+			Vector3 dir   = -Vector3.Normalize(new Vector3(x,y,z));
+			Vector3 right =  Vector3.Normalize(new Vector3(dir.Z, 0, -dir.X)); // When up is (0,1,0), the `right` vector is trivial
+			Vector3 up    =  Vector3.Cross(dir, right);
+			return Quaternion.CreateFromRotationMatrix(
+				new Matrix(right.X, right.Y, right.Z, 0,
+				           up   .X, up   .Y, up   .Z, 0,
+				           dir  .X, dir  .Y, dir  .Z, 0,
+				                 0,       0,       0, 0));
+		}
 
 		/// <summary>This gives a relative rotation between the first and
 		/// second quaternion rotations.

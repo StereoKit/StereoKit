@@ -1,77 +1,46 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2023 Nick Klingensmith
-// Copyright (c) 2023 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 using System;
-using System.Collections.Generic;
 using StereoKit;
 using StereoKit.Framework;
 
 class Program
 {
+	// This is the starting scene, and can be overridden by passing
+	// -start <testname> via the CLI.
 	static string startTest = "welcome";
+
+	// The base settings we use for this test app. Some of these, like mode,
+	// are overridden, particularly when running tests.
 	static SKSettings settings = new SKSettings {
 		appName         = "StereoKit C#",
-		assetsFolder    = "Assets",
 		blendPreference = DisplayBlend.AnyTransparent,
 		mode            = AppMode.XR,
-		logFilter       = LogLevel.Diagnostic,
-		//origin          = OriginMode.Floor,
 	};
 
-	static Model  floorMesh;
-	static Matrix floorTr;
-	static Pose   windowDemoPose = new Pose();
-	static bool   windowDemoShow = false;
-	static Sprite powerButton;
+	static Mesh      floorMesh;
+	static Material  floorMat;
+	static Pose      windowDemoPose = new Pose(-0.7f, 0, -0.3f, Quat.LookDir(1, 0, 1));
+	static Sprite    powerButton;
+	static SceneType sceneCategory = SceneType.Demos;
 
-	static Tests.Category testCategory = Tests.Category.Demo;
-	static float          demoWinWidth = 50 * U.cm;
-
-	public static LogWindow logWindow;
-
-	public static bool WindowDemoShow
-	{
-		get => windowDemoShow;
-		set {
-			if (windowDemoShow == value) return;
-			windowDemoShow = value;
-			if (windowDemoShow)
-			{
-				windowDemoPose.position    = new Vec3(-0.7f, 0, -0.3f);
-				windowDemoPose.orientation = Quat.LookDir(1, 0, 1);
-			}
-		}
-	}
-
-	public static bool WindowConsoleShow
-	{
-		get => logWindow.Enabled;
-		set {
-			if (logWindow.Enabled == value) return;
-			logWindow.Enabled = value;
-			if (logWindow.Enabled)
-				logWindow.pose = UI.PopupPose();
-		}
-	}
+	public static LogWindow WindowLog;
+	public static bool      WindowDemoShow = false;
 
 	static void Main(string[] args)
 	{
-		bool headless         = Array.IndexOf(args, "-headless") != -1;
-		Tests.IsTesting       = Array.IndexOf(args, "-test") != -1;
-		Tests.MakeScreenshots = Array.IndexOf(args, "-noscreens") == -1;
-		if (Array.IndexOf(args, "-screenfolder") != -1)
-			Tests.ScreenshotRoot = args[Array.IndexOf(args, "-screenfolder")+1];
-		if (Array.IndexOf(args, "-gltf") != -1)
-			Tests.GltfFolders = args[Array.IndexOf(args, "-gltf") + 1];
-		if (Array.IndexOf(args, "-gltfscreenfolder") != -1)
-			Tests.GltfScreenshotRoot = args[Array.IndexOf(args, "-gltfscreenfolder") + 1];
-		if (Array.IndexOf(args, "-start") != -1)
-		{
-			startTest = args[Array.IndexOf(args, "-start") + 1];
-			Tests.TestSingle = true;
-		}
+		// CLI arguments
+		bool headless            =  ParamPresent(args, "-headless");
+		Tests.IsTesting          =  ParamPresent(args, "-test");
+		Tests.MakeScreenshots    = !ParamPresent(args, "-noscreens");
+		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     "../../../docs/img/screenshots");
+		Tests.GltfFolders        =  ParamVal    (args, "-gltf",             null); // "C:\\Tools\\glTF-Sample-Models-master\\2.0";
+		Tests.GltfScreenshotRoot =  ParamVal    (args, "-gltfscreenfolder", null);
+		Tests.TestSingle         =  ParamPresent(args, "-start");
+		startTest                =  ParamVal    (args, "-start",            startTest);
 
 		if (Tests.IsTesting)
 		{
@@ -79,20 +48,16 @@ class Program
 			settings.standbyMode = StandbyMode.None;
 		}
 
-		// Preload the StereoKit library for access to Time.Scale before
-		// initialization occurs.
-		SK.PreLoadLibrary();
-
+		// OpenXR extensions need added before SK.Initialize, so does
+		// LogWindow for early log registration!
 		SK.AddStepper<PassthroughFBExt>();
-		//SK.AddStepper<Win32PerformanceCounterExt>();
-		logWindow = SK.AddStepper<LogWindow>();
-		logWindow.Enabled = false;
+		SK.AddStepper<Win32PerformanceCounterExt>();
+		WindowLog = SK.AddStepper<LogWindow>();
+		WindowLog.Enabled = false;
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);
-
-		Time.Scale = Tests.IsTesting ? 0 : 1;
 
 		Init();
 
@@ -101,17 +66,13 @@ class Program
 
 	static void Init()
 	{
-		Material floorMat = new Material(Shader.FromFile("Shaders/floor_shader.hlsl"));
+		floorMat = new Material("Shaders/floor_shader.hlsl");
 		floorMat.Transparency = Transparency.Blend;
-		floorMat.SetVector("radius", new Vec4(5,10,0,0));
-		floorMat.QueueOffset = -11;
+		floorMat.QueueOffset  = -11;
+		floorMat["radius"]    = new Vec4(5, 10, 0, 0);
 
-		floorMesh = Model.FromMesh(Mesh.GeneratePlane(new Vec2(40,40), Vec3.Up, Vec3.Forward), floorMat);
-		floorTr   = Matrix.TR(new Vec3(0, -1.5f, 0), Quat.Identity);
-
+		floorMesh   = Mesh.GeneratePlane(V.XY(40,40), Vec3.Up, Vec3.Forward);
 		powerButton = Sprite.FromTex(Tex.FromFile("power.png"));
-
-		WindowDemoShow = true;
 
 		Tests.FindTests();
 		Tests.SetTestActive(startTest);
@@ -119,10 +80,13 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			UI.EnableFarInteract = false;
+			UI  .EnableFarInteract = false;
+			Time.Scale             = 0;
+			WindowDemoShow         = false;
 		}
 		else
 		{
+			WindowDemoShow = true;
 			SK.AddStepper<DebugToolWindow>();
 		}
 	}
@@ -131,10 +95,6 @@ class Program
 
 	static void Step()
 	{
-		CheckFocus();
-
-		Tests.Update();
-
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
 
@@ -153,35 +113,27 @@ class Program
 
 		// If we can't see the world, we'll draw a floor!
 		if (Device.DisplayBlend == DisplayBlend.Opaque)
-			Renderer.Add(floorMesh, World.HasBounds ? World.BoundsPose.ToMatrix() : floorTr, Color.White);
+			floorMesh.Draw(floorMat, World.HasBounds ? World.BoundsPose.ToMatrix() : Matrix.T(0, -1.5f, 0), Color.White);
 
-		// Skip selection window if we're in test mode
-		if (Tests.IsTesting)
-			return;
-
+		CheckFocus    ();
+		Tests.Update  ();
 		WindowDemoStep();
 	}
 
 	static void WindowDemoStep()
 	{
-		if (!windowDemoShow) return;
+		// Skip the window if we're in test mode
+		if (!WindowDemoShow) return;
 
 		// Make a window for demo selection
-		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(demoWinWidth, 0));
+		UI.WindowBegin("Demos", ref windowDemoPose, new Vec2(50 * U.cm, 0));
 
 		// Display the different categories of tests we have available
-		for (int i = 0; i < (int)Tests.Category.MAX; i++)
+		for (int i = 0; i < (int)SceneType.MAX; i++)
 		{
-			string categoryName = "";
-			switch ((Tests.Category)i)
-			{
-				case Tests.Category.Demo:          categoryName = "Demos"; break;
-				case Tests.Category.Test:          categoryName = "Tests"; break;
-				case Tests.Category.Documentation: categoryName = "Docs"; break;
-				default: categoryName = ((Tests.Category)i).ToString(); break;
-			}
-			if (UI.Radio(categoryName, (Tests.Category)i == testCategory))
-				testCategory = (Tests.Category)i;
+			SceneType category = (SceneType)i;
+			if (UI.Radio(category.ToString(), category == sceneCategory))
+				sceneCategory = category;
 			UI.SameLine();
 		}
 		// Display a quit button on the far right side
@@ -198,32 +150,33 @@ class Program
 		float      currWidthTotal = 0;
 		UISettings uiSettings     = UI.Settings;
 		TextStyle  style          = UI.TextStyle;
-		for (int i = 0; i < Tests.Count(testCategory); i++)
+		float      windowWidth    = UI.LayoutRemaining.x;
+		for (int i = 0; i < Tests.Count(sceneCategory); i++)
 		{
-			float width = Text.Size(Tests.GetTestName(testCategory,i), style).x + uiSettings.padding * 2;
-			if (currWidthTotal + (width+uiSettings.gutter) > demoWinWidth)
+			float width = Text.Size(Tests.GetTestName(sceneCategory,i), style).x + uiSettings.padding * 2;
+			if (currWidthTotal + (width+uiSettings.gutter) > windowWidth)
 			{
-				float inflate = (demoWinWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
+				float inflate = (windowWidth - (currWidthTotal-uiSettings.gutter+0.0001f)) / (i - start);
 				for (int t = start; t < i; t++)
 				{
-					string name      = Tests.GetTestName(testCategory,t);
+					string name      = Tests.GetTestName(sceneCategory,t);
 					float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2 + inflate;
-					if (UI.Radio(name, Tests.IsActive(testCategory,t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
-						Tests.SetTestActive(testCategory, t);
+					if (UI.Radio(name, Tests.IsActive(sceneCategory, t),  null, null, UIBtnLayout.None, new Vec2(currWidth, 0) ))
+						Tests.SetTestActive(sceneCategory, t);
 					UI.SameLine();
 				}
 				start = i;
 			}
 			if (start == i)
-				currWidthTotal = uiSettings.margin * 2;
+				currWidthTotal = 0;
 			currWidthTotal += width + uiSettings.gutter;
 		}
-		for (int t = start; t < Tests.Count(testCategory); t++)
+		for (int t = start; t < Tests.Count(sceneCategory); t++)
 		{
-			string name      = Tests.GetTestName(testCategory, t);
+			string name      = Tests.GetTestName(sceneCategory, t);
 			float  currWidth = Text.Size(name, style).x + uiSettings.padding * 2;
-			if (UI.Radio(name, Tests.IsActive(testCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
-				Tests.SetTestActive(testCategory, t);
+			if (UI.Radio(name, Tests.IsActive(sceneCategory, t), null, null, UIBtnLayout.None, new Vec2(currWidth, 0)))
+				Tests.SetTestActive(sceneCategory, t);
 			UI.SameLine();
 		}
 
@@ -242,4 +195,14 @@ class Program
 		}
 	}
 	/// :End:
+
+	static bool ParamPresent(string[] args, string param) 
+		=> Array.IndexOf(args, param) != -1;
+	static string ParamVal(string[] args, string param, string defaultVal)
+	{
+		int index = Array.IndexOf(args, param);
+		return (index == -1 || index + 1 >= args.Length)
+			? defaultVal 
+			: args[index + 1];
+	}
 }
