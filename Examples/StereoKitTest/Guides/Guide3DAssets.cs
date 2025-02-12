@@ -96,6 +96,22 @@
 ///
 /// For more information about shaders and material, check out StereoKit's
 /// [Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html)!
+/// 
+/// ### References
+///
+/// A quick note about how Asset types (Model/Material/Tex, etc.) work in
+/// StereoKit!
+///
+/// When you work with an Asset, you'll want to keep in mind that you're
+/// actually working with a reference to the Asset! Sometimes the handle you
+/// have is just one of _many_ references to the Asset, and so changing the
+/// Asset will affect all other references to it as well.
+///
+/// If you want to change an Asset's property _without_ affecting other
+/// references to that Asset, then you should `Copy()` that Asset, and modify
+/// that new, unique instance instead! This is why you'll frequently see the
+/// example code doing something like `Material.Default.Copy()` before
+/// changing any of the properties.
 ///
 /// ## GLTF extension support
 ///
