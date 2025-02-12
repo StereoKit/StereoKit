@@ -477,7 +477,7 @@ else()
 endif()
 
 skshaderc_compile_headers(StereoKitC
-  ${CMAKE_BINARY_DIR}/shaders
+  ${CMAKE_BINARY_DIR}/shaders/
   "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
