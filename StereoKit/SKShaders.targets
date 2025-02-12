@@ -20,6 +20,7 @@
 		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">skshaderc\win32_$(PlatformArch)\skshaderc.exe</SKShadercExe>
 		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Linux'))"  >skshaderc/linux_$(PlatformArch)/skshaderc</SKShadercExe>
 		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('OSX'))"    >skshaderc/mac/skshaderc</SKShadercExe>
+		<SKShadercPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))</SKShadercPath>
 		<SKAutoFindShaders Condition="'$(SKAutoFindShaders)' == ''">True</SKAutoFindShaders>
 	</PropertyGroup>
 
@@ -51,7 +52,7 @@
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))" $(SKOpt) -e -t xge -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Command>$(SKShadercPath) $(SKOpt) -e -t xe -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
 				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
@@ -74,4 +75,46 @@
 			<SKContent Include="$(IntermediateOutputPath)$(SKAssetDestination)/**/*.sks" />
 		</ItemGroup>
 	</Target>
+
+	<!-- Shader C# code generation -->
+	
+	<!-- Collect shader files that should be treated like code. -->
+	<ItemGroup Condition="'$(SKBuildShaderCode)' == 'true'">
+		<SKShaderCode Include="$(SKShaderCodeFolder)**/*.hlsl" Exclude="**/bin/**;**/obj/**;**/$(SKAssetFolder)/**"/>
+
+		<Compile Update="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')">
+			<DependentUpon>%(SKShaderCode.Filename)%(SKShaderCode.Extension)</DependentUpon>
+			<AutoGen>true</AutoGen>
+			<DesignTimeSharedInput>true</DesignTimeSharedInput>
+			<Link>Material%(SKShaderCode.Filename).gen.cs</Link>
+			<Visible>true</Visible>
+		</Compile>
+	</ItemGroup>
+
+	<!-- Compile the shaders ang generate the C# in the /obj/ folder -->
+	<Target Name="StereoKit_Shader_Code" Condition="'$(SKBuildShaderCode)' == 'true'" BeforeTargets="BeforeCompile" Inputs="@(SKShaderCode)" Outputs="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).generated.cs')">
+		<Message Text="[StereoKit NuGet] Generating C# for %(SKShaderCode.Identity) -> $(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs" Importance="high" />
+
+		<Exec Command='$(SKShadercPath) $(SKOpt) -e -sk -t xe -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs"'></Exec>
+
+		<!-- Insert generated files into the Compile list.
+		     We also attempt to nest them under the corresponding .hlsl file,
+		     however, this doesn't appear to work when the linked files are in the
+		     /obj folder. -->
+		<ItemGroup>
+			<Compile Remove ="$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs"/>
+			<Compile Include="$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs" KeepDuplicates="false">
+				<DependentUpon>%(SKShaderCode.Filename)%(SKShaderCode.Extension)</DependentUpon>
+				<AutoGen>true</AutoGen>
+				<DesignTimeSharedInput>true</DesignTimeSharedInput>
+				<Link>Material%(SKShaderCode.Filename).gen.cs</Link>
+				<Visible>true</Visible>
+			</Compile>
+		</ItemGroup>
+	</Target>
+
+	<Target Name="StereoKit_Shader_Code_Rebuild" Condition="'$(SKBuildShaderCode)' == 'true'" AfterTargets="CoreClean">
+		<Delete Files="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')" />
+	</Target>
+
 </Project>
