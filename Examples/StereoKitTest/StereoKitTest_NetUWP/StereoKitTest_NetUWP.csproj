@@ -16,6 +16,7 @@
 
 		<SKCopyAssets>true</SKCopyAssets>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
 

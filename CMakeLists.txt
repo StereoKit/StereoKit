@@ -217,8 +217,8 @@ add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2025.1.22
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.1.22/sk_gpu.v2025.1.22.zip
+  NAME sk_gpu # 2025.2.11
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.2.11/sk_gpu.v2025.2.11.zip
 )
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.

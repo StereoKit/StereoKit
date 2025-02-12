@@ -6,12 +6,14 @@
 		<SKOpenXRLoader          Condition="'$(SKOpenXRLoader)'          == ''">Standard</SKOpenXRLoader>
 		<SKShowDebugVars         Condition="'$(SKShowDebugVars)'         == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders       Condition="'$(SKAutoFindShaders)'       == ''">True</SKAutoFindShaders>
+		<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'      == ''"></SKShaderCodeFolder>
+		<SKBuildShaderCode       Condition="'$(SKBuildShaderCode)'       == ''">true</SKBuildShaderCode>
 		<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'    == ''">$(ProjectDir)openxr_loader/</SKOpenXRLoaderFolder>
 		<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)' == ''">$(MSBuildThisFileDirectory)../tools/include/</SKShaderStandardInclude>
 		<SKCopyAssets            Condition="'$(SKCopyAssets)'	== '' and '$(UseUwp)'=='true'">false</SKCopyAssets>
 		<SKCopyAssets            Condition="'$(SKCopyAssets)'	== '' and '$(UseUwp)'!='true'">true</SKCopyAssets>
 	</PropertyGroup>
-	
+
 	<Target Name="StereoKit_Properties" BeforeTargets="BeforeBuild">
 		<PropertyGroup>
 			<!--These variables are not populated outside of Targets-->
@@ -25,8 +27,9 @@
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
 
-			<SKOpenXRLoaderFolder>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
-			<SKShaderStandardInclude>$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
+			<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'   !=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
+			<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)'!=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
+			<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'     !=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderCodeFolder)'))))</SKShaderCodeFolder>
 		</PropertyGroup>
 
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>
@@ -34,6 +37,8 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAssetDestination         : $(SKAssetDestination)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKBuildShaderCode          : $(SKBuildShaderCode)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderCodeFolder         : $(SKShaderCodeFolder)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShadercExe               : $(SKShadercExe)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderStandardInclude    : $(SKShaderStandardInclude)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>
