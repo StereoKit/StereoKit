@@ -13,6 +13,7 @@
 		<SKOpenXRLoaderFolder Condition="'$(OS)'=='Windows_NT'">C:/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
 		<SKOpenXRLoader>Standard</SKOpenXRLoader>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
 		
