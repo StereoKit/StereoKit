@@ -179,11 +179,11 @@ include("cmake/CPM.cmake")
 
 #### ReactPhysics3D - https://www.reactphysics3d.com/ ####
 if(SK_PHYSICS)
-  set(reactphysics_patch git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME reactphysics3d # 0.9.1
     GITHUB_REPOSITORY DanielChappuis/reactphysics3d
     GIT_TAG 17dd22e677ed861b0d4ece0c00a7e3cb503cc2f0
+    PATCH_COMMAND git apply ${CMAKE_CURRENT_SOURCE_DIR}/tools/reactphysics.patch
     EXCLUDE_FROM_ALL YES
   )
   # Something in reactphysics3d seems to require -fPIC

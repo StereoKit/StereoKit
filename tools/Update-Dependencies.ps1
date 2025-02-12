@@ -68,16 +68,18 @@ class Dependency {
     [string]$Repository
     [string]$Tag
     [string]$Version
+    [string]$Patch
     [string]$VerifyFile
     [System.Collections.ArrayList]$Copies = @()
     [System.Collections.ArrayList]$CmakeOptions = @()
     [bool]$NeedsBuilt
 
-    Dependency([string]$n, [string]$repo, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies, [string]$verifyFile) {
+    Dependency([string]$n, [string]$repo, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies, [string]$verifyFile) {
         $this.Name = $n
         $this.Repository = $repo
         $this.Tag = ""
         $this.Copies = $copies
+        $this.Patch = $patch
         $this.CmakeOptions = $options
         $this.NeedsBuilt = $false
         $this.VerifyFile = $verifyFile
@@ -100,6 +102,7 @@ $dependencies = @(
     [Dependency]::new(
         'openxr_loader', 
         'https://github.com/KhronosGroup/OpenXR-SDK.git',
+        '',
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
         @(  [FolderCopy]::new('src\loader\[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\include\openxr\', "[libfolder]\include\openxr\", $false, @('h'))),
@@ -108,14 +111,16 @@ $dependencies = @(
     [Dependency]::new(
         'reactphysics3d',
         'https://github.com/DanielChappuis/reactphysics3d.git',
+        'reactphysics.patch',
         $null,
         @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) ),
+            [FolderCopy]::new('..\include\reactphysics3d\*', "[libfolder]\include\reactphysics3d\", $true, $null) ),
         $null
     ),
     [Dependency]::new(
         'sk_gpu', 
         'https://github.com/StereoKit/sk_gpu/releases/download/v[version]/sk_gpu.v[version].zip',
+        '',
         @(), 
         @(  [FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null),
             [FolderCopy]::new('..\src\*', '[libfolder]\include\sk_gpu\', $false, @('h'))),
@@ -124,6 +129,7 @@ $dependencies = @(
     [Dependency]::new(
         'meshoptimizer',
         'https://github.com/zeux/meshoptimizer.git',
+        '',
         $null,
         @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\src\*', "[libfolder]\include\meshoptimizer\", $false, @('h')) ),
@@ -132,6 +138,7 @@ $dependencies = @(
     [Dependency]::new(
         'basis_universal',
         'https://github.com/BinomialLLC/basis_universal.git',
+        '',
         $null,
         @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
             [FolderCopy]::new('..\transcoder\*', "[libfolder]\include\basisu\", $false, @('h', 'cpp', 'inc')),
@@ -262,6 +269,11 @@ foreach($dep in $dependencies) {
         & git checkout "$($dep.Tag)"
 
         Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
+
+        if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
+            Write-Host "Applying patch: $($dep.Patch)"
+            & git apply "$PSScriptRoot\$($dep.Patch)"
+        }
     } else {
         $zipName = "$folderName\$($dep.Name).$(($dep.Version)).zip"
 
