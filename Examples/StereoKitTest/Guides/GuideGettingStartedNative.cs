@@ -36,6 +36,6 @@
 /// While there are no official bindings other than C#, there are some partial
 /// examples for [Zig](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitZig)
 /// and [V](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitV),
-/// as well as a community driven effort to bind with [rust](https://github.com/MalekiRe/stereokit-rs)!
+/// as well as a community driven effort to bind with [rust](https://github.com/mvvvv/StereoKit-rust)!
 /// 
 /// :End:

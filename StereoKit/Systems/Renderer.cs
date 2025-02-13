@@ -73,10 +73,20 @@ namespace StereoKit
 		/// of the recommended size. Note that the final resolution may also be
 		/// clamped or quantized. Only works in XR mode. If known in advance,
 		/// set this via SKSettings in initialization. This is a _very_ costly
-		/// change to make.</summary>
+		/// change to make. Consider if ViewportScaling will work for you
+		/// instead, and prefer that.</summary>
 		public static float Scaling {
 			get => NativeAPI.render_get_scaling();
 			set => NativeAPI.render_set_scaling(value);
+		}
+
+		/// <summary>This allows you to trivially scale down the area of the
+		/// swapchain that StereoKit renders to! This can be used to boost
+		/// performance in situations where full resolution is not needed, or
+		/// to reduce GPU time. This value is locked to the 0-1 range.</summary>
+		public static float ViewportScaling {
+			get => NativeAPI.render_get_viewport_scaling();
+			set => NativeAPI.render_set_viewport_scaling(value);
 		}
 
 		/// <summary>Allows you to set the multisample (MSAA) level of the

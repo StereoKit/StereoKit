@@ -110,7 +110,7 @@ internal class DemoHandPoses : ITest
 			Lines.AddAxis(new Pose(c.palm.position, c.palm.orientation * Quat.FromAngles(0,90,-90)), 0.03f);
 
 		Demo.ShowSummary(title, description,
-			new Bounds(.8f, .7f, 0.2f));
+			new Bounds(new Vec3(-.07f,-.15f,0), new Vec3(.6f, .4f, 0.2f)));
 	}
 
 	void AssignButtonLine(string name, ref HandSimId id, ControllerKey ckey, Key key, Pose[] handPose)

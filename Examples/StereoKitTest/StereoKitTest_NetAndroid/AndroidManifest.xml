@@ -13,7 +13,8 @@
 		<meta-data android:name="handtracking" android:value="1" />
 		<!-- Snapdragon -->
 		<meta-data android:name="spaces.version" android:value="0.15.0"/>
-
+		<!-- AndroidXR -->
+		<property android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE" android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED" />
 		<profileable android:shell="true"/>
 	</application>
 
@@ -31,6 +32,16 @@
 		<intent> <action android:name="org.khronos.openxr.OpenXRRuntimeService" /> </intent>
 		<intent> <action android:name="org.khronos.openxr.OpenXRApiLayerService" /> </intent>
 	</queries>
+
+	<!-- AndroidXR items -->
+	<!-- https://developer.android.com/develop/xr/get-started#designing-xr -->
+	<uses-feature    android:name="android.software.xr.immersive"           android:required="true"  />
+	<uses-feature    android:name="android.hardware.xr.input.hand_tracking" android:required="false" />
+	<uses-feature    android:name="android.hardware.xr.input.controller"    android:required="false" />
+	<uses-feature    android:name="android.hardware.xr.input.eye_tracking"  android:required="false" />
+	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+	<uses-permission android:name="android.permission.HAND_TRACKING" />
+	<uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
 
 	<!-- Vive specific items  -->
 	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>

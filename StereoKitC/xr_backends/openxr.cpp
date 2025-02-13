@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -21,12 +21,13 @@
 #include "../device.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_hash.h"
-#include "../libraries/sk_gpu.h"
 #include "../systems/render.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
+
+#include <sk_gpu.h>
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -35,6 +36,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined(SK_OS_ANDROID)
+#include <unistd.h> // gettid
+#endif
 
 #if defined(SK_OS_ANDROID) || defined(SK_OS_LINUX)
 #include <time.h>
@@ -71,7 +76,7 @@ XrSession      xr_session       = {};
 XrExtTable     xr_extensions    = {};
 XrExtInfo      xr_ext_available = {};
 XrSessionState xr_session_state = XR_SESSION_STATE_UNKNOWN;
-bool           xr_running       = false;
+bool           xr_has_session   = false;
 XrSpace        xr_app_space     = {};
 XrReferenceSpaceType xr_app_space_type = {};
 XrSpace        xr_stage_space   = {};
@@ -161,7 +166,7 @@ XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFl
 	log_ level = log_diagnostic;
 	if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
 	else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
-	log_writef(level, "%s: %s", msg->functionName, msg->message);
+	log_writef(level, "[<~mag>xr<~clr>] %s: %s", msg->functionName, msg->message);
 
 	// Returning XR_TRUE here will force the calling function to fail
 	return (XrBool32)XR_FALSE;
@@ -245,7 +250,7 @@ bool openxr_create_system() {
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
-		"xrGetInstanceProperties failed [%s]");
+		"xrGetInstanceProperties");
 
 	device_data.runtime = string_copy(inst_properties.runtimeName);
 	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
@@ -270,7 +275,7 @@ bool openxr_create_system() {
 		XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
 	debug_info.messageSeverities =
-		XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+		//XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -378,7 +383,7 @@ bool openxr_init() {
 	// called before xrCreateSession
 	XrGraphicsRequirements requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS };
 	xr_check(xr_extensions.xrGetGraphicsRequirementsKHR(xr_instance, xr_system_id, &requirement),
-		"xrGetGraphicsRequirementsKHR failed [%s]");
+		"xrGetGraphicsRequirementsKHR");
 	void *luid = nullptr;
 #ifdef XR_USE_GRAPHICS_API_D3D11
 	luid = (void *)&requirement.adapterLuid;
@@ -432,10 +437,19 @@ bool openxr_init() {
 		return false;
 	}
 
+		// On Android, tell OpenXR what kind of thread this is. This can be
+	// important on Android systems so we don't get treated as a low priority
+	// thread by accident.
+#if defined(SK_OS_ANDROID)
+	if (xr_ext_available.KHR_android_thread_settings) {
+		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
+	}
+#endif
+
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
-		"xrGetInstanceProperties failed [%s]");
+		"xrGetInstanceProperties");
 
 	// Figure out what this device is capable of!
 	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
@@ -444,18 +458,18 @@ bool openxr_init() {
 	XrSystemEyeGazeInteractionPropertiesEXT properties_gaze     = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
 	// Validation layer does not seem to like 'next' chaining beyond a depth of
 	// 1, so we'll just call these one at a time.
-	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	if (xr_ext_available.EXT_hand_tracking) {
 		properties.next = &properties_tracking;
-		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
 	if (xr_ext_available.MSFT_hand_tracking_mesh) {
 		properties.next = &properties_handmesh;
-		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
 	if (xr_ext_available.EXT_eye_gaze_interaction) {
 		properties.next = &properties_gaze;
-		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties failed [%s]");
+		xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties), "xrGetSystemProperties");
 	}
 
 	log_diagf("System name: <~grn>%s<~clr>", properties.systemName);
@@ -567,8 +581,10 @@ bool openxr_init() {
 	// Wait for the session to start before we do anything more with the 
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
-	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN)
+	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
+		platform_sleep(33);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
+	}
 	// Blank frames should only be submitted when the session is READY
 	while (xr_session_state == XR_SESSION_STATE_READY) {
 		openxr_blank_frame();
@@ -636,11 +652,11 @@ bool openxr_blank_frame() {
 	XrFrameWaitInfo wait_info   = { XR_TYPE_FRAME_WAIT_INFO };
 	XrFrameState    frame_state = { XR_TYPE_FRAME_STATE };
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
-		"blank xrWaitFrame [%s]");
+		"blank xrWaitFrame");
 
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
 	xr_check(xrBeginFrame(xr_session, &begin_info),
-		"blank xrBeginFrame [%s]");
+		"blank xrBeginFrame");
 
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
 	end_info.displayTime = frame_state.predictedDisplayTime;
@@ -648,7 +664,7 @@ bool openxr_blank_frame() {
 	else if (xr_blend_valid(display_blend_additive)) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
 	else if (xr_blend_valid(display_blend_blend   )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
 	xr_check(xrEndFrame(xr_session, &end_info),
-		"blank xrEndFrame [%s]");
+		"blank xrEndFrame");
 
 	return true;
 }
@@ -888,7 +904,7 @@ void openxr_shutdown() {
 
 void openxr_step_begin() {
 	openxr_poll_events();
-	if (xr_running)
+	if (xr_has_session)
 		openxr_poll_actions();
 	input_step();
 	
@@ -900,11 +916,52 @@ void openxr_step_begin() {
 void openxr_step_end() {
 	anchors_step_end();
 
-	if (xr_running)
-		openxr_render_frame();
+	if (xr_has_session) { openxr_render_frame(); }
+	else                { render_clear(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
-	render_clear();
+
+	// If the OpenXR state is idling, the device is likely in some sort of
+	// standby. Either way, the session isn't available, so there's little
+	// point in stepping the application. Instead, we block the thread and
+	// just poll OpenXR until we leave the state.
+	//
+	// This happens at the end of step_end so that the app still can receive a
+	// message about the app going into a hidden state.
+	if (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
+		const sk_settings_t* settings = sk_get_settings_ref();
+		if (settings->standby_mode == standby_mode_pause) {
+			log_diagf("Sleeping until OpenXR session wakes");
+#if defined(SK_OS_ANDROID)
+			if (xr_ext_available.KHR_android_thread_settings) {
+				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
+			}
+#endif
+			// Add a small delay before pausing audio since the sleeping path can
+			// be triggered by a regular shutdown, and it would be a waste to stop
+			// and resume audio when we're just going to shut down later.
+			int32_t       timer      = 0;
+			const int32_t timer_time = 5; // timer_time * 100ms == 500ms
+
+			while (xr_session_state == XR_SESSION_STATE_IDLE && sk_is_running()) {
+				if (timer == timer_time) audio_pause();
+				timer += 1;
+
+				platform_sleep(100);
+				openxr_poll_events();
+			}
+			if (timer > timer_time) audio_resume();
+
+#if defined(SK_OS_ANDROID)
+			if (xr_ext_available.KHR_android_thread_settings) {
+				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
+			}
+#endif
+			log_diagf("Resuming from sleep");
+		} else if (settings->standby_mode == standby_mode_slow) {
+			platform_sleep(77);
+		}
+	}
 }
 
 ///////////////////////////////////////////
@@ -947,7 +1004,7 @@ bool openxr_poll_events() {
 				XrResult xresult = xrBeginSession(xr_session, &begin_info);
 				if (XR_FAILED(xresult)) {
 					log_errf("xrBeginSession failed [%s]", openxr_string(xresult));
-					sk_quit();
+					sk_quit(quit_reason_session_lost);
 					result = false;
 				}
 
@@ -957,15 +1014,15 @@ bool openxr_poll_events() {
 				// is ready.
 				openxr_views_update_fov();
 
-				xr_running = true;
+				xr_has_session = true;
 				log_diag("OpenXR session begin.");
 			} break;
-			case XR_SESSION_STATE_SYNCHRONIZED: break;
-			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_running = false; result = false; break;
-			case XR_SESSION_STATE_VISIBLE: break; // In this case, we can't recieve input. For now pretend it's not happening.
-			case XR_SESSION_STATE_FOCUSED: break; // This is probably the normal case, so everything can continue!
-			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(); result = false; break;
-			case XR_SESSION_STATE_EXITING:      sk_quit(); result = false; break;
+			case XR_SESSION_STATE_SYNCHRONIZED: break; // We're connected to a session, but not visible to users yet.
+			case XR_SESSION_STATE_VISIBLE:      break; // We're visible to users, but not in focus or receiving input. Modal OS dialogs could be visible here.
+			case XR_SESSION_STATE_FOCUSED:      break; // We're visible and focused. This is the "normal" operating state of an app.
+			case XR_SESSION_STATE_STOPPING:     xrEndSession(xr_session); xr_has_session = false; result = false; break; // We should not render in this state. We may be minimized, suspended, or otherwise out of action for the moment.
+			case XR_SESSION_STATE_EXITING:      sk_quit(quit_reason_user);                        result = false; break; // Runtime wants us to terminate the app, usually from a user's request.
+			case XR_SESSION_STATE_LOSS_PENDING: sk_quit(quit_reason_session_lost);                result = false; break; // The OpenXR runtime may have had some form of failure. It is theoretically possible to recover from this state by occasionally attempting to xrGetSystem, but we don't currently do this.
 			default: break;
 			}
 		} break;
@@ -975,9 +1032,9 @@ bool openxr_poll_events() {
 				oxri_update_interaction_profile();
 			}
 		} break;
-		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: sk_quit(); result = false; break;
+		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING         : sk_quit(quit_reason_session_lost); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
-			XrEventDataReferenceSpaceChangePending *pending = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
+			XrEventDataReferenceSpaceChangePending *pending   = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 
 			// Update the main app space. In particular, some fallback spaces
 			// may require recalculation.

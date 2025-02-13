@@ -28,7 +28,7 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, void *file_data, size_t, shader_t shader) {
+bool modelfmt_obj(model_t model, const char *filename, const void *file_data, size_t, shader_t shader) {
 	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);

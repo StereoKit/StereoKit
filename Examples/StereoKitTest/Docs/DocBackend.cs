@@ -1,24 +1,16 @@
-﻿using StereoKit;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2025 Qualcomm Technologies, Inc.
+
+using StereoKit;
 using StereoKit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 class DocBackend : ITest
 {
-	public void Initialize()
-	{
-	}
-
-	public void Shutdown()
-	{
-	}
-
-	public void Step()
-	{
-	}
+	public void Initialize() { }
+	public void Shutdown  () { }
+	public void Step      () { }
 }
 
 /// :CodeSample: OpenXR.RequestExt OpenXR.ExtEnabled Backend.XRType OpenXR.GetFunction OpenXR.Instance OpenXR.Time IStepper
@@ -79,7 +71,8 @@ class Win32PerformanceCounterExt : IStepper
 		return xrConvertTimeToWin32PerformanceCounterKHR != null;
 	}
 
-	// A more complicated extension might use these, but 
+	// A more complicated extension might use these, but this EXT does not
+	// require any actions on-Step.
 	public void Shutdown() { }
 	public void Step() { }
 }

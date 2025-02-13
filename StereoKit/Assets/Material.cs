@@ -71,7 +71,14 @@ namespace StereoKit
 		/// This is great for tiling textures!
 		/// 
 		/// This represents the float param 'tex_scale'.</summary>
+		[Obsolete("No longer present, use TexTransform instead.")]
 		TexScale,
+		/// <summary>Not necessarily present in all shaders, this transforms
+		/// the UV coordinates of the mesh, so that the texture can repeat and
+		/// scroll. XY components are offset, and ZW components are scale.
+		/// 
+		/// This represents the float param 'tex_trans'.</summary>
+		TexTransform,
 		/// <summary>In clip shaders, this is the cutoff value below which
 		/// pixels are discarded. Typically, the diffuse/albedo's alpha
 		/// component is sampled for comparison here.
@@ -189,7 +196,7 @@ namespace StereoKit
 			get => new Shader(NativeAPI.material_get_shader(_inst));
 			set => NativeAPI.material_set_shader(_inst, value?._inst ?? IntPtr.Zero); }
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id { 
 			get => Marshal.PtrToStringAnsi(NativeAPI.material_get_id(_inst));
@@ -275,7 +282,7 @@ namespace StereoKit
 				case bool    v:    SetBool   (parameterName, v); break;
 				case Matrix  m:    SetMatrix (parameterName, m); break;
 				case Tex     t:    SetTexture(parameterName, t); break;
-				default: Log.Err("Invalid material parameter type: {0}", value.GetType().ToString()); break;
+				default: Log.Err($"Invalid material parameter type: {value.GetType()}"); break;
 			}
 		} }
 		/// <summary>This array accessor allows for easy access to the more
@@ -285,7 +292,15 @@ namespace StereoKit
 		/// shader! The presence of this parameter may vary from shader to
 		/// shader, especially if using custom shaders.</param>
 		/// <returns>This is a set only.</returns>
-		public object this[MatParamName parameter] { set { this[MaterialParamString(parameter)] = value; } }
+		public object this[MatParamName parameter]
+		{
+			set
+			{
+				// TODO: v0.4 Remove this backwards compatibility code
+				if (parameter == MatParamName.TexScale) this["tex_trans"] = new Vec4( 0, 0, (float)value, (float)value);
+				else                                    this[MaterialParamString(parameter)] = value;
+			}
+		}
 		private string MaterialParamString(MatParamName parameter)
 		{
 			switch (parameter)
@@ -299,9 +314,9 @@ namespace StereoKit
 				case MatParamName.NormalTex:       return "normal";
 				case MatParamName.OcclusionTex:    return "occlusion";
 				case MatParamName.RoughnessAmount: return "roughness";
-				case MatParamName.TexScale:        return "tex_scale";
+				case MatParamName.TexTransform:    return "tex_trans";
 				case MatParamName.ClipCutoff:      return "cutoff";
-				default: Log.Err("Unimplemented Material Parameter Name! " + parameter); return "";
+				default: Log.Err($"Unimplemented Material Parameter Name! {parameter}"); return "";
 			}
 		}
 

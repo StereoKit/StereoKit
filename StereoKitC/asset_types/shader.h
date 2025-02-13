@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../libraries/sk_gpu.h"
+#include <sk_gpu.h>
 #include "../stereokit.h"
 #include "assets.h"
 

@@ -97,12 +97,13 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, text_align_ anchor_positio
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
-		vec3 offset = vec3_zero;
-		if      (anchor_position & text_align_x_left  ) offset.x = -sprite->aspect/2;
-		else if (anchor_position & text_align_x_right ) offset.x =  sprite->aspect/2;
+		vec3  offset = vec3_zero;
+		float aspect = sprite_get_aspect(sprite);
+		if      (anchor_position & text_align_x_left  ) offset.x = -aspect/2;
+		else if (anchor_position & text_align_x_right ) offset.x = aspect /2;
 		if      (anchor_position & text_align_y_bottom) offset.y =  0.5f;
 		else if (anchor_position & text_align_y_top   ) offset.y = -0.5f;
-		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {sprite->aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
 		return;
 	} else {
 		log_err("Not implemented");

@@ -40,7 +40,6 @@ void          ui_box_interaction_1h_pinch(uint64_t id, vec3 box_unfocused_start,
 void          ui_box_interaction_1h_poke (uint64_t id, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_state, int32_t* out_hand);
 bool32_t      _ui_handle_begin(uint64_t id, pose_t& handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
-bool32_t      ui_is_enabled();
 bool32_t      ui_is_hand_preoccupied(handed_ hand, uint64_t for_el_id, bool32_t include_focused);
 int32_t       ui_last_focused_hand(uint64_t for_el_id);
 button_state_ ui_focus_set (int32_t hand, uint64_t for_el_id, bool32_t focused, float priority);

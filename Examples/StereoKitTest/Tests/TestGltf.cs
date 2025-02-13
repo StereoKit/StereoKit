@@ -4,10 +4,20 @@ using System.Linq;
 
 class TestGltf : ITest
 {
+	enum State
+	{
+		None,
+		Loading,
+		View,
+		Screenshot,
+	}
+
 	string[] _files     = null;
 	int      _currFile  = 0;
 	Model    _currModel = null;
-	int      _frames = 1;
+	int      _frames    = 1;
+	State    _state     = State.None;
+	int      _frameCounter = 0;
 
 	public void Initialize()
 	{
@@ -17,6 +27,7 @@ class TestGltf : ITest
 			.Split(';')
 			.SelectMany(folder => new string[] { "*.glb", "*.gltf" }
 				.SelectMany(ext => Directory.EnumerateFiles(folder, ext, SearchOption.AllDirectories)))
+			.Where(file => !file.Contains("glTF-Draco"))
 			.ToArray();
 	}
 
@@ -43,19 +54,42 @@ class TestGltf : ITest
 			Hierarchy.Pop();
 		}
 
-		bool isFinished = Assets.CurrentTask == Assets.TotalTasks;
-		if (isFinished)
+		if (_state == State.None)
 		{
-			if (Tests.GltfScreenshotRoot != null)
-				Tests.ScreenshotGltf(_files[_currFile].Replace('/', '_').Replace('\\','_').Replace(':','_') + ".jpg", 500, 500, V.XYZ(0,-0.25f,1.0f), V.XYZ(0,-0.25f,0));
 			Log.Info($"Loading {_files[_currFile]}");
-
-			if (_currFile + 1 >= _files.Length)
-				_files = null;
-			else
+			_currModel = Model.FromFile(_files[_currFile]);
+			_currFile += 1;
+			_state     = State.Loading;
+		}
+		else if (_state == State.Loading)
+		{
+			if (Assets.CurrentTask == Assets.TotalTasks)
 			{
-				_currModel = Model.FromFile(_files[_currFile]);
-				_currFile += 1;
+				_state        = State.View;
+				_frameCounter = 0;
+			}
+		}
+		else if (_state == State.View)
+		{
+			_frameCounter += 1;
+			if (_frameCounter >= 4)
+			{
+				_state        = State.Screenshot;
+				_frameCounter = 0;
+			}
+		}
+		else if (_state == State.Screenshot)
+		{
+			_frameCounter += 1;
+			if (_frameCounter == 2 && Tests.GltfScreenshotRoot != null)
+			{
+				Tests.ScreenshotGltf(_files[_currFile-1].Replace('/', '_').Replace('\\', '_').Replace(':', '_') + ".jpg", 1000, 1000, V.XYZ(0, -0.25f, 1.0f), V.XYZ(0, -0.25f, 0));
+			}
+			if (_frameCounter >= 4)
+			{
+				if (_currFile + 1 >= _files.Length)
+					_files = null;
+				_state = State.None;
 			}
 		}
 	}

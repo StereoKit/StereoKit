@@ -102,7 +102,7 @@ class DebugToolWindow : IStepper
 	public bool Initialize()
 	{
 		itemDemos         = new HandMenuItem("Demos",        Sprite.ToggleOn,  () => Program.WindowDemoShow = !Program.WindowDemoShow);
-		itemConsole       = new HandMenuItem("Console",      Sprite.ToggleOn,  () => Program.WindowConsoleShow = !Program.WindowConsoleShow);
+		itemConsole       = new HandMenuItem("Console",      Sprite.ToggleOn,  () => Program.WindowLog.Enabled = !Program.WindowLog.Enabled);
 		itemToolsAvatar   = new HandMenuItem("Avatar",       Sprite.ToggleOff, () => ToggleAvatar() );
 		itemToolsSkeleton = new HandMenuItem("Skeleton",     Sprite.ToggleOff, () => skeleton = ToggleTool(skeleton) );
 		itemToolsTheme    = new HandMenuItem("Theme Editor", Sprite.ToggleOff, () => theme    = ToggleTool(theme) );
@@ -161,7 +161,7 @@ class DebugToolWindow : IStepper
 	public void Step()
 	{
 		itemDemos        .image = Program.WindowDemoShow    ? Sprite.ToggleOn : Sprite.ToggleOff;
-		itemConsole      .image = Program.WindowConsoleShow ? Sprite.ToggleOn : Sprite.ToggleOff;
+		itemConsole      .image = Program.WindowLog.Enabled ? Sprite.ToggleOn : Sprite.ToggleOff;
 		itemToolsAvatar  .image = avatar   != null ? Sprite.ToggleOn : Sprite.ToggleOff;
 		itemToolsSkeleton.image = skeleton != null ? Sprite.ToggleOn : Sprite.ToggleOff;
 		itemToolsTheme   .image = theme    != null ? Sprite.ToggleOn : Sprite.ToggleOff;

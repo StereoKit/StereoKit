@@ -14,20 +14,24 @@ class DocDebug : ITest
 		Log.Filter = LogLevel.Diagnostic;
 
 		/// :CodeSample: Log.Write
-		Log.Write(LogLevel.Info, "<~grn>{0:0.0}s<~clr> have elapsed since StereoKit start.", Time.Total);
+		Log.Write(LogLevel.Info, $"<~grn>{Time.Total:0.0}s<~clr> have elapsed since StereoKit start.");
+		/// :End:
+
+		/// :CodeSample: Log.Diag
+		Log.Diag($"<~blu>{Time.Total:0.0}s<~clr> have elapsed since StereoKit start.");
 		/// :End:
 
 		/// :CodeSample: Log.Info
-		Log.Info("<~grn>{0:0.0}s<~clr> have elapsed since StereoKit start.", Time.Total);
+		Log.Info($"<~grn>{Time.Total:0.0}s<~clr> have elapsed since StereoKit start.");
 		/// :End:
 
 		/// :CodeSample: Log.Warn
-		Log.Warn("Warning! <~ylw>{0:0.0}s<~clr> have elapsed since StereoKit start!", Time.Total);
+		Log.Warn($"Warning! <~ylw>{Time.Total:0.0}s<~clr> have elapsed since StereoKit start!");
 		/// :End:
 
 		/// :CodeSample: Log.Err
 		if (Time.Stepf > 0.017f)
-			Log.Err("Oh no! Frame time (<~red>{0}<~clr>) has exceeded 17ms! There's no way we'll hit even 60 frames per second!", Time.Stepf);
+			Log.Err($"Oh no! Frame time (<~red>{Time.Stepf}<~clr>) has exceeded 17ms! There's no way we'll hit even 60 frames per second!");
 		/// :End:
 
 		/// :CodeSample: Log.Unsubscribe

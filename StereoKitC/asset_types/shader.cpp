@@ -109,10 +109,8 @@ shader_t shader_create_file(const char *filename) {
 	// Load from file
 	void  *data;
 	size_t size;
-	char*  asset_filename = assets_file(final_file);
-	bool   loaded         = platform_read_file(asset_filename, &data, &size);
+	bool   loaded         = platform_read_file(final_file, &data, &size);
 	if (!loaded) log_warnf("Shader file failed to load: %s", filename);
-	sk_free(asset_filename);
 	sk_free(with_ext);
 
 	result = loaded ? shader_create_mem(data, size) : nullptr;

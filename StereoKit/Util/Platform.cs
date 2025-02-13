@@ -49,6 +49,13 @@ namespace StereoKit
 		/// TextContext provided.</param>
 		public static void KeyboardShow(bool show, TextContext inputType = TextContext.Text)
 			=> NativeAPI.platform_keyboard_show(show, inputType);
+
+		/// <summary>Replace the default keyboard type with a custom layout.</summary>
+		/// <param name="keyboardType">Type of keyboard.</param>
+		/// <param name="keyboardLayout">Custom keyboard layout to replace the defualt layout.</param>
+		/// <returns>True if keyboard type was swapped with the provided layout.</returns>
+		public static bool KeyboardSetLayout(TextContext keyboardType, string[] keyboardLayout)
+			=> NativeAPI.platform_keyboard_set_layout(keyboardType, keyboardLayout, keyboardLayout.Length);
 		#endregion
 
 		#region File Picker
@@ -192,8 +199,7 @@ namespace StereoKit
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by
 		/// Platform.FilePicker. Returns null on failure.</summary>
-		/// <param name="filename">Path to the file. Not affected by Assets
-		/// folder path.</param>
+		/// <param name="filename">Path to the file.</param>
 		/// <returns>A UTF-8 decoded string if successful, null if not.</returns>
 		public static string ReadFileText(string filename)
 		{
@@ -204,8 +210,7 @@ namespace StereoKit
 		/// <summary>Reads the entire contents of the file as a byte array,
 		/// taking advantage of any permissions that may have been granted by
 		/// Platform.FilePicker.</summary>
-		/// <param name="filename">Path to the file. Not affected by Assets
-		/// folder path.</param>
+		/// <param name="filename">Path to the file.</param>
 		/// <param name="data">A raw byte array representing the contents of
 		/// the file. Will be null on failure.</param>
 		/// <returns>True on success, False on failure.</returns>
@@ -223,8 +228,7 @@ namespace StereoKit
 		/// <summary>Reads the entire contents of the file as a byte array,
 		/// taking advantage of any permissions that may have been granted by
 		/// Platform.FilePicker. Returns null on failure.</summary>
-		/// <param name="filename">Path to the file. Not affected by Assets
-		/// folder path.</param>
+		/// <param name="filename">Path to the file.</param>
 		/// <returns>A raw byte array if successful, null if not.</returns>
 		public static byte[] ReadFileBytes(string filename)
 		{

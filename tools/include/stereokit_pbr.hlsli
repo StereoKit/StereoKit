@@ -36,7 +36,15 @@ float4 sk_pbr_shade(float4 albedo, float3 irradiance, float3 ao, float metal, fl
 	float3 view        = normalize(view_dir);
 	float3 reflection  = reflect(-view, surface_normal);
 	float  ndotv       = max(0, dot(surface_normal, view));
-
+	
+	// Reduce specular aliasing by capping roughness at glancing angles.
+	// See Advanced VR Rendering p43 by Alex Vlachos:
+	// https://gdcvault.com/play/1021772/Advanced-VR
+	float3 norm_ddx        = ddx(surface_normal.xyz);
+	float3 norm_ddy        = ddy(surface_normal.xyz);
+	float  geometric_rough = pow(saturate(max(dot(norm_ddx.xyz, norm_ddx.xyz), dot(norm_ddy.xyz, norm_ddy.xyz))), 0.45);
+	rough = max(rough, geometric_rough);
+	
 	float3 F0 = lerp(0.04, albedo.rgb, metal);
 	float3 F  = sk_pbr_fresnel_schlick_roughness(ndotv, F0, rough);
 	float3 kS = F;

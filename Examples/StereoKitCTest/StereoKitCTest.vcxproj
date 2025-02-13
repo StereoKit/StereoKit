@@ -29,7 +29,7 @@
     <OutDir>$(ProjectDir)..\..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <IntDir>$(ProjectDir)..\..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)..\..\StereoKitC;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\StereoKitC;$(IntDir)\shaders;$(IncludePath)</IncludePath>
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -62,7 +62,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"$(ProjectDir)..\..\Tools\skshaderc.exe" -O3 -h -t xgew -i "$(ProjectDir)..\..\Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(ProjectDir)..\..\tools\skshaderc\win32_x64\skshaderc.exe" -O3 -h -t xgew -i "$(ProjectDir)..\..\tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -80,9 +80,14 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PreBuildEvent>
-      <Command>"$(ProjectDir)..\..\Tools\skshaderc.exe" -O3 -h -t xgew -i "$(ProjectDir)..\..\Tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
+      <Command>"$(ProjectDir)..\..\tools\skshaderc\win32_x64\skshaderc.exe" -o $(IntDir)\shaders  -O3 -h -t xgew -i "$(ProjectDir)..\..\tools\include" "$(ProjectDir)Shaders\*.hlsl"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
+
+  <Target Name="SKCheckSKShaderC" BeforeTargets="PreBuild">
+    <!--Make sure the shader compiler is available to us-->
+    <Exec Command="cd $(ProjectDir)..\..\ &amp; powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;tools\Update-Dependencies.ps1&quot; -arch x64 -config Debug -plat Win32 -onlyDep sk_gpu" />
+  </Target>
   
   <ItemGroup>
     <ClCompile Include="demo_aliasing.cpp" />
@@ -119,9 +124,6 @@
     <ClInclude Include="demo_ui_layout.h" />
     <ClInclude Include="demo_world.h" />
     <ClInclude Include="scene.h" />
-    <ClInclude Include="Shaders\blit.hlsl.h" />
-    <ClInclude Include="Shaders\skt_default_lighting.hlsl.h" />
-    <ClInclude Include="Shaders\skt_light_only.hlsl.h" />
     <ClInclude Include="skt_lighting.h" />
   </ItemGroup>
   <ItemGroup>

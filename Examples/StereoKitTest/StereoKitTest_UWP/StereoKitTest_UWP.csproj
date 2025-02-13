@@ -12,7 +12,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22621.0</TargetPlatformVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -93,10 +93,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\StereoKitC\StereoKitC_UWP\StereoKitC_UWP.vcxproj">
-      <Project>{45af7827-11ca-4691-a063-8c78fb0be1ec}</Project>
-      <Name>StereoKitC_UWP</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\StereoKit\StereoKit.csproj">
       <Project>{0152979d-5d5e-4d18-9ef7-7261581b2bc6}</Project>
       <Name>StereoKit</Name>
@@ -106,11 +102,24 @@
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <!-- Make sure the UWP binaries are built and included. -->
+  <PropertyGroup>
+    <SKCMakePreset Condition="'$(Platform)' == 'ARM'"  >Uwp_Arm32_$(Configuration)</SKCMakePreset>
+    <SKCMakePreset Condition="'$(Platform)' == 'ARM64'">Uwp_Arm64_$(Configuration)</SKCMakePreset>
+    <SKCMakePreset Condition="'$(Platform)' == 'x64'"  >Uwp_x64_$(Configuration)</SKCMakePreset>
+    <PreBuildEvent>cd $(ProjectDir)..\..\..\ &amp; cmake --preset $(SKCMakePreset) &amp; cmake --build --preset $(SKCMakePreset)</PreBuildEvent>
+  </PropertyGroup>
+  <Target Name="SKTestRebuildUWP" AfterTargets="Clean">
+    <RemoveDir Directories="$(ProjectDir)..\..\..\bin\intermediate\UWP_$(Platform)" />
   </Target>
-  <Target Name="AfterBuild"> 
+  <Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
+    <Message Importance="high" Text="=========$(Platform)" />
+    <Error Condition="!Exists('$(ProjectDir)..\..\..\bin\distribute\bin\UWP\$(Platform)\$(Configuration)\StereoKitC.dll')" Text="StereoKitC was not properly built! Binary files are missing." />
   </Target>
-  -->
+  <ItemGroup>
+    <None Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\UWP\$(Platform)\$(Configuration)\StereoKitC.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Visible="false" Include="$(ProjectDir)..\..\..\bin\distribute\bin\UWP\$(Platform)\$(Configuration)\StereoKitC.pdb" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Needed for ucrtbased.dll when running a debug build. -->
+    <SDKReference Condition="'$(Configuration)' == 'Debug'" Include="Microsoft.VCLibs, Version=14.0" />
+  </ItemGroup>
 </Project>

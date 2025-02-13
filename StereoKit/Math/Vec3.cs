@@ -134,6 +134,9 @@ namespace StereoKit
 		/// <summary>This returns a Vec3 that has been flattened to 0 on the
 		/// Z axis. No other changes are made.</summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
+		/// <summary>This returns a Vec3 that has been set to 1 on the
+		/// Z axis. No other changes are made.</summary>
+		public Vec3 XY1 => new Vec3(x, y, 1);
 
 		/// <summary>Magnitude is the length of the vector! The distance from
 		/// the origin to this point. Uses Math.Sqrt, so it's not dirt cheap

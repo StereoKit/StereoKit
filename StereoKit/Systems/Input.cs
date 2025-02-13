@@ -369,6 +369,17 @@ namespace StereoKit
 		/// </summary>
 		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
 
+		/// <summary>This controls the visibility of StereoKit's finger glow
+		/// effect on the UI. When true, SK will fill out global shader
+		/// variable `sk_fingertip[2]` with the location of the pointer
+		/// finger's tips. When false, or the hand is untracked, the location
+		/// will be set to an unlikely faraway position.</summary>
+		public static bool FingerGlow
+		{
+			set => NativeAPI.input_set_finger_glow(value);
+			get => NativeAPI.input_get_finger_glow();
+		}
+
 		/// <summary>Gets raw controller input data from the system. Note that
 		/// not all buttons provided here are guaranteed to be present on the
 		/// user's physical controller. Controllers are also not guaranteed to

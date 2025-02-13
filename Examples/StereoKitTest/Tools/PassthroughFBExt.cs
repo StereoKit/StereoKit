@@ -164,7 +164,7 @@ namespace StereoKit.Framework
 		}
 
 		#region OpenXR native bindings and types
-		enum XrStructureType : UInt64
+		enum XrStructureType : UInt32
 		{
 			XR_TYPE_PASSTHROUGH_CREATE_INFO_FB = 1000118001,
 			XR_TYPE_PASSTHROUGH_LAYER_CREATE_INFO_FB = 1000118002,

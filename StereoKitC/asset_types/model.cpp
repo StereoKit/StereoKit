@@ -62,8 +62,9 @@ model_t model_copy(model_t model) {
 	result->nodes_used   = model->nodes_used;
 	result->anim_inst.anim_id = -1;
 	for (int32_t i = 0; i < result->visuals.count; i++) {
-		material_addref(result->visuals[i].material);
-		mesh_addref    (result->visuals[i].mesh);
+		model_visual_t* vis = &result->visuals[i];
+		if (vis->material) material_addref(vis->material);
+		if (vis->mesh    ) mesh_addref    (vis->mesh);
 	}
 	for (int32_t i = 0; i < result->nodes.count; i++) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
@@ -73,11 +74,13 @@ model_t model_copy(model_t model) {
 	// the original meshes, not the active, modified meshes.
 	if (model->anim_inst.skinned_meshes != nullptr) {
 		for (int32_t i = 0; i < model->anim_inst.skinned_mesh_count; i++) {
-			model_node_id node   = model->anim_data.skeletons[i].skin_node;
-			int32_t       visual = result->nodes[node].visual;
-			assets_safeswap_ref(
-				(asset_header_t**)&result->visuals[visual].mesh,
-				(asset_header_t* ) model ->anim_inst.skinned_meshes[i].original_mesh);
+			model_node_id   node = model->anim_data.skeletons[i].skin_node;
+			model_visual_t* vis  = &result->visuals[result->nodes[node].visual];
+
+			mesh_t old_mesh = vis->mesh;
+			vis->mesh = model->anim_inst.skinned_meshes[i].original_mesh;
+			mesh_addref (vis->mesh);
+			mesh_release(old_mesh);
 		}
 	}
 	result->anim_data = anim_data_copy(&model->anim_data);
@@ -97,7 +100,7 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, void *data, size_t data_size, shader_t shader) {
+model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader) {
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 
@@ -130,9 +133,7 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 	void*    data;
 	size_t   length;
-	char*    asset_filename = assets_file(filename);
-	bool32_t loaded         = platform_read_file(asset_filename, &data, &length);
-	sk_free(asset_filename);
+	bool32_t loaded         = platform_read_file(filename, &data, &length);
 	if (!loaded) {
 		log_warnf("Model file failed to load: %s", filename);
 		return nullptr;
@@ -151,22 +152,21 @@ model_t model_create_file(const char *filename, shader_t shader) {
 
 void model_recalculate_bounds(model_t model) {
 	model->bounds_dirty = false;
-	if (model->visuals.count <= 0) {
-		model->bounds = {};
-		return;
-	}
-	
-	// Get an initial size
-	vec3 first_corner = bounds_corner(mesh_get_bounds(model->visuals[0].mesh), 0);
-	vec3 min, max;
-	min = max = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
-	
+
+	vec3 min = {  FLT_MAX,  FLT_MAX,  FLT_MAX };
+	vec3 max = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+	bool has_bounds = false;
+
 	// Find the corners for each bounding cube, and factor them in!
 	for (int32_t m = 0; m < model->visuals.count; m += 1) {
-		bounds_t bounds = mesh_get_bounds(model->visuals[m].mesh);
+		const model_visual_t* vis = &model->visuals[m];
+		if (vis->mesh == nullptr) continue;
+		has_bounds = true;
+
+		bounds_t bounds = mesh_get_bounds(vis->mesh);
 		for (int32_t i = 0; i < 8; i += 1) {
 			vec3 corner = bounds_corner      (bounds, i);
-			vec3 pt     = matrix_transform_pt(model->visuals[m].transform_model, corner);
+			vec3 pt     = matrix_transform_pt(vis->transform_model, corner);
 			min.x = fminf(pt.x, min.x);
 			min.y = fminf(pt.y, min.y);
 			min.z = fminf(pt.z, min.z);
@@ -178,31 +178,30 @@ void model_recalculate_bounds(model_t model) {
 	}
 	
 	// Final bounds value
-	model->bounds = bounds_t{ min / 2 + max / 2, max - min };
+	model->bounds = has_bounds
+		? bounds_t{ min / 2 + max / 2, max - min }
+		: bounds_t{ };
 }
 
 ///////////////////////////////////////////
 
 void model_recalculate_bounds_exact(model_t model) {
 	model->bounds_dirty = false;
-	if (model->visuals.count <= 0) {
-		model->bounds = {};
-		return;
-	}
 
-	// Get an initial size
-	vec3 first_corner = model->visuals[0].mesh->verts != nullptr
-		? model->visuals[0].mesh->verts[0].pos
-		: bounds_corner(model->visuals[0].mesh->bounds, 0);
-
-	vec3     minf = matrix_transform_pt( model->visuals[0].transform_model, first_corner);
-	XMVECTOR min  = XMLoadFloat3((XMFLOAT3*)&minf);
-	XMVECTOR max  = XMLoadFloat3((XMFLOAT3*)&minf);
+	XMFLOAT3 xmmin = {  FLT_MAX,   FLT_MAX,   FLT_MAX };
+	XMFLOAT3 xmmax = { -FLT_MAX,  -FLT_MAX,  -FLT_MAX };
+	XMVECTOR min   = XMLoadFloat3(&xmmin);
+	XMVECTOR max   = XMLoadFloat3(&xmmax);
+	bool has_bounds = false;
 
 	// Use all the transformed vertices, and factor them in!
 	for (int32_t m = 0; m < model->visuals.count; m += 1) {
-		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&model->visuals[m].transform_model.row);
-		const mesh_t  mesh            = model->visuals[m].mesh;
+		const model_visual_t* vis = &model->visuals[m];
+		if (vis->mesh == nullptr) continue;
+		has_bounds = true;
+
+		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&vis->transform_model.row);
+		const mesh_t  mesh            = vis->mesh;
 		const vert_t* verts           = mesh->verts;
 
 		if (verts != nullptr) {
@@ -224,12 +223,15 @@ void model_recalculate_bounds_exact(model_t model) {
 	}
 
 	// Final bounds value
+	if (has_bounds) {
+		XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
+		XMVECTOR dimensions = XMVectorSubtract   (max, min);
 
-	XMVECTOR center     = XMVectorMultiplyAdd(min, g_XMOneHalf, XMVectorMultiply(max, g_XMOneHalf));
-	XMVECTOR dimensions = XMVectorSubtract   (max, min);
-
-	XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
-	XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
+		XMStoreFloat3((XMFLOAT3*)&(model->bounds.center),     center);
+		XMStoreFloat3((XMFLOAT3*)&(model->bounds.dimensions), dimensions);
+	} else {
+		model->bounds = bounds_t{ };
+	}
 }
 
 ///////////////////////////////////////////
@@ -378,15 +380,16 @@ bounds_t model_get_bounds(model_t model) {
 ///////////////////////////////////////////
 
 bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
+	*out_pt = {};
+
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
 
 	float closest = FLT_MAX;
-	*out_pt = {};
 	for (int32_t i = 0; i < model->nodes.count; i++) {
-		model_node_t *n = &model->nodes[i];
-		if (!n->solid || n->visual == -1)
+		const model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1 || model->visuals[n->visual].mesh == nullptr)
 			continue;
 
 		matrix inverse   = matrix_invert(n->transform_model);
@@ -394,7 +397,7 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 		ray_t  at;
 		if (mesh_ray_intersect(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
-			if (d < closest) {
+			if (closest > d) {
 				closest = d;
 				*out_pt = matrix_transform_ray(n->transform_model, at);
 			}
@@ -406,15 +409,16 @@ bool32_t model_ray_intersect(model_t model, ray_t model_space_ray, ray_t *out_pt
 ///////////////////////////////////////////
 
 bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *out_pt, cull_ cull_mode) {
+	*out_pt = {};
+
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
 
 	float closest = FLT_MAX;
-	*out_pt = {};
 	for (int32_t i = 0; i < model->nodes.count; i++) {
-		model_node_t *n = &model->nodes[i];
-		if (!n->solid || n->visual == -1)
+		const model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1 || model->visuals[n->visual].mesh == nullptr)
 			continue;
 
 		matrix inverse   = matrix_invert(n->transform_model);
@@ -422,7 +426,7 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 		ray_t  at;
 		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, nullptr, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
-			if (d < closest) {
+			if (closest > d) {
 				closest = d;
 				*out_pt = matrix_transform_ray(n->transform_model, at);
 			}
@@ -435,30 +439,32 @@ bool32_t model_ray_intersect_bvh(model_t model, ray_t model_space_ray, ray_t *ou
 
 // Same as model_ray_intersect_bvh, but returns mesh, mesh transform and start index if intersection found
 bool32_t model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, ray_t *out_pt, mesh_t *out_mesh, matrix *out_matrix, uint32_t* out_start_inds, cull_ cull_mode) {
+	*out_pt = {};
+	if (out_mesh      ) *out_mesh       = nullptr;
+	if (out_matrix    ) *out_matrix     = {};
+	if (out_start_inds) *out_start_inds = 0;
+
 	vec3 bounds_at;
 	if (!bounds_ray_intersect(model->bounds, model_space_ray, &bounds_at))
 		return false;
 
 	float closest = FLT_MAX;
-	*out_pt = {};
 	for (int32_t i = 0; i < model->nodes.count; i++) {
-		model_node_t *n = &model->nodes[i];
-		if (!n->solid || n->visual == -1)
+		const model_node_t *n = &model->nodes[i];
+		if (!n->solid || n->visual == -1 || model->visuals[n->visual].mesh == nullptr)
 			continue;
 
-		matrix inverse   = matrix_invert(n->transform_model);
-		ray_t  local_ray = matrix_transform_ray(inverse, model_space_ray);
-		ray_t  at;
+		matrix   inverse   = matrix_invert(n->transform_model);
+		ray_t    local_ray = matrix_transform_ray(inverse, model_space_ray);
+		ray_t    at;
 		uint32_t local_start_inds;
 		if (mesh_ray_intersect_bvh(model->visuals[n->visual].mesh, local_ray, &at, &local_start_inds, cull_mode)) {
 			float d = vec3_distance_sq(local_ray.pos, at.pos);
-			if (d < closest) {
+			if (closest > d) {
 				closest = d;
-				if (out_mesh != nullptr && out_start_inds != nullptr) {
-					*out_mesh = model->visuals[n->visual].mesh;
-					*out_matrix = n->transform_model;
-					*out_start_inds = local_start_inds;
-				}
+				if (out_mesh      ) *out_mesh       = model->visuals[n->visual].mesh;
+				if (out_start_inds) *out_start_inds = local_start_inds;
+				if (out_matrix    ) *out_matrix     = n->transform_model;
 				*out_pt = matrix_transform_ray(n->transform_model, at);
 			}
 		}
@@ -493,12 +499,6 @@ model_node_id model_node_add(model_t model, const char *name, matrix transform, 
 ///////////////////////////////////////////
 
 model_node_id model_node_add_child(model_t model, model_node_id parent, const char *name, matrix local_transform, mesh_t mesh, material_t material, bool32_t solid) {
-	if ((mesh != nullptr && material == nullptr) ||
-		(mesh == nullptr && material != nullptr)) {
-		log_err("model_node_add_child: mesh and material must either both be null, or neither be null!");
-		return -1;
-	}
-
 	model_node_id node_id = (model_node_id)model->nodes.count;
 	char          tmp_name[32];
 	if (name == nullptr) {
@@ -536,9 +536,9 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		node.transform_model = local_transform;
 	}
 
-	if (mesh != nullptr) {
-		material_addref(material);
-		mesh_addref    (mesh);
+	if (mesh != nullptr || material != nullptr) {
+		if (material) material_addref(material);
+		if (mesh    ) mesh_addref    (mesh);
 
 		model_visual_t visual = {};
 		visual.material        = material;
@@ -547,9 +547,11 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 		visual.node            = node_id;
 		visual.visible         = true;
 		node.visual = model->visuals.add(visual);
-		model->bounds = model->visuals.count == 1
-			? bounds_transform(mesh_get_bounds(mesh), node.transform_model)
-			: bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
+		if (mesh) {
+			model->bounds = model->visuals.count == 1
+				? bounds_transform(mesh_get_bounds(mesh), node.transform_model)
+				: bounds_grow_to_fit_box(model->bounds, mesh_get_bounds(mesh), &node.transform_model);
+		}
 	}
 
 	model->nodes.add(node);
@@ -666,7 +668,7 @@ bool32_t model_node_get_visible(model_t model, model_node_id node) {
 
 material_t  model_node_get_material(model_t model, model_node_id node) {
 	int32_t vis = model->nodes[node].visual;
-	if (vis < 0) {
+	if (vis < 0 || model->visuals[vis].material == nullptr) {
 		return nullptr;
 	} else {
 		material_addref(model->visuals[vis].material);
@@ -678,7 +680,7 @@ material_t  model_node_get_material(model_t model, model_node_id node) {
 
 mesh_t model_node_get_mesh(model_t model, model_node_id node) {
 	int32_t vis = model->nodes[node].visual;
-	if (vis < 0) {
+	if (vis < 0 || model->visuals[vis].mesh == nullptr) {
 		return nullptr;
 	} else {
 		mesh_addref(model->visuals[vis].mesh);
@@ -729,12 +731,16 @@ void model_node_set_visible(model_t model, model_node_id node, bool32_t visible)
 void model_node_set_material(model_t model, model_node_id node, material_t material) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
+		if (material == nullptr) return;
+
 		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
-	assets_safeswap_ref(
-		(asset_header_t**)&model->visuals[vis].material,
-		(asset_header_t* )material);
+	material_t prev_material = model->visuals[vis].material;
+	model->visuals[vis].material = material;
+	if (material)
+		material_addref(material);
+	material_release(prev_material);
 }
 
 ///////////////////////////////////////////
@@ -742,13 +748,16 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
+		if (mesh == nullptr) return;
+
 		vis = model->visuals.add({});
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
 	model->visuals[vis].mesh = mesh;
 	model->bounds_dirty = true;
-	mesh_addref (model->visuals[vis].mesh);
+	if (mesh)
+		mesh_addref(mesh);
 	mesh_release(prev_mesh);
 }
 

@@ -9,6 +9,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
+#if defined(SK_OS_ANDROID)
+#include <syslog.h>
+#endif
+
+#if defined(SK_OS_WEB)
+#include <emscripten.h>
+#endif
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -67,10 +82,15 @@ const char *log_colorcodes[_countof(log_tags)] = {
 	LOG_C_CLEAR,
 };
 
+///////////////////////////////////////////
+
+void log_platform_output(log_ level, const char* text);
 
 ///////////////////////////////////////////
 
 int32_t log_count_color_tags(const char* ch, int32_t *out_len) {
+	if (ch == nullptr) return 0;
+
 	*out_len = 0;
 	int32_t tags = 0;
 	int32_t curr = 0;
@@ -169,22 +189,21 @@ void log_write(log_ level, const char *text) {
 	for (int32_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i].callback(log_listeners[i].context, level, plain_text);
 	}
-	platform_debug_output(level, plain_text);
+	log_platform_output(level, plain_text);
 	if (level == log_error) platform_print_callstack();
 }
 
 ///////////////////////////////////////////
 
-void _log_writef(log_ level, const char* text, va_list args) {
+char *make_variadic_string(const char* text, va_list args) {
 	va_list copy;
-	va_copy(copy, args);
-	size_t length = vsnprintf(nullptr, 0, text, args);
-	char*  buffer = sk_malloc_t(char, length + 2);
-	vsnprintf(buffer, length + 2, text, copy);
-
-	log_write(level, buffer);
-	sk_free(buffer);
+	va_copy (copy, args);
+	size_t length = vsnprintf(nullptr, 0, text, args) + 1;
+	char*  buffer = sk_malloc_t(char, length);
+	vsnprintf(buffer, length, text, copy);
 	va_end(copy);
+
+	return buffer;
 }
 
 ///////////////////////////////////////////
@@ -192,8 +211,11 @@ void _log_writef(log_ level, const char* text, va_list args) {
 void log_writef(log_ level, const char *text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(level, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(level, buffer);
+	sk_free(buffer);
 }
 
 ///////////////////////////////////////////
@@ -205,26 +227,38 @@ void log_err (const char* text) { log_write(log_error,      text); }
 void log_diagf(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_diagnostic, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_diagnostic, buffer);
+	sk_free(buffer);
 }
 void log_infof(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_inform, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_inform, buffer);
+	sk_free(buffer);
 }
 void log_warnf(const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_warning, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_warning, buffer);
+	sk_free(buffer);
 }
 void log_errf (const char* text, ...) {
 	va_list args;
 	va_start(args, text);
-	_log_writef(log_error, text, args);
+	char* buffer = make_variadic_string(text, args);
 	va_end(args);
+
+	log_write(log_error, buffer);
+	sk_free(buffer);
 }
 
 ///////////////////////////////////////////
@@ -328,5 +362,69 @@ void log_unsubscribe_data(void (*log_callback)(void* context, log_ level, const 
 void log_clear_subscribers() {
 	log_listeners.free();
 }
+
+///////////////////////////////////////////
+// Platform specific logging code        //
+///////////////////////////////////////////
+
+#if defined(SK_OS_ANDROID)
+static bool log_opened = false;
+static char log_name[64];
+#endif
+
+void log_set_name(const char* name) {
+#if defined(SK_OS_ANDROID)
+	if (log_opened) {
+		closelog();
+	}
+	log_opened = true;
+	// openlog does not seem to copy the string, it uses _our_ memory, so we
+	// need to ensure that memory stays alive.
+	snprintf(log_name, sizeof(log_name), "%s", name);
+	openlog (log_name, LOG_CONS | LOG_NOWAIT, LOG_USER);
+#endif
+}
+
+///////////////////////////////////////////
+
+void log_platform_output(log_ level, const char *text) {
+	if (text == nullptr) text = "(null)";
+
+#if defined(SK_OS_ANDROID)
+	if (log_opened == false) {
+		log_opened = true;
+		openlog("StereoKit", LOG_CONS | LOG_NOWAIT, LOG_USER);
+	}
+
+	int32_t priority = LOG_INFO;
+	if      (level == log_diagnostic) priority = LOG_DEBUG;
+	else if (level == log_inform    ) priority = LOG_INFO;
+	else if (level == log_warning   ) priority = LOG_WARNING;
+	else if (level == log_error     ) priority = LOG_ERR;
+	syslog(priority, "%s", text);
+#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	const char* tag = "";
+	switch (level) {
+	case log_diagnostic: tag = "diagnostic"; break;
+	case log_inform:     tag = "info";       break;
+	case log_warning:    tag = "warning";    break;
+	case log_error:      tag = "error";      break;
+	default: break;
+	}
+
+	size_t expand_size = strlen(text) + _countof("[SK diagnostic] \n");
+	char*  expanded    = sk_stack_alloc_t(char, expand_size);
+	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
+
+	OutputDebugStringA(expanded);
+#elif defined(SK_OS_WEB)
+	if      (level == log_diagnostic) emscripten_console_log(text);
+	else if (level == log_inform    ) emscripten_console_log(text);
+	else if (level == log_warning   ) emscripten_console_warn(text);
+	else if (level == log_error     ) emscripten_console_error(text);
+#endif
+}
+
+///////////////////////////////////////////
 
 } // namespace sk

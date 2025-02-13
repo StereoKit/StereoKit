@@ -1,9 +1,15 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "render.h"
+#include "render_.h"
 #include "world.h"
 #include "defaults.h"
 #include "../_stereokit.h"
 #include "../device.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/stref.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
@@ -19,18 +25,12 @@
 #include "../systems/input.h"
 #include "../platforms/platform.h"
 
+#include <sk_gpu.h>
 #include <limits.h>
+#include <stdio.h>
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6386 6385 )
-#if defined(_WIN32)
-#define __STDC_LIB_EXT1__
-#endif
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_STATIC
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
-#pragma warning(pop)
 
 using namespace DirectX;
 
@@ -38,22 +38,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-struct render_item_t {
-	XMMATRIX    transform;
-	color128    color;
-	uint64_t    sort_id;
-	mesh_t      mesh;
-	material_t  material;
-	int32_t     mesh_inds;
-	uint16_t    layer;
-};
-
-struct _render_list_t {
-	array_t<render_item_t> queue;
-	render_stats_t         stats;
-	render_list_state_     state;
-	bool                   prepped;
-};
 
 struct render_transform_buffer_t {
 	XMMATRIX world;
@@ -93,7 +77,7 @@ struct render_screenshot_t {
 	int32_t       height;
 	render_layer_ layer_filter;
 	render_clear_ clear;
-	tex_format_	  tex_format;
+	tex_format_   tex_format;
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
@@ -107,11 +91,23 @@ struct render_viewpoint_t {
 
 ///////////////////////////////////////////
 
+typedef enum inst_pool_size_ {
+	inst_pool_size_1,
+	inst_pool_size_8,
+	inst_pool_size_32,
+	inst_pool_size_128,
+	inst_pool_size_512,
+	inst_pool_size_819,
+	inst_pool_size_max,
+} inst_pool_size_;
+const int32_t inst_pool_sizes[] = { 1,8,32,128,512,819 };
+
 struct render_state_t {
 	bool32_t                initialized;
 
 	array_t<render_transform_buffer_t> instance_list;
-	skg_buffer_t                       instance_buffer;
+	array_t<skg_buffer_t>              instance_pool     [inst_pool_size_max];
+	int32_t                            instance_pool_used[inst_pool_size_max];
 
 	material_buffer_t       shader_globals;
 	skg_buffer_t            shader_blit;
@@ -135,6 +131,7 @@ struct render_state_t {
 	spherical_harmonics_t   lighting_src;
 	color128                clear_col;
 	render_list_t           list_primary;
+	float                   viewport_scale;
 	float                   scale;
 	int32_t                 multisample;
 	render_layer_           primary_filter;
@@ -149,15 +146,14 @@ struct render_state_t {
 	material_t              sky_mat;
 	material_t              sky_mat_default;
 	bool32_t                sky_show;
+	tex_t                   sky_pending_tex;
 
 	material_t              last_material;
 	shader_t                last_shader;
 	mesh_t                  last_mesh;
 
-	array_t< render_list_t> list_stack;
-	array_t<_render_list_t> lists;
+	array_t<render_list_t>  list_stack;
 	render_list_t           list_active;
-
 };
 static render_state_t local = {};
 
@@ -165,12 +161,13 @@ const int32_t    render_instance_max     = 819;
 const int32_t    render_skytex_register  = 11;
 const skg_bind_t render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 const skg_bind_t render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-const skg_bind_t render_list_blit_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+const skg_bind_t render_list_blit_bind   = { 3,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
 
 ///////////////////////////////////////////
 
 void          render_set_material     (material_t material);
-skg_buffer_t *render_fill_inst_buffer (array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count);
+skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count);
+void          render_reset_buffer_pool();
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 
 void          render_list_prep        (render_list_t list);
@@ -197,12 +194,13 @@ bool render_init() {
 	local.ortho_far_clip        = 50.0f;
 	local.ortho_viewport_height = 1.0f;
 	local.clear_col             = color128{0,0,0,0};
-	local.list_primary          = -1;
-	local.scale                 = 1;
-	local.multisample           = 1;
+	local.list_primary          = nullptr;
+	local.viewport_scale        = 1;
+	local.scale                 = sk_get_settings_ref()->render_scaling;
+	local.multisample           = sk_get_settings_ref()->render_multisample;
 	local.primary_filter        = render_layer_all_first_person;
 	local.capture_filter        = render_layer_all_first_person;
-	local.list_active           = -1;
+	local.list_active           = nullptr;
 
 	local.shader_globals  = material_buffer_create(1, sizeof(local.global_buffer));
 	local.shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
@@ -210,10 +208,6 @@ bool render_init() {
 	skg_buffer_name(&local.shader_blit, "sk/render/blit_buffer");
 #endif
 	
-	local.instance_buffer = skg_buffer_create(nullptr, render_instance_max, sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-	skg_buffer_name(&local.instance_buffer, "sk/render/instance_buffer");
-#endif
 	local.instance_list.resize(render_instance_max);
 
 	// Setup a default camera
@@ -251,7 +245,8 @@ bool render_init() {
 	tex_release(sky_cubemap);
 	
 	local.list_primary = render_list_create();
-	render_list_push(local.list_primary);
+	render_list_set_id(local.list_primary, "sk/render/primary_renderlist");
+	render_list_push  (local.list_primary);
 
 	radix_sort_init();
 	hierarchy_init();
@@ -264,10 +259,9 @@ bool render_init() {
 ///////////////////////////////////////////
 
 void render_shutdown() {
-	for (int32_t i = 0; i < local.lists.count; i++) {
-		render_list_release(i);
-	}
-	local.lists          .free();
+	render_list_pop();
+	render_list_release(local.list_active);
+	render_list_release(local.list_primary);
 	local.list_stack     .free();
 	local.screenshot_list.free();
 	local.viewpoint_list .free();
@@ -277,13 +271,21 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	tex_release            (local.sky_pending_tex);
 	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
 	mesh_release           (local.sky_mesh);
 	mesh_release           (local.blit_quad);
 	material_buffer_release(local.shader_globals);
 
-	skg_buffer_destroy(&local.instance_buffer);
+	for (int32_t pool_idx = 0; pool_idx < inst_pool_size_max; pool_idx++) {
+		array_t<skg_buffer_t>* pool = &local.instance_pool[pool_idx];
+		for (int32_t i = 0; i < pool->count; i++) {
+			skg_buffer_destroy(&pool->get(i));
+		}
+		pool->free();
+	}
+
 	skg_buffer_destroy(&local.shader_blit);
 
 	local = {};
@@ -295,6 +297,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_step() {
+	render_reset_buffer_pool();
+
 	hierarchy_step();
 
 	if (local.sky_show && device_display_get_blend() == display_blend_opaque) {
@@ -482,6 +486,7 @@ matrix render_get_cam_final_inv() {
 ///////////////////////////////////////////
 
 render_list_t render_get_primary_list() {
+	render_list_addref(local.list_primary);
 	return local.list_primary;
 }
 
@@ -519,24 +524,65 @@ void render_set_sim_head(pose_t pose) {
 
 ///////////////////////////////////////////
 
-void render_set_skytex(tex_t sky_texture) {
-	if (sky_texture != nullptr && !(sky_texture->type & tex_type_cubemap)) {
-		log_err("render_set_skytex: Attempting to set the skybox texture to a texture that's not a cubemap! Sorry, but cubemaps only here please!");
+void render_check_pending_skytex() {
+	if (local.sky_pending_tex == nullptr) return;
+
+	asset_state_ state = tex_asset_state(local.sky_pending_tex);
+
+	// Check if it's errored out
+	if (state < 0) {
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
 		return;
 	}
 
-	if (sky_texture != nullptr && local.global_textures[render_skytex_register] != nullptr) {
-		tex_set_fallback(sky_texture, local.global_textures[render_skytex_register]);
+	// Check if it's a valid asset, we'll know for sure once the metadata is
+	// loaded.
+	if (state >= asset_state_loaded_meta && (local.sky_pending_tex->type & tex_type_cubemap) == 0) {
+		log_warnf("Skytex must be a cubemap, ignoring %s", tex_get_id(local.sky_pending_tex));
+
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
+		return;
 	}
-	render_global_texture(render_skytex_register, sky_texture);
+
+	// Check if it's loaded
+	if (state >= asset_state_loaded) {
+		render_global_texture(render_skytex_register, local.sky_pending_tex);
+
+		tex_release(local.sky_pending_tex);
+		local.sky_pending_tex = nullptr;
+		return;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_set_skytex(tex_t sky_texture) {
+	if (sky_texture == nullptr) return;
+
+	tex_addref(sky_texture);
+	local.sky_pending_tex = sky_texture;
+
+	// This is also checked every step, but if the texture is already valid, we
+	// can set it up right away and avoid any potential frame delays.
+	render_check_pending_skytex();
 }
 
 ///////////////////////////////////////////
 
 tex_t render_get_skytex() {
-	if (local.global_textures[render_skytex_register] != nullptr)
+	if (local.sky_pending_tex != nullptr) {
+		tex_addref(local.sky_pending_tex);
+		return local.sky_pending_tex;
+	}
+
+	if (local.global_textures[render_skytex_register] != nullptr) {
 		tex_addref(local.global_textures[render_skytex_register]);
-	return local.global_textures[render_skytex_register];
+		return local.global_textures[render_skytex_register];
+	}
+
+	return nullptr;
 }
 
 ///////////////////////////////////////////
@@ -595,6 +641,18 @@ void render_set_scaling(float texture_scale) {
 
 float render_get_scaling() {
 	return local.scale;
+}
+
+///////////////////////////////////////////
+
+void render_set_viewport_scaling(float viewport_rect_scale) {
+	local.viewport_scale = fmaxf(0,fminf(1,viewport_rect_scale));
+}
+
+///////////////////////////////////////////
+
+float render_get_viewport_scaling(void) {
+	return local.viewport_scale;
 }
 
 ///////////////////////////////////////////
@@ -685,79 +743,31 @@ color128 render_get_clear_color_ln() {
 ///////////////////////////////////////////
 
 void render_add_mesh(mesh_t mesh, material_t material, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	render_item_t item;
-	item.mesh      = mesh;
-	item.mesh_inds = mesh->ind_draw;
-	item.color     = color_linear;
-	item.layer     = (uint16_t)layer;
-	if (hierarchy_use_top()) {
-		matrix_mul(transform, hierarchy_top(), item.transform);
-	} else {
-		math_matrix_to_fast(transform, &item.transform);
-	}
-
-	material_t curr = material;
-	while (curr != nullptr) {
-		item.material = curr;
-		item.sort_id  = render_sort_id(curr, mesh);
-		render_list_add(&item);
-		curr = curr->chain;
-	}
+	render_list_add_mesh(local.list_active, mesh, material, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model_mat(model_t model, material_t material_override, const matrix& transform, color128 color_linear, render_layer_ layer) {
-	XMMATRIX root;
-	if (hierarchy_use_top()) {
-		matrix_mul(transform, hierarchy_top(), root);
-	} else {
-		math_matrix_to_fast(transform, &root);
-	}
-
-	anim_update_model(model);
-	for (int32_t i = 0; i < model->visuals.count; i++) {
-		const model_visual_t *vis = &model->visuals[i];
-		if (vis->visible == false) continue;
-		
-		render_item_t item;
-		item.mesh      = vis->mesh;
-		item.mesh_inds = vis->mesh->ind_count;
-		item.color     = color_linear;
-		item.layer     = (uint16_t)layer;
-		matrix_mul(vis->transform_model, root, item.transform);
-
-		material_t curr = material_override == nullptr ? vis->material : material_override;
-		while (curr != nullptr) {
-			item.material = curr;
-			item.sort_id  = render_sort_id(curr, vis->mesh);
-			render_list_add(&item);
-			curr = curr->chain;
-		}
-	}
-
-	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
-		model->transforms_changed = false;
-		anim_update_skin(model);
-	}
+	render_list_add_model_mat(local.list_active, model, material_override, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
 void render_add_model(model_t model, const matrix &transform, color128 color_linear, render_layer_ layer) {
-	render_add_model_mat(model, nullptr, transform, color_linear, layer);
+	render_list_add_model_mat(local.list_active, model, nullptr, transform, color_linear, layer);
 }
 
 ///////////////////////////////////////////
 
-void render_draw_queue(const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
+void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
 
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
-		math_matrix_to_fast(views      [i], &view_f      );
-		math_matrix_to_fast(projections[i], &projection_f);
+		math_matrix_to_fast(views      [eye_offset+i], &view_f      );
+		math_matrix_to_fast(projections[eye_offset+i], &projection_f);
 
 		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f      );
 		XMMATRIX proj_inv = XMMatrixInverse(nullptr, projection_f);
@@ -780,7 +790,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	local.global_buffer.eye_offset = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
-		vec3          tip  = hand->tracked_state & button_state_active ? hand->fingers[1][4].position : vec3{ 0,-1000,0 };
+		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_get_finger_glow()
+			? hand->fingers[1][4].position
+			: vec3{ 0,-1000,0 };
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
@@ -797,7 +809,7 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	// Activate any material buffers we have
 	for (int32_t i = 0; i < _countof(material_buffers); i++) {
 		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant }, 0);
+			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
 	}
 
 	// Activate any global textures we have
@@ -813,17 +825,9 @@ void render_draw_queue(const matrix *views, const matrix *projections, int32_t e
 	skg_event_end();
 	skg_event_begin("Execute Render List");
 
-	render_list_execute(local.list_primary, filter, view_count, 0, INT_MAX);
+	render_list_execute(list, filter, view_count, 0, INT_MAX);
 
 	skg_event_end();
-}
-
-///////////////////////////////////////////
-
-void render_draw_matrix(const matrix* views, const matrix* projections, int32_t eye_offset, int32_t count, render_layer_ render_filter) {
-	render_check_viewpoints();
-	render_draw_queue(views, projections, eye_offset, count, render_filter);
-	render_check_screenshots();
 }
 
 ///////////////////////////////////////////
@@ -842,13 +846,10 @@ void render_check_screenshots() {
 		// Create the screenshot surface
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
-
-		tex_t render_capture_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget, local.screenshot_list[i].tex_format);
-		tex_set_color_arr(render_capture_surface, w, h, nullptr, 1, nullptr, 8);
-		tex_release(tex_add_zbuffer(render_capture_surface));
-
+		
 		// Setup to render the screenshot
-		skg_tex_target_bind(&render_capture_surface->tex);
+		tex_t render_capture_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_depthstencil);
+		skg_tex_target_bind(&render_capture_surface->tex, -1, 0);
 
 		// Set up the viewport if we've got one!
 		if (local.screenshot_list[i].viewport.w != 0) {
@@ -867,38 +868,32 @@ void render_check_screenshots() {
 
 		// Clear the viewport
 		if (local.screenshot_list[i].clear != render_clear_none) {
-			float color[4] = {
-				local.clear_col.r / 255.f,
-				local.clear_col.g / 255.f,
-				local.clear_col.b / 255.f,
-				local.clear_col.a / 255.f };
 			skg_target_clear(
 				(local.screenshot_list[i].clear & render_clear_depth),
-				(local.screenshot_list[i].clear & render_clear_color) ? &color[0] : (float*)nullptr);
+				(local.screenshot_list[i].clear & render_clear_color) ? &local.clear_col.r : (float*)nullptr);
 		}
 
 		// Render!
-		render_draw_queue(&local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
-		skg_tex_target_bind(nullptr);
+		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
+		skg_tex_target_bind(nullptr, -1, 0);
 
-		tex_t resolve_tex = tex_create(tex_type_image_nomips, local.screenshot_list[i].tex_format);
-		tex_set_colors(resolve_tex, w, h, nullptr);
-		skg_tex_copy_to(&render_capture_surface->tex, &resolve_tex->tex);
+		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
+		skg_tex_copy_to(&render_capture_surface->tex, -1, &resolve_tex->tex, -1);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
-		int32_t line_size = skg_tex_fmt_size(resolve_tex->tex.format) * resolve_tex->tex.width;
+		int32_t line_size = skg_tex_fmt_pitch(resolve_tex->tex.format, resolve_tex->tex.width);
 		void* tmp = sk_malloc(line_size);
 		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
 			void* top_line = ((uint8_t*)buffer) + line_size * y;
 			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
-			memcpy(tmp, top_line, line_size);
+			memcpy(tmp,      top_line, line_size);
 			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp, line_size);
+			memcpy(bot_line, tmp,      line_size);
 		}
 		sk_free(tmp);
 #endif
-		tex_release(render_capture_surface);
 		tex_release(resolve_tex);
+		tex_release(render_capture_surface);
 
 		// Notify that the color data is ready!
 		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
@@ -906,7 +901,7 @@ void render_check_screenshots() {
 		skg_event_end();
 	}
 	local.screenshot_list.clear();
-	skg_tex_target_bind(old_target);
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
@@ -918,18 +913,13 @@ void render_check_viewpoints() {
 	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
 		skg_event_begin("Viewpoint");
 		// Setup to render the screenshot
-		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex);
+		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex, -1, 0);
 
 		// Clear the viewport
 		if (local.viewpoint_list[i].clear != render_clear_none) {
-			float color[4] = {
-				local.clear_col.r / 255.f,
-				local.clear_col.g / 255.f,
-				local.clear_col.b / 255.f,
-				local.clear_col.a / 255.f };
 			skg_target_clear(
 				(local.viewpoint_list[i].clear & render_clear_depth),
-				(local.viewpoint_list[i].clear & render_clear_color) ? &color[0] : (float *)nullptr);
+				(local.viewpoint_list[i].clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
 		}
 
 		// Set up the viewport if we've got one!
@@ -943,22 +933,22 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(&local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
-		skg_tex_target_bind(nullptr);
+		render_draw_queue(local.list_primary, &local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
+		skg_tex_target_bind(nullptr, -1, 0);
 
 		// Release the reference we added, the user should have their own ref
 		tex_release(local.viewpoint_list[i].rendertarget);
 		skg_event_end();
 	}
 	local.viewpoint_list.clear();
-	skg_tex_target_bind(old_target);
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
 
 void render_clear() {
 	//log_infof("draws: %d, instances: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.draw_instances, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
-	render_list_clear(local.list_active);
+	render_list_clear(local.list_primary);
 
 	local.last_material = nullptr;
 	local.last_shader   = nullptr;
@@ -985,7 +975,7 @@ void render_blit_to_bound(material_t material) {
 
 	// Setup render states for blitting
 	skg_buffer_set_contents(&local.shader_blit, &data, sizeof(render_blit_data_t));
-	skg_buffer_bind        (&local.shader_blit, render_list_blit_bind, 0);
+	skg_buffer_bind        (&local.shader_blit, render_list_blit_bind);
 	render_set_material(material);
 	skg_mesh_bind(&local.blit_quad->gpu_mesh);
 	
@@ -1002,9 +992,12 @@ void render_blit_to_bound(material_t material) {
 void render_blit(tex_t to, material_t material) {
 	skg_tex_t *old_target = skg_tex_target_get();
 
-	skg_tex_target_bind (&to->tex  );
-	render_blit_to_bound(material  );
-	skg_tex_target_bind (old_target);
+	for (int32_t i = 0; i < to->tex.array_count; i++)
+	{
+		skg_tex_target_bind(&to->tex, i, 0);
+		render_blit_to_bound(material);
+	}
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
@@ -1092,11 +1085,11 @@ void render_set_material(material_t material) {
 	if (material == local.last_material)
 		return;
 	local.last_material = material;
-	local.lists[local.list_active].stats.swaps_material++;
+	local.list_active->stats.swaps_material++;
 
 	// Update and bind the material parameter buffer
 	if (material->args.buffer != nullptr) {
-		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind, 0);
+		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind);
 	}
 
 	// Bind the material textures
@@ -1115,24 +1108,63 @@ void render_set_material(material_t material) {
 
 ///////////////////////////////////////////
 
-skg_buffer_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, int32_t &offset, int32_t &out_count) {
-	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = list.count - offset;
-	int32_t start = offset;
+inst_pool_size_ inst_pool_from_size(int32_t size) {
+	if      (size <= inst_pool_sizes[inst_pool_size_1  ]) return inst_pool_size_1;
+	else if (size <= inst_pool_sizes[inst_pool_size_8  ]) return inst_pool_size_8;
+	else if (size <= inst_pool_sizes[inst_pool_size_32 ]) return inst_pool_size_32;
+	else if (size <= inst_pool_sizes[inst_pool_size_128]) return inst_pool_size_128;
+	else if (size <= inst_pool_sizes[inst_pool_size_512]) return inst_pool_size_512;
+	else if (size <= inst_pool_sizes[inst_pool_size_819]) return inst_pool_size_819;
+	else { log_err("Bad pool size"); return inst_pool_size_1; }
+}
 
-	// Check if it fits, if it doesn't, then set up data so we only fill what we have!
+///////////////////////////////////////////
+
+void render_reset_buffer_pool() {
+	for (int32_t i = 0; i < inst_pool_size_max; i++) {
+		int32_t buffer_id = local.instance_pool_used[i] = 0;
+	}
+}
+
+///////////////////////////////////////////
+
+skg_buffer_t *render_fill_inst_buffer(const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count) {
+	// Find a buffer that can contain this list! Or the biggest one
+	int32_t size  = list->count - *ref_offset;
+	int32_t start = *ref_offset;
+
+	// Check if it fits, if it doesn't, then set up data so we only fill what we have! 
 	if (size > render_instance_max) {
-		offset   += render_instance_max;
-		out_count = render_instance_max;
+		*ref_offset += render_instance_max;
+		*out_count   = render_instance_max;
 	} else {
 		// this means we've gotten through the whole list :)
-		offset    = 0;
-		out_count = size;
+		*ref_offset = 0;
+		*out_count  = size;
 	}
 
+	// Get the appropriate pool for this size
+	inst_pool_size_        pool_idx  = inst_pool_from_size(*out_count);
+	array_t<skg_buffer_t>* pool      = &local.instance_pool     [pool_idx];
+	int32_t*               pool_used = &local.instance_pool_used[pool_idx];
+	// If our pool for this size is empty, add a new buffer
+	if (*pool_used >= pool->count) {
+		skg_buffer_t new_buffer = skg_buffer_create(nullptr, inst_pool_sizes[pool_idx], sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
+#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+		char name[64];
+		snprintf(name, sizeof(name), "sk/render/instance_pool_%d_%d", inst_pool_sizes[pool_idx], *pool_used);
+		skg_buffer_name(&new_buffer, name);
+#endif
+		pool->add(new_buffer);
+	}
+
+	// Fetch the buffer at the top of the pool
+	skg_buffer_t* buffer = &pool->get(*pool_used);
+	*pool_used += 1;
+
 	// Copy data into the buffer, and return it!
-	skg_buffer_set_contents(&local.instance_buffer, &list[start], sizeof(render_transform_buffer_t) * out_count);
-	return &local.instance_buffer;
+	skg_buffer_set_contents(buffer, &list->data[start], sizeof(render_transform_buffer_t) * *out_count);
+	return buffer;
 }
 
 ///////////////////////////////////////////
@@ -1175,39 +1207,80 @@ void render_get_device(void **device, void **context) {
 // Render List                           //
 ///////////////////////////////////////////
 
+render_list_t render_list_find(const char* id) {
+	render_list_t result = (render_list_t)assets_find(id, asset_type_render_list);
+	if (result != nullptr) {
+		render_list_addref(result);
+		return result;
+	}
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 render_list_t render_list_create() {
-	int32_t id = local.lists.index_where(&_render_list_t::state, render_list_state_destroyed);
-	if (id == -1)
-		id = local.lists.add({});
-	return id;
+	render_list_t result = (render_list_t)assets_allocate(asset_type_render_list);
+	return result;
+}
+
+///////////////////////////////////////////
+
+void render_list_set_id(render_list_t list, const char* id) {
+	assets_set_id(&list->header, id);
+}
+
+///////////////////////////////////////////
+
+const char* render_list_get_id(const render_list_t list) {
+	return list->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void render_list_addref(render_list_t list) {
+	assets_addref(&list->header);
 }
 
 ///////////////////////////////////////////
 
 void render_list_release(render_list_t list) {
-	local.lists[list].queue.free();
-	local.lists[list] = {};
-	local.lists[list].state = render_list_state_destroyed;
+	if (list == nullptr)
+		return;
+	assets_releaseref(&list->header);
+}
+
+///////////////////////////////////////////
+
+void render_list_destroy(render_list_t list) {
+	if (list == nullptr) return;
+	render_list_clear(list);
+	list->queue.free();
+	*list = {};
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
-	local.list_active = local.list_stack.add(list);
-	local.lists[list].state = render_list_state_used;
+	render_list_addref(list);
+	local.list_stack.add(list);
+
+	local.list_active = list;
 }
 
 ///////////////////////////////////////////
 
 void render_list_pop() {
+	render_list_release(local.list_stack[local.list_stack.count-1]);
 	local.list_stack.pop();
-	local.list_active = local.list_stack.count - 1;
+	local.list_active = local.list_stack.count > 0 
+		? local.list_stack[local.list_stack.count-1]
+		: nullptr;
 }
 
 ///////////////////////////////////////////
 
 void render_list_add(const render_item_t *item) {
-	local.lists[local.list_active].queue.add(*item);
+	local.list_active->queue.add(*item);
 	assets_addref(&item->material->header);
 	assets_addref(&item->mesh->header);
 }
@@ -1215,7 +1288,7 @@ void render_list_add(const render_item_t *item) {
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
-	local.lists[list].queue.add(*item);
+	list->queue.add(*item);
 	assets_addref(&item->material->header);
 	assets_addref(&item->mesh->header);
 }
@@ -1230,8 +1303,8 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 	// Collect and draw instances
 	int32_t offsets = 0, inst_count = 0;
 	do {
-		skg_buffer_t *instances = render_fill_inst_buffer(local.instance_list, offsets, inst_count);
-		skg_buffer_bind(instances, render_list_inst_bind, 0);
+		skg_buffer_t *instances = render_fill_inst_buffer(&local.instance_list, &offsets, &inst_count);
+		skg_buffer_bind(instances, render_list_inst_bind);
 
 		skg_draw(0, 0, mesh_inds, inst_count * view_count);
 		list->stats.draw_calls     += 1;
@@ -1242,15 +1315,14 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered; 
+		list->state = render_list_state_rendered;
 		return;
 	}
-	render_list_prep(list_id);
+	render_list_prep(list);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
@@ -1288,12 +1360,15 @@ void render_list_execute(render_list_t list_id, render_layer_ filter, uint32_t v
 	}
 
 	list->state = render_list_state_rendered;
+
+	local.last_material = nullptr;
+	local.last_shader   = nullptr;
+	local.last_mesh     = nullptr;
 }
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list_id, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1302,7 +1377,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 	}
 	// TODO: this isn't entirely optimal here, this would be best if sorted
 	// solely by the mesh id since we only have one single material.
-	render_list_prep(list_id);
+	render_list_prep(list);
 	material_check_dirty(override_material);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
@@ -1345,8 +1420,7 @@ void render_list_execute_material(render_list_t list_id, render_layer_ filter, u
 
 ///////////////////////////////////////////
 
-void render_list_prep(render_list_t list_id) {
-	_render_list_t *list = &local.lists[list_id];
+void render_list_prep(render_list_t list) {
 	if (list->prepped) return;
 
 	// Sort the render queue
@@ -1366,20 +1440,114 @@ void render_list_prep(render_list_t list_id) {
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
-	for (int32_t i = 0; i < local.lists[list].queue.count; i++) {
-		assets_releaseref(&local.lists[list].queue[i].material->header);
-		assets_releaseref(&local.lists[list].queue[i].mesh->header);
+	list->prev_count = list->queue.count;
+	for (int32_t i = 0; i < list->queue.count; i++) {
+		assets_releaseref(&list->queue[i].material->header);
+		assets_releaseref(&list->queue[i].mesh    ->header);
 	}
-	local.lists[list].queue.clear();
-	local.lists[list].stats   = {};
-	local.lists[list].prepped = false;
-	local.lists[list].state   = render_list_state_empty;
+	list->queue.clear();
+	list->stats   = {};
+	list->prepped = false;
+	list->state   = render_list_state_empty;
 }
 
 ///////////////////////////////////////////
 
 int32_t render_list_item_count(render_list_t list) {
-	return local.lists[list].queue.count;
+	return list->queue.count;
+}
+
+///////////////////////////////////////////
+
+int32_t render_list_prev_count(render_list_t list) {
+	return list->prev_count;
+}
+
+///////////////////////////////////////////
+
+void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_item_t item;
+	item.mesh      = mesh;
+	item.mesh_inds = mesh->ind_draw;
+	item.color     = color_linear;
+	item.layer     = (uint16_t)layer;
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), item.transform);
+	else                     math_matrix_to_fast(transform, &item.transform);
+
+	material_t curr = material;
+	while (curr != nullptr) {
+		item.material = curr;
+		item.sort_id  = render_sort_id(curr, mesh);
+		render_list_add_to(list, &item);
+		curr = curr->chain;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_list_add_model(render_list_t list, model_t model, matrix transform, color128 color_linear, render_layer_ layer) {
+	render_list_add_model_mat(list, model, nullptr, transform, color_linear, layer);
+}
+
+///////////////////////////////////////////
+
+void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	XMMATRIX root;
+	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), root);
+	else                     math_matrix_to_fast(transform, &root);
+
+	anim_update_model(model);
+	for (int32_t i = 0; i < model->visuals.count; i++) {
+		const model_visual_t *vis = &model->visuals[i];
+		if (vis->visible == false || vis->mesh == nullptr || vis->material == nullptr) continue;
+		
+		render_item_t item;
+		item.mesh      = vis->mesh;
+		item.mesh_inds = vis->mesh->ind_count;
+		item.color     = color_linear;
+		item.layer     = (uint16_t)layer;
+		matrix_mul(vis->transform_model, root, item.transform);
+
+		material_t curr = material_override == nullptr ? vis->material : material_override;
+		while (curr != nullptr) {
+			item.material = curr;
+			item.sort_id  = render_sort_id(curr, vis->mesh);
+			render_list_add_to(list, &item);
+			curr = curr->chain;
+		}
+	}
+
+	if (model->transforms_changed && model->anim_data.skeletons.count > 0) {
+		model->transforms_changed = false;
+		anim_update_skin(model);
+	}
+}
+
+///////////////////////////////////////////
+
+void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter) {
+	skg_tex_t* old_target = skg_tex_target_get();
+	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
+
+	if (clear != render_clear_none) {
+		skg_target_clear(
+			(clear & render_clear_depth),
+			(clear & render_clear_color) ? &clear_color.r : (float*)nullptr);
+	}
+
+	if (viewport_pct.w == 0) viewport_pct.w = 1;
+	if (viewport_pct.h == 0) viewport_pct.h = 1;
+
+	int32_t viewport_i[4] = {
+		(int32_t)(viewport_pct.x * to_rendertarget->width ),
+		(int32_t)(viewport_pct.y * to_rendertarget->height),
+		(int32_t)(viewport_pct.w * to_rendertarget->width ),
+		(int32_t)(viewport_pct.h * to_rendertarget->height) };
+	skg_viewport(viewport_i);
+
+	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
+
+	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////

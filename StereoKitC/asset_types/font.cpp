@@ -1,13 +1,6 @@
 ﻿#include "font.h"
 
-#pragma warning(push)
-#pragma warning(disable : 26451 26819 6387 6011 6385 )
-#define STB_TRUETYPE_IMPLEMENTATION
-#define STBTT_malloc(x,y) sk::sk_malloc(x)
-#define STBTT_free(x,y) sk::_sk_free(x)
 #include "../libraries/stb_truetype.h"
-#pragma warning(pop)
-
 #include "../libraries/aileron_font_data.h"
 #include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
@@ -65,8 +58,7 @@ int32_t font_source_add(const char *filename) {
 
 	if (font_sources[id].references == 1) {
 		size_t length;
-		char* asset_filename = assets_file(filename);
-		if (!platform_read_file(asset_filename, (void **)&font_sources[id].file, &length)) {
+		if (!platform_read_file(filename, (void **)&font_sources[id].file, &length)) {
 			log_warnf("Font file failed to load: %s", filename);
 		} else {
 			stbtt_InitFont(&font_sources[id].info, (const unsigned char *)font_sources[id].file, stbtt_GetFontOffsetForIndex((const unsigned char *)font_sources[id].file,0));
@@ -75,7 +67,6 @@ int32_t font_source_add(const char *filename) {
 			stbtt_GetCodepointBox(&font_sources[id].info, 'T', &x0, &y0, &x1, &y1);
 			font_sources[id].char_height = y1 * font_sources[id].scale;
 		}
-		sk_free(asset_filename);
 	}
 
 	return font_sources[id].file == nullptr

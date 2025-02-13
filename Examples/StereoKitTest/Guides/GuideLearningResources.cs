@@ -34,6 +34,13 @@
 /// this, but it can be pretty enlightening to browse through a code-base
 /// such as this one for reference.
 /// 
+/// ### [Light Baking and Scene Management](https://github.com/maluoi/SKLightBake)
+/// 
+/// This is a quick demo for performantly managing static scenes, and baking
+/// lighting into them with StereoKit! This bakes lighting into the vertex
+/// colors of the mesh, so is visually limited by the number of vertices the
+/// mesh has, and will merge meshes together.
+/// 
 /// ### [StereoKit Demos]({{site.url}}/Pages/Guides/Sample-Code.html)
 /// 
 /// These are the demos that test StereoKit features and APIs! They are

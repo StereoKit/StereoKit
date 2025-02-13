@@ -16,6 +16,7 @@ class DemoMaterial : ITest
 	Material matWireframe;
 	Material matCull;
 	Material matTextured;
+	Material matMSAABlend;
 	Material matAlphaBlend;
 	Material matAlphaAdd;
 	Material matUnlit;
@@ -38,8 +39,8 @@ class DemoMaterial : ITest
 		/// great way to instantly get a particular feel to your scene! A neat
 		/// place to find compatible equirectangular images for this is
 		/// [Poly Haven](https://polyhaven.com/hdris)
-		Renderer.SkyTex   = Tex.FromCubemapEquirectangular("old_depot.hdr", out SphericalHarmonics lighting);
-		Renderer.SkyLight = lighting;
+		Renderer.SkyTex   = Tex.FromCubemap("old_depot.hdr");
+		Renderer.SkyLight = Renderer.SkyTex.CubemapLighting;
 		/// And here's what it looks like applied to the default Material!
 		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
 		/// :End:
@@ -84,10 +85,10 @@ class DemoMaterial : ITest
 
 		/// :CodeSample: Material.Transparency Transparency.Add
 		/// ### Additive Transparency
-		/// Here's an example material with additive transparency. 
+		/// Here's an example material with additive transparency.
 		/// Transparent materials typically don't write to the depth buffer,
-		/// but this may vary from case to case. Note that the material's 
-		/// alpha does not play any role in additive transparency! Instead, 
+		/// but this may vary from case to case. Note that the material's
+		/// alpha does not play any role in additive transparency! Instead,
 		/// you could make the material's tint darker.
 		matAlphaAdd = Material.Default.Copy();
 		matAlphaAdd.Transparency = Transparency.Add;
@@ -97,10 +98,10 @@ class DemoMaterial : ITest
 
 		/// :CodeSample: Material.Transparency Transparency.Blend
 		/// ### Alpha Blending
-		/// Here's an example material with an alpha blend transparency. 
+		/// Here's an example material with an alpha blend transparency.
 		/// Transparent materials typically don't write to the depth buffer,
 		/// but this may vary from case to case. Here we're setting the alpha
-		/// through the material's Tint value, but the diffuse texture's 
+		/// through the material's Tint value, but the diffuse texture's
 		/// alpha and the instance render color's alpha may also play a part
 		/// in the final alpha value.
 		matAlphaBlend = Material.Default.Copy();
@@ -108,6 +109,22 @@ class DemoMaterial : ITest
 		matAlphaBlend.DepthWrite   = false;
 		matAlphaBlend[MatParamName.ColorTint] = new Color(1, 1, 1, 0.75f);
 		/// ![Alpha blend example]({{site.screen_url}}/MaterialAlphaBlend.jpg)
+		/// :End:
+
+		/// :CodeSample: Material.Transparency Transparency.MSAA
+		/// ### MSAA (Alpha to Coverage)
+		/// Here's an example material with a transparency mode that utilizes
+		/// MSAA samples for blending. Also known as Alpha To Coverage, this
+		/// takes advantage of the fact that MSAA can generate multiple
+		/// fragments per-pixel while utilizing the zbuffer, and then blend
+		/// them together before presenting the image. This means you can dodge
+		/// a couple of z-sorting artifacts, but with a limited/quantized
+		/// number of transparency "values" equivalent to the number of MSAA
+		/// samples.
+		matMSAABlend = Material.Default.Copy();
+		matMSAABlend.Transparency = Transparency.MSAA;
+		matMSAABlend[MatParamName.ColorTint] = new Color(1, 1, 1, 0.75f);
+		/// ![MSAA transparency example]({{site.screen_url}}/MaterialMSAABlend.jpg)
 		/// :End:
 
 		matTextured = Material.Default.Copy();
@@ -134,7 +151,7 @@ class DemoMaterial : ITest
 
 		/// :CodeSample: Default.MaterialUIBox Material.UIBox
 		/// The UI Box material has 3 parameters to control how the box wires
-		/// are rendered. The initial size in meters is 'border_size', and 
+		/// are rendered. The initial size in meters is 'border_size', and
 		/// can grow by 'border_size_grow' meters based on distance to the
 		/// user's hand. That distance can be configured via the
 		/// 'border_affect_radius' property of the shader, which is also in
@@ -147,9 +164,9 @@ class DemoMaterial : ITest
 		/// :End:
 
 		matParameters = Material.Default.Copy();
-		matParameters[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
-		matParameters[MatParamName.ColorTint ] = Color.HSV(0.6f, 0.7f, 1f);
-		matParameters[MatParamName.TexScale  ] = 2.0f;
+		matParameters[MatParamName.DiffuseTex  ] = Tex.FromFile("floor.png");
+		matParameters[MatParamName.ColorTint   ] = Color.HSV(0.6f, 0.7f, 1f);
+		matParameters[MatParamName.TexTransform] = new Vec4(0,0,2,2);
 	}
 
 	int showCount;
@@ -174,6 +191,7 @@ class DemoMaterial : ITest
 		ShowMaterial(meshSphere, matTextured,   "MaterialTextured.jpg");
 		ShowMaterial(meshSphere, matAlphaAdd,   "MaterialAlphaAdd.jpg");
 		ShowMaterial(meshSphere, matAlphaBlend, "MaterialAlphaBlend.jpg");
+		ShowMaterial(meshSphere, matMSAABlend,  "MaterialMSAABlend.jpg");
 		ShowMaterial(meshSphere, matUnlit,      "MaterialUnlit.jpg");
 		ShowMaterial(meshSphere, matPBR,        "MaterialPBR.jpg");
 		ShowMaterial(meshSphere, matParameters, "MaterialParameters.jpg");

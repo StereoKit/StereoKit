@@ -26,6 +26,7 @@ ma_device         au_mic_device     = {};
 sound_t           au_mic_sound      = {};
 char             *au_mic_name       = nullptr;
 bool              au_recording      = false;
+bool              au_paused         = false;
 
 ///////////////////////////////////////////
 
@@ -411,13 +412,6 @@ bool audio_init() {
 
 	au_mic_name = nullptr;
 
-	if (au_device.thread)
-		ft_thread_name(au_device.thread, "StereoKit Audio");
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	if (au_context.backend == ma_backend_wasapi && au_context.wasapi.commandThread)
-		ft_thread_name(au_context.wasapi.commandThread, "StereoKit Audio Context");
-#endif
-
 	log_infof("Using audio backend: %s", ma_get_backend_name(au_device.pContext->backend));
 	return true;
 }
@@ -452,6 +446,26 @@ void audio_shutdown() {
 	sound_release(au_mic_sound);
 	au_mic_sound = nullptr;
 	sk_free(au_mix_temp);
+}
+
+///////////////////////////////////////////
+
+void audio_pause() {
+	if (au_paused) return;
+
+	au_paused = true;
+	ma_device_stop  (&au_device);
+	ma_device_uninit(&au_device);
+}
+
+///////////////////////////////////////////
+
+void audio_resume() {
+	if (!au_paused) return;
+
+	au_paused = false;
+	ma_device_init (&au_context, &au_config, &au_device);
+	ma_device_start(&au_device);
 }
 
 }

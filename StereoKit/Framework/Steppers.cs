@@ -13,9 +13,11 @@ namespace StereoKit.Framework
 			public ActionType type;
 			public StepperAction(IStepper stepper, ActionType type) { this.stepper = stepper; this.type = type; }
 		}
+		readonly object                _stepperLock = new object();
+		List           <IStepper>      _steppers    = new List<IStepper>();
+		ConcurrentQueue<StepperAction> _actions     = new ConcurrentQueue<StepperAction>();
 
-		List           <IStepper>      _steppers = new List<IStepper>();
-		ConcurrentQueue<StepperAction> _actions  = new ConcurrentQueue<StepperAction>();
+		public IEnumerable<IStepper> steppers { get { return _steppers; } }
 
 		// Add steppers via the threadsafe action queue
 		public T Add<T>() where T : IStepper
@@ -42,10 +44,13 @@ namespace StereoKit.Framework
 		public void Remove<T>() => Remove(typeof(T));
 		public void Remove(Type type)
 		{
-			foreach(IStepper stepper in _steppers)
+			lock (_stepperLock)
 			{
-				if (type.IsAssignableFrom(stepper.GetType()))
-					_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
+				foreach (IStepper stepper in _steppers)
+				{
+					if (type.IsAssignableFrom(stepper.GetType()))
+						_actions.Enqueue(new StepperAction(stepper, ActionType.Remove));
+				}
 			}
 		}
 		public void Remove(IStepper stepper)
@@ -57,10 +62,13 @@ namespace StereoKit.Framework
 		public T Get<T>() => (T)Get(typeof(T));
 		public object Get(Type type)
 		{
-			foreach (IStepper stepper in _steppers)
+			lock (_stepperLock)
 			{
-				if (type.IsAssignableFrom(stepper.GetType()))
-					return stepper;
+				foreach (IStepper stepper in _steppers)
+				{
+					if (type.IsAssignableFrom(stepper.GetType()))
+						return stepper;
+				}
 			}
 			foreach (StepperAction action in _actions)
 			{
@@ -80,11 +88,14 @@ namespace StereoKit.Framework
 				{
 					case ActionType.Add:
 						if (action.stepper.Initialize())
-							_steppers.Add(action.stepper);
+						{
+							lock (_stepperLock) _steppers.Add(action.stepper);
+						}
 						break;
 					case ActionType.Remove:
-						if (_steppers.Remove(action.stepper))
-							action.stepper.Shutdown();
+						bool result = false;
+						lock (_stepperLock) result = _steppers.Remove(action.stepper);
+						if (result) action.stepper.Shutdown();
 						break;
 				}
 			}

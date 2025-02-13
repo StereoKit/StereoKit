@@ -288,6 +288,47 @@ namespace StereoKit
 		Copy,
 	}
 
+	/// <summary>When the device StereoKit is running on goes into standby mode, how should
+	/// StereoKit react? Typically the app should pause, stop playing sound, and
+	/// consume as little power as possible, but some scenarios such as multiplayer
+	/// games may need the app to continue running.</summary>
+	public enum StandbyMode {
+		/// <summary>This will let StereoKit pick a mode based on its own preferences. On v0.3
+		/// and lower, this will be Slow, and on v0.4 and higher, this will be Pause.</summary>
+		Default      = 0,
+		/// <summary>The entire main thread will pause, and wait until the device has come out
+		/// of standby. This is the most power efficient mode for the device to take
+		/// when the device is in standby, and is recommended for the vast majority
+		/// of apps. This will also disable sound.</summary>
+		Pause        = 1,
+		/// <summary>The main thread will continue to execute, but with 100ms sleeps each
+		/// frame. This allows the app to continue polling and processing, but
+		/// reduces power consumption by throttling a bit. This will not disable
+		/// sound. In the Simulator, this will behave as Slow.</summary>
+		Slow         = 2,
+		/// <summary>The main thread will continue to execute, but with a very short sleep
+		/// each frame. This allows the app to continue polling and processing, but
+		/// without flooding the CPU with polling work while vsync is no longer the
+		/// throttle. This will not disable sound.</summary>
+		None         = 3,
+	}
+
+	/// <summary>Provides a reason on why StereoKit has quit.</summary>
+	public enum QuitReason {
+		/// <summary>Default state when SK has not quit.</summary>
+		None,
+		/// <summary>The user (or possibly the OS) has explicitly asked to exit the
+		/// application under normal circumstances.</summary>
+		User,
+		/// <summary>Some runtime error occurred, causing the application to quit
+		/// gracefully.</summary>
+		Error,
+		/// <summary>If initialization failed, StereoKit won't run to begin with!</summary>
+		InitializationFailed,
+		/// <summary>The runtime under StereoKit has encountered an issue and has been lost.</summary>
+		SessionLost,
+	}
+
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
@@ -534,14 +575,24 @@ namespace StereoKit
 		/// can be used as input to important Mixed Reality features like
 		/// Late Stage Reprojection that'll make your view more stable!</summary>
 		None         = 1,
+		/// <summary>Also known as Alpha To Coverage, this mode uses MSAA samples to
+		/// create transparency. This works with a z-buffer and therefore
+		/// functionally behaves more like an opaque material, but has a
+		/// quantized number of "transparent values" it supports rather than
+		/// a full range of  0-255 or 0-1. For 4x MSAA, this will give only
+		/// 4 different transparent values, 8x MSAA only 8, etc.
+		/// From a performance perspective, MSAA usually is only costly
+		/// around triangle edges, but using this mode, MSAA is used for the
+		/// whole triangle.</summary>
+		MSAA         = 2,
 		/// <summary>This will blend with the pixels behind it. This is 
 		/// transparent! You may not want to write to the z-buffer, and it's
 		/// slower than opaque materials.</summary>
-		Blend,
+		Blend        = 3,
 		/// <summary>This will straight up add the pixel color to the color
 		/// buffer! This usually looks -really- glowy, so it makes for good
 		/// particles or lighting effects.</summary>
-		Add,
+		Add          = 4,
 	}
 
 	/// <summary>Depth test describes how this material looks at and responds
@@ -641,6 +692,8 @@ namespace StereoKit
 	/// it is given.</summary>
 	[Flags]
 	public enum TextFit {
+		/// <summary>No particularly special behavior.</summary>
+		None         = 0,
 		/// <summary>The text will wrap around to the next line down when it
 		/// reaches the end of the space on the X axis.</summary>
 		Wrap         = 1 << 0,
@@ -787,6 +840,19 @@ namespace StereoKit
 		Ortho        = 1,
 	}
 
+	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
+	/// stack, this can be used to change the behavior of how parent hierarchy items
+	/// will affect the item being added to the top of the stack.</summary>
+	public enum HierarchyParent {
+		/// <summary>Inheriting is generally the default behavior of a hierarchy stack, the
+		/// current item will inherit the properties of the parent stack item in some
+		/// form or another.</summary>
+		Inherit,
+		/// <summary>Ignoring the parent hierarchy stack item will let you skip inheriting
+		/// anything from the parent item. The new item remains exactly as provided.</summary>
+		Ignore,
+	}
+
 	/// <summary>When opening the Platform.FilePicker, this enum describes
 	/// how the picker should look and behave.</summary>
 	public enum PickerMode {
@@ -803,13 +869,13 @@ namespace StereoKit
 	public enum TextContext {
 		/// <summary>General text editing, this is the most common type of text, and would
 		/// result in a 'standard' keyboard layout.</summary>
-		Text         = 1,
+		Text         = 0,
 		/// <summary>Numbers and numerical values.</summary>
-		Number       = 2,
+		Number       = 1,
 		/// <summary>This text specifically represents some kind of URL/URI address.</summary>
-		Uri          = 10,
+		Uri          = 2,
 		/// <summary>This is a password, and should not be visible when typed!</summary>
-		Password     = 18,
+		Password     = 3,
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a
@@ -1263,6 +1329,8 @@ namespace StereoKit
 		Solid,
 		/// <summary>An Anchor.</summary>
 		Anchor,
+		/// <summary>A RenderList</summary>
+		RenderList,
 	}
 
 }

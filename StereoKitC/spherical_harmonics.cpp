@@ -89,12 +89,12 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 
 spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int32_t face_size) {
 	spherical_harmonics_t result   = {};
-	size_t                col_size = tex_format_size(format);
+	size_t                col_size = 0;
 	vec3     (*convert)(uint8_t *) = nullptr;
 	switch (format) {
-	case tex_format_rgba128:       convert = to_color_128;       break;
-	case tex_format_rgba32:        convert = to_color_32_linear; break;
-	case tex_format_rgba32_linear: convert = to_color_32;        break;
+	case tex_format_rgba128:       convert = to_color_128;       col_size = sizeof(float) * 4; break;
+	case tex_format_rgba32:        convert = to_color_32_linear; col_size = sizeof(color32); break;
+	case tex_format_rgba32_linear: convert = to_color_32;        col_size = sizeof(color32); break;
 	default: return {};
 	}
 

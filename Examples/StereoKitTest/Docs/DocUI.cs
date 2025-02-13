@@ -13,12 +13,14 @@ class DocUI : ITest
 
 	public void Step()
 	{
-		ShowWindowButton   ();
-		ShowWindowToggle   ();
-		ShowWindowSeparator();
-		ShowWindowSlider   ();
-		ShowWindowInput    ();
-		ShowWindowRadio    ();
+		ShowWindowButton    ();
+		ShowWindowToggle    ();
+		ShowWindowSeparator ();
+		ShowWindowSlider    ();
+		ShowWindowInput     ();
+		ShowWindowRadio     ();
+		ShowWindowEnabled   ();
+		ShowWindowTextScroll();
 
 		Tests.Screenshot("UI/ButtonWindow.jpg",    1, 500, 400, 50, V.XYZ(.0f,-0.02f,-.2f), V.XYZ(.0f,-0.02f,0));
 		Tests.Screenshot("UI/ToggleWindow.jpg",    1, 500, 400, 50, V.XYZ(.3f,-0.04f,-.2f), V.XYZ(.3f,-0.04f,0));
@@ -26,6 +28,8 @@ class DocUI : ITest
 		Tests.Screenshot("UI/SliderWindow.jpg",    1, 500, 400, 45, V.XYZ(.9f,-0.02f,-.2f), V.XYZ(.9f,-0.02f,0));
 		Tests.Screenshot("UI/InputWindow.jpg",     1, 500, 400, 45, V.XYZ(1.2f,-0.02f,-.2f), V.XYZ(1.2f,-0.02f,0));
 		Tests.Screenshot("UI/RadioWindow.jpg",     1, 500, 500, 55, V.XYZ(1.5f,-0.06f,-.2f), V.XYZ(1.5f,-0.06f,0));
+		Tests.Screenshot("UI/EnabledWindow.jpg",   1, 500, 500, 55, V.XYZ(1.8f,-0.07f,-.2f), V.XYZ(1.8f,-0.07f,0));
+		Tests.Screenshot("UI/TextScroll.jpg",      1, 500, 500, 55, V.XYZ(2.1f,-0.05f,-.2f), V.XYZ(2.1f,-0.05f,0));
 	}
 
 	/// :CodeSample: UI UI.Button UI.WindowBegin UI.WindowEnd
@@ -178,6 +182,71 @@ class DocUI : ITest
 		if (UI.Radio("Option 1", radioState == 1)) radioState = 1;
 		if (UI.Radio("Option 2", radioState == 2)) radioState = 2;
 		if (UI.Radio("Option 3", radioState == 3)) radioState = 3;
+
+		UI.WindowEnd();
+	}
+	/// :End:
+
+	/// :CodeSample: UI.PushEnabled UI.PopEnabled UI.Enabled
+	/// ### Enabling and Disabling UI Elements
+	/// 
+	/// ![A window with labels in various states of enablement]({{site.screen_url}}/UI/EnabledWindow.jpg)
+	/// 
+	/// UI.Push/PopEnabled allows you to enable and disable groups of UI
+	/// elements! This is a hierarchical stack, so by default, all PushEnabled
+	/// calls inherit the stack's state.
+	/// 
+	Pose windowPoseEnabled = new Pose(1.8f, 0, 0, Quat.Identity);
+	void ShowWindowEnabled()
+	{
+		UI.WindowBegin("Window Enabled", ref windowPoseEnabled);
+
+		// Default state of the enabled stack is true
+		UI.Label(UI.Enabled ? "Enabled" : "Disabled");
+
+		UI.PushEnabled(false);
+		{
+			// This label will be disabled
+			UI.Label(UI.Enabled?"Enabled":"Disabled");
+
+			UI.PushEnabled(true);
+			{
+				// This label inherits the state of the parent, so is therefore
+				// disabled
+				UI.Label(UI.Enabled?"Enabled":"Disabled");
+			}
+			UI.PopEnabled();
+
+			UI.PushEnabled(true, HierarchyParent.Ignore);
+			{
+				// This label was enabled, overriding the parent, and so is
+				// enabled.
+				UI.Label(UI.Enabled ? "Enabled" : "Disabled");
+			}
+			UI.PopEnabled();
+		}
+		UI.PopEnabled();
+
+		UI.WindowEnd();
+	}
+	/// :End:
+
+	string loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur sollicitudin lectus at fringilla blandit. Morbi at leo pulvinar, consequat nisi sed, eleifend dui. Donec efficitur eros libero, sed euismod velit lobortis at. Aliquam erat volutpat. Etiam pellentesque quis nisl vitae mattis. Proin tortor nisl, sollicitudin at suscipit id, tincidunt pellentesque justo. Praesent ut justo quis neque pulvinar sagittis mattis vel magna. Aenean placerat, felis in pretium viverra, felis neque volutpat nibh, quis molestie tellus diam sed augue. Nulla ac cursus nunc. Proin viverra tincidunt lacus, aliquet pretium dui. Suspendisse aliquam ligula a mauris commodo varius. Nam hendrerit tincidunt consectetur. Phasellus efficitur diam arcu, in ultricies nunc rhoncus ut. Donec mollis mattis aliquam. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur purus ac finibus pulvinar.\n\nCurabitur ipsum tellus, pharetra eget erat ac, hendrerit tincidunt neque. Fusce varius pretium ligula, nec ultrices sem consequat in. Nulla finibus ipsum vel augue dapibus convallis. In quis lectus non massa malesuada gravida nec eget massa. Praesent at rhoncus turpis. Duis porta magna eu ligula sodales imperdiet. Vivamus convallis rutrum diam, ac tempor lectus iaculis pharetra. Ut pulvinar placerat felis, vel scelerisque nisi. Duis non lobortis arcu.";
+	/// :CodeSample: UI.Text
+	/// ### Scrolling Text
+	/// 
+	/// `UI.Text` has an optional overload that allows you to scroll long
+	/// chunks of text! Here's a simple example that allows you to scroll some
+	/// Lorem Ipsum text vertically.
+	/// 
+	/// ![A window with a scrolling text box]({{site.screen_url}}/UI/TextScrollWindow.jpg)
+	Pose windowPoseScroll = new Pose(2.1f, 0, 0, Quat.Identity);
+	Vec2 scroll           = V.XY(0,0.1f);
+	void ShowWindowTextScroll()
+	{
+		UI.WindowBegin("Window Text Scroll", ref windowPoseScroll);
+
+		UI.Text(loremIpsum, ref scroll, UIScroll.Vertical, 0.1f);
 
 		UI.WindowEnd();
 	}

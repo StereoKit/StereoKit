@@ -1,7 +1,14 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
 #include "ui_layout.h"
 #include "ui_theming.h"
 
 #include "../libraries/array.h"
+#include "../sk_math.h"
 
 ///////////////////////////////////////////
 
@@ -513,41 +520,65 @@ void ui_panel_end() {
 ///////////////////////////////////////////
 
 pose_t ui_popup_pose(vec3 shift) {
-	vec3 at;
-	if (ui_last_element_active() & button_state_active) {
+	pose_t result;
+	if (ui_last_element_active() & (button_state_active | button_state_just_inactive) ) {
 		// If there was a UI element focused, we'll use that
-		at = hierarchy_to_world_point( ui_layout_last().center );
-	} else {
-		bool active_left  = input_hand(handed_left )->tracked_state & button_state_active;
-		bool active_right = input_hand(handed_right)->tracked_state & button_state_active;
+		vec3 at  = hierarchy_to_world_point   ( ui_layout_last().center );
+		quat rot = hierarchy_to_world_rotation( quat_identity );
 
-		if (active_left && active_right) {
-			// Both hands are active, pick the hand that's the most high
-			// and outstretched.
-			vec3  pl       = input_hand(handed_left )->fingers[1][4].position;
-			vec3  pr       = input_hand(handed_right)->fingers[1][4].position;
-			vec3  head     = input_head()->position;
-			float dist_l   = vec3_distance(pl, head);
-			float dist_r   = vec3_distance(pr, head);
-			float height_l = pl.y - pr.y;
-			float height_r = pr.y - pl.y;
-			at = dist_l + height_l / 2.0f > dist_r + height_r / 2.0f ? pl : pr;
-		} else if (active_left) {
-			at = input_hand(handed_left)->fingers[1][4].position;
-		} else if (active_right) {
-			at = input_hand(handed_right)->fingers[1][4].position;
-		} else {
-			// Head based fallback!
-			at = input_head()->position + input_head()->orientation * vec3_forward * 0.35f;
+		// For an element attached popup, we can just offset the popup from the
+		// element by a bit. Pretty straightforward!
+		vec3 fwd   = rot * vec3_forward;
+		vec3 up    = rot * vec3_up;
+		vec3 right = rot * vec3_right;
+
+		const float away =  0.1f;  // Away from the panel
+		const float down = -0.08f; // Down from the element;
+		result.position    = at + fwd * away + up * down;
+		result.orientation = quat_from_angles(25, 0, 0) * rot;
+
+		// If this pose is out-of-reach, we want to clamp it to be within arm's
+		// reach, touchable by the user.
+		const float max_dist = 0.6f;
+		const float rot_dist = 0.1f;
+		float dist_sq = vec3_distance_sq(input_head()->position, result.position);
+		if (dist_sq > max_dist * max_dist) {
+			result.position = input_head()->position + vec3_normalize(result.position - input_head()->position) * max_dist;
+
+			// we don't want to rotate allll the way if the keyboard is pretty
+			// much in the right spot. Instead, we should gradually face
+			// towards the user as the pose gets further from its original
+			// position.
+			quat  dest_rot = quat_lookat(result.position, input_head()->position);
+			float percent  = math_saturate((sqrtf(dist_sq) - max_dist) / rot_dist);
+			result.orientation = quat_slerp(result.orientation, dest_rot, percent);
 		}
+	} else {
+		// For an independant popup, we want to position it in front of the
+		// user. We'll place it in arm's reach, but this may be a bit odd for
+		// controller mode, or those using far hand rays.
+		// TODO: consider far interaction placement
+
+		const float popup_distance = 0.5f; // The XZ distance from the user
+		const float height_blend   = 0.5f; // How much does the user's Y axis rotation affect the popup position
+		const float rotation_blend = 0.4f; // How much does the popup position's Y offset affect the popup orientation
+
+		pose_t head     = *input_head();
+		vec3   head_fwd = head.orientation * vec3_forward;
+		vec3   flat_fwd = vec3_normalize(vec3{ head_fwd.x, 0, head_fwd.z });
+		flat_fwd.y = head_fwd.y * height_blend;
+		result.position    = head.position + flat_fwd * popup_distance;
+
+		vec3 face_dir = vec3_normalize(head.position - result.position);
+		face_dir.y *= rotation_blend;
+		result.orientation = quat_lookat(vec3_zero, face_dir);
+
+		vec3 fwd   = result.orientation * vec3_forward;
+		vec3 up    = result.orientation * vec3_up;
+		vec3 right = result.orientation * vec3_right;
+		result.position += shift.x * right + shift.y * up + shift.z * fwd;
 	}
-
-	vec3 dir = at - input_head()->position;
-	at = input_head()->position + dir * 0.7f;
-
-	return pose_t {
-		at + shift,
-		quat_lookat(vec3_zero, -dir) };
+	return result;
 }
 
 ///////////////////////////////////////////

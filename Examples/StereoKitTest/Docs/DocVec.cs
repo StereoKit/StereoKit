@@ -14,7 +14,7 @@ class DocVec : ITest
 		float distance = Vec3.Distance(pointA, pointB);
 		/// :End:
 
-		Log.Info("Distance: {0}, expected 3", distance);
+		Log.Info($"Distance: {distance}, expected 3");
 		return distance == 3;
 	}
 
@@ -30,7 +30,7 @@ class DocVec : ITest
 		}
 		/// :End:
 
-		Log.Info("DistanceSq: {0}, expected 9", distanceSquared);
+		Log.Info($"DistanceSq: {distanceSquared}, expected 9");
 		return distanceSquared == 9;
 	}
 

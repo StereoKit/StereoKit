@@ -26,7 +26,7 @@ namespace StereoKit {
 		internal IntPtr _inst;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on! This is StereoKit's asset ID, and not the system's
 		/// unique Name for the anchor.</summary>
 		public string Id

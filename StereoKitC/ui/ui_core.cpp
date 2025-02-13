@@ -30,7 +30,7 @@ struct ui_id_t {
 
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius;
-uint64_t        skui_last_element;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 bool32_t        skui_show_volumes;
 
 array_t<bool32_t>    skui_enabled_stack;
@@ -73,6 +73,7 @@ void ui_core_shutdown() {
 	skui_preserve_keyboard_ids[1].free();
 	skui_preserve_keyboard_ids_read  = nullptr;
 	skui_preserve_keyboard_ids_write = nullptr;
+	skui_last_element = 0xFFFFFFFFFFFFFFFF;
 }
 
 ///////////////////////////////////////////
@@ -857,8 +858,10 @@ void ui_pop_id() {
 
 ///////////////////////////////////////////
 
-void ui_push_enabled(bool32_t enabled) {
-	skui_enabled_stack.add(enabled);
+void ui_push_enabled(bool32_t enabled, hierarchy_parent_ parent_behavior) {
+	skui_enabled_stack.add(parent_behavior == hierarchy_parent_ignore
+		? enabled
+		: (enabled == true && ui_is_enabled() == true));
 }
 
 ///////////////////////////////////////////
@@ -874,7 +877,9 @@ void ui_pop_enabled() {
 ///////////////////////////////////////////
 
 bool32_t ui_is_enabled() {
-	return skui_enabled_stack.last();
+	return skui_enabled_stack.count == 0
+		? true
+		: skui_enabled_stack.last();
 }
 
 ///////////////////////////////////////////

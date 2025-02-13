@@ -478,13 +478,11 @@ void file_picker_update() {
 		case picker_mode_open: {
 			if (ui_button("Cancel")) { fp_call = true; fp_call_status = false; }
 			ui_sameline();
-			if (fp_active == nullptr) ui_push_enabled(false);
+			ui_push_enabled(fp_active != nullptr);
 			if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 			ui_sameline();
-			if (fp_active == nullptr) ui_push_enabled(false);
-			ui_text_sz(fp_active ? fp_active : "None selected...", text_align_center_left, text_fit_squeeze, {0,0});
-			if (fp_active == nullptr) ui_pop_enabled();
-			ui_push_enabled(true);
+			ui_text(fp_active ? fp_active : "None selected...", nullptr, ui_scroll_none, ui_line_height(), text_align_center_left, text_fit_none);
+			ui_pop_enabled();
 		} break;
 		}
 
@@ -559,7 +557,7 @@ void file_picker_update() {
 				if (fp_items[i].file_attr.file) {
 					char buffer[128];
 					snprintf(buffer, sizeof(buffer), "%d KB ", (int32_t)(fp_items[i].file_attr.size / 1024));
-					ui_text_sz(buffer, text_align_center_right, text_fit_clip, { size.x, size.y });
+					ui_text_sz(buffer, nullptr, ui_scroll_none, size, text_align_center_right, text_fit_clip);
 					ui_sameline();
 				} else {
 					ui_layout_reserve(size);

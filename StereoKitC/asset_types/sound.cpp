@@ -44,9 +44,7 @@ sound_t sound_create(const char *filename) {
 	
 	void*    data;
 	size_t   length;
-	char*    sound_file = assets_file(filename);
-	bool32_t loaded     = platform_read_file(sound_file, &data, &length);
-	sk_free(sound_file);
+	bool32_t loaded     = platform_read_file(filename, &data, &length);
 	if (!loaded) {
 		log_warnf("Sound file failed to load: %s", filename);
 		return nullptr;
@@ -58,7 +56,7 @@ sound_t sound_create(const char *filename) {
 
 	ma_decoder_config config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 1, AU_SAMPLE_RATE);
 	if (ma_decoder_init_memory(data, length, &config, &result->decoder) != MA_SUCCESS) {
-		log_errf("Failed to parse sound '%s'.", sound_file);
+		log_errf("Failed to parse sound '%s'.", filename);
 		assets_releaseref(&result->header);
 		return nullptr;
 	}

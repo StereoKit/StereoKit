@@ -1,10 +1,10 @@
 ﻿/// :CodeDoc: Guides 1 Getting Started VS Code
 /// # Getting Started with StereoKit - Visual Studio Code
 /// 
-/// StereoKit's onboarding has generally been optimized for Visual Studio
-/// 'Prime', but VS Code definitely has some benefits, like running on
-/// platforms other than windows! This path will be expanded on in the future,
-/// but here's a quick way to get started on it right now.
+/// The [regular getting started guide]({{site.url}}/Pages/Guides/Getting-Started.html)
+/// and the official templates now cater to Visual Studio Code, but if you're
+/// interested in setting up a StereoKit project for VS without using the
+/// templates, here's a quick rundown!
 /// 
 /// ![Creating a new StereoKit project in VS Code](/img/StereoKitDotnetWoah.gif)
 /// 

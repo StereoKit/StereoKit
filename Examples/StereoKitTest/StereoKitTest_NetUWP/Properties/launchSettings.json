@@ -1,0 +1,7 @@
+{
+	"profiles": {
+		"Local Machine": {
+			"commandName": "MsixPackage"
+		}
+	}
+}

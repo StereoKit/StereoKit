@@ -80,7 +80,7 @@ bool window_init() {
 	} break;
 	}
 
-	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
+	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
 	if (swapchain)
 		window_surface_resize(local->surface, swapchain->width, swapchain->height);
@@ -132,7 +132,7 @@ void window_step_begin() {
 		case platform_evt_character:    input_text_inject_char  (data.character);                                  break;
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
-		case platform_evt_close:        sk_quit(); break;
+		case platform_evt_close:        sk_quit(quit_reason_user); break;
 		case platform_evt_resize:       window_surface_resize(local->surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;

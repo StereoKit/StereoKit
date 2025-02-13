@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
+
+using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -101,6 +106,9 @@ namespace StereoKit
 		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Z axis.
 		/// </summary>
 		public Vec3 XY0 => new Vec3(x, y, 0);
+		/// <summary>Promotes this Vec2 to a Vec3, using 1 for the Z axis.
+		/// </summary>
+		public Vec3 XY1 => new Vec3(x, y, 1);
 		/// <summary>Promotes this Vec2 to a Vec3, using 0 for the Y axis.
 		/// </summary>
 		public Vec3 X0Y => new Vec3(x, 0, y);

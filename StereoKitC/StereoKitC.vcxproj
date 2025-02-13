@@ -49,13 +49,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\include\basisu;$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(ProjectDir)lib\include\sk_gpu;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\bin\$(Platform)_$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)lib\include\basisu;$(ProjectDir)lib\include\meshoptimizer;$(ProjectDir)lib\include;$(IntDir)shaders;$(ProjectDir)lib\include\sk_gpu;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib\bin\$(Platform)\$(Configuration);$(ProjectDir)lib\bin\$(Platform);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -73,7 +73,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>meshoptimizer.lib;reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -94,7 +94,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>meshoptimizer.lib;reactphysics3d.lib;openxr_loader.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -110,8 +110,8 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     </PostBuildEvent>
     <PreBuildEvent>
       <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
-      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
-"$(ProjectDir)..\tools\skshaderc.exe" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$(ProjectDir)..\tools\include" -o "$(IntermediateOutputPath)shaders" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
+      <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\Update-Dependencies.ps1'))" -arch $(PlatformTarget) -config $(Configuration) -plat Win32
+"$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\skshaderc\win32_x64\skshaderc.exe'))" -O3 $(SKShaderDebugFlag) -h -z -t x -i "$([MSBuild]::NormalizePath('$(ProjectDir)..\tools\include'))" -o "$([MSBuild]::NormalizePath('$(IntermediateOutputPath)shaders\'))" "$(ProjectDir)shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -131,6 +131,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="asset_types\sound.cpp" />
     <ClCompile Include="asset_types\sprite.cpp" />
     <ClCompile Include="asset_types\texture.cpp" />
+    <ClCompile Include="asset_types\texture_compression.cpp" />
     <ClCompile Include="backend.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="device.cpp" />
@@ -149,8 +150,11 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="libraries\qoi.cpp" />
     <ClCompile Include="libraries\sk_gpu.cpp" />
     <ClCompile Include="libraries\sokol_time.cpp" />
+    <ClCompile Include="libraries\stb.cpp" />
     <ClCompile Include="libraries\stref.cpp" />
     <ClCompile Include="libraries\unicode.cpp" />
+    <ClCompile Include="lib\include\basisu\basisu_transcoder.cpp" />
+    <ClCompile Include="lib\include\zstd\zstd.c" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="platforms\android.cpp" />
     <ClCompile Include="platforms\linux.cpp" />
@@ -213,6 +217,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="asset_types\sprite.h" />
     <ClInclude Include="asset_types\texture.h" />
     <ClInclude Include="asset_types\texture_.h" />
+    <ClInclude Include="asset_types\texture_compression.h" />
     <ClInclude Include="device.h" />
     <ClInclude Include="hands\hand_mouse.h" />
     <ClInclude Include="hands\hand_override.h" />
@@ -231,7 +236,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />
     <ClInclude Include="libraries\qoi.h" />
-    <ClInclude Include="libraries\sk_gpu.h" />
+    <ClInclude Include="libraries\sk_fontfile.h" />
     <ClInclude Include="libraries\sokol_time.h" />
     <ClInclude Include="libraries\stb_image.h" />
     <ClInclude Include="libraries\stb_image_write.h" />
@@ -263,6 +268,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\line_drawer.h" />
     <ClInclude Include="systems\physics.h" />
     <ClInclude Include="systems\render.h" />
+    <ClInclude Include="systems\render_.h" />
     <ClInclude Include="systems\render_pipeline.h" />
     <ClInclude Include="systems\sprite_drawer.h" />
     <ClInclude Include="systems\system.h" />
@@ -306,6 +312,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <None Include="shaders_builtin\shader_builtin_ui_box.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_unlit_clip.hlsl" />
+    <None Include="shaders_builtin\shader_builtin_lightmap.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_quadrant.hlsl" />
     <None Include="shaders_builtin\shader_builtin_blit.hlsl" />
     <None Include="shaders_builtin\shader_builtin_ui_aura.hlsl" />

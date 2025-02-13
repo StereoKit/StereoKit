@@ -9,9 +9,7 @@ struct _sprite_t {
 	asset_header_t header;
 
 	vec2       uvs[2];
-	vec2       dimensions_normalized;
 	float      size;
-	float      aspect;
 	tex_t      texture;
 	material_t material;
 	int32_t    buffer_index;

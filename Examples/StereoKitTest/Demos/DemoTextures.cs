@@ -75,8 +75,8 @@ class DemoTextures : ITest
 		/// shader parameters really quickly! You can do this with strings
 		/// representing shader parameter names, or use the MatParamName
 		/// enum for compile safety.
-		exampleMaterial[MatParamName.DiffuseTex] = gridTex;
-		exampleMaterial[MatParamName.TexScale  ] = 2.0f;
+		exampleMaterial[MatParamName.DiffuseTex  ] = gridTex;
+		exampleMaterial[MatParamName.TexTransform] = new Vec4(0,0,2,2);
 		/// :End:
 	}
 

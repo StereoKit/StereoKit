@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "../libraries/sk_gpu.h"
+#include <sk_gpu.h>
 
 #include "../stereokit.h"
 #include "../systems/bvh.h"

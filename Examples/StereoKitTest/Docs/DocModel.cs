@@ -45,7 +45,7 @@ class DocModel : ITest
 		testModel = model;
 
 		// Check that model bounds are as expected
-		Log.Info("Expected bounds: center:<0,0.5,0> dimensions:<1,2,1> Got: {0}", model.Bounds);
+		Log.Info($"Expected bounds: center:<0,0.5,0> dimensions:<1,2,1> Got: {model.Bounds}");
 		if (model.Bounds.center.x != 0 ||
 			model.Bounds.center.y != 0.5f ||
 			model.Bounds.center.z != 0 ||

@@ -160,7 +160,7 @@ class DemoMath : ITest
 
 		Tests.Screenshot("CrossProduct.jpg", 0, 400, 400, 20, poseCross.position + screenshotFrom, poseCross.position + screenshotAt);
 
-		Demo.ShowSummary(title, description, new Bounds(.8f, .3f, .1f));
+		Demo.ShowSummary(title, description, new Bounds(new Vec3(0,0,-.05f), new Vec3(.84f, .34f, 0)));
 	}
 
 	public void Initialize() {

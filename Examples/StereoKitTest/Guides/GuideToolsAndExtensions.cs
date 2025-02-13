@@ -11,6 +11,11 @@
 /// for StereoKit! This is an easy way to get desktop functionality onto your
 /// HoloLens, or cut down on iteration time while testing on-device.
 /// 
+/// ## [NuGet] - Official - [StereoKit.DesktopMirror (Windows)](https://github.com/StereoKit/StereoKit.DesktopMirror)
+/// 
+/// A small library for duplicating your desktop screen within a StereoKit
+/// application on Windows. Useful for developing in-context!
+/// 
 /// ## [GitHub] - Official (WIP) - [StereoKit Browser](https://github.com/StereoKit/StereoKit-Browser)
 /// 
 /// This is a short StereoKit sample that shows implementing a browser UI
@@ -26,11 +31,5 @@
 /// lighting into them with StereoKit! This bakes lighting into the vertex
 /// colors of the mesh, so is visually limited by the number of vertices the
 /// mesh has, and will merge meshes together.
-/// 
-/// ## [GitHub] - [Desktop Duplicator Template](https://github.com/maluoi/SKDesktopDuplicator)
-/// 
-/// Mirroring a Windows desktop window and displaying it in StereoKit. Useful
-/// for developing in-context. This template also includes Holographic Remoting
-/// to work on HoloLens as well.
 /// 
 /// :End:
