@@ -77,44 +77,23 @@
 	</Target>
 
 	<!-- Shader C# code generation -->
-	
-	<!-- Collect shader files that should be treated like code. -->
-	<ItemGroup Condition="'$(SKBuildShaderCode)' == 'true'">
-		<SKShaderCode Include="$(SKShaderCodeFolder)**/*.hlsl" Exclude="**/bin/**;**/obj/**;**/$(SKAssetFolder)/**"/>
 
-		<Compile Update="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')">
-			<DependentUpon>%(SKShaderCode.Filename)%(SKShaderCode.Extension)</DependentUpon>
-			<AutoGen>true</AutoGen>
-			<DesignTimeSharedInput>true</DesignTimeSharedInput>
-			<Link>Material%(SKShaderCode.Filename).gen.cs</Link>
-			<Visible>true</Visible>
-		</Compile>
+	<!-- Collect shader files that should be treated like code. -->
+	<ItemGroup>
+		<SKShaderCode Condition="'$(SKBuildShaderCode)'=='true'" Include="$(SKShaderCodeFolder)**/*.hlsl" Exclude="**/bin/**;**/obj/**;**/$(SKAssetFolder)/**"/>
+		
+		<Compile Include="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')" KeepDuplicates="false" />
 	</ItemGroup>
 
-	<!-- Compile the shaders ang generate the C# in the /obj/ folder -->
-	<Target Name="StereoKit_Shader_Code" Condition="'$(SKBuildShaderCode)' == 'true'" BeforeTargets="BeforeCompile" Inputs="@(SKShaderCode)" Outputs="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).generated.cs')">
+	<!-- Compile the shaders and generate the C# in the /obj/ folder -->
+	<Target Name="StereoKit_Shader_Code" BeforeTargets="BeforeCompile" Inputs="@(SKShaderCode->'%(FullPath)')" Outputs="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')">
 		<Message Text="[StereoKit NuGet] Generating C# for %(SKShaderCode.Identity) -> $(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs" Importance="high" />
 
 		<Exec Command='$(SKShadercPath) $(SKOpt) -e -sk -t xe -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs"'></Exec>
 
-		<!-- Insert generated files into the Compile list.
-		     We also attempt to nest them under the corresponding .hlsl file,
-		     however, this doesn't appear to work when the linked files are in the
-		     /obj folder. -->
 		<ItemGroup>
-			<Compile Remove ="$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs"/>
-			<Compile Include="$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs" KeepDuplicates="false">
-				<DependentUpon>%(SKShaderCode.Filename)%(SKShaderCode.Extension)</DependentUpon>
-				<AutoGen>true</AutoGen>
-				<DesignTimeSharedInput>true</DesignTimeSharedInput>
-				<Link>Material%(SKShaderCode.Filename).gen.cs</Link>
-				<Visible>true</Visible>
-			</Compile>
+			<Compile Include="$(IntermediateOutputPath)Shaders\Material%(SKShaderCode.Filename).gen.cs" KeepDuplicates="false" />
 		</ItemGroup>
-	</Target>
-
-	<Target Name="StereoKit_Shader_Code_Rebuild" Condition="'$(SKBuildShaderCode)' == 'true'" AfterTargets="CoreClean">
-		<Delete Files="@(SKShaderCode->'$(IntermediateOutputPath)Shaders\Material%(Filename).gen.cs')" />
 	</Target>
 
 </Project>
