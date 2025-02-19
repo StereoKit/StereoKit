@@ -66,9 +66,8 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
-	for (int32_t i = 0; i < win32_windows.count; i++) {
-		platform_win_destroy(i);
-	}
+	PostQuitMessage(0);
+
 	win32_windows.free();
 	win32_hinst  = nullptr;
 	win32_icon   = nullptr;
@@ -178,8 +177,7 @@ void platform_win_destroy(platform_win_t window) {
 		skg_swapchain_destroy(&win->swapchain);
 	}
 
-	if (win->handle) DestroyWindow   (win->handle);
-	if (win->title)  UnregisterClassW(win->title, win32_hinst);
+	if (win->title) UnregisterClassW(win->title, win32_hinst);
 
 	win->events.free();
 	sk_free(win->title);
@@ -249,7 +247,8 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	case WM_SYSKEYDOWN:  e.type = platform_evt_key_press;     e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_SYSKEYUP:    e.type = platform_evt_key_release;   e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_CHAR:        e.type = platform_evt_character;     e.data.character     = (char32_t)wParam;     win->events.add(e); return true;
-	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); PostQuitMessage(0); break;
+	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); if (IsWindow(win->handle)) DestroyWindow(win->handle); win->handle = nullptr; break;
+	case WM_DESTROY:     PostQuitMessage(0); break;
 	case WM_SETFOCUS:    e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_active;     win->events.add(e); break;
 	case WM_KILLFOCUS:   e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_background; win->events.add(e); break;
 	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;
