@@ -7,7 +7,7 @@
 		<SKShowDebugVars         Condition="'$(SKShowDebugVars)'         == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders       Condition="'$(SKAutoFindShaders)'       == ''">True</SKAutoFindShaders>
 		<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'      == ''"></SKShaderCodeFolder>
-		<SKBuildShaderCode       Condition="'$(SKBuildShaderCode)'       == ''">false</SKBuildShaderCode>
+		<SKBuildShaderCode       Condition="'$(SKBuildShaderCode)'       == ''">true</SKBuildShaderCode>
 		<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'    == ''">$(ProjectDir)openxr_loader/</SKOpenXRLoaderFolder>
 		<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)' == ''">$(MSBuildThisFileDirectory)../tools/include/</SKShaderStandardInclude>
 	</PropertyGroup>
