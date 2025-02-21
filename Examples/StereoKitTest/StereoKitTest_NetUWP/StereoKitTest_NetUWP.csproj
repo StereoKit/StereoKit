@@ -14,7 +14,6 @@
 
 		<ReadOnlyProject>true</ReadOnlyProject>
 
-		<SKCopyAssets>true</SKCopyAssets>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
 		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
