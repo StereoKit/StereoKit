@@ -1,4 +1,9 @@
-﻿using System.Numerics;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2025 Qualcomm Technologies, Inc.
+
+using System.Numerics;
 
 namespace StereoKit
 {
@@ -209,7 +214,7 @@ namespace StereoKit
 		/// <param name="translation">Move an object by this amount.</param>
 		/// <returns>A Matrix containing a simple translation!</returns>
 		public static Matrix T(Vec3 translation) 
-			=> Matrix4x4.CreateTranslation(translation.x, translation.y, translation.z);
+			=> Matrix4x4.CreateTranslation(translation.v.X, translation.v.Y, translation.v.Z);
 		/// <summary>Translate. Creates a translation Matrix!</summary>
 		/// <param name="x">Move an object on the x axis by this amount.</param>
 		/// <param name="y">Move an object on the y axis by this amount.</param>
@@ -223,8 +228,8 @@ namespace StereoKit
 		/// this transform.</param>
 		/// <returns>A Matrix that will rotate by the provided Quaternion 
 		/// orientation.</returns>
-		public static Matrix R(Quat rotation) 
-			=> Matrix4x4.CreateFromQuaternion(rotation);
+		public static Matrix R(Quat rotation)
+			=> Matrix4x4.CreateFromQuaternion(rotation.q);
 		/// <summary>Create a rotation matrix from pitch, yaw, and roll 
 		/// information. Units are in degrees.</summary>
 		/// <param name="pitchXDeg">Pitch, or rotation around the X axis, in
@@ -253,15 +258,22 @@ namespace StereoKit
 		/// makes things. Vec3.One is a good default, as Vec3.Zero will
 		/// shrink it to nothing!</param>
 		/// <returns>A non-uniform scaling matrix.</returns>
-		public static Matrix S(Vec3 scale) 
+		public static Matrix S(Vec3 scale)
 			=> Matrix4x4.CreateScale(scale.x, scale.y, scale.z);
+		/// <summary>Creates a scaling Matrix, where scale can be different
+		/// on each axis (non-uniform).</summary>
+		/// <param name="x">How much larger or smaller this transform makes
+		/// things. 1 is a good default, as 0 will shrink it to nothing!</param>
+		/// <returns>A non-uniform scaling matrix.</returns>
+		public static Matrix S(float x, float y, float z)
+			=> Matrix4x4.CreateScale(x, y, z);
 		/// <summary>Creates a scaling Matrix, where the scale is the same on
 		/// each axis (uniform).</summary>
 		/// <param name="scale">How much larger or smaller this transform
 		/// makes things. 1 is a good default, as 0 will shrink it to nothing!
 		/// This will expand to a scale vector of (size, size, size)</param>
 		/// <returns>A uniform scaling matrix.</returns>
-		public static Matrix S(float scale) 
+		public static Matrix S(float scale)
 			=> Matrix4x4.CreateScale(scale, scale, scale);
 
 		/// <summary>Translate, Scale. Creates a transform Matrix using both
@@ -272,8 +284,12 @@ namespace StereoKit
 		/// This will expand to a scale vector of (size, size, size)</param>
 		/// <returns>A Matrix that combines translation and scale information
 		/// into a single Matrix!</returns>
-		public static Matrix TS(Vec3 translation, float scale) 
-			=> NativeAPI.matrix_trs(translation, Quat.Identity, new Vec3(scale, scale, scale));
+		public static Matrix TS(Vec3 translation, float scale)
+			=> new Matrix4x4(
+				scale, 0, 0, 0,
+				0, scale, 0, 0,
+				0, 0, scale, 0,
+				translation.v.X, translation.v.Y, translation.v.Z, 1);
 		/// <summary>Translate, Scale. Creates a transform Matrix using both
 		/// these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -283,7 +299,11 @@ namespace StereoKit
 		/// <returns>A Matrix that combines translation and scale information
 		/// into a single Matrix!</returns>
 		public static Matrix TS(Vec3 translation, Vec3 scale)
-			=> NativeAPI.matrix_trs(translation, Quat.Identity, scale);
+			=> new Matrix4x4(
+				scale.v.X, 0, 0, 0,
+				0, scale.v.Y, 0, 0,
+				0, 0, scale.v.Z, 0,
+				translation.v.X, translation.v.Y, translation.v.Z, 1);
 		/// <summary>Translate, Scale. Creates a transform Matrix using both
 		/// these components!</summary>
 		/// <param name="x">Move an object on the x axis by this amount.</param>
@@ -294,8 +314,12 @@ namespace StereoKit
 		/// shrink it to nothing!</param>
 		/// <returns>A Matrix that combines translation and scale information
 		/// into a single Matrix!</returns>
-		public static Matrix TS(float x, float y, float z, float scale) 
-			=> NativeAPI.matrix_trs(new Vec3(x, y, z), Quat.Identity, new Vec3(scale, scale, scale));
+		public static Matrix TS(float x, float y, float z, float scale)
+			=> new Matrix4x4(
+				scale, 0, 0, 0,
+				0, scale, 0, 0,
+				0, 0, scale, 0,
+				x, y, z, 1);
 		/// <summary>Translate, Scale. Creates a transform Matrix using both
 		/// these components!</summary>
 		/// <param name="x">Move an object on the x axis by this amount.</param>
@@ -306,8 +330,12 @@ namespace StereoKit
 		/// shrink it to nothing!</param>
 		/// <returns>A Matrix that combines translation and scale information
 		/// into a single Matrix!</returns>
-		public static Matrix TS(float x, float y, float z, Vec3  scale) 
-			=> NativeAPI.matrix_trs(new Vec3(x, y, z), Quat.Identity, scale);
+		public static Matrix TS(float x, float y, float z, Vec3  scale)
+			=> new Matrix4x4(
+				scale.v.X, 0, 0, 0,
+				0, scale.v.Y, 0, 0,
+				0, 0, scale.v.Z, 0,
+				x, y, z, 1);
 
 
 		/// <summary>Translate, Rotate. Creates a transform Matrix using 
@@ -318,7 +346,7 @@ namespace StereoKit
 		/// <returns>A Matrix that combines translation and rotation
 		/// information into a single Matrix!</returns>
 		public static Matrix TR(Vec3 translation, Quat rotation)
-			=> NativeAPI.matrix_trs(translation, rotation, Vec3.One);
+			=> TR(translation.v.X, translation.v.Y, translation.v.Z, rotation);
 		/// <summary>Translate, Rotate. Creates a transform Matrix using 
 		/// these components!</summary>
 		/// <param name="x">Move an object on the x axis by this amount.</param>
@@ -329,7 +357,13 @@ namespace StereoKit
 		/// <returns>A Matrix that combines translation and rotation
 		/// information into a single Matrix!</returns>
 		public static Matrix TR(float x, float y, float z, Quat rotation)
-			=> NativeAPI.matrix_trs(new Vec3(x, y, z), rotation, Vec3.One);
+		{
+			Matrix4x4 result = Matrix4x4.CreateFromQuaternion(rotation.q);
+			result.M41 = x;
+			result.M42 = y;
+			result.M43 = z;
+			return result;
+		}
 		/// <summary>Translate, Rotate. Creates a transform Matrix using 
 		/// these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -338,8 +372,8 @@ namespace StereoKit
 		/// Units are in degrees.</param>
 		/// <returns>A Matrix that combines translation and rotation
 		/// information into a single Matrix!</returns>
-		public static Matrix TR(Vec3 translation, Vec3 pitchYawRollDeg) 
-			=> NativeAPI.matrix_trs(translation, Quat.FromAngles(pitchYawRollDeg), Vec3.One);
+		public static Matrix TR(Vec3 translation, Vec3 pitchYawRollDeg)
+			=> TR(translation.v.X, translation.v.Y, translation.v.Z, Quat.FromAngles(pitchYawRollDeg));
 		/// <summary>Translate, Rotate. Creates a transform Matrix using 
 		/// these components!</summary>
 		/// <param name="x">Move an object on the x axis by this amount.</param>
@@ -350,9 +384,9 @@ namespace StereoKit
 		/// Units are in degrees.</param>
 		/// <returns>A Matrix that combines translation and rotation
 		/// information into a single Matrix!</returns>
-		public static Matrix TR(float x, float y, float z, Vec3 pitchYawRollDeg) 
-			=> NativeAPI.matrix_trs(new Vec3(x, y, z), Quat.FromAngles(pitchYawRollDeg), Vec3.One);
-		
+		public static Matrix TR(float x, float y, float z, Vec3 pitchYawRollDeg)
+			=> TR(x, y, z, Quat.FromAngles(pitchYawRollDeg));
+
 		/// <summary>Translate, Rotate, Scale. Creates a transform Matrix 
 		/// using all these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -363,8 +397,8 @@ namespace StereoKit
 		/// This will expand to a scale vector of (size, size, size)</param>
 		/// <returns>A Matrix that combines translation, rotation, and scale
 		/// information into a single Matrix!</returns>
-		public static Matrix TRS(Vec3 translation, Quat rotation, float scale) 
-			=> NativeAPI.matrix_trs(translation, rotation, new Vec3(scale, scale, scale));
+		public static Matrix TRS(Vec3 translation, Quat rotation, float scale)
+			=> TRS(translation, rotation, new Vec3(scale, scale, scale));
 		/// <summary>Translate, Rotate, Scale. Creates a transform Matrix 
 		/// using all these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -375,8 +409,16 @@ namespace StereoKit
 		/// shrink it to nothing!</param>
 		/// <returns>A Matrix that combines translation, rotation, and scale
 		/// information into a single Matrix!</returns>
-		public static Matrix TRS(Vec3 translation, Quat rotation, Vec3  scale) 
-			=> NativeAPI.matrix_trs(translation, rotation, scale);
+		public static Matrix TRS(Vec3 translation, Quat rotation, Vec3 scale)
+		{
+			Matrix4x4 result =
+				Matrix4x4.CreateScale(scale.v) *
+				Matrix4x4.CreateFromQuaternion(rotation);
+			result.M41 += translation.v.X;
+			result.M42 += translation.v.Y;
+			result.M43 += translation.v.Z;
+			return result;
+		}
 		/// <summary>Translate, Rotate, Scale. Creates a transform Matrix 
 		/// using all these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -388,8 +430,8 @@ namespace StereoKit
 		/// shrink it to nothing!</param>
 		/// <returns>A Matrix that combines translation, rotation, and scale
 		/// information into a single Matrix!</returns>
-		public static Matrix TRS(Vec3 translation, Vec3 pitchYawRollDeg, float scale) 
-			=> NativeAPI.matrix_trs(translation, Quat.FromAngles(pitchYawRollDeg), new Vec3(scale, scale, scale));
+		public static Matrix TRS(Vec3 translation, Vec3 pitchYawRollDeg, float scale)
+			=> TRS(translation, Quat.FromAngles(pitchYawRollDeg), new Vec3(scale, scale, scale));
 		/// <summary>Translate, Rotate, Scale. Creates a transform Matrix 
 		/// using all these components!</summary>
 		/// <param name="translation">Move an object by this amount.</param>
@@ -401,8 +443,8 @@ namespace StereoKit
 		/// shrink it to nothing!</param>
 		/// <returns>A Matrix that combines translation, rotation, and scale
 		/// information into a single Matrix!</returns>
-		public static Matrix TRS(Vec3 translation, Vec3 pitchYawRollDeg, Vec3 scale) 
-			=> NativeAPI.matrix_trs(translation, Quat.FromAngles(pitchYawRollDeg), scale);
+		public static Matrix TRS(Vec3 translation, Vec3 pitchYawRollDeg, Vec3 scale)
+			=> TRS(translation, Quat.FromAngles(pitchYawRollDeg), scale);
 
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. Perspective projection 
@@ -422,6 +464,24 @@ namespace StereoKit
 		/// <returns>The final perspective matrix.</returns>
 		public static Matrix Perspective(float fovDegrees, float aspectRatio, float nearClip, float farClip)
 			=> Matrix4x4.CreatePerspectiveFieldOfView(fovDegrees*Units.deg2rad, aspectRatio, nearClip, farClip);
+
+		/// <summary>A transformation that describes one position looking at
+		/// another point. This is particularly useful for describing camera
+		/// transforms!</summary>
+		/// <param name="from">The location the transform is looking from, or
+		/// the position of the 'camera'.</param>
+		/// <param name="at">The location the transform is looking towards, or
+		/// the subject of the 'camera'.</param>
+		/// <returns>A common camera-like transform matrix.</returns>
+		public static Matrix LookAt(Vec3 from, Vec3 at)
+			=> Matrix4x4.CreateLookAt(from, at, Vec3.Up);
+
+		/// <inheritdoc cref="LookAt(Vec3, Vec3)"/>
+		/// <param name="up">This controlls the roll value of the lookat
+		/// transform, this would be the direction the top of the camera is
+		/// facing. In most cases, this is just Vec3.Up.</param>
+		public static Matrix LookAt(Vec3 from, Vec3 at, Vec3 up)
+			=> Matrix4x4.CreateLookAt(from, at, up);
 
 		/// <summary>This creates a matrix used for projecting 3D geometry
 		/// onto a 2D surface for rasterization. With the known camera 

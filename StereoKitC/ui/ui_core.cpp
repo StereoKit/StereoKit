@@ -30,7 +30,7 @@ struct ui_id_t {
 
 ui_hand_t       skui_hand[2];
 float           skui_finger_radius;
-uint64_t        skui_last_element;
+uint64_t        skui_last_element = 0xFFFFFFFFFFFFFFFF;
 bool32_t        skui_show_volumes;
 
 array_t<bool32_t>    skui_enabled_stack;
@@ -73,6 +73,7 @@ void ui_core_shutdown() {
 	skui_preserve_keyboard_ids[1].free();
 	skui_preserve_keyboard_ids_read  = nullptr;
 	skui_preserve_keyboard_ids_write = nullptr;
+	skui_last_element = 0xFFFFFFFFFFFFFFFF;
 }
 
 ///////////////////////////////////////////
@@ -451,7 +452,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 							dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 						} break;
 						case ui_move_face_user: {
-							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
+							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position - vec3{0,0.12f,0});
 							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt[i].x, local_pt[i].z }) / 0.1f);
 							vec3  handle_center= matrix_transform_pt(pose_matrix(handle_pose), handle_bounds.center);
 							// Previously, facing happened from a point
@@ -857,8 +858,10 @@ void ui_pop_id() {
 
 ///////////////////////////////////////////
 
-void ui_push_enabled(bool32_t enabled) {
-	skui_enabled_stack.add(enabled);
+void ui_push_enabled(bool32_t enabled, hierarchy_parent_ parent_behavior) {
+	skui_enabled_stack.add(parent_behavior == hierarchy_parent_ignore
+		? enabled
+		: (enabled == true && ui_is_enabled() == true));
 }
 
 ///////////////////////////////////////////
@@ -874,7 +877,9 @@ void ui_pop_enabled() {
 ///////////////////////////////////////////
 
 bool32_t ui_is_enabled() {
-	return skui_enabled_stack.last();
+	return skui_enabled_stack.count == 0
+		? true
+		: skui_enabled_stack.last();
 }
 
 ///////////////////////////////////////////

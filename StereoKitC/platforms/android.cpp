@@ -14,8 +14,9 @@
 #include "../systems/render.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
-#include "../libraries/sk_gpu.h"
 #include "../libraries/sokol_time.h"
+
+#include <sk_gpu.h>
 
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
@@ -244,7 +245,6 @@ void android_set_window_xam(void *window) {
 
 bool android_read_asset(const char* asset_name, void** out_data, size_t* out_size) {
 	// See: http://www.50ply.com/blog/2013/01/19/loading-compressed-android-assets-with-file-pointer/
-
 	AAsset *asset = AAssetManager_open(local.asset_manager, asset_name, AASSET_MODE_BUFFER);
 	if (asset) {
 		*out_size = AAsset_getLength(asset);

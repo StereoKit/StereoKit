@@ -1,16 +1,16 @@
 /// :CodeDoc: Guides 0 Getting Started
 /// # Getting Started with StereoKit
 /// 
-/// The minimum prerequisite for StereoKit is the .NET 7 SDK! You can use `dotnet --version` to check if this is already present.
+/// The minimum prerequisite for StereoKit is the .NET SDK! You can use `dotnet --version` to check if this is already present.
 /// 
-/// Open up your Terminal, and run the following:
+/// If it is not, open up your Terminal, and run the following:
 /// ```bash
-/// winget install Microsoft.DotNet.SDK.7
+/// winget install Microsoft.DotNet.SDK.9
 /// # Restart the Terminal to refresh your Path variable
 /// ```
 /// 
-/// > On _Linux_, many distros can do something like this:
-/// > `sudo apt-get install dotnet-sdk-7.0`
+/// > On _Linux_, while the .NET version sometimes lags behind, many distros can do something like this:
+/// > `sudo apt-get install dotnet-sdk-8.0`
 /// 
 /// With the .NET SDK installed, setting up a StereoKit project is quite simple!
 /// 
@@ -18,11 +18,11 @@
 /// # Install the StereoKit templates!
 /// dotnet new install StereoKit.Templates
 /// 
-/// # Create a .NET Core based StereoKit project, and run it
+/// # Create a multiplatform StereoKit project, and run it
 /// mkdir SKProjectName
 /// cd    SKProjectName
 /// 
-/// dotnet new sk-net
+/// dotnet new sk-multi
 /// dotnet run
 /// 
 /// # For hot-reloading code, try this instead of `run`
@@ -36,48 +36,34 @@
 /// Once you've installed the templates via `dotnet new install StereoKit.Templates`,
 /// you have your choice of tools! Visual Studio 2022 will recognize the
 /// StereoKit templates when creating a new project, and the Command Line
-/// workflow works well with VS Code and other editors. Visual Studio 2022 is
-/// the recommended tool for those targeting Android platforms.
+/// workflow works well with VS Code and other editors.
 /// 
 /// - Get [**Visual Studio 2022** here](https://visualstudio.microsoft.com/vs/).
 /// - _Or_ get [VS Code here](https://code.visualstudio.com/).
 /// 
 /// StereoKit is OpenXR based, so will work in any environment that supports
 /// OpenXR! On PC, this means you'll want a desktop runtime such as SteamVR,
-/// Quest + Link, the Windows Mixed Reality Portal, or Monado. If no OpenXR
-/// runtime is found, StereoKit will provide a [nice Simulator]({{site.url}}/Pages/Guides/Using-The-Simulator.html)
-/// that's great for development! Some runtimes, such as the Windows Mixed
-/// Reality Portal, also provide a simulator of their own, so you can test
-/// their runtime without a headset.
+/// Quest + Link, or Monado. If no OpenXR
+/// runtime is found, StereoKit will provide a [nice Simulator]({{site.url}}Pages/Guides/Using-The-Simulator.html)
+/// that's great for development! Some runtimes also provide a simulator for
+/// their platform, such as the [Meta XR Simulator](https://developers.meta.com/horizon/documentation/native/xrsim-getting-started),
+/// so you can test their runtime without a headset.
 /// 
 /// ## Android
 /// 
-/// To deploy to Android, you'll need to use StereoKit's multiplatform
-/// template! From Visual Studio 2022, you'll need to set the `SKProjectName_Android`
-/// sub-project as your Startup Project (Solution Explorer->Right click on SKProjectName_Android->Set as Startup Project),
-/// and then you'll have the option to deploy to any Android device connected
-/// to your machine.
+/// When using StereoKit's sk-multi (multiplatform) template, deploying to an
+/// Android device is pretty straightforward! From Visual Studio 2022, you'll
+/// need to set the `SKProjectName.Android` sub-project as your Startup Project
+/// (Solution Explorer->Right click on SKProjectName.Android->Set as Startup
+/// Project), and then you'll have the option to deploy to any Android device
+/// connected to your machine.
 /// 
-/// From the command line, or VS Code, there's a few extra steps to deploy to
-/// Android.
+/// From the command line, or VS Code, you have to run the Android flavored
+/// .csproj explicitly.
 /// 
 /// ```bash
-/// mkdir SKAndroid
-/// cd    SKAndroid
-/// 
-/// dotnet new sk-multi
-/// 
-/// # Create an APK for Android
-/// dotnet publish -c Release Projects\Android\SKProjectName_Android.csproj
-/// 
-/// # Install to a connected Android device
-/// adb install Projects\Android\bin\Release\net7.0-android\publish\com.companyname.SKProjectName-Signed.apk
-/// 
-/// # Run the app on device
-/// adb shell monkey -p com.companyname.SKProjectName 1
-/// 
-/// # sk-multi projects can still be run as normal for fast iteration
-/// dotnet run
+/// # From the same folder as above
+/// dotnet run --project .\Projects\Android\SKProjectName.Android.csproj
 /// ```
 /// 
 /// ## Minimum "Hello Cube" Application
@@ -102,13 +88,14 @@ SK.Run(() => {
 /// 220 lines of code! It's well commented, and is a good example to pick
 /// through.
 /// 
-/// For additional learning resources, you can check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
-/// page for a couple of repositories and links that may help you out. In
-/// particular, the GitHub repository does contain a [number of small demo scenes](https://github.com/StereoKit/StereoKit/tree/master/Examples/StereoKitTest/Demos)
-/// that are excellent reference for a number of different StereoKit features!
+/// For additional learning resources, you can check out the SDK source, which
+/// does contain a [number of small demo scenes]({{site.url}}/Pages/Guides/Sample-Code.html) 
+/// that are excellent reference for a variety of different StereoKit features!
+/// You can also check out the [Learning Resources]({{site.url}}/Pages/Guides/Learning-Resources.html)
+/// page for a couple of repositories and links that may help you out.
 /// 
-/// And don't forget to peek in the docs here! Most pages contain sample code
-/// that illustrates how a particular function or property is used
+/// And don't forget to peek in the API docs here! Most pages contain sample
+/// code that illustrates how a particular function or property is used
 /// in-context. The ultimate goal is to have a sample for 100% of the docs,
 /// so if you're looking for one and it isn't there, use the 'Create an Issue'
 /// link at the bottom of the web page to get it prioritized!

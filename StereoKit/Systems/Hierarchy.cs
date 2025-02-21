@@ -21,8 +21,13 @@
 		/// stack! All Push calls must have an accompanying Pop call.</summary>
 		/// <param name="parentTransform">The transform Matrix you want to 
 		/// apply to all following draw calls.</param>
-		public static void Push(in Matrix parentTransform)
-			=> NativeAPI.hierarchy_push(parentTransform);
+		/// <param name="parentBehavior">This determines how this matrix
+		/// combines with the parent matrix below it. Normal behavior is to
+		/// "inherit" the parent matrix, but there are cases where you may wish
+		/// to entirely ignore the parent transform. For example, if you're in
+		/// UI space, and wish to do some world space rendering.</param>
+		public static void Push(in Matrix parentTransform, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.hierarchy_push(parentTransform, parentBehavior);
 
 		/// <summary>Removes the top Matrix from the stack!</summary>
 		public static void Pop()
@@ -62,12 +67,19 @@
 			=> NativeAPI.hierarchy_to_local_rotation(worldOrientation);
 
 
-		/// <summary>Converts a world pose relative to the current 
+		/// <summary>Converts a world pose relative to the current
 		/// hierarchy stack into local space!</summary>
 		/// <param name="worldPose">A pose in world space.</param>
 		/// <returns>The provided pose now in local hierarchy space!</returns>
 		public static Pose ToLocal(Pose worldPose)
 			=> NativeAPI.hierarchy_to_local_pose(worldPose);
+
+		/// <summary>Converts a world ray relative to the current
+		/// hierarchy stack into local space!</summary>
+		/// <param name="worldRay">A ray in world space.</param>
+		/// <returns>The provided ray now in local hierarchy space!</returns>
+		public static Ray ToLocal(Ray worldRay)
+			=> NativeAPI.hierarchy_to_local_ray(worldRay);
 
 		/// <summary>Converts a local point relative to the current hierarchy
 		/// stack into world space!</summary>
@@ -92,11 +104,18 @@
 		public static Quat ToWorld(Quat localOrientation)
 			=> NativeAPI.hierarchy_to_world_rotation(localOrientation);
 
-		/// <summary>Converts a local pose relative to the current 
+		/// <summary>Converts a local pose relative to the current
 		/// hierarchy stack into world space!</summary>
 		/// <param name="localPose">A pose in local space.</param>
 		/// <returns>The provided pose now in world space!</returns>
 		public static Pose ToWorld(Pose localPose)
 			=> NativeAPI.hierarchy_to_world_pose(localPose);
+
+		/// <summary>Converts a local ray relative to the current
+		/// hierarchy stack into world space!</summary>
+		/// <param name="localRay">A ray in local space.</param>
+		/// <returns>The provided ray now in world space!</returns>
+		public static Ray ToWorld(Ray localRay)
+			=> NativeAPI.hierarchy_to_world_ray(localRay);
 	}
 }

@@ -8,7 +8,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 9
+#define SK_VERSION_PATCH 10
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -400,6 +400,32 @@ typedef enum memory_ {
 	memory_copy,
 } memory_;
 
+/*When the device StereoKit is running on goes into standby mode, how should
+  StereoKit react? Typically the app should pause, stop playing sound, and
+  consume as little power as possible, but some scenarios such as multiplayer
+  games may need the app to continue running.*/
+typedef enum standby_mode_ {
+	/*This will let StereoKit pick a mode based on its own preferences. On v0.3
+	  and lower, this will be Slow, and on v0.4 and higher, this will be Pause.
+	  */
+	standby_mode_default = 0,
+	/*The entire main thread will pause, and wait until the device has come out
+	  of standby. This is the most power efficient mode for the device to take
+	  when the device is in standby, and is recommended for the vast majority
+	  of apps. This will also disable sound.*/
+	standby_mode_pause = 1,
+	/*The main thread will continue to execute, but with 100ms sleeps each
+	  frame. This allows the app to continue polling and processing, but
+	  reduces power consumption by throttling a bit. This will not disable
+	  sound. In the Simulator, this will behave as Slow.*/
+	standby_mode_slow = 2,
+	/*The main thread will continue to execute, but with a very short sleep
+	  each frame. This allows the app to continue polling and processing, but
+	  without flooding the CPU with polling work while vsync is no longer the
+	  throttle. This will not disable sound.*/
+	standby_mode_none = 3
+} standby_mode_;
+
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
@@ -422,6 +448,7 @@ typedef struct sk_settings_t {
 	int32_t        render_multisample;
 	origin_mode_   origin;
 	bool32_t       omit_empty_frames;
+	standby_mode_  standby_mode;
 
 	void          *android_java_vm;  // JavaVM*
 	void          *android_activity; // jobject
@@ -439,12 +466,28 @@ typedef struct system_info_t {
 	bool32_t       world_raycast_present;
 } system_info_t;
 
+/* Provides a reason on why StereoKit has quit.*/
+typedef enum quit_reason_ {
+	/*Default state when SK has not quit.*/
+	quit_reason_none,
+	/*The user (or possibly the OS) has explicitly asked to exit the
+	  application under normal circumstances.*/
+	quit_reason_user,
+	/*Some runtime error occurred, causing the application to quit
+	  gracefully.*/
+	quit_reason_error,
+	/*If initialization failed, StereoKit won't run to begin with!*/
+	quit_reason_initialization_failed,
+	/*The runtime under StereoKit has encountered an issue and has been lost.*/
+	quit_reason_session_lost,
+} quit_reason_;
+
 SK_API bool32_t      sk_init               (sk_settings_t settings);
 SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (void);
+SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -455,6 +498,7 @@ SK_API system_info_t sk_system_info        (void);
 SK_API const char   *sk_version_name       (void);
 SK_API uint64_t      sk_version_id         (void);
 SK_API app_focus_    sk_app_focus          (void);
+SK_API quit_reason_  sk_get_quit_reason    (void);
 
 ///////////////////////////////////////////
 
@@ -750,6 +794,7 @@ SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(solid_t);
 SK_DeclarePrivateType(anchor_t);
+SK_DeclarePrivateType(render_list_t);
 
 ///////////////////////////////////////////
 
@@ -1000,6 +1045,30 @@ typedef enum tex_format_ {
 	  channel and 8 bits for the green channel.*/
 	tex_format_r8g8 = 19,
 
+	tex_format_bc1_rgb_srgb,
+	tex_format_bc1_rgb,
+	tex_format_bc3_rgba_srgb,
+	tex_format_bc3_rgba,
+	tex_format_bc4_r,
+	tex_format_bc5_rg,
+	tex_format_bc7_rgba_srgb,
+	tex_format_bc7_rgba,
+
+	tex_format_etc1_rgb,
+	tex_format_etc2_rgba_srgb,
+	tex_format_etc2_rgba,
+	tex_format_etc2_r11,
+	tex_format_etc2_rg11,
+	tex_format_pvrtc1_rgb_srgb,
+	tex_format_pvrtc1_rgb,
+	tex_format_pvrtc1_rgba_srgb,
+	tex_format_pvrtc1_rgba,
+	tex_format_pvrtc2_rgba_srgb,
+	tex_format_pvrtc2_rgba,
+	tex_format_astc4x4_rgba_srgb,
+	tex_format_astc4x4_rgba,
+	tex_format_atc_rgb,
+	tex_format_atc_rgba,
 } tex_format_;
 
 /*How does the shader grab pixels from the texture? Or more
@@ -1042,17 +1111,20 @@ typedef enum tex_address_ {
 
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
+SK_API tex_t        tex_create_rendertarget (int32_t width, int32_t height, int32_t msaa sk_default(1), tex_format_ color_format sk_default(tex_format_rgba32), tex_format_ depth_format sk_default(tex_format_depth16));
 SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
 SK_API tex_t        tex_create_mem          (void *data, size_t data_size,                  bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file         (const char *file_utf8,                         bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
 SK_API tex_t        tex_create_file_arr     (const char **in_arr_files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_cubemap_file (const char *equirectangular_file_utf8,         bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_file (const char *cubemap_file_utf8,                 bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
+SK_API tex_t        tex_copy                (const tex_t texture, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_none));
+SK_API bool32_t     tex_gen_mips            (tex_t texture);
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
-SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, bool32_t owned sk_default(true));
+SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), int32_t framebuffer_multisample sk_default(1), bool32_t owned sk_default(true));
 SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -1060,7 +1132,8 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** data, int32_t data_count, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 // TODO: For v0.4, remove the return value here, since this needs to addref, and the texture may be ignored
 SK_API tex_t        tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
@@ -1121,14 +1194,24 @@ typedef enum transparency_ {
 	  can be used as input to important Mixed Reality features like
 	  Late Stage Reprojection that'll make your view more stable!*/
 	transparency_none = 1,
+	/*Also known as Alpha To Coverage, this mode uses MSAA samples to
+	  create transparency. This works with a z-buffer and therefore
+	  functionally behaves more like an opaque material, but has a
+	  quantized number of "transparent values" it supports rather than
+	  a full range of  0-255 or 0-1. For 4x MSAA, this will give only
+	  4 different transparent values, 8x MSAA only 8, etc.
+	  From a performance perspective, MSAA usually is only costly
+	  around triangle edges, but using this mode, MSAA is used for the
+	  whole triangle.*/
+	transparency_msaa = 2,
 	/*This will blend with the pixels behind it. This is 
 	  transparent! You may not want to write to the z-buffer, and it's
 	  slower than opaque materials.*/
-	transparency_blend,
+	transparency_blend = 3,
 	/*This will straight up add the pixel color to the color
 	  buffer! This usually looks -really- glowy, so it makes for good
 	  particles or lighting effects.*/
-	transparency_add,
+	transparency_add = 4,
 } transparency_;
 
 /*Depth test describes how this material looks at and responds
@@ -1292,6 +1375,8 @@ SK_API void              material_buffer_release  (material_buffer_t buffer);
 /*This enum describes how text layout behaves within the space
   it is given.*/
 typedef enum text_fit_ {
+	/*No particularly special behavior.*/
+	text_fit_none           = 0,
 	/*The text will wrap around to the next line down when it
 	  reaches the end of the space on the X axis.*/
 	text_fit_wrap           = 1 << 0,
@@ -1308,6 +1393,7 @@ typedef enum text_fit_ {
 	  on going.*/
 	text_fit_overflow       = 1 << 4
 } text_fit_;
+SK_MakeFlag(text_fit_)
 
 /*A bit-flag enum for describing alignment or positioning.
   Items can be combined using the '|' operator, like so:
@@ -1372,6 +1458,8 @@ SK_API float         text_add_in                   (const char*     text_utf8,  
 SK_API float         text_add_in_16                (const char16_t* text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
 SK_API vec2          text_size                     (const char*     text_utf8,  text_style_t style sk_default(0));
 SK_API vec2          text_size_16                  (const char16_t* text_utf16, text_style_t style sk_default(0));
+SK_API vec2          text_size_constrained         (const char*     text_utf8,  text_style_t style, float max_width);
+SK_API vec2          text_size_constrained_16      (const char16_t* text_utf16, text_style_t style, float max_width);
 SK_API vec2          text_char_at                  (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 SK_API vec2          text_char_at_16               (const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
 
@@ -1437,7 +1525,7 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, void *data, size_t data_size, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
 SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
@@ -1581,6 +1669,7 @@ typedef enum render_clear_ {
 	/*Clear both color and depth data.*/
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
+SK_MakeFlag(render_clear_)
 
 /*The projection mode used by StereoKit for the main camera! You
   can use this with Renderer.Projection. These options are only
@@ -1616,6 +1705,8 @@ SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
 SK_API void                  render_set_scaling    (float display_tex_scale);
 SK_API float                 render_get_scaling    (void);
+SK_API void                  render_set_viewport_scaling(float viewport_rect_scale);
+SK_API float                 render_get_viewport_scaling(void);
 SK_API void                  render_set_multisample(int32_t display_tex_multisample);
 SK_API int32_t               render_get_multisample(void);
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
@@ -1639,10 +1730,44 @@ SK_API void                  render_screenshot_viewpoint(void (*render_on_screen
 SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
+SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
-SK_API void          hierarchy_push              (const sk_ref(matrix) transform);
+
+SK_API render_list_t         render_list_find         (const char* id);
+SK_API render_list_t         render_list_create       (void);
+SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
+SK_API const char*           render_list_get_id       (const render_list_t list);
+SK_API void                  render_list_addref       (      render_list_t list);
+SK_API void                  render_list_release      (      render_list_t list);
+SK_API void                  render_list_clear        (      render_list_t list);
+SK_API int32_t               render_list_item_count   (const render_list_t list);
+SK_API int32_t               render_list_prev_count   (const render_list_t list);
+SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all));
+
+SK_API void                  render_list_push         (      render_list_t list);
+SK_API void                  render_list_pop          (void);
+
+///////////////////////////////////////////
+
+/*When used with a hierarchy modifying function that will push/pop items onto a
+  stack, this can be used to change the behavior of how parent hierarchy items
+  will affect the item being added to the top of the stack.*/
+typedef enum hierarchy_parent_ {
+	/*Inheriting is generally the default behavior of a hierarchy stack, the
+	  current item will inherit the properties of the parent stack item in some
+	  form or another.*/
+	hierarchy_parent_inherit,
+	/*Ignoring the parent hierarchy stack item will let you skip inheriting
+	  anything from the parent item. The new item remains exactly as provided.*/
+	hierarchy_parent_ignore,
+} hierarchy_parent_;
+
+SK_API void          hierarchy_push              (const sk_ref(matrix) transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void          hierarchy_pop               (void);
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        (void);
@@ -1721,13 +1846,13 @@ typedef enum picker_mode_ {
 typedef enum text_context_ {
 	/*General text editing, this is the most common type of text, and would
 	  result in a 'standard' keyboard layout.*/
-	text_context_text = 1,
+	text_context_text = 0,
 	/*Numbers and numerical values.*/
-	text_context_number = 2,
+	text_context_number = 1,
 	/*This text specifically represents some kind of URL/URI address.*/
-	text_context_uri = 10,
+	text_context_uri = 2,
 	/*This is a password, and should not be visible when typed!*/
-	text_context_password = 18,
+	text_context_password = 3,
 
 } text_context_;
 SK_MakeFlag(text_context_);
@@ -1744,6 +1869,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
+SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, char** keyboard_layout, int layouts_num);
 
 ///////////////////////////////////////////
 
@@ -2159,6 +2285,8 @@ SK_API void                  input_text_inject_char  (char32_t character);
 SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
 SK_API void                  input_hand_solid        (handed_ hand, bool32_t solid);
 SK_API void                  input_hand_material     (handed_ hand, material_t material);
+SK_API bool32_t              input_get_finger_glow   (void);
+SK_API void                  input_set_finger_glow   (bool32_t visible);
 
 SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove(hand_sim_id_t id);
@@ -2402,6 +2530,8 @@ typedef enum asset_type_ {
 	asset_type_solid,
 	/*An Anchor.*/
 	asset_type_anchor,
+	/*A RenderList*/
+	asset_type_render_list,
 } asset_type_;
 
 typedef void* asset_t;
@@ -2456,7 +2586,8 @@ SK_CONST char *default_id_shader_blit          = "default/shader_blit";
 SK_CONST char *default_id_shader_pbr           = "default/shader_pbr";
 SK_CONST char *default_id_shader_pbr_clip      = "default/shader_pbr_clip";
 SK_CONST char *default_id_shader_unlit         = "default/shader_unlit";
-SK_CONST char *default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char* default_id_shader_unlit_clip    = "default/shader_unlit_clip";
+SK_CONST char *default_id_shader_lightmap      = "default/shader_lightmap";
 SK_CONST char *default_id_shader_font          = "default/shader_font";
 SK_CONST char *default_id_shader_equirect      = "default/shader_equirect";
 SK_CONST char *default_id_shader_ui            = "default/shader_ui";

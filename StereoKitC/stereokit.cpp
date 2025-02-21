@@ -64,6 +64,7 @@ struct sk_state_t {
 	uint64_t  app_init_time;
 	system_t *app_system;
 	int32_t   app_system_idx;
+	quit_reason_ quit_reason;
 };
 static sk_state_t local;
 
@@ -83,12 +84,13 @@ bool32_t sk_step_end  ();
 bool32_t sk_init(sk_settings_t settings) {
 	local = {};
 	local.timev_scale = 1;
+	local.quit_reason = quit_reason_none;
 
 	local.settings    = settings;
 	local.init_thread = ft_id_current();
-	ft_thread_name(ft_thread_current(), "StereoKit Main");
-	if (local.settings.log_filter != log_none)
-		log_set_filter(local.settings.log_filter);
+	log_set_filter(local.settings.log_filter != log_none
+		? local.settings.log_filter
+		: log_diagnostic);
 
 	// Manual positioning happens when _any_ of the flascreen positioning
 	// settings are set.
@@ -100,10 +102,28 @@ bool32_t sk_init(sk_settings_t settings) {
 
 	// Set some default values
 	if (local.settings.app_name           == nullptr) local.settings.app_name           = "StereoKit App";
+	if (local.settings.assets_folder      == nullptr) local.settings.assets_folder      = "Assets";
 	if (local.settings.flatscreen_width   == 0      ) local.settings.flatscreen_width   = 1280;
 	if (local.settings.flatscreen_height  == 0      ) local.settings.flatscreen_height  = 720;
 	if (local.settings.render_scaling     == 0      ) local.settings.render_scaling     = 1;
+	if (local.settings.mode               == app_mode_none) local.settings.mode         = app_mode_xr;
+#if SK_VERSION_MINOR >= 4
+	if (local.settings.standby_mode == standby_mode_default) local.settings.standby_mode = standby_mode_pause;
+#else
+	if (local.settings.standby_mode == standby_mode_default)
+		local.settings.standby_mode = local.settings.disable_unfocused_sleep
+			? standby_mode_none
+			: standby_mode_slow;
+#endif
+	
+	// HoloLens (UWP) can't handle MSAA and a resolve, so we set MSAA to 1 by
+	// default there. Fortunately it looks great without it, so we don't really
+	// need MSAA there. This setting is still explicitly assignable.
+#if defined(SK_OS_WINDOWS_UWP)
 	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
+#else
+	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 4;
+#endif
 
 	// display_preference is obsolete, so we'll fill in `mode` based on it, if
 	// mode hasn't been specified.
@@ -120,9 +140,6 @@ bool32_t sk_init(sk_settings_t settings) {
 	// don't allow flatscreen fallback on Android
 	local.settings.no_flatscreen_fallback = true;
 #endif
-
-	render_set_scaling    (local.settings.render_scaling);
-	render_set_multisample(local.settings.render_multisample);
 
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 
@@ -258,8 +275,12 @@ bool32_t sk_init(sk_settings_t settings) {
 	systems_add(&sys_app);
 
 	local.initialized = systems_initialize();
-	if (!local.initialized) log_show_any_fail_reason();
-	else                    log_clear_any_fail_reason();
+	if (!local.initialized) {
+		log_show_any_fail_reason();
+		sk_quit(quit_reason_initialization_failed);
+	} else {
+		log_clear_any_fail_reason();
+	}
 
 	local.app_system     = systems_find    ("App");
 	local.app_system_idx = systems_find_idx("App");
@@ -289,25 +310,15 @@ void sk_shutdown() {
 void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
-	systems_shutdown();
+	systems_shutdown      ();
 	sk_mem_log_allocations();
-	log_clear_subscribers();
+	log_clear_subscribers ();
 
+	// Persist the quit reason after everything has been shut down and cleared.
+	quit_reason_ temp_quit_reason = local.quit_reason;
 	local = {};
 	local.disallow_user_shutdown = true;
-}
-
-///////////////////////////////////////////
-
-void sk_app_step() {
-	if (local.app_step_func != nullptr)
-		local.app_step_func();
-}
-
-///////////////////////////////////////////
-
-void sk_quit() {
-	local.running = false;
+	local.quit_reason            = temp_quit_reason;
 }
 
 ///////////////////////////////////////////
@@ -336,7 +347,7 @@ bool32_t sk_step_end() {
 
 	systems_step_partial(system_run_from, local.app_system_idx+1);
 
-	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && !local.settings.disable_unfocused_sleep)
+	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
 		platform_sleep(100);
 	local.in_step = false;
 	return local.running;
@@ -407,6 +418,20 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
 #endif
+}
+
+///////////////////////////////////////////
+
+void sk_app_step() {
+	if (local.app_step_func != nullptr)
+		local.app_step_func();
+}
+
+///////////////////////////////////////////
+
+void sk_quit(quit_reason_ quit_reason) {
+	local.quit_reason = quit_reason;
+	local.running     = false;
 }
 
 ///////////////////////////////////////////
@@ -506,6 +531,12 @@ uint64_t sk_version_id() { return SK_VERSION_ID; }
 ///////////////////////////////////////////
 
 app_focus_ sk_app_focus() { return local.focus; }
+
+///////////////////////////////////////////
+
+quit_reason_ sk_get_quit_reason() { 
+	return local.quit_reason;
+}
 
 ///////////////////////////////////////////
 

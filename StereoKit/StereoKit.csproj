@@ -18,7 +18,7 @@
 	<!-- NuGet package -->
 	<PropertyGroup>
 		<Id>StereoKit</Id>
-		<Version>0.3.9</Version>
+		<Version>0.3.10</Version>
 		<Title>StereoKit</Title>
 		<Authors>Nick Klingensmith</Authors>
 		<PackageProjectUrl>https://github.com/maluoi/StereoKit</PackageProjectUrl>
@@ -71,9 +71,12 @@
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/UWP/ARM/Release/StereoKitC.pdb"   PackagePath="runtimes/win10-arm/nativeassets/uap10.0/"   Condition="Exists('../bin/distribute/bin/UWP/ARM/Release/StereoKitC.pdb')"  />
 
 		<!-- Shader compile tools -->
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc.exe" PackagePath="tools/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc"     PackagePath="tools/" />
-		<Content Pack="true" Visible="false" Include="../tools/include/*.*"   PackagePath="tools/include/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_x64/skshaderc.exe"   PackagePath="tools/skshaderc/win32_x64/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_arm64/skshaderc.exe" PackagePath="tools/skshaderc/win32_arm64/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_x64/skshaderc"       PackagePath="tools/skshaderc/linux_x64/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_arm64/skshaderc"     PackagePath="tools/skshaderc/linux_arm64/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/mac/skshaderc"             PackagePath="tools/skshaderc/mac/" />
+		<Content Pack="true" Visible="false" Include="../tools/include/*.*" PackagePath="tools/include/" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in
 		the user's project. -->

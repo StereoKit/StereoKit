@@ -54,6 +54,10 @@ namespace StereoKit
 		/// stack, according to UI.Push/PopTextStyle.</summary>
 		public static TextStyle TextStyle => NativeAPI.ui_get_text_style();
 
+		/// <summary>This returns the current state of the UI's enabled status
+		/// stack, set by `UI.Push/PopEnabled`.</summary>
+		public static bool Enabled => NativeAPI.ui_is_enabled();
+		
 		/// <summary>Use LayoutRemaining, removing in v0.4</summary>
 		[Obsolete("Use LayoutRemaining, removing in v0.4")]
 		public static Vec2 AreaRemaining => NativeAPI.ui_area_remaining();
@@ -432,7 +436,7 @@ namespace StereoKit
 		/// within its bounds? TextAlign.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
-			=> NativeAPI.ui_text_16(text, textAlign);
+			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, 0, textAlign, TextFit.Wrap);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -452,7 +456,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
-			=> NativeAPI.ui_text_sz_16(text, textAlign, fit, size);
+			=> NativeAPI.ui_text_sz_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -472,7 +476,68 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_text_at_16(text, textAlign, fit, topLeftCorner, size);
+			=> NativeAPI.ui_text_at_16(text, IntPtr.Zero, UIScroll.None, textAlign, fit, topLeftCorner, size);
+
+		/// <summary>A scrolling text element! This is for reading large chunks
+		/// of text that may be too long to fit in the available space. It
+		/// requires a size, as well as a place to store the current scroll
+		/// value. Text uses the UI's current font settings, which can be
+		/// changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="scroll">This is the current scroll value of the text,
+		/// in meters, _not_ percent.</param>
+		/// <param name="scrollDirection">What scroll bars are allowed to show
+		/// on this text? Vertical, horizontal, both?</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default, and this scrolling
+		/// overload will always add `TextFit.Clip` internally.</param>
+		/// <returns>Returns true if any of the scroll bars have changed this
+		/// frame.</returns>
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
+
+		/// <summary>A scrolling text element! This is for reading large chunks
+		/// of text that may be too long to fit in the available space. It
+		/// requires a height, as well as a place to store the current scroll
+		/// value. Text uses the UI's current font settings, which can be
+		/// changed with UI.Push/PopTextStyle.</summary>
+		/// <param name="text">The text you wish to display, there's no
+		/// additional parsing done to this text, so put it in as you want to
+		/// see it!</param>
+		/// <param name="scroll">This is the current scroll value of the text,
+		/// in meters, _not_ percent.</param>
+		/// <param name="scrollDirection">What scroll bars are allowed to show
+		/// on this text? Vertical, horizontal, both?</param>
+		/// <param name="height">The vertical height of this Text element,
+		/// width will automatically take the remainder of the current layout
+		/// width.</param>
+		/// <param name="textAlign">Where should the text position itself
+		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// aligned.</param>
+		/// <param name="fit">Describe how the text should behave when one of
+		/// its size dimensions conflicts with the provided 'size' parameter.
+		/// `UI.Text` uses `TextFit.Wrap` by default, and this scrolling
+		/// overload will always add `TextFit.Clip` internally.</param>
+		/// <returns>Returns true if any of the scroll bars have changed this
+		/// frame.</returns>
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
+
+		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <param name="topLeftCorner">This is the top left corner of the UI
+		/// element relative to the current Hierarchy.</param>
+		/// <param name="size">The layout size for this element in Hierarchy
+		/// space.</param>
+		public static bool TextAt(string text, ref Vec2 scroll, UIScroll scrollDirection, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+			=> NativeAPI.ui_text_at_16(text, ref scroll, scrollDirection, textAlign, fit, topLeftCorner, size);
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
@@ -1339,12 +1404,25 @@ namespace StereoKit
 		/// <summary>All UI between PushEnabled and its matching PopEnabled
 		/// will set the UI to an enabled or disabled state, allowing or
 		/// preventing interaction with specific elements. The default state is
-		/// true. This currently doesn't have any visual effect, so you may
-		/// wish to pair it with a PushTint.</summary>
+		/// true.</summary>
 		/// <param name="enabled">Should the following elements be enabled and
 		/// interactable?</param>
-		public static void PushEnabled(bool enabled)
-			=> NativeAPI.ui_push_enabled(enabled);
+		/// <param name="ignoreParent">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		[Obsolete("Use override with HierarchyParent parameter")]
+		public static void PushEnabled(bool enabled, bool ignoreParent)
+			=> NativeAPI.ui_push_enabled(enabled, ignoreParent ? HierarchyParent.Ignore : HierarchyParent.Inherit);
+
+		/// <summary>All UI between PushEnabled and its matching PopEnabled
+		/// will set the UI to an enabled or disabled state, allowing or
+		/// preventing interaction with specific elements. The default state is
+		/// true.</summary>
+		/// <param name="enabled">Should the following elements be enabled and
+		/// interactable?</param>
+		/// <param name="parentBehavior">Do we want to ignore or inherit the
+		/// state of the current stack?</param>
+		public static void PushEnabled(bool enabled, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.ui_push_enabled(enabled, parentBehavior);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>

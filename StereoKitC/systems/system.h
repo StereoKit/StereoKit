@@ -46,7 +46,6 @@ struct system_t {
 
 void      systems_add         (const system_t *system);
 bool      systems_initialize  ();
-void      systems_step        ();
 void      systems_step_partial(system_run_ run_section, int32_t system_idx);
 void      systems_shutdown    ();
 system_t* systems_find        (const char *name);

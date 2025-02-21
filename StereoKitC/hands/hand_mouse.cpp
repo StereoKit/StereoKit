@@ -112,7 +112,7 @@ void hand_mouse_update_poses(bool update_visuals) {
 	input_hand_sim_poses(mouse_active_hand, true, pointer_cursor->ray.pos, hand_rot);
 
 	if (update_visuals)
-		input_hand_update_meshes();
+		input_hand_update_fallback_meshes();
 }
 
 }

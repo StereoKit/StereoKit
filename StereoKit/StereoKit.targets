@@ -6,7 +6,7 @@
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
-	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="'$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android'">
+	<Target Name="StereoKit_Libraries" BeforeTargets="AfterBuild" AfterTargets="StereoKit_Properties" Condition="('$(OutputType)'!='Library' or '$(SKBuildPlatform)'=='Android') and '$(UseUwp)'!='true'">
 		<Message Importance="high" Text="[StereoKit NuGet] Copying native libraries for .NET $(SKBuildNET) $(SKBuildPlatform)."/>
 		<Message Importance="high" Condition= "'$(SKBuildPlatform)'=='Android'" Text="[StereoKit NuGet] Using the $(SKOpenXRLoader) &lt;SKOpenXRLoader&gt; version of the Android OpenXR loader."/>
 		<Error Condition="'$(SKBuildPlatform)'=='Android' and '$(SKOpenXRLoader)'!='None' and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/libopenxr_loader.so') and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/x64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/arm64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/libopenxr_loader.so')" Text="StereoKit could not find the Android OpenXR Loader indicated by &lt;SKOpenXRLoader&gt;! Please copy your platform specific libopenxr_loader.so file in this folder: $(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/[x64|arm64]/" />
@@ -45,6 +45,28 @@
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 
+	</Target>
+
+	<!-- Shenanigans to get UWP working here -->
+	<Target Name="StereoKit_FixUWPBinaries" AfterTargets="ResolvePackageAssets" Condition="'$(UseUwp)'=='true'">
+		<Message Importance="High" Text="[StereoKit NuGet] Replacing StereoKit Win32 binaries with UWP versions." />
+		<!-- Immediately after package assets are picked, we insert ourselves and
+		     swap out the incorrect Win32 binaries that .NET selects for the UWP
+		     ones. .NET deprecated the RIDs necessary to distinguish properly
+		     between UWP and Win32, perhaps there's a better mechanism here, but
+		     this seems like it'll be alright. -->
+		<ItemGroup>
+			<NativeCopyLocalItems Remove="$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\runtimes\win-$(Platform)\native\StereoKitC.dll'))"/>
+			<NativeCopyLocalItems Remove="$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\runtimes\win-$(Platform)\native\StereoKitC.pdb'))"/>
+			<NativeCopyLocalItems
+				Include   = "$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\runtimes\win10-$(Platform)\nativeassets\uap10.0\StereoKitC.dll'))"
+				AssetType = "native"
+				CopyLocal = "true"/>
+			<NativeCopyLocalItems
+				Include   = "$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\runtimes\win10-$(Platform)\nativeassets\uap10.0\StereoKitC.pdb'))"
+				AssetType = "native"
+				CopyLocal = "true"/>
+		</ItemGroup>
 	</Target>
 
 	<!-- Link libraries directly in Xamarin and Maui Android projects. -->

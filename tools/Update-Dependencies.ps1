@@ -6,7 +6,8 @@ param(
     [ValidateSet('Release','Debug')]
     [string]$config = 'Release',
     [string]$gitCache = 'C:\Temp\StereoKitBuild',
-    [string]$libOut = '..\StereoKitC\lib'
+    [string]$libOut = '..\StereoKitC\lib',
+    [string]$onlyDep = ''
 )
 
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
@@ -16,7 +17,7 @@ function FormatPath { param([string]$path)
     if ($script:plat -eq 'UWP') {
         $archplat = "$($script:arch)_UWP"
     }
-    return $path.Replace('[arch]',$script:arch).Replace('[config]', $config).Replace('[archplat]', $archplat)
+    return $path.Replace('[arch]',$script:arch).Replace('[config]', $config).Replace('[archplat]', $archplat).Replace('[libfolder]', $script:libOut)
 }
 
 ######## FolderCopy ########
@@ -37,7 +38,7 @@ class FolderCopy {
 
     [void] Execute() {
         $sourceFinal = FormatPath($this.Source)
-        $destFinal   = "$PSScriptRoot\$script:libOut\$(FormatPath($this.Dest))"
+        $destFinal   = "$PSScriptRoot\$(FormatPath($this.Dest))"
         Write-Host "Copy from $sourceFinal to $destFinal"
 
         New-Item -ItemType Directory -Path $destFinal -Force
@@ -68,11 +69,12 @@ class Dependency {
     [string]$Tag
     [string]$Version
     [string]$Patch
+    [string]$VerifyFile
     [System.Collections.ArrayList]$Copies = @()
     [System.Collections.ArrayList]$CmakeOptions = @()
     [bool]$NeedsBuilt
 
-    Dependency([string]$n, [string]$repo, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies) {
+    Dependency([string]$n, [string]$repo, [string]$patch, [System.Collections.ArrayList]$options, [System.Collections.ArrayList]$copies, [string]$verifyFile) {
         $this.Name = $n
         $this.Repository = $repo
         $this.Tag = ""
@@ -80,9 +82,12 @@ class Dependency {
         $this.Patch = $patch
         $this.CmakeOptions = $options
         $this.NeedsBuilt = $false
+        $this.VerifyFile = $verifyFile
     }
 
     [string] Path() {
+        if ($this.VerifyFile -ne '' -and $null -ne $this.VerifyFile) {return FormatPath($this.VerifyFile)}
+
         if ($script:plat -eq 'Win32') {return "$PSScriptRoot\$script:libOut\bin\$script:arch\$script:config\$($this.Name).lib"}
         else                          {return "$PSScriptRoot\$script:libOut\bin\$($script:arch)_UWP\$script:config\$($this.Name).lib"}
     }
@@ -97,18 +102,48 @@ $dependencies = @(
     [Dependency]::new(
         'openxr_loader', 
         'https://github.com/KhronosGroup/OpenXR-SDK.git',
-        $null, 
+        '',
         @('-DOPENXR_DEBUG_POSTFIX=""'), 
-        @(  [FolderCopy]::new('src\loader\[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\include\openxr\', "include\openxr\", $false, @('h')))
+        @(  [FolderCopy]::new('src\loader\[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\include\openxr\', "[libfolder]\include\openxr\", $false, @('h'))),
+        $null
     ), 
     [Dependency]::new(
         'reactphysics3d',
         'https://github.com/DanielChappuis/reactphysics3d.git',
-        $null,
+        'reactphysics.patch',
         $null,
         @(  [FolderCopy]::new('[config]\', "bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
-            [FolderCopy]::new('..\include\reactphysics3d\*', "include\reactphysics3d\", $true, $null) )
+            [FolderCopy]::new('..\include\reactphysics3d\*', "[libfolder]\include\reactphysics3d\", $true, $null) ),
+        $null
+    ),
+    [Dependency]::new(
+        'sk_gpu', 
+        'https://github.com/StereoKit/sk_gpu/releases/download/v[version]/sk_gpu.v[version].zip',
+        '',
+        @(), 
+        @(  [FolderCopy]::new('..\tools\*', 'skshaderc\', $true, $null),
+            [FolderCopy]::new('..\src\*', '[libfolder]\include\sk_gpu\', $false, @('h'))),
+        'skshaderc\win32_x64\skshaderc.exe'
+    )
+    [Dependency]::new(
+        'meshoptimizer',
+        'https://github.com/zeux/meshoptimizer.git',
+        '',
+        $null,
+        @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\src\*', "[libfolder]\include\meshoptimizer\", $false, @('h')) ),
+        $null
+    )
+    [Dependency]::new(
+        'basis_universal',
+        'https://github.com/BinomialLLC/basis_universal.git',
+        '',
+        $null,
+        @(  [FolderCopy]::new('[config]\', "[libfolder]\bin\[archplat]\[config]\", $false, @('lib', 'pdb', 'dll') ),
+            [FolderCopy]::new('..\transcoder\*', "[libfolder]\include\basisu\", $false, @('h', 'cpp', 'inc')),
+            [FolderCopy]::new('..\zstd\*', "[libfolder]\include\zstd\", $false, @('h', 'c')) ),
+        "[libfolder]\include\basisu\basisu_transcoder.h"
     )
 )
 
@@ -130,6 +165,8 @@ $dependencyVersions = ConvertFrom-StringData -String $depsFile
 # Check each dependency to see if it needs to be built
 $dependenciesDirty = $false
 foreach($dep in $dependencies) { # NAME\s*$($dep.Name)\s*#\s*([\d.]*)
+    if ($onlyDep -ne '' -and $dep.Name -ne $onlyDep) {continue}
+
     $tag            = $sourceFile | Select-String -Pattern "(?s)NAME\s*$($dep.Name).*?GIT_TAG\s*(\w*)" | %{$_.Matches.Groups[1].Value}
     $desiredVersion = $sourceFile | Select-String -Pattern "NAME\s*$($dep.Name)\s*#\s*([\d.]*)" | %{$_.Matches.Groups[1].Value}
     $currentVersion = $dependencyVersions[$dep.Key()]
@@ -218,23 +255,54 @@ foreach($dep in $dependencies) {
     #Skip this item if it doesn't need built
     if (!$dep.NeedsBuilt) {continue}
 
-    # Make sure the repository is cloned and pointing to the right version
+    # Check if the repository ends with .git or .zip
     $folderName = "$gitCache\$($dep.Name)"
-    if (!(Test-Path -Path $folderName)) {
-        & git clone $dep.Repository "$folderName"
-    }
-    Push-Location -Path $folderName
-    & git fetch
-    & git clean -fd
-    & git reset --hard
-    & git checkout "$($dep.Tag)"
+    if ($dep.Repository.EndsWith('.git')) {
+        # Make sure the repository is cloned and pointing to the right version
+        if (!(Test-Path -Path $folderName)) {
+            & git clone $dep.Repository "$folderName"
+        }
+        Push-Location -Path $folderName
+        & git fetch
+        & git clean -fd
+        & git reset --hard
+        & git checkout "$($dep.Tag)"
 
-    Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
+        Write-Host "Checked out $($dep.Name) at $($dep.Tag)"
 
-    if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
-        Write-Host "Applying patch: $($dep.Patch)"
-        & git apply "$PSScriptRoot\$($dep.Patch)"
-    }
+        if ($null -ne $dep.Patch -and $dep.Patch -ne '') {
+            Write-Host "Applying patch: $($dep.Patch)"
+            & git apply "$PSScriptRoot\$($dep.Patch)"
+        }
+    } else {
+        $zipName = "$folderName\$($dep.Name).$(($dep.Version)).zip"
+
+        if (!(Test-Path -Path $zipName)) {
+            Write-Host "Downloading $($dep.Name) $($dep.Version)"
+            # if the folder exists, we need to delete it
+            if (Test-Path -Path $folderName) {
+                Remove-Item -Path $folderName -Recurse -Force -Confirm:$false
+            }
+            New-Item -Path $folderName -ItemType "directory" | Out-Null
+
+            # Download the zip file and extract it
+            $url = $dep.Repository.Replace('[version]', $dep.Version)
+            Invoke-WebRequest -Uri $url -OutFile $zipName
+            Expand-Archive -Path $zipName -DestinationPath $folderName -Force
+
+            # Touch all the files to make sure they have the current time,
+            # which is apparently not guaranteed when unzipping.
+            foreach ($file in (Get-ChildItem -Path $folderName -Recurse -File)) {
+                $currentTime = Get-Date
+                $file.LastWriteTime  = $currentTime
+                $file.CreationTime   = $currentTime
+                $file.LastAccessTime = $currentTime
+            }
+
+            Write-Host "Downloaded finished"
+        }
+        Push-Location -Path $folderName
+    } 
 
     # Make a build folder for the current build options
     $buildFolder = "build_$($arch)_$($plat)_$($config)"

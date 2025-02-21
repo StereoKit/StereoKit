@@ -26,6 +26,7 @@ bool             oxra_system_initialized = false;
 bool             oxra_mesh_dirty[2] = { true, true };
 XrHandMeshMSFT   oxra_mesh_src[2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
 float            oxra_hand_joint_scale = 1;
+hand_mesh_t      oxra_ext_mesh[2];
 
 ///////////////////////////////////////////
 
@@ -118,13 +119,15 @@ void hand_oxra_init() {
 
 		// Initialize hand mesh trackers
 		for (int32_t h = 0; h < handed_max; h++) {
-			hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+			hand_mesh_t *hand_mesh = &oxra_ext_mesh[h];
+			hand_mesh->mesh = mesh_create();
+			mesh_set_keep_data(hand_mesh->mesh, false);
 
 			// Allocate memory for OpenXR to store hand mesh data in.
 			oxra_mesh_src[h].indexBuffer.indexCapacityInput   = properties_handmesh.maxHandMeshIndexCount;
 			oxra_mesh_src[h].indexBuffer.indices              = sk_malloc_t(uint32_t, properties_handmesh.maxHandMeshIndexCount);
 			oxra_mesh_src[h].vertexBuffer.vertexCapacityInput = properties_handmesh.maxHandMeshVertexCount;
-			oxra_mesh_src[h].vertexBuffer.vertices            = sk_malloc_t(XrHandMeshVertexMSFT, properties_handmesh.maxHandMeshIndexCount);
+			oxra_mesh_src[h].vertexBuffer.vertices            = sk_malloc_t(XrHandMeshVertexMSFT, properties_handmesh.maxHandMeshVertexCount);
 
 			// Allocate memory for the SK format mesh data.
 			if (hand_mesh->ind_count < properties_handmesh.maxHandMeshIndexCount) {
@@ -163,6 +166,10 @@ void hand_oxra_shutdown() {
 		if (oxra_hand_space[h] != XR_NULL_HANDLE) xrDestroySpace(oxra_hand_space[h]);
 		sk_free(oxra_mesh_src[h].indexBuffer.indices);
 		sk_free(oxra_mesh_src[h].vertexBuffer.vertices);
+
+		mesh_release(oxra_ext_mesh[h].mesh);
+		sk_free(oxra_ext_mesh[h].inds);
+		sk_free(oxra_ext_mesh[h].verts);
 	}
 
 	oxra_hand_joint_scale = 1;
@@ -217,8 +224,20 @@ void hand_oxra_update_joints() {
 			(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
 			(locations.jointLocations[1 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
+		// Vive XR Elite will mark joints as valid, but then send invalid joint
+		// data such as 0,0,0,0 quats which will crash math functions.
+		// Unfortunately, it seems impossible to restrict this to specific
+		// joints, so all joints must be checked.
+		for (uint32_t j = 0; j < locations.jointCount; j++) {
+			XrHandJointLocationEXT jt = locations.jointLocations[j];
+			float sum = jt.pose.orientation.x + jt.pose.orientation.y + jt.pose.orientation.z + jt.pose.orientation.w;
+			if (sum == 0) {
+				valid_joints = false;
+				break;
+			}
+		}
 		hand_t *inp_hand     = (hand_t*)input_hand((handed_)h);
-		inp_hand->tracked_state = button_make_state(inp_hand->tracked_state & button_state_active, valid_joints);
+		inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
 		pointer->tracked = inp_hand->tracked_state;
 
 		// If both hands aren't active at all, we'll want to to switch back
@@ -293,7 +312,7 @@ void hand_oxra_update_poses(bool update_visuals) {
 
 	if (update_visuals) {
 		if (xr_has_hand_meshes) hand_oxra_update_system_meshes();
-		else                    input_hand_update_meshes();
+		else                    input_hand_update_fallback_meshes();
 	}
 }
 
@@ -330,7 +349,10 @@ struct hand_tri_t {
 
 void hand_oxra_update_system_meshes() {
 	for (int32_t h = 0; h < handed_max; h++) {
-		hand_mesh_t *hand_mesh = input_hand_mesh_data((handed_)h);
+		if (input_hand_should_update_mesh((handed_)h) == false)
+			continue;
+
+		hand_mesh_t* hand_mesh = &oxra_ext_mesh[h];
 
 		XrHandMeshUpdateInfoMSFT info = { XR_TYPE_HAND_MESH_UPDATE_INFO_MSFT };
 		info.handPoseType = XR_HAND_POSE_TYPE_TRACKED_MSFT;
@@ -393,6 +415,8 @@ void hand_oxra_update_system_meshes() {
 			}
 			oxra_mesh_dirty[h] = false;
 		}
+
+		input_hand_set_mesh_data((handed_)h, hand_mesh);
 	}
 }
 

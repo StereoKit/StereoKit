@@ -3,6 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace StereoKit
 {
@@ -16,9 +17,11 @@ namespace StereoKit
 
 		/// <summary>This is a copy of the settings that StereoKit was
 		/// initialized with, so you can refer back to them a little easier.
-		/// These are read only, and keep in mind that some settings are 
-		/// only requests! Check SK.System and other properties for the 
-		/// current state of StereoKit.</summary>
+		/// Some of these values will be different than provided, as StereoKit
+		/// will resolve some default values based on the platform capabilities
+		/// or internal preference. These are read only, and keep in mind that
+		/// some settings are only requests! Check SK.System and other
+		/// properties for the current state of StereoKit.</summary>
 		public static SKSettings Settings { get; private set; }
 		/// <summary>Has StereoKit been successfully initialized already? If
 		/// initialization was attempted and failed, this value will be 
@@ -48,6 +51,10 @@ namespace StereoKit
 		/// still run and render when unfocused, as the app may still be
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
+
+		/// <summary> This tells the reason why StereoKit has quit and 
+		/// developer can take appropriate action to debug.</summary>
+		public static QuitReason QuitReason => NativeAPI.sk_get_quit_reason();
 
 		/// <summary>On Android systems, this must be assigned right away,
 		/// before _any_ access to SK methods. When using Xamarin.Essentials or
@@ -105,7 +112,7 @@ namespace StereoKit
 		/// trailing '/' is unnecessary.</param>
 		/// <returns>Returns true if all systems are successfully 
 		/// initialized!</returns>
-		public static bool Initialize(string projectName = null, string assetsFolder = "")
+		public static bool Initialize(string projectName = null, string assetsFolder = null)
 			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
 
 		/// <summary>If you need to call StereoKit code before calling
@@ -142,11 +149,13 @@ namespace StereoKit
 				catch { settings.appName = "StereoKit App"; }
 			}
 
-			// DllImport finds the function at the beginning of the function 
-			// call, so this needs to be in a separate function from 
+			// DllImport finds the function at the beginning of the function
+			// call, so this needs to be in a separate function from
 			// NativeLib.LoadDll
 			bool result = NativeAPI.sk_init(settings);
-			Settings = settings;
+			// Get the "resolved" settings from StereoKit, so we pick up some
+			// of the final defaults or calculated settings.
+			Settings = NativeAPI.sk_get_settings();
 
 			// Get system information
 			if (result) { 
@@ -181,9 +190,9 @@ namespace StereoKit
 		/// <summary>Lets StereoKit know it should quit! It'll finish the
 		/// current frame, and after that Step will return that it wants to
 		/// exit.</summary>
-		public static void Quit()
+		public static void Quit(QuitReason quitReason = QuitReason.User)
 		{
-			NativeAPI.sk_quit();
+			NativeAPI.sk_quit(quitReason);
 		}
 
 		/// <summary> Steps all StereoKit systems, and inserts user code via
@@ -223,14 +232,9 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			try {
-				while (Step())
-					if (onStep != null) onStep();
-			} catch {
-				if (onShutdown != null) onShutdown();
-				Shutdown();
-				throw;
-			}
+			while (Step())
+				if (onStep != null) onStep();
+
 			if (onShutdown != null) onShutdown();
 			Shutdown();
 		}
@@ -340,6 +344,13 @@ namespace StereoKit
 			if (result == null) result = _steppers.Add(type);
 			return result;
 		}
+
+		/// <summary>An enumerable list of all currently active ISteppers
+		/// registered with StereoKit. This does not include Steppers that have
+		/// been added, but are not yet initialized. Stepper initialization
+		/// happens at the beginning of the frame, before the app's Step.
+		/// </summary>
+		public static IEnumerable<IStepper> Steppers => _steppers.steppers;
 
 		/// <summary>This will queue up some code to be run on StereoKit's main
 		/// thread! Immediately after StereoKit's Step, all callbacks

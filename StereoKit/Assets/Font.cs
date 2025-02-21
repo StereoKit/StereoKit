@@ -13,7 +13,7 @@ namespace StereoKit {
 		internal IntPtr _inst;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id
 		{
@@ -43,7 +43,7 @@ namespace StereoKit {
 			IntPtr fontInst = NativeAPI.font_find(fontId);
 			if (fontInst == IntPtr.Zero)
 			{
-				Log.Write(LogLevel.Warning, "Couldn't find a font named {0}", fontId);
+				Log.Warn($"Couldn't find a font named {fontId}");
 				return null;
 			}
 			return new Font(fontInst);

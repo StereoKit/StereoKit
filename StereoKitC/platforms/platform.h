@@ -143,12 +143,14 @@ void   platform_set_window        (void *window);
 void   platform_set_window_xam    (void *window);
 
 bool   platform_file_exists       (const char* filename);
+bool   platform_file_delete       (const char* filename);
 char  *platform_working_dir       ();
 void   platform_iterate_dir       (const char *directory_path, void *callback_data, void (*on_item)(void *callback_data, const char *name, const platform_file_attr_t platform_file_attr_t));
 char  *platform_push_path_ref     (char       *path, const char *directory);
 char  *platform_pop_path_ref      (char       *path);
 char  *platform_push_path_new     (const char *path, const char *directory);
 char  *platform_pop_path_new      (const char *path);
+bool32_t platform_read_file_direct(const char* filename_utf8, void** out_data, size_t* out_size);
 
 bool   platform_key_save_bytes    (const char* key, void* data,       int32_t data_size);
 bool   platform_key_load_bytes    (const char* key, void* ref_buffer, int32_t buffer_size);

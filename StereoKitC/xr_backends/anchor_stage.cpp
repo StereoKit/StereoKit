@@ -35,7 +35,10 @@ bool32_t anchor_stage_init() {
 	// Read anchors from a text file
 	char*  anchor_file      = nullptr;
 	size_t anchor_file_size = 0;
-	if (platform_read_file(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+	
+	if (platform_file_exists     (anchor_stage_store_filename) &&
+		platform_read_file_direct(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+
 		stref_t data_stref = stref_make(anchor_file);
 		stref_t line = {};
 		while (stref_nextline(data_stref, line)) {
@@ -83,18 +86,23 @@ void anchor_stage_shutdown() {
 	if (!anchor_stage_sys.loaded) return;
 
 	// Write our persistent anchors to file
-	char* file_data = string_copy("");
-	char  line[512];
-	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
-		anchor_t a = anchor_stage_sys.persistant[i];
-		snprintf(line, sizeof(line), "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %s\n",
-			a->pose.position.x, a->pose.position.y, a->pose.position.z, 
-			a->pose.orientation.x, a->pose.orientation.y, a->pose.orientation.z, a->pose.orientation.w,
-			a->name);
-		file_data = string_append(file_data, 1, line);
+	if (anchor_stage_sys.persistant.count > 0) {
+		char* file_data = string_copy("");
+		char  line[512];
+		for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
+			anchor_t a = anchor_stage_sys.persistant[i];
+			snprintf(line, sizeof(line), "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %s\n",
+				a->pose.position.x, a->pose.position.y, a->pose.position.z, 
+				a->pose.orientation.x, a->pose.orientation.y, a->pose.orientation.z, a->pose.orientation.w,
+				a->name);
+			file_data = string_append(file_data, 1, line);
+		}
+		platform_write_file_text(anchor_stage_store_filename, file_data);
+		sk_free(file_data);
+	} else {
+		if (platform_file_exists(anchor_stage_store_filename))
+			platform_file_delete(anchor_stage_store_filename);
 	}
-	platform_write_file_text(anchor_stage_store_filename, file_data);
-	sk_free(file_data);
 
 	// Release the persisted anchors and free the array
 	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {

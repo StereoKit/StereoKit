@@ -15,16 +15,18 @@ class DemoRenderScaling : ITest
 
 	float multisample;
 	float scaling;
+	float viewScaling;
 
 	public void Initialize()
 	{
 		multisample = Renderer.Multisample;
 		scaling     = Renderer.Scaling;
+		viewScaling = Renderer.ViewportScaling;
 	}
 	public void Shutdown() { }
 	public void Step()
 	{
-		UI.WindowBegin("Aliasing Settings", ref windowPose);
+		UI.WindowBegin("Render Scaling Settings", ref windowPose, new Vec2(0.3f,0));
 
 		if (Backend.XRType != BackendXRType.OpenXR)
 		{
@@ -55,12 +57,20 @@ class DemoRenderScaling : ITest
 			Renderer.Scaling     = scaling;
 		}
 
+		UI.HSeparator();
+
+		UI.Label("Viewport Scaling");
+		UI.Label($"{viewScaling:0.00}", V.XY(0.04f, 0));
+		UI.SameLine();
+		if (UI.HSlider("viewscaling", ref viewScaling, 0.1f, 1, 0))
+			Renderer.ViewportScaling = viewScaling;
+
 		if (Backend.XRType != BackendXRType.OpenXR)
 			UI.PopEnabled();
 
 		UI.WindowEnd();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.11f), V.XYZ(.3f, .32f, 0.1f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.16f), V.XYZ(.34f, .42f, 0.1f)));
 	}
 
 }

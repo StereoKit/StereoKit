@@ -5,39 +5,68 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+public enum SceneType
+{
+	Demos,
+	Tests,
+	Docs,
+	MAX
+}
+
 public static class Tests
 {
-	static List<Type> allTests  = new List<Type>();
-	static List<Type> demoTests = new List<Type>();
-	static ITest activeScene;
-	static ITest nextScene;
-	static int   testIndex  = 0;
-	static int   runFrames  = 2;
-	static float runSeconds = 0;
-	static int   sceneFrame = 0;
-	static float sceneTime  = 0;
-	static HashSet<string> screens = new HashSet<string>();
+	struct SceneItem
+	{
+		public Type   type;
+		public string name;
+	}
 
-	private static Type ActiveTest { set { nextScene = (ITest)Activator.CreateInstance(value); } }
-	public  static int  DemoCount => demoTests.Count;
-	public  static bool IsTesting { get; set; }
-	public  static bool TestSingle { get; set; }
+	static Type[]          allScenes;
+	static SceneItem[][]   sceneTypes;
+	static ITest           activeScene;
+	static ITest           nextScene;
+	static int             sceneIndex  = 0;
+	static int             runFrames   = 2;
+	static float           runSeconds  = 0;
+	static int             sceneFrame  = 0;
+	static float           sceneTime   = 0;
+	static int             failures    = 0;
+	static HashSet<string> screenshots = new HashSet<string>();
 
-	public static string ScreenshotRoot     { get; set; } = "../../../docs/img/screenshots";
-	public static bool   MakeScreenshots    { get; set; } = true;
-	public static string GltfFolders        { get; set; } = null; // "C:\\Tools\\glTF-Sample-Models-master\\2.0";
-	public static string GltfScreenshotRoot { get; set; } = null;
+	private static Type   ActiveScene        { set { nextScene = (ITest)Activator.CreateInstance(value); } }
+	public  static bool   IsTesting          { get; set; }
+	public  static bool   TestSingle         { get; set; }
+
+	public  static string ScreenshotRoot     { get; set; } = null;
+	public  static bool   MakeScreenshots    { get; set; } = true;
+	public  static string GltfFolders        { get; set; } = null;
+	public  static string GltfScreenshotRoot { get; set; } = null;
 
 	public static void FindTests()
 	{
-		allTests = Assembly.GetExecutingAssembly()
+		allScenes = Assembly.GetExecutingAssembly()
 			.GetTypes()
-			.Where ( a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
-			.ToList();
-		demoTests = allTests
-			.Where(a=>a.Name.StartsWith("Demo"))
-			.ToList();
+			.Where   (a => a != typeof(ITest) && typeof(ITest).IsAssignableFrom(a) )
+			.OrderBy (a => a.Name )
+			.ToArray ();
+
+		sceneTypes = new SceneItem[(int)SceneType.MAX][];
+		sceneTypes[(int)SceneType.Demos] = allScenes
+			.Where  (t => t.Name.StartsWith("Demo"))
+			.Select (t => new SceneItem { type = t, name = t.Name.Substring("Demo".Length) })
+			.ToArray();
+		sceneTypes[(int)SceneType.Tests] = allScenes
+			.Where  (t => t.Name.StartsWith("Test"))
+			.Select (t => new SceneItem { type = t, name = t.Name.Substring("Test".Length) })
+			.ToArray();
+		sceneTypes[(int)SceneType.Docs] = allScenes
+			.Where  (t => t.Name.StartsWith("Doc"))
+			.Select (t => new SceneItem { type = t, name = t.Name.Substring("Doc".Length) })
+			.ToArray();
 	}
+
+	public static int  Count   (SceneType category)        => sceneTypes[(int)category].Length;
+	public static bool IsActive(SceneType category, int i) => sceneTypes[(int)category][i].type == activeScene.GetType();
 
 	public static void Initialize()
 	{
@@ -45,8 +74,9 @@ public static class Tests
 			nextScene = null;
 		}
 		if (nextScene == null)
-			nextScene = (ITest)Activator.CreateInstance(allTests[testIndex]);
+			nextScene = (ITest)Activator.CreateInstance(allScenes[sceneIndex]);
 	}
+
 	public static void Update()
 	{
 		if (IsTesting && runSeconds != 0)
@@ -58,8 +88,8 @@ public static class Tests
 			GC.Collect(int.MaxValue, GCCollectionMode.Forced);
 			if (IsTesting)
 			{
-				Time.SetTime(0);
-				Input.HandVisible(Handed.Max, false);
+				Time .SetTime          (0);
+				Input.HandVisible      (Handed.Max, false);
 				Input.HandClearOverride(Handed.Left);
 				Input.HandClearOverride(Handed.Right);
 			}
@@ -71,16 +101,29 @@ public static class Tests
 			activeScene = nextScene;
 			nextScene   = null;
 		}
-		activeScene.Step();
+
+		// If we're testing, catch and log exceptions instead of crashing
+		if (IsTesting)
+		{
+			try { activeScene.Step(); }
+			catch ( Exception e )
+			{
+				Log.Err(e.ToString());
+				failures++;
+				runFrames = sceneFrame + 1; // Ditch out of this test
+			}
+		} else {
+			activeScene.Step();
+		}
 		sceneFrame++;
 
 		if (IsTesting && FinishedWithTest())
 		{
-			testIndex += 1;
-			if (testIndex >= allTests.Count || TestSingle)
+			sceneIndex += 1;
+			if (sceneIndex >= allScenes.Length || TestSingle)
 				SK.Quit();
 			else
-				SetTestActive(allTests[testIndex].Name);
+				SetTestActive(allScenes[sceneIndex].Name);
 		}
 	}
 	public static void Shutdown()
@@ -88,56 +131,72 @@ public static class Tests
 		activeScene?.Shutdown();
 		activeScene = null;
 		GC.Collect(int.MaxValue, GCCollectionMode.Forced);
+
+		if (IsTesting) {
+			if (failures != 0)
+			{
+				Log.Warn($"Testing <~RED>FAILED<~clr>: {failures} failures encountered!");
+				Environment.Exit(-1);
+			} else {
+				Log.Info($"Testing <~GRN>passed!<~clr>");
+			}
+		}
+		Log.Info($"Quit reason: <~WHT>{SK.QuitReason}<~clr>");
 	}
 
-	public static string GetDemoName  (int index)
+	public static string GetTestName(SceneType category, int index)
 	{
-		return demoTests[index].Name;
+		return sceneTypes[(int)category][index].name;
 	}
-	public static void   SetDemoActive(int index)
+
+	public static void SetTestActive(SceneType category, int index)
 	{
-		Log.Write(LogLevel.Info, "Starting Scene: " + demoTests[index].Name);
-		ActiveTest = demoTests[index];
+		Log.Info($"Starting Scene: {sceneTypes[(int)category][index].name}");
+		ActiveScene = sceneTypes[(int)category][index].type;
 	}
-	public static void   SetTestActive(string name)
+
+	public static void SetTestActive(string name)
 	{
 		name = name.ToLower();
-		Type result = allTests.OrderBy( a => {
+		Type result = allScenes.OrderBy( a => {
 			string str = a.Name.ToLower();
 			if (str == name)             return 0;
 			else if (str.Contains(name)) return str.Length - name.Length;
 			else                         return 1000 + string.Compare(str, name);
 		}).First();
-		Log.Write(LogLevel.Info, "Starting Scene: " + result.Name);
+		Log.Info($"Starting Scene: {result.Name}");
 
-		sceneFrame = 0;
-		runFrames  = 2;
-		runSeconds = 0;
-		ActiveTest = result;
+		sceneFrame  = 0;
+		runFrames   = 2;
+		runSeconds  = 0;
+		ActiveScene = result;
 	}
+
 	public static void Test(Func<bool> testFunction)
 	{
-		if (!testFunction())
-		{
-			Log.Err("Test failed for {0}!", testFunction.Method.Name);
-			Environment.Exit(-1);
+		try {
+			if (!testFunction())
+			{
+				Log.Err($"Test failed for {testFunction.Method.Name}!");
+				failures += 1;
+			}
+		} catch (Exception e) {
+			Log.Err($"Test CRASHED for {testFunction.Method.Name}!\n{e.ToString()}");
+			failures += 1;
 		}
 	}
 
 	private static bool FinishedWithTest()
 	{
-		if (runSeconds != 0) {
-			return Time.Totalf-sceneTime > runSeconds;
-		}
-		if (runFrames != -1) { 
-			return sceneFrame == runFrames;
-		}
+		if (runSeconds != 0) return Time.Totalf-sceneTime > runSeconds;
+		if (runFrames != -1) return sceneFrame == runFrames;
 		return true;
 	}
-	public static void RunForFrames(int frames)
-		=> runFrames = frames;
-	public static void RunForSeconds(float seconds)
-		=> runSeconds = seconds;
+
+	public static void RunForFrames (int   frames)  => runFrames  = frames;
+	public static void RunForSeconds(float seconds) => runSeconds = seconds;
+	public static void RunContinue  ()              => runFrames +=  1;
+	public static void RunStop      ()              => runFrames  = -1;
 
 	public static void Screenshot(string name, int width, int height, float fov, Vec3 from, Vec3 at)
 		=> Screenshot(name, 0, width, height, fov, from, at);
@@ -145,26 +204,26 @@ public static class Tests
 		=> Screenshot(name, 0, width, height, 90, from, at);
 	public static void Screenshot(string name, int frame, int width, int height, float fov, Vec3 from, Vec3 at)
 	{
-		if (!IsTesting || frame != sceneFrame || screens.Contains(name) || !MakeScreenshots)
+		if (!IsTesting || frame != sceneFrame || screenshots.Contains(name) || !MakeScreenshots)
 			return;
-		screens.Add(name);
+		screenshots.Add(name);
 
 		string file = Path.Combine(ScreenshotRoot, name);
 		string dir  = Path.GetDirectoryName(file);
-		if (!Directory.Exists(dir))
+		if (Directory.Exists(dir) == false)
 			Directory.CreateDirectory(dir);
 		Renderer.Screenshot(file, from, at, width, height, fov);
 	}
 
 	public static void ScreenshotGltf(string name, int width, int height, Vec3 from, Vec3 at)
 	{
-		if (!IsTesting || screens.Contains(name) || !MakeScreenshots || GltfScreenshotRoot == null)
+		if (!IsTesting || screenshots.Contains(name) || !MakeScreenshots || GltfScreenshotRoot == null)
 			return;
-		screens.Add(name);
+		screenshots.Add(name);
 
 		string file = Path.Combine(GltfScreenshotRoot, name);
 		string dir  = Path.GetDirectoryName(file);
-		if (!Directory.Exists(dir))
+		if (Directory.Exists(dir) == false)
 			Directory.CreateDirectory(dir);
 		Renderer.Screenshot(file, from, at, width, height, 45);
 	}

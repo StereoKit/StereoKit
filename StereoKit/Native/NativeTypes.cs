@@ -40,7 +40,7 @@ namespace StereoKit
 		/// <summary> The default log filtering level. This can be changed at
 		/// runtime, but this allows you to set the log filter before
 		/// Initialization occurs, so you can choose to get information from
-		/// that. Default is LogLevel.Info.</summary>
+		/// that. Default is LogLevel.Diagnostic.</summary>
 		public LogLevel     logFilter;
 		/// <summary>If the runtime supports it, should this application run
 		/// as an overlay above existing applications? Check
@@ -81,6 +81,7 @@ namespace StereoKit
 		/// power while the app is out-of-focus, but may not always be
 		/// desired. In particular, running multiple copies of a SK app for
 		/// testing networking code may benefit from this setting.</summary>
+		[Obsolete("Use SKSettings.standbyMode with StandbyMode.None instead.")]
 		public bool disableUnfocusedSleep { get { return _disableUnfocusedSleep > 0; } set { _disableUnfocusedSleep = value ? 1 : 0; } }
 		private int _disableUnfocusedSleep;
 
@@ -107,9 +108,15 @@ namespace StereoKit
 		public OriginMode origin;
 
 		/// <summary>If StereoKit has nothing to render for this frame, it
-		/// skips submitting a proojection layer to OpenXR entirely.</summary>
+		/// skips submitting a projection layer to OpenXR entirely.</summary>
 		public bool omitEmptyFrames { get { return _omitEmptyFrames > 0; } set { _omitEmptyFrames = value ? 1 : 0; } }
 		private int _omitEmptyFrames;
+
+		/// <summary>Configures StereoKit's behavior during device standby. By
+		/// default in v0.4, SK will completely pause the main thread and
+		/// disable audio. In v0.3, SK will continue to execute at a throttled
+		/// pace, and audio will remain on.</summary>
+		public StandbyMode standbyMode;
 
 		/// <summary>A pointer to the JNI's JavaVM structure, only used for
 		/// Android applications. This is optional, even for Android.</summary>
@@ -164,6 +171,7 @@ namespace StereoKit
 	public struct SystemInfo
 	{
 		/// <summary>The type of display this device has.</summary>
+		[Obsolete("Obsolete, please use Device.DisplayBlend")]
 		public Display displayType;
 		/// <summary>Width of the display surface, in pixels! For a stereo
 		/// display, this will be the width of a single eye.</summary>
@@ -813,6 +821,24 @@ namespace StereoKit
 		Left   = TopLeft    | BottomLeft,
 		/// <summary>The top right and bottom right corners.</summary>
 		Right  = TopRight   | BottomRight,
+	}
+
+	/// <summary>This describes how UI elements with scrollable regions scroll
+	/// around or use scroll bars! This allows you to enable or disable
+	/// vertical and horizontal scrolling.</summary>
+	public enum UIScroll
+	{
+		/// <summary>No scroll bars or scrolling.</summary>
+		None       = 0,
+		/// <summary>This will enable vertical scroll bars or scrolling.
+		/// </summary>
+		Vertical   = 1 << 0,
+		/// <summary>This will enable horizontal scroll bars or scrolling.
+		/// </summary>
+		Horizontal = 1 << 1,
+		/// <summary>This will enable both vertical and horizontal scroll bars
+		/// or scrolling.</summary>
+		Both = Vertical | Horizontal,
 	}
 
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the

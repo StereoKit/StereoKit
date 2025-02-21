@@ -6,8 +6,9 @@ namespace StereoKit
 {
 	/// <summary>This is the texture asset class! This encapsulates 2D images,
 	/// texture arrays, cubemaps, and rendertargets! It can load any image
-	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic)
-	/// plus more later on, and you can also create textures procedurally.
+	/// format that stb_image can, (jpg, png, tga, bmp, psd, gif, hdr, pic,
+	/// ktx2) plus more later on, and you can also create textures
+	/// procedurally.
 	/// </summary>
 	public class Tex : IAsset
 	{
@@ -17,7 +18,7 @@ namespace StereoKit
 		private  List<Assets.CallbackData> _callbacks;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
-		/// This can be helpful for debugging, managine your assets, or finding
+		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id
 		{
@@ -140,6 +141,14 @@ namespace StereoKit
 		#endregion
 
 		#region Methods
+		public Tex Copy(TexType textureType = TexType.Image, TexFormat textureFormat = TexFormat.None)
+		{
+			IntPtr result = NativeAPI.tex_copy(_inst, textureType, textureFormat);
+			return result == IntPtr.Zero
+				? null
+				: new Tex(result);
+		}
+
 		/// <summary>Set the texture's pixels using a pointer to a chunk of
 		/// memory! This is great if you're pulling in some color data from
 		/// native code, and don't want to pay the cost of trying to marshal
@@ -257,7 +266,7 @@ namespace StereoKit
 		{
 			if (Format != TexFormat.R32)
 			{
-				Log.Err($"Can't set a {Format} format texture from Color data!", Format);
+				Log.Err($"Can't set a {Format} format texture from Color data!");
 				return;
 			}
 			NativeAPI.tex_set_colors(_inst, width, height, data);
@@ -265,7 +274,7 @@ namespace StereoKit
 
 		/// <summary>Loads an image file stored in memory directly into
 		/// the created texture! Supported formats are: jpg, png, tga,
-		/// bmp, psd, gif, hdr, pic. This method introduces a blocking 
+		/// bmp, psd, gif, hdr, pic, ktx2. This method introduces a blocking
 		/// boolean parameter, which allows you to specify whether this
 		/// method blocks until the image fully loads! The default case
 		/// is to have it as part of the asynchronous asset pipeline, in
@@ -318,7 +327,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, owned);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, 1, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
@@ -475,9 +484,29 @@ namespace StereoKit
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
+		[Obsolete("Use FromCubemap instead")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
+			=> FromCubemap(equirectangularCubemap, sRGBData, loadPriority);
+
+		/// <summary>Creates a cubemap texture from a single file! This will
+		/// load KTX2 files with 6 surfaces, or convert equirectangular images
+		/// into cubemap images. KTX2 files are the _fastest_ way to load a
+		/// cubemap, but equirectangular images can be acquired quite easily!
+		/// Equirectangular images look like an unwrapped globe with the poles
+		/// all stretched out, and are sometimes referred to as HDRIs.</summary>
+		/// <param name="cubemapFile">Filename of the cubemap image.</param>
+		/// <param name="sRGBData">Is this image color data in sRGB format,
+		/// or is it normal/metal/rough/data that's not for direct display?
+		/// sRGB colors get converted to linear color space on the graphics
+		/// card, so getting this right can have a big impact on visuals.
+		/// </param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Cubemap texture asset!</returns>
+		public static Tex FromCubemap(string cubemapFile, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, IntPtr.Zero, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(cubemapFile), sRGBData, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -500,18 +529,21 @@ namespace StereoKit
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
+		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, out lightingInfo, loadPriority);
-			return tex == IntPtr.Zero ? null : new Tex(tex);
+			IntPtr tex    = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, loadPriority);
+			Tex    result = tex == IntPtr.Zero ? null : new Tex(tex);
+			lightingInfo = result == null ? default : result.CubemapLighting;
+			return result;
 		}
 
 		/// <summary>Loads an image file directly into a texture! Supported
-		/// formats are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id
+		/// formats are: jpg, png, tga, bmp, psd, gif, hdr, pic, ktx2. Asset Id
 		/// will be the same as the filename.</summary>
 		/// <param name="file">An absolute filename, or a filename relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
-		/// pic</param>
+		/// pic, ktx2.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -532,11 +564,11 @@ namespace StereoKit
 		/// array texture! Array textures are often useful for shader
 		/// effects, layering, material merging, weird stuff, and will
 		/// generally need a specific shader to support it. Supported formats
-		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic. Asset Id will be the
-		/// hash of all the filenames merged consecutively.</summary>
+		/// are: jpg, png, tga, bmp, psd, gif, hdr, pic, ktx2. Asset Id will be
+		/// the hash of all the filenames merged consecutively.</summary>
 		/// <param name="files">Absolute filenames, or a filenames relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
-		/// pic</param>
+		/// pic, ktx2.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -554,7 +586,8 @@ namespace StereoKit
 
 		/// <summary>Loads an image file stored in memory directly into a
 		/// texture! Supported formats are: jpg, png, tga, bmp, psd, gif,
-		/// hdr, pic. Asset Id will be the same as the filename.</summary>
+		/// hdr, pic, ktx2. Asset Id will be the same as the filename.
+		/// </summary>
 		/// <param name="imageFileData">The binary data of an image file,
 		/// this is NOT a raw RGB color array!</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
@@ -646,7 +679,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, IntPtr.Zero, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -668,12 +701,35 @@ namespace StereoKit
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given files, or null if any failed 
 		/// to load.</returns>
+		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
 		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, out SphericalHarmonics lightingInfo, bool sRGBData = true, int priority = 10)
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, out lightingInfo, priority);
-			return inst == IntPtr.Zero ? null : new Tex(inst);
+			IntPtr inst   = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
+			Tex    result = inst == IntPtr.Zero ? null : new Tex(inst);
+			lightingInfo = result == null ? default : result.CubemapLighting;
+			return result;
+		}
+
+		/// <summary>This will assemble a texture ready for rendering to! It
+		/// creates a render target texture with no mip maps and a depth buffer
+		/// attached.</summary>
+		/// <param name="width">Width in pixels.</param>
+		/// <param name="height">Height in pixels</param>
+		/// <param name="multisample">Multisample level, or MSAA. This should
+		/// be 1, 2, 4, 8, or 16. The results will have moother edges with
+		/// higher values, but will cost more RAM and time to render. Note that
+		/// GL platforms cannot trivially draw a multisample > 1 texture in a
+		/// shader.</param>
+		/// <param name="colorFormat">The format of the color surface.</param>
+		/// <param name="depthFormat">The format of the depth buffer. If this
+		/// is None, no depth buffer will be attached to this rendertarget.</param>
+		/// <returns>Returns a texture set up as a rendertarget.</returns>
+		public static Tex RenderTarget(int width, int height, int multisample = 1, TexFormat colorFormat = TexFormat.Rgba32, TexFormat depthFormat = TexFormat.Depth16)
+		{
+			IntPtr tex =  NativeAPI.tex_create_rendertarget(width, height, multisample, colorFormat, depthFormat);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
 		/// <summary>This generates a solid color texture of the given

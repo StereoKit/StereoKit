@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0-windows10.0.22621.0</TargetFramework>
+		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+		<UseUwp>true</UseUwp>
+		<Platforms>x64;arm64</Platforms>
+		<RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+		<DefaultLanguage>en-US</DefaultLanguage>
+		<PublishAot>true</PublishAot>
+		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
+		<DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+		<EnableMsixTooling>true</EnableMsixTooling>
+
+		<ReadOnlyProject>true</ReadOnlyProject>
+
+		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
+		<SKShowDebugVars>true</SKShowDebugVars>
+
+		<!--
+		  This is a non-XAML app (just a simple CoreApplication app), so the XAML compiler is not needed.
+		  Disabling this property fixes that, and also removes the Windows SDK check for the 26100 SDK.
+		  Not importing the XAML compiler removes some unnecessary declared project capabilities. Note:
+		  this property should not be disabled if custom PRI resources are needed by the application.
+		-->
+		<EnableXamlCompilerTargetsForUwpApps>false</EnableXamlCompilerTargetsForUwpApps>
+	</PropertyGroup>
+
+	<!-- Include the Stereokit project manually. This is similar to including the
+	     StereoKit NuGet, but different because C# cannot consume a NuGet package
+	     directly. -->
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\BuildStereoKitSDK.targets" />
+
+	<ItemGroup>
+		<Compile Include="..\Program.cs" Visible="false" />
+		<Compile Include="..\DebugToolWindow.cs" Visible="false" />
+		<Compile Include="..\ITest.cs" Visible="false" />
+		<Compile Include="..\Tests.cs" Visible="false" />
+		<Compile Include="..\Demos\*.cs" Visible="false" />
+		<Compile Include="..\Tools\*.cs" Visible="false" />
+		<Compile Include="..\Tests\*.cs" Visible="false" />
+		<Compile Include="..\Docs\*.cs" Visible="false" />
+	</ItemGroup>
+</Project>

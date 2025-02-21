@@ -26,7 +26,7 @@ class DemoPBR : ITest
 		oldSkyTex   = Renderer.SkyTex;
 		oldSkyLight = Renderer.SkyLight;
 		sphereMesh  = Mesh.GenerateSphere(1, 7);
-		Renderer.SkyTex = Tex.FromCubemapEquirectangular(@"old_depot.hdr");
+		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
 		selectionMat = new Material("interactable.hlsl");
 		selectionMat.Transparency = Transparency.Add;
@@ -49,14 +49,14 @@ class DemoPBR : ITest
 		// Iterate using a foreach
 		Log.Info("Builtin PBR Materials contain these parameters:");
 		foreach (MatParamInfo info in Material.PBR.GetAllParamInfo())
-			Log.Info($"- {info.name} : {info.type}");
+			Log.Info($"- {info.type,8}: {info.name}");
 
 		// Or with a normal for loop
 		Log.Info("Builtin Unlit Materials contain these parameters:");
 		for (int i=0; i<Material.Unlit.ParamCount; i+=1)
 		{
 			MatParamInfo info = Material.Unlit.GetParamInfo(i);
-			Log.Info($"- {info.name} : {info.type}");
+			Log.Info($"- {info.type,8}: {info.name}");
 		}
 		/// :End:
 	}
@@ -88,6 +88,6 @@ class DemoPBR : ITest
 		Text.Add("Roughness -->", Matrix.TRS(new Vec3(materialGrid/-8.0f-0.2f, 0, -0.25f), Quat.FromAngles(0,180,-90), 4));
 		Hierarchy.Pop();
 
-		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0, 0, 0.5f), V.XYZ(2.2f, 2.2f, .5f)));
+		Demo.ShowSummary(title, description, new Bounds(V.XYZ(0.1f, .2f, 0.65f), V.XYZ(2.0f, 2.0f, .2f)));
 	}
 }

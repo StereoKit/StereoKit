@@ -10,6 +10,9 @@ class DemoControllers : ITest
 	string title       = "Controllers";
 	string description = "While StereoKit prioritizes hand input, sometimes a controller has more precision! StereoKit provides access to any controllers via the Input.Controller function. This is a debug visualization of the controller data provided there.\n\nStereoKit will simulate hands if only controllers are present, but it will not simulate controllers if only hands are present.";
 
+	Handed activeHand = Handed.Right;
+	Pose windowPose = Demo.contentPose.Pose;
+
 	public void Initialize()
 	{
 		Default.MaterialHand[MatParamName.ColorTint] = new Color(1,1,1,0.4f);
@@ -25,7 +28,15 @@ class DemoControllers : ITest
 		ShowController(Handed.Right);
 		ShowController(Handed.Left);
 
-		Demo.ShowSummary(title, description, new Bounds(.2f, .1f, 0));
+		UI.WindowBegin("Controller Info", ref windowPose, new Vec2(0.3f,0));
+		if (UI.Radio("Left",  activeHand == Handed.Left )) activeHand = Handed.Left;
+		UI.SameLine();
+		if (UI.Radio("Right", activeHand == Handed.Right)) activeHand = Handed.Right;
+
+		ShowControllerUI(activeHand);
+		UI.WindowEnd();
+
+		Demo.ShowSummary(title, description, new Bounds(new Vec3(0,-.27f,0), new Vec3(.5f, .7f, 0)));
 	}
 
 	/// :CodeSample: Controller Input.Controller TrackState Input.ControllerMenuButton Controller.IsTracked Controller.trackedPos Controller.trackedRot Controller.IsX1Pressed Controller.IsX2Pressed Controller.IsStickClicked Controller.stick Controller.aim Controller.grip Controller.trigger Controller.pose
@@ -76,4 +87,29 @@ class DemoControllers : ITest
 		Default.MeshCube.Draw(Default.Material, c.aim.ToMatrix(new Vec3(1,1,4) * U.cm), Color.HSV(0,0.5f,0.8f).ToLinear());
 	}
 	/// :End:
+
+	static void LineItem(string label, string content)
+	{
+		UI.Label(label, new Vec2(UI.LineHeight * 3, 0));
+		UI.SameLine();
+		UI.Label(content);
+	}
+	void ShowControllerUI(Handed hand)
+	{
+		Controller controller = Input.Controller(hand);
+
+		LineItem("Pose",        controller.pose.ToString());
+		LineItem("Tracked",     controller.IsTracked.ToString());
+		LineItem("Tracked Pos", controller.trackedPos.ToString());
+		LineItem("Tracked Rot", controller.trackedRot.ToString());
+
+		LineItem("Palm",        controller.palm.ToString());
+		LineItem("Aim",         controller.aim.ToString());
+		LineItem("Stick",       controller.stick.ToString());
+		LineItem("Stick Click", controller.stickClick.IsActive().ToString());
+		LineItem("Trigger",     controller.trigger.ToString());
+		LineItem("Grip",        controller.grip.ToString());
+		LineItem("X1",          controller.x1.ToString());
+		LineItem("X2",          controller.x2.ToString());
+	}
 }

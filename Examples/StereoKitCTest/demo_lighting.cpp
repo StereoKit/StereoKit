@@ -1,8 +1,8 @@
 #include "demo_lighting.h"
 #include "skt_lighting.h"
 
-#include "Shaders/skt_default_lighting.hlsl.h"
-#include "Shaders/skt_light_only.hlsl.h"
+#include "skt_default_lighting.hlsl.h"
+#include "skt_light_only.hlsl.h"
 
 #include <stdlib.h>
 

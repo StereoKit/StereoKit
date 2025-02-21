@@ -66,9 +66,8 @@ bool platform_impl_init() {
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
-	for (int32_t i = 0; i < win32_windows.count; i++) {
-		platform_win_destroy(i);
-	}
+	PostQuitMessage(0);
+
 	win32_windows.free();
 	win32_hinst  = nullptr;
 	win32_icon   = nullptr;
@@ -119,7 +118,6 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	rect.right  = win_rect.x + win_rect.w;
 	rect.top    = win_rect.y;
 	rect.bottom = win_rect.y + win_rect.h;
-	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, false);
 	if (rect.right == rect.left)   rect.right  = rect.left + win_rect.w;
 	if (rect.top   == rect.bottom) rect.bottom = rect.top  + win_rect.h;
 
@@ -127,8 +125,10 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 		win.title,
 		win.title,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		maxi(0, rect.left),
-		maxi(0, rect.top),
+		// 8px outside of screen seems common in maximized windows? This is
+		// consistently true on my PC, even with various resolution scaling.
+		maxi(-8, rect.left),
+		maxi(-8, rect.top),
 		rect.right - rect.left,
 		rect.bottom - rect.top,
 		0, 0,
@@ -177,8 +177,7 @@ void platform_win_destroy(platform_win_t window) {
 		skg_swapchain_destroy(&win->swapchain);
 	}
 
-	if (win->handle) DestroyWindow   (win->handle);
-	if (win->title)  UnregisterClassW(win->title, win32_hinst);
+	if (win->title) UnregisterClassW(win->title, win32_hinst);
 
 	win->events.free();
 	sk_free(win->title);
@@ -248,7 +247,8 @@ LRESULT platform_message_callback(HWND hwnd, UINT message, WPARAM wParam, LPARAM
 	case WM_SYSKEYDOWN:  e.type = platform_evt_key_press;     e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_SYSKEYUP:    e.type = platform_evt_key_release;   e.data.press_release = (key_)wParam;         win->events.add(e); return true;
 	case WM_CHAR:        e.type = platform_evt_character;     e.data.character     = (char32_t)wParam;     win->events.add(e); return true;
-	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); PostQuitMessage(0); break;
+	case WM_CLOSE:       e.type = platform_evt_close;                                                      win->events.add(e); if (IsWindow(win->handle)) DestroyWindow(win->handle); win->handle = nullptr; break;
+	case WM_DESTROY:     PostQuitMessage(0); break;
 	case WM_SETFOCUS:    e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_active;     win->events.add(e); break;
 	case WM_KILLFOCUS:   e.type = platform_evt_app_focus;     e.data.app_focus     = app_focus_background; win->events.add(e); break;
 	case WM_MOUSEWHEEL:  win32_scroll += (short)HIWORD(wParam); return true;

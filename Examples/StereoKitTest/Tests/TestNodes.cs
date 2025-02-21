@@ -36,7 +36,7 @@ class TestNodes : ITest
 		/// or contents.
 		Log.Info("Iterate nodes:");
 		foreach (ModelNode node in model.Nodes)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals
@@ -45,7 +45,7 @@ class TestNodes : ITest
 		/// data attached to it!
 		Log.Info("Iterate visuals:");
 		foreach (ModelNode node in model.Visuals)
-			Log.Info("  "+ node.Name);
+			Log.Info($"  {node.Name}");
 		/// :End:
 
 		/// :CodeSample: Model Model.Visuals Model.Nodes
@@ -96,6 +96,7 @@ class TestNodes : ITest
 		Tests.Test(TestEmptyVisuals);
 		Tests.Test(TestEmptyModel);
 		Tests.Test(TestNodeInfo);
+		Tests.Test(TestAddNode);
 	}
 
 	bool TestEmptyVisuals()
@@ -135,6 +136,27 @@ class TestNodes : ITest
 			&& n.GetInfo("c") == null
 			&& n.GetInfo("d") == null
 			&& n.GetInfo("e") == null;
+	}
+
+	bool TestAddNode()
+	{
+		Model model = Model.FromFile("Radio.glb").Copy();
+		int count       = model.Nodes.Count;
+		int visualCount = model.Visuals.Count;
+		ModelNode node1 = model.AddNode("New Node", Matrix.Identity);
+		ModelNode node2 = model.AddNode("New Node", Matrix.Identity, Mesh.Cube, Material.Default);
+		ModelNode node3 = model.AddNode("New Node", Matrix.Identity);
+
+		// This causes a Visual to be added to Node 1, where previously it had
+		// none.
+		node1.Material = Material.Default;
+
+		Log.Info("Add nodes to existing:");
+		RecursiveTraversal(model.RootNode);
+
+		return
+			count       + 3 == model.Nodes  .Count &&
+			visualCount + 2 == model.Visuals.Count;
 	}
 
 	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent

@@ -1,0 +1,88 @@
+diff --git forkSrcPrefix/include/reactphysics3d/utils/DefaultLogger.h forkDstPrefix/include/reactphysics3d/utils/DefaultLogger.h
+index 3dcebd82c73afeebe96ca956ad60087e640d58ba..8f9267662572098e4a202cf41f7e451a4f3eda99 100644
+--- forkSrcPrefix/include/reactphysics3d/utils/DefaultLogger.h
++++ forkDstPrefix/include/reactphysics3d/utils/DefaultLogger.h
+@@ -85,21 +85,7 @@ class DefaultLogger : public Logger {
+                 /// Return the current date and time
+                 std::tm getLocalTime(const std::time_t& time) const {
+ 
+-                    std::tm bt = std::tm();
+-
+-                    // This is because std::localtime is not thread-safe
+-
+-#if defined(__unix__)
+-                    localtime_r(&time, &bt);
+-#elif defined(_MSC_VER)
+-                    localtime_s(&bt, &time);
+-#else
+-                    static std::mutex mtx;
+-                    std::lock_guard<std::mutex> lock(mtx);
+-                    bt = *std::localtime(&time);
+-#endif
+-
+-                    return bt;
++                    return std::tm();
+                 }
+ 
+         };
+@@ -121,16 +107,10 @@ class DefaultLogger : public Logger {
+                 /// Return the header to write at the beginning of the stream
+                 virtual std::string getHeader() const override {
+ 
+-                    // Get current date
+-                    auto now = std::chrono::system_clock::now();
+-                    std::time_t time = std::chrono::system_clock::to_time_t(now);
+-
+-                    auto localTime = getLocalTime(time);
+ 
+                     std::stringstream ss;
+                     ss << "ReactPhysics3D Logs" << std::endl;
+                     ss << "ReactPhysics3D Version: " << RP3D_VERSION << std::endl;
+-                    ss << "Date: " << std::put_time(&localTime, "%Y-%m-%d") << std::endl;
+                     ss << "---------------------------------------------------------" << std::endl;
+ 
+                     return ss.str();
+@@ -175,11 +155,6 @@ class DefaultLogger : public Logger {
+                 /// Return the header to write at the beginning of the stream
+                 virtual std::string getHeader() const override {
+ 
+-                    // Get current date
+-                    auto now = std::chrono::system_clock::now();
+-                    auto time = std::chrono::system_clock::to_time_t(now);
+-                    auto localTime = getLocalTime(time);
+-
+                     std::stringstream ss;
+                     ss << "<!DOCTYPE HTML>" << std::endl;
+                     ss << "<html>" << std::endl;
+@@ -191,7 +166,6 @@ class DefaultLogger : public Logger {
+                     ss << "<h1>ReactPhysics3D Logs</h1>" << std::endl;
+                     ss << "<div class='general_info'>" << std::endl;
+                     ss << "<p>ReactPhysics3D version: " << RP3D_VERSION << "</p>" << std::endl;
+-                    ss << "<p>Date: " << std::put_time(&localTime, "%Y-%m-%d") << "</p>" << std::endl;
+                     ss << "</div>" << std::endl;
+                     ss << "<hr>";
+ 
+diff --git forkSrcPrefix/src/utils/DefaultLogger.cpp forkDstPrefix/src/utils/DefaultLogger.cpp
+index aff4f1629f9f78ab472e14f186844d8ff93d7fca..14c818b0aff1a1d7218032b02ec19668aafe923a 100644
+--- forkSrcPrefix/src/utils/DefaultLogger.cpp
++++ forkDstPrefix/src/utils/DefaultLogger.cpp
+@@ -93,17 +93,14 @@ void DefaultLogger::removeAllDestinations() {
+ 
+ // Log something
+ void DefaultLogger::log(Level level, const std::string& physicsWorldName, Category category, const std::string& message, const char* filename, int lineNumber) {
+-
+-    // Get current time
+-    auto now = std::chrono::system_clock::now();
+-    auto time = std::chrono::system_clock::to_time_t(now);
++    time_t bt{};
+ 
+     mMutex.lock();
+ 
+     // For each destination
+     for (auto it = mDestinations.begin(); it != mDestinations.end(); ++it) {
+ 
+-        (*it)->write(time, physicsWorldName, message, level, category, filename, lineNumber);
++        (*it)->write(bt, physicsWorldName, message, level, category, filename, lineNumber);
+     }
+ 
+     mMutex.unlock();

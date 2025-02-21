@@ -1,4 +1,5 @@
-//--name = sk/blit/equirect_convert
+#include "stereokit.hlsli"
+
 //--up      = 0,1,0,0
 //--right   = 1,0,0,0
 //--forward = 0,0,-1,0
@@ -10,17 +11,7 @@ float4       forward;
 Texture2D    source   : register(t0);
 SamplerState source_s : register(s0);
 
-cbuffer GlobalBuffer : register(b1) {
-	float4x4 sk_view[2];
-	float4x4 sk_proj[2];
-	float4x4 sk_viewproj[2];
-	float3   sk_lighting_sh[9];
-	float4   sk_camera_pos[2];
-	float4   sk_camera_dir[2];
-	float4   sk_fingertip[2];
-	float    sk_time;
-};
-cbuffer TransformBuffer : register(b2) {
+cbuffer TransformBuffer : register(b3) {
 	float sk_width;
 	float sk_height;
 	float sk_pixel_width;
@@ -36,19 +27,21 @@ struct vsIn {
 struct psIn {
 	float4 pos : SV_POSITION;
 	float3 norm : TEXCOORD0;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 
 static const float2 invAtan = float2(0.1591, 0.3183);
 float2 ToEquirect(float3 v) {
-    float2 uv = float2(atan2(v.z, v.x), asin(v.y));
-    uv *= invAtan;
-    uv += 0.5;
-    return uv;
+	float2 uv = float2(atan2(v.z, v.x), asin(v.y));
+	uv *= invAtan;
+	uv += 0.5;
+	return uv;
 }
 
-psIn vs(vsIn input) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	o.pos = input.pos;
+	o.view_id = id % sk_view_count;
+	o.pos     = input.pos;
 
 	float2 uv = input.uv * 2 - 1;
 	o.norm    = forward.xyz + right.xyz*uv.x + up.xyz*uv.y;

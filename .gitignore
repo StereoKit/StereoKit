@@ -337,6 +337,7 @@ ASALocalRun/
 
 # Ignore dependency build related stuff
 tools/deps_current.txt
+tools/skshaderc/**
 StereoKitC/lib/include/**
 StereoKitC/lib/bin/**
 # An exception for the Android loader

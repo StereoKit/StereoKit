@@ -91,7 +91,7 @@ bool simulator_init() {
 	} break;
 	}
 
-	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1);
+	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
@@ -138,7 +138,7 @@ void simulator_step_begin() {
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		//case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
-		case platform_evt_close:        sk_quit(); break;
+		case platform_evt_close:        sk_quit(quit_reason_user); break;
 		case platform_evt_resize:       sim_surface_resize(sim_surface, data.resize.width, data.resize.height); break;
 		case platform_evt_none: break;
 		default: break;

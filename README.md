@@ -24,7 +24,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
 - Model formats: .gltf, .glb, .obj, .stl, ASCII .ply
-- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, cubemaps
+- Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, ktx2, cubemaps
 - Flexible shader/material system with built-in PBR
 - Performance-by-default instanced render pipeline
 - Skeletal/skinned animation
@@ -94,6 +94,8 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [OpenXR](https://www.khronos.org/openxr/)
 - [ReactPhysics3D](https://www.reactphysics3d.com/) - Physics.
 - [cgltf](https://github.com/jkuhlmann/cgltf) - Gltf format support.
+- [meshoptimizer](https://github.com/zeux/meshoptimizer) - Gltf decompression and mesh optimization.
+- [basis_universal](https://github.com/BinomialLLC/basis_universal) - Texture compression support.
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - Image and font format support.
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.
 - [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net7.0-android</TargetFramework>
+		<TargetFramework>net8.0-android</TargetFramework>
 		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
 		<OutputType>Exe</OutputType>
 		<ApplicationId>net.stereokit.stereokittest_netandroid</ApplicationId>
@@ -13,6 +13,7 @@
 		<SKOpenXRLoaderFolder Condition="'$(OS)'=='Windows_NT'">C:/Tools/openxr_loaders/</SKOpenXRLoaderFolder>
 		<SKOpenXRLoader>Standard</SKOpenXRLoader>
 		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
 		
@@ -27,9 +28,10 @@
 		<NoWarn>XA4211;XA1006;XA4301;CS1587</NoWarn>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\..\..\StereoKit\StereoKit.csproj" />
-	</ItemGroup>
+	<!-- Include the Stereokit project manually. This is similar to including the
+	     StereoKit NuGet, but different because C# cannot consume a NuGet package
+	     directly. -->
+	<Import Project="$(ProjectDir)..\..\..\StereoKit\BuildStereoKitSDK.targets" />
 
 	<PropertyGroup>
 		<AndroidManifest          >AndroidManifest.xml</AndroidManifest>
@@ -44,43 +46,8 @@
 		<Compile Include="..\Tests.cs" Visible="false" />
 		<Compile Include="..\Demos\*.cs" Visible="false" />
 		<Compile Include="..\Tools\*.cs" Visible="false" />
+		<Compile Include="..\Tests\*.cs" Visible="false" />
+		<Compile Include="..\Docs\*.cs" Visible="false" />
 	</ItemGroup>
 
-	<Import Project="$(ProjectDir)..\..\..\StereoKit\StereoKit.props" />
-	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKAssets.targets" />
-	<Import Project="$(ProjectDir)..\..\..\StereoKit\SKShaders.targets" />
-
-	<!-- Make sure the Android binaries are built and included. -->
-	<PropertyGroup>
-		<!--Unlike the other projects, this seems to invoke from the bin
-		    folder, and $(ProjectDir) doesn't work.-->
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='ARM64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_Arm64_$(Configuration) &amp; cmake --build --preset Android_Arm64_$(Configuration)</PreBuildEvent>
-		<PreBuildEvent Condition="'$(TestBuildMode)'=='x64'">cd ..\..\..\..\..\..\ &amp; cmake --preset Android_x64_$(Configuration) &amp; cmake --build --preset Android_x64_$(Configuration)</PreBuildEvent>
-	</PropertyGroup>
-	<Target Name="SKTestRebuildAndroid" AfterTargets="Clean">
-		<RemoveDir Condition="'$(TestBuildMode)'=='ARM64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_ARM64_$(Configuration)" />
-		<RemoveDir Condition="'$(TestBuildMode)'=='x64'" Directories="..\..\..\..\..\..\bin\intermediate\cmake\Android_x64_$(Configuration)" />
-	</Target>
-
-	<Target Name="SKCheckBuildFiles" BeforeTargets="CoreBuild" AfterTargets="PreBuild">
-		<Message Importance="high" Text="=========$(TestBuildMode)" />
-		<Error Condition="('$(TestBuildMode)'=='ARM64') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
-		<Error Condition="('$(TestBuildMode)'=='x64') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(ConfigurationName)\libStereoKitC.so')" Text="StereoKitC was not properly built! Binary files are missing." />
-
-		<Error
-			Condition="!Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/libopenxr_loader.so') and !Exists('$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/x64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/arm64/libopenxr_loader.so') and !Exists('$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/libopenxr_loader.so') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so') and !Exists('$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\$(SKOpenXRLoader.ToLower())\libopenxr_loader.so')"
-			Text="Couldn't find binaries for the '$(SKOpenXRLoader)' OpenXR Loader. Expected to find a 'libopenxr_loader.so' in the '$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64|x64\' or '$(MSBuildThisFileDirectory)..\android_openxr_loaders\$(SKOpenXRLoader.ToLower())\arm64|x64\' folders." />
-	</Target>
-
-	<ItemGroup>
-		<!--<None                 Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />-->
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\arm64-v8a\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='ARM64'" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64\*.so"                                                         CopyToOutputDirectory="PreserveNewest" Abi="arm64-v8a" />
-		
-		<!--<None                 Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\libStereoKitC.so.dbg"             CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />-->
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\libStereoKitC.so"                 CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(ProjectDir)..\..\..\bin\distribute\bin\Android\x86_64\$(Configuration)\$(SKOpenXRLoader.ToLower())\*.so" CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />
-		<AndroidNativeLibrary Visible="false" Condition="'$(TestBuildMode)'=='x64'" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\arm64\*.so"                                                      CopyToOutputDirectory="PreserveNewest" Abi="x86_64" />
-	</ItemGroup>
 </Project>
