@@ -51,7 +51,7 @@ class Program
 		// OpenXR extensions need added before SK.Initialize, so does
 		// LogWindow for early log registration!
 		SK.AddStepper<PassthroughFBExt>();
-		SK.AddStepper<Win32PerformanceCounterExt>();
+		//SK.AddStepper<Win32PerformanceCounterExt>();
 		WindowLog = SK.AddStepper<LogWindow>();
 		WindowLog.Enabled = false;
 

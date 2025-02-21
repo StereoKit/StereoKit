@@ -452,7 +452,7 @@ bool32_t _ui_handle_begin(uint64_t id, pose_t &handle_pose, bounds_t handle_boun
 							dest_rot = quat_difference(start_palm_rot[i], dest_rot);
 						} break;
 						case ui_move_face_user: {
-							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position);
+							vec3  local_head   = matrix_transform_pt(to_handle_parent_local, input_head()->position - vec3{0,0.12f,0});
 							float head_xz_lerp = fminf(1, vec2_distance_sq({ local_head.x, local_head.z }, { local_pt[i].x, local_pt[i].z }) / 0.1f);
 							vec3  handle_center= matrix_transform_pt(pose_matrix(handle_pose), handle_bounds.center);
 							// Previously, facing happened from a point
