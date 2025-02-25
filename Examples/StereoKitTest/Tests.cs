@@ -1,4 +1,5 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,6 +101,7 @@ public static class Tests
 			sceneTime   = Time.Totalf;
 			activeScene = nextScene;
 			nextScene   = null;
+			Inspector.Show(activeScene, true);
 		}
 
 		// If we're testing, catch and log exceptions instead of crashing
