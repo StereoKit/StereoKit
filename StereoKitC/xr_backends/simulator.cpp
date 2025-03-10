@@ -92,7 +92,7 @@ bool simulator_init() {
 	default: return false;
 	}
 
-	sim_surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
+	sim_surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);

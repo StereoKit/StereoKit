@@ -456,7 +456,20 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		return true;
 	}
 
-	xr_draw_to_swapchain = skg_capability(skg_cap_tiled_multisample) || s == 1;
+	// If we have in-tile MSAA, or no MSAA, we can draw directly to the swapchain and skip MSAA resolve steps!
+	xr_draw_to_swapchain =
+		skg_capability(skg_cap_tiled_multisample)           ||
+		skg_capability(skg_cap_multiview_tiled_multisample) ||
+		s == 1;
+
+	pipeline_render_strategy_ strategy = pipeline_render_strategy_sequential;
+	// D3D can draw to multiple array texture surfaces simultaneously.
+	if (backend_graphics_get() == backend_graphics_d3d11)
+		strategy = pipeline_render_strategy_simultaneous;
+	// OpenGL can draw to multiple array texture surfaces simultaneously only
+	// if the multiview extension is present.
+	if (skg_capability(skg_cap_multiview) && display->view_cap == 2)
+		strategy = pipeline_render_strategy_multiview;
 
 	// A "quilt" is a grid of images on a single texture. This terminology is
 	// used for lenticular displays like Looking Glass, and we're using it here
@@ -466,11 +479,16 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	int32_t array_count  = display->view_cap;
 	int32_t quilt_width  = 1;
 	int32_t quilt_height = 1;
-/*#if defined(SKG_OPENGL)
-	array_count  = 1;
-	quilt_width  = display->view_cap;
-	quilt_height = 1;
-#endif*/
+	if (s != 1 && backend_graphics_get() != backend_graphics_d3d11 && (!skg_capability(skg_cap_multiview) || display->view_cap != 2)) {
+		// GL can only support MSAA on double-wide and multiview surfaces.
+		// Regular array textures + MSAA doesn't work, so we go to a non-array
+		// "double-wide" strategy. SK also only supports multiview for 2
+		// surfaces.
+		array_count  = 1;
+		quilt_width  = display->view_cap;
+		quilt_height = 1;
+		strategy     = pipeline_render_strategy_sequential;
+	}
 	w = w * quilt_width;
 	h = h * quilt_height;
 
@@ -502,6 +520,7 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 
 		sc_color->render_surface_tex = -1;
 		sc_color->render_surface     = render_pipeline_surface_create(
+			strategy,
 			tex_get_tex_format(xr_preferred_color_format),
 			tex_get_tex_format(xr_preferred_depth_format),
 			array_count, quilt_width, quilt_height);

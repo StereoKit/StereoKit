@@ -761,7 +761,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter) {
+void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
 
 	// Copy camera information into the global buffer
@@ -826,7 +826,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	skg_event_end();
 	skg_event_begin("Execute Render List");
 
-	render_list_execute(list, filter, view_count, 0, INT_MAX);
+	render_list_execute(list, filter, inst_multiplier, 0, INT_MAX);
 
 	skg_event_end();
 }
@@ -875,7 +875,7 @@ void render_check_screenshots() {
 		}
 
 		// Render!
-		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, local.screenshot_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, 1, local.screenshot_list[i].layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
@@ -934,7 +934,7 @@ void render_check_viewpoints() {
 		}
 
 		// Render!
-		render_draw_queue(local.list_primary, &local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, local.viewpoint_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, 1, local.viewpoint_list[i].layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		// Release the reference we added, the user should have their own ref
@@ -1290,7 +1290,9 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 
 ///////////////////////////////////////////
 
-inline void render_list_execute_run(_render_list_t *list, material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t view_count) {
+inline void render_list_execute_run(_render_list_t *list, material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t inst_multiplier) {
+	if (mesh_inds == 0) return;
+
 	render_set_material(material);
 	skg_mesh_bind      (mesh);
 	list->stats.swaps_mesh++;
@@ -1301,7 +1303,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 		skg_buffer_t *instances = render_fill_inst_buffer(&local.instance_list, &offsets, &inst_count);
 		skg_buffer_bind(instances, render_list_inst_bind);
 
-		skg_draw(0, 0, mesh_inds, inst_count * view_count);
+		skg_draw(0, 0, mesh_inds, inst_count * inst_multiplier);
 		list->stats.draw_calls     += 1;
 		list->stats.draw_instances += inst_count;
 
@@ -1310,7 +1312,7 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end) {
+void render_list_execute(render_list_t list, render_layer_ filter, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
@@ -1337,7 +1339,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view
 		// If the material/mesh changed
 		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
+			render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
 			local.instance_list.clear();
 			// Start the next run
 			run_start = item;
@@ -1350,7 +1352,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t view
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (local.instance_list.count > 0) {
-		render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
+		render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
 		local.instance_list.clear();
 	}
 
@@ -1540,7 +1542,7 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 		(int32_t)(viewport_pct.h * to_rendertarget->height) };
 	skg_viewport(viewport_i);
 
-	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter);
+	render_draw_queue(list, &camera, &projection, 0, 1, 1, layer_filter);
 
 	skg_tex_target_bind(old_target, -1, 0);
 }
