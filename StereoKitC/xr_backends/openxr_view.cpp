@@ -479,7 +479,7 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	int32_t array_count  = display->view_cap;
 	int32_t quilt_width  = 1;
 	int32_t quilt_height = 1;
-	if (s != 1 && backend_graphics_get() != backend_graphics_d3d11 && (!skg_capability(skg_cap_multiview) || display->view_cap != 2)) {
+	if (s != 1 && backend_graphics_get() != backend_graphics_d3d11 && (!skg_capability(skg_cap_multiview_tiled_multisample) || display->view_cap != 2)) {
 		// GL can only support MSAA on double-wide and multiview surfaces.
 		// Regular array textures + MSAA doesn't work, so we go to a non-array
 		// "double-wide" strategy. SK also only supports multiview for 2
@@ -496,7 +496,13 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	if (!openxr_create_swapchain(&display->swapchain_color, display->type, true,  array_count, xr_preferred_color_format, w, h, 1)) return false;
 	if (!openxr_create_swapchain(&display->swapchain_depth, display->type, false, array_count, xr_preferred_depth_format, w, h, 1)) return false;
 
-	log_diagf("Set swapchain: <~grn>%s<~clr> to %d<~BLK>x<~clr>%d", openxr_view_name(display->type), sc_color->width, sc_color->height);
+	const char* strategy_name = "";
+	switch (strategy) {
+	case pipeline_render_strategy_sequential:   strategy_name = "sequential";   break;
+	case pipeline_render_strategy_simultaneous: strategy_name = "simultaneous"; break;
+	case pipeline_render_strategy_multiview:    strategy_name = "multiview";    break;
+	}
+	log_diagf("Set swapchain for <~grn>%s<~clr> using <~grn>%s<~clr> render.", openxr_view_name(display->type), strategy_name);
 
 	// Create texture objects if we don't have 'em
 	if (sc_color->textures == nullptr) {
