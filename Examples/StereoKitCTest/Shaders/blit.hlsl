@@ -1,19 +1,11 @@
+#include "stereokit.hlsli"
+
 //--name = app/blit
 //--source = white
 
 Texture2D    source   : register(t0);
 SamplerState source_s : register(s0);
 
-cbuffer GlobalBuffer : register(b1) {
-	float4x4 sk_view[2];
-	float4x4 sk_proj[2];
-	float4x4 sk_viewproj[2];
-	float3   sk_lighting_sh[9];
-	float4   sk_camera_pos[2];
-	float4   sk_camera_dir[2];
-	float4   sk_fingertip[2];
-	float    sk_time;
-};
 cbuffer TransformBuffer : register(b2) {
 	float sk_width;
 	float sk_height;
@@ -27,18 +19,20 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
-struct psIn {
+struct psIn : sk_ps_input_t {
 	float4 pos : SV_POSITION;
 	float2 uv  : TEXCOORD0;
 };
 
-psIn vs(vsIn input) {
+psIn vs(vsIn input, sk_vs_input_t sk_in) {
 	psIn o;
+	sk_view_init(sk_in, o);
+	
 	o.pos = input.pos;
-	o.uv = input.uv;
+	o.uv  = input.uv;
 	return o;
 }
 
-float4 ps(psIn input) : SV_TARGET{
+float4 ps(psIn input) : SV_TARGET {
 	return pow(abs(source.Sample(source_s, input.uv)), 2.2);
 }

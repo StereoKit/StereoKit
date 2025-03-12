@@ -10,19 +10,20 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct pipeline_surface_t {
-	tex_format_   color;
-	tex_format_   depth;
-	render_layer_ layer;
-	float         viewport_scale;
-	int32_t       array_count;
-	int32_t       quilt_width;
-	int32_t       quilt_height;
-	int32_t       multisample;
-	color128      clear_color;
-	tex_t         tex;
-	matrix       *view_matrices;
-	matrix       *proj_matrices;
-	bool32_t      enabled;
+	tex_format_                 color;
+	tex_format_                 depth;
+	render_layer_               layer;
+	float                       viewport_scale;
+	pipeline_render_strategy_   strategy;
+	int32_t                     array_count;
+	int32_t                     quilt_width;
+	int32_t                     quilt_height;
+	int32_t                     multisample;
+	color128                    clear_color;
+	tex_t                       tex;
+	matrix*                     view_matrices;
+	matrix*                     proj_matrices;
+	bool32_t                    enabled;
 };
 
 struct render_pipeline_state_t {
@@ -66,35 +67,43 @@ void render_pipeline_draw() {
 
 		skg_event_begin("Draw Surface");
 		{
-#if defined(SKG_DIRECT3D11)
-			skg_tex_target_bind(&s->tex->tex, -1, 0);
-			skg_target_clear   (true, &s->clear_color.r);
+			if (s->strategy == pipeline_render_strategy_sequential) {
+				for (int32_t layer = 0; layer < s->array_count; layer++) {
+					skg_tex_target_bind(&s->tex->tex, layer, 0);
+					skg_target_clear(true, &s->clear_color.r);
+
+					for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
+						for (int32_t quilt_x = 0; quilt_x < s->quilt_width; quilt_x += 1) {
+							int32_t viewport[4] = { quilt_x * width, quilt_y * height, width, height };
+							skg_viewport(viewport);
+
+							int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
+							render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer);
+						}
+					}
+				}
+			} else if (
+				s->strategy == pipeline_render_strategy_simultaneous ||
+				s->strategy == pipeline_render_strategy_multiview) {
+
+				skg_tex_target_bind(&s->tex->tex, -1, 0);
+				skg_target_clear   (true, &s->clear_color.r);
+
+				// Regulat simultaneous array textures draw one inst per
+				// `view`, and multiview draws one inst `view` times.
+				int32_t inst_multiplier = s->strategy == pipeline_render_strategy_simultaneous
+					? s->array_count
+					: 1;
 				
-			for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
-			for (int32_t quilt_x = 0; quilt_x < s->quilt_width;  quilt_x += 1) {
-				int32_t viewport[4] = {quilt_x*width, quilt_y*height, width, height };
-				skg_viewport(viewport);
-
-				int32_t idx = quilt_x + quilt_y * s->quilt_width;
-				render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, s->layer);
-			} }
-#elif defined (SKG_OPENGL)
-			for (int32_t layer = 0; layer < s->array_count; layer++) {
-				skg_tex_target_bind(&s->tex->tex, layer, 0);
-				skg_target_clear(true, &s->clear_color.r);
-
 				for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
 				for (int32_t quilt_x = 0; quilt_x < s->quilt_width;  quilt_x += 1) {
-					int32_t viewport[4] = { quilt_x * width, quilt_y * height, width, height };
+					int32_t viewport[4] = {quilt_x*width, quilt_y*height, width, height };
 					skg_viewport(viewport);
 
-					int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
-					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, s->layer);
+					int32_t idx = quilt_x + quilt_y * s->quilt_width;
+					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer);
 				} }
 			}
-#else
-#pragma error
-#endif
 		}
 		skg_event_end();
 	}
@@ -116,7 +125,7 @@ void render_pipeline_shutdown() {
 
 ///////////////////////////////////////////
 
-pipeline_surface_id render_pipeline_surface_create(tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height) {
+pipeline_surface_id render_pipeline_surface_create(pipeline_render_strategy_ strategy, tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height) {
 	pipeline_surface_t result = {};
 	result.enabled        = false; // shouldn't be enabled until the tex is sized
 	result.color          = color;
@@ -126,6 +135,7 @@ pipeline_surface_id render_pipeline_surface_create(tex_format_ color, tex_format
 	result.array_count    = array_count;
 	result.quilt_width    = quilt_width;
 	result.quilt_height   = quilt_height;
+	result.strategy       = strategy;
 	result.view_matrices  = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
 	result.proj_matrices  = sk_malloc_t(matrix, array_count * quilt_width * quilt_height);
 	return local.surfaces.add(result);

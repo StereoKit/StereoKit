@@ -7,7 +7,14 @@ namespace sk {
 
 typedef int32_t pipeline_surface_id;
 
-pipeline_surface_id render_pipeline_surface_create            (tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height);
+typedef enum pipeline_render_strategy_ {
+	pipeline_render_strategy_none,
+	pipeline_render_strategy_sequential,
+	pipeline_render_strategy_simultaneous,
+	pipeline_render_strategy_multiview,
+} pipeline_render_strategy_;
+
+pipeline_surface_id render_pipeline_surface_create            (pipeline_render_strategy_ strategy, tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height);
 void                render_pipeline_surface_destroy           (pipeline_surface_id surface);
 bool32_t            render_pipeline_surface_resize            (pipeline_surface_id surface, int32_t width, int32_t height, int32_t multisample);
 void                render_pipeline_surface_to_swapchain      (pipeline_surface_id surface, skg_swapchain_t* swapchain);

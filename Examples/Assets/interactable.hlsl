@@ -16,19 +16,18 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
-struct psIn {
+struct psIn : sk_ps_input_t {
 	float4 pos       : SV_POSITION;
 	float3 world_pos : TEXCOORD0;
 	float3 model_pos : TEXCOORD1;
 	half3  normal    : NORMAL0;
 	half4  color     : COLOR0;
-	uint view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_vs_input_t sk_in) {
 	psIn o;
-	o.view_id = id % sk_view_count;
-	id        = id / sk_view_count;
+	uint view_id = sk_view_init(sk_in, o);
+	uint id      = sk_inst_id  (sk_in);
 
 	float4x4 world_mat = sk_inst[id].world;
 	float3   scale     = float3(
@@ -38,7 +37,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 		
 	o.model_pos = input.pos.xyz * scale;
 	o.world_pos = mul(float4(input.pos.xyz, 1), world_mat).xyz;
-	o.pos       = mul(float4(o.world_pos,   1), sk_viewproj[o.view_id]);
+	o.pos       = mul(float4(o.world_pos,   1), sk_viewproj[view_id]);
 	o.color     = input.col * color * sk_inst[id].color;
 	o.normal    = input.norm;
 	return o;

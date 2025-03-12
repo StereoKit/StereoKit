@@ -81,7 +81,7 @@ bool window_init() {
 	default: return false;
 	}
 
-	local->surface = render_pipeline_surface_create(tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
+	local->surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
 	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
 	if (swapchain)
 		window_surface_resize(local->surface, swapchain->width, swapchain->height);
