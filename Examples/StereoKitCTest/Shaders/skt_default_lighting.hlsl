@@ -19,20 +19,19 @@ struct Light {
 	float4 col;
 };
 cbuffer ParamBuffer : register(b3) {
-	Light lights[6];
+	Light lights[6]; 
 };
 
 struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
-	float4 col  : COLOR;
 	float2 uv   : TEXCOORD0;
+	float4 col  : COLOR;
 };
-struct psIn {
-	float4 pos   : SV_POSITION;
+struct psIn : sk_ps_input_t {
+	float4 pos   : SV_Position;
 	float4 color : COLOR0;
 	float2 uv    : TEXCOORD0;
-	uint view_id : SV_RenderTargetArrayIndex;
 };
 
 // y = 1/(x^2+1) * (1-x/6)
@@ -52,13 +51,13 @@ float3 sample_lights(float3 world_pos, float3 world_norm) {
 	return result;
 }
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_vs_input_t sk_in) {
 	psIn output;
-	output.view_id = id % sk_view_count;
-	id             = id / sk_view_count;
+	uint view_id = sk_view_init(sk_in, output);
+	uint id      = sk_inst_id  (sk_in);
 
 	float4 world = mul(input.pos, sk_inst[id].world);
-	output.pos   = mul(world,     sk_viewproj[output.view_id]);
+	output.pos   = mul(world,     sk_viewproj[view_id]);
 
 	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 

@@ -8,19 +8,18 @@ float4 radius;
 struct vsIn {
 	float4 pos : SV_POSITION;
 };
-struct psIn {
+struct psIn : sk_ps_input_t {
 	float4 pos   : SV_POSITION;
 	float4 world : TEXCOORD0;
-	uint view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_vs_input_t sk_in) {
 	psIn o;
-	o.view_id = id % sk_view_count;
-	id        = id / sk_view_count;
+	uint view_id = sk_view_init(sk_in, o);
+	uint id      = sk_inst_id  (sk_in);
 
 	o.world = mul(input.pos, sk_inst[id].world);
-	o.pos   = mul(o.world,   sk_viewproj[o.view_id]);
+	o.pos   = mul(o.world,   sk_viewproj[view_id]);
 
 	return o;
 }
