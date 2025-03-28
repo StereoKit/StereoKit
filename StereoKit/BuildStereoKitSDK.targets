@@ -68,7 +68,7 @@
 	</ItemGroup>
 	<!-- This needs to be a Target instead of a PreBuildEvent, otherwise it won't
 	     run unless the consuming project has dirty code.-->
-	<Target Name="SKPreBuildEvent" BeforeTargets="PreBuildEvent">
+	<Target Name="SKPreBuildEvent" BeforeTargets="BeforeBuild;StereoKit_Properties">
 		<PropertyGroup>
 			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
 			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'">$(SKSDKBuildOS)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)\CMakeCache.txt</SKSDKCacheFile>

@@ -188,6 +188,7 @@ if (SK_BUILD_OPENXR_LOADER)
     "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
+  target_compile_options(openxr_loader PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
   
   set(OPENXR_LIB openxr_loader)
 endif()
@@ -198,6 +199,7 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   GITHUB_REPOSITORY zeux/meshoptimizer
   GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
 )
+target_compile_options(meshoptimizer PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 #### basis_universal - https://github.com/BinomialLLC/basis_universal ####
