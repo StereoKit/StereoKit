@@ -157,10 +157,14 @@ namespace StereoKit
 			// of the final defaults or calculated settings.
 			Settings = NativeAPI.sk_get_settings();
 
-			// Get system information
+			// Do a few things on success
 			if (result) { 
 				_system = NativeAPI.sk_system_info();
 				Default.Initialize();
+
+				// Ensure any steppers already in the queue get initialized
+				// right away.
+				_steppers.DequeueActions();
 			}
 
 			Backend.OpenXR.CleanupInitialize();
