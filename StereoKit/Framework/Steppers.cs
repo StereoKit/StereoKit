@@ -78,7 +78,7 @@ namespace StereoKit.Framework
 			return null;
 		}
 
-		public void Step()
+		public void DequeueActions()
 		{
 			// Execute all stepper actions on the main thread in the order they
 			// were given.
@@ -99,6 +99,11 @@ namespace StereoKit.Framework
 						break;
 				}
 			}
+		}
+
+		public void Step()
+		{
+			DequeueActions();
 
 			foreach (IStepper stepper in _steppers)
 				stepper.Step();
