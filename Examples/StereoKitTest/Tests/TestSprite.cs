@@ -17,16 +17,16 @@ class TestSprite : ITest
 		Lines.Add(V.XYZ( 0.1f,-1,    0), V.XYZ( 0.1f,1,    0), new Color32(0,255,0,128), 0.001f);
 		Lines.Add(V.XYZ(-0.1f,-1,    0), V.XYZ(-0.1f,1,    0), new Color32(0,255,0,128), 0.001f);
 		
-		sprite.Draw(Matrix.TS( 0.1f, 0.05f, 0, 0.03f), TextAlign.BottomRight);  // Left
-		sprite.Draw(Matrix.TS( 0,    0.05f, 0, 0.03f), TextAlign.BottomCenter); // Center
-		sprite.Draw(Matrix.TS(-0.1f, 0.05f, 0, 0.03f), TextAlign.BottomLeft);   // Right
+		sprite.Draw(Matrix.TS( 0.1f, 0.05f, 0, 0.03f), Pivot.BottomRight);  // Left
+		sprite.Draw(Matrix.TS( 0,    0.05f, 0, 0.03f), Pivot.BottomCenter); // Center
+		sprite.Draw(Matrix.TS(-0.1f, 0.05f, 0, 0.03f), Pivot.BottomLeft);   // Right
 		
-		sprite.Draw(Matrix.TS( 0.1f, 0, 0, 0.03f), TextAlign.CenterRight);      // Left
-		sprite.Draw(Matrix.S ( 0.03f),             TextAlign.Center);           // Center
-		sprite.Draw(Matrix.TS(-0.1f, 0, 0, 0.03f), TextAlign.CenterLeft);       // Right
+		sprite.Draw(Matrix.TS( 0.1f, 0, 0, 0.03f), Pivot.CenterRight);      // Left
+		sprite.Draw(Matrix.S ( 0.03f),             Pivot.Center);           // Center
+		sprite.Draw(Matrix.TS(-0.1f, 0, 0, 0.03f), Pivot.CenterLeft);       // Right
 
-		sprite.Draw(Matrix.TS( 0.1f, -0.05f, 0, 0.03f), TextAlign.TopRight);    // Left
-		sprite.Draw(Matrix.TS( 0,    -0.05f, 0, 0.03f), TextAlign.TopCenter);   // Center
-		sprite.Draw(Matrix.TS(-0.1f, -0.05f, 0, 0.03f), TextAlign.TopLeft);     // Right
+		sprite.Draw(Matrix.TS( 0.1f, -0.05f, 0, 0.03f), Pivot.TopRight);    // Left
+		sprite.Draw(Matrix.TS( 0,    -0.05f, 0, 0.03f), Pivot.TopCenter);   // Center
+		sprite.Draw(Matrix.TS(-0.1f, -0.05f, 0, 0.03f), Pivot.TopLeft);     // Right
 	}
 }

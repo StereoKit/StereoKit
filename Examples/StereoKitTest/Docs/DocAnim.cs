@@ -55,8 +55,8 @@ class DocAnim : ITest
 
 		// These are some labels for the progress bar that tell us more about
 		// the active animation.
-		Text.Add($"{model.ActiveAnim.Name} : {model.AnimMode}", Matrix.TS(0, -2*U.cm, 0, 3),        TextAlign.TopLeft);
-		Text.Add($"{model.AnimTime:F1}s",                       Matrix.TS(-progress, 2*U.cm, 0, 3), TextAlign.BottomCenter);
+		Text.Add($"{model.ActiveAnim.Name} : {model.AnimMode}", Matrix.TS(0, -2*U.cm, 0, 3),        Pivot.TopLeft);
+		Text.Add($"{model.AnimTime:F1}s",                       Matrix.TS(-progress, 2*U.cm, 0, 3), Pivot.BottomCenter);
 
 		Hierarchy.Pop();
 		/// :End:

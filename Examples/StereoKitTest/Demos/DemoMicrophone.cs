@@ -129,13 +129,13 @@ class DemoMicrophone : ITest
 			float scale = 0.1f + 0.06f * intensity;
 			Color color = new Color(1,1,1, Math.Max(0.1f, intensity));
 			Default.MeshSphere.Draw(micMaterial, Matrix.S(scale), color);
-			micSprite.Draw(Matrix.S(0.06f), TextAlign.Center);
+			micSprite.Draw(Matrix.S(0.06f), Pivot.Center);
 		}
 		else
 		{
 			// Draw it in red if we're not recording
 			Default.MeshSphere.Draw(micMaterial, Matrix.S(0.1f), new Color(1,0,0,0.1f));
-			micSprite.Draw(Matrix.S(0.06f), TextAlign.Center);
+			micSprite.Draw(Matrix.S(0.06f), Pivot.Center);
 		}
 		Hierarchy.Pop();
 

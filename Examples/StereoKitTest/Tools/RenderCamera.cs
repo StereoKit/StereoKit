@@ -78,7 +78,7 @@ namespace StereoKit.Framework
 			{
 				Hierarchy.Push(Matrix.TR(previewAt, Quat.LookAt(previewAt, Input.Head.position)));
 				Default.MeshQuad.Draw(_frameMaterial, Matrix.S(V.XYZ(0.08f * ((float)Width / Height), 0.08f, 1)));
-				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), TextAlign.CenterLeft);
+				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), Pivot.CenterLeft);
 				Hierarchy.Pop();
 
 				Matrix glFix = Backend.Graphics == BackendGraphics.D3D11 ? Matrix.Identity : Matrix.R(0,0,180);

@@ -311,13 +311,13 @@ void _ui_visualize_layout(ui_layout_t* layout) {
 
 	char text[256];
 	snprintf(text, 256, "layout\n%.2gx%.2g", size.x * 100, size.y * 100);
-	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
+	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, pivot_top_left, align_top_left, 0, 0, 0, color32_to_128(col));
 
 	snprintf(text, 256, "%.2g,%.2g", start.x * 100, start.y * 100);
-	text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
+	text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, pivot_top_left, align_top_left, 0, 0, 0, color32_to_128(col));
 
 	snprintf(text, 256, "%.2g,%.2g", (start.x - size.x) * 100, start.y * 100);
-	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, text_align_top_right, text_align_top_left, 0, 0, 0, color32_to_128(col));
+	text_add_at(text, matrix_ts(start - vec3{ size.x, 0, z_offset }, vec3_one * 0.5f), 0, pivot_top_right, align_top_left, 0, 0, 0, color32_to_128(col));
 
 	if (layout->window != -1) {
 		ui_window_t *win = &skui_windows[layout->window];
@@ -332,7 +332,7 @@ void _ui_visualize_layout(ui_layout_t* layout) {
 		line_add(start - vec3{ 0, size.y, z_offset }, start - vec3{ size.x, size.y, z_offset }, col, col, weight);
 
 		snprintf(text, 256, "win %.2gx%.2g", size.x * 100, size.y * 100);
-		text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, text_align_bottom_left, text_align_top_left, 0, 0, 0, color32_to_128(col));
+		text_add_at(text, matrix_ts(start - vec3{ 0, 0, z_offset }, vec3_one * 0.5f), 0, pivot_bottom_left, align_top_left, 0, 0, 0, color32_to_128(col));
 	}
 }
 

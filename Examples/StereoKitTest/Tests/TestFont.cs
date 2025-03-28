@@ -16,27 +16,27 @@ class TestFont : ITest
 		Color32 col = new Color32(0, 255, 0, 255);
 
 		Hierarchy.Push(Matrix.T(-0.06f, .05f, 0));
-		Text.Add("Y Top", Matrix.TR(new Vec3(0, .04f, 0), Quat.LookDir(0, 0, 1)), style, TextAlign.TopCenter);
+		Text.Add("Y Top", Matrix.TR(new Vec3(0, .04f, 0), Quat.LookDir(0, 0, 1)), style, Pivot.TopCenter);
 		Lines.Add(new Vec3(-0.05f, .04f, 0), new Vec3(.05f, .04f, 0), col, 0.001f);
 
-		Text.Add("Y Center", Matrix.TR(new Vec3(0, .0f, 0), Quat.LookDir(0, 0, 1)), style, TextAlign.Center);
+		Text.Add("Y Center", Matrix.TR(new Vec3(0, .0f, 0), Quat.LookDir(0, 0, 1)), style, Pivot.Center);
 		Lines.Add(new Vec3(-0.05f, 0, 0), new Vec3(.05f, 0, 0), col, 0.001f);
 
-		Text.Add("Y Bottom", Matrix.TR(new Vec3(0, -.04f, 0), Quat.LookDir(0, 0, 1)), style, TextAlign.BottomCenter);
+		Text.Add("Y Bottom", Matrix.TR(new Vec3(0, -.04f, 0), Quat.LookDir(0, 0, 1)), style, Pivot.BottomCenter);
 		Lines.Add(new Vec3(-0.05f, -.04f, 0), new Vec3(.05f, -.04f, 0), col, 0.001f);
 		Hierarchy.Pop();
 
 		Hierarchy.Push(Matrix.T(0.02f, 0.05f, 0));
-		Text.Add("2cm Tall", Matrix.R(Quat.LookDir(0, 0, 1)), style, TextAlign.CenterLeft);
+		Text.Add("2cm Tall", Matrix.R(Quat.LookDir(0, 0, 1)), style, Pivot.CenterLeft);
 		
 		Lines.Add(new Vec3(0, -.01f, 0), new Vec3( .11f, -.01f, 0), col, 0.001f);
 		Lines.Add(new Vec3(0,  .01f, 0), new Vec3( .11f,  .01f, 0), col, 0.001f);
 		Hierarchy.Pop();
 
 		Hierarchy.Push(Matrix.T(0, -0.06f, 0));
-		Text.Add("X Left",   Matrix.TR(new Vec3(0, 0.04f, 0), Quat.LookDir(0, 0, 1)), style, TextAlign.CenterLeft);
-		Text.Add("X Center", Matrix.TR(new Vec3(0, 0,     0), Quat.LookDir(0, 0, 1)), style, TextAlign.Center);
-		Text.Add("X Right",  Matrix.TR(new Vec3(0,-0.04f, 0), Quat.LookDir(0, 0, 1)), style, TextAlign.CenterRight);
+		Text.Add("X Left",   Matrix.TR(new Vec3(0, 0.04f, 0), Quat.LookDir(0, 0, 1)), style, Pivot.CenterLeft);
+		Text.Add("X Center", Matrix.TR(new Vec3(0, 0,     0), Quat.LookDir(0, 0, 1)), style, Pivot.Center);
+		Text.Add("X Right",  Matrix.TR(new Vec3(0,-0.04f, 0), Quat.LookDir(0, 0, 1)), style, Pivot.CenterRight);
 		Lines.Add(new Vec3(0, .06f, 0), new Vec3(0, -.06f, 0), col, 0.001f);
 		Hierarchy.Pop();
 

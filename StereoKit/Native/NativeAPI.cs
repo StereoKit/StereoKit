@@ -315,8 +315,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style                (IntPtr font, float character_height, Color color);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_shader         (IntPtr font, float character_height, IntPtr shader, Color color);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern TextStyle text_make_style_mat            (IntPtr font, float character_height, IntPtr material, Color color);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void      text_add_at_16                 (string text, in Matrix transform, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern float     text_add_in_16                 (string text, in Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position, TextAlign align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void      text_add_at_16                 (string text, in Matrix transform, TextStyle style, Pivot position, Align align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern float     text_add_in_16                 (string text, in Matrix transform, Vec2 size, TextFit fit, TextStyle style, Pivot position, Align align, float off_x, float off_y, float off_z, Color vertex_tint_linear);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_layout_16            (string text, TextStyle style);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_layout_constrained_16(string text, TextStyle style, float max_width);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern Vec2      text_size_render               (Vec2 layout_size, TextStyle style, out float out_y_offset);
@@ -412,7 +412,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr sprite_get_id     (IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_release    (IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  sprite_get_aspect (IntPtr sprite);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_draw       (IntPtr sprite, Matrix transform, TextAlign position, Color32 color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   sprite_draw       (IntPtr sprite, Matrix transform, Pivot position, Color32 color);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    sprite_get_width  (IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int    sprite_get_height (IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2   sprite_get_dimensions_normalized(IntPtr sprite);
@@ -832,17 +832,17 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_16        (string text, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_label_sz_16     (string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_16         (string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign text_align, TextFit fit);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_16         (string text, ref Vec2 scroll, UIScroll scrollDirection, float height, Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_16         (string text, IntPtr   scroll, UIScroll scrollDirection, float height, TextAlign text_align, TextFit fit);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_16         (string text, IntPtr   scroll, UIScroll scrollDirection, float height, Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_sz_16      (string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2  size,   TextAlign text_align, TextFit fit);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_sz_16      (string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2  size,   Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_sz_16      (string text, IntPtr   scroll, UIScroll scrollDirection, Vec2  size,   TextAlign text_align, TextFit fit);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_sz_16      (string text, IntPtr   scroll, UIScroll scrollDirection, Vec2  size,   Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_at_16      (string text, ref Vec2 scroll, UIScroll scrollDirection, TextAlign text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_at_16      (string text, ref Vec2 scroll, UIScroll scrollDirection, Align text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_at_16      (string text, IntPtr   scroll, UIScroll scrollDirection, TextAlign text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_text_at_16      (string text, IntPtr   scroll, UIScroll scrollDirection, Align text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_image           (IntPtr sprite_image, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_button_16       (string text);

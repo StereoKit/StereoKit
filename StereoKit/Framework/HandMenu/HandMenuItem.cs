@@ -64,13 +64,13 @@ namespace StereoKit.Framework
 				float height = TextStyle.Default.LayoutHeight;
 				Vec3  offset = new Vec3(0, height * 0.75f, 0);
 				Hierarchy.Push(Matrix.TS(at, focused ? 1.2f : 1));
-					image.Draw(Matrix.TS(offset, height), TextAlign.Center);
-					Text.Add(name, Matrix.TS(-offset, .5f), TextAlign.BottomCenter);
+					image.Draw(Matrix.TS(offset, height), Pivot.Center);
+					Text.Add(name, Matrix.TS(-offset, .5f), Pivot.BottomCenter);
 				Hierarchy.Pop();
 			}
 			else
 			{
-				Text.Add(name, Matrix.TS(at, focused ? 0.6f : 0.5f), TextAlign.BottomCenter);
+				Text.Add(name, Matrix.TS(at, focused ? 0.6f : 0.5f), Pivot.BottomCenter);
 			}
 		}
 	}

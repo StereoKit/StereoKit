@@ -118,18 +118,18 @@ class DemoUITearsheet : ITest
 
 		UI.HSeparator();
 
-		UI.Text("UI.Text", TextAlign.TopLeft);
-		UI.Text("UI.Text", TextAlign.TopCenter);
-		UI.Text("UI.Text", TextAlign.TopRight);
+		UI.Text("UI.Text", Align.TopLeft);
+		UI.Text("UI.Text", Align.TopCenter);
+		UI.Text("UI.Text", Align.TopRight);
 
 		UI.HSeparator();
 
 		Vec2 size = new Vec2(0.14f, 0.03f);
-		UI.Text("UI.Text with a size overload + Clip",     TextAlign.TopLeft, TextFit.Clip,     size);
-		UI.Text("UI.Text with a size overload + Exact",    TextAlign.TopLeft, TextFit.Exact,    size);
-		UI.Text("UI.Text with a size overload + Overflow", TextAlign.TopLeft, TextFit.Overflow, size);
-		UI.Text("UI.Text with a size overload + Squeeze",  TextAlign.TopLeft, TextFit.Squeeze,  size);
-		UI.Text("UI.Text with a size overload + Wrap",     TextAlign.TopLeft, TextFit.Wrap,     size);
+		UI.Text("UI.Text with a size overload + Clip",     Align.TopLeft, TextFit.Clip,     size);
+		UI.Text("UI.Text with a size overload + Exact",    Align.TopLeft, TextFit.Exact,    size);
+		UI.Text("UI.Text with a size overload + Overflow", Align.TopLeft, TextFit.Overflow, size);
+		UI.Text("UI.Text with a size overload + Squeeze",  Align.TopLeft, TextFit.Squeeze,  size);
+		UI.Text("UI.Text with a size overload + Wrap",     Align.TopLeft, TextFit.Wrap,     size);
 
 		UI.HSeparator();
 

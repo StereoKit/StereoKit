@@ -36,7 +36,7 @@ const float    skui_aura_radius    = 0.02f;
 
 ///////////////////////////////////////////
 
-bool32_t ui_text_at(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_fit_ fit, text_align_ text_align, vec3 window_relative_pos, vec2 size);
+bool32_t ui_text_at(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_fit_ fit, align_ text_align, vec3 window_relative_pos, vec2 size);
 
 ///////////////////////////////////////////
 
@@ -148,8 +148,8 @@ void ui_hseparator() {
 vec2 text_size_layout            (const char16_t* text_utf16, text_style_t style)                  { return text_size_layout_16(text_utf16, style); }
 vec2 text_size_layout_constrained(const char16_t* text_utf16, text_style_t style, float max_width) { return text_size_layout_constrained_16(text_utf16, style, max_width); }
 
-float ui_text_in  (const char*     text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in   (text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
-float ui_text_in  (const char16_t* text, text_align_ position, text_align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in_16(text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+float ui_text_in  (const char*     text, pivot_ position, align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in   (text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
+float ui_text_in  (const char16_t* text, pivot_ position, align_ align, text_fit_ fit, vec3 start, vec2 size, vec2 offset) { return text_add_in_16(text, matrix_t(start), size, fit, ui_get_text_style(), position, align, offset.x,offset.y,0, ui_is_enabled() ? color128{ 1, 1, 1, 1 } : color128{ .5f, .5f, .5f, 1 }); }
 
 ///////////////////////////////////////////
 
@@ -162,7 +162,7 @@ void ui_label_sz_g(const C *text, vec2 size, bool32_t use_padding) {
 	vec2 padding = use_padding
 		? vec2{ skui_settings.padding, skui_settings.padding }
 		: vec2{ 0, skui_settings.padding };
-	ui_text_in(text, text_align_top_left, text_align_center_left, text_fit_squeeze, final_pos - vec3{ padding.x, 0, skui_settings.depth/2}, vec2{final_size.x-padding.x*2, final_size.y}, vec2_zero);
+	ui_text_in(text, pivot_top_left, align_center_left, text_fit_squeeze, final_pos - vec3{ padding.x, 0, skui_settings.depth/2}, vec2{final_size.x-padding.x*2, final_size.y}, vec2_zero);
 }
 void ui_label_sz   (const char     *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char    >(text, size, use_padding); }
 void ui_label_sz_16(const char16_t *text, vec2 size, bool32_t use_padding) { ui_label_sz_g<char16_t>(text, size, use_padding); }
@@ -185,56 +185,56 @@ void ui_image(sprite_t image, vec2 size) {
 	ui_layout_reserve_sz(size, false, &final_pos, &final_size);
 	
 	sprite_draw(image, matrix_ts(final_pos - vec3{size.x / 2, size.y / 2, 2 * mm2m }, vec3{ scale, scale, 1 }),
-		text_align_center, ui_is_enabled() ? color32{255, 255, 255, 255} : color32{128, 128, 128, 255});
+		pivot_center, ui_is_enabled() ? color32{255, 255, 255, 255} : color32{128, 128, 128, 255});
 }
 
 ///////////////////////////////////////////
 template<typename C>
-void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, text_align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset, color128 image_tint) {
-	float pad2       = skui_settings.padding * 2;
-	float depth      = finger_offset + 2 * mm2m;
-	vec3  image_at   = {};
-	float image_size;
-	text_align_ image_align = text_align_x_left;
-	vec3  text_at;
-	vec2  text_size;
-	text_align_ text_align;
+void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_layout, align_ text_layout, vec3 window_relative_pos, vec2 size, float finger_offset, color128 image_tint) {
+	float  pad2       = skui_settings.padding * 2;
+	float  depth      = finger_offset + 2 * mm2m;
+	vec3   image_at   = {};
+	float  image_size;
+	pivot_ image_pivot = pivot_x_left;
+	vec3   text_at;
+	vec2   text_size;
+	pivot_ text_pivot;
 	float aspect = image != nullptr ? sprite_get_aspect(image) : 1.0f;
 	float font_size = text_style_get_baseline(ui_get_text_style());
 	switch (image_layout) {
 	default:
 	case ui_btn_layout_left:
-		image_align = text_align_center;
+		image_pivot = pivot_center;
 		image_size  = fminf(size.y - pad2, font_size);
 		image_at    = window_relative_pos - vec3{ size.y/2.0f, size.y/2.0f, depth };
 
-		text_align = text_align_center_right;
+		text_pivot = pivot_center_right;
 		text_at    = window_relative_pos - vec3{ size.x-skui_settings.padding, size.y/2, depth };
 		text_size  = { size.x - ((size.y+image_size)/2.0f + pad2), size.y - pad2 };
 		break;
 	case ui_btn_layout_right:
-		image_align = text_align_center;
+		image_pivot = pivot_center;
 		image_at    = window_relative_pos - vec3{ size.x-(size.y/2), size.y / 2, depth };
 		image_size  = fminf(size.y - pad2, font_size);
 
-		text_align = text_align_center_left;
+		text_pivot = pivot_center_left;
 		text_at    = window_relative_pos - vec3{ skui_settings.padding, size.y / 2, depth };
 		text_size  = { size.x - ((size.y+image_size)/2.0f + pad2), size.y - pad2 };
 		break;
 	case ui_btn_layout_none:
 		image_size = 0;
 
-		text_align = text_align_top_left;
+		text_pivot = pivot_top_left;
 		text_at    = window_relative_pos - vec3{ skui_settings.padding, skui_settings.padding, depth };
 		text_size  = vec2{ size.x - pad2, size.y - pad2 };
 		break;
 	case ui_btn_layout_center_no_text:
 	case ui_btn_layout_center:
-		image_align = text_align_center;
+		image_pivot = pivot_center;
 		image_size  = fminf(size.y - pad2, (size.x - pad2) / aspect);
 		image_at    = window_relative_pos - vec3{ size.x/2, size.y / 2, depth }; 
 
-		text_align = text_align_top_center;
+		text_pivot = pivot_top_center;
 		float y = size.y / 2 + image_size / 2;
 		text_at    = window_relative_pos - vec3{size.x/2, y, depth};
 		text_size  = { size.x-pad2, (size.y-skui_settings.padding*0.25f)-y };
@@ -245,10 +245,10 @@ void _ui_button_img_surface(const C* text, sprite_t image, ui_btn_layout_ image_
 		color128 final_color = image_tint;
 		if (!ui_is_enabled()) final_color = final_color * color128{ .5f, .5f, .5f, 1 };
 	
-		sprite_draw(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_align, color_to_32( final_color ));
+		sprite_draw(image, matrix_ts(image_at, { image_size, image_size, image_size }), image_pivot, color_to_32( final_color ));
 	}
 	if (image_layout != ui_btn_layout_center_no_text)
-		ui_text_in(text, text_align, text_layout, text_fit_squeeze, text_at, text_size, vec2_zero);
+		ui_text_in(text, text_pivot, text_layout, text_fit_squeeze, text_at, text_size, vec2_zero);
 }
 
 ///////////////////////////////////////////
@@ -287,7 +287,7 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 
 	float min_activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_element(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
-	_ui_button_img_surface(text, image, image_layout, text_align_center, window_relative_pos, size, finger_offset, image_tint);
+	_ui_button_img_surface(text, image, image_layout, align_center, window_relative_pos, size, finger_offset, image_tint);
 
 	return state & button_state_just_inactive;
 }
@@ -356,7 +356,7 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 
 	float min_activation = 1 - (finger_offset / skui_settings.depth);
 	ui_draw_element(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
-	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, text_align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
+	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
 	return state & button_state_just_inactive;
 }
@@ -422,7 +422,7 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
-	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), text_align_center);
+	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), pivot_center);
 
 	return state & button_state_just_inactive;
 }
@@ -472,8 +472,8 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 
 ///////////////////////////////////////////
 
-inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at   (text, style, char_index, opt_size, fit, position, align); }
-inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
+inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at   (text, style, char_index, opt_size, fit, position, align); }
+inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
 
 template<typename C>
 bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type) {
@@ -593,18 +593,18 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 		float carat_sz = baseline * 0.1f;
 
 		int32_t carat_at      = skui_input_carat;
-		vec2    carat_pos     = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+		vec2    carat_pos     = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, pivot_top_left, align_center_left);
 		float   scroll_margin = text_bounds.x - baseline;
 		while (carat_pos.x < -scroll_margin && *draw_text != '\0' && carat_at >= 0) {
 			draw_text += 1;
 			carat_at  -= 1;
-			carat_pos = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+			carat_pos = text_char_at_o(draw_text, style, carat_at, &text_bounds, text_fit_clip, pivot_top_left, align_center_left);
 		}
 
 		// Display a selection box for highlighted text
 		if (skui_input_carat != skui_input_carat_end) {
 			int32_t end       = maxi(0, carat_at + (skui_input_carat_end - skui_input_carat));
-			vec2    carat_end = text_char_at_o(draw_text, style, end, &text_bounds, text_fit_clip, text_align_top_left, text_align_center_left);
+			vec2    carat_end = text_char_at_o(draw_text, style, end, &text_bounds, text_fit_clip, pivot_top_left, align_center_left);
 			float   left      =       fmaxf(carat_pos.x, carat_end.x);
 			float   right     = fmaxf(fminf(carat_pos.x, carat_end.x), -text_bounds.x);
 
@@ -619,7 +619,7 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 		}
 	}
 
-	ui_text_in(draw_text, text_align_top_left, text_align_center_left, text_fit_clip, window_relative_pos - vec3{ skui_settings.padding, 0, text_depth }, text_bounds, vec2_zero);
+	ui_text_in(draw_text, pivot_top_left, align_center_left, text_fit_clip, window_relative_pos - vec3{ skui_settings.padding, 0, text_depth }, text_bounds, vec2_zero);
 
 	return result;
 }
@@ -821,7 +821,7 @@ bool32_t ui_vslider_f64_16(const char16_t* name, double& value, double min, doub
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_text_at_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) {
+bool32_t ui_text_at_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) {
 	vec2 txt_bounds = size;
 	bool result     = false;
 
@@ -852,19 +852,19 @@ bool32_t ui_text_at_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_dir
 			fit |= text_fit_clip;
 	}
 
-	ui_text_in(text, text_align_top_left, text_align, fit, window_relative_pos - vec3{ 0, 0, skui_settings.depth / 2 }, txt_bounds, opt_ref_scroll == nullptr ? vec2_zero : *opt_ref_scroll);
+	ui_text_in(text, pivot_top_left, text_align, fit, window_relative_pos - vec3{ 0, 0, skui_settings.depth / 2 }, txt_bounds, opt_ref_scroll == nullptr ? vec2_zero : *opt_ref_scroll);
 
 	return result;
 }
 
-bool32_t ui_text_at   (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char16_t>(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
-bool32_t ui_text_at   (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char    >(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
-bool32_t ui_text_at_16(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char16_t>(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
+bool32_t ui_text_at   (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char16_t>(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
+bool32_t ui_text_at   (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char    >(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
+bool32_t ui_text_at_16(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size) { return ui_text_at_g<char16_t>(text, opt_ref_scroll, scroll_direction, text_align, fit, window_relative_pos, size); }
 
 ///////////////////////////////////////////
 
 template<typename C>
-bool32_t ui_text_sz_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align, text_fit_ fit) {
+bool32_t ui_text_sz_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, align_ text_align, text_fit_ fit) {
 	if (size.x == 0) size.x = ui_layout_remaining().x;
 	if (size.y == 0) size.y = (fit & text_fit_wrap) > 0
 		? text_size_layout_constrained(text, ui_get_text_style(), size.x).y
@@ -877,11 +877,11 @@ bool32_t ui_text_sz_g(const C* text, vec2* opt_ref_scroll, ui_scroll_ scroll_dir
 	return ui_text_at_g<C>(text, opt_ref_scroll, scroll_direction, text_align, fit, final_pos, final_size);
 }
 
-bool32_t ui_text_sz   (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align, text_fit_ fit) { return ui_text_sz_g<char    >(text, opt_ref_scroll, scroll_direction, size, text_align, fit); }
-bool32_t ui_text_sz_16(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align, text_fit_ fit) { return ui_text_sz_g<char16_t>(text, opt_ref_scroll, scroll_direction, size, text_align, fit); }
+bool32_t ui_text_sz   (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, align_ text_align, text_fit_ fit) { return ui_text_sz_g<char    >(text, opt_ref_scroll, scroll_direction, size, text_align, fit); }
+bool32_t ui_text_sz_16(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, align_ text_align, text_fit_ fit) { return ui_text_sz_g<char16_t>(text, opt_ref_scroll, scroll_direction, size, text_align, fit); }
 
-bool32_t ui_text      (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, float height, text_align_ text_align, text_fit_ fit) { return ui_text_sz_g<char    >(text, opt_ref_scroll, scroll_direction, { 0, height }, text_align, fit); }
-bool32_t ui_text_16   (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, float height, text_align_ text_align, text_fit_ fit) { return ui_text_sz_g<char16_t>(text, opt_ref_scroll, scroll_direction, { 0, height }, text_align, fit); }
+bool32_t ui_text      (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, float height, align_ text_align, text_fit_ fit) { return ui_text_sz_g<char    >(text, opt_ref_scroll, scroll_direction, { 0, height }, text_align, fit); }
+bool32_t ui_text_16   (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, float height, align_ text_align, text_fit_ fit) { return ui_text_sz_g<char16_t>(text, opt_ref_scroll, scroll_direction, { 0, height }, text_align, fit); }
 
 ///////////////////////////////////////////
 
@@ -929,7 +929,7 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		vec2 size     = vec2{ window_size.x == 0 ? txt_size.x : window_size.x-(skui_settings.margin*2), ui_line_height() };
 		vec3 at       = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
 
-		ui_text_in(text, text_align_top_left, text_align_center_left, text_fit_squeeze, at, size, vec2_zero);
+		ui_text_in(text, pivot_top_left, align_center_left, text_fit_squeeze, at, size, vec2_zero);
 
 		float header_width = window_size.x == 0 ? size.x + skui_settings.padding * 2 + skui_settings.margin * 2 : size.x;
 		if (win->curr_size.x < header_width)

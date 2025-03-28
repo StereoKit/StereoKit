@@ -100,7 +100,7 @@ class DocUI : ITest
 		UI.Label("Content Header");
 		UI.HSeparator();
 		UI.Text("A separator can go a long way towards making your content "
-		      + "easier to look at!", TextAlign.TopCenter);
+		      + "easier to look at!", Align.TopCenter);
 
 		UI.WindowEnd();
 	}

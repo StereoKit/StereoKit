@@ -22,7 +22,7 @@ class DocLastElement : ITest
 		UI.WindowBegin("Last Element API", ref windowPose);
 
 		UI.HSlider("Slider", ref sliderVal, 0, 1, 0.1f, 0, UIConfirm.Pinch);
-		UI.Text("Element Info:", TextAlign.TopCenter);
+		UI.Text("Element Info:", Align.TopCenter);
 		if (UI.LastElementHandActive (Handed.Left ).IsActive()) UI.Label("Left Active");
 		if (UI.LastElementHandActive (Handed.Right).IsActive()) UI.Label("Right Active");
 		if (UI.LastElementHandFocused(Handed.Left ).IsActive()) UI.Label("Left Focused");
