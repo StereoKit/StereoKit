@@ -32,7 +32,7 @@ class DocText : ITest
 		string text  = "lÔTy";
 		TextStyle style = TextStyle.Default;
 
-		Text.Add(text, Matrix.Identity, style, TextAlign.Center);
+		Text.Add(text, Matrix.Identity, style, Pivot.Center);
 
 		// Calculate the text sizes! Layout size is used for placing text, but
 		// render size indicates the total area where text could end up,
@@ -73,7 +73,7 @@ class DocText : ITest
 		string text = "lÔTy";
 
 		// Draw the text
-		Text.Add(text, Matrix.Identity, style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(text, Matrix.Identity, style, Pivot.TopLeft, Align.TopLeft);
 
 		// Show the bounding regions for the size of the text
 		Color colLayoutArea = new Color(0.1f,  0.1f, 0.1f);

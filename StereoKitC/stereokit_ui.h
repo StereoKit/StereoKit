@@ -237,12 +237,12 @@ SK_API void     ui_label             (const char*     text, bool32_t use_padding
 SK_API void     ui_label_16          (const char16_t* text, bool32_t use_padding sk_default(true));
 SK_API void     ui_label_sz          (const char*     text, vec2 size, bool32_t use_padding sk_default(true));
 SK_API void     ui_label_sz_16       (const char16_t* text, vec2 size, bool32_t use_padding sk_default(true));
-SK_API bool32_t ui_text              (const char*     text, vec2* opt_ref_scroll sk_default(nullptr), ui_scroll_ scroll_direction sk_default(ui_scroll_vertical), float height sk_default(0), text_align_ text_align sk_default(text_align_top_left), text_fit_ fit sk_default(text_fit_wrap));
-SK_API bool32_t ui_text_16           (const char16_t* text, vec2* opt_ref_scroll sk_default(nullptr), ui_scroll_ scroll_direction sk_default(ui_scroll_vertical), float height sk_default(0), text_align_ text_align sk_default(text_align_top_left), text_fit_ fit sk_default(text_fit_wrap));
-SK_API bool32_t ui_text_sz           (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align sk_default(text_align_top_left), text_fit_ fit sk_default(text_fit_wrap));
-SK_API bool32_t ui_text_sz_16        (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, text_align_ text_align sk_default(text_align_top_left), text_fit_ fit sk_default(text_fit_wrap));
-SK_API bool32_t ui_text_at           (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction,            text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
-SK_API bool32_t ui_text_at_16        (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction,            text_align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_text              (const char*     text, vec2* opt_ref_scroll sk_default(nullptr), ui_scroll_ scroll_direction sk_default(ui_scroll_vertical), float height sk_default(0), align_ text_align sk_default(align_top_left), text_fit_ fit sk_default(text_fit_wrap));
+SK_API bool32_t ui_text_16           (const char16_t* text, vec2* opt_ref_scroll sk_default(nullptr), ui_scroll_ scroll_direction sk_default(ui_scroll_vertical), float height sk_default(0), align_ text_align sk_default(align_top_left), text_fit_ fit sk_default(text_fit_wrap));
+SK_API bool32_t ui_text_sz           (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, align_ text_align sk_default(align_top_left), text_fit_ fit sk_default(text_fit_wrap));
+SK_API bool32_t ui_text_sz_16        (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction, vec2 size, align_ text_align sk_default(align_top_left), text_fit_ fit sk_default(text_fit_wrap));
+SK_API bool32_t ui_text_at           (const char*     text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction,            align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
+SK_API bool32_t ui_text_at_16        (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scroll_direction,            align_ text_align, text_fit_ fit, vec3 window_relative_pos, vec2 size);
 SK_API bool32_t ui_button            (const char*     text);
 SK_API bool32_t ui_button_16         (const char16_t* text);
 SK_API bool32_t ui_button_sz         (const char*     text, vec2 size);

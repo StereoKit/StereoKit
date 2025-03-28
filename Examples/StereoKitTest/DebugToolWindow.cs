@@ -389,14 +389,14 @@ class DebugToolWindow : IStepper
 	{
 		UI.HandleBegin("Ruler", ref rulerPose, new Bounds(new Vec3(31,4,1)*U.cm), true);
 		Color32 color = Color.HSV(.6f, 0.5f, 1);
-		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), TextAlign.BottomLeft);
+		Text.Add("Centimeters", Matrix.TS(new Vec3(14.5f, -1.5f, -.6f)*U.cm, .3f), Pivot.BottomLeft);
 		for (int d = 0; d <= 60; d+=1)
 		{
 			float x    = d/2.0f;
 			float size = d%2==0?.5f:0.15f;
 			if (d%10 == 0 && d/2 != 30) {
 				size = 1;
-				Text.Add(rulerLabels[d/10], Matrix.TS(new Vec3(15-x-0.1f, 2-size, -.6f) * U.cm, .2f), TextAlign.BottomLeft);
+				Text.Add(rulerLabels[d/10], Matrix.TS(new Vec3(15-x-0.1f, 2-size, -.6f) * U.cm, .2f), Pivot.BottomLeft);
 			}
 			Lines.Add(new Vec3(15-x, 1.8f, -.6f)*U.cm, new Vec3(15-x,1.8f-size, -.6f)*U.cm, color, U.mm*0.5f);
 		}

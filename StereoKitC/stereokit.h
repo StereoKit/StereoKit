@@ -1338,74 +1338,141 @@ typedef enum text_fit_ {
 } text_fit_;
 SK_MakeFlag(text_fit_)
 
+/*Use align_ or pivot_ instead*/
+SK_DEPRECATED typedef enum text_align_ {
+	text_align_x_left       = 1 << 0,
+	text_align_y_top        = 1 << 1,
+	text_align_x_center     = 1 << 2,
+	text_align_y_center     = 1 << 3,
+	text_align_x_right      = 1 << 4,
+	text_align_y_bottom     = 1 << 5,
+	text_align_center       = text_align_x_center | text_align_y_center,
+	text_align_center_left  = text_align_x_left   | text_align_y_center,
+	text_align_center_right = text_align_x_right  | text_align_y_center,
+	text_align_top_center   = text_align_x_center | text_align_y_top,
+	text_align_top_left     = text_align_x_left   | text_align_y_top,
+	text_align_top_right    = text_align_x_right  | text_align_y_top,
+	text_align_bottom_center= text_align_x_center | text_align_y_bottom,
+	text_align_bottom_left  = text_align_x_left   | text_align_y_bottom,
+	text_align_bottom_right = text_align_x_right  | text_align_y_bottom,
+} text_align_;
+
 /*A bit-flag enum for describing alignment or positioning.
   Items can be combined using the '|' operator, like so:
-  
-  `TextAlign alignment = TextAlign.YTop | TextAlign.XLeft;`
-  
+  `Align alignment = Align.YTop | Align.XLeft;`
   Avoid combining multiple items of the same axis. There are also a
   complete list of valid bit flag combinations! These are the values
   without an axis listed in their names, 'TopLeft', 'BottomCenter',
   etc.*/
-typedef enum text_align_ {
+typedef enum align_ {
 	/*On the x axis, this item should start on the left.*/
-	text_align_x_left       = 1 << 0,
+	align_x_left = 1 << 0,
 	/*On the y axis, this item should start at the top.*/
-	text_align_y_top        = 1 << 1,
+	align_y_top = 1 << 1,
 	/*On the x axis, the item should be centered.*/
-	text_align_x_center     = 1 << 2,
+	align_x_center = 1 << 2,
 	/*On the y axis, the item should be centered.*/
-	text_align_y_center     = 1 << 3,
+	align_y_center = 1 << 3,
 	/*On the x axis, this item should start on the right.*/
-	text_align_x_right      = 1 << 4,
+	align_x_right = 1 << 4,
 	/*On the y axis, this item should start on the bottom.*/
-	text_align_y_bottom     = 1 << 5,
-	/*Center on both X and Y axes. This is a combination of 
+	align_y_bottom = 1 << 5,
+	/*Center on both X and Y axes. This is a combination of
 	  XCenter and YCenter.*/
-	text_align_center       = text_align_x_center | text_align_y_center,
-	/*Start on the left of the X axis, center on the Y axis. 
+	align_center = align_x_center | align_y_center,
+	/*Start on the left of the X axis, center on the Y axis.
 	  This is a combination of XLeft and YCenter.*/
-	text_align_center_left  = text_align_x_left   | text_align_y_center,
-	/*Start on the right of the X axis, center on the Y axis. 
+	align_center_left = align_x_left | align_y_center,
+	/*Start on the right of the X axis, center on the Y axis.
 	  This is a combination of XRight and YCenter.*/
-	text_align_center_right = text_align_x_right  | text_align_y_center,
+	align_center_right = align_x_right | align_y_center,
 	/*Center on the X axis, and top on the Y axis. This is a
 	  combination of XCenter and YTop.*/
-	text_align_top_center   = text_align_x_center | text_align_y_top,
+	align_top_center = align_x_center | align_y_top,
 	/*Start on the left of the X axis, and top on the Y axis.
 	  This is a combination of XLeft and YTop.*/
-	text_align_top_left     = text_align_x_left   | text_align_y_top,
+	align_top_left = align_x_left | align_y_top,
 	/*Start on the right of the X axis, and top on the Y axis.
 	  This is a combination of XRight and YTop.*/
-	text_align_top_right    = text_align_x_right  | text_align_y_top,
+	align_top_right = align_x_right | align_y_top,
 	/*Center on the X axis, and bottom on the Y axis. This is
 	  a combination of XCenter and YBottom.*/
-	text_align_bottom_center= text_align_x_center | text_align_y_bottom,
+	align_bottom_center = align_x_center | align_y_bottom,
 	/*Start on the left of the X axis, and bottom on the Y
 	  axis. This is a combination of XLeft and YBottom.*/
-	text_align_bottom_left  = text_align_x_left   | text_align_y_bottom,
+	align_bottom_left = align_x_left | align_y_bottom,
 	/*Start on the right of the X axis, and bottom on the Y
 	  axis.This is a combination of XRight and YBottom.*/
-	text_align_bottom_right = text_align_x_right  | text_align_y_bottom,
-} text_align_;
-SK_MakeFlag(text_align_);
+	align_bottom_right = align_x_right | align_y_bottom,
+} align_;
+SK_MakeFlag(align_);
+
+/*A bit-flag enum for describing alignment or positioning.
+  Items can be combined using the '|' operator, like so:
+  `Align alignment = Align.YTop | Align.XLeft;`
+  Avoid combining multiple items of the same axis. There are also a
+  complete list of valid bit flag combinations! These are the values
+  without an axis listed in their names, 'TopLeft', 'BottomCenter',
+  etc.*/
+typedef enum pivot_ {
+	/*On the x axis, this item should start on the left.*/
+	pivot_x_left = 1 << 0,
+	/*On the y axis, this item should start at the top.*/
+	pivot_y_top = 1 << 1,
+	/*On the x axis, the item should be centered.*/
+	pivot_x_center = 1 << 2,
+	/*On the y axis, the item should be centered.*/
+	pivot_y_center = 1 << 3,
+	/*On the x axis, this item should start on the right.*/
+	pivot_x_right = 1 << 4,
+	/*On the y axis, this item should start on the bottom.*/
+	pivot_y_bottom = 1 << 5,
+	/*Center on both X and Y axes. This is a combination of
+	  XCenter and YCenter.*/
+	pivot_center = pivot_x_center | pivot_y_center,
+	/*Start on the left of the X axis, center on the Y axis.
+	  This is a combination of XLeft and YCenter.*/
+	pivot_center_left = pivot_x_left | pivot_y_center,
+	/*Start on the right of the X axis, center on the Y axis.
+	  This is a combination of XRight and YCenter.*/
+	pivot_center_right = pivot_x_right | pivot_y_center,
+	/*Center on the X axis, and top on the Y axis. This is a
+	  combination of XCenter and YTop.*/
+	pivot_top_center = pivot_x_center | pivot_y_top,
+	/*Start on the left of the X axis, and top on the Y axis.
+	  This is a combination of XLeft and YTop.*/
+	pivot_top_left = pivot_x_left | pivot_y_top,
+	/*Start on the right of the X axis, and top on the Y axis.
+	  This is a combination of XRight and YTop.*/
+	pivot_top_right = pivot_x_right | pivot_y_top,
+	/*Center on the X axis, and bottom on the Y axis. This is
+	  a combination of XCenter and YBottom.*/
+	pivot_bottom_center = pivot_x_center | pivot_y_bottom,
+	/*Start on the left of the X axis, and bottom on the Y
+	  axis. This is a combination of XLeft and YBottom.*/
+	pivot_bottom_left = pivot_x_left | pivot_y_bottom,
+	/*Start on the right of the X axis, and bottom on the Y
+	  axis.This is a combination of XRight and YBottom.*/
+	pivot_bottom_right = pivot_x_right | pivot_y_bottom,
+} pivot_;
+SK_MakeFlag(pivot_);
 
 typedef uint32_t text_style_t;
 
 SK_API text_style_t  text_make_style                (font_t font, float layout_height,                      color128 color_gamma);
 SK_API text_style_t  text_make_style_shader         (font_t font, float layout_height, shader_t   shader,   color128 color_gamma);
 SK_API text_style_t  text_make_style_mat            (font_t font, float layout_height, material_t material, color128 color_gamma);
-SK_API void          text_add_at                    (const char*     text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
-SK_API void          text_add_at_16                 (const char16_t* text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
-SK_API float         text_add_in                    (const char*     text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
-SK_API float         text_add_in_16                 (const char16_t* text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), text_align_ position sk_default(text_align_center), text_align_ align sk_default(text_align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API void          text_add_at                    (const char*     text_utf8,  const sk_ref(matrix)  transform, text_style_t style sk_default(0), pivot_ position sk_default(pivot_center), align_ align sk_default(align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API void          text_add_at_16                 (const char16_t* text_utf16, const sk_ref(matrix)  transform, text_style_t style sk_default(0), pivot_ position sk_default(pivot_center), align_ align sk_default(align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API float         text_add_in                    (const char*     text_utf8,  const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), pivot_ position sk_default(pivot_center), align_ align sk_default(align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
+SK_API float         text_add_in_16                 (const char16_t* text_utf16, const sk_ref(matrix)  transform, vec2 size, text_fit_ fit, text_style_t style sk_default(0), pivot_ position sk_default(pivot_center), align_ align sk_default(align_center), float off_x sk_default(0), float off_y sk_default(0), float off_z sk_default(0), color128 vertex_tint_linear sk_default({1,1,1,1}));
 SK_API vec2          text_size_layout               (const char*     text_utf8,  text_style_t style sk_default(0));
 SK_API vec2          text_size_layout_16            (const char16_t* text_utf16, text_style_t style sk_default(0));
 SK_API vec2          text_size_layout_constrained   (const char*     text_utf8,  text_style_t style, float max_width);
 SK_API vec2          text_size_layout_constrained_16(const char16_t* text_utf16, text_style_t style, float max_width);
 SK_API vec2          text_size_render               (vec2 layout_size,           text_style_t style, float* out_y_offset);
-SK_API vec2          text_char_at                   (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
-SK_API vec2          text_char_at_16                (const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align);
+SK_API vec2          text_char_at                   (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, pivot_ position, align_ align);
+SK_API vec2          text_char_at_16                (const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, pivot_ position, align_ align);
 
 SK_API float         text_style_get_line_height_pct (text_style_t style);
 SK_API void          text_style_set_line_height_pct (text_style_t style, float height_percentage);
@@ -1537,7 +1604,7 @@ SK_API float       sprite_get_aspect (sprite_t sprite);
 SK_API int32_t     sprite_get_width  (sprite_t sprite);
 SK_API int32_t     sprite_get_height (sprite_t sprite);
 SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void        sprite_draw       (sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color sk_default({255,255,255,255}));
 
 ///////////////////////////////////////////
 

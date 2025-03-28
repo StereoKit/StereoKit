@@ -71,7 +71,7 @@ internal class TestCustomButton : ITest
 		layout.center    .z -= offset / 2;
 		layout.dimensions.z  = offset;
 		Mesh.Cube.Draw(Material.UI, Matrix.TS(layout.center, layout.dimensions), UI.GetElementColor(UIVisual.Button, UI.GetAnimFocus(id, focus, state)));
-		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, TextAlign.Center);
+		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
 		return state.IsJustInactive();
 	}
@@ -87,7 +87,7 @@ internal class TestCustomButton : ITest
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;
 		UI.DrawElement(UIVisual.Button, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
-		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, TextAlign.Center);
+		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
 		return state.IsJustInactive();
 	}
@@ -103,7 +103,7 @@ internal class TestCustomButton : ITest
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;
 		UI.DrawElement(CustomUIVisual.Button, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
-		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, TextAlign.Center);
+		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
 		return state.IsJustInactive();
 	}
@@ -119,7 +119,7 @@ internal class TestCustomButton : ITest
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;
 		UI.DrawElement(CustomUIVisual.Nonexistent, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
-		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, TextAlign.Center);
+		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
 		return state.IsJustInactive();
 	}

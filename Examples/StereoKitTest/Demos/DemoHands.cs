@@ -400,7 +400,7 @@ class DemoHands : ITest
 			Text.Add(
 				(hand.size * 100).ToString(".0")+"cm", 
 				Matrix.TRS(pos, rot, 0.3f),
-				TextAlign.XCenter|TextAlign.YBottom);
+				Pivot.XCenter|Pivot.YBottom);
 		}
 	}
 }

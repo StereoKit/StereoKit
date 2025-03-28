@@ -152,9 +152,9 @@ class DemoMath : ITest
 		Lines.Add(crossStart, crossStart + Vec3.Up*0.05f,      new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + Vec3.Forward*0.05f, new Color32(255,255,255,255), 2*Units.mm2m);
 		Lines.Add(crossStart, crossStart + right * 0.05f,      new Color32(0, 255, 0, 255),  2*Units.mm2m);
-		Text.Add("Up",                 Matrix.TRS(crossStart + Vec3.Up      * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), TextAlign.BottomCenter);
-		Text.Add("Fwd",                Matrix.TRS(crossStart + Vec3.Forward * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), TextAlign.BottomCenter);
-		Text.Add("Vec3.Cross(Fwd,Up)", Matrix.TRS(crossStart + right * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), TextAlign.BottomCenter);
+		Text.Add("Up",                 Matrix.TRS(crossStart + Vec3.Up      * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), Pivot.BottomCenter);
+		Text.Add("Fwd",                Matrix.TRS(crossStart + Vec3.Forward * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), Pivot.BottomCenter);
+		Text.Add("Vec3.Cross(Fwd,Up)", Matrix.TRS(crossStart + right        * 0.05f, Quat.LookDir(-Vec3.Forward), 0.25f), Pivot.BottomCenter);
 
 		UI.HandleEnd();
 

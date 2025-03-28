@@ -376,9 +376,9 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
-		public static void Text(string text, TextAlign textAlign = TextAlign.TopLeft)
+		public static void Text(string text, Align textAlign = Align.TopLeft)
 			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, 0, textAlign, TextFit.Wrap);
 
 		/// <summary>Displays a large chunk of text on the current layout.
@@ -389,7 +389,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		/// <param name="fit">Describe how the text should behave when one of
 		/// its size dimensions conflicts with the provided 'size' parameter.
@@ -398,7 +398,7 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static void Text(string text, TextAlign textAlign, TextFit fit, Vec2 size)
+		public static void Text(string text, Align textAlign, TextFit fit, Vec2 size)
 			=> NativeAPI.ui_text_sz_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
 
 		/// <summary>Displays a large chunk of text on the current layout.
@@ -409,7 +409,7 @@ namespace StereoKit
 		/// additional parsing done to this text, so put it in as you want to
 		/// see it!</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		/// <param name="fit">Describe how the text should behave when one of
 		/// its size dimensions conflicts with the provided 'size' parameter.
@@ -418,7 +418,7 @@ namespace StereoKit
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
-		public static void TextAt(string text, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+		public static void TextAt(string text, Align textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_text_at_16(text, IntPtr.Zero, UIScroll.None, textAlign, fit, topLeftCorner, size);
 
 		/// <summary>A scrolling text element! This is for reading large chunks
@@ -444,7 +444,7 @@ namespace StereoKit
 		/// overload will always add `TextFit.Clip` internally.</param>
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
-		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
 
 		/// <summary>A scrolling text element! This is for reading large chunks
@@ -471,15 +471,15 @@ namespace StereoKit
 		/// overload will always add `TextFit.Clip` internally.</param>
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
-		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, TextAlign textAlign = TextAlign.TopLeft, TextFit fit = TextFit.Wrap)
+		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
 			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
 
-		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, TextAlign, TextFit)"/>
+		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, Align, TextFit)"/>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
-		public static bool TextAt(string text, ref Vec2 scroll, UIScroll scrollDirection, TextAlign textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
+		public static bool TextAt(string text, ref Vec2 scroll, UIScroll scrollDirection, Align textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
 			=> NativeAPI.ui_text_at_16(text, ref scroll, scrollDirection, textAlign, fit, topLeftCorner, size);
 
 		/// <summary>Adds an image to the UI!</summary>

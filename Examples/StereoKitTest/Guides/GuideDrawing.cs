@@ -256,7 +256,7 @@ class GuideDrawing : ITest
 		/// that position instead! The scale here is also equivalent to the
 		/// size of the image's vertical axis, so this `Sprite` will be 0.5
 		/// meters tall.
-		sprite.Draw(Matrix.TS(0, 10, 0, 0.5f), TextAlign.Center);
+		sprite.Draw(Matrix.TS(0, 10, 0, 0.5f), Pivot.Center);
 		/// ![Drawing a sprite]({{site.screen_url}}/Drawing_Sprite.jpg)
 		/// 
 		/// If you already have a `Tex` with your image loaded, you can pretty

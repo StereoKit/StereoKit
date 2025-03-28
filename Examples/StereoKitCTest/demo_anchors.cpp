@@ -36,7 +36,7 @@ void demo_anchors_update() {
 	// Draw a pose for each anchor
 	for (size_t i = 0; i < anchors.size(); i++) {
 		line_add_axis(anchor_get_pose(anchors[i]), 0.1f);
-		text_add_at(anchor_get_name(anchors[i]), pose_matrix(anchor_get_pose(anchors[i])), 0, text_align_top_center);
+		text_add_at(anchor_get_name(anchors[i]), pose_matrix(anchor_get_pose(anchors[i])), 0, pivot_top_center);
 	}
 
 	// Some interaction for adding anchors

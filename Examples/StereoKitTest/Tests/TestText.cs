@@ -24,7 +24,7 @@ class TestText : ITest
 
 		Quat r  = Quat.FromAngles(0, 180, 0);
 		Vec3 at = new Vec3(0.52f,0.35f,-0.5f);
-		Text.Add(scenders, Matrix.TR(at, r), style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(scenders, Matrix.TR(at, r), style, Pivot.TopLeft, Align.TopLeft);
 		Vec2 s = Text.SizeLayout(scenders, style);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), colLayout);
 		s = Text.SizeRender(s, style, out float offset);
@@ -36,27 +36,27 @@ class TestText : ITest
 
 		at = new Vec3(0.52f, 0.15f, -0.5f);
 		s = Text.SizeLayout(shortText, style, 0.5f);
-		Text.Add(shortText, Matrix.TR(at, r), new Vec2(0.5f, s.y), TextFit.Wrap, style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(shortText, Matrix.TR(at, r), new Vec2(0.5f, s.y), TextFit.Wrap, style, Pivot.TopLeft, Align.TopLeft);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), colLayout);
 		s = Text.SizeRender(s, style, out offset);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2 + offset, at.z - 0.002f, new Vec3(s.x, s.y, 0.001f)), colRender);
 
 		at = new Vec3(0, 0.35f, -0.5f);
 		s = Text.SizeLayout(longText, style, 0.5f);
-		Text.Add(longText, Matrix.TR(at, r), new Vec2(0.5f,s.y), TextFit.Wrap, style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(longText, Matrix.TR(at, r), new Vec2(0.5f,s.y), TextFit.Wrap, style, Pivot.TopLeft, Align.TopLeft);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), colLayout);
 		s = Text.SizeRender(s, style, out offset);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2 + offset, at.z - 0.002f, new Vec3(s.x, s.y, 0.001f)), colRender);
 
 		at = new Vec3(0.52f, 0.2f, -0.5f);
-		Text.Add(shortText, Matrix.TR(at, r), style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(shortText, Matrix.TR(at, r), style, Pivot.TopLeft, Align.TopLeft);
 		s = Text.SizeLayout(shortText, style);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), colLayout);
 		s = Text.SizeRender(s, style, out offset);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2 + offset, at.z - 0.002f, new Vec3(s.x, s.y, 0.001f)), colRender);
 
 		at = new Vec3(0, 0.05f, -0.5f);
-		Text.Add(longText, Matrix.TR(at, r), style, TextAlign.TopLeft, TextAlign.TopLeft);
+		Text.Add(longText, Matrix.TR(at, r), style, Pivot.TopLeft, Align.TopLeft);
 		s = Text.SizeLayout(longText, style);
 		Mesh.Cube.Draw(Material.Unlit, Matrix.TS(at.x + s.x / 2, at.y - s.y / 2, at.z - 0.001f, new Vec3(s.x, s.y, 0.001f)), colLayout);
 		s = Text.SizeRender(s, style, out offset);

@@ -122,7 +122,7 @@ class DemoPicker : ITest
 		{
 			var node = model.Nodes[n];
 			Mesh.Cube.Draw(jointMaterial, node.ModelTransform.Pose.ToMatrix(0.025f * scale));
-			Text.Add(node.Name, Matrix.S(scale)*node.ModelTransform, TextAlign.TopCenter, TextAlign.TopCenter);
+			Text.Add(node.Name, Matrix.S(scale)*node.ModelTransform, Pivot.TopCenter, Align.TopCenter);
 		}
 	}
 

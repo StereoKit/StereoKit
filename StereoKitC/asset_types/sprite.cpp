@@ -212,8 +212,8 @@ void sprite_destroy(sprite_t sprite) {
 
 ///////////////////////////////////////////
 
-void sprite_draw(sprite_t sprite, matrix transform, text_align_ anchor_position, color32 color) {
-	sprite_drawer_add_at(sprite, transform, anchor_position, color);
+void sprite_draw(sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color) {
+	sprite_drawer_add_at(sprite, transform, pivot_position, color);
 }
 
 

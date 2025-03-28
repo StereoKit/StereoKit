@@ -72,17 +72,17 @@ namespace StereoKit
 		/// space as 1 x Aspect meters on the x and y axes respectively, so
 		/// scale appropriately and remember that your anchor position may
 		/// affect the transform as well.</param>
-		/// <param name="anchorPosition">Describes what corner of the sprite
-		/// you're specifying the transform of. The 'Anchor' point or
+		/// <param name="pivotPosition">Describes what corner of the sprite
+		/// you're specifying the transform of. The 'Pivot' point or
 		/// 'Origin' of the Sprite.</param>
-		public void Draw(in Matrix transform, TextAlign anchorPosition)
-			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, Color32.White);
+		public void Draw(in Matrix transform, Pivot pivotPosition)
+			=> NativeAPI.sprite_draw(_inst, transform, pivotPosition, Color32.White);
 
-		/// <inheritdoc cref="Draw(in Matrix, TextAlign)"/>
+		/// <inheritdoc cref="Draw(in Matrix, Pivot)"/>
 		/// <param name="linearColor">Per-instance color data for this render
 		/// item. It is unmodified by StereoKit, and is generally interpreted
 		/// as linear.</param>
-		public void Draw(in Matrix transform, TextAlign anchorPosition, Color32 linearColor)
+		public void Draw(in Matrix transform, Pivot anchorPosition, Color32 linearColor)
 			=> NativeAPI.sprite_draw(_inst, transform, anchorPosition, linearColor);
 
 		/// <summary>Finds a sprite that matches the given id! Check out the

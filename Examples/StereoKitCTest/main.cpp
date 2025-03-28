@@ -272,7 +272,7 @@ void ruler_window() {
 	text_add_at("Centimeters",
 				matrix_trs(vec3{14.5f*cm2m, -1.5f*cm2m, -0.6f*cm2m},
 						   quat_identity, vec3{0.3f, 0.3f, 0.3f}),
-				0, text_align_bottom_left);
+				0, pivot_bottom_left);
 	for (int d = 0; d <= 60; d++) {
 		float x = d / 2.0f;
 		float size = (d % 2 == 0) ? 1.0f : 0.15f;
@@ -285,7 +285,7 @@ void ruler_window() {
 						matrix_trs(vec3{(15 - x - 0.1f)*cm2m,
 										(2 - size)*cm2m, -0.6f*cm2m},
 									quat_identity, vec3{0.2f, 0.2f, 0.2f}),
-						0, text_align_bottom_left);
+						0, pivot_bottom_left);
 		}
 	}
 	ui_handle_end();

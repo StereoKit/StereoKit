@@ -680,9 +680,14 @@ namespace StereoKit
 	}
 
 	/// <summary>A bit-flag enum for describing alignment or positioning.
-	/// Items can be combined using the '|' operator, like so:</summary>
+	/// Items can be combined using the '|' operator, like so:
+	/// `Align alignment = Align.YTop | Align.XLeft;`
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter',
+	/// etc.</summary>
 	[Flags]
-	public enum TextAlign {
+	public enum Align {
 		/// <summary>On the x axis, this item should start on the left.</summary>
 		XLeft        = 1 << 0,
 		/// <summary>On the y axis, this item should start at the top.</summary>
@@ -695,13 +700,63 @@ namespace StereoKit
 		XRight       = 1 << 4,
 		/// <summary>On the y axis, this item should start on the bottom.</summary>
 		YBottom      = 1 << 5,
-		/// <summary>Center on both X and Y axes. This is a combination of 
+		/// <summary>Center on both X and Y axes. This is a combination of
 		/// XCenter and YCenter.</summary>
 		Center       = XCenter | YCenter,
-		/// <summary>Start on the left of the X axis, center on the Y axis. 
+		/// <summary>Start on the left of the X axis, center on the Y axis.
 		/// This is a combination of XLeft and YCenter.</summary>
 		CenterLeft   = XLeft | YCenter,
-		/// <summary>Start on the right of the X axis, center on the Y axis. 
+		/// <summary>Start on the right of the X axis, center on the Y axis.
+		/// This is a combination of XRight and YCenter.</summary>
+		CenterRight  = XRight | YCenter,
+		/// <summary>Center on the X axis, and top on the Y axis. This is a
+		/// combination of XCenter and YTop.</summary>
+		TopCenter    = XCenter | YTop,
+		/// <summary>Start on the left of the X axis, and top on the Y axis.
+		/// This is a combination of XLeft and YTop.</summary>
+		TopLeft      = XLeft | YTop,
+		/// <summary>Start on the right of the X axis, and top on the Y axis.
+		/// This is a combination of XRight and YTop.</summary>
+		TopRight     = XRight | YTop,
+		/// <summary>Center on the X axis, and bottom on the Y axis. This is
+		/// a combination of XCenter and YBottom.</summary>
+		BottomCenter = XCenter | YBottom,
+		/// <summary>Start on the left of the X axis, and bottom on the Y
+		/// axis. This is a combination of XLeft and YBottom.</summary>
+		BottomLeft   = XLeft | YBottom,
+		/// <summary>Start on the right of the X axis, and bottom on the Y
+		/// axis.This is a combination of XRight and YBottom.</summary>
+		BottomRight  = XRight | YBottom,
+	}
+
+	/// <summary>A bit-flag enum for describing alignment or positioning.
+	/// Items can be combined using the '|' operator, like so:
+	/// `Align alignment = Align.YTop | Align.XLeft;`
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter',
+	/// etc.</summary>
+	[Flags]
+	public enum Pivot {
+		/// <summary>On the x axis, this item should start on the left.</summary>
+		XLeft        = 1 << 0,
+		/// <summary>On the y axis, this item should start at the top.</summary>
+		YTop         = 1 << 1,
+		/// <summary>On the x axis, the item should be centered.</summary>
+		XCenter      = 1 << 2,
+		/// <summary>On the y axis, the item should be centered.</summary>
+		YCenter      = 1 << 3,
+		/// <summary>On the x axis, this item should start on the right.</summary>
+		XRight       = 1 << 4,
+		/// <summary>On the y axis, this item should start on the bottom.</summary>
+		YBottom      = 1 << 5,
+		/// <summary>Center on both X and Y axes. This is a combination of
+		/// XCenter and YCenter.</summary>
+		Center       = XCenter | YCenter,
+		/// <summary>Start on the left of the X axis, center on the Y axis.
+		/// This is a combination of XLeft and YCenter.</summary>
+		CenterLeft   = XLeft | YCenter,
+		/// <summary>Start on the right of the X axis, center on the Y axis.
 		/// This is a combination of XRight and YCenter.</summary>
 		CenterRight  = XRight | YCenter,
 		/// <summary>Center on the X axis, and top on the Y axis. This is a

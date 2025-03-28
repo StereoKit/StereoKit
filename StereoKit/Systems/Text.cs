@@ -246,7 +246,7 @@ namespace StereoKit
 		/// <param name="offX">An additional offset on the X axis.</param>
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
-		public static void Add(string text, Matrix transform, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX=0, float offY=0, float offZ=0) 
+		public static void Add(string text, Matrix transform, TextStyle style, Pivot position = Pivot.Center, Align align = Align.Center, float offX=0, float offY=0, float offZ=0) 
 			=> NativeAPI.text_add_at_16(text, transform, style, position, align, offX, offY, offZ, Color.White);
 
 		/// <summary>Renders text at the given location! Must be called every
@@ -261,21 +261,21 @@ namespace StereoKit
 		/// <param name="offX">An additional offset on the X axis.</param>
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
-		public static void Add(string text, Matrix transform, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static void Add(string text, Matrix transform, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at_16(text, transform, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
 
-		/// <inheritdoc cref="Add(string, Matrix, TextStyle, TextAlign, TextAlign, float, float, float)"/>
+		/// <inheritdoc cref="Add(string, Matrix, TextStyle, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
-		public static void Add(string text, Matrix transform, TextStyle style, Color vertexTintLinear, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static void Add(string text, Matrix transform, TextStyle style, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at_16(text, transform, style, position, align, offX, offY, offZ, vertexTintLinear);
 
-		/// <inheritdoc cref="Add(string, Matrix, TextAlign, TextAlign, float, float, float)"/>
+		/// <inheritdoc cref="Add(string, Matrix, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
-		public static void Add(string text, Matrix transform, Color vertexTintLinear, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static void Add(string text, Matrix transform, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_at_16(text, transform, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
 
 		/// <summary>Renders text at the given location! Must be called every
@@ -299,7 +299,7 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		/// <returns>Returns the vertical space used by this text.</returns>
-		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, style, position, align, offX, offY, offZ, Color.White);
 
 		/// <summary>Renders text at the given location! Must be called every
@@ -321,21 +321,21 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		/// <returns>Returns the vertical space used by this text.</returns>
-		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
 
-		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, TextAlign, TextAlign, float, float, float)"/>
+		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
-		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Color vertexTintLinear, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
 
-		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, TextStyle, TextAlign, TextAlign, float, float, float)"/>
+		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, TextStyle, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
-		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Color vertexTintLinear, TextAlign position = TextAlign.Center, TextAlign align = TextAlign.Center, float offX = 0, float offY = 0, float offZ = 0)
+		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
 			=> NativeAPI.text_add_in_16(text, transform, size, fit, style, position, align, offX, offY, offZ, vertexTintLinear);
 
 		/// <summary>Sometimes you just need to know how much room some text

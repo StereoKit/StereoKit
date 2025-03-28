@@ -35,7 +35,7 @@ abstract class Demo
 		}
 
 		Text.Add(title,       titlePose);
-		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, TextAlign.TopCenter, TextAlign.TopLeft);
+		Text.Add(description, descPose, V.XY(0.4f, 0), TextFit.Wrap, Pivot.TopCenter, Align.TopLeft);
 		if (showBounds)
 			Mesh.Cube.Draw(Material.UIBox, Matrix.TS(experienceBounds.center, experienceBounds.dimensions) * contentPose);
 	}

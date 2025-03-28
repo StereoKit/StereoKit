@@ -36,7 +36,7 @@ class DocTexGenParticle: ITest
 		/// :CodeSample: Tex.GenParticle Sprite.FromTex
 		/// And here's what that looks like when you draw using this code!
 		for (int i = 0; i < sprites.Length; i++)
-			sprites[i].Draw(Matrix.TS(V.XY0(i%5, -i/5)*0.1f, 0.1f), TextAlign.TopRight);
+			sprites[i].Draw(Matrix.TS(V.XY0(i%5, -i/5)*0.1f, 0.1f), Pivot.TopRight);
 		/// ![Generated particle sprites]({{site.screen_url}}/TexGenParticles.jpg)
 		/// :End:
 

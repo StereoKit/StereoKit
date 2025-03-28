@@ -109,12 +109,12 @@ namespace StereoKit.Framework
 					_                  => styleInfo,
 				};
 				float y = (i - index) * -textSize.y;
-				Text.Add(item.text, Matrix.T(start + new Vec3(0,y, -.004f)), textSize, TextFit.Clip | TextFit.Wrap, ts, TextAlign.TopLeft, TextAlign.CenterLeft);
+				Text.Add(item.text, Matrix.T(start + new Vec3(0,y, -.004f)), textSize, TextFit.Clip | TextFit.Wrap, ts, Pivot.TopLeft, Align.CenterLeft);
 
 				if (item.count > 1)
 				{
 					Vec3 at = V.XYZ(start.x - textSize.x, start.y + y, start.z-0.014f);
-					Text.Add(item.count.ToString(), Matrix.T(at), V.XY(textSize.y, textSize.y), TextFit.Clip, styleInfo, TextAlign.TopRight, TextAlign.Center);
+					Text.Add(item.count.ToString(), Matrix.T(at), V.XY(textSize.y, textSize.y), TextFit.Clip, styleInfo, Pivot.TopRight, Align.Center);
 				}
 			}
 			UI.LayoutPop();
@@ -206,10 +206,9 @@ namespace StereoKit.Framework
 				}
 				Lines.Add(points);
 
-				Text.Add(((int)max).ToString(), Matrix.TS(at.x-size.x, at.y,        at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, TextAlign.TopLeft,    TextAlign.TopLeft);
-				Text.Add(((int)min).ToString(), Matrix.TS(at.x-size.x, at.y-size.y, at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, TextAlign.BottomLeft, TextAlign.BottomLeft);
-				Text.Add(label,                 Matrix.TS(at.x,        at.y,        at.z, textScale),                                                  style, TextAlign.TopLeft,    TextAlign.TopLeft);
-
+				Text.Add(((int)max).ToString(), Matrix.TS(at.x-size.x, at.y,        at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, Pivot.TopLeft,    Align.TopLeft);
+				Text.Add(((int)min).ToString(), Matrix.TS(at.x-size.x, at.y-size.y, at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, Pivot.BottomLeft, Align.BottomLeft);
+				Text.Add(label,                 Matrix.TS(at.x,        at.y,        at.z, textScale),                                                  style, Pivot.TopLeft,    Align.TopLeft);
 				Lines.Add(at+V.XY0(-Text.SizeLayout(label, style).x*textScale - 0.002f, 0), at + V.XY0(-size.x, 0), new Color32(255,255,255,20), 0.001f);
 				Lines.Add(at+V.XY0(0, -size.y), at + V.XY0(-size.x, -size.y), new Color32(255, 255, 255, 20), 0.001f);
 

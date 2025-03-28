@@ -290,9 +290,9 @@ class GuideUI : ITest
 		// then setting the text to align to the center of its element
 		// region.
 		UI.Text("Lorem Ipsum",
-		        TextAlign.Center,
-		        TextFit  .None,
-		        UI       .LayoutRemaining);
+		        Align  .Center,
+		        TextFit.None,
+		        UI     .LayoutRemaining);
 		UI.LayoutPop();
 
 		UI.LayoutPushCut(UICut.Left, 0.1f);

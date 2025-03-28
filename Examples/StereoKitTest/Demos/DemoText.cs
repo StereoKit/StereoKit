@@ -10,9 +10,9 @@ class DemoText : ITest
 	string title       = "Text";
 	string description = "";
 
-	TextAlign alignX      = TextAlign.XLeft;
-	TextAlign alignY      = TextAlign.YTop;
-	Pose      alignWindow = (Demo.contentPose * Matrix.T(0,-0.3f,0)).Pose;
+	Align alignX      = Align.XLeft;
+	Align alignY      = Align.YTop;
+	Pose  alignWindow = (Demo.contentPose * Matrix.T(0,-0.3f,0)).Pose;
 
 	/// :CodeSample: Text.MakeStyle Font.FromFile Text.Add
 	/// ### Drawing text with and without a TextStyle
@@ -40,30 +40,30 @@ class DemoText : ITest
 
 		UI.WindowBegin("Alignment", ref alignWindow);
 		Vec2 size = new Vec2(8 * U.cm, UI.LineHeight);
-		if (UI.Radio("Left"   , alignX == TextAlign.XLeft  , size)) alignX = TextAlign.XLeft;   UI.SameLine();
-		if (UI.Radio("CenterX", alignX == TextAlign.XCenter, size)) alignX = TextAlign.XCenter; UI.SameLine();
-		if (UI.Radio("Right"  , alignX == TextAlign.XRight , size)) alignX = TextAlign.XRight;
-		if (UI.Radio("Top"    , alignY == TextAlign.YTop   , size)) alignY = TextAlign.YTop;    UI.SameLine();
-		if (UI.Radio("CenterY", alignY == TextAlign.YCenter, size)) alignY = TextAlign.YCenter; UI.SameLine();
-		if (UI.Radio("Bottom" , alignY == TextAlign.YBottom, size)) alignY = TextAlign.YBottom;
+		if (UI.Radio("Left"   , alignX == Align.XLeft  , size)) alignX = Align.XLeft;   UI.SameLine();
+		if (UI.Radio("CenterX", alignX == Align.XCenter, size)) alignX = Align.XCenter; UI.SameLine();
+		if (UI.Radio("Right"  , alignX == Align.XRight , size)) alignX = Align.XRight;
+		if (UI.Radio("Top"    , alignY == Align.YTop   , size)) alignY = Align.YTop;    UI.SameLine();
+		if (UI.Radio("CenterY", alignY == Align.YCenter, size)) alignY = Align.YCenter; UI.SameLine();
+		if (UI.Radio("Bottom" , alignY == Align.YBottom, size)) alignY = Align.YBottom;
 		UI.WindowEnd();
 
 		Hierarchy.Push(Matrix.R(0, 180, 0) * Demo.contentPose);
 		Hierarchy.Push(Matrix.T(0.1f,0,0));
-		Text.Add("X Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.Center,      alignX | alignY);
-		Text.Add("X Left",   Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.CenterLeft,  alignX | alignY);
-		Text.Add("X Right",  Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.CenterRight, alignX | alignY);
+		Text.Add("X Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), Pivot.Center,      alignX | alignY);
+		Text.Add("X Left",   Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), Pivot.CenterLeft,  alignX | alignY);
+		Text.Add("X Right",  Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), Pivot.CenterRight, alignX | alignY);
 		Lines.Add(new Vec3(0,.05f,0), new Vec3(0,.25f,0), Color32.White, 0.001f);
 		Hierarchy.Pop();
 
 		Hierarchy.Push(Matrix.T(-0.1f,0,0));
-		Text.Add("Y Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), TextAlign.YCenter|TextAlign.XCenter, alignX | alignY);
+		Text.Add("Y Center", Matrix.TR(new Vec3(0,.1f, 0), Quat.LookDir(0,0,1)), Pivot.YCenter|Pivot.XCenter, alignX | alignY);
 		Lines.Add(new Vec3(-0.05f, .1f, 0), new Vec3(.05f, .1f, 0), Color32.White, 0.001f);
 
-		Text.Add("Y Top",    Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), TextAlign.YTop|TextAlign.XCenter, alignX | alignY);
+		Text.Add("Y Top",    Matrix.TR(new Vec3(0,.15f,0), Quat.LookDir(0,0,1)), Pivot.YTop|Pivot.XCenter, alignX | alignY);
 		Lines.Add(new Vec3(-0.05f, .15f, 0), new Vec3(.05f, .15f, 0), Color32.White, 0.001f);
 
-		Text.Add("Y Bottom", Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), TextAlign.YBottom|TextAlign.XCenter, alignX | alignY);
+		Text.Add("Y Bottom", Matrix.TR(new Vec3(0,.2f, 0), Quat.LookDir(0,0,1)), Pivot.YBottom|Pivot.XCenter, alignX | alignY);
 		Lines.Add(new Vec3(-0.05f,.2f, 0), new Vec3(.05f,.2f, 0), Color32.White, 0.001f);
 		Hierarchy.Pop();
 
@@ -91,7 +91,7 @@ class DemoText : ITest
 			Matrix.TR(new Vec3(0, 0.0f, 0), Quat.LookDir(0, 0, 1)),
 			new Vec2(SKMath.Cos(Time.Totalf)*10+11, 20) * U.cm,
 			TextFit.Clip,
-			style, TextAlign.Center, alignX | alignY);
+			style, Pivot.Center, alignX | alignY);
 		Hierarchy.Pop();
 
 		Hierarchy.Pop();

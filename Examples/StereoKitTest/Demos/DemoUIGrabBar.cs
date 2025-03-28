@@ -30,7 +30,7 @@ class DemoUIGrabBar : ITest
 		UI.WindowBegin("Interface", ref windowPose, new Vec2(0.15f, 0), UIWin.Body, UIMove.None);
 
 		// Some UI to fill up space
-		UI.Text("Here's a window that can be moved via a bar below the window!", TextAlign.Center);
+		UI.Text("Here's a window that can be moved via a bar below the window!", Align.Center);
 		UI.HSeparator();
 		UI.Button("Testing!");
 

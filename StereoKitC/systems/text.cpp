@@ -425,12 +425,12 @@ float text_step_height(const C *text, int32_t *out_length, const _text_style_t *
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
-void text_step_next_line(const C* start, const _text_style_t* style, text_align_ align, bool wrap, float max_width, float start_x, int32_t* out_line_remaining, vec2* ref_pos) {
+void text_step_next_line(const C* start, const _text_style_t* style, align_ align, bool wrap, float max_width, float start_x, int32_t* out_line_remaining, vec2* ref_pos) {
 	const C* next;
 	float line_size = text_step_line_length<C, char_decode_b_T>(start, out_line_remaining, &next, style, wrap, max_width);
 	float align_x = 0;
-	if (align & text_align_x_center) align_x = ((max_width - line_size) / 2.f);
-	if (align & text_align_x_right)  align_x = (max_width - line_size);
+	if (align & align_x_center) align_x = ((max_width - line_size) / 2.f);
+	if (align & align_x_right)  align_x = (max_width - line_size);
 	ref_pos->x = start_x - align_x;
 	ref_pos->y -= style->line_baseline * style->scale;
 }
@@ -438,7 +438,7 @@ void text_step_next_line(const C* start, const _text_style_t* style, text_align_
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C*, const C**, char32_t*)>
-void text_step_position(char32_t ch, const font_char_t* char_info, const C* next, const _text_style_t* style, text_align_ align, bool wrap, float max_width, float start_x, int32_t* ref_line_remaining, vec2* ref_pos) {
+void text_step_position(char32_t ch, const font_char_t* char_info, const C* next, const _text_style_t* style, align_ align, bool wrap, float max_width, float start_x, int32_t* ref_line_remaining, vec2* ref_pos) {
 	*ref_line_remaining = *ref_line_remaining - 1;
 	if (*ref_line_remaining <= 0) {
 		text_step_next_line<C, char_decode_b_T>(next, style, align, wrap, max_width, start_x, ref_line_remaining, ref_pos);
@@ -454,7 +454,7 @@ void text_step_position(char32_t ch, const font_char_t* char_info, const C* next
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) {
+inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_index, vec2 *opt_size, text_fit_ fit, pivot_ position, align_ align) {
 	if (text == nullptr) return {};
 	vec2 size = opt_size == nullptr
 		? text_size_layout_g<C, char_decode_b_T>(text, style_id)
@@ -488,15 +488,15 @@ inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_in
 
 	// Align the start based on the size of the bounds
 	vec2 start = { 0, style->scale };
-	if      (position & text_align_x_center) start.x += bounds.x / 2.f;
-	else if (position & text_align_x_right)  start.x += bounds.x;
-	if      (position & text_align_y_center) start.y += bounds.y / 2.f;
-	else if (position & text_align_y_bottom) start.y += bounds.y;
+	if      (position & pivot_x_center) start.x += bounds.x / 2.f;
+	else if (position & pivot_x_right)  start.x += bounds.x;
+	if      (position & pivot_y_center) start.y += bounds.y / 2.f;
+	else if (position & pivot_y_bottom) start.y += bounds.y;
 	vec2 pos = start;
 
 	// Figure out the vertical align of the text
-	if      (align & text_align_y_center) pos.y -= (bounds.y-text_height) / 2.f;
-	else if (align & text_align_y_bottom) pos.y -=  bounds.y-text_height;
+	if      (align & align_y_center) pos.y -= (bounds.y-text_height) / 2.f;
+	else if (align & align_y_bottom) pos.y -=  bounds.y-text_height;
 
 	// Core loop for drawing the text
 	vec2     bounds_min     = start - bounds;
@@ -524,8 +524,8 @@ inline vec2 text_char_at_g(const C *text, text_style_t style_id, int32_t char_in
 	return pos;
 }
 
-vec2 text_char_at   (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_g<char,     utf8_decode_fast_b >(text_utf8,  style, char_index, opt_size, fit, position, align); }
-vec2 text_char_at_16(const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, text_align_ position, text_align_ align) { return text_char_at_g<char16_t, utf16_decode_fast_b>(text_utf16, style, char_index, opt_size, fit, position, align); }
+vec2 text_char_at   (const char*     text_utf8,  text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at_g<char,     utf8_decode_fast_b >(text_utf8,  style, char_index, opt_size, fit, position, align); }
+vec2 text_char_at_16(const char16_t* text_utf16, text_style_t style, int32_t char_index, vec2 *opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at_g<char16_t, utf16_decode_fast_b>(text_utf16, style, char_index, opt_size, fit, position, align); }
 
 ///////////////////////////////////////////
 
@@ -588,20 +588,20 @@ void text_add_quad_clipped(float x, float y, float off_z, vec2 bounds_min, vec2 
 
 ///////////////////////////////////////////
 
-void text_add_at(const char* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+void text_add_at(const char* text, const matrix &transform, text_style_t style, pivot_ position, align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	text_add_in(text, transform, text_size_layout(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
 
-void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+void text_add_at_16(const char16_t* text, const matrix &transform, text_style_t style, pivot_ position, align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	text_add_in_16(text, transform, text_size_layout_16(text, style), text_fit_exact, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 
 ///////////////////////////////////////////
 
 template<typename C, bool (*char_decode_b_T)(const C *, const C **, char32_t *)>
-float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style_id, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_ fit, text_style_t style_id, pivot_ position, align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	if (text == nullptr) return 0;
 	if (size.x <= 0) return 0; // Zero width text isn't visible, and causes issues when trying to determine text height.
 
@@ -656,18 +656,18 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 
 	// Align the start based on the size of the bounds
 	vec2 start = {};
-	if      (position & text_align_x_center) start.x += bounds.x / 2.f;
-	else if (position & text_align_x_right)  start.x += bounds.x;
-	if      (position & text_align_y_center) start.y += bounds.y / 2.f;
-	else if (position & text_align_y_bottom) start.y += bounds.y;
+	if      (position & pivot_x_center) start.x += bounds.x / 2.f;
+	else if (position & pivot_x_right)  start.x += bounds.x;
+	if      (position & pivot_y_center) start.y += bounds.y / 2.f;
+	else if (position & pivot_y_bottom) start.y += bounds.y;
 	vec2 bounds_min = start - bounds;
 	vec2 bounds_max = start;
 	start += vec2{ off_x, off_y };
 	vec2 pos = start;
 
 	// Figure out the vertical align of the text
-	if      (align & text_align_y_center) pos.y -= (bounds.y-text_height) / 2.f;
-	else if (align & text_align_y_bottom) pos.y -=  bounds.y-text_height;
+	if      (align & align_y_center) pos.y -= (bounds.y-text_height) / 2.f;
+	else if (align & align_y_bottom) pos.y -=  bounds.y-text_height;
 
 	// Ensure text capacity
 	text_buffer_t &buffer = text_buffers[style->buffer_index];
@@ -702,10 +702,10 @@ float text_add_in_g(const C* text, const matrix& transform, vec2 size, text_fit_
 }
 
 
-float text_add_in(const char *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+float text_add_in(const char *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, pivot_ position, align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	return text_add_in_g<char, utf8_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
-float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, text_align_ position, text_align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
+float text_add_in_16(const char16_t *text, const matrix &transform, vec2 size, text_fit_ fit, text_style_t style, pivot_ position, align_ align, float off_x, float off_y, float off_z, color128 vertex_tint_linear) {
 	return text_add_in_g<char16_t, utf16_decode_fast_b>(text, transform, size, fit, style, position, align, off_x, off_y, off_z, vertex_tint_linear);
 }
 

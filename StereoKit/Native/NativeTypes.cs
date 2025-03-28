@@ -945,4 +945,94 @@ namespace StereoKit
 		/// focus of the slider. Or -1 if there is no interaction.</summary>
 		public int      interactor;
 	}
+
+    /// <summary>A bit-flag enum for describing alignment or positioning.
+    /// Items can be combined using the '|' operator, like so:
+    /// `Align alignment = Align.YTop | Align.XLeft;`
+    /// Avoid combining multiple items of the same axis. There are also a
+    /// complete list of valid bit flag combinations! These are the values
+    /// without an axis listed in their names, 'TopLeft', 'BottomCenter',
+    /// etc.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextAlign
+    {
+		private int value;
+		private TextAlign(int v) => value = v;
+		private TextAlign(TextAlign v) => value = v.value;
+
+        /// <summary>On the x axis, this item should start on the left.</summary>
+        public static TextAlign XLeft = new TextAlign(1 << 0);
+		/// <summary>On the y axis, this item should start at the top.</summary>
+		public static TextAlign YTop = new TextAlign(1 << 1);
+		/// <summary>On the x axis, the item should be centered.</summary>
+		public static TextAlign XCenter = new TextAlign(1 << 2);
+		/// <summary>On the y axis, the item should be centered.</summary>
+		public static TextAlign YCenter = new TextAlign(1 << 3);
+		/// <summary>On the x axis, this item should start on the right.</summary>
+		public static TextAlign XRight = new TextAlign(1 << 4);
+		/// <summary>On the y axis, this item should start on the bottom.</summary>
+		public static TextAlign YBottom = new TextAlign(1 << 5);
+		/// <summary>Center on both X and Y axes. This is a combination of 
+		/// XCenter and YCenter.</summary>
+		public static TextAlign Center = new TextAlign(XCenter | YCenter);
+		/// <summary>Start on the left of the X axis, center on the Y axis. 
+		/// This is a combination of XLeft and YCenter.</summary>
+		public static TextAlign CenterLeft = new TextAlign(XLeft | YCenter);
+		/// <summary>Start on the right of the X axis, center on the Y axis. 
+		/// This is a combination of XRight and YCenter.</summary>
+		public static TextAlign CenterRight = new TextAlign(XRight | YCenter);
+		/// <summary>Center on the X axis, and top on the Y axis. This is a
+		/// combination of XCenter and YTop.</summary>
+		public static TextAlign TopCenter = new TextAlign(XCenter | YTop);
+		/// <summary>Start on the left of the X axis, and top on the Y axis.
+		/// This is a combination of XLeft and YTop.</summary>
+		public static TextAlign TopLeft = new TextAlign(XLeft | YTop);
+		/// <summary>Start on the right of the X axis, and top on the Y axis.
+		/// This is a combination of XRight and YTop.</summary>
+		public static TextAlign TopRight = new TextAlign(XRight | YTop);
+		/// <summary>Center on the X axis, and bottom on the Y axis. This is
+		/// a combination of XCenter and YBottom.</summary>
+		public static TextAlign BottomCenter = new TextAlign(XCenter | YBottom);
+		/// <summary>Start on the left of the X axis, and bottom on the Y
+		/// axis. This is a combination of XLeft and YBottom.</summary>
+		public static TextAlign BottomLeft = new TextAlign(XLeft | YBottom);
+		/// <summary>Start on the right of the X axis, and bottom on the Y
+		/// axis.This is a combination of XRight and YBottom.</summary>
+		public static TextAlign BottomRight = new TextAlign(XRight | YBottom);
+
+		/// <summary>Allow Flag-like enum behavior.</summary>
+		/// <param name="a">First TextAlign</param>
+		/// <param name="b">Second TextAlign</param>
+		/// <returns>Bitwise operation of a and b.</returns>
+		public static TextAlign operator |(TextAlign a, TextAlign b) => new TextAlign(a.value | b.value);
+        /// <summary>Allow Flag-like enum behavior.</summary>
+        /// <param name="a">First TextAlign</param>
+        /// <param name="b">Second TextAlign</param>
+        /// <returns>Bitwise operation of a and b.</returns>
+        public static TextAlign operator &(TextAlign a, TextAlign b) => new TextAlign(a.value & b.value);
+        /// <summary>Allow Flag-like enum behavior.</summary>
+        /// <param name="a">First TextAlign</param>
+        /// <param name="b">Second TextAlign</param>
+        /// <returns>Bitwise operation of a and b.</returns>
+        public static TextAlign operator ^(TextAlign a, TextAlign b) => new TextAlign(a.value ^ b.value);
+        /// <summary>Allow Flag-like enum behavior.</summary>
+        /// <param name="a">First TextAlign</param>
+        /// <returns>Bitwise operation of a.</returns>
+        public static TextAlign operator ~(TextAlign a) => new TextAlign(~a.value);
+
+        /// <summary>For back compatibility, allows conversion from a TextAlign
+        /// into an Align while providing a good obsolescence message for it.
+		/// </summary>
+        /// <param name="a">Source TextAlign.</param>
+        /// <returns>An equivalent Align.</returns>
+        [Obsolete("Use Align instead")]
+        public static implicit operator Align(TextAlign a) => (Align)a;
+        /// <summary>For back compatibility, allows conversion from a TextAlign
+        /// into a Pivot while providing a good obsolescence message for it.
+		/// </summary>
+        /// <param name="a">Source TextAlign.</param>
+        /// <returns>An equivalent Pivot.</returns>
+        [Obsolete("Use Pivot instead")]
+        public static implicit operator Pivot(TextAlign a) => (Pivot)a;
+    }
 }
