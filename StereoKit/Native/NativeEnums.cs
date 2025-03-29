@@ -731,7 +731,7 @@ namespace StereoKit
 
 	/// <summary>A bit-flag enum for describing alignment or positioning.
 	/// Items can be combined using the '|' operator, like so:
-	/// `Align alignment = Align.YTop | Align.XLeft;`
+	/// `Pivot alignment = Pivot.YTop | Pivot.XLeft;`
 	/// Avoid combining multiple items of the same axis. There are also a
 	/// complete list of valid bit flag combinations! These are the values
 	/// without an axis listed in their names, 'TopLeft', 'BottomCenter',
