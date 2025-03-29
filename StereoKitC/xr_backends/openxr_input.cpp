@@ -324,6 +324,7 @@ bool oxri_init() {
 		_bind_rl(&bind_arr, local.action_stick_xy,    path_stick_xy   );
 		_bind_rl(&bind_arr, local.action_stick_click, path_stick_click);
 		_bind   (&bind_arr, local.action_menu,        path_menu_click.left);
+		_bind	(&bind_arr, local.action_menu,		  path_system_click.right);
 		_bind_rl(&bind_arr, local.action_x1,          {path_x_click.left, path_a_click.right} );
 		_bind_rl(&bind_arr, local.action_x2,          {path_y_click.left, path_b_click.right} );
 		if (xr_ext.EXT_palm_pose == xr_ext_active) _bind_rl(&bind_arr, local.action_palm_pose, path_palm_pose);
