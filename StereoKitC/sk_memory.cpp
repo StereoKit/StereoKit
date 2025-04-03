@@ -55,6 +55,7 @@ void sk_mem_log_allocations() {
 #else
 
 struct mem_info_t {
+	uint32_t    marker;
 	size_t      bytes;
 	const char* type;
 	const char* filename;
@@ -81,6 +82,7 @@ void *sk_malloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 
 	mem_info_t* info = (mem_info_t*)result;
 	*info = {};
+	info->marker   = 0x12345678;
 	info->bytes    = bytes;
 	info->filename = filename;
 	info->line     = line;
@@ -101,6 +103,7 @@ void *sk_calloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 	
 	mem_info_t* info = (mem_info_t*)result;
 	*info = {};
+	info->marker   = 0x12345678;
 	info->bytes    = bytes;
 	info->filename = filename;
 	info->line     = line;
@@ -123,6 +126,7 @@ void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* fil
 	}
 
 	mem_info_t* info = (mem_info_t*)result;
+	info->marker   = 0x12345678;
 	info->bytes    = bytes;
 	info->filename = filename;
 	info->line     = line;
@@ -140,6 +144,10 @@ void _sk_free_d(void* memory, const char* filename, int32_t line) {
 	if (memory == nullptr) return;
 
 	mem_info_t* info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
+	if (info->marker != 0x12345678) {
+		fprintf(stderr, "Memory free failed! Memory was not allocated by sk_malloc, sk_calloc, or sk_realloc!");
+		abort();
+	}
 	if (info->prev != nullptr) info->prev->next = info->next;
 	if (info->next != nullptr) info->next->prev = info->prev;
 	if (mem_tracker_tail == info) mem_tracker_tail = info->prev;
