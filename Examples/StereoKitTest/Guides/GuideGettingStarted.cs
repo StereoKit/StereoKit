@@ -44,7 +44,7 @@
 /// StereoKit is OpenXR based, so will work in any environment that supports
 /// OpenXR! On PC, this means you'll want a desktop runtime such as SteamVR,
 /// Quest + Link, or Monado. If no OpenXR
-/// runtime is found, StereoKit will provide a [nice Simulator]({{site.url}}Pages/Guides/Using-The-Simulator.html)
+/// runtime is found, StereoKit will provide a [nice Simulator]({{site.url}}/Pages/Guides/Using-The-Simulator.html)
 /// that's great for development! Some runtimes also provide a simulator for
 /// their platform, such as the [Meta XR Simulator](https://developers.meta.com/horizon/documentation/native/xrsim-getting-started),
 /// so you can test their runtime without a headset.
