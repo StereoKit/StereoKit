@@ -97,7 +97,7 @@ bool simulator_init() {
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
 
-	anchors_init(anchor_system_stage);
+	anchors_init();
 	return true;
 }
 

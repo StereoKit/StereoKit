@@ -53,17 +53,30 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 #define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
+#define OPENXR_DEFINE_FN(name) PFN_##name name;
+#define OPENXR_LOAD_FN(name) if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name))))) { return false; }
+
 namespace sk {
 
-bool openxr_init          ();
-void openxr_cleanup       ();
-void openxr_shutdown      ();
-void openxr_step_begin    ();
-void openxr_step_end      ();
-bool openxr_poll_events   ();
-bool openxr_render_frame  ();
-void openxr_poll_actions  ();
+typedef struct xr_system_t {
+	const char* request_exts[4];
+	int32_t     request_ext_count;
 
+	bool (*func_initialize)(void);
+	void (*func_step_begin)(void);
+	void (*func_step_end  )(void);
+	void (*func_shutdown  )(void);
+} xr_system_t;
+
+bool openxr_init        ();
+void openxr_cleanup     ();
+void openxr_shutdown    ();
+void openxr_step_begin  ();
+void openxr_step_end    ();
+bool openxr_poll_events ();
+bool openxr_render_frame();
+
+void          openxr_sys_register     (xr_system_t system);
 void*         openxr_get_luid         ();
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
 bool32_t      openxr_get_gaze_space   (pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);

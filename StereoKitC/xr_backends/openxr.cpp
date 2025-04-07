@@ -27,6 +27,10 @@
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
 
+#include "extensions/oculus_audio.h"
+#include "extensions/msft_bridge.h"
+#include "extensions/msft_anchor_interop.h"
+
 #include <sk_gpu.h>
 
 #include <openxr/openxr.h>
@@ -48,6 +52,12 @@
 namespace sk {
 
 ///////////////////////////////////////////
+
+typedef struct openxr_system_t {
+	bool (*func_initialize)(void);
+	void (*func_step      )(void);
+	void (*func_shutdown  )(void);
+} openxr_system_t;
 
 typedef struct context_callback_t {
 	void (*callback)(void* context);
@@ -96,6 +106,10 @@ pose_t               xr_bounds_pose_local = pose_identity;
 
 array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
 array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
+array_t<xr_system_t>           xr_system_list                  = {};
+array_t<void (*)(void)>        xr_systems_step_begin           = {};
+array_t<void (*)(void)>        xr_systems_step_end             = {};
+array_t<void (*)(void)>        xr_systems_shutdown             = {};
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
@@ -103,10 +117,27 @@ XrReferenceSpaceType     xr_refspace;
 ///////////////////////////////////////////
 
 bool32_t openxr_try_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
-void     openxr_list_layers    (array_t<const char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
+void     openxr_list_layers         (array_t<const char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
 XrTime   openxr_acquire_time        ();
 bool     openxr_blank_frame         ();
 bool     is_ext_explicitly_requested(const char* extension_name);
+
+///////////////////////////////////////////
+
+void openxr_register_systems() {
+	oxri_register();
+	anchors_register();
+
+	xr_ext_oculus_audio_register();
+	xr_ext_msft_bridge_register();
+	xr_ext_msft_anchor_interop_register();
+}
+
+///////////////////////////////////////////
+
+void openxr_sys_register(xr_system_t system) {
+	xr_system_list.add(system);
+}
 
 ///////////////////////////////////////////
 
@@ -215,6 +246,13 @@ bool openxr_create_system() {
 		return false;
 	}
 #endif
+
+	openxr_register_systems();
+	for (int32_t i = 0; i < xr_system_list.count; i++) {
+		const xr_system_t* sys = &xr_system_list[i];
+		for (int32_t e = 0; e < sys->request_ext_count; e++)
+			xr_exts_user.add(sys->request_exts[e]);
+	}
 
 	array_t<const char*> exts_request   = {};
 	array_t<const char*> exts_available = {};
@@ -508,8 +546,6 @@ bool openxr_init() {
 	if (xr_ext.EXT_hand_tracking        == xr_ext_active && properties_tracking.supportsHandTracking       == false) xr_ext.EXT_hand_tracking        = xr_ext_disabled;
 	if (xr_ext.MSFT_hand_tracking_mesh  == xr_ext_active && properties_handmesh.supportsHandTrackingMesh   == false) xr_ext.MSFT_hand_tracking_mesh  = xr_ext_disabled;
 	if (xr_ext.EXT_eye_gaze_interaction == xr_ext_active && properties_gaze    .supportsEyeGazeInteraction == false) xr_ext.EXT_eye_gaze_interaction = xr_ext_disabled;
-	sys_info->perception_bridge_present = xr_ext.MSFT_perception_anchor_interop == xr_ext_active;
-	sys_info->spatial_bridge_present    = xr_ext.MSFT_spatial_graph_bridge      == xr_ext_active;
 
 	// Exception for the articulated Vive Index hand simulation. This
 	// simulation is insufficient to treat it like true articulated hands.
@@ -669,11 +705,6 @@ bool openxr_init() {
 		default:                                      world_origin_mode = origin_mode_local; break;
 	}
 
-	if (!oxri_init()) {
-		openxr_cleanup();
-		return false;
-	}
-
 	// If this is an overlay app, and the user has not explicitly requested a
 	// blend mode, then we'll auto-switch to 'blend', as that's likely the most
 	// appropriate mode for the app.
@@ -683,23 +714,20 @@ bool openxr_init() {
 		device_data.display_blend = display_blend_blend;
 	}
 
+	for (int32_t i = 0; i < xr_system_list.count; i++) {
+		const xr_system_t* sys = &xr_system_list[i];
+
+		if (sys->func_initialize != nullptr && sys->func_initialize() == false) {
+			break;
+		}
+
+		if (sys->func_shutdown  ) xr_systems_shutdown  .add(sys->func_shutdown  );
+		if (sys->func_step_begin) xr_systems_step_begin.add(sys->func_step_begin);
+		if (sys->func_step_end  ) xr_systems_step_end  .add(sys->func_step_end  );
+	}
+
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
-
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	if (xr_ext.OCULUS_audio_device_guid == xr_ext_active) {
-		wchar_t device_guid[128];
-		if (XR_SUCCEEDED(xr_extensions.xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) {
-			audio_set_default_device_out(device_guid);
-		}
-		if (XR_SUCCEEDED(xr_extensions.xrGetAudioInputDeviceGuidOculus(xr_instance, device_guid))) {
-			audio_set_default_device_in(device_guid);
-		}
-	}
-#endif
-
-	if (xr_ext.MSFT_spatial_anchor == xr_ext_active)
-		anchors_init(anchor_system_openxr_msft);
 
 	return true;
 }
@@ -921,8 +949,6 @@ void openxr_set_origin_offset(pose_t offset) {
 
 void openxr_cleanup() {
 	if (xr_instance) {
-		// Shut down the input!
-		oxri_shutdown();
 
 		openxr_views_destroy();
 
@@ -939,7 +965,8 @@ void openxr_cleanup() {
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
-	anchors_shutdown();
+	for (int32_t i = 0; i < xr_systems_shutdown.count; i++)
+		xr_systems_shutdown[i]();
 
 	openxr_cleanup();
 
@@ -951,23 +978,29 @@ void openxr_shutdown() {
 	xr_exts_user   .free();
 	xr_exts_exclude.free();
 	xr_callbacks_pre_session_create.free();
+	xr_callbacks_poll_event        .free();
+	xr_system_list                 .free();
+	xr_systems_step_begin          .free();
+	xr_systems_step_end            .free();
+	xr_systems_shutdown            .free();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_begin() {
 	openxr_poll_events();
-	if (xr_has_session)
-		openxr_poll_actions();
-	input_step();
 	
-	anchors_step_begin();
+	for (int32_t i = 0; i < xr_systems_step_begin.count; i++)
+		xr_systems_step_begin[i]();
+
+	input_step();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
-	anchors_step_end();
+	for (int32_t i = 0; i < xr_systems_step_end.count; i++)
+		xr_systems_step_end[i]();
 
 	if (xr_has_session) { openxr_render_frame(); }
 	else                { render_clear(); platform_sleep(33); }
@@ -1131,15 +1164,6 @@ bool openxr_poll_events() {
 
 ///////////////////////////////////////////
 
-void openxr_poll_actions() {
-	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
-		return;
-
-	oxri_update_frame();
-}
-
-///////////////////////////////////////////
-
 bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 	if (time == 0) time = xr_time;
 
@@ -1168,177 +1192,6 @@ bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, X
 		return true;
 	}
 	return false;
-}
-
-///////////////////////////////////////////
-
-pose_t world_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time) {
-	if (!xr_session) {
-		log_warn("No OpenXR session available for converting spatial graph nodes!");
-		return pose_identity;
-	}
-	if (!sk_get_info_ref()->spatial_bridge_present) {
-		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
-		return pose_identity;
-	}
-
-	XrSpace                               space;
-	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
-	space_info.nodeType = dynamic ? XR_SPATIAL_GRAPH_NODE_TYPE_DYNAMIC_MSFT : XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
-	space_info.pose     = { {0,0,0,1}, {0,0,0} };
-	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
-
-	if (XR_FAILED(xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space))) {
-		log_warn("world_from_spatial_graph: xrCreateSpatialGraphNodeSpaceMSFT call failed, maybe a bad spatial node?");
-		return pose_identity;
-	}
-
-	XrTime time = 0;
-#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
-	if (qpc_time > 0) {
-		LARGE_INTEGER li;
-		li.QuadPart = qpc_time;
-		xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &li, &time);
-	}
-#endif
-
-	pose_t result = {};
-	if (!openxr_get_space(space, &result, time)) {
-		log_warn("world_from_spatial_graph: openxr_get_space call failed, maybe a bad spatial node?");
-		return pose_identity;
-	}
-	return result;
-}
-
-///////////////////////////////////////////
-
-bool32_t world_try_from_spatial_graph(uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose) {
-	if (!xr_session) {
-		log_warn("No OpenXR session available for converting spatial graph nodes!");
-		*out_pose = pose_identity;
-		return false;
-	}
-	if (!sk_get_info_ref()->spatial_bridge_present) {
-		log_warn("This system doesn't support the spatial bridge! Check SK.System.spatialBridgePresent.");
-		*out_pose = pose_identity;
-		return false;
-	}
-
-	XrSpace                               space;
-	XrSpatialGraphNodeSpaceCreateInfoMSFT space_info = { XR_TYPE_SPATIAL_GRAPH_NODE_SPACE_CREATE_INFO_MSFT };
-	space_info.nodeType = dynamic ? XR_SPATIAL_GRAPH_NODE_TYPE_DYNAMIC_MSFT : XR_SPATIAL_GRAPH_NODE_TYPE_STATIC_MSFT;
-	space_info.pose     = { {0,0,0,1}, {0,0,0} };
-	memcpy(space_info.nodeId, spatial_graph_node_id, sizeof(space_info.nodeId));
-
-	if (XR_FAILED(xr_extensions.xrCreateSpatialGraphNodeSpaceMSFT(xr_session, &space_info, &space))) {
-		*out_pose = pose_identity;
-		return false;
-	}
-
-	XrTime time = 0;
-#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
-	if (qpc_time > 0) {
-		LARGE_INTEGER li;
-		li.QuadPart = qpc_time;
-		xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &li, &time);
-	}
-#endif
-
-	if (!openxr_get_space(space, out_pose, time)) {
-		*out_pose = pose_identity;
-		return false;
-	}
-	return true;
-}
-
-///////////////////////////////////////////
-
-pose_t world_from_perception_anchor(void *perception_spatial_anchor) {
-#if defined(SK_OS_WINDOWS_UWP)
-	if (!xr_session) {
-		log_warn("No OpenXR session available for converting perception anchors!");
-		return pose_identity;
-	}
-	if (!sk_get_info_ref()->perception_bridge_present) {
-		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
-		return pose_identity;
-	}
-
-	// Create an anchor from what the user gave us
-	XrSpatialAnchorMSFT anchor = {};
-	xr_extensions.xrCreateSpatialAnchorFromPerceptionAnchorMSFT(xr_session, (IUnknown*)perception_spatial_anchor, &anchor);
-
-	// Create a Space from the anchor
-	XrSpace                            space;
-	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
-	info.anchor            = anchor;
-	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
-	if (XR_FAILED(xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space))) {
-		log_warn("world_from_perception_anchor: xrCreateSpatialAnchorSpaceMSFT call failed, possibly a bad anchor?");
-		return pose_identity;
-	}
-
-	// Convert the space into a pose
-	pose_t result;
-	if (!openxr_get_space(space, &result)) {
-		xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
-		return pose_identity;
-	}
-
-	// Release the anchor, and return the resulting pose!
-	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
-	return result;
-#else
-	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
-	return pose_identity;
-#endif
-}
-
-///////////////////////////////////////////
-
-bool32_t world_try_from_perception_anchor(void *perception_spatial_anchor, pose_t *out_pose) {
-#if defined(SK_OS_WINDOWS_UWP)
-	if (!xr_session) {
-		log_warn("No OpenXR session available for converting perception anchors!");
-		*out_pose = pose_identity;
-		return false;
-	}
-	if (!sk_get_info_ref()->perception_bridge_present) {
-		log_warn("This system doesn't support the perception bridge! Check SK.System.perceptionBridgePresent.");
-		*out_pose = pose_identity;
-		return false;
-	}
-
-	// Create an anchor from what the user gave us
-	XrSpatialAnchorMSFT anchor = {};
-	xr_extensions.xrCreateSpatialAnchorFromPerceptionAnchorMSFT(xr_session, (IUnknown*)perception_spatial_anchor, &anchor);
-
-	// Create a Space from the anchor
-	XrSpace                            space;
-	XrSpatialAnchorSpaceCreateInfoMSFT info = { XR_TYPE_SPATIAL_ANCHOR_SPACE_CREATE_INFO_MSFT };
-	info.anchor            = anchor;
-	info.poseInAnchorSpace = { {0,0,0,1}, {0,0,0} };
-	if (XR_FAILED(xr_extensions.xrCreateSpatialAnchorSpaceMSFT(xr_session, &info, &space))) {
-		log_warn("world_from_perception_anchor: xrCreateSpatialAnchorSpaceMSFT call failed, possibly a bad anchor?");
-		*out_pose = pose_identity;
-		return false;
-	}
-
-	// Convert the space into a pose
-	if (!openxr_get_space(space, out_pose)) {
-		*out_pose = pose_identity;
-		xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
-		return false;
-	}
-
-	// Release the anchor, and return the resulting pose!
-	xr_extensions.xrDestroySpatialAnchorMSFT(anchor);
-	return true;
-#else
-	log_warn("world_from_perception_anchor not available outside of Windows UWP!");
-	*out_pose = pose_identity;
-	return false;
-#endif
 }
 
 ///////////////////////////////////////////

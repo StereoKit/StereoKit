@@ -258,6 +258,15 @@
     <ClCompile Include="asset_types\texture_compression.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\oculus_audio.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\msft_bridge.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\msft_anchor_interop.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -540,6 +549,18 @@
     <ClInclude Include="asset_types\texture_compression.h">
       <Filter>asset_types</Filter>
     </ClInclude>
+    <ClInclude Include="xr_backends\extensions\oculus_audio.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\msft_bridge.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\msft_anchor_interop.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\openxr_platform.h">
+      <Filter>xr_backends</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -574,6 +595,9 @@
     </Filter>
     <Filter Include="utils">
       <UniqueIdentifier>{cc487034-d7b8-48bc-85ed-fba2b844bd5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="xr_backends\extensions">
+      <UniqueIdentifier>{785aa32f-7ab8-442c-b70e-b19dc3949ca1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

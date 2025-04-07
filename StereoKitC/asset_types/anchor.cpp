@@ -4,6 +4,7 @@
 #include "../utils/random.h"
 #include "../platforms/platform.h"
 
+#include "../xr_backends/openxr.h"
 #include "../xr_backends/anchor_openxr_msft.h"
 #include "../xr_backends/anchor_stage.h"
 
@@ -18,14 +19,32 @@ bool32_t          anch_initialized  = false;
 
 ///////////////////////////////////////////
 
-void anchors_init(anchor_system_ system) {
+void anchors_register() {
+	xr_system_t system = {};
+	system.func_initialize = anchors_init;
+	system.func_shutdown   = anchors_shutdown;
+	system.func_step_begin = anchors_step_begin;
+	system.func_step_end   = anchors_step_end;
+	openxr_sys_register(system);
+}
+
+///////////////////////////////////////////
+
+bool anchors_init() {
 	if (anch_initialized) {
 		log_err("Anchor system already initialized!");
-		return;
+		return false;
 	}
 
+	if (backend_openxr_ext_enabled(XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME))
+		anch_sys = anchor_system_openxr_msft;
+	else if (backend_xr_get_type() == backend_xr_type_simulator)
+		anch_sys = anchor_system_stage;
+	else
+		anch_sys = anchor_system_none;
+
 	bool32_t result = false;
-	switch (system) {
+	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
 #endif
@@ -33,15 +52,16 @@ void anchors_init(anchor_system_ system) {
 	default: break;
 	}
 
-	if (!result) system = anchor_system_none;
-	anch_sys         = system;
+	if (!result) anch_sys = anchor_system_none;
 	anch_initialized = true;
 
-	switch (system) {
+	switch (anch_sys) {
 	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
 	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
 	default:                        log_diagf("NOT using spatial anchors."); break;
 	}
+
+	return true;
 }
 
 ///////////////////////////////////////////

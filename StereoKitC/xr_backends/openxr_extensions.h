@@ -1,96 +1,13 @@
 #pragma once
 
-#include "../platforms/platform.h"
+#include "openxr_platform.h"
+
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
 #include "../stereokit.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
-
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-	#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <d3d11.h>
-	#define XR_GFX_EXTENSION XR_KHR_D3D11_ENABLE_EXTENSION_NAME
-	#define XrSwapchainImage XrSwapchainImageD3D11KHR
-	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR
-	#define XrGraphicsRequirements XrGraphicsRequirementsD3D11KHR
-	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR
-	#define xrGetGraphicsRequirementsKHR xrGetD3D11GraphicsRequirementsKHR
-	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetD3D11GraphicsRequirementsKHR
-	#define NAME_xrGetGraphicsRequirementsKHR "xrGetD3D11GraphicsRequirementsKHR"
-	#define XrGraphicsBinding XrGraphicsBindingD3D11KHR
-	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_D3D11_KHR
-
-#elif defined(XR_USE_PLATFORM_WIN32) && defined(XR_USE_GRAPHICS_API_OPENGL)
-	#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <unknwn.h>
-	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
-	#define XrSwapchainImage XrSwapchainImageOpenGLKHR
-	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
-	#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLKHR
-	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR
-	#define xrGetGraphicsRequirementsKHR xrGetOpenGLGraphicsRequirementsKHR
-	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLGraphicsRequirementsKHR
-	#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
-	#define XrGraphicsBinding XrGraphicsBindingOpenGLWin32KHR
-	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR
-
-#elif defined(XR_USE_PLATFORM_XLIB) && defined(XR_USE_GRAPHICS_API_OPENGL)
-	#include<X11/X.h>
-	#include<X11/Xlib.h>
-	#include<GL/glx.h>
-	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ENABLE_EXTENSION_NAME
-	#define XrSwapchainImage XrSwapchainImageOpenGLKHR
-	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR
-	#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLKHR
-	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR
-	#define xrGetGraphicsRequirementsKHR xrGetOpenGLGraphicsRequirementsKHR
-	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLGraphicsRequirementsKHR
-	#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLGraphicsRequirementsKHR"
-	#define XrGraphicsBinding XrGraphicsBindingOpenGLXlibKHR
-	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR
-
-#elif defined(XR_USE_GRAPHICS_API_VULKAN)
-	#define XR_GFX_EXTENSION XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
-	#define XrSwapchainImage XrSwapchainImageVulkanKHR
-	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR
-	#define XrGraphicsRequirements XrGraphicsRequirementsVulkanKHR
-	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR
-	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetVulkanGraphicsRequirementsKHR
-	#define NAME_xrGetGraphicsRequirementsKHR "xrGetVulkanGraphicsRequirementsKHR"
-	#define XrGraphicsBinding XrGraphicsBindingVulkanKHR
-	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR
-
-#elif defined(XR_USE_GRAPHICS_API_OPENGL_ES)
-	#include <EGL/egl.h>
-	#define XR_GFX_EXTENSION XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME
-	#define XrSwapchainImage XrSwapchainImageOpenGLESKHR
-	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR
-	#define XrGraphicsRequirements XrGraphicsRequirementsOpenGLESKHR
-	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_ES_KHR
-	#define xrGetGraphicsRequirementsKHR xrGetOpenGLESGraphicsRequirementsKHR
-	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetOpenGLESGraphicsRequirementsKHR
-	#define NAME_xrGetGraphicsRequirementsKHR "xrGetOpenGLESGraphicsRequirementsKHR"
-
-	#if defined(SK_OS_ANDROID)
-		#include <android/native_activity.h>
-		#define XrGraphicsBinding XrGraphicsBindingOpenGLESAndroidKHR
-		#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR
-
-	#elif defined(SK_OS_LINUX)
-		#define XrGraphicsBinding XrGraphicsBindingEGLMNDX
-		#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_EGL_MNDX
-
-	#endif
-
-#endif
-
-#include <openxr/openxr_platform.h>
 
 namespace sk {
 
@@ -99,25 +16,20 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-#if defined(SK_OS_WINDOWS_UWP)
-#define EXT_AVAILABLE_UWP true
-#else
-#define EXT_AVAILABLE_UWP false
-#endif
 #if defined(SK_DEBUG)
-#define EXT_AVAILABLE_DEBUG true
+	#define EXT_AVAILABLE_DEBUG true
 #else
-#define EXT_AVAILABLE_DEBUG false
+	#define EXT_AVAILABLE_DEBUG false
 #endif
 #if defined(SK_OS_ANDROID)
-#define EXT_AVAILABLE_ANDROID true
+	#define EXT_AVAILABLE_ANDROID true
 #else
-#define EXT_AVAILABLE_ANDROID false
+	#define EXT_AVAILABLE_ANDROID false
 #endif
 #if defined(SK_OS_LINUX)
-#define EXT_AVAILABLE_LINUX true
+	#define EXT_AVAILABLE_LINUX true
 #else
-#define EXT_AVAILABLE_LINUX false
+	#define EXT_AVAILABLE_LINUX false
 #endif
 
 ///////////////////////////////////////////
@@ -141,17 +53,12 @@ namespace sk {
 	_(MSFT_hand_interaction,             true) \
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_anchor_persistence,   true) \
-	_(MSFT_spatial_graph_bridge,         true) \
 	_(MSFT_secondary_view_configuration, true) \
 	_(MSFT_first_person_observer,        true) \
 	_(MSFT_scene_understanding,          true) \
 	_(BD_controller_interaction,         true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
 	_(EXTX_overlay,                      true)
-
-// UWP platform only
-#define FOR_EACH_EXT_UWP(_) \
-	_(MSFT_perception_anchor_interop, EXT_AVAILABLE_UWP)
 
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
@@ -199,18 +106,13 @@ namespace sk {
 	_(xrUpdateHandMeshMSFT)                      \
 	_(xrEnumerateColorSpacesFB)                  \
 	_(xrSetColorSpaceFB)                         \
-	_(xrCreateSpatialGraphNodeSpaceMSFT)         \
 	_(xrCreateDebugUtilsMessengerEXT)            \
 	_(xrDestroyDebugUtilsMessengerEXT)
 
 #if defined(_WIN32)
-#define FOR_EACH_PLATFORM_FUNCTION(_)                \
-	_(xrConvertWin32PerformanceCounterToTimeKHR)     \
-	_(xrConvertTimeToWin32PerformanceCounterKHR)     \
-	_(xrCreateSpatialAnchorFromPerceptionAnchorMSFT) \
-	_(xrTryGetPerceptionAnchorFromSpatialAnchorMSFT) \
-	_(xrGetAudioOutputDeviceGuidOculus)              \
-	_(xrGetAudioInputDeviceGuidOculus)
+#define FOR_EACH_PLATFORM_FUNCTION(_)            \
+	_(xrConvertWin32PerformanceCounterToTimeKHR) \
+	_(xrConvertTimeToWin32PerformanceCounterKHR)
 #elif defined(SK_OS_ANDROID)
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
 	_(xrConvertTimespecTimeToTimeKHR ) \
@@ -265,7 +167,6 @@ typedef struct xr_ext_info_t {
 	xr_state_ gfx_extension;
 	xr_state_ time_extension;
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
-	FOR_EACH_EXT_UWP    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
 	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_DEBUG  (DEFINE_EXT_INFO);
@@ -323,7 +224,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 #define ADD_NAME(name, available) else if (available && strcmp("XR_"#name, exts[i].extensionName) == 0) {ref_request_exts->add("XR_"#name);}
 		if (false) {}
 		FOR_EACH_EXT_ALL    (ADD_NAME)
-		FOR_EACH_EXT_UWP    (ADD_NAME)
 		FOR_EACH_EXT_ANDROID(ADD_NAME)
 		FOR_EACH_EXT_LINUX  (ADD_NAME)
 		FOR_EACH_EXT_DEBUG  (ADD_NAME)
@@ -340,7 +240,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 #define CHECK_EXT(name, available) else if (strcmp("XR_"#name, ref_request_exts->get(i)) == 0) {xr_ext.name = xr_ext_active;}
 		if (false) {}
 		FOR_EACH_EXT_ALL    (CHECK_EXT)
-		FOR_EACH_EXT_UWP    (CHECK_EXT)
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
 		FOR_EACH_EXT_LINUX  (CHECK_EXT)
 		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
@@ -352,11 +251,9 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 }
 
 #undef DEFINE_EXT_INFO
-#undef EXT_AVAILABLE_UWP
 #undef EXT_AVAILABLE_ANDROID
 #undef EXT_AVAILABLE_DEBUG
 #undef FOR_EACH_EXT_ALL
-#undef FOR_EACH_EXT_UWP
 #undef FOR_EACH_EXT_ANDROID
 #undef FOR_EACH_EXT_LINUX
 #undef FOR_EACH_EXT_DEBUG

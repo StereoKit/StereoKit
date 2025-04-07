@@ -77,6 +77,10 @@ bool    xrc_aim_ready[2];
 
 ///////////////////////////////////////////
 
+bool oxri_init        ();
+void oxri_shutdown    ();
+void oxri_update_frame();
+
 void oxri_set_profile(handed_ hand, XrPath profile);
 
 XrRLPath _bind_paths    (const char* name);
@@ -85,6 +89,16 @@ void     _bind_rl       (array_t<XrActionSuggestedBinding>* arr, XrAction action
 bool     _bind_suggest  (const char* profile_name, bool is_hand, const array_t<XrActionSuggestedBinding> binding_arr, pose_t palm_left_offset, pose_t palm_right_offset, xrc_profile_info_t* out_profile);
 bool     _make_action_rl(const char* action_name, const char* display_name, XrActionType type, XrRLPath* in_subaction_path, XrAction *out_action);
 bool     _make_action   (const char* action_name, const char* display_name, XrActionType type, XrAction* out_action);
+
+///////////////////////////////////////////
+
+void oxri_register() {
+	xr_system_t system = {};
+	system.func_initialize = oxri_init;
+	system.func_shutdown   = oxri_shutdown;
+	system.func_step_begin = oxri_update_frame;
+	openxr_sys_register(system);
+}
 
 ///////////////////////////////////////////
 
@@ -574,6 +588,9 @@ void oxri_update_poses() {
 ///////////////////////////////////////////
 
 void oxri_update_frame() {
+	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
+		return;
+
 	// This function call already syncs OpenXR actions
 	oxri_update_poses();
 

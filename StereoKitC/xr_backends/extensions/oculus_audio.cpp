@@ -1,0 +1,65 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2025 Nick Klingensmith
+ * Copyright (c) 2025 Qualcomm Technologies, Inc.
+ */
+
+#include "../openxr_platform.h"
+#include "oculus_audio.h"
+
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+
+#include "../../systems/audio.h"
+
+///////////////////////////////////////////
+
+namespace sk {
+
+///////////////////////////////////////////
+
+bool xr_ext_oculus_audio_init();
+
+///////////////////////////////////////////
+
+void xr_ext_oculus_audio_register() {
+	xr_system_t sys = {};
+	sys.request_exts[sys.request_ext_count++] = XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME;
+	sys.func_initialize = xr_ext_oculus_audio_init;
+	openxr_sys_register(sys);
+}
+
+///////////////////////////////////////////
+
+bool xr_ext_oculus_audio_init() {
+	// Check if we got our extension
+	if (!backend_openxr_ext_enabled(XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME))
+		return false;
+
+	// Load all extension functions, we can do this locally since it's such a
+	// simple extension!
+	#define FN_LIST( X )                    \
+		X(xrGetAudioOutputDeviceGuidOculus) \
+		X(xrGetAudioInputDeviceGuidOculus )
+	FN_LIST(OPENXR_DEFINE_FN);
+	FN_LIST(OPENXR_LOAD_FN  );
+
+	// All we really need to do here is just find out what audio devices the XR
+	// runtime recommends, and register that with our audio system!
+	wchar_t device_guid[128];
+	if (XR_SUCCEEDED(xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) audio_set_default_device_out(device_guid);
+	if (XR_SUCCEEDED(xrGetAudioInputDeviceGuidOculus (xr_instance, device_guid))) audio_set_default_device_in (device_guid);
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+} // namespace sk
+
+#else
+
+namespace sk {
+void xr_ext_oculus_audio_register() {}
+}
+
+#endif
