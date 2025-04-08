@@ -21,10 +21,10 @@ bool32_t          anch_initialized  = false;
 
 void anchors_register() {
 	xr_system_t system = {};
-	system.func_initialize = []() { return anchors_init() ? xr_system_succeed : xr_system_fail; };
-	system.func_shutdown   = anchors_shutdown;
-	system.func_step_begin = anchors_step_begin;
-	system.func_step_end   = anchors_step_end;
+	system.func_initialize = { [](void*) { return anchors_init() ? xr_system_succeed : xr_system_fail; } };
+	system.func_shutdown   = { anchors_shutdown   };
+	system.func_step_begin = { anchors_step_begin };
+	system.func_step_end   = { anchors_step_end   };
 	openxr_sys_register(system);
 }
 
@@ -66,7 +66,7 @@ bool anchors_init() {
 
 ///////////////////////////////////////////
 
-void anchors_shutdown() {
+void anchors_shutdown(void*) {
 	if (!anch_initialized) return;
 
 	for (int32_t i = anch_list   .count-1; i>=0; i--) anchor_release(anch_list   [i]);
@@ -88,7 +88,7 @@ void anchors_shutdown() {
 
 ///////////////////////////////////////////
 
-void anchors_step_begin() {
+void anchors_step_begin(void*) {
 	switch (anch_sys) {
 #if defined(SK_XR_OPENXR)
 	case anchor_system_openxr_msft: anchor_oxr_msft_step(); break;
@@ -100,7 +100,7 @@ void anchors_step_begin() {
 
 ///////////////////////////////////////////
 
-void anchors_step_end() {
+void anchors_step_end(void*) {
 	for (int32_t i = 0; i < anch_changed.count; i++) {
 		//anch_changed[i]->changed = false;
 		anchor_release(anch_changed[i]);

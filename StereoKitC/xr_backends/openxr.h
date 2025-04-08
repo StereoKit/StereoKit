@@ -39,14 +39,30 @@ typedef enum xr_system_ {
 	xr_system_fail_critical = -1,
 } xr_system_;
 
+typedef struct context_callback_t {
+	void       (*callback)(void* context);
+	void*        context;
+} context_callback_t;
+
+typedef struct context_result_callback_t {
+	xr_system_ (*callback)(void* context);
+	void*        context;
+} context_result_callback_t;
+
+typedef struct poll_event_callback_t {
+	void       (*callback)(void* context, void* XrEventDataBuffer);
+	void*        context;
+} poll_event_callback_t;
+
+
 typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
-	xr_system_(*func_initialize)(void);
-	void      (*func_step_begin)(void);
-	void      (*func_step_end  )(void);
-	void      (*func_shutdown  )(void);
+	context_result_callback_t func_initialize;
+	context_callback_t        func_step_begin;
+	context_callback_t        func_step_end;
+	context_callback_t        func_shutdown;
 } xr_system_t;
 
 bool openxr_init        ();

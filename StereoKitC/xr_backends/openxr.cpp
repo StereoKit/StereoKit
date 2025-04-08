@@ -27,6 +27,7 @@
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
 
+#include "extensions/ext_management.h"
 #include "extensions/time.h"
 #include "extensions/oculus_audio.h"
 #include "extensions/msft_bridge.h"
@@ -50,15 +51,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-typedef struct context_callback_t {
-	void (*callback)(void* context);
-	void *context;
-} context_callback_t;
 
-typedef struct poll_event_callback_t {
-	void (*callback)(void* context, void* XrEventDataBuffer);
-	void *context;
-} poll_event_callback_t;
 
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
@@ -85,22 +78,10 @@ XrTime               xr_eyes_sample_time  = 0;
 bool                 xr_system_created    = false;
 bool                 xr_system_success    = false;
 
-array_t<const char*> xr_exts_user         = {};
-array_t<const char*> xr_exts_exclude      = {};
-array_t<uint64_t>    xr_exts_loaded       = {};
-bool32_t             xr_minimum_exts      = false;
-
 bool                 xr_has_bounds        = false;
 vec2                 xr_bounds_size       = {};
 pose_t               xr_bounds_pose       = pose_identity;
 pose_t               xr_bounds_pose_local = pose_identity;
-
-array_t<context_callback_t>    xr_callbacks_pre_session_create = {};
-array_t<poll_event_callback_t> xr_callbacks_poll_event         = {};
-array_t<xr_system_t>           xr_system_list                  = {};
-array_t<void (*)(void)>        xr_systems_step_begin           = {};
-array_t<void (*)(void)>        xr_systems_step_end             = {};
-array_t<void (*)(void)>        xr_systems_shutdown             = {};
 
 XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
@@ -123,12 +104,6 @@ void openxr_register_systems() {
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
 	xr_ext_msft_anchor_interop_register();
-}
-
-///////////////////////////////////////////
-
-void openxr_sys_register(xr_system_t system) {
-	xr_system_list.add(system);
 }
 
 ///////////////////////////////////////////
@@ -240,22 +215,21 @@ bool openxr_create_system() {
 #endif
 
 	openxr_register_systems();
-	for (int32_t i = 0; i < xr_system_list.count; i++) {
-		const xr_system_t* sys = &xr_system_list[i];
-		for (int32_t e = 0; e < sys->request_ext_count; e++)
-			xr_exts_user.add(sys->request_exts[e]);
-	}
 
+	// TODO: This all needs shifted over to ext_management!
 	array_t<const char*> exts_request   = {};
 	array_t<const char*> exts_available = {};
-	openxr_list_extensions(xr_exts_user, xr_exts_exclude, xr_minimum_exts, &exts_available, &exts_request);
+	array_t<const char*> exts_user      = {};
+	array_t<const char*> exts_exclude   = {};
+	ext_management_get_exts    (&exts_user   .data, &exts_user   .count);
+	ext_management_get_excludes(&exts_exclude.data, &exts_exclude.count);
+	openxr_list_extensions(exts_user, exts_exclude, ext_management_get_use_min(), &exts_available, &exts_request);
 
 	array_t<const char*> layers_request   = {};
 	array_t<const char*> layers_available = {};
 	openxr_list_layers(&layers_available, &layers_request);
 
-	for (int32_t i = 0; i < exts_request.count; i++)
-		xr_exts_loaded.add(hash_fnv64_string(exts_request[i]));
+	ext_management_mark_loaded(exts_request.data, exts_request.count);
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
 	create_info.enabledExtensionCount = (uint32_t)exts_request.count;
@@ -390,9 +364,7 @@ bool openxr_init() {
 
 	device_data.display_type = display_type_stereo;
 
-	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
-	// yet, so it throws errors into the logs.
-	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
+	if (!backend_openxr_ext_enabled(XR_GFX_EXTENSION)) {
 		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
 		openxr_cleanup();
 		return false;
@@ -410,10 +382,7 @@ bool openxr_init() {
 
 	// Before we call xrCreateSession, lets fire an event for anyone that needs
 	// to set things up!
-	for (int32_t i = 0; i < xr_callbacks_pre_session_create.count; i++) {
-		xr_callbacks_pre_session_create[i].callback(xr_callbacks_pre_session_create[i].context);
-	}
-	xr_callbacks_pre_session_create.free();
+	ext_management_evt_pre_session_create();
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be
 	// called before xrCreateSession
@@ -654,29 +623,9 @@ bool openxr_init() {
 	}
 
 	// Initialize XR systems
-	for (int32_t i = 0; i < xr_system_list.count; i++) {
-		const xr_system_t* sys = &xr_system_list[i];
-
-		if (sys->func_initialize) {
-
-			xr_system_ sys_result = sys->func_initialize();
-			if (sys_result == xr_system_fail_critical) {
-				// If the system fails critically, we need to fail
-				// initialization entirely!
-				log_infof("Critical failure in XR system #%d!", i);
-				openxr_cleanup();
-				return false;
-
-			} else if (sys_result == xr_system_fail) {
-				// If the system fails normally, no worries, we just skip
-				// adding any of its callbacks!
-				continue;
-			}
-		}
-
-		if (sys->func_shutdown  ) xr_systems_shutdown  .add(sys->func_shutdown  );
-		if (sys->func_step_begin) xr_systems_step_begin.add(sys->func_step_begin);
-		if (sys->func_step_end  ) xr_systems_step_end  .add(sys->func_step_end  );
+	if (!ext_management_evt_session_ready()) {
+		openxr_cleanup();
+		return false;
 	}
 
 	// A number of other items use the xr_time, so lets get this ready as soon as
@@ -951,42 +900,26 @@ void openxr_cleanup() {
 ///////////////////////////////////////////
 
 void openxr_shutdown() {
-	for (int32_t i = 0; i < xr_systems_shutdown.count; i++)
-		xr_systems_shutdown[i]();
+	ext_management_cleanup();
 
 	openxr_cleanup();
 
-	xr_minimum_exts   = false;
 	xr_system_created = false;
 	xr_system_success = false;
-
-	xr_exts_loaded .free();
-	xr_exts_user   .free();
-	xr_exts_exclude.free();
-	xr_callbacks_pre_session_create.free();
-	xr_callbacks_poll_event        .free();
-	xr_system_list                 .free();
-	xr_systems_step_begin          .free();
-	xr_systems_step_end            .free();
-	xr_systems_shutdown            .free();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_begin() {
 	openxr_poll_events();
-	
-	for (int32_t i = 0; i < xr_systems_step_begin.count; i++)
-		xr_systems_step_begin[i]();
-
+	ext_management_evt_step_begin();
 	input_step();
 }
 
 ///////////////////////////////////////////
 
 void openxr_step_end() {
-	for (int32_t i = 0; i < xr_systems_step_end.count; i++)
-		xr_systems_step_end[i]();
+	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
 	else                { render_clear(); platform_sleep(33); }
@@ -1139,9 +1072,7 @@ bool openxr_poll_events() {
 		default: break;
 		}
 
-		for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
-			xr_callbacks_poll_event[i].callback(xr_callbacks_poll_event[i].context, &event_buffer);
-		}
+		ext_management_evt_poll_event(&event_buffer);
 
 		event_buffer = { XR_TYPE_EVENT_DATA_BUFFER };
 	}
@@ -1248,96 +1179,6 @@ void *backend_openxr_get_function(const char *function_name) {
 	return (void*)fn;
 }
 
-///////////////////////////////////////////
-
-bool32_t backend_openxr_ext_enabled(const char *extension_name) {
-	if (backend_xr_get_type() != backend_xr_type_openxr) {
-		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-		return false;
-	}
-	uint64_t hash = hash_fnv64_string(extension_name);
-	return xr_exts_loaded.index_of(hash) >= 0;
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_ext_request(const char *extension_name) {
-	if (sk_is_initialized()) {
-		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
-		return;
-	}
-
-	xr_exts_user.add(string_copy(extension_name));
-}
-
-///////////////////////////////////////////
-
-bool is_ext_explicitly_requested(const char* extension_name) {
-	for (int32_t i = 0; i < xr_exts_user.count; i++) {
-		if (strcmp(xr_exts_user[i], extension_name) == 0) return true;
-	}
-	return false;
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_ext_exclude(const char* extension_name) {
-	if (sk_is_initialized()) {
-		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
-		return;
-	}
-
-	xr_exts_exclude.add(string_copy(extension_name));
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
-	if (sk_is_initialized()) {
-		log_err("backend_openxr_ext_ must be called BEFORE StereoKit initialization!");
-		return;
-	}
-
-	xr_minimum_exts = use_minimum_exts;
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
-	if (sk_is_initialized()) {
-		log_err("backend_openxr_ pre_session must be called BEFORE StereoKit initialization!");
-		return;
-	}
-
-	xr_callbacks_pre_session_create.add({ on_pre_session_create, context });
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_add_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer), void* context) {
-	if (backend_xr_get_type() != backend_xr_type_openxr) {
-		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-		return;
-	}
-
-	xr_callbacks_poll_event.add({ on_poll_event, context });
-}
-
-///////////////////////////////////////////
-
-void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* context, void* XrEventDataBuffer)) {
-	if (backend_xr_get_type() != backend_xr_type_openxr) {
-		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
-		return;
-	}
-
-	for (int32_t i = 0; i < xr_callbacks_poll_event.count; i++) {
-		if (xr_callbacks_poll_event[i].callback == on_poll_event || on_poll_event == nullptr) {
-			xr_callbacks_poll_event.remove(i);
-			return;
-		}
-	}
-}
 
 } // namespace sk
 

@@ -31,8 +31,8 @@ void           anchor_mark_dirty      (anchor_t anchor);
 void           anchor_clear_all_dirty ();
 void           anchors_register       ();
 bool           anchors_init           ();
-void           anchors_shutdown       ();
-void           anchors_step_begin     ();
-void           anchors_step_end       ();
+void           anchors_shutdown       (void*);
+void           anchors_step_begin     (void*);
+void           anchors_step_end       (void*);
 
 }

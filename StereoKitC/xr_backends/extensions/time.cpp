@@ -30,20 +30,20 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_time_init();
+xr_system_ xr_ext_time_init(void*);
 
 ///////////////////////////////////////////
 
 void xr_ext_time_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
-	sys.func_initialize = xr_ext_time_init;
+	sys.func_initialize = { xr_ext_time_init };
 	openxr_sys_register(sys);
 }
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_time_init() {
+xr_system_ xr_ext_time_init(void*) {
 	// This extension is CRITICAL for SK's code, so if we fail to get
 	// everything we need to work, we'll fail initialization!
 	if (!backend_openxr_ext_enabled(XR_TIME_EXTENSION))

@@ -17,20 +17,20 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_oculus_audio_init();
+xr_system_ xr_ext_oculus_audio_init(void*);
 
 ///////////////////////////////////////////
 
 void xr_ext_oculus_audio_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME;
-	sys.func_initialize = xr_ext_oculus_audio_init;
+	sys.func_initialize = { xr_ext_oculus_audio_init };
 	openxr_sys_register(sys);
 }
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_oculus_audio_init() {
+xr_system_ xr_ext_oculus_audio_init(void*) {
 	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME))
 		return xr_system_fail;

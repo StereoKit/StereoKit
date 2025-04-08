@@ -78,8 +78,8 @@ bool    xrc_aim_ready[2];
 ///////////////////////////////////////////
 
 bool oxri_init        ();
-void oxri_shutdown    ();
-void oxri_update_frame();
+void oxri_shutdown    (void*);
+void oxri_update_frame(void*);
 
 void oxri_set_profile(handed_ hand, XrPath profile);
 
@@ -94,9 +94,9 @@ bool     _make_action   (const char* action_name, const char* display_name, XrAc
 
 void oxri_register() {
 	xr_system_t system = {};
-	system.func_initialize = []() { return oxri_init() ? xr_system_succeed : xr_system_fail_critical; };
-	system.func_shutdown   = oxri_shutdown;
-	system.func_step_begin = oxri_update_frame;
+	system.func_initialize = { [](void*) { return oxri_init() ? xr_system_succeed : xr_system_fail_critical; } };
+	system.func_shutdown   = { oxri_shutdown };
+	system.func_step_begin = { oxri_update_frame };
 	openxr_sys_register(system);
 }
 
@@ -435,7 +435,7 @@ bool oxri_init() {
 
 ///////////////////////////////////////////
 
-void oxri_shutdown() {
+void oxri_shutdown(void*) {
 	local.profiles.free();
 	for (int32_t i = 0; i < 2; i++) {
 		if (local.space_grip[i]) { xrDestroySpace(local.space_grip[i]); local.space_grip[i] = {}; }
@@ -587,7 +587,7 @@ void oxri_update_poses() {
 
 ///////////////////////////////////////////
 
-void oxri_update_frame() {
+void oxri_update_frame(void*) {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
 		return;
 

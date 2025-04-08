@@ -270,6 +270,9 @@
     <ClCompile Include="xr_backends\extensions\time.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\ext_management.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -565,6 +568,9 @@
       <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\extensions\time.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\ext_management.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>

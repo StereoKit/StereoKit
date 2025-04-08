@@ -121,7 +121,7 @@ void simulator_shutdown() {
 	sim_surface = -1;
 	platform_win_destroy(sim_window);
 	sim_window = -1;
-	anchors_shutdown();
+	anchors_shutdown(NULL);
 }
 
 ///////////////////////////////////////////
@@ -209,13 +209,13 @@ void simulator_step_begin() {
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
-	anchors_step_begin();
+	anchors_step_begin(NULL);
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_end() {
-	anchors_step_end();
+	anchors_step_end(NULL);
 	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());
