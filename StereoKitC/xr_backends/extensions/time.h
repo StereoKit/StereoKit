@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <openxr/openxr.h>
+
 namespace sk {
 
-void xr_ext_msft_anchor_interop_register();
-bool xr_ext_msft_anchor_interop_try_get_perception_anchor(XrSpatialAnchorMSFT anchor, void** out_perception_spatial_anchor);
+void   xr_ext_time_register();
+XrTime xr_ext_time_acquire_time();
 
 }

@@ -9,40 +9,8 @@
 #include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
-#if defined(SK_OS_ANDROID)
-	#define XR_USE_PLATFORM_ANDROID
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
-
-#elif defined(SK_OS_LINUX)
-	#define XR_USE_PLATFORM_EGL
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
-
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-
-#elif defined(SK_OS_WEB)
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_USE_GRAPHICS_API_OPENGL
-
-#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	#if defined(SKG_FORCE_OPENGL)
-		#define XR_USE_GRAPHICS_API_OPENGL
-	#else
-		#define XR_USE_GRAPHICS_API_D3D11
-	#endif
-
-	#define XR_USE_PLATFORM_WIN32
-	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
-
-#endif
-
 #include "../stereokit.h"
-
 #include <openxr/openxr.h>
-
 #include <stdint.h>
 
 typedef struct XR_MAY_ALIAS XrBaseHeader {
@@ -53,19 +21,32 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 #define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
-#define OPENXR_DEFINE_FN(name) PFN_##name name;
-#define OPENXR_LOAD_FN(name) if (XR_FAILED(xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name))))) { return false; }
+// Some "X Macros" to simplify function loading. Otherwise, function loading
+// tends to have a lot of manual code duplication that gets spread out across
+// multiple spots.
+#define _OPENXR_DEFINE_FN(name) PFN_##name name;
+#define OPENXR_DEFINE_FN(list) list(_OPENXR_DEFINE_FN)
+#define _OPENXR_DEFINE_FN_STATIC(name) static PFN_##name name;
+#define OPENXR_DEFINE_FN_STATIC(list) list(_OPENXR_DEFINE_FN_STATIC)
+#define _OPENXR_LOAD_FN_RESULT(name) if (xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name)))<0) { result = result && false; }
+#define OPENXR_LOAD_FN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
 
 namespace sk {
+
+typedef enum xr_system_ {
+	xr_system_succeed       = 1,
+	xr_system_fail          = 0,
+	xr_system_fail_critical = -1,
+} xr_system_;
 
 typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
-	bool (*func_initialize)(void);
-	void (*func_step_begin)(void);
-	void (*func_step_end  )(void);
-	void (*func_shutdown  )(void);
+	xr_system_(*func_initialize)(void);
+	void      (*func_step_begin)(void);
+	void      (*func_step_end  )(void);
+	void      (*func_shutdown  )(void);
 } xr_system_t;
 
 bool openxr_init        ();

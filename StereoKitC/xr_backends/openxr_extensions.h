@@ -110,18 +110,12 @@ namespace sk {
 	_(xrDestroyDebugUtilsMessengerEXT)
 
 #if defined(_WIN32)
-#define FOR_EACH_PLATFORM_FUNCTION(_)            \
-	_(xrConvertWin32PerformanceCounterToTimeKHR) \
-	_(xrConvertTimeToWin32PerformanceCounterKHR)
+#define FOR_EACH_PLATFORM_FUNCTION(_)
 #elif defined(SK_OS_ANDROID)
 #define FOR_EACH_PLATFORM_FUNCTION(_)  \
-	_(xrConvertTimespecTimeToTimeKHR ) \
-	_(xrConvertTimeToTimespecTimeKHR ) \
 	_(xrSetAndroidApplicationThreadKHR)
 #else
-#define FOR_EACH_PLATFORM_FUNCTION(_)  \
-	_(xrConvertTimespecTimeToTimeKHR ) \
-	_(xrConvertTimeToTimespecTimeKHR )
+#define FOR_EACH_PLATFORM_FUNCTION(_)
 #endif
 
 ///////////////////////////////////////////
@@ -189,7 +183,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 	for (uint32_t i = 0; i < ext_count; i++) {
 		// These extensions are required for StereoKit to function
 		if (strcmp(exts[i].extensionName, XR_GFX_EXTENSION)  == 0) { ref_request_exts->add(XR_GFX_EXTENSION);  continue; }
-		if (strcmp(exts[i].extensionName, XR_TIME_EXTENSION) == 0) { ref_request_exts->add(XR_TIME_EXTENSION); continue; }
 #if defined(SK_OS_ANDROID)
 		if (strcmp(exts[i].extensionName, "XR_KHR_android_create_instance") == 0) { ref_request_exts->add("XR_KHR_android_create_instance"); continue; }
 #endif

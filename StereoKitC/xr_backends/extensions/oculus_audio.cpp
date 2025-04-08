@@ -17,7 +17,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-bool xr_ext_oculus_audio_init();
+xr_system_ xr_ext_oculus_audio_init();
 
 ///////////////////////////////////////////
 
@@ -30,18 +30,18 @@ void xr_ext_oculus_audio_register() {
 
 ///////////////////////////////////////////
 
-bool xr_ext_oculus_audio_init() {
+xr_system_ xr_ext_oculus_audio_init() {
 	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME))
-		return false;
+		return xr_system_fail;
 
 	// Load all extension functions, we can do this locally since it's such a
 	// simple extension!
-	#define FN_LIST( X )                    \
+	#define XR_EXT_FUNCTIONS( X )           \
 		X(xrGetAudioOutputDeviceGuidOculus) \
 		X(xrGetAudioInputDeviceGuidOculus )
-	FN_LIST(OPENXR_DEFINE_FN);
-	FN_LIST(OPENXR_LOAD_FN  );
+	OPENXR_DEFINE_FN(XR_EXT_FUNCTIONS);
+	OPENXR_LOAD_FN  (XR_EXT_FUNCTIONS, xr_system_fail);
 
 	// All we really need to do here is just find out what audio devices the XR
 	// runtime recommends, and register that with our audio system!
@@ -49,7 +49,7 @@ bool xr_ext_oculus_audio_init() {
 	if (XR_SUCCEEDED(xrGetAudioOutputDeviceGuidOculus(xr_instance, device_guid))) audio_set_default_device_out(device_guid);
 	if (XR_SUCCEEDED(xrGetAudioInputDeviceGuidOculus (xr_instance, device_guid))) audio_set_default_device_in (device_guid);
 
-	return true;
+	return xr_system_succeed;
 }
 
 ///////////////////////////////////////////

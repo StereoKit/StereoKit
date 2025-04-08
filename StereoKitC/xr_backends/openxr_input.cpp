@@ -94,7 +94,7 @@ bool     _make_action   (const char* action_name, const char* display_name, XrAc
 
 void oxri_register() {
 	xr_system_t system = {};
-	system.func_initialize = oxri_init;
+	system.func_initialize = []() { return oxri_init() ? xr_system_succeed : xr_system_fail_critical; };
 	system.func_shutdown   = oxri_shutdown;
 	system.func_step_begin = oxri_update_frame;
 	openxr_sys_register(system);

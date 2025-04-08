@@ -21,7 +21,7 @@ bool32_t          anch_initialized  = false;
 
 void anchors_register() {
 	xr_system_t system = {};
-	system.func_initialize = anchors_init;
+	system.func_initialize = []() { return anchors_init() ? xr_system_succeed : xr_system_fail; };
 	system.func_shutdown   = anchors_shutdown;
 	system.func_step_begin = anchors_step_begin;
 	system.func_step_end   = anchors_step_end;

@@ -14,10 +14,10 @@
 
 ///////////////////////////////////////////
 
-#define FN_LIST( X )                             \
+#define XR_EXT_FUNCTIONS( X )                    \
 	X(xrCreateSpatialGraphNodeSpaceMSFT        ) \
 	X(xrConvertWin32PerformanceCounterToTimeKHR)
-FN_LIST(OPENXR_DEFINE_FN);
+OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
 
 ///////////////////////////////////////////
 
@@ -25,7 +25,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-bool xr_ext_msft_bridge_init();
+	xr_system_ xr_ext_msft_bridge_init();
 
 ///////////////////////////////////////////
 
@@ -39,17 +39,17 @@ void xr_ext_msft_bridge_register() {
 
 ///////////////////////////////////////////
 
-bool xr_ext_msft_bridge_init() {
+xr_system_ xr_ext_msft_bridge_init() {
 	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME) ||
 		!backend_openxr_ext_enabled(XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME))
-		return false;
+		return xr_system_fail;
 
 	// Load all extension functions
-	FN_LIST(OPENXR_LOAD_FN);
+	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	sk_get_info_ref()->spatial_bridge_present = true;
-	return true;
+	return xr_system_succeed;
 }
 
 ///////////////////////////////////////////

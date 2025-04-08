@@ -3,6 +3,7 @@
 
 #include "anchor_openxr_msft.h"
 #include "openxr_extensions.h"
+#include "extensions/msft_anchor_interop.h"
 #include "../asset_types/anchor.h"
 #include "../systems/input.h"
 
@@ -209,19 +210,8 @@ bool32_t anchor_oxr_msft_persist(anchor_t anchor, bool32_t persist) {
 ///////////////////////////////////////////
 
 bool32_t anchor_oxr_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor) {
-#if defined(SK_OS_WINDOWS_UWP)
-	if (xr_ext.MSFT_perception_anchor_interop != xr_ext_active) return false;
 	oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
-	XrResult result = xr_extensions.xrTryGetPerceptionAnchorFromSpatialAnchorMSFT(xr_session, anchor_data->anchor, (IUnknown**)perception_spatial_anchor);
-	if (XR_FAILED(result)) {
-		log_warnf("xrTryGetPerceptionAnchorFromSpatialAnchorMSFT failed: %s", openxr_string(result));
-		return false;
-	}
-	return true;
-#else
-	log_warn("anchor_oxr_get_perception_anchor not available outside of Windows UWP!");
-	return false;
-#endif
+	return xr_ext_msft_anchor_interop_try_get_perception_anchor(anchor_data->anchor, perception_spatial_anchor);
 }
 
 } // namespace sk

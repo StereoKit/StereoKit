@@ -196,6 +196,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="xr_backends\extensions\msft_anchor_interop.cpp" />
     <ClCompile Include="xr_backends\extensions\msft_bridge.cpp" />
     <ClCompile Include="xr_backends\extensions\oculus_audio.cpp" />
+    <ClCompile Include="xr_backends\extensions\time.cpp" />
     <ClCompile Include="xr_backends\offscreen.cpp" />
     <ClCompile Include="xr_backends\openxr.cpp" />
     <ClCompile Include="xr_backends\anchor_openxr_msft.cpp" />
@@ -292,6 +293,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="xr_backends\extensions\msft_anchor_interop.h" />
     <ClInclude Include="xr_backends\extensions\msft_bridge.h" />
     <ClInclude Include="xr_backends\extensions\oculus_audio.h" />
+    <ClInclude Include="xr_backends\extensions\time.h" />
     <ClInclude Include="xr_backends\offscreen.h" />
     <ClInclude Include="xr_backends\openxr.h" />
     <ClInclude Include="xr_backends\anchor_openxr_msft.h" />

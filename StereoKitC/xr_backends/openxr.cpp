@@ -27,6 +27,7 @@
 #include "../systems/world.h"
 #include "../asset_types/anchor.h"
 
+#include "extensions/time.h"
 #include "extensions/oculus_audio.h"
 #include "extensions/msft_bridge.h"
 #include "extensions/msft_anchor_interop.h"
@@ -45,19 +46,9 @@
 #include <unistd.h> // gettid
 #endif
 
-#if defined(SK_OS_ANDROID) || defined(SK_OS_LINUX)
-#include <time.h>
-#endif
-
 namespace sk {
 
 ///////////////////////////////////////////
-
-typedef struct openxr_system_t {
-	bool (*func_initialize)(void);
-	void (*func_step      )(void);
-	void (*func_shutdown  )(void);
-} openxr_system_t;
 
 typedef struct context_callback_t {
 	void (*callback)(void* context);
@@ -118,13 +109,14 @@ XrReferenceSpaceType     xr_refspace;
 
 bool32_t openxr_try_get_app_space   (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
 void     openxr_list_layers         (array_t<const char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
-XrTime   openxr_acquire_time        ();
 bool     openxr_blank_frame         ();
 bool     is_ext_explicitly_requested(const char* extension_name);
 
 ///////////////////////////////////////////
 
 void openxr_register_systems() {
+	xr_ext_time_register();
+
 	oxri_register();
 	anchors_register();
 
@@ -392,35 +384,11 @@ void *openxr_get_luid() {
 
 ///////////////////////////////////////////
 
-XrTime openxr_acquire_time() {
-	XrTime result = {};
-#ifdef XR_USE_TIMESPEC
-	struct timespec time;
-	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
-		XR_FAILED(xr_extensions.xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#else
-	LARGE_INTEGER time;
-	if (!QueryPerformanceCounter(&time) ||
-		XR_FAILED(xr_extensions.xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
-		log_warn("openxr_acquire_time failed to get current time!");
-	}
-#endif
-	return result;
-}
-
-///////////////////////////////////////////
-
 bool openxr_init() {
 	if (!openxr_create_system())
 		return false;
 
 	device_data.display_type = display_type_stereo;
-
-	// A number of other items also use the xr_time, so lets get this ready
-	// right away.
-	xr_time = openxr_acquire_time();
 
 	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
 	// yet, so it throws errors into the logs.
@@ -685,6 +653,36 @@ bool openxr_init() {
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 
+	// Initialize XR systems
+	for (int32_t i = 0; i < xr_system_list.count; i++) {
+		const xr_system_t* sys = &xr_system_list[i];
+
+		if (sys->func_initialize) {
+
+			xr_system_ sys_result = sys->func_initialize();
+			if (sys_result == xr_system_fail_critical) {
+				// If the system fails critically, we need to fail
+				// initialization entirely!
+				log_infof("Critical failure in XR system #%d!", i);
+				openxr_cleanup();
+				return false;
+
+			} else if (sys_result == xr_system_fail) {
+				// If the system fails normally, no worries, we just skip
+				// adding any of its callbacks!
+				continue;
+			}
+		}
+
+		if (sys->func_shutdown  ) xr_systems_shutdown  .add(sys->func_shutdown  );
+		if (sys->func_step_begin) xr_systems_step_begin.add(sys->func_step_begin);
+		if (sys->func_step_end  ) xr_systems_step_end  .add(sys->func_step_end  );
+	}
+
+	// A number of other items use the xr_time, so lets get this ready as soon as
+	// we're able.
+	xr_time = xr_ext_time_acquire_time();
+
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
@@ -712,18 +710,6 @@ bool openxr_init() {
 	if (sys_info->overlay_app && sk_get_settings_ref()->blend_preference == display_blend_none) {
 		log_diag("Overlay app defaulting to 'blend' display_blend.");
 		device_data.display_blend = display_blend_blend;
-	}
-
-	for (int32_t i = 0; i < xr_system_list.count; i++) {
-		const xr_system_t* sys = &xr_system_list[i];
-
-		if (sys->func_initialize != nullptr && sys->func_initialize() == false) {
-			break;
-		}
-
-		if (sys->func_shutdown  ) xr_systems_shutdown  .add(sys->func_shutdown  );
-		if (sys->func_step_begin) xr_systems_step_begin.add(sys->func_step_begin);
-		if (sys->func_step_end  ) xr_systems_step_end  .add(sys->func_step_end  );
 	}
 
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
@@ -1165,7 +1151,8 @@ bool openxr_poll_events() {
 ///////////////////////////////////////////
 
 bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
-	if (time == 0) time = xr_time;
+	if (time == 0)
+		time = xr_time;
 
 	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 	XrResult        res            = xrLocateSpace(space, xr_app_space, time, &space_location);
@@ -1180,7 +1167,8 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 ///////////////////////////////////////////
 
 bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, XrTime time) {
-	if (time == 0) time = xr_time;
+	if (time == 0)
+		time = xr_time;
 
 	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
 	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION, &gaze_sample_time };

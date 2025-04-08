@@ -14,6 +14,30 @@
 
 #include "openxr.h"
 
+#if defined(SK_OS_ANDROID)
+	#define XR_USE_PLATFORM_ANDROID
+	#define XR_USE_TIMESPEC
+	#define XR_USE_GRAPHICS_API_OPENGL_ES
+
+#elif defined(SK_OS_LINUX)
+	#define XR_USE_PLATFORM_EGL
+	#define XR_USE_TIMESPEC
+	#define XR_USE_GRAPHICS_API_OPENGL_ES
+
+#elif defined(SK_OS_WEB)
+	#error OpenXR not supported on web
+
+#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+	#define XR_USE_PLATFORM_WIN32
+
+	#if defined(SKG_FORCE_OPENGL)
+		#define XR_USE_GRAPHICS_API_OPENGL
+	#else
+		#define XR_USE_GRAPHICS_API_D3D11
+	#endif
+
+#endif
+
 #if defined(XR_USE_GRAPHICS_API_D3D11)
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
