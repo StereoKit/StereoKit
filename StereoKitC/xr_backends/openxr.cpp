@@ -28,6 +28,7 @@
 #include "../asset_types/anchor.h"
 
 #include "extensions/ext_management.h"
+#include "extensions/debug_utils.h"
 #include "extensions/time.h"
 #include "extensions/oculus_audio.h"
 #include "extensions/msft_bridge.h"
@@ -83,7 +84,6 @@ vec2                 xr_bounds_size       = {};
 pose_t               xr_bounds_pose       = pose_identity;
 pose_t               xr_bounds_pose_local = pose_identity;
 
-XrDebugUtilsMessengerEXT xr_debug = {};
 XrReferenceSpaceType     xr_refspace;
 
 ///////////////////////////////////////////
@@ -96,6 +96,7 @@ bool     is_ext_explicitly_requested(const char* extension_name);
 ///////////////////////////////////////////
 
 void openxr_register_systems() {
+	xr_ext_debug_utils_register();
 	xr_ext_time_register();
 
 	oxri_register();
@@ -174,24 +175,6 @@ void openxr_show_ext_table(array_t<const char*> exts_request, array_t<const char
 }
 
 ///////////////////////////////////////////
-
-#if defined(SK_DEBUG)
-XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFlagsEXT severity,
-                                                   XrDebugUtilsMessageTypeFlagsEXT,
-                                                   const XrDebugUtilsMessengerCallbackDataEXT *msg,
-                                                   void*) {
-	// Print the debug message we got! There's a bunch more info we could
-	// add here too, but this is a pretty good start, and you can always
-	// add a breakpoint this line!
-	log_ level = log_diagnostic;
-	if      (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT  ) level = log_error;
-	else if (severity & XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = log_warning;
-	log_writef(level, "[<~mag>xr<~clr>] %s: %s", msg->functionName, msg->message);
-
-	// Returning XR_TRUE here will force the calling function to fail
-	return (XrBool32)XR_FALSE;
-}
-#endif
 
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
@@ -295,30 +278,6 @@ bool openxr_create_system() {
 
 	// Create links to the extension functions
 	xr_extensions = openxr_create_extension_table(xr_instance);
-
-#if defined(SK_DEBUG)
-	// Set up a really verbose debug log! Great for dev, but turn this off or
-	// down for final builds. WMR doesn't produce much output here, but it
-	// may be more useful for other runtimes?
-	// Here's some extra information about the message types and severities:
-	// https://www.khronos.org/registry/OpenXR/specs/1.0/html/xrspec.html#debug-message-categorization
-	XrDebugUtilsMessengerCreateInfoEXT debug_info = { XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-	debug_info.messageTypes =
-		XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT     |
-		XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  |
-		XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-		XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
-	debug_info.messageSeverities =
-		//XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-		XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT    |
-		XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-		XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-
-	debug_info.userCallback = openxr_debug_messenger_callback;
-	// Start up the debug utils!
-	if (xr_ext.EXT_debug_utils == xr_ext_active)
-		xr_extensions.xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &xr_debug);
-#endif
 
 	// Request a form factor from the device (HMD, Handheld, etc.)
 	XrSystemGetInfo system_info = { XR_TYPE_SYSTEM_GET_INFO };
@@ -889,7 +848,6 @@ void openxr_cleanup() {
 
 		// Release all the other OpenXR resources that we've created!
 		// What gets allocated, must get deallocated!
-		if (xr_debug      != XR_NULL_HANDLE) { xr_extensions.xrDestroyDebugUtilsMessengerEXT(xr_debug); xr_debug = {}; }
 		if (xr_head_space != XR_NULL_HANDLE) { xrDestroySpace   (xr_head_space); xr_head_space = {}; }
 		if (xr_app_space  != XR_NULL_HANDLE) { xrDestroySpace   (xr_app_space ); xr_app_space  = {}; }
 		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }

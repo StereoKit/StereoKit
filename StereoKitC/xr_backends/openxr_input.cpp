@@ -10,6 +10,7 @@
 #include "openxr.h"
 #include "openxr_extensions.h"
 #include "openxr_input.h"
+#include "extensions/ext_management.h"
 #include "../hands/hand_oxr_controller.h"
 #include "../hands/input_hand.h"
 #include "../systems/input.h"
@@ -97,7 +98,7 @@ void oxri_register() {
 	system.func_initialize = { [](void*) { return oxri_init() ? xr_system_succeed : xr_system_fail_critical; } };
 	system.func_shutdown   = { oxri_shutdown };
 	system.func_step_begin = { oxri_update_frame };
-	openxr_sys_register(system);
+	ext_management_sys_register(system);
 }
 
 ///////////////////////////////////////////

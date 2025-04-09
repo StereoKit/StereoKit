@@ -5,6 +5,7 @@
  */
 
 #include "../openxr_platform.h"
+#include "ext_management.h"
 #include "time.h"
 
 // There are two different time conversion extensions, one for Windows, and one
@@ -38,7 +39,7 @@ void xr_ext_time_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
 	sys.func_initialize = { xr_ext_time_init };
-	openxr_sys_register(sys);
+	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////

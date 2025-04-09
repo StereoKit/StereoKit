@@ -5,6 +5,7 @@
 #include "../platforms/platform.h"
 
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/extensions/ext_management.h"
 #include "../xr_backends/anchor_openxr_msft.h"
 #include "../xr_backends/anchor_stage.h"
 
@@ -25,7 +26,7 @@ void anchors_register() {
 	system.func_shutdown   = { anchors_shutdown   };
 	system.func_step_begin = { anchors_step_begin };
 	system.func_step_end   = { anchors_step_end   };
-	openxr_sys_register(system);
+	ext_management_sys_register(system);
 }
 
 ///////////////////////////////////////////

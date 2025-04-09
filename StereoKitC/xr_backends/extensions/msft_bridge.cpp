@@ -5,6 +5,7 @@
  */
 
 #include "../openxr_platform.h"
+#include "ext_management.h"
 #include "msft_bridge.h"
 
 #if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
@@ -34,7 +35,7 @@ void xr_ext_msft_bridge_register() {
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME;
 	sys.request_exts[sys.request_ext_count++] = XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME;
 	sys.func_initialize = { xr_ext_msft_bridge_init };
-	openxr_sys_register(sys);
+	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////

@@ -22,11 +22,11 @@ typedef struct ext_management_state_t {
 
 	array_t<sk::xr_system_t> system_list;
 
+	array_t<sk::context_callback_t>    callbacks_pre_session_create;
 	array_t<sk::context_callback_t>    callbacks_step_begin;
 	array_t<sk::context_callback_t>    callbacks_step_end;
-	array_t<sk::context_callback_t>    callbacks_shutdown;
-	array_t<sk::context_callback_t>    callbacks_pre_session_create;
 	array_t<sk::poll_event_callback_t> callbacks_poll_event;
+	array_t<sk::context_callback_t>    callbacks_shutdown;
 } ext_management_state_t;
 static ext_management_state_t local = { };
 
@@ -36,8 +36,11 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-void openxr_sys_register(xr_system_t system) {
+void ext_management_sys_register(xr_system_t system) {
 	local.system_list.add(system);
+	if (system.func_pre_session.callback)
+		local.callbacks_pre_session_create.add(system.func_pre_session);
+
 	// TODO: This registers as a USER extension currently! It should be separate!
 	for (int32_t e = 0; e < system.request_ext_count; e++)
 		backend_openxr_ext_request(system.request_exts[e]);
@@ -149,7 +152,8 @@ bool ext_management_evt_session_ready() {
 
 void ext_management_cleanup() {
 
-	for (int32_t i = 0; i < local.callbacks_shutdown.count; i++) {
+	// Call shutdown in reverse order. Just in case.
+	for (int32_t i = local.callbacks_shutdown.count-1; i >= 0; i--) {
 		const context_callback_t* sys = &local.callbacks_shutdown[i];
 		sys->callback(sys->context);
 	}

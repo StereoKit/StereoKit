@@ -418,6 +418,8 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_XR_EXTS
+  StereoKitC/xr_backends/extensions/debug_utils.h
+  StereoKitC/xr_backends/extensions/debug_utils.cpp
   StereoKitC/xr_backends/extensions/time.h
   StereoKitC/xr_backends/extensions/time.cpp
   StereoKitC/xr_backends/extensions/oculus_audio.h

@@ -5,6 +5,7 @@
  */
 
 #include "../openxr_platform.h"
+#include "ext_management.h"
 #include "oculus_audio.h"
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
@@ -25,7 +26,7 @@ void xr_ext_oculus_audio_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_OCULUS_AUDIO_DEVICE_GUID_EXTENSION_NAME;
 	sys.func_initialize = { xr_ext_oculus_audio_init };
-	openxr_sys_register(sys);
+	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////

@@ -59,6 +59,7 @@ typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
+	context_callback_t        func_pre_session;
 	context_result_callback_t func_initialize;
 	context_callback_t        func_step_begin;
 	context_callback_t        func_step_end;
@@ -73,7 +74,6 @@ void openxr_step_end    ();
 bool openxr_poll_events ();
 bool openxr_render_frame();
 
-void          openxr_sys_register     (xr_system_t system);
 void*         openxr_get_luid         ();
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
 bool32_t      openxr_get_gaze_space   (pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);

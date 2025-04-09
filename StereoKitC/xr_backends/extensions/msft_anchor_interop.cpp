@@ -5,6 +5,7 @@
  */
 
 #include "../openxr_platform.h"
+#include "ext_management.h"
 #include "msft_bridge.h"
 
 #if defined(SK_OS_WINDOWS_UWP)
@@ -36,7 +37,7 @@ void xr_ext_msft_anchor_interop_register() {
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME;
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME;
 	sys.func_initialize = { xr_ext_msft_anchor_interop_init };
-	openxr_sys_register(sys);
+	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////

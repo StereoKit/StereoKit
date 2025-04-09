@@ -6,15 +6,16 @@
 
 #pragma once
 
-#include <openxr/openxr.h>
+#include "../openxr.h"
 
 namespace sk {
 
-bool is_ext_explicitly_requested(const char*   extension_name);
-bool ext_management_get_use_min ();
-void ext_management_mark_loaded (const char**  extension_names, int32_t count);
-void ext_management_get_exts    (const char*** out_ext_names, int32_t* out_count);
-void ext_management_get_excludes(const char*** out_ext_names, int32_t* out_count);
+bool is_ext_explicitly_requested          (const char*   extension_name);
+void ext_management_sys_register          (xr_system_t system);
+bool ext_management_get_use_min           ();
+void ext_management_mark_loaded           (const char**  extension_names, int32_t count);
+void ext_management_get_exts              (const char*** out_ext_names, int32_t* out_count);
+void ext_management_get_excludes          (const char*** out_ext_names, int32_t* out_count);
 void ext_management_cleanup               ();
 void ext_management_evt_pre_session_create();
 bool ext_management_evt_session_ready     ();
