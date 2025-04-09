@@ -422,6 +422,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/debug_utils.cpp
   StereoKitC/xr_backends/extensions/time.h
   StereoKitC/xr_backends/extensions/time.cpp
+  StereoKitC/xr_backends/extensions/overlay.h
+  StereoKitC/xr_backends/extensions/overlay.cpp
   StereoKitC/xr_backends/extensions/oculus_audio.h
   StereoKitC/xr_backends/extensions/oculus_audio.cpp
   StereoKitC/xr_backends/extensions/msft_bridge.h

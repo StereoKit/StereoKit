@@ -24,7 +24,7 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-void       xr_ext_debug_utils_pre_session(void*);
+void       xr_ext_debug_utils_pre_session(void*, XrBaseHeader*);
 xr_system_ xr_ext_debug_utils_initialize (void*);
 void       xr_ext_debug_utils_shutdown   (void*);
 
@@ -64,7 +64,7 @@ XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFl
 
 ///////////////////////////////////////////
 
-void xr_ext_debug_utils_pre_session(void*) {
+void xr_ext_debug_utils_pre_session(void*, XrBaseHeader*) {
 	// We do this on pre-session so we start getting debug messages earlier!
 
 	// Default to fail

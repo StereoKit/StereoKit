@@ -22,11 +22,11 @@ typedef struct ext_management_state_t {
 
 	array_t<sk::xr_system_t> system_list;
 
-	array_t<sk::context_callback_t>    callbacks_pre_session_create;
-	array_t<sk::context_callback_t>    callbacks_step_begin;
-	array_t<sk::context_callback_t>    callbacks_step_end;
-	array_t<sk::poll_event_callback_t> callbacks_poll_event;
-	array_t<sk::context_callback_t>    callbacks_shutdown;
+	array_t<sk::create_info_callback_t> callbacks_pre_session_create;
+	array_t<sk::context_callback_t>     callbacks_step_begin;
+	array_t<sk::context_callback_t>     callbacks_step_end;
+	array_t<sk::poll_event_callback_t>  callbacks_poll_event;
+	array_t<sk::context_callback_t>     callbacks_shutdown;
 } ext_management_state_t;
 static ext_management_state_t local = { };
 
@@ -85,9 +85,9 @@ void ext_management_get_excludes(const char*** out_ext_names, int32_t* out_count
 
 ///////////////////////////////////////////
 
-void ext_management_evt_pre_session_create() {
+void ext_management_evt_pre_session_create(XrSessionCreateInfo* ref_session_info) {
 	for (int32_t i = 0; i < local.callbacks_pre_session_create.count; i++) {
-		local.callbacks_pre_session_create[i].callback(local.callbacks_pre_session_create[i].context);
+		local.callbacks_pre_session_create[i].callback(local.callbacks_pre_session_create[i].context, (XrBaseHeader*)ref_session_info);
 	}
 	local.callbacks_pre_session_create.free();
 }
@@ -214,12 +214,31 @@ void backend_openxr_use_minimum_exts(bool32_t use_minimum_exts) {
 
 ///////////////////////////////////////////
 
+// Adapter to convert the public API's callback into our newer internal
+// callback.
+// TODO: update the public API to use the newer format callback!
+typedef struct pre_session_create_callback_data_t{
+	void (*callback)(void* context);
+	void*  context;
+} pre_session_create_callback_data_t;
+void invoke_pre_session_create_callback(void* context, XrBaseHeader*) {
+	pre_session_create_callback_data_t* callback_data = (pre_session_create_callback_data_t*)context;
+	if (callback_data->callback) {
+		callback_data->callback(callback_data->context);
+	}
+	sk_free(context);
+}
+
 void backend_openxr_add_callback_pre_session_create(void (*on_pre_session_create)(void* context), void* context) {
 	if (local.exts_collected || sk_is_initialized()) {
 		log_err("backend_openxr_ pre_session must be called BEFORE StereoKit initialization!");
 		return;
 	}
-	local.callbacks_pre_session_create.add({ on_pre_session_create, context });
+
+	pre_session_create_callback_data_t* callback_data = sk_malloc_t(pre_session_create_callback_data_t, 1);
+	callback_data->callback = on_pre_session_create;
+	callback_data->context  = context;
+	local.callbacks_pre_session_create.add({ invoke_pre_session_create_callback, callback_data });
 }
 
 ///////////////////////////////////////////

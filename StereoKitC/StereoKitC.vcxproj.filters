@@ -276,6 +276,9 @@
     <ClCompile Include="xr_backends\extensions\debug_utils.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\overlay.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -577,6 +580,9 @@
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\extensions\debug_utils.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\overlay.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>

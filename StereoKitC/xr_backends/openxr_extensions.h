@@ -16,11 +16,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-#if defined(SK_DEBUG)
-	#define EXT_AVAILABLE_DEBUG true
-#else
-	#define EXT_AVAILABLE_DEBUG false
-#endif
 #if defined(SK_OS_ANDROID)
 	#define EXT_AVAILABLE_ANDROID true
 #else
@@ -39,26 +34,29 @@ namespace sk {
 // Extensions that are available for all supported platforms
 #define FOR_EACH_EXT_ALL(_) \
 	_(KHR_composition_layer_depth,       true) \
+	_(MSFT_first_person_observer,        true) \
+	_(MSFT_secondary_view_configuration, true) \
+\
 	_(EXT_hand_tracking,                 true) \
 	_(EXT_hand_tracking_data_source,     true) \
-	_(EXT_hand_interaction,              true) \
 	_(EXT_palm_pose,                     true) \
-	_(EXT_eye_gaze_interaction,          true) \
-	_(EXT_local_floor,                   true) \
-	_(FB_color_space,                    true) \
-	_(FB_spatial_entity,                 true) \
-	_(OCULUS_audio_device_guid,          true) \
-	_(MSFT_unbounded_reference_space,    true) \
 	_(MSFT_hand_tracking_mesh,           true) \
-	_(MSFT_hand_interaction,             true) \
-	_(MSFT_spatial_anchor,               true) \
-	_(MSFT_spatial_anchor_persistence,   true) \
-	_(MSFT_secondary_view_configuration, true) \
-	_(MSFT_first_person_observer,        true) \
-	_(MSFT_scene_understanding,          true) \
+\
+	_(EXT_eye_gaze_interaction,          true) \
 	_(BD_controller_interaction,         true) \
 	_(EXT_hp_mixed_reality_controller,   true) \
-	_(EXTX_overlay,                      true)
+	_(MSFT_hand_interaction,             true) \
+	_(EXT_hand_interaction,              true) \
+\
+	_(EXT_local_floor,                   true) \
+	_(MSFT_unbounded_reference_space,    true) \
+\
+	_(FB_color_space,                    true) \
+\
+	_(FB_spatial_entity,                 true) \
+	_(MSFT_spatial_anchor,               true) \
+	_(MSFT_spatial_anchor_persistence,   true) \
+	_(MSFT_scene_understanding,          true)
 
 // Android platform only
 #define FOR_EACH_EXT_ANDROID(_) \
@@ -68,10 +66,6 @@ namespace sk {
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
 	_(MNDX_egl_enable, EXT_AVAILABLE_LINUX)
-
-// Debug builds only
-#define FOR_EACH_EXT_DEBUG(_) \
-	_(EXT_debug_utils, EXT_AVAILABLE_DEBUG)
 
 ///////////////////////////////////////////
 // Extension functions
@@ -88,6 +82,7 @@ namespace sk {
 	_(xrCreateSpatialAnchorFromPersistedNameMSFT)\
 	_(xrUnpersistSpatialAnchorMSFT)              \
 	_(xrClearSpatialAnchorStoreMSFT)             \
+\
 	_(xrCreateSceneObserverMSFT)                 \
 	_(xrDestroySceneObserverMSFT)                \
 	_(xrCreateSceneMSFT)                         \
@@ -98,16 +93,17 @@ namespace sk {
 	_(xrLocateSceneComponentsMSFT)               \
 	_(xrEnumerateSceneComputeFeaturesMSFT)       \
 	_(xrGetSceneMeshBuffersMSFT)                 \
+\
 	_(xrGetVisibilityMaskKHR)                    \
+\
 	_(xrCreateHandTrackerEXT)                    \
 	_(xrDestroyHandTrackerEXT)                   \
 	_(xrLocateHandJointsEXT)                     \
 	_(xrCreateHandMeshSpaceMSFT)                 \
 	_(xrUpdateHandMeshMSFT)                      \
+\
 	_(xrEnumerateColorSpacesFB)                  \
-	_(xrSetColorSpaceFB)                         \
-	_(xrCreateDebugUtilsMessengerEXT)            \
-	_(xrDestroyDebugUtilsMessengerEXT)
+	_(xrSetColorSpaceFB)
 
 #if defined(_WIN32)
 #define FOR_EACH_PLATFORM_FUNCTION(_)
@@ -163,7 +159,6 @@ typedef struct xr_ext_info_t {
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
 	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
 	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
-	FOR_EACH_EXT_DEBUG  (DEFINE_EXT_INFO);
 } xr_ext_info_t;
 extern xr_ext_info_t xr_ext;
 
@@ -219,7 +214,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 		FOR_EACH_EXT_ALL    (ADD_NAME)
 		FOR_EACH_EXT_ANDROID(ADD_NAME)
 		FOR_EACH_EXT_LINUX  (ADD_NAME)
-		FOR_EACH_EXT_DEBUG  (ADD_NAME)
 		else {
 			// We got to the end, and no-one loves this extension.
 			ref_all_available_exts->add(string_copy(exts[i].extensionName));
@@ -235,7 +229,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 		FOR_EACH_EXT_ALL    (CHECK_EXT)
 		FOR_EACH_EXT_ANDROID(CHECK_EXT)
 		FOR_EACH_EXT_LINUX  (CHECK_EXT)
-		FOR_EACH_EXT_DEBUG  (CHECK_EXT)
 #undef CHECK_EXT
 	}
 	
@@ -245,11 +238,9 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 
 #undef DEFINE_EXT_INFO
 #undef EXT_AVAILABLE_ANDROID
-#undef EXT_AVAILABLE_DEBUG
 #undef FOR_EACH_EXT_ALL
 #undef FOR_EACH_EXT_ANDROID
 #undef FOR_EACH_EXT_LINUX
-#undef FOR_EACH_EXT_DEBUG
 
 #pragma warning( pop )
 }

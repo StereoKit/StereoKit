@@ -44,6 +44,11 @@ typedef struct context_callback_t {
 	void*        context;
 } context_callback_t;
 
+typedef struct create_info_callback_t {
+	void       (*callback)(void* context, XrBaseHeader* create_info);
+	void*        context;
+} create_info_callback_t;
+
 typedef struct context_result_callback_t {
 	xr_system_ (*callback)(void* context);
 	void*        context;
@@ -59,7 +64,7 @@ typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
-	context_callback_t        func_pre_session;
+	create_info_callback_t    func_pre_session;
 	context_result_callback_t func_initialize;
 	context_callback_t        func_step_begin;
 	context_callback_t        func_step_end;

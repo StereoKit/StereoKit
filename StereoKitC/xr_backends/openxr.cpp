@@ -29,6 +29,7 @@
 
 #include "extensions/ext_management.h"
 #include "extensions/debug_utils.h"
+#include "extensions/overlay.h"
 #include "extensions/time.h"
 #include "extensions/oculus_audio.h"
 #include "extensions/msft_bridge.h"
@@ -51,8 +52,6 @@
 namespace sk {
 
 ///////////////////////////////////////////
-
-
 
 XrFormFactor xr_config_form = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 const char *xr_request_layers[] = {
@@ -102,6 +101,7 @@ void openxr_register_systems() {
 	oxri_register();
 	anchors_register();
 
+	xr_ext_overlay_register();
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
 	xr_ext_msft_anchor_interop_register();
@@ -234,7 +234,7 @@ bool openxr_create_system() {
 	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
 	create_android.applicationVM       = backend_android_get_java_vm ();
 	create_android.applicationActivity = backend_android_get_activity();
-	create_info.next = (void*)&create_android;
+	xr_insert_next((XrBaseHeader*)&create_info, (XrBaseHeader*)&create_android);
 #endif
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
@@ -339,9 +339,13 @@ bool openxr_init() {
 	// See here for more info on Holographic Remoting's lifecycle:
 	// https://learn.microsoft.com/en-us/windows/mixed-reality/develop/native/holographic-remoting-create-remote-openxr?source=recommendations#connect-to-the-device
 
+	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
+	session_info.systemId = xr_system_id;
+
 	// Before we call xrCreateSession, lets fire an event for anyone that needs
-	// to set things up!
-	ext_management_evt_pre_session_create();
+	// to set things up! This gives extensions the opportunity to insert items
+	// into the session creation "next" chain.
+	ext_management_evt_pre_session_create(&session_info);
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be
 	// called before xrCreateSession
@@ -382,16 +386,8 @@ bool openxr_init() {
 #elif defined(XR_USE_GRAPHICS_API_D3D11)
 	gfx_binding.device = (ID3D11Device*)platform._d3d11_device;
 #endif
-	XrSessionCreateInfo session_info = { XR_TYPE_SESSION_CREATE_INFO };
-	session_info.next     = &gfx_binding;
-	session_info.systemId = xr_system_id;
-	XrSessionCreateInfoOverlayEXTX overlay_info = {XR_TYPE_SESSION_CREATE_INFO_OVERLAY_EXTX};
-	const sk_settings_t *settings = sk_get_settings_ref();
-	if (xr_ext.EXTX_overlay == xr_ext_active && settings->overlay_app) {
-		overlay_info.sessionLayersPlacement = settings->overlay_priority;
-		gfx_binding.next = &overlay_info;
-		sys_info->overlay_app = true;
-	}
+	xr_insert_next((XrBaseHeader*)&session_info, (XrBaseHeader*)&gfx_binding);
+
 	XrResult result = xrCreateSession(xr_instance, &session_info, &xr_session);
 
 	// Unable to start a session, may not have an MR device attached or ready
@@ -401,7 +397,7 @@ bool openxr_init() {
 		return false;
 	}
 
-		// On Android, tell OpenXR what kind of thread this is. This can be
+	// On Android, tell OpenXR what kind of thread this is. This can be
 	// important on Android systems so we don't get treated as a low priority
 	// thread by accident.
 #if defined(SK_OS_ANDROID)
