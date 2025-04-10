@@ -150,7 +150,6 @@ bool openxr_get_stage_bounds(vec2 *out_size, pose_t *out_pose, XrTime time) {
 			out_pose->orientation.x, out_pose->orientation.y, out_pose->orientation.z, out_pose->orientation.w);
 	}
 
-
 	return true;
 }
 
@@ -587,10 +586,6 @@ bool openxr_init() {
 		return false;
 	}
 
-	// A number of other items use the xr_time, so lets get this ready as soon as
-	// we're able.
-	xr_time = xr_ext_time_acquire_time();
-
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
 	// valid data, so we'll wait for that here.
@@ -609,15 +604,6 @@ bool openxr_init() {
 		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  world_origin_mode = origin_mode_local; break;
 		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: world_origin_mode = origin_mode_floor; break;
 		default:                                      world_origin_mode = origin_mode_local; break;
-	}
-
-	// If this is an overlay app, and the user has not explicitly requested a
-	// blend mode, then we'll auto-switch to 'blend', as that's likely the most
-	// appropriate mode for the app.
-	if (sys_info->overlay_app) log_diag("Starting as an overlay app.");
-	if (sys_info->overlay_app && sk_get_settings_ref()->blend_preference == display_blend_none) {
-		log_diag("Overlay app defaulting to 'blend' display_blend.");
-		device_data.display_blend = display_blend_blend;
 	}
 
 	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);

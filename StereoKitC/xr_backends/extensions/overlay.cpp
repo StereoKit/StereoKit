@@ -7,6 +7,7 @@
 #include "../../_stereokit.h"
 #include "ext_management.h"
 #include "overlay.h"
+#include "../../device.h"
 
 ///////////////////////////////////////////
 
@@ -37,9 +38,10 @@ void xr_ext_overlay_register() {
 ///////////////////////////////////////////
 
 void xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info) {
-	if (!backend_openxr_ext_enabled(XR_EXTX_OVERLAY_EXTENSION_NAME) ||
-		!sk_get_settings_ref()->overlay_app)
+	if (!backend_openxr_ext_enabled(XR_EXTX_OVERLAY_EXTENSION_NAME)) {
+		log_warn("Overlay was requested, but is not available on this system!");
 		return;
+	}
 
 	// overlay_info must be declared in a long lasting scope! The memory must
 	// remain alive at least until the session is created!
@@ -48,6 +50,15 @@ void xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info) {
 
 	// Insert our overlay info into the the session creation "next" chain
 	xr_insert_next(session_create_info, (XrBaseHeader*)&local.overlay_info);
+
+	// If this is an overlay app and the user has not explicitly requested a blend
+	// mode, then we'll auto-switch to 'blend', as that's likely the most
+	// appropriate mode for the app.
+	log_diag("Starting as an overlay app.");
+	if (sk_get_settings_ref()->blend_preference == display_blend_none) {
+		log_diag("Overlay app defaulting to 'blend' display_blend.");
+		device_data.display_blend = display_blend_blend;
+	}
 }
 
 } // namespace sk

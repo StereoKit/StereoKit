@@ -53,6 +53,10 @@ xr_system_ xr_ext_time_init(void*) {
 	// Load all extension functions
 	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS, xr_system_fail_critical);
 
+	// A number of items use the xr_time, so lets get this ready as soon as we're
+	// able.
+	xr_time = xr_ext_time_acquire_time();
+
 	return xr_system_succeed;
 }
 
