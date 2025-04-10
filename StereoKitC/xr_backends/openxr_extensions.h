@@ -48,9 +48,6 @@ namespace sk {
 	_(MSFT_hand_interaction,             true) \
 	_(EXT_hand_interaction,              true) \
 \
-	_(EXT_local_floor,                   true) \
-	_(MSFT_unbounded_reference_space,    true) \
-\
 	_(FB_color_space,                    true) \
 \
 	_(FB_spatial_entity,                 true) \

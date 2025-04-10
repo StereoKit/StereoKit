@@ -94,7 +94,11 @@ bool     is_ext_explicitly_requested(const char* extension_name);
 
 ///////////////////////////////////////////
 
-void openxr_register_systems() {
+void openxr_register_extensions() {
+	// These extensions require deep integration, so we just request them here.
+	backend_openxr_ext_request( XR_EXT_LOCAL_FLOOR_EXTENSION_NAME );
+	backend_openxr_ext_request( XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME );
+
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
 
@@ -197,7 +201,7 @@ bool openxr_create_system() {
 	}
 #endif
 
-	openxr_register_systems();
+	openxr_register_extensions();
 
 	// TODO: This all needs shifted over to ext_management!
 	array_t<const char*> exts_request   = {};
@@ -728,7 +732,7 @@ bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime t
 		case XR_REFERENCE_SPACE_TYPE_LOCAL_FLOOR_EXT: has_local_floor = true; break;
 		// It's possible runtimes may be providing this despite the extension
 		// not being enabled? So we're forcing it here.
-		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = xr_ext.MSFT_unbounded_reference_space == xr_ext_active; break;
+		case XR_REFERENCE_SPACE_TYPE_UNBOUNDED_MSFT:  has_unbounded   = backend_openxr_ext_enabled(XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME); break;
 		default: break;
 		}
 	}
