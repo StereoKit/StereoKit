@@ -424,6 +424,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/android_create_instance.h
   StereoKitC/xr_backends/extensions/android_create_instance.cpp
+  StereoKitC/xr_backends/extensions/android_thread.h
+  StereoKitC/xr_backends/extensions/android_thread.cpp
   StereoKitC/xr_backends/extensions/time.h
   StereoKitC/xr_backends/extensions/time.cpp
   StereoKitC/xr_backends/extensions/overlay.h

@@ -31,6 +31,7 @@
 #include "extensions/debug_utils.h"
 #include "extensions/loader_init.h"
 #include "extensions/android_create_instance.h"
+#include "extensions/android_thread.h"
 #include "extensions/overlay.h"
 #include "extensions/time.h"
 #include "extensions/oculus_audio.h"
@@ -46,10 +47,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#if defined(SK_OS_ANDROID)
-#include <unistd.h> // gettid
-#endif
 
 namespace sk {
 
@@ -107,6 +104,7 @@ bool openxr_register_extensions() {
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
 	xr_ext_android_create_instance_register();
+	xr_ext_android_thread_register();
 
 	oxri_register();
 	anchors_register();
@@ -395,15 +393,6 @@ bool openxr_init() {
 		return false;
 	}
 
-	// On Android, tell OpenXR what kind of thread this is. This can be
-	// important on Android systems so we don't get treated as a low priority
-	// thread by accident.
-#if defined(SK_OS_ANDROID)
-	if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
-		xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
-	}
-#endif
-
 	// Fetch the runtime name/info, for logging and for a few other checks
 	XrInstanceProperties inst_properties = { XR_TYPE_INSTANCE_PROPERTIES };
 	xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
@@ -580,6 +569,11 @@ bool openxr_init() {
 		openxr_cleanup();
 		return false;
 	}
+
+	// On Android, tell OpenXR what kind of thread this is. This can be
+	// important on Android systems so we don't get treated as a low priority
+	// thread by accident.
+	xr_ext_android_thread_set_type(xr_thread_type_render_main);
 
 	// Create reference spaces! So we can find stuff relative to them :) Some
 	// platforms still take time after session start before the spaces provide
@@ -876,11 +870,8 @@ void openxr_step_end() {
 		const sk_settings_t* settings = sk_get_settings_ref();
 		if (settings->standby_mode == standby_mode_pause) {
 			log_diagf("Sleeping until OpenXR session wakes");
-#if defined(SK_OS_ANDROID)
-			if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
-				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR, gettid());
-			}
-#endif
+			xr_ext_android_thread_set_type(xr_thread_type_app_work);
+
 			// Add a small delay before pausing audio since the sleeping path can
 			// be triggered by a regular shutdown, and it would be a waste to stop
 			// and resume audio when we're just going to shut down later.
@@ -896,11 +887,7 @@ void openxr_step_end() {
 			}
 			if (timer > timer_time) audio_resume();
 
-#if defined(SK_OS_ANDROID)
-			if (xr_ext.KHR_android_thread_settings == xr_ext_active) {
-				xr_extensions.xrSetAndroidApplicationThreadKHR(xr_session, XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR, gettid());
-			}
-#endif
+			xr_ext_android_thread_set_type(xr_thread_type_render_main);
 			log_diagf("Resuming from sleep");
 		} else if (settings->standby_mode == standby_mode_slow) {
 			platform_sleep(77);

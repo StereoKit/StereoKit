@@ -28,7 +28,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_msft_anchor_interop_init(void*);
+xr_system_ xr_ext_msft_anchor_interop_init    (void*);
+void       xr_ext_msft_anchor_interop_shutdown(void*);
 
 ///////////////////////////////////////////
 
@@ -37,6 +38,7 @@ void xr_ext_msft_anchor_interop_register() {
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_PERCEPTION_ANCHOR_INTEROP_EXTENSION_NAME;
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME;
 	sys.func_initialize = { xr_ext_msft_anchor_interop_init };
+	sys.func_shutdown   = { xr_ext_msft_anchor_interop_shutdown };
 	ext_management_sys_register(sys);
 }
 
@@ -53,6 +55,12 @@ xr_system_ xr_ext_msft_anchor_interop_init(void*) {
 
 	sk_get_info_ref()->perception_bridge_present = true;
 	return xr_system_succeed;
+}
+
+///////////////////////////////////////////
+
+xr_system_ xr_ext_msft_anchor_interop_shutdown(void*) {
+	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
 }
 
 ///////////////////////////////////////////

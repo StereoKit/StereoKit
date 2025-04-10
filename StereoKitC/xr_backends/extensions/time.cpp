@@ -31,7 +31,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_time_init(void*);
+xr_system_ xr_ext_time_init    (void*);
+void       xr_ext_time_shutdown(void*);
 
 ///////////////////////////////////////////
 
@@ -39,6 +40,7 @@ void xr_ext_time_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
 	sys.func_initialize = { xr_ext_time_init };
+	sys.func_shutdown   = { xr_ext_time_shutdown };
 	ext_management_sys_register(sys);
 }
 
@@ -58,6 +60,12 @@ xr_system_ xr_ext_time_init(void*) {
 	xr_time = xr_ext_time_acquire_time();
 
 	return xr_system_succeed;
+}
+
+///////////////////////////////////////////
+
+void xr_ext_time_shutdown(void*) {
+	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
 }
 
 ///////////////////////////////////////////

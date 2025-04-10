@@ -56,9 +56,7 @@ namespace sk {
 	_(MSFT_scene_understanding,          true)
 
 // Android platform only
-#define FOR_EACH_EXT_ANDROID(_) \
-	_(KHR_android_create_instance, EXT_AVAILABLE_ANDROID) \
-	_(KHR_android_thread_settings, EXT_AVAILABLE_ANDROID)
+#define FOR_EACH_EXT_ANDROID(_)
 
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
@@ -175,9 +173,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 	for (uint32_t i = 0; i < ext_count; i++) {
 		// These extensions are required for StereoKit to function
 		if (strcmp(exts[i].extensionName, XR_GFX_EXTENSION)  == 0) { ref_request_exts->add(XR_GFX_EXTENSION);  continue; }
-#if defined(SK_OS_ANDROID)
-		if (strcmp(exts[i].extensionName, "XR_KHR_android_create_instance") == 0) { ref_request_exts->add("XR_KHR_android_create_instance"); continue; }
-#endif
 
 		// Skip this extension if it's a specifically excluded one
 		bool skip = false;

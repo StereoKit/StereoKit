@@ -116,6 +116,8 @@ xr_system_ xr_ext_debug_utils_initialize(void*) {
 void xr_ext_debug_utils_shutdown(void*) {
 	if (local.messenger) xrDestroyDebugUtilsMessengerEXT(local.messenger);
 	local = {};
+
+	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
 }
 
 } // namespace sk

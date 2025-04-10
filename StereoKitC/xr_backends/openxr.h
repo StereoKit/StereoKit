@@ -26,6 +26,8 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 // multiple spots.
 #define _OPENXR_DEFINE_FN(name) PFN_##name name;
 #define OPENXR_DEFINE_FN(list) list(_OPENXR_DEFINE_FN)
+#define _OPENXR_CLEAR_FN(name) name = nullptr;
+#define OPENXR_CLEAR_FN(list) list(_OPENXR_CLEAR_FN)
 #define _OPENXR_DEFINE_FN_STATIC(name) static PFN_##name name;
 #define OPENXR_DEFINE_FN_STATIC(list) list(_OPENXR_DEFINE_FN_STATIC)
 #define _OPENXR_LOAD_FN_RESULT(name) if (xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name)))<0) { result = result && false; }
