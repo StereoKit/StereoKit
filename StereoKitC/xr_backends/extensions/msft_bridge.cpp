@@ -8,7 +8,7 @@
 #include "ext_management.h"
 #include "msft_bridge.h"
 
-#if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_WINDOWS)
+#ifdef XR_USE_PLATFORM_WIN32
 
 #include "../../_stereokit.h"
 #include <string.h>

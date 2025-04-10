@@ -193,8 +193,10 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="ui\ui_theming.cpp" />
     <ClCompile Include="utils\random.cpp" />
     <ClCompile Include="utils\sdf.cpp" />
+    <ClCompile Include="xr_backends\extensions\android_create_instance.cpp" />
     <ClCompile Include="xr_backends\extensions\debug_utils.cpp" />
     <ClCompile Include="xr_backends\extensions\ext_management.cpp" />
+    <ClCompile Include="xr_backends\extensions\loader_init.cpp" />
     <ClCompile Include="xr_backends\extensions\msft_anchor_interop.cpp" />
     <ClCompile Include="xr_backends\extensions\msft_bridge.cpp" />
     <ClCompile Include="xr_backends\extensions\oculus_audio.cpp" />
@@ -293,8 +295,10 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="ui\ui_theming.h" />
     <ClInclude Include="utils\random.h" />
     <ClInclude Include="utils\sdf.h" />
+    <ClInclude Include="xr_backends\extensions\android_create_instance.h" />
     <ClInclude Include="xr_backends\extensions\debug_utils.h" />
     <ClInclude Include="xr_backends\extensions\ext_management.h" />
+    <ClInclude Include="xr_backends\extensions\loader_init.h" />
     <ClInclude Include="xr_backends\extensions\msft_anchor_interop.h" />
     <ClInclude Include="xr_backends\extensions\msft_bridge.h" />
     <ClInclude Include="xr_backends\extensions\oculus_audio.h" />

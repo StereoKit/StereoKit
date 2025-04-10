@@ -29,6 +29,8 @@
 
 #include "extensions/ext_management.h"
 #include "extensions/debug_utils.h"
+#include "extensions/loader_init.h"
+#include "extensions/android_create_instance.h"
 #include "extensions/overlay.h"
 #include "extensions/time.h"
 #include "extensions/oculus_audio.h"
@@ -94,13 +96,17 @@ bool     is_ext_explicitly_requested(const char* extension_name);
 
 ///////////////////////////////////////////
 
-void openxr_register_extensions() {
+bool openxr_register_extensions() {
+	if (xr_ext_loader_init_register() == xr_system_fail_critical)
+		return false;
+
 	// These extensions require deep integration, so we just request them here.
 	backend_openxr_ext_request( XR_EXT_LOCAL_FLOOR_EXTENSION_NAME );
 	backend_openxr_ext_request( XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME );
 
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
+	xr_ext_android_create_instance_register();
 
 	oxri_register();
 	anchors_register();
@@ -109,6 +115,8 @@ void openxr_register_extensions() {
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
 	xr_ext_msft_anchor_interop_register();
+
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -184,23 +192,10 @@ bool openxr_create_system() {
 	xr_system_success = false;
 	xr_system_created = true;
 
-#if defined(SK_OS_ANDROID)
-	PFN_xrInitializeLoaderKHR ext_xrInitializeLoaderKHR;
-	xrGetInstanceProcAddr(
-		XR_NULL_HANDLE,
-		"xrInitializeLoaderKHR",
-		(PFN_xrVoidFunction *)(&ext_xrInitializeLoaderKHR));
-
-	XrLoaderInitInfoAndroidKHR init_android = { XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR };
-	init_android.applicationVM      = backend_android_get_java_vm ();
-	init_android.applicationContext = backend_android_get_activity();
-	if (XR_FAILED(ext_xrInitializeLoaderKHR((XrLoaderInitInfoBaseHeaderKHR *)&init_android))) {
-		log_fail_reasonf(90, log_warning, "Failed to initialize OpenXR loader");
+	if (!openxr_register_extensions()) {
+		openxr_cleanup();
 		return false;
 	}
-#endif
-
-	openxr_register_extensions();
 
 	// TODO: This all needs shifted over to ext_management!
 	array_t<const char*> exts_request   = {};
@@ -233,12 +228,12 @@ bool openxr_create_system() {
 	create_info.applicationInfo.apiVersion = XR_MAKE_VERSION(1,0,XR_VERSION_PATCH(XR_CURRENT_API_VERSION));
 	snprintf(create_info.applicationInfo.applicationName, sizeof(create_info.applicationInfo.applicationName), "%s", sk_get_settings_ref()->app_name);
 	snprintf(create_info.applicationInfo.engineName,      sizeof(create_info.applicationInfo.engineName     ), "StereoKit");
-#if defined(SK_OS_ANDROID)
-	XrInstanceCreateInfoAndroidKHR create_android = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
-	create_android.applicationVM       = backend_android_get_java_vm ();
-	create_android.applicationActivity = backend_android_get_activity();
-	xr_insert_next((XrBaseHeader*)&create_info, (XrBaseHeader*)&create_android);
-#endif
+
+	// Execute any extensions that want to run right before creating the
+	// instance! This can also give them the chance to modify or chain items 
+	// into the create_info for the instance.
+	ext_management_evt_pre_instance_create(&create_info);
+
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
 
 	// If we succeeded, log some infor about our setup.

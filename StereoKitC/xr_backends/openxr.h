@@ -64,8 +64,11 @@ typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
+	create_info_callback_t    func_pre_instance;
 	create_info_callback_t    func_pre_session;
 	context_result_callback_t func_initialize;
+	// These callbacks are only called if "initialize" succeeds, or if
+	// "initialize" isn't specified.
 	context_callback_t        func_step_begin;
 	context_callback_t        func_step_end;
 	context_callback_t        func_shutdown;

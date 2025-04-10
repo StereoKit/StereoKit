@@ -8,7 +8,7 @@
 #include "ext_management.h"
 #include "oculus_audio.h"
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#ifdef XR_USE_PLATFORM_WIN32
 
 #include "../../systems/audio.h"
 

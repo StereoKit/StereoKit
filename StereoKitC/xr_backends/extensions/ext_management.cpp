@@ -22,6 +22,7 @@ typedef struct ext_management_state_t {
 
 	array_t<sk::xr_system_t> system_list;
 
+	array_t<sk::create_info_callback_t> callbacks_pre_instance_create;
 	array_t<sk::create_info_callback_t> callbacks_pre_session_create;
 	array_t<sk::context_callback_t>     callbacks_step_begin;
 	array_t<sk::context_callback_t>     callbacks_step_end;
@@ -38,8 +39,12 @@ namespace sk {
 
 void ext_management_sys_register(xr_system_t system) {
 	local.system_list.add(system);
+
+	// These callback hooks are _not_ dependant on a successful initialization callback
 	if (system.func_pre_session.callback)
 		local.callbacks_pre_session_create.add(system.func_pre_session);
+	if (system.func_pre_instance.callback)
+		local.callbacks_pre_instance_create.add(system.func_pre_instance);
 
 	// TODO: This registers as a USER extension currently! It should be separate!
 	for (int32_t e = 0; e < system.request_ext_count; e++)
@@ -81,6 +86,15 @@ void ext_management_get_exts(const char*** out_ext_names, int32_t* out_count) {
 void ext_management_get_excludes(const char*** out_ext_names, int32_t* out_count) {
 	*out_ext_names = local.exts_exclude.data;
 	*out_count     = local.exts_exclude.count;
+}
+
+///////////////////////////////////////////
+
+void ext_management_evt_pre_instance_create(XrInstanceCreateInfo* ref_instance_info) {
+	for (int32_t i = 0; i < local.callbacks_pre_instance_create.count; i++) {
+		local.callbacks_pre_instance_create[i].callback(local.callbacks_pre_instance_create[i].context, (XrBaseHeader*)ref_instance_info);
+	}
+	local.callbacks_pre_instance_create.free();
 }
 
 ///////////////////////////////////////////
@@ -164,11 +178,12 @@ void ext_management_cleanup() {
 
 	local.system_list .free();
 
-	local.callbacks_step_begin        .free();
-	local.callbacks_step_end          .free();
-	local.callbacks_shutdown          .free();
-	local.callbacks_pre_session_create.free();
-	local.callbacks_poll_event        .free();
+	local.callbacks_step_begin         .free();
+	local.callbacks_step_end           .free();
+	local.callbacks_shutdown           .free();
+	local.callbacks_pre_session_create .free();
+	local.callbacks_pre_instance_create.free();
+	local.callbacks_poll_event         .free();
 	local = {};
 }
 

@@ -10,17 +10,18 @@
 
 namespace sk {
 
-bool is_ext_explicitly_requested          (const char*   extension_name);
-void ext_management_sys_register          (xr_system_t system);
-bool ext_management_get_use_min           ();
-void ext_management_mark_loaded           (const char**  extension_names, int32_t count);
-void ext_management_get_exts              (const char*** out_ext_names, int32_t* out_count);
-void ext_management_get_excludes          (const char*** out_ext_names, int32_t* out_count);
-void ext_management_cleanup               ();
-void ext_management_evt_pre_session_create(XrSessionCreateInfo* ref_session_info);
-bool ext_management_evt_session_ready     ();
-void ext_management_evt_step_begin        ();
-void ext_management_evt_step_end          ();
-void ext_management_evt_poll_event        (const XrEventDataBuffer* event_data);
+bool is_ext_explicitly_requested           (const char*   extension_name);
+void ext_management_sys_register           (xr_system_t system);
+bool ext_management_get_use_min            ();
+void ext_management_mark_loaded            (const char**  extension_names, int32_t count);
+void ext_management_get_exts               (const char*** out_ext_names, int32_t* out_count);
+void ext_management_get_excludes           (const char*** out_ext_names, int32_t* out_count);
+void ext_management_cleanup                ();
+void ext_management_evt_pre_instance_create(XrInstanceCreateInfo* ref_instance_info);
+void ext_management_evt_pre_session_create (XrSessionCreateInfo*  ref_session_info);
+bool ext_management_evt_session_ready      ();
+void ext_management_evt_step_begin         ();
+void ext_management_evt_step_end           ();
+void ext_management_evt_poll_event         (const XrEventDataBuffer* event_data);
 
 }
