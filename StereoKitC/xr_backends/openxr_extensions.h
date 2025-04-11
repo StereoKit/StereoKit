@@ -16,11 +16,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-#if defined(SK_OS_ANDROID)
-	#define EXT_AVAILABLE_ANDROID true
-#else
-	#define EXT_AVAILABLE_ANDROID false
-#endif
 #if defined(SK_OS_LINUX)
 	#define EXT_AVAILABLE_LINUX true
 #else
@@ -54,9 +49,6 @@ namespace sk {
 	_(MSFT_spatial_anchor,               true) \
 	_(MSFT_spatial_anchor_persistence,   true) \
 	_(MSFT_scene_understanding,          true)
-
-// Android platform only
-#define FOR_EACH_EXT_ANDROID(_)
 
 // Linux platform only
 #define FOR_EACH_EXT_LINUX(_) \
@@ -100,21 +92,12 @@ namespace sk {
 	_(xrEnumerateColorSpacesFB)                  \
 	_(xrSetColorSpaceFB)
 
-#if defined(_WIN32)
-#define FOR_EACH_PLATFORM_FUNCTION(_)
-#elif defined(SK_OS_ANDROID)
-#define FOR_EACH_PLATFORM_FUNCTION(_)  \
-	_(xrSetAndroidApplicationThreadKHR)
-#else
-#define FOR_EACH_PLATFORM_FUNCTION(_)
-#endif
 
 ///////////////////////////////////////////
 
 #define DEFINE_PROC_MEMBER(name) PFN_##name name;
 struct xr_ext_table_t {
 	FOR_EACH_EXTENSION_FUNCTION(DEFINE_PROC_MEMBER);
-	FOR_EACH_PLATFORM_FUNCTION(DEFINE_PROC_MEMBER);
 	PFN_xrGetGraphicsRequirementsKHR xrGetGraphicsRequirementsKHR;
 };
 extern xr_ext_table_t xr_extensions;
@@ -123,7 +106,6 @@ extern xr_ext_table_t xr_extensions;
 inline xr_ext_table_t openxr_create_extension_table(XrInstance instance) {
 	xr_ext_table_t result = {};
 	FOR_EACH_EXTENSION_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
-	FOR_EACH_PLATFORM_FUNCTION(GET_INSTANCE_PROC_ADDRESS);
 	(void)xrGetInstanceProcAddr(instance, NAME_xrGetGraphicsRequirementsKHR, (PFN_xrVoidFunction*)((PFN_xrGetGraphicsRequirementsKHR)(&result.xrGetGraphicsRequirementsKHR)));
 	return result;
 }
@@ -131,8 +113,6 @@ inline xr_ext_table_t openxr_create_extension_table(XrInstance instance) {
 #undef DEFINE_PROC_MEMBER
 #undef GET_INSTANCE_PROC_ADDRESS
 #undef FOR_EACH_EXTENSION_FUNCTION
-#undef FOR_EACH_PLATFORM_FUNCTION
-#undef FOR_EACH_GRAPHICS_FUNCTION
 
 ///////////////////////////////////////////
 
@@ -152,7 +132,6 @@ typedef struct xr_ext_info_t {
 	xr_state_ gfx_extension;
 	xr_state_ time_extension;
 	FOR_EACH_EXT_ALL    (DEFINE_EXT_INFO);
-	FOR_EACH_EXT_ANDROID(DEFINE_EXT_INFO);
 	FOR_EACH_EXT_LINUX  (DEFINE_EXT_INFO);
 } xr_ext_info_t;
 extern xr_ext_info_t xr_ext;
@@ -204,7 +183,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 #define ADD_NAME(name, available) else if (available && strcmp("XR_"#name, exts[i].extensionName) == 0) {ref_request_exts->add("XR_"#name);}
 		if (false) {}
 		FOR_EACH_EXT_ALL    (ADD_NAME)
-		FOR_EACH_EXT_ANDROID(ADD_NAME)
 		FOR_EACH_EXT_LINUX  (ADD_NAME)
 		else {
 			// We got to the end, and no-one loves this extension.
@@ -219,7 +197,6 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 #define CHECK_EXT(name, available) else if (strcmp("XR_"#name, ref_request_exts->get(i)) == 0) {xr_ext.name = xr_ext_active;}
 		if (false) {}
 		FOR_EACH_EXT_ALL    (CHECK_EXT)
-		FOR_EACH_EXT_ANDROID(CHECK_EXT)
 		FOR_EACH_EXT_LINUX  (CHECK_EXT)
 #undef CHECK_EXT
 	}
@@ -229,9 +206,7 @@ inline bool openxr_list_extensions(array_t<const char*> extra_exts, array_t<cons
 }
 
 #undef DEFINE_EXT_INFO
-#undef EXT_AVAILABLE_ANDROID
 #undef FOR_EACH_EXT_ALL
-#undef FOR_EACH_EXT_ANDROID
 #undef FOR_EACH_EXT_LINUX
 
 #pragma warning( pop )

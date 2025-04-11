@@ -285,6 +285,9 @@
     <ClCompile Include="xr_backends\extensions\android_create_instance.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\android_thread.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -595,6 +598,9 @@
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\extensions\android_create_instance.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\android_thread.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>
