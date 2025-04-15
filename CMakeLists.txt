@@ -420,6 +420,8 @@ set(SK_SRC_XR_BACKENDS
 set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/debug_utils.h
   StereoKitC/xr_backends/extensions/debug_utils.cpp
+  StereoKitC/xr_backends/extensions/input_profiles.h
+  StereoKitC/xr_backends/extensions/input_profiles.cpp
   StereoKitC/xr_backends/extensions/loader_init.h
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/android_create_instance.h

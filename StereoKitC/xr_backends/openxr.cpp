@@ -29,6 +29,7 @@
 
 #include "extensions/ext_management.h"
 #include "extensions/debug_utils.h"
+#include "extensions/input_profiles.h"
 #include "extensions/loader_init.h"
 #include "extensions/android_create_instance.h"
 #include "extensions/android_thread.h"
@@ -105,6 +106,11 @@ bool openxr_register_extensions() {
 	xr_ext_time_register();
 	xr_ext_android_create_instance_register();
 	xr_ext_android_thread_register();
+
+	xr_profile_ext_hp_mr_controller_register     ();
+	xr_profile_ext_hand_interaction_register     ();
+	xr_profile_msft_hand_interaction_register    ();
+	xr_profile_bd_controller_interaction_register();
 
 	oxri_register();
 	anchors_register();
