@@ -471,6 +471,44 @@ vec2          input_xy_get    (input_xy_     xy_type)     { return xy_type     >
 
 ///////////////////////////////////////////
 
+void input_reset() {
+	// Set all poses to un-tracked.
+	ft_mutex_lock(local.mtx_poses);
+	local.evt_poses.clear();
+	ft_mutex_unlock(local.mtx_poses);
+	for (int32_t i = 0; i < local.curr_poses.count; i++) {
+		local.curr_poses[i].pos_tracked = track_state_lost;
+		local.curr_poses[i].rot_tracked = track_state_lost;
+	}
+
+	// If any buttons are pressed, send an event to un-press them
+	ft_mutex_lock(local.mtx_buttons);
+	local.evt_buttons.clear();
+	for (int32_t i = 0; i < local.curr_buttons.count; i++) {
+		if (local.curr_buttons[i] & button_state_active)
+			local.evt_buttons.add({(input_button_)i, false});
+	}
+	ft_mutex_unlock(local.mtx_buttons);
+
+	// Reset floats to 0
+	ft_mutex_lock(local.mtx_floats);
+	local.evt_floats.clear();
+	ft_mutex_unlock(local.mtx_floats);
+	for (int32_t i = 0; i < local.curr_floats.count; i++) {
+		local.curr_floats[i] = 0;
+	}
+
+	// Reset XYs to 0
+	ft_mutex_lock(local.mtx_xys);
+	local.evt_xys.clear();
+	ft_mutex_unlock(local.mtx_xys);
+	for (int32_t i = 0; i < local.curr_xys.count; i++) {
+		local.curr_xys[i] = vec2_zero;
+	}
+}
+
+///////////////////////////////////////////
+
 void input_pose_get_state(input_pose_ pose_type, track_state_* out_pos_tracked, track_state_* out_rot_tracked) {
 	if (pose_type >= 0 && pose_type < local.curr_poses.count) {
 		pose_info_t info = local.curr_poses[pose_type];

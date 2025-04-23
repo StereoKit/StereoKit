@@ -77,6 +77,7 @@ void          input_button_inject      (input_button_ button_type, bool value);
 button_state_ input_button_get         (input_button_ button_type);
 void          input_xy_inject          (input_xy_     xy_type, vec2 value);
 vec2          input_xy_get             (input_xy_     xy_type);
+void          input_reset              ();
 
 int32_t       input_add_pointer(input_source_ source);
 pointer_t    *input_get_pointer(int32_t id);

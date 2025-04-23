@@ -449,7 +449,6 @@ bool oxri_init() {
 		return false;
 	}
 
-	oxri_update_profiles();
 	return true;
 }
 
@@ -650,7 +649,7 @@ void oxri_update_frame(void*) {
 		XrActionStateBoolean state    = { XR_TYPE_ACTION_STATE_BOOLEAN  };
 		get_info.action = local.actions[xra_type_bool][i];
 		xrGetActionStateBoolean(xr_session, &get_info, &state);
-		input_button_inject((input_button_)i, state.isActive);
+		input_button_inject((input_button_)i, state.currentState);
 	}
 
 	for (int32_t i = 0; i < local.actions[xra_type_float].count; i++) {
@@ -766,6 +765,8 @@ void oxri_poll(void*, XrEventDataBuffer* event) {
 ///////////////////////////////////////////
 
 void oxri_update_profiles() {
+	bool reset = false;
+
 	for (int32_t t = 0; t < local.top_levels.count; t++) {
 		xr_top_level_t* top_level = &local.top_levels[t];
 
@@ -773,7 +774,7 @@ void oxri_update_profiles() {
 		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, top_level->path, &new_profile)))
 			continue;
 
-		if (new_profile.interactionProfile == local.profiles[top_level->active_profile].profile)
+		if (top_level->active_profile >= 0 && new_profile.interactionProfile == local.profiles[top_level->active_profile].profile)
 			continue;
 
 		for (int32_t p = 0; p < local.profiles.count; p++) {
@@ -781,6 +782,8 @@ void oxri_update_profiles() {
 
 			if (profile->top_level_path != top_level->path || profile->profile == new_profile.interactionProfile)
 				continue;
+
+			reset = true;
 
 			top_level->active_profile = p;
 			if      (string_eq(top_level->name, "/user/hand/left" )) { local.active_offset[handed_left ] = profile->offset; input_controller_set_hand(handed_left,  profile->is_hand); }
@@ -790,6 +793,9 @@ void oxri_update_profiles() {
 			break;
 		}
 	}
+
+	if (reset)
+		input_reset();
 }
 
 ///////////////////////////////////////////
