@@ -103,7 +103,7 @@ void oxri_register() {
 
 void oxri_register_profile(xr_interaction_profile_t profile) {
 	if (local.registration_finished == true) {
-		log_errf("Interaction profile '%s' was registered too late! Please add it before stereokit initialization.", profile.name);
+		log_errf("Interaction profile '%s' was registered too late! Please add it before StereoKit initialization.", profile.name);
 		return;
 	}
 	// If we already have a registered profile with this name, we prefer the
@@ -117,63 +117,56 @@ void oxri_register_profile(xr_interaction_profile_t profile) {
 
 ///////////////////////////////////////////
 
-bool oxri_bind_profile(xr_interaction_profile_t profile, xrc_profile_info_t *out_profile) {
-	*out_profile = {};
-	bool result = true;
+bool oxri_bind_profile(xr_interaction_profile_t *profiles, int32_t profile_count) {
+	array_t<XrActionSuggestedBinding> binds = {};
+	char                              buffer[XR_MAX_PATH_LENGTH];
+	for (int32_t p = 0; p < profile_count; p++) {
+		xr_interaction_profile_t* profile = &profiles[p];
 
-	// Notify our extensions that we're adding a profile! This is for
-	// extensions such as EXT_palm_pose that inject poses into _all_ input
-	// profiles involving a hand.
-	ext_management_evt_profile_suggest(&profile);
+		// Notify our extensions that we're adding a profile! This is for
+		// extensions such as EXT_palm_pose that inject poses into _all_ input
+		// profiles involving a hand.
+		ext_management_evt_profile_suggest(profile);
 
-	XrPath   top_level_path;
-	XrResult xr = xrStringToPath(xr_instance, profile.top_level_path, &top_level_path);
-	if (XR_FAILED(xr)) {
-		log_errf("xrStringToPath failed for %s: [%s]", profile.top_level_path,openxr_string(xr));
-		return false;
-	}
+		XrPath   top_level_path;
+		XrResult xr = xrStringToPath(xr_instance, profile->top_level_path, &top_level_path);
+		if (XR_FAILED(xr)) {
+			log_errf("xrStringToPath failed for %s: [%s]", profile->top_level_path,openxr_string(xr));
+			binds.free();
+			return false;
+		}
 
-	char                      buffer[256];
-	XrActionSuggestedBinding* binds    = sk_malloc_t(XrActionSuggestedBinding, profile.binding_ct*2);
-	int32_t                   bind_ct  = 0;
-	for (int32_t i = 0; i < profile.binding_ct; i++) {
-		binds[bind_ct].action = oxri_get_or_create_action((xra_type_)profile.binding[i].xra_type, (uint32_t)profile.binding[i].xra_type_val);
+		for (int32_t i = 0; i < profile->binding_ct; i++) {
+			XrActionSuggestedBinding bind = {};
+			bind.action = oxri_get_or_create_action((xra_type_)profile->binding[i].xra_type, (uint32_t)profile->binding[i].xra_type_val);
 
-		// TODO This needs modification for outputs??
-		snprintf(buffer, sizeof(buffer), "%s/input/%s", profile.top_level_path, profile.binding[i].path);
-		xr = xrStringToPath(xr_instance, buffer, &binds[bind_ct].binding);
-		if (XR_FAILED(xr)) { log_errf("xrStringToPath failed for %s '%s': [%s]", profile.name, buffer, openxr_string(xr)); result = false; goto finish; }
-		else               { bind_ct++; }
+			// TODO This needs modification for outputs??
+			snprintf(buffer, sizeof(buffer), "%s/input/%s", profile->top_level_path, profile->binding[i].path);
+			xr = xrStringToPath(xr_instance, buffer, &bind.binding);
+			if (XR_FAILED(xr)) { log_errf("xrStringToPath failed for %s '%s': [%s]", profile->name, buffer, openxr_string(xr)); binds.free(); return false; }
+			else               { binds.add(bind); }
+		}
 	}
 
 	XrPath interaction_path;
-	snprintf(buffer, sizeof(buffer), "/interaction_profiles/%s", profile.name);
+	snprintf(buffer, sizeof(buffer), "/interaction_profiles/%s", profiles[0].name);
 	xrStringToPath(xr_instance, buffer, &interaction_path);
 
 	XrInteractionProfileSuggestedBinding suggested_binds = { XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
 	suggested_binds.interactionProfile     = interaction_path;
-	suggested_binds.suggestedBindings      = binds;
-	suggested_binds.countSuggestedBindings = bind_ct;
+	suggested_binds.suggestedBindings      = binds.data;
+	suggested_binds.countSuggestedBindings = binds.count;
 	if (XR_FAILED(xrSuggestInteractionProfileBindings(xr_instance, &suggested_binds))) {
-		result = false;
-		goto finish;
+		binds.free();
+		return false;
 	}
-
-	out_profile->top_level_path = top_level_path;
-	out_profile->profile        = interaction_path;
-	out_profile->name           = profile.name;
-	out_profile->is_hand        = profile.is_hand;
-	out_profile->offset         = profile.palm_offset;
-
-finish:
-	sk_free(binds);
-	return result;
+	binds.free();
+	return true;
 }
 
 ///////////////////////////////////////////
 
 bool oxri_init() {
-	local = {};
 	local.active_offset[0] = pose_identity;
 	local.active_offset[1] = pose_identity;
 	local.eyes_pointer     = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
@@ -226,13 +219,13 @@ bool oxri_init() {
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = palm_offset;
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/click"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/click"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "menu/click"       };
 		oxri_register_profile(profile_r);
 	}
 
@@ -254,11 +247,11 @@ bool oxri_init() {
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"      };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "menu/click"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"      };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "menu/click"    };
 		oxri_register_profile(profile_r);
 	}
 
@@ -284,15 +277,15 @@ bool oxri_init() {
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "system/click"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_x1,      "a/click"          };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_x2,      "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "system/click"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,      "a/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,      "b/click"          };
 		oxri_register_profile(profile_r);
 	}
 
@@ -318,15 +311,15 @@ bool oxri_init() {
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_trigger, "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_grip,    "squeeze/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_l_stick,      "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_stick,  "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
 
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_x1,     "a/click"          };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_x2,     "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
 		oxri_register_profile(profile_r);
 	}
 
@@ -347,40 +340,87 @@ bool oxri_init() {
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_identity;
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_l_trigger, "select/click"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_l_menu,   "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "select/click"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,   "menu/click"       };
 		oxri_register_profile(profile_r);
 	}
 
 	// Suggest all our input profiles
 	local.registration_finished = true;
-	for (int32_t i = 0; i < local.registered_profiles.count; i++) {
-		xr_interaction_profile_t* profile   = &local.registered_profiles[i];
-		xrc_profile_info_t        bind_info = {};
-		if (oxri_bind_profile(*profile, &bind_info)) {
-			local.profiles.add(bind_info);
+	// We can only submit one binding per interaction profile, so here we
+	// combine each uniqu top-level path belonging to the same interaction
+	// profile.
 
-			// Track all our top level paths
-			bool found = false;
-			for (int32_t t=0; t<local.top_levels.count; t++) {
-				xr_top_level_t* top_level = &local.top_levels[t];
-				if (string_eq(top_level->name, profile->top_level_path)) {
-					found = true;
+	// Figure out all the unique interaction profiles
+	array_t<const char*>              unique_profiles = {};
+	array_t<xr_interaction_profile_t> top_levels      = {};
+	for (int32_t p = 0; p < local.registered_profiles.count; p++) {
+		// Make sure we haven't registered this interaction profile yet
+		const char* curr_profile = local.registered_profiles[p].name;
+		bool        found        = false;
+		for (int32_t u = 0; u < unique_profiles.count; u++) {
+			if (string_eq(unique_profiles[u], curr_profile)) {
+				found = true;
+				break;
+			}
+		}
+		if (found) continue;
+
+		// Find all top-levels associated with this interaction profile.
+		unique_profiles.add(curr_profile);
+		top_levels     .clear();
+		for (int32_t t = p; t < local.registered_profiles.count; t++) {
+			if (!string_eq(local.registered_profiles[t].name, curr_profile)) continue;
+			// Check if we've added this top-level already
+			bool unique_top_level = true;
+			for (int32_t i = 0; i < top_levels.count; i++) {
+				if (string_eq(top_levels[i].name, curr_profile) && string_eq(top_levels[i].top_level_path, local.registered_profiles[t].top_level_path)) {
+					unique_top_level = false;
 					break;
 				}
 			}
-			if (!found) {
-				xr_top_level_t top = {};
-				top.name           = profile->top_level_path;
-				top.active_profile = -1;
-				top.id             = local.top_levels.count;
-				xrStringToPath(xr_instance, top.name, &top.path);
-				local.top_levels.add(top);
+			top_levels.add(local.registered_profiles[t]);
+		}
+
+		// Now register it
+		if (oxri_bind_profile(top_levels.data, top_levels.count)) {
+			for (int32_t t = 0; t < top_levels.count; t++) {
+
+				char buffer[XR_MAX_PATH_LENGTH];
+				snprintf(buffer, sizeof(buffer), "/interaction_profiles/%s", top_levels[t].name);
+
+				xrc_profile_info_t bind_info = {};
+				xrStringToPath(xr_instance, top_levels[t].top_level_path, &bind_info.top_level_path);
+				xrStringToPath(xr_instance, buffer,                       &bind_info.profile);
+				bind_info.name    = top_levels[t].name;
+				bind_info.is_hand = top_levels[t].is_hand;
+				bind_info.offset  = top_levels[t].palm_offset;
+				local.profiles.add(bind_info);
+
+				// Track all our top level paths
+				bool found = false;
+				for (int32_t i = 0; i < local.top_levels.count; i++) {
+					xr_top_level_t* top_level = &local.top_levels[i];
+					if (string_eq(top_level->name, top_levels[t].top_level_path)) {
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					xr_top_level_t top = {};
+					top.name           = top_levels[t].top_level_path;
+					top.active_profile = -1;
+					top.id             = local.top_levels.count;
+					xrStringToPath(xr_instance, top.name, &top.path);
+					local.top_levels.add(top);
+				}
 			}
 		}
 	}
+	unique_profiles.free();
+	top_levels     .free();
 	local.registered_profiles.free();
 
 	// Create a space/reference frame for each input pose action
@@ -729,16 +769,12 @@ void oxri_update_profiles() {
 	for (int32_t t = 0; t < local.top_levels.count; t++) {
 		xr_top_level_t* top_level = &local.top_levels[t];
 
-		log_infof("Checking top level %s", top_level->name);
 		XrInteractionProfileState new_profile = { XR_TYPE_INTERACTION_PROFILE_STATE };
 		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, top_level->path, &new_profile)))
 			continue;
 
-		log_infof("Found top level %s", top_level->name);
 		if (new_profile.interactionProfile == local.profiles[top_level->active_profile].profile)
 			continue;
-
-		log_infof("Top level profile change %s", top_level->name);
 
 		for (int32_t p = 0; p < local.profiles.count; p++) {
 			xrc_profile_info_t* profile = &local.profiles[p];
