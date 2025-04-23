@@ -13,7 +13,6 @@
 #include "../systems/input.h"
 #include "../hands/input_hand.h"
 #include "../sk_math.h"
-#include "../xr_backends/openxr_extensions.h"
 
 #include <float.h>
 

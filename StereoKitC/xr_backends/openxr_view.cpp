@@ -9,7 +9,9 @@
 #if defined(SK_XR_OPENXR)
 
 #include "openxr.h"
-#include "openxr_extensions.h"
+#include "openxr_platform.h"
+#include "extensions/fb_colorspace.h"
+#include "extensions/composition_depth.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
@@ -260,20 +262,7 @@ bool openxr_views_create() {
 	openxr_preferred_format(&xr_preferred_color_format, &xr_preferred_depth_format);
 
 	// Tell OpenXR what sort of color space we're rendering in
-	if (xr_ext.FB_color_space == xr_ext_active) {
-		const char    *colorspace_str = "XR_COLOR_SPACE_REC709_FB";
-		XrColorSpaceFB colorspace     =  XR_COLOR_SPACE_REC709_FB;
-		skg_tex_fmt_   fmt            = skg_tex_fmt_from_native(xr_preferred_color_format);
-
-		// Maybe?
-		if (fmt != skg_tex_fmt_bgra32 && fmt != skg_tex_fmt_rgba32) {
-			colorspace_str = "XR_COLOR_SPACE_REC2020_FB";
-			colorspace     =  XR_COLOR_SPACE_REC2020_FB;
-		}
-
-		if (XR_SUCCEEDED(xr_extensions.xrSetColorSpaceFB(xr_session, colorspace)))
-			log_diagf("Set color space to <~grn>%s<~clr>", colorspace_str);
-	}
+	xr_ext_fb_colorspace_set_for((tex_format_)skg_tex_fmt_from_native(xr_preferred_color_format));
 
 	// Find all the valid view configurations
 	uint32_t count = 0;
@@ -917,7 +906,7 @@ bool openxr_display_locate(device_display_t* display, XrTime at_time) {
 		view->subImage.imageRect.offset = { view_rect[0], view_rect[1] };
 		view->subImage.imageRect.extent = { view_rect[2], view_rect[3] };
 
-		if (xr_ext.KHR_composition_layer_depth == xr_ext_active) {
+		if (xr_ext_composition_depth_available()) {
 			XrCompositionLayerDepthInfoKHR *depth = &display->view_depths[i];
 			depth->minDepth = 0;
 			depth->maxDepth = 1;

@@ -20,26 +20,27 @@ static android_create_instance_state_t local = { };
 
 namespace sk {
 
-void xr_ext_android_create_instance_pre_instance(void*, XrBaseHeader* ref_instance_create_info);
+xr_system_ xr_ext_android_create_instance_pre_instance(void*, XrBaseHeader* ref_instance_create_info);
 
 ///////////////////////////////////////////
 
 void xr_ext_android_create_instance_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME;
-	sys.func_pre_instance = { xr_ext_android_create_instance_pre_instance };
+	sys.evt_pre_instance = { xr_ext_android_create_instance_pre_instance };
 	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////
 
-void xr_ext_android_create_instance_pre_instance(void*, XrBaseHeader* ref_instance_create_info) {
+xr_system_ xr_ext_android_create_instance_pre_instance(void*, XrBaseHeader* ref_instance_create_info) {
 	// create_info must be declared in a long lasting scope! The memory must
 	// remain alive at least until the instance is created!
 	local.android_info = { XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR };
 	local.android_info.applicationVM       = backend_android_get_java_vm ();
 	local.android_info.applicationActivity = backend_android_get_activity();
 	xr_insert_next(ref_instance_create_info, (XrBaseHeader*)&local.android_info);
+	return xr_system_succeed;
 }
 
 } // namespace sk

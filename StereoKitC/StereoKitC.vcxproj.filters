@@ -163,9 +163,6 @@
     <ClCompile Include="hands\hand_override.cpp">
       <Filter>hands</Filter>
     </ClCompile>
-    <ClCompile Include="hands\hand_oxr_articulated.cpp">
-      <Filter>hands</Filter>
-    </ClCompile>
     <ClCompile Include="hands\hand_oxr_controller.cpp">
       <Filter>hands</Filter>
     </ClCompile>
@@ -187,9 +184,6 @@
     <ClCompile Include="asset_types\anchor.cpp">
       <Filter>asset_types</Filter>
     </ClCompile>
-    <ClCompile Include="xr_backends\anchor_openxr_msft.cpp">
-      <Filter>xr_backends</Filter>
-    </ClCompile>
     <ClCompile Include="xr_backends\anchor_stage.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
@@ -209,9 +203,6 @@
       <Filter>ui</Filter>
     </ClCompile>
     <ClCompile Include="xr_backends\simulator.cpp">
-      <Filter>xr_backends</Filter>
-    </ClCompile>
-    <ClCompile Include="xr_backends\openxr_scene_understanding.cpp">
       <Filter>xr_backends</Filter>
     </ClCompile>
     <ClCompile Include="utils\random.cpp">
@@ -289,6 +280,39 @@
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
     <ClCompile Include="xr_backends\extensions\input_profiles.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\hand_tracking.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\graphics.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\hand_mesh.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\msft_scene_understanding.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\palm_pose.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\msft_anchors.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\fb_colorspace.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\eye_interaction.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\msft_observer.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\composition_depth.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\_registration.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
   </ItemGroup>
@@ -471,9 +495,6 @@
     <ClInclude Include="hands\hand_override.h">
       <Filter>hands</Filter>
     </ClInclude>
-    <ClInclude Include="hands\hand_oxr_articulated.h">
-      <Filter>hands</Filter>
-    </ClInclude>
     <ClInclude Include="hands\hand_oxr_controller.h">
       <Filter>hands</Filter>
     </ClInclude>
@@ -486,9 +507,6 @@
     <ClInclude Include="xr_backends\openxr.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
-    <ClInclude Include="xr_backends\openxr_extensions.h">
-      <Filter>xr_backends</Filter>
-    </ClInclude>
     <ClInclude Include="xr_backends\openxr_input.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
@@ -497,9 +515,6 @@
     </ClInclude>
     <ClInclude Include="asset_types\anchor.h">
       <Filter>asset_types</Filter>
-    </ClInclude>
-    <ClInclude Include="xr_backends\anchor_openxr_msft.h">
-      <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\anchor_stage.h">
       <Filter>xr_backends</Filter>
@@ -523,9 +538,6 @@
       <Filter>ui</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\simulator.h">
-      <Filter>xr_backends</Filter>
-    </ClInclude>
-    <ClInclude Include="xr_backends\openxr_scene_understanding.h">
       <Filter>xr_backends</Filter>
     </ClInclude>
     <ClInclude Include="utils\random.h">
@@ -607,6 +619,39 @@
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\extensions\input_profiles.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\hand_tracking.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\graphics.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\hand_mesh.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\msft_scene_understanding.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\palm_pose.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\msft_anchors.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\fb_colorspace.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\eye_interaction.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\msft_observer.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\composition_depth.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\_registration.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>

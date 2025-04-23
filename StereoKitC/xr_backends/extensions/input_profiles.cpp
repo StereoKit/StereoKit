@@ -6,6 +6,9 @@
 
 #include "ext_management.h"
 #include "../openxr_input.h"
+#include "../../systems/input.h"
+
+#include <string.h>
 
 ///////////////////////////////////////////
 
@@ -16,7 +19,7 @@ namespace sk {
 void xr_profile_ext_hp_mr_controller_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME;
-	sys.func_initialize = { [](void*) {
+	sys.evt_initialize = { [](void*) {
 		if (!backend_openxr_ext_enabled(XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME))
 			return xr_system_fail;
 
@@ -26,21 +29,35 @@ void xr_profile_ext_hp_mr_controller_register() {
 			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
 			: pose_t{ {0,      0.005f, 0     }, quat_from_angles(-68, 0, 0) };
 
-		xr_interaction_profile_t profile = { "hp/mixed_reality_controller" };
-		profile.use_shorthand_names       = true;
-		profile.is_hand                   = false;
-		profile.palm_offset[handed_left ] = palm_offset;
-		profile.palm_offset[handed_right] = palm_offset;
-		profile.binding[profile.binding_ct++] = { xr_action_pose_grip,      "grip/pose",           "grip/pose"           };
-		profile.binding[profile.binding_ct++] = { xr_action_pose_aim,       "aim/pose",            "aim/pose"            };
-		profile.binding[profile.binding_ct++] = { xr_action_float_trigger,  "trigger/value",       "trigger/value"       };
-		profile.binding[profile.binding_ct++] = { xr_action_float_grip,     "squeeze/value",       "squeeze/value"       };
-		profile.binding[profile.binding_ct++] = { xr_action_xy_stick,       "thumbstick",          "thumbstick"          };
-		profile.binding[profile.binding_ct++] = { xr_action_bool_stick,     "thumbstick/click",    "thumbstick/click"    };
-		profile.binding[profile.binding_ct++] = { xr_action_bool_menu,      "menu/click",          "menu/click"          };
-		profile.binding[profile.binding_ct++] = { xr_action_bool_x1,        "x/click",             "a/click"             };
-		profile.binding[profile.binding_ct++] = { xr_action_bool_x2,        "y/click",             "b/click"             };
-		oxri_register_profile(profile);
+		xr_interaction_profile_t profile_l = { "hp/mixed_reality_controller" };
+		profile_l.top_level_path = "/user/hand/left";
+		profile_l.is_hand        = false;
+		profile_l.palm_offset    = palm_offset;
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger, "trigger/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,    "squeeze/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_l_stick,      "thumbstick"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_stick,  "thumbstick/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,   "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x1,     "x/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x2,     "y/click"          };
+		oxri_register_profile(profile_l);
+
+		xr_interaction_profile_t profile_r = { "hp/mixed_reality_controller" };
+		profile_l.top_level_path = "/user/hand/right";
+		profile_r.is_hand        = false;
+		profile_r.palm_offset    = palm_offset;
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_menu,   "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
+		oxri_register_profile(profile_r);
 
 		return xr_system_succeed;
 	} };
@@ -52,23 +69,44 @@ void xr_profile_ext_hp_mr_controller_register() {
 void xr_profile_ext_hand_interaction_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_HAND_INTERACTION_EXTENSION_NAME;
-	sys.func_initialize = { [](void*) {
+	sys.evt_initialize = { [](void*) {
 		if (!backend_openxr_ext_enabled(XR_EXT_HAND_INTERACTION_EXTENSION_NAME))
 			return xr_system_fail;
 
+		bool explicit_request = ext_management_is_user_requested(XR_EXT_HAND_INTERACTION_EXTENSION_NAME);
+
+		// SK's hand_interaction implementations use XR_EXT_hand_tracking for
+		// some data, so we can't rely on these interaction profiles unless
+		// XR_EXT_hand_tracking is available.
+		if (explicit_request == false && !backend_openxr_ext_enabled(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
+			log_diag("XR_EXT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
+			//xr_ext.EXT_hand_interaction = xr_ext_disabled;
+			return xr_system_fail;
+		}
+
 		// ext/hand_interaction_ext
 		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
-		xr_interaction_profile_t profile = { "ext/hand_interaction_ext" };
-		profile.use_shorthand_names       = true;
-		profile.is_hand                   = true;
-		profile.palm_offset[handed_left ] = pose_identity;
-		profile.palm_offset[handed_right] = pose_identity;
-		profile.binding[profile.binding_ct++] = { xr_action_pose_grip,      "grip/pose",           "grip/pose"           };
-		profile.binding[profile.binding_ct++] = { xr_action_pose_aim,       "aim/pose",            "aim/pose"            };
-		profile.binding[profile.binding_ct++] = { xr_action_bool_aim_ready, "pinch_ext/ready_ext", "pinch_ext/ready_ext" };
-		profile.binding[profile.binding_ct++] = { xr_action_float_trigger,  "pinch_ext/value",     "pinch_ext/value"     };
-		profile.binding[profile.binding_ct++] = { xr_action_float_grip,     "grasp_ext/value",     "grasp_ext/value"     };
-		oxri_register_profile(profile);
+		xr_interaction_profile_t profile_l = { "ext/hand_interaction_ext" };
+		profile_l.top_level_path = "/user/hand/left";
+		profile_l.is_hand        = true;
+		profile_l.palm_offset    = pose_identity;
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,        "grip/pose"           };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,         "aim/pose"            };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_aim_ready, "pinch_ext/ready_ext" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger,    "pinch_ext/value"     };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,       "grasp_ext/value"     };
+		oxri_register_profile(profile_l);
+
+		xr_interaction_profile_t profile_r = { "ext/hand_interaction_ext" };
+		profile_r.top_level_path = "/user/hand/right";
+		profile_r.is_hand        = true;
+		profile_r.palm_offset    = pose_identity;
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,        "grip/pose"           };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,         "aim/pose"            };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_aim_ready, "pinch_ext/ready_ext" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,    "pinch_ext/value"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,       "grasp_ext/value"     };
+		oxri_register_profile(profile_r);
 
 		return xr_system_succeed;
 	} };
@@ -80,22 +118,58 @@ void xr_profile_ext_hand_interaction_register() {
 void xr_profile_msft_hand_interaction_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_HAND_INTERACTION_EXTENSION_NAME;
-	sys.func_initialize = { [](void*) {
+	sys.evt_initialize = { [](void*) {
 		if (!backend_openxr_ext_enabled(XR_MSFT_HAND_INTERACTION_EXTENSION_NAME))
 			return xr_system_fail;
 
+		bool explicit_request = ext_management_is_user_requested(XR_MSFT_HAND_INTERACTION_EXTENSION_NAME);
+
+		// Quest has a menu button that is always shown when hand tracking, but
+		// the hand interaction EXTs don't support actions for it. This can
+		// lead to a mismatch where users see the menu button, but SK _can't_
+		// react to the button events. hand_interaction EXTs are disabled on
+		// Quest so that input falls back to the simple_controller interaction
+		// profile. We will only enable it if it's explicitly requested.
+		//
+		// Quest does not implement XR_EXT_hand_interaction, so we only need to
+		// do this for the MSFT one.
+		if (explicit_request == false && strstr(device_get_runtime(), "Oculus") != nullptr) {
+			//xr_ext.MSFT_hand_interaction = xr_ext_rejected;
+			log_diag("XR_MSFT_hand_interaction - Rejected - Hides menu button events on Quest.");
+			return xr_system_fail;
+		}
+
+		// SK's hand_interaction implementations use XR_EXT_hand_tracking for
+		// some data, so we can't rely on these interaction profiles unless
+		// XR_EXT_hand_tracking is available.
+		if (explicit_request == false && !backend_openxr_ext_enabled(XR_EXT_HAND_TRACKING_EXTENSION_NAME)) {
+			log_diag("XR_MSFT_hand_interaction - Disabled - Dependant on XR_EXT_hand_tracking.");
+			//xr_ext.MSFT_hand_interaction = xr_ext_disabled;
+			return xr_system_fail;
+		}
+
+
 		// microsoft/hand_interaction
 		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
-		xr_interaction_profile_t profile = { "microsoft/hand_interaction" };
-		profile.use_shorthand_names       = true;
-		profile.is_hand                   = true;
-		profile.palm_offset[handed_left ] = pose_identity;
-		profile.palm_offset[handed_right] = pose_identity;
-		profile.binding[profile.binding_ct++] = { xr_action_pose_grip,      "grip/pose",           "grip/pose"           };
-		profile.binding[profile.binding_ct++] = { xr_action_pose_aim,       "aim/pose",            "aim/pose"            };
-		profile.binding[profile.binding_ct++] = { xr_action_float_trigger,  "select/value",        "select/value"        };
-		profile.binding[profile.binding_ct++] = { xr_action_float_grip,     "squeeze/value",       "squeeze/value"       };
-		oxri_register_profile(profile);
+		xr_interaction_profile_t profile_l = { "microsoft/hand_interaction" };
+		profile_l.top_level_path = "/user/hand/left";
+		profile_l.is_hand        = true;
+		profile_l.palm_offset    = pose_identity;
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose, input_pose_l_grip,      "grip/pose"     };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose, input_pose_l_aim,       "aim/pose"      };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger, "select/value"  };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,    "squeeze/value" };
+		oxri_register_profile(profile_l);
+
+		xr_interaction_profile_t profile_r = { "microsoft/hand_interaction" };
+		profile_r.top_level_path = "/user/hand/right";
+		profile_r.is_hand        = true;
+		profile_r.palm_offset    = pose_identity;
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose, input_pose_r_grip,      "grip/pose"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose, input_pose_r_aim,       "aim/pose"      };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "select/value"  };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value" };
+		oxri_register_profile(profile_r);
 
 		return xr_system_succeed;
 	} };
@@ -107,47 +181,75 @@ void xr_profile_msft_hand_interaction_register() {
 void xr_profile_bd_controller_interaction_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME;
-	sys.func_initialize = { [](void*) {
+	sys.evt_initialize = { [](void*) {
 		if (!backend_openxr_ext_enabled(XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME))
 			return xr_system_fail;
 
 		// Bytedance PICO Neo3
 		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
-		xr_interaction_profile_t profile3 = { "bytedance/pico_neo3_controller" };
-		profile3.use_shorthand_names       = true;
-		profile3.is_hand                   = false;
-		profile3.palm_offset[handed_left ] = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
-		profile3.palm_offset[handed_right] = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
-		profile3.binding[profile3.binding_ct++]={ xr_action_pose_grip,      "grip/pose",           "grip/pose"           };
-		profile3.binding[profile3.binding_ct++]={ xr_action_pose_aim,       "aim/pose",            "aim/pose"            };
-		profile3.binding[profile3.binding_ct++]={ xr_action_float_trigger,  "trigger/value",       "trigger/value"       };
-		profile3.binding[profile3.binding_ct++]={ xr_action_float_grip,     "squeeze/value",       "squeeze/value"       };
-		profile3.binding[profile3.binding_ct++]={ xr_action_xy_stick,       "thumbstick",          "thumbstick"          };
-		profile3.binding[profile3.binding_ct++]={ xr_action_bool_stick,     "thumbstick/click",    "thumbstick/click"    };
-		profile3.binding[profile3.binding_ct++]={ xr_action_bool_menu,      "menu/click",          "menu/click"          };
-		profile3.binding[profile3.binding_ct++]={ xr_action_bool_x1,        "x/click",             "a/click"             };
-		profile3.binding[profile3.binding_ct++]={ xr_action_bool_x2,        "y/click",             "b/click"             };
-		oxri_register_profile(profile3);
+		xr_interaction_profile_t profile3_l = { "bytedance/pico_neo3_controller" };
+		profile3_l.top_level_path = "/user/hand/left";
+		profile3_l.is_hand        = false;
+		profile3_l.palm_offset    = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_float, input_float_l_trigger,  "trigger/value"    };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_float, input_float_l_grip,     "squeeze/value"    };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_bool,  input_button_l_menu,    "menu/click"       };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_bool,  input_button_l_x1,      "x/click"          };
+		profile3_l.binding[profile3_l.binding_ct++]={ xra_type_bool,  input_button_l_x2,      "y/click"          };
+		oxri_register_profile(profile3_l);
+
+		xr_interaction_profile_t profile3_r = { "bytedance/pico_neo3_controller" };
+		profile3_r.top_level_path = "/user/hand/right";
+		profile3_r.is_hand        = false;
+		profile3_r.palm_offset    = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_float, input_float_r_trigger,  "trigger/value"    };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_float, input_float_r_grip,     "squeeze/value"    };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_bool,  input_button_r_menu,    "menu/click"       };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_bool,  input_button_r_x1,      "a/click"          };
+		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_bool,  input_button_r_x2,      "b/click"          };
+		oxri_register_profile(profile3_r);
 
 		// Bytedance Pico 4
 		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 		// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 		// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
-		xr_interaction_profile_t profile4 = { "bytedance/pico4_controller" };
-		profile4.use_shorthand_names       = true;
-		profile4.is_hand                   = false;
-		profile4.palm_offset[handed_left ] = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
-		profile4.palm_offset[handed_right] = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
-		profile4.binding[profile4.binding_ct++]={ xr_action_pose_grip,      "grip/pose",           "grip/pose"           };
-		profile4.binding[profile4.binding_ct++]={ xr_action_pose_aim,       "aim/pose",            "aim/pose"            };
-		profile4.binding[profile4.binding_ct++]={ xr_action_float_trigger,  "trigger/value",       "trigger/value"       };
-		profile4.binding[profile4.binding_ct++]={ xr_action_float_grip,     "squeeze/value",       "squeeze/value"       };
-		profile4.binding[profile4.binding_ct++]={ xr_action_xy_stick,       "thumbstick",          "thumbstick"          };
-		profile4.binding[profile4.binding_ct++]={ xr_action_bool_stick,     "thumbstick/click",    "thumbstick/click"    };
-		profile4.binding[profile4.binding_ct++]={ xr_action_bool_menu,      "menu/click"                                 };
-		profile4.binding[profile4.binding_ct++]={ xr_action_bool_x1,        "x/click",             "a/click"             };
-		profile4.binding[profile4.binding_ct++]={ xr_action_bool_x2,        "y/click",             "b/click"             };
-		oxri_register_profile(profile4);
+		xr_interaction_profile_t profile4_l = { "bytedance/pico4_controller" };
+		profile4_l.top_level_path = "/user/hand/left";
+		profile4_l.is_hand        = false;
+		profile4_l.palm_offset    = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_float, input_float_l_trigger,  "trigger/value"    };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_float, input_float_l_grip,     "squeeze/value"    };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_bool,  input_button_l_menu,    "menu/click"       };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_bool,  input_button_l_x1,      "x/click"          };
+		profile4_l.binding[profile4_l.binding_ct++]={ xra_type_bool,  input_button_l_x2,      "y/click"          };
+		oxri_register_profile(profile4_l);
+
+		xr_interaction_profile_t profile4_r = { "bytedance/pico4_controller" };
+		profile4_r.top_level_path = "/user/hand/right";
+		profile4_r.is_hand        = false;
+		profile4_r.palm_offset    = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_float, input_float_r_trigger,  "trigger/value"    };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_float, input_float_r_grip,     "squeeze/value"    };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
+
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_bool,  input_button_r_x1,      "a/click"          };
+		profile4_r.binding[profile4_r.binding_ct++]={ xra_type_bool,  input_button_r_x2,      "b/click"          };
+		oxri_register_profile(profile4_r);
 
 		return xr_system_succeed;
 	} };

@@ -10,6 +10,7 @@
 #if defined(SK_XR_OPENXR)
 
 #include "../stereokit.h"
+#include "openxr_input.h"
 #include <openxr/openxr.h>
 #include <stdint.h>
 
@@ -31,7 +32,7 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 #define _OPENXR_DEFINE_FN_STATIC(name) static PFN_##name name;
 #define OPENXR_DEFINE_FN_STATIC(list) list(_OPENXR_DEFINE_FN_STATIC)
 #define _OPENXR_LOAD_FN_RESULT(name) if (xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name)))<0) { result = result && false; }
-#define OPENXR_LOAD_FN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
+#define OPENXR_LOAD_FN_RETURN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
 
 namespace sk {
 
@@ -47,7 +48,7 @@ typedef struct context_callback_t {
 } context_callback_t;
 
 typedef struct create_info_callback_t {
-	void       (*callback)(void* context, XrBaseHeader* create_info);
+	xr_system_ (*callback)(void* context, XrBaseHeader* create_info);
 	void*        context;
 } create_info_callback_t;
 
@@ -56,24 +57,31 @@ typedef struct context_result_callback_t {
 	void*        context;
 } context_result_callback_t;
 
+typedef struct profile_callback_t {
+	void       (*callback)(void* context, xr_interaction_profile_t *ref_profile);
+	void*        context;
+} profile_callback_t;
+
 typedef struct poll_event_callback_t {
 	void       (*callback)(void* context, void* XrEventDataBuffer);
 	void*        context;
 } poll_event_callback_t;
 
-
 typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
 
-	create_info_callback_t    func_pre_instance;
-	create_info_callback_t    func_pre_session;
-	context_result_callback_t func_initialize;
+	create_info_callback_t    evt_pre_instance;
+	create_info_callback_t    evt_pre_session;
+	create_info_callback_t    evt_begin_session;
+	context_result_callback_t evt_initialize;
+	profile_callback_t        evt_profile;
 	// These callbacks are only called if "initialize" succeeds, or if
 	// "initialize" isn't specified.
-	context_callback_t        func_step_begin;
-	context_callback_t        func_step_end;
-	context_callback_t        func_shutdown;
+	context_callback_t        evt_step_begin;
+	context_callback_t        evt_step_end;
+	context_callback_t        evt_shutdown;
+	poll_event_callback_t     evt_poll;
 } xr_system_t;
 
 bool openxr_init        ();

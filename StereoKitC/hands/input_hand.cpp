@@ -15,7 +15,6 @@
 #include "hand_mouse.h"
 #include "hand_override.h"
 #include "hand_oxr_controller.h"
-#include "hand_oxr_articulated.h"
 
 #include "../platforms/platform.h"
 
@@ -52,74 +51,14 @@ typedef struct hand_sim_t {
 	key_            hotkey2;
 } hand_sim_t;
 
-typedef struct hand_system_t {
-	hand_system_ system;
-	hand_source_ source;
-	float pinch_blend;
-	bool (*available)();
-	void (*init)();
-	void (*shutdown)();
-	void (*update_inactive)();
-	void (*update_frame)();
-	void (*update_poses)();
-} hand_system_t;
-
-hand_system_t hand_sources[] = { // In order of priority
-	{ hand_system_override,
-		hand_source_overridden,
-		0.2f,
-		hand_override_available,
-		hand_override_init,
-		hand_override_shutdown,
-		nullptr,
-		hand_override_update_frame,
-		nullptr },
-#if defined(SK_XR_OPENXR)
-	{ hand_system_oxr_articulated,
-		hand_source_articulated,
-		0.3f,
-		hand_oxra_available,
-		hand_oxra_init,
-		hand_oxra_shutdown,
-		hand_oxra_update_inactive,
-		hand_oxra_update_frame,
-		hand_oxra_update_poses },
-	{ hand_system_oxr_controllers,
-		hand_source_simulated,
-		0.6f,
-		hand_oxrc_available,
-		hand_oxrc_init,
-		hand_oxrc_shutdown,
-		nullptr,
-		hand_oxrc_update_frame,
-		hand_oxrc_update_poses },
-#endif
-	{ hand_system_mouse,
-		hand_source_simulated,
-		1,
-		hand_mouse_available,
-		hand_mouse_init,
-		hand_mouse_shutdown,
-		nullptr,
-		hand_mouse_update_frame,
-		hand_mouse_update_poses },
-	{ hand_system_none,
-		hand_source_none,
-		1,
-		[]() {return true;},
-		[]() {},
-		[]() {},
-		nullptr,
-		[]() {},
-		[]() {} },
-};
-int32_t             hand_system = -1;
-hand_state_t        hand_state[2] = {};
-float               hand_size_update = 0;
-int32_t             input_hand_pointer_id[handed_max] = {-1, -1};
-array_t<hand_sim_t> hand_sim_poses   = {};
-hand_sim_id_t       hand_sim_next_id = 1;
-bool32_t            hand_finger_glow_visible = true;
+array_t<hand_system_t> hand_sources;
+int32_t                hand_system = -1;
+hand_state_t           hand_state[2] = {};
+float                  hand_size_update = 0;
+int32_t                input_hand_pointer_id[handed_max] = {-1, -1};
+array_t<hand_sim_t>    hand_sim_poses   = {};
+hand_sim_id_t          hand_sim_next_id = 1;
+bool32_t               hand_finger_glow_visible = true;
 
 void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
 
@@ -149,9 +88,23 @@ hand_system_ input_hand_get_system() {
 
 ///////////////////////////////////////////
 
+void input_hand_system_register(hand_system_t system) {
+	int idx = -1;
+	for (int32_t i = 0; i < hand_sources.count; i++) {
+		if (system.priority > hand_sources[i].priority) {
+			idx = i;
+			break;
+		}
+	}
+	if (idx == -1) hand_sources.add   (system);
+	else           hand_sources.insert(idx, system);
+}
+
+///////////////////////////////////////////
+
 void input_hand_refresh_system() {
-	int available_source = _countof(hand_sources) - 1;
-	for (int32_t i = 0; i < _countof(hand_sources); i++) {
+	int available_source = hand_sources.count - 1;
+	for (int32_t i = 0; i < hand_sources.count; i++) {
 		if (hand_sources[i].available()) {
 			available_source = i;
 			break;
@@ -168,12 +121,65 @@ void input_hand_refresh_system() {
 ///////////////////////////////////////////
 
 void input_hand_init() {
+	// Override hand system
+	hand_system_t sys = {};
+	sys.priority        = 100;
+	sys.system          = hand_system_override;
+	sys.source          = hand_source_overridden;
+	sys.pinch_blend     = 0.2f;
+	sys.available       = hand_override_available;
+	sys.init            = hand_override_init;
+	sys.shutdown        = hand_override_shutdown;
+	sys.update_frame    = hand_override_update_frame;
+	input_hand_system_register(sys);
+
+#if defined(SK_XR_OPENXR)
+	// Controller generated hand system
+	sys = {};
+	sys.priority        = 50;
+	sys.system          = hand_system_oxr_controllers;
+	sys.source          = hand_source_simulated;
+	sys.pinch_blend     = 0.6f;
+	sys.available       = hand_oxrc_available;
+	sys.init            = hand_oxrc_init;
+	sys.shutdown        = hand_oxrc_shutdown;
+	sys.update_frame    = hand_oxrc_update_frame;
+	sys.update_poses    = hand_oxrc_update_poses;
+	input_hand_system_register(sys);
+#endif
+
+	// Mouse hand system
+	sys = {};
+	sys.priority        = 10;
+	sys.system          = hand_system_mouse;
+	sys.source          = hand_source_simulated;
+	sys.pinch_blend     = 1;
+	sys.available       = hand_mouse_available;
+	sys.init            = hand_mouse_init;
+	sys.shutdown        = hand_mouse_shutdown;
+	sys.update_frame    = hand_mouse_update_frame;
+	sys.update_poses    = hand_mouse_update_poses;
+	input_hand_system_register(sys);
+
+	// Empty/None system when nothing is available
+	sys = {};
+	sys.priority        = 0;
+	sys.system          = hand_system_none;
+	sys.source          = hand_source_none;
+	sys.pinch_blend     = 1;
+	sys.available       = []() {return true;};
+	sys.init            = []() {};
+	sys.shutdown        = []() {};
+	sys.update_frame    = []() {};
+	sys.update_poses    = []() {};
+	input_hand_system_register(sys);
+
 	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
 	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
 	hand_finger_glow_visible = true;
 
 	float blend = 1;
-	for (int32_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < hand_sources.count; i++) {
 		if (hand_sources[i].system == hand_system_oxr_controllers) {
 			blend = hand_sources[i].pinch_blend;
 			break;
@@ -218,8 +224,9 @@ void input_hand_init() {
 		} }
 	}
 
-	for (int32_t i = 0; i < _countof(hand_sources); i++) {
-		hand_sources[i].init();
+	for (int32_t i = 0; i < hand_sources.count; i++) {
+		if (hand_sources[i].init)
+			hand_sources[i].init();
 	}
 
 	input_hand_refresh_system();
@@ -228,9 +235,11 @@ void input_hand_init() {
 ///////////////////////////////////////////
 
 void input_hand_shutdown() {
-	for (int32_t i = 0; i < _countof(hand_sources); i++) {
-		hand_sources[i].shutdown();
+	for (int32_t i = 0; i < hand_sources.count; i++) {
+		if (hand_sources[i].shutdown)
+			hand_sources[i].shutdown();
 	}
+	hand_sources  .free();
 	hand_sim_poses.free();
 }
 
@@ -264,7 +273,7 @@ void input_hand_update() {
 		input_hand_state_update((handed_)i);
 	}
 
-	for (int32_t i = 0; i < _countof(hand_sources); i++) {
+	for (int32_t i = 0; i < hand_sources.count; i++) {
 		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
 			hand_sources[i].update_inactive();
 	}

@@ -8,10 +8,9 @@
 #include "input.h"
 #include "input_render.h"
 #include "../hands/input_hand.h"
-#include "../hands/hand_oxr_articulated.h"
 #include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
-#include "../xr_backends/openxr_extensions.h"
+#include "../xr_backends/extensions/hand_mesh.h"
 #include "../systems/defaults.h"
 
 namespace sk {
@@ -126,8 +125,8 @@ void input_render_step_late() {
 			const hand_t* hand = input_hand((handed_)i);
 			if ((hand->tracked_state & button_state_active) != 0 && local.hand_material[i] != nullptr) {
 				hand_mesh_t* hand_active_mesh = &local.hand_fallback_mesh[i];
-				if (xr_ext.MSFT_hand_tracking_mesh == xr_ext_active) { hand_oxra_update_system_mesh   ((handed_)i, &local.hand_articulated_mesh  [i]); hand_active_mesh = &local.hand_articulated_mesh[i]; }
-				else                                                 { input_hand_update_fallback_mesh((handed_)i, &local.hand_fallback_mesh     [i]); hand_active_mesh = &local.hand_fallback_mesh   [i]; }
+				if (xr_ext_msft_hand_mesh_available()) { xr_ext_msft_hand_mesh_update_mesh((handed_)i, &local.hand_articulated_mesh  [i]); hand_active_mesh = &local.hand_articulated_mesh[i]; }
+				else                                   { input_hand_update_fallback_mesh  ((handed_)i, &local.hand_fallback_mesh     [i]); hand_active_mesh = &local.hand_fallback_mesh   [i]; }
 
 				render_add_mesh(hand_active_mesh->mesh, local.hand_material[i], hand_active_mesh->root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
 			}

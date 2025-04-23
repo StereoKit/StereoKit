@@ -35,8 +35,8 @@ void xr_ext_msft_bridge_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_GRAPH_BRIDGE_EXTENSION_NAME;
 	sys.request_exts[sys.request_ext_count++] = XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME;
-	sys.func_initialize = { xr_ext_msft_bridge_init };
-	sys.func_initialize = { xr_ext_msft_bridge_init };
+	sys.evt_initialize = { xr_ext_msft_bridge_init     };
+	sys.evt_shutdown   = { xr_ext_msft_bridge_shutdown };
 	ext_management_sys_register(sys);
 }
 
@@ -49,7 +49,7 @@ xr_system_ xr_ext_msft_bridge_init(void*) {
 		return xr_system_fail;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	sk_get_info_ref()->spatial_bridge_present = true;
 	return xr_system_succeed;

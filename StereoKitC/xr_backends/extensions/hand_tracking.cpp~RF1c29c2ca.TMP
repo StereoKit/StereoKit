@@ -5,7 +5,7 @@
  */
 
 #include "ext_management.h"
-#include "debug_utils.h"
+#include "hand_tracking.h"
 
 #define XR_EXT_FUNCTIONS( X )         \
 	X(xrCreateDebugUtilsMessengerEXT) \
@@ -24,9 +24,9 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_debug_utils_pre_session(void*, XrBaseHeader*);
-xr_system_ xr_ext_debug_utils_initialize (void*);
-void       xr_ext_debug_utils_shutdown   (void*);
+void       xr_ext_hand_tracking_pre_session(void*, XrBaseHeader*);
+xr_system_ xr_ext_hand_tracking_initialize (void*);
+void       xr_ext_hand_tracking_shutdown   (void*);
 
 ///////////////////////////////////////////
 
@@ -35,9 +35,9 @@ void xr_ext_debug_utils_register() {
 #if defined(SK_DEBUG)
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_DEBUG_UTILS_EXTENSION_NAME;
-	sys.evt_pre_session = { xr_ext_debug_utils_pre_session };
-	sys.evt_initialize  = { xr_ext_debug_utils_initialize  };
-	sys.evt_shutdown    = { xr_ext_debug_utils_shutdown    };
+	sys.func_pre_session = { xr_ext_debug_utils_pre_session };
+	sys.func_initialize  = { xr_ext_debug_utils_initialize  };
+	sys.func_shutdown    = { xr_ext_debug_utils_shutdown    };
 	ext_management_sys_register(sys);
 #endif
 }
@@ -64,7 +64,7 @@ XrBool32 XRAPI_PTR openxr_debug_messenger_callback(XrDebugUtilsMessageSeverityFl
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_debug_utils_pre_session(void*, XrBaseHeader*) {
+void xr_ext_debug_utils_pre_session(void*, XrBaseHeader*) {
 	// We do this on pre-session so we start getting debug messages earlier!
 
 	// Default to fail
@@ -72,10 +72,10 @@ xr_system_ xr_ext_debug_utils_pre_session(void*, XrBaseHeader*) {
 
 	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_EXT_DEBUG_UTILS_EXTENSION_NAME))
-		return xr_system_fail;
+		return;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS,);
 
 	// Set up a really verbose debug log! Great for dev, but turn this off or
 	// down for final builds. WMR doesn't produce much output here, but it
@@ -99,7 +99,6 @@ xr_system_ xr_ext_debug_utils_pre_session(void*, XrBaseHeader*) {
 	local.init_result = XR_SUCCEEDED(xrCreateDebugUtilsMessengerEXT(xr_instance, &debug_info, &local.messenger))
 		? xr_system_succeed
 		: xr_system_fail;
-	return local.init_result;
 }
 
 ///////////////////////////////////////////

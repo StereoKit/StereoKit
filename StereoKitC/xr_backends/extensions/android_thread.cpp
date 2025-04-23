@@ -32,8 +32,8 @@ void       xr_ext_android_thread_shutdown  (void*);
 void xr_ext_android_thread_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME;
-	sys.func_initialize = { xr_ext_android_thread_initialize };
-	sys.func_shutdown   = { xr_ext_android_thread_shutdown };
+	sys.evt_initialize = { xr_ext_android_thread_initialize };
+	sys.evt_shutdown   = { xr_ext_android_thread_shutdown };
 	ext_management_sys_register(sys);
 }
 
@@ -43,7 +43,7 @@ xr_system_ xr_ext_android_thread_initialize(void*) {
 	if (!backend_openxr_ext_enabled(XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME))
 		return xr_system_fail;
 
-	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	return xr_system_succeed;
 }

@@ -39,8 +39,8 @@ void       xr_ext_time_shutdown(void*);
 void xr_ext_time_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
-	sys.func_initialize = { xr_ext_time_init };
-	sys.func_shutdown   = { xr_ext_time_shutdown };
+	sys.evt_initialize = { xr_ext_time_init };
+	sys.evt_shutdown   = { xr_ext_time_shutdown };
 	ext_management_sys_register(sys);
 }
 
@@ -53,7 +53,7 @@ xr_system_ xr_ext_time_init(void*) {
 		return xr_system_fail_critical;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN(XR_EXT_FUNCTIONS, xr_system_fail_critical);
+	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail_critical);
 
 	// A number of items use the xr_time, so lets get this ready as soon as we're
 	// able.

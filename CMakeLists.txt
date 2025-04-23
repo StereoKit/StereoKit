@@ -366,8 +366,6 @@ set(SK_SRC_HANDS
   StereoKitC/hands/hand_mouse.cpp
   StereoKitC/hands/hand_override.h
   StereoKitC/hands/hand_override.cpp
-  StereoKitC/hands/hand_oxr_articulated.h
-  StereoKitC/hands/hand_oxr_articulated.cpp
   StereoKitC/hands/hand_oxr_controller.h
   StereoKitC/hands/hand_oxr_controller.cpp
   StereoKitC/hands/hand_poses.h
@@ -394,16 +392,15 @@ set(SK_SRC_PLATFORMS
 set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr.h
   StereoKitC/xr_backends/openxr.cpp
-  StereoKitC/xr_backends/openxr_extensions.h
   StereoKitC/xr_backends/openxr_platform.h
   StereoKitC/xr_backends/openxr_input.h
   StereoKitC/xr_backends/openxr_input.cpp
-  StereoKitC/xr_backends/openxr_scene_understanding.h
-  StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
   StereoKitC/xr_backends/extensions/ext_management.h
   StereoKitC/xr_backends/extensions/ext_management.cpp
+  StereoKitC/xr_backends/extensions/_registration.h
+  StereoKitC/xr_backends/extensions/_registration.cpp
   StereoKitC/xr_backends/xr.h
   StereoKitC/xr_backends/xr.cpp
   StereoKitC/xr_backends/simulator.h
@@ -412,18 +409,30 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/window.cpp
   StereoKitC/xr_backends/offscreen.h
   StereoKitC/xr_backends/offscreen.cpp
-  StereoKitC/xr_backends/anchor_openxr_msft.h
-  StereoKitC/xr_backends/anchor_openxr_msft.cpp
   StereoKitC/xr_backends/anchor_stage.h
   StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_XR_EXTS
+  StereoKitC/xr_backends/extensions/composition_depth.h
+  StereoKitC/xr_backends/extensions/composition_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
   StereoKitC/xr_backends/extensions/debug_utils.cpp
+  StereoKitC/xr_backends/extensions/eye_interaction.h
+  StereoKitC/xr_backends/extensions/eye_interaction.cpp
+  StereoKitC/xr_backends/extensions/fb_colorspace.h
+  StereoKitC/xr_backends/extensions/fb_colorspace.cpp
+  StereoKitC/xr_backends/extensions/graphics.h
+  StereoKitC/xr_backends/extensions/graphics.cpp
+  StereoKitC/xr_backends/extensions/hand_mesh.h
+  StereoKitC/xr_backends/extensions/hand_mesh.cpp
+  StereoKitC/xr_backends/extensions/hand_tracking.h
+  StereoKitC/xr_backends/extensions/hand_tracking.cpp
   StereoKitC/xr_backends/extensions/input_profiles.h
   StereoKitC/xr_backends/extensions/input_profiles.cpp
   StereoKitC/xr_backends/extensions/loader_init.h
   StereoKitC/xr_backends/extensions/loader_init.cpp
+  StereoKitC/xr_backends/extensions/palm_pose.h
+  StereoKitC/xr_backends/extensions/palm_pose.cpp
   StereoKitC/xr_backends/extensions/android_create_instance.h
   StereoKitC/xr_backends/extensions/android_create_instance.cpp
   StereoKitC/xr_backends/extensions/android_thread.h
@@ -434,10 +443,16 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/overlay.cpp
   StereoKitC/xr_backends/extensions/oculus_audio.h
   StereoKitC/xr_backends/extensions/oculus_audio.cpp
+  StereoKitC/xr_backends/extensions/msft_anchors.h
+  StereoKitC/xr_backends/extensions/msft_anchors.cpp
+  StereoKitC/xr_backends/extensions/msft_anchor_interop.h
+  StereoKitC/xr_backends/extensions/msft_anchor_interop.cpp
   StereoKitC/xr_backends/extensions/msft_bridge.h
   StereoKitC/xr_backends/extensions/msft_bridge.cpp
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.h
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.cpp)
+  StereoKitC/xr_backends/extensions/msft_observer.h
+  StereoKitC/xr_backends/extensions/msft_observer.cpp
+  StereoKitC/xr_backends/extensions/msft_scene_understanding.h
+  StereoKitC/xr_backends/extensions/msft_scene_understanding.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard.h

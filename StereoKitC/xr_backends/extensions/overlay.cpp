@@ -22,14 +22,14 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-void xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info);
+xr_system_ xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info);
 
 ///////////////////////////////////////////
 
 void xr_ext_overlay_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXTX_OVERLAY_EXTENSION_NAME;
-	sys.func_pre_session = { xr_ext_overlay_pre_session };
+	sys.evt_pre_session = { xr_ext_overlay_pre_session };
 
 	if (sk_get_settings_ref()->overlay_app)
 		ext_management_sys_register(sys);
@@ -37,10 +37,10 @@ void xr_ext_overlay_register() {
 
 ///////////////////////////////////////////
 
-void xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info) {
+xr_system_ xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info) {
 	if (!backend_openxr_ext_enabled(XR_EXTX_OVERLAY_EXTENSION_NAME)) {
 		log_warn("Overlay was requested, but is not available on this system!");
-		return;
+		return xr_system_fail;
 	}
 
 	// overlay_info must be declared in a long lasting scope! The memory must
@@ -59,6 +59,7 @@ void xr_ext_overlay_pre_session(void*, XrBaseHeader* session_create_info) {
 		log_diag("Overlay app defaulting to 'blend' display_blend.");
 		device_data.display_blend = display_blend_blend;
 	}
+	return xr_system_succeed;
 }
 
 } // namespace sk
