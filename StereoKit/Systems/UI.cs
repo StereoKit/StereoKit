@@ -436,7 +436,7 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		/// <param name="fit">Describe how the text should behave when one of
 		/// its size dimensions conflicts with the provided 'size' parameter.
@@ -463,7 +463,7 @@ namespace StereoKit
 		/// width will automatically take the remainder of the current layout
 		/// width.</param>
 		/// <param name="textAlign">Where should the text position itself
-		/// within its bounds? TextAlign.TopLeft is how most English text is
+		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		/// <param name="fit">Describe how the text should behave when one of
 		/// its size dimensions conflicts with the provided 'size' parameter.
