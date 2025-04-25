@@ -68,7 +68,6 @@ struct xrc_state_t {
 
 	array_t<xrc_profile_info_t>       profiles;
 	array_t<xr_top_level_t>           top_levels;
-	pose_t                            active_offset[2];
 };
 static xrc_state_t local = {};
 
@@ -167,9 +166,7 @@ bool oxri_bind_profile(xr_interaction_profile_t *profiles, int32_t profile_count
 ///////////////////////////////////////////
 
 bool oxri_init() {
-	local.active_offset[0] = pose_identity;
-	local.active_offset[1] = pose_identity;
-	local.eyes_pointer     = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
+	local.eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
 
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
@@ -531,7 +528,7 @@ void oxri_update_poses() {
 
 		track_state_ tr_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT   ) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) ? track_state_inferred : track_state_lost);
 		track_state_ tr_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) ? track_state_inferred : track_state_lost);
-		pose_t pose = input_pose_get((input_pose_)i);
+		pose_t       pose   = input_pose_get((input_pose_)i);
 		if (tr_pos != track_state_lost) {
 			memcpy(&pose.position, &space_location.pose.position, sizeof(vec3));
 			pose.position = root * pose.position;
@@ -756,9 +753,6 @@ void oxri_poll(void*, XrEventDataBuffer* event) {
 	if (event->type != XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED)
 		return;
 
-	XrEventDataInteractionProfileChanged* changed = (XrEventDataInteractionProfileChanged*)&event;
-	if (changed->session != xr_session) return;
-
 	oxri_update_profiles();
 }
 
@@ -780,16 +774,16 @@ void oxri_update_profiles() {
 		for (int32_t p = 0; p < local.profiles.count; p++) {
 			xrc_profile_info_t* profile = &local.profiles[p];
 
-			if (profile->top_level_path != top_level->path || profile->profile == new_profile.interactionProfile)
+			if (profile->profile != new_profile.interactionProfile || profile->top_level_path != top_level->path)
 				continue;
 
 			reset = true;
 
 			top_level->active_profile = p;
-			if      (string_eq(top_level->name, "/user/hand/left" )) { local.active_offset[handed_left ] = profile->offset; input_controller_set_hand(handed_left,  profile->is_hand); }
-			else if (string_eq(top_level->name, "/user/hand/right")) { local.active_offset[handed_right] = profile->offset; input_controller_set_hand(handed_right, profile->is_hand); }
+			if      (string_eq(top_level->name, "/user/hand/left" )) { input_set_palm_offset(handed_left,  profile->offset); input_controller_set_hand(handed_left,  profile->is_hand); }
+			else if (string_eq(top_level->name, "/user/hand/right")) { input_set_palm_offset(handed_right, profile->offset); input_controller_set_hand(handed_right, profile->is_hand); }
 			
-			log_diagf("Switched interaction profile for %s to %s", top_level->name, profile->name);
+			log_diagf("Switched %s to %s", top_level->name, profile->name);
 			break;
 		}
 	}

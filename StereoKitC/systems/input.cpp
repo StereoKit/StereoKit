@@ -58,6 +58,7 @@ struct input_state_t {
 	bool                  controller_hand[2];
 	button_state_         controller_menubtn;
 	button_state_         eyes_track_state;
+	pose_t                palm_offset[2];
 
 	array_t<pose_info_t>  curr_poses;
 	array_t<button_state_>curr_buttons;
@@ -186,6 +187,35 @@ void input_step() {
 	local.evt_poses.clear();
 	ft_mutex_unlock(local.mtx_poses);
 
+	// Handle palm pose, which may not be available from the system. If it's
+	// not, we want to generate it from the grip pose!
+	input_pose_ poses_palm[2]{ input_pose_l_palm, input_pose_r_palm };
+	input_pose_ poses_grip[2]{ input_pose_l_grip, input_pose_r_grip };
+	for (int32_t i = 0; i < 2; i++) {
+		// Check if the palm is _not_ tracked, but the grip is.
+		track_state_ palm_pos_tracked, palm_rot_tracked;
+		track_state_ grip_pos_tracked, grip_rot_tracked;
+		input_pose_get_state(poses_palm[i], &palm_pos_tracked, &palm_rot_tracked);
+		input_pose_get_state(poses_grip[i], &grip_pos_tracked, &grip_rot_tracked);
+		if (palm_pos_tracked == track_state_lost &&
+			palm_rot_tracked == track_state_lost &&
+			grip_rot_tracked != track_state_lost) {
+
+			// Make sure we have room in our input array for the pose
+			if (poses_palm[i] >= local.curr_poses.count)
+				local.curr_poses.add_empties((poses_palm[i] - local.curr_poses.count) + 1);
+
+			// Set up the new palm pose, based on the grip
+			pose_t      grip_pose = input_pose_get(poses_grip[i]);
+			pose_info_t new_pose  = {
+				grip_pose.position + grip_pose.orientation * local.palm_offset[i].position,
+				local.palm_offset[i].orientation * grip_pose.orientation };
+			local.curr_poses[poses_palm[i]]             = new_pose;
+			local.curr_poses[poses_palm[i]].pos_tracked = grip_pos_tracked;
+			local.curr_poses[poses_palm[i]].rot_tracked = grip_rot_tracked;
+		}
+	}
+
 	///////////////////////////////////////////
 	// Update floats
 	///////////////////////////////////////////
@@ -230,7 +260,7 @@ void input_step() {
 
 	track_state_ pos_tracked, rot_tracked;
 	input_pose_get_state(input_pose_l_grip, &pos_tracked, &rot_tracked);
-	local.controllers[handed_left].tracked     = button_make_state((local.controllers[handed_left].tracked & button_state_active) > 0, pos_tracked != track_state_lost);
+	local.controllers[handed_left].tracked     = button_make_state((local.controllers[handed_left].tracked & button_state_active) > 0, pos_tracked != track_state_lost || rot_tracked != track_state_lost);
 	local.controllers[handed_left].tracked_pos = pos_tracked;
 	local.controllers[handed_left].tracked_rot = rot_tracked;
 
@@ -244,7 +274,6 @@ void input_step() {
 	local.controllers[handed_right].x2          = input_button_get(input_button_r_x2);
 	local.controllers[handed_right].stick       = input_xy_get    (input_xy_r_stick);
 
-	pos_tracked, rot_tracked;
 	input_pose_get_state(input_pose_r_grip, &pos_tracked, &rot_tracked);
 	local.controllers[handed_right].tracked     = button_make_state((local.controllers[handed_right].tracked & button_state_active) > 0, pos_tracked != track_state_lost);
 	local.controllers[handed_right].tracked_pos = pos_tracked;
@@ -505,6 +534,12 @@ void input_reset() {
 	for (int32_t i = 0; i < local.curr_xys.count; i++) {
 		local.curr_xys[i] = vec2_zero;
 	}
+}
+
+///////////////////////////////////////////
+
+void input_set_palm_offset(handed_ hand, pose_t offset) {
+	local.palm_offset[hand] = offset;
 }
 
 ///////////////////////////////////////////
