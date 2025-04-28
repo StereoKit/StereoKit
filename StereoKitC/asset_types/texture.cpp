@@ -4,8 +4,8 @@
 // Copyright (c) 2024 Qualcomm Technologies, Inc.
 
 #include "../stereokit.h"
+#include "../_stereokit.h"
 #include "../platforms/platform.h"
-#include "../libraries/ferr_hash.h"
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
 #include "../sk_math.h"
@@ -471,9 +471,9 @@ tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, bool32_
 
 tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_count, bool32_t srgb_data, int32_t priority) {
 	// Hash the names of all of the files together
-	uint64_t hash = HASH_FNV64_START;
+	id_hash_t hash = default_hash_root;
 	for (int32_t i = 0; i < file_count; i++) {
-		hash = hash_fnv64_string(files[i], hash);
+		hash = hash_string_with(files[i], hash);
 	}
 	char file_id[64];
 	snprintf(file_id, sizeof(file_id), "sk/tex/array/%" PRIu64, hash);
@@ -516,7 +516,7 @@ tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_
 
 tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int32_t priority) {
 	char cubemap_id[64];
-	snprintf(cubemap_id, sizeof(cubemap_id), "sk/tex/cubemap/%" PRIu64, hash_fnv64_string(cubemap_file));
+	snprintf(cubemap_id, sizeof(cubemap_id), "sk/tex/cubemap/%" PRIu64, hash_string(cubemap_file));
 
 	tex_t result = tex_find(cubemap_id);
 	if (result != nullptr) {
@@ -1200,9 +1200,9 @@ tex_format_ tex_get_tex_format(int64_t native_fmt) {
 
 ///////////////////////////////////////////
 
-uint64_t tex_meta_hash(tex_t texture) {
-	uint64_t result = hash_fnv64_data(&texture->width,  sizeof(texture->width));
-	result          = hash_fnv64_data(&texture->height, sizeof(texture->height), result);
+id_hash_t tex_meta_hash(tex_t texture) {
+	id_hash_t result = hash_int     (texture->width);
+	result           = hash_int_with(texture->height, result);
 	// May want to consider texture format or some other items as well, but
 	// this is plenty for now.
 	return result;

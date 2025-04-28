@@ -20,7 +20,6 @@
 #include "../log.h"
 #include "../device.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
 #include "../systems/render.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
@@ -86,7 +85,7 @@ bool                 xr_system_success    = false;
 
 array_t<const char*> xr_exts_user         = {};
 array_t<const char*> xr_exts_exclude      = {};
-array_t<uint64_t>    xr_exts_loaded       = {};
+array_t<id_hash_t>   xr_exts_loaded       = {};
 bool32_t             xr_minimum_exts      = false;
 
 bool                 xr_has_bounds        = false;
@@ -225,7 +224,7 @@ bool openxr_create_system() {
 	openxr_list_layers(&layers_available, &layers_request);
 
 	for (int32_t i = 0; i < exts_request.count; i++)
-		xr_exts_loaded.add(hash_fnv64_string(exts_request[i]));
+		xr_exts_loaded.add(hash_string(exts_request[i]));
 
 	XrInstanceCreateInfo create_info = { XR_TYPE_INSTANCE_CREATE_INFO };
 	create_info.enabledExtensionCount = (uint32_t)exts_request.count;
@@ -386,7 +385,7 @@ bool openxr_init() {
 
 	// We would use backend_openxr_ext_enabled, but openxr isn't full ready
 	// yet, so it throws errors into the logs.
-	if (xr_exts_loaded.index_of(hash_fnv64_string(XR_GFX_EXTENSION)) < 0) {
+	if (xr_exts_loaded.index_of(hash_string(XR_GFX_EXTENSION)) < 0) {
 		log_infof("Couldn't load required extension [%s]", XR_GFX_EXTENSION);
 		openxr_cleanup();
 		return false;
@@ -1414,7 +1413,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 		return false;
 	}
-	uint64_t hash = hash_fnv64_string(extension_name);
+	id_hash_t hash = hash_string(extension_name);
 	return xr_exts_loaded.index_of(hash) >= 0;
 }
 

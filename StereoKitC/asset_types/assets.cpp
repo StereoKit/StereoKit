@@ -19,7 +19,6 @@
 #include "anchor.h"
 #include "../platforms/platform.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../libraries/sokol_time.h"
 #include "../libraries/atomic_util.h"
@@ -79,12 +78,12 @@ void    asset_step_task();
 ///////////////////////////////////////////
 
 void *assets_find(const char *id, asset_type_ type) {
-	return assets_find(hash_fnv64_string(id), type);
+	return assets_find(hash_string(id), type);
 }
 
 ///////////////////////////////////////////
 
-void *assets_find(uint64_t id, asset_type_ type) {
+void *assets_find(id_hash_t id, asset_type_ type) {
 	void* result = nullptr;
 	ft_mutex_lock(assets_lock);
 	for (int32_t i = 0; i < assets.count; i++) {
@@ -101,11 +100,11 @@ void *assets_find(uint64_t id, asset_type_ type) {
 
 void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
 	snprintf(dest, dest_size, "%s", root_name);
-	uint64_t id    = hash_fnv64_string(dest);
-	int      count = 1;
+	id_hash_t id    = hash_string(dest);
+	int       count = 1;
 	while (assets_find(dest, type) != nullptr) {
 		snprintf(dest, dest_size, "%s%d", root_name, count);
-		id = hash_fnv64_string(dest);
+		id = hash_string(dest);
 		count += 1;
 	}
 }
@@ -138,7 +137,7 @@ void *assets_allocate(asset_type_ type) {
 	ft_mutex_lock(assets_lock);
 	char name[64];
 	snprintf(name, sizeof(name), "auto/%s_%d", type_name, assets.count);
-	header->id      = hash_fnv64_string(name);
+	header->id      = hash_string(name);
 	header->id_text = string_copy(name);
 	header->index   = assets.count;
 
@@ -150,7 +149,7 @@ void *assets_allocate(asset_type_ type) {
 ///////////////////////////////////////////
 
 void assets_set_id(asset_header_t *header, const char *id) {
-	assets_set_id(header, hash_fnv64_string(id));
+	assets_set_id(header, hash_string(id));
 	char* old_text = header->id_text;
 	header->id_text = string_copy(id);
 	sk_free(old_text);
@@ -158,7 +157,7 @@ void assets_set_id(asset_header_t *header, const char *id) {
 
 ///////////////////////////////////////////
 
-void assets_set_id(asset_header_t *header, uint64_t id) {
+void assets_set_id(asset_header_t *header, id_hash_t id) {
 #if defined(SK_DEBUG)
 	asset_header_t *other = (asset_header_t *)assets_find(id, header->type);
 	if (other != nullptr) {
@@ -554,7 +553,7 @@ asset_type_ asset_get_type(asset_t asset) {
 ///////////////////////////////////////////
 
 void asset_set_id(asset_t asset, const char* id) {
-	assets_set_id((asset_header_t*)asset, hash_fnv64_string(id));
+	assets_set_id((asset_header_t*)asset, hash_string(id));
 }
 
 ///////////////////////////////////////////
