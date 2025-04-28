@@ -13,6 +13,7 @@
 #include "systems/_stereokit_systems.h"
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
+#include "libraries/ferr_hash.h"
 #include "utils/random.h"
 #include "platforms/platform.h"
 
@@ -513,5 +514,12 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	local.timevf_us      = (float)local.timev_us;
 	local.timevf         = (float)local.timev;
 }
+
+///////////////////////////////////////////
+
+id_hash_t hash_string     (const char* str_utf8)                 { return hash_fnv64_string(str_utf8); }
+id_hash_t hash_string_with(const char* str_utf8, id_hash_t root) { return hash_fnv64_string(str_utf8, root); }
+id_hash_t hash_int        (int32_t value)                        { return hash_fnv64_data  (&value, sizeof(int32_t), HASH_FNV64_START); }
+id_hash_t hash_int_with   (int32_t value,        id_hash_t root) { return hash_fnv64_data  (&value, sizeof(int32_t), root); }
 
 } // namespace sk

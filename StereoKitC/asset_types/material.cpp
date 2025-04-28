@@ -2,7 +2,6 @@
 #include "shader.h"
 #include "texture.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
 #include "../libraries/array.h"
 #include "../sk_memory.h"
 #include "../systems/defaults.h"
@@ -590,7 +589,7 @@ void material_set_matrix(material_t material, const char *name, matrix value) {
 
 ///////////////////////////////////////////
 
-bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) {
+bool32_t material_set_texture_id(material_t material, id_hash_t id, tex_t value) {
 
 	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 		const skg_shader_resource_t *resource = &material->shader->shader.meta->resources[i];
@@ -628,8 +627,7 @@ bool32_t material_set_texture_id(material_t material, uint64_t id, tex_t value) 
 ///////////////////////////////////////////
 
 bool32_t material_set_texture(material_t material, const char *name, tex_t value) {
-	uint64_t id = hash_fnv64_string(name);
-	return material_set_texture_id(material, id, value);
+	return material_set_texture_id(material, hash_string(name), value);
 }
 
 ///////////////////////////////////////////
@@ -698,7 +696,7 @@ matrix material_get_matrix(material_t material, const char* name) {
 ///////////////////////////////////////////
 
 tex_t material_get_texture(material_t material, const char* name) {
-	uint64_t id = hash_fnv64_string(name);
+	id_hash_t id = hash_string(name);
 	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 		const skg_shader_resource_t* resource = &material->shader->shader.meta->resources[i];
 		if (resource->name_hash == id) {
@@ -713,7 +711,7 @@ tex_t material_get_texture(material_t material, const char* name) {
 ///////////////////////////////////////////
 
 bool32_t material_has_param(material_t material, const char *name, material_param_ type) {
-	uint64_t id = hash_fnv64_string(name);
+	id_hash_t id = hash_string(name);
 
 	if (type == material_param_texture) {
 		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
@@ -730,12 +728,12 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 ///////////////////////////////////////////
 
 void material_set_param(material_t material, const char *name, material_param_ type, const void *value) {
-	material_set_param_id(material, hash_fnv64_string(name), type, value);
+	material_set_param_id(material, hash_string(name), type, value);
 }
 
 ///////////////////////////////////////////
 
-void material_set_param_id(material_t material, uint64_t id, material_param_ type, const void *value) {
+void material_set_param_id(material_t material, id_hash_t id, material_param_ type, const void *value) {
 	if (type == material_param_texture) {
 		material_set_texture_id(material, id, (tex_t)value);
 	} else {
@@ -751,12 +749,12 @@ void material_set_param_id(material_t material, uint64_t id, material_param_ typ
 ///////////////////////////////////////////
 
 bool32_t material_get_param(material_t material, const char *name, material_param_ type, void *out_value) {
-	return material_get_param_id(material, hash_fnv64_string(name), type, out_value);
+	return material_get_param_id(material, hash_string(name), type, out_value);
 }
 
 ///////////////////////////////////////////
 
-bool32_t material_get_param_id(material_t material, uint64_t id, material_param_ type, void *out_value) {
+bool32_t material_get_param_id(material_t material, id_hash_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
 		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
 			if (material->shader->shader.meta->resources[i].name_hash == id) {
@@ -872,8 +870,8 @@ void material_check_tex_changes(material_t material) {
 				: curr->tex->fallback;
 			curr->meta_hash = curr->tex->meta_hash;
 
-			uint64_t tex_info_hash = hash_fnv64_string("_i", material->shader->shader.meta->resources[i].name_hash);
-			vec4     info = { (float)physical_tex->width, (float)physical_tex->height, (float)(uint32_t)log2(physical_tex->width), 0 };
+			id_hash_t tex_info_hash = hash_string_with("_i", material->shader->shader.meta->resources[i].name_hash);
+			vec4      info = { (float)physical_tex->width, (float)physical_tex->height, (float)(uint32_t)log2(physical_tex->width), 0 };
 			material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
 		}
 	}

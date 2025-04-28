@@ -11,7 +11,6 @@
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
-#include "../libraries/ferr_hash.h"
 #include "../platforms/platform.h"
 
 namespace sk {
@@ -157,11 +156,11 @@ void virtualkeyboard_shutdown() {
 
 ///////////////////////////////////////////
 
-uint64_t virtualkeyboard_hash(const keylayout_key_t* key) {
+id_hash_t virtualkeyboard_hash(const keylayout_key_t* key) {
 	return key->is_sprite
-		? (uint64_t)key->display_sprite
+		? (id_hash_t)key->display_sprite
 		: (key->display_text != nullptr
-			? hash_fnv64_string(key->display_text)
+			? hash_string(key->display_text)
 			: 0);
 }
 

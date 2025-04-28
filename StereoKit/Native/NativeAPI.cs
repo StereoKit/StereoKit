@@ -67,6 +67,13 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash hash_string     ([In] byte[] str_utf8);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash hash_string_with([In] byte[] str_utf8, IdHash root);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash hash_int        (int val);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash hash_int_with   (int val, IdHash root);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_difference (in Quat a, in Quat b);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat     (in Vec3 from, in Vec3 at);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Quat quat_lookat_up  (in Vec3 from, in Vec3 at, in Vec3 up);

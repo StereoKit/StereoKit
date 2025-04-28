@@ -24,8 +24,6 @@
 
 #elif defined(SK_OS_WINDOWS_UWP)
 
-	#include "../libraries/ferr_hash.h"
-
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
 	#endif
@@ -68,7 +66,7 @@ enum fp_sort_by_ {
 #if defined(SK_OS_WINDOWS_UWP)
 struct fp_file_cache_t {
 public:
-	uint64_t    name_hash;
+	id_hash_t   name_hash;
 	StorageFile file = nullptr;
 };
 std::vector<fp_file_cache_t> fp_file_cache;
@@ -76,7 +74,7 @@ std::vector<fp_file_cache_t> fp_file_cache;
 
 char                         fp_filename [1024];
 wchar_t                      fp_wfilename[1024];
-char                         fp_buffer[1023];
+char                         fp_buffer   [1023];
 bool                         fp_call                  = false;
 void                        *fp_call_data             = nullptr;
 bool                         fp_call_status           = false;
@@ -302,7 +300,7 @@ void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus sta
 
 		fp_file_cache_t item;
 		item.file      = file;
-		item.name_hash = hash_fnv64_string(fp_filename);
+		item.name_hash = hash_string(fp_filename);
 		fp_file_cache.push_back(item);
 		fp_call        = true;
 		fp_call_status = true;
@@ -629,7 +627,7 @@ void file_picker_shutdown() {
 
 bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_size) {
 #if defined(SK_OS_WINDOWS_UWP)
-	uint64_t hash = hash_fnv64_string(filename);
+	id_hash_t hash = hash_string(filename);
 	for (size_t i = 0; i < fp_file_cache.size(); i++) {
 		if (fp_file_cache[i].name_hash == hash) {
 			IRandomAccessStreamWithContentType stream = fp_file_cache[i].file.OpenReadAsync().get();
@@ -657,7 +655,7 @@ bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_s
 
 bool file_picker_cache_save(const char *filename, void *data, size_t size) {
 #if defined(SK_OS_WINDOWS_UWP)
-	uint64_t hash = hash_fnv64_string(filename);
+	id_hash_t hash = hash_string(filename);
 	for (size_t i = 0; i < fp_file_cache.size(); i++) {
 		if (fp_file_cache[i].name_hash == hash) {
 			winrt::array_view<uint8_t const> view{ (uint8_t *)data, (uint8_t *)data + size };
