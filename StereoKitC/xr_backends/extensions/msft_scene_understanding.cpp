@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_MSFT_scene_understanding
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_scene_understanding
+
 #include "msft_scene_understanding.h"
 #include "ext_management.h"
 #include "../../_stereokit.h"

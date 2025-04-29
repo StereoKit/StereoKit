@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_KHR_android_create_instance
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_android_create_instance
+
 #include "android_create_instance.h"
 #include "ext_management.h"
 #include "../openxr_platform.h"

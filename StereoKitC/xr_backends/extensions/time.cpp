@@ -4,6 +4,10 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_KHR_convert_timespec_time and XR_KHR_win32_convert_performance_counter_time
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_convert_timespec_time
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_win32_convert_performance_counter_time
+
 #include "../openxr_platform.h"
 #include "ext_management.h"
 #include "time.h"

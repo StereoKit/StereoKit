@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_EXT_debug_utils
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_debug_utils
+
 #include "ext_management.h"
 #include "debug_utils.h"
 

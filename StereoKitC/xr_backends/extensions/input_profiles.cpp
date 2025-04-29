@@ -16,6 +16,9 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+// This implements "hp/mixed_reality_controller" in XR_EXT_hp_mixed_reality_controller
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hp_mixed_reality_controller
+
 void xr_profile_ext_hp_mr_controller_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME;
@@ -23,8 +26,6 @@ void xr_profile_ext_hp_mr_controller_register() {
 		if (!backend_openxr_ext_enabled(XR_EXT_HP_MIXED_REALITY_CONTROLLER_EXTENSION_NAME))
 			return xr_system_fail;
 
-		// hp/mixed_reality_controller
-		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hp_mixed_reality_controller
 		pose_t palm_offset = device_display_get_blend() == display_blend_opaque
 			? pose_t{ {0.01f, -0.01f,  0.015f}, quat_from_angles(-45, 0, 0) }
 			: pose_t{ {0,      0.005f, 0     }, quat_from_angles(-68, 0, 0) };
@@ -66,6 +67,9 @@ void xr_profile_ext_hp_mr_controller_register() {
 
 ///////////////////////////////////////////
 
+// This implements "ext/hand_interaction_ext" in XR_EXT_hand_interaction
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hand_interaction
+
 void xr_profile_ext_hand_interaction_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_HAND_INTERACTION_EXTENSION_NAME;
@@ -84,8 +88,6 @@ void xr_profile_ext_hand_interaction_register() {
 			return xr_system_fail;
 		}
 
-		// ext/hand_interaction_ext
-		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
 		xr_interaction_profile_t profile_l = { "ext/hand_interaction_ext" };
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.is_hand        = true;
@@ -114,6 +116,9 @@ void xr_profile_ext_hand_interaction_register() {
 }
 
 ///////////////////////////////////////////
+
+// This implements "microsoft/hand_interaction" in XR_MSFT_hand_interaction
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_hand_interaction
 
 void xr_profile_msft_hand_interaction_register() {
 	xr_system_t sys = {};
@@ -148,9 +153,6 @@ void xr_profile_msft_hand_interaction_register() {
 			return xr_system_fail;
 		}
 
-
-		// microsoft/hand_interaction
-		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#ext_hand_interaction_profile
 		xr_interaction_profile_t profile_l = { "microsoft/hand_interaction" };
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.is_hand        = true;
@@ -178,6 +180,9 @@ void xr_profile_msft_hand_interaction_register() {
 
 ///////////////////////////////////////////
 
+// This implements "bytedance/pico_neo3_controller" and "bytedance/pico4_controller" in XR_BD_controller_interaction
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
+
 void xr_profile_bd_controller_interaction_register() {
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME;
@@ -185,8 +190,6 @@ void xr_profile_bd_controller_interaction_register() {
 		if (!backend_openxr_ext_enabled(XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME))
 			return xr_system_fail;
 
-		// Bytedance PICO Neo3
-		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 		xr_interaction_profile_t profile3_l = { "bytedance/pico_neo3_controller" };
 		profile3_l.top_level_path = "/user/hand/left";
 		profile3_l.is_hand        = false;
@@ -217,8 +220,6 @@ void xr_profile_bd_controller_interaction_register() {
 		profile3_r.binding[profile3_r.binding_ct++]={ xra_type_bool,  input_button_r_x2,      "b/click"          };
 		oxri_register_profile(profile3_r);
 
-		// Bytedance Pico 4
-		// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_BD_controller_interaction
 		// Note that on the pico 4 OS 5.5 OpenXR SDK 2.2, the xrGetCurrentInteractionProfile will return '/interaction_profiles/bytedance/pico_neo3_controller'
 		// instead of the expected '/interaction_profiles/bytedance/pico4_controller'
 		xr_interaction_profile_t profile4_l = { "bytedance/pico4_controller" };

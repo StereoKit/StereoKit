@@ -4,7 +4,7 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
-// XR_KHR_composition_layer_depth spec here:
+// This implements XR_KHR_composition_layer_depth
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_composition_layer_depth
 
 // NOTE! openxr_view.cpp has part of the implementation for this extension!!!

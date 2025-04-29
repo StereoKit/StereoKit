@@ -4,6 +4,13 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_KHR_d3d11_enable, XR_KHR_opengl_enable,
+// XR_KHR_opengl_es_enable, and XR_MNDX_egl_enable
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_D3D11_enable
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_opengl_enable
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_opengl_es_enable
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MNDX_egl_enable
+
 #include "../openxr_platform.h"
 #include "ext_management.h"
 #include "graphics.h"

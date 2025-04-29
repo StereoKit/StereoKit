@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_MSFT_hand_tracking_mesh
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_hand_tracking_mesh
+
 #include "hand_mesh.h"
 #include "hand_tracking.h"
 #include "ext_management.h"

@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_EXT_eye_gaze_interaction
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_eye_gaze_interaction
+
 #include "ext_management.h"
 #include "eye_interaction.h"
 #include "../../systems/input.h"

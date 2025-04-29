@@ -4,6 +4,10 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_KHR_loader_init and XR_KHR_loader_init_android
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_loader_init
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_loader_init_android
+
 #include "loader_init.h"
 #include "../openxr_platform.h"
 #include "../../log.h"

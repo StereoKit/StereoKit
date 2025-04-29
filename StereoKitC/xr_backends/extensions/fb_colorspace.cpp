@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_FB_color_space
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_FB_color_space
+
 #include "fb_colorspace.h"
 #include "ext_management.h"
 

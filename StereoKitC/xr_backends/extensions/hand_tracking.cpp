@@ -4,6 +4,10 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_EXT_hand_tracking, augmented with XR_EXT_hand_tracking_data_source
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hand_tracking
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hand_tracking_data_source
+
 #include "../../stereokit.h"
 #include "../openxr.h"
 #include "ext_management.h"

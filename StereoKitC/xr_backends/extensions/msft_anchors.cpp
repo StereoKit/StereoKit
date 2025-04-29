@@ -4,7 +4,7 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
-// For OpenXR extensions:
+// This implements XR_MSFT_spatial_anchor and XR_MSFT_spatial_anchor_persistence
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_spatial_anchor
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_spatial_anchor_persistence
 

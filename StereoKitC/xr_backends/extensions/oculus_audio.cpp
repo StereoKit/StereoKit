@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_OCULUS_audio_device_guid
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_OCULUS_audio_device_guid
+
 #include "../openxr_platform.h"
 #include "ext_management.h"
 #include "oculus_audio.h"

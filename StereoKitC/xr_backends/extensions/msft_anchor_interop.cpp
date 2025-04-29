@@ -4,6 +4,10 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_MSFT_perception_anchor_interop and depends on XR_MSFT_spatial_anchor
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_perception_anchor_interop
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_spatial_anchor
+
 #include "../openxr_platform.h"
 #include "ext_management.h"
 #include "msft_bridge.h"

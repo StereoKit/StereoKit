@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_KHR_android_thread_settings
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_android_thread_settings
+
 #include "android_thread.h"
 #include "ext_management.h"
 #include "../openxr_platform.h"

@@ -4,9 +4,8 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
-// XR_MSFT_first_person_observer spec here:
+// This implements XR_MSFT_first_person_observer and XR_MSFT_secondary_view_configuration
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_first_person_observer
-// XR_MSFT_secondary_view_configuration spec here:
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_MSFT_secondary_view_configuration
 
 // NOTE! openxr_view.cpp has part of the implementation for this extension!!!
