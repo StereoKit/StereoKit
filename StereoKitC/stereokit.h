@@ -57,7 +57,8 @@ inline enumType  operator~ (const enumType& a)              { return static_cast
 namespace sk {
 #endif
 
-typedef int32_t bool32_t;
+typedef int32_t  bool32_t;
+typedef uint64_t id_hash_t;
 
 typedef struct vec2 {
 	float x;
@@ -542,6 +543,13 @@ SK_API double        time_step             (void);
 SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
 SK_API uint64_t      time_frame            (void);
+
+///////////////////////////////////////////
+
+SK_API id_hash_t     hash_string           (const char* str_utf8);
+SK_API id_hash_t     hash_string_with      (const char* str_utf8, id_hash_t root);
+SK_API id_hash_t     hash_int              (int32_t value);
+SK_API id_hash_t     hash_int_with         (int32_t value,        id_hash_t root);
 
 ///////////////////////////////////////////
 
@@ -1288,7 +1296,7 @@ SK_API void              material_set_uint3       (material_t material, const ch
 SK_API void              material_set_uint4       (material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3, uint32_t value4);
 SK_API void              material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t          material_set_texture     (material_t material, const char *name, tex_t    value);
-SK_API bool32_t          material_set_texture_id  (material_t material, uint64_t    id,   tex_t    value);
+SK_API bool32_t          material_set_texture_id  (material_t material, id_hash_t   id,   tex_t    value);
 SK_API float             material_get_float       (material_t material, const char *name);
 SK_API vec2              material_get_vector2     (material_t material, const char *name);
 SK_API vec3              material_get_vector3     (material_t material, const char *name);
@@ -1301,9 +1309,9 @@ SK_API matrix            material_get_matrix      (material_t material, const ch
 SK_API tex_t             material_get_texture     (material_t material, const char *name);
 SK_API bool32_t          material_has_param       (material_t material, const char *name, material_param_ type);
 SK_API void              material_set_param       (material_t material, const char *name, material_param_ type, const void *value);
-SK_API void              material_set_param_id    (material_t material, uint64_t    id,   material_param_ type, const void *value);
+SK_API void              material_set_param_id    (material_t material, id_hash_t   id,   material_param_ type, const void *value);
 SK_API bool32_t          material_get_param       (material_t material, const char *name, material_param_ type, void *out_value);
-SK_API bool32_t          material_get_param_id    (material_t material, uint64_t    id,   material_param_ type, void *out_value);
+SK_API bool32_t          material_get_param_id    (material_t material, id_hash_t   id,   material_param_ type, void *out_value);
 SK_API void              material_get_param_info  (material_t material, int32_t index, char **out_name, material_param_ *out_type);
 SK_API int32_t           material_get_param_count (material_t material);
 SK_API void              material_set_shader      (material_t material, shader_t shader);

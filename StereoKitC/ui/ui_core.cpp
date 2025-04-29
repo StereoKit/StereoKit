@@ -8,8 +8,8 @@
 #include "ui_layout.h"
 #include "ui_theming.h"
 
+#include "../_stereokit.h"
 #include "../libraries/array.h"
-#include "../libraries/ferr_hash.h"
 #include "../systems/input.h"
 #include "../hands/input_hand.h"
 #include "../sk_math.h"
@@ -57,7 +57,7 @@ void ui_core_init() {
 	skui_preserve_keyboard_ids_read  = &skui_preserve_keyboard_ids[0];
 	skui_preserve_keyboard_ids_write = &skui_preserve_keyboard_ids[1];
 
-	skui_id_stack.add({ HASH_FNV64_START });
+	skui_id_stack.add({ default_hash_root });
 
 	skui_hand_interactors[0] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activate_position);
 	skui_hand_interactors[1] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activate_state);
@@ -989,7 +989,7 @@ button_state_ ui_last_element_focused() {
 
 ///////////////////////////////////////////
 
-id_hash_t hash_fnv64_string_16(const char16_t* string, id_hash_t start_hash = HASH_FNV64_START) {
+id_hash_t hash_fnv64_string_16(const char16_t* string, id_hash_t start_hash = default_hash_root) {
 	id_hash_t hash = start_hash;
 	while (*string != '\0') {
 		hash = (hash ^ ((*string & 0xFF00) >> 2)) * 1099511628211;
@@ -1003,8 +1003,8 @@ id_hash_t hash_fnv64_string_16(const char16_t* string, id_hash_t start_hash = HA
 
 id_hash_t ui_stack_hash(const char *string) {
 	return skui_id_stack.count > 0 
-		? hash_fnv64_string(string, skui_id_stack.last())
-		: hash_fnv64_string(string);
+		? hash_string_with(string, skui_id_stack.last())
+		: hash_string     (string);
 }
 
 ///////////////////////////////////////////
@@ -1019,8 +1019,8 @@ id_hash_t ui_stack_hash_16(const char16_t *string) {
 
 id_hash_t ui_stack_hashi(int32_t id) {
 	return skui_id_stack.count > 0 
-		? hash_fnv64_data(&id, sizeof(int32_t), skui_id_stack.last())
-		: hash_fnv64_data(&id, sizeof(int32_t));
+		? hash_int_with(id, skui_id_stack.last())
+		: hash_int     (id);
 }
 
 ///////////////////////////////////////////

@@ -10,17 +10,16 @@
 #include "../../stereokit.h"
 #include "../../_stereokit.h"
 #include "../../libraries/array.h"
-#include "../../libraries/ferr_hash.h"
 #include "../../libraries/stref.h"
 
 typedef struct ext_management_state_t {
-	array_t<const char*> exts_user;
-	array_t<const char*> exts_sk;
-	array_t<char*>       exts_exclude_m; // these _m lists own allocated strings
-	array_t<char*>       exts_all_m;
-	array_t<uint64_t>    exts_loaded;
-	bool                 minimum_exts;
-	bool                 exts_collected;
+	array_t<const char*>     exts_user;
+	array_t<const char*>     exts_sk;
+	array_t<char*>           exts_exclude_m; // these _m lists own allocated strings
+	array_t<char*>           exts_all_m;
+	array_t<sk::id_hash_t>   exts_loaded;
+	bool                     minimum_exts;
+	bool                     exts_collected;
 
 	array_t<sk::xr_system_t> system_list;
 
@@ -115,7 +114,7 @@ bool ext_management_select_exts(bool minimum_exts, array_t<char*>* ref_all_avail
 
 		if (str) {
 			ref_request_exts->add(str);
-			local.exts_loaded.add(hash_fnv64_string(str));
+			local.exts_loaded.add(hash_string(str));
 		} else {
 			ref_all_available_exts->add(string_copy(exts[i].extensionName));
 		}
@@ -283,8 +282,7 @@ bool32_t backend_openxr_ext_enabled(const char *extension_name) {
 	if (backend_xr_get_type() != backend_xr_type_openxr) {
 		return false;
 	}
-	uint64_t hash = hash_fnv64_string(extension_name);
-	return local.exts_loaded.index_of(hash) >= 0 ? 1 : 0;
+	return local.exts_loaded.index_of(hash_string(extension_name)) >= 0 ? 1 : 0;
 }
 
 ///////////////////////////////////////////

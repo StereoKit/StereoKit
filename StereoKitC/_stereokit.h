@@ -5,6 +5,8 @@
 
 namespace sk {
 
+const id_hash_t default_hash_root = 14695981039346656037UL;
+
 void     sk_assert_thread_valid();
 bool32_t sk_has_stepped        ();
 bool32_t sk_is_initialized     ();

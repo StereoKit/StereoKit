@@ -8,7 +8,7 @@ namespace sk {
 struct asset_header_t {
 	asset_type_  type;
 	asset_state_ state;
-	uint64_t     id;
+	id_hash_t    id;
 	uint64_t     index;
 	int32_t      refs;
 	char        *id_text;
@@ -53,7 +53,7 @@ struct asset_task_t {
 };
 
 void*       assets_find               (const char* id, asset_type_ type);
-void*       assets_find               (uint64_t    id, asset_type_ type);
+void*       assets_find               (id_hash_t   id, asset_type_ type);
 asset_find_ assets_find_or_create     (const char* id, asset_type_ type, void** out_asset);
 void*       assets_allocate           (asset_type_ type);
 void        assets_destroy            (asset_header_t *asset);

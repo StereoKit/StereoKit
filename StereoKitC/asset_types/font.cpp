@@ -1,8 +1,8 @@
 ﻿#include "font.h"
 
+#include "../_stereokit.h"
 #include "../libraries/stb_truetype.h"
 #include "../libraries/aileron_font_data.h"
-#include "../libraries/ferr_hash.h"
 #include "../libraries/stref.h"
 #include "../libraries/sk_fontfile.h"
 #include "../rect_atlas.h"
@@ -16,7 +16,7 @@
 namespace sk {
 
 typedef struct font_source_t {
-	int64_t        name_hash;
+	id_hash_t      name_hash;
 	char          *name;
 	int32_t        references;
 	stbtt_fontinfo info;
@@ -94,8 +94,8 @@ void         font_source_release  (int32_t id);
 ///////////////////////////////////////////
 
 int32_t font_source_add(const char *filename) {
-	int64_t hash = hash_fnv64_string(filename);
-	int32_t id   = font_sources.index_where(&font_source_t::name_hash, hash);
+	id_hash_t hash = hash_string(filename);
+	int32_t   id   = font_sources.index_where(&font_source_t::name_hash, hash);
 
 	if (id == -1) {
 		font_source_t new_file = {};
@@ -123,8 +123,8 @@ int32_t font_source_add(const char *filename) {
 ///////////////////////////////////////////
 
 int32_t font_source_add_data(const char *name, const void *data, size_t data_size) {
-	int64_t hash = hash_fnv64_string(name);
-	int32_t id   = font_sources.index_where(&font_source_t::name_hash, hash);
+	id_hash_t hash = hash_string(name);
+	int32_t   id   = font_sources.index_where(&font_source_t::name_hash, hash);
 
 	if (id == -1) {
 		font_source_t new_file = {};
@@ -270,9 +270,9 @@ font_t font_create_files(const char **files, int32_t file_count) {
 	}
 
 	// Hash the names of all of the files together
-	uint64_t hash = HASH_FNV64_START;
+	id_hash_t hash = default_hash_root;
 	for (int32_t i = 0; i < file_count; i++) {
-		hash = hash_fnv64_string(files[i], hash);
+		hash = hash_string_with(files[i], hash);
 	}
 	char file_id[64];
 	snprintf(file_id, sizeof(file_id), "sk/font/%" PRIu64, hash);
