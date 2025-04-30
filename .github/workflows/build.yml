@@ -209,13 +209,12 @@ jobs:
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
-    - name: Install Arm64 Prerequisites
-      run: |
-        sudo cp ./tools/docker/arm-cross-compile-sources-focal.list /etc/apt/sources.list.d/
-        sudo sed -i "s/deb mirror/deb [arch=amd64] mirror/g" /etc/apt/sources.list
-        sudo dpkg --add-architecture arm64
-        sudo apt-get update
-        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libegl-dev:arm64 libgbm-dev:arm64 libfontconfig-dev:arm64
+    - name: Install Cross-Compile Support for ARM64
+      uses: cyberjunk/gha-ubuntu-cross@v5
+      with:
+        arch: arm64
+    - name: Install cross-compilation tools
+      run: sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libegl-dev:arm64 libgbm-dev:arm64 libfontconfig-dev:arm64
 
     - name: Build Linux Arm64
       run: |
