@@ -83,7 +83,7 @@ xr_system_ xr_ext_msft_spatial_anchors_initialize(void*) {
 
 	if (local.persistance) {
 		// Load the persistence extension functions
-		OPENXR_LOAD_FN_RETURN(XR_EXT_ANCHOR_FUNCTIONS, xr_system_fail);
+		OPENXR_LOAD_FN_RETURN(XR_EXT_PERSISTENCE_FUNCTIONS, xr_system_fail);
 
 		// Load all the persistent anchors from storage
 		if (xr_ext_msft_spatial_anchors_load_persistent_anchors() == false)

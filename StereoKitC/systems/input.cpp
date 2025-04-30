@@ -137,39 +137,7 @@ void input_shutdown() {
 
 ///////////////////////////////////////////
 
-void input_step() {
-	///////////////////////////////////////////
-	// Update buttons
-	///////////////////////////////////////////
-
-	// Clear last frame's just-active/inactive flags, prev_evt_buttons will
-	// contain last frame's button events.
-	for (int32_t i = 0; i < local.prev_evt_buttons.count; i++) {
-		evt_button_t e = local.prev_evt_buttons[i];
-		if (e.value) local.curr_buttons[e.type] &= ~button_state_just_active;
-		else         local.curr_buttons[e.type] &= ~button_state_just_inactive;
-	}
-	local.prev_evt_buttons.clear();
-
-	// Copy new events, thread-safe
-	ft_mutex_lock(local.mtx_buttons);
-	local.prev_evt_buttons.add_range(local.evt_buttons.data, local.evt_buttons.count);
-	local.evt_buttons.clear();
-	ft_mutex_unlock(local.mtx_buttons);
-	
-	// Update our button states based on button events
-	for (int32_t i = 0; i < local.prev_evt_buttons.count; i++) {
-		evt_button_t e = local.prev_evt_buttons[i];
-		// Make sure we have space allocated for this button
-		if (e.type >= local.curr_buttons.count)
-			local.curr_buttons.add_empties((e.type - local.curr_buttons.count)+1);
-		local.curr_buttons[e.type] = button_make_state(local.curr_buttons[e.type] & button_state_active, e.value);
-	}
-
-	///////////////////////////////////////////
-	// Update poses
-	///////////////////////////////////////////
-	
+void input_pose_info_update() {
 	// Clear tracking state first, since we don't know if all poses will be
 	// updated.
 	for (int32_t i = 0; i < local.curr_poses.count; i++) {
@@ -215,6 +183,38 @@ void input_step() {
 			local.curr_poses[poses_palm[i]].rot_tracked = grip_rot_tracked;
 		}
 	}
+}
+
+///////////////////////////////////////////
+
+void input_buttons_update() {
+	///////////////////////////////////////////
+	// Update buttons
+	///////////////////////////////////////////
+
+	// Clear last frame's just-active/inactive flags, prev_evt_buttons will
+	// contain last frame's button events.
+	for (int32_t i = 0; i < local.prev_evt_buttons.count; i++) {
+		evt_button_t e = local.prev_evt_buttons[i];
+		if (e.value) local.curr_buttons[e.type] &= ~button_state_just_active;
+		else         local.curr_buttons[e.type] &= ~button_state_just_inactive;
+	}
+	local.prev_evt_buttons.clear();
+
+	// Copy new events, thread-safe
+	ft_mutex_lock(local.mtx_buttons);
+	local.prev_evt_buttons.add_range(local.evt_buttons.data, local.evt_buttons.count);
+	local.evt_buttons.clear();
+	ft_mutex_unlock(local.mtx_buttons);
+
+	// Update our button states based on button events
+	for (int32_t i = 0; i < local.prev_evt_buttons.count; i++) {
+		evt_button_t e = local.prev_evt_buttons[i];
+		// Make sure we have space allocated for this button
+		if (e.type >= local.curr_buttons.count)
+			local.curr_buttons.add_empties((e.type - local.curr_buttons.count) + 1);
+		local.curr_buttons[e.type] = button_make_state(local.curr_buttons[e.type] & button_state_active, e.value);
+	}
 
 	///////////////////////////////////////////
 	// Update floats
@@ -243,27 +243,43 @@ void input_step() {
 	}
 	local.evt_xys.clear();
 	ft_mutex_unlock(local.mtx_xys);
+}
+
+///////////////////////////////////////////
+
+void input_step() {
+	///////////////////////////////////////////
+	// Update input sources
+	///////////////////////////////////////////
+
+	input_pose_info_update();
+	input_buttons_update  ();
+	input_mouse_update    ();
+	input_keyboard_update ();
 
 	///////////////////////////////////////////
 	// Make controllers from our inputs
 	///////////////////////////////////////////
 
-	local.controllers[handed_left].aim         = input_pose_get  (input_pose_l_aim);
-	local.controllers[handed_left].palm        = input_pose_get  (input_pose_l_palm);
-	local.controllers[handed_left].pose        = input_pose_get  (input_pose_l_grip);
-	local.controllers[handed_left].grip        = input_float_get (input_float_l_grip);
-	local.controllers[handed_left].trigger     = input_float_get (input_float_l_trigger);
-	local.controllers[handed_left].stick_click = input_button_get(input_button_l_stick);
-	local.controllers[handed_left].x1          = input_button_get(input_button_l_x1);
-	local.controllers[handed_left].x2          = input_button_get(input_button_l_x2);
-	local.controllers[handed_left].stick       = input_xy_get    (input_xy_l_stick);
-
 	track_state_ pos_tracked, rot_tracked;
-	input_pose_get_state(input_pose_l_grip, &pos_tracked, &rot_tracked);
-	local.controllers[handed_left].tracked     = button_make_state((local.controllers[handed_left].tracked & button_state_active) > 0, pos_tracked != track_state_lost || rot_tracked != track_state_lost);
-	local.controllers[handed_left].tracked_pos = pos_tracked;
-	local.controllers[handed_left].tracked_rot = rot_tracked;
 
+	// Left
+	local.controllers[handed_left].aim          = input_pose_get  (input_pose_l_aim);
+	local.controllers[handed_left].palm         = input_pose_get  (input_pose_l_palm);
+	local.controllers[handed_left].pose         = input_pose_get  (input_pose_l_grip);
+	local.controllers[handed_left].grip         = input_float_get (input_float_l_grip);
+	local.controllers[handed_left].trigger      = input_float_get (input_float_l_trigger);
+	local.controllers[handed_left].stick_click  = input_button_get(input_button_l_stick);
+	local.controllers[handed_left].x1           = input_button_get(input_button_l_x1);
+	local.controllers[handed_left].x2           = input_button_get(input_button_l_x2);
+	local.controllers[handed_left].stick        = input_xy_get    (input_xy_l_stick);
+
+	input_pose_get_state(input_pose_l_grip, &pos_tracked, &rot_tracked);
+	local.controllers[handed_left].tracked      = button_make_state((local.controllers[handed_left].tracked & button_state_active) > 0, pos_tracked != track_state_lost || rot_tracked != track_state_lost);
+	local.controllers[handed_left].tracked_pos  = pos_tracked;
+	local.controllers[handed_left].tracked_rot  = rot_tracked;
+
+	// Right
 	local.controllers[handed_right].aim         = input_pose_get  (input_pose_r_aim);
 	local.controllers[handed_right].palm        = input_pose_get  (input_pose_r_palm);
 	local.controllers[handed_right].pose        = input_pose_get  (input_pose_r_grip);
@@ -280,12 +296,13 @@ void input_step() {
 	local.controllers[handed_right].tracked_rot = rot_tracked;
 
 	///////////////////////////////////////////
-	// Update input systems
+	// Update more input systems
 	///////////////////////////////////////////
 
-	input_mouse_update();
-	input_keyboard_update();
+	// Hands may depend on controllers
 	input_hand_update();
+
+	// Rendering depends on inputs
 	input_render_step();
 }
 
@@ -293,6 +310,7 @@ void input_step() {
 
 void input_step_late() {
 	input_update_poses();
+	input_pose_info_update();
 	input_render_step_late();
 }
 

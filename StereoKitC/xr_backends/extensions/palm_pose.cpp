@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_EXT_palm_pose
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_palm_pose
+
 #include "palm_pose.h"
 #include "ext_management.h"
 #include "../../libraries/stref.h"

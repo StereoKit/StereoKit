@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+// This implements XR_EXTX_overlay
+// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXTX_overlay
+
 #include "../../_stereokit.h"
 #include "ext_management.h"
 #include "overlay.h"

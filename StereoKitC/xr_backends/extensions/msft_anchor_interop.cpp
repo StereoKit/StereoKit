@@ -63,7 +63,7 @@ xr_system_ xr_ext_msft_anchor_interop_init(void*) {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_msft_anchor_interop_shutdown(void*) {
+void xr_ext_msft_anchor_interop_shutdown(void*) {
 	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
 }
 

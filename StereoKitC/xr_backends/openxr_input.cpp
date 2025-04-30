@@ -842,7 +842,7 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			case input_button_r_x2:        oxri_make_action_name(&action_info, handed_right, "x2_click",    "X2 click");    break;
 			case input_button_l_menu:      oxri_make_action_name(&action_info, handed_left,  "menu_click",  "Menu click");  break;
 			case input_button_r_menu:      oxri_make_action_name(&action_info, handed_right, "menu_click",  "Menu click");  break;
-			default:                       oxri_make_action_default(&action_info, 3, "bool", xra_val); break;
+			default:                       oxri_make_action_default(&action_info, 2, "bool", xra_val); break;
 			}
 			break;
 		case xra_type_float:
@@ -852,7 +852,7 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			case input_float_r_trigger:    oxri_make_action_name(&action_info, handed_right, "trigger", "Trigger"); break;
 			case input_float_l_grip:       oxri_make_action_name(&action_info, handed_left,  "grip",    "Grip");    break;
 			case input_float_r_grip:       oxri_make_action_name(&action_info, handed_right, "grip",    "Grip");    break;
-			default:                       oxri_make_action_default(&action_info, 3, "float", xra_val); break;
+			default:                       oxri_make_action_default(&action_info, 2, "float", xra_val); break;
 			}
 			break;
 		case xra_type_pose:
@@ -864,8 +864,8 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			case input_pose_r_palm:        oxri_make_action_name(&action_info, handed_right, "palm_pose",    "Palm pose");     break;
 			case input_pose_l_aim:         oxri_make_action_name(&action_info, handed_left,  "aim_pose",     "Aim pose");      break;
 			case input_pose_r_aim:         oxri_make_action_name(&action_info, handed_right, "aim_pose",     "Aim pose");      break;
-			case input_pose_eyes:          oxri_make_action_name(&action_info, 3,            "eyegaze_pose", "Eye gaze pose"); break;
-			default:                       oxri_make_action_default(&action_info, 3, "pose", xra_val); break;
+			case input_pose_eyes:          oxri_make_action_name(&action_info, 2,            "eyegaze_pose", "Eye gaze pose"); break;
+			default:                       oxri_make_action_default(&action_info, 2, "pose", xra_val); break;
 			}
 			break;
 		case xra_type_xy:
@@ -873,7 +873,7 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			switch (xra_val) {
 			case input_xy_l_stick:         oxri_make_action_name(&action_info, handed_left,  "stick_xy", "Stick XY"); break;
 			case input_xy_r_stick:         oxri_make_action_name(&action_info, handed_right, "stick_xy", "Stick XY"); break;
-			default:                       oxri_make_action_default(&action_info, 3, "xy", xra_val); break;
+			default:                       oxri_make_action_default(&action_info, 2, "xy", xra_val); break;
 			}
 			break;
 		}
