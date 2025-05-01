@@ -491,7 +491,7 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	case pipeline_render_strategy_simultaneous: strategy_name = "simultaneous"; break;
 	case pipeline_render_strategy_multiview:    strategy_name = "multiview";    break;
 	}
-	log_diagf("Set swapchain to %d<~blk>x<~clr>%d %d<~blk>msaa<~clr> for <~grn>%s<~clr> using <~grn>%s<~clr> render.", w, h, s, openxr_view_name(display->type), strategy_name);
+	log_diagf("Set swapchain to %d<~BLK>x<~clr>%d %d<~BLK>msaa<~clr> for <~grn>%s<~clr> using <~grn>%s<~clr> render.", w, h, s, openxr_view_name(display->type), strategy_name);
 
 	// Create texture objects if we don't have 'em
 	if (sc_color->textures == nullptr) {
@@ -540,6 +540,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 
 	if (xr_draw_to_swapchain == false)
 		render_pipeline_surface_resize(sc_color->render_surface, sc_color->width, sc_color->height, s);
+	else
+		render_pipeline_surface_set_tex(sc_color->render_surface, sc_color->textures[0]);
 
 	if (display->type == XR_PRIMARY_CONFIG) {
 		device_data.display_width  = w;
