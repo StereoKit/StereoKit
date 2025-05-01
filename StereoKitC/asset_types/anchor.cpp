@@ -46,7 +46,8 @@ bool anchors_init() {
 
 	bool32_t result = false;
 	switch (anch_sys) {
-	case anchor_system_stage: result = anchor_stage_init(); break;
+	case anchor_system_stage:       result = anchor_stage_init(); break;
+	case anchor_system_openxr_msft: result = true;                break;
 	default: break;
 	}
 

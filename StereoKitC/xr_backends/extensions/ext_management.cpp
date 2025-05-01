@@ -60,8 +60,9 @@ void ext_management_sys_register(xr_system_t system) {
 	local.system_list.add(system);
 
 	// These callback hooks are _not_ dependant on a successful initialization callback
-	if (system.evt_pre_instance.callback) local.callbacks_pre_instance_create.add(system.evt_pre_instance);
-	if (system.evt_pre_session .callback) local.callbacks_pre_session_create .add(system.evt_pre_session );
+	if (system.evt_pre_instance .callback) local.callbacks_pre_instance_create.add(system.evt_pre_instance );
+	if (system.evt_pre_session  .callback) local.callbacks_pre_session_create .add(system.evt_pre_session  );
+	if (system.evt_begin_session.callback) local.callbacks_begin_session      .add(system.evt_begin_session);
 
 	for (int32_t e = 0; e < system.request_ext_count; e++)
 		ext_management_request_ext(system.request_exts[e]);
