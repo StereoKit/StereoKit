@@ -71,6 +71,4 @@ void oxri_register_profile(xr_interaction_profile_t profile);
 void oxri_register    ();
 void oxri_update_poses();
 
-extern bool xrc_aim_ready[2];
-
 } // namespace sk

@@ -57,6 +57,10 @@ bool ext_registration() {
 	xr_ext_fb_colorspace_register();
 	xr_ext_msft_observer_register();
 	xr_ext_composition_depth_register();
+	xr_ext_overlay_register();
+	xr_ext_oculus_audio_register();
+	xr_ext_msft_bridge_register();
+	xr_ext_msft_anchor_interop_register();
 
 	// Input extensions all must go before the oxri/input system
 	xr_ext_palm_pose_register                    ();
@@ -68,11 +72,6 @@ bool ext_registration() {
 	oxri_register();
 
 	anchors_register();
-
-	xr_ext_overlay_register();
-	xr_ext_oculus_audio_register();
-	xr_ext_msft_bridge_register();
-	xr_ext_msft_anchor_interop_register();
 
 	return true;
 }

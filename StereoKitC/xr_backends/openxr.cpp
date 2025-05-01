@@ -791,24 +791,6 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 
 ///////////////////////////////////////////
 
-bool32_t openxr_get_gaze_space(pose_t* out_pose, XrTime &out_gaze_sample_time, XrTime time) {
-	if (time == 0)
-		time = xr_time;
-
-	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
-	XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION, &gaze_sample_time };
-	XrResult        res = xrLocateSpace(xr_gaze_space, xr_app_space, time, &space_location);
-	if (XR_UNQUALIFIED_SUCCESS(res) && openxr_loc_valid(space_location)) {
-		memcpy(&out_pose->position, &space_location.pose.position, sizeof(vec3));
-		memcpy(&out_pose->orientation, &space_location.pose.orientation, sizeof(quat));
-		out_gaze_sample_time = gaze_sample_time.time;
-		return true;
-	}
-	return false;
-}
-
-///////////////////////////////////////////
-
 openxr_handle_t backend_openxr_get_instance() {
 	if (backend_xr_get_type() != backend_xr_type_openxr) 
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
