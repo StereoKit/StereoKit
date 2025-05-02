@@ -334,13 +334,13 @@ void xr_ext_hand_tracking_update_states() {
 		// "ready pose" (facing the same general direction as the user). It
 		// should remain tracked if it was activated, even if it's no longer in
 		// a ready pose.
-		const pose_t* head = input_head();
+		pose_t head = input_head();
 		const float near_dist  = 0.2f;
 		const float hand_angle = 0.25f; // ~150 degrees
 		bool is_pinched   = (inp_hand->pinch_state   & button_state_active) > 0;
 		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
-		bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head->position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
-		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head->position.x, head->position.z}) > (near_dist*near_dist);
+		bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head.position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
+		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head.position.x, head.position.z}) > (near_dist*near_dist);
 		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
 		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
 

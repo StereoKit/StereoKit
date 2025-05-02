@@ -10,6 +10,7 @@
 #include "openxr.h"
 #include "openxr_input.h"
 #include "extensions/ext_management.h"
+#include "extensions/eye_interaction.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
 
@@ -85,8 +86,6 @@ void oxri_register() {
 ///////////////////////////////////////////
 
 xr_system_ oxri_init(void*) {
-	local.eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
-
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
 	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
@@ -365,6 +364,8 @@ xr_system_ oxri_init(void*) {
 		return xr_system_fail_critical;
 	}
 
+	local.eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
+
 	return xr_system_succeed;
 }
 
@@ -480,9 +481,6 @@ void oxri_update_poses() {
 	sync_info.activeActionSets      = &action_set;
 	xrSyncActions(xr_session, &sync_info);
 
-	matrix root   = render_get_cam_final    ();
-	quat   root_q = matrix_extract_rotation(root);
-
 	// Track the head location, and use it to determine the tracking state of
 	// the world.
 	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
@@ -502,25 +500,25 @@ void oxri_update_poses() {
 		(local.tracked_state            & button_state_active)                    != 0,
 		(head_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT) != 0);
 
-	input_head_pose_world = matrix_transform_pose(root, input_head_pose_local);
-
 	// Get input from whatever controllers may be present
+	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
 	for (int32_t i = 0; i < local.pose_spaces.count; i++) {
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
+		if (i == input_pose_eyes && xr_ext_eye_gaze_available()) {
+			space_location.next = &gaze_sample_time;
+		}
 		if (local.pose_spaces[i] == XR_NULL_HANDLE || !XR_UNQUALIFIED_SUCCESS(xrLocateSpace(local.pose_spaces[i], xr_app_space, xr_time, &space_location))) continue;
 
 		track_state_ tr_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT   ) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) ? track_state_inferred : track_state_lost);
 		track_state_ tr_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) ? track_state_inferred : track_state_lost);
 		pose_t       pose   = input_pose_get((input_pose_)i);
-		if (tr_pos != track_state_lost) {
-			memcpy(&pose.position, &space_location.pose.position, sizeof(vec3));
-			pose.position = root * pose.position;
-		}
-		if (tr_rot != track_state_lost) {
-			memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
-			pose.orientation = pose.orientation * root_q;
-		}
+		if (tr_pos != track_state_lost) memcpy(&pose.position,    &space_location.pose.position,    sizeof(vec3));
+		if (tr_rot != track_state_lost) memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
 		input_pose_inject((input_pose_)i, pose, tr_pos, tr_rot);
+
+		if (i == input_pose_eyes && xr_ext_eye_gaze_available() && tr_pos != track_state_lost && tr_rot != track_state_lost) {
+			xr_eyes_sample_time = gaze_sample_time.time;
+		}
 	}
 }
 

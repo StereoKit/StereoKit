@@ -10,12 +10,20 @@
 #include "ext_management.h"
 #include "eye_interaction.h"
 #include "../../systems/input.h"
+#include "../../device.h"
 
 #include <string.h>
 
 ///////////////////////////////////////////
 
 namespace sk {
+
+///////////////////////////////////////////
+
+typedef struct xr_ext_eye_gaze_state_t {
+	bool available;
+} xrext_eye_gaze_state_t;
+static xr_ext_eye_gaze_state_t local = { };
 
 ///////////////////////////////////////////
 
@@ -47,11 +55,18 @@ void xr_profile_ext_eye_gaze_register() {
 		profile.binding[profile.binding_ct++] = { xra_type_pose, input_pose_eyes, "gaze_ext/pose" };
 		oxri_register_profile(profile);
 
+		local.available = true;
+		device_data.has_eye_gaze = true;
+
 		return xr_system_succeed;
 	} };
 	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////
+
+bool xr_ext_eye_gaze_available() {
+	return local.available;
+}
 
 } // namespace sk

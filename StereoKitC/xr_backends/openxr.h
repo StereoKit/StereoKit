@@ -109,7 +109,6 @@ extern bool       xr_has_bounds;
 extern XrTime     xr_time;
 extern XrTime     xr_eyes_sample_time;
 extern vec2       xr_bounds_size;
-extern pose_t     xr_bounds_pose;
 extern pose_t     xr_bounds_pose_local;
 
 #define XR_PRIMARY_CONFIG XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO

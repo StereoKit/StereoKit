@@ -11,21 +11,21 @@
 namespace sk {
 
 typedef enum input_pose_ {
-	input_pose_l_grip,
-	input_pose_r_grip,
-	input_pose_l_palm,
-	input_pose_r_palm,
-	input_pose_l_aim,
-	input_pose_r_aim,
 	input_pose_eyes,
+	input_pose_l_grip,
+	input_pose_l_palm,
+	input_pose_l_aim,
+	input_pose_r_grip,
+	input_pose_r_palm,
+	input_pose_r_aim,
 
 	input_pose_max
 } input_pose_;
 
 typedef enum input_float_ {
 	input_float_l_trigger,
-	input_float_r_trigger,
 	input_float_l_grip,
+	input_float_r_trigger,
 	input_float_r_grip,
 
 	input_float_max
@@ -33,14 +33,14 @@ typedef enum input_float_ {
 
 typedef enum input_button_ {
 	input_button_l_aim_ready,
-	input_button_r_aim_ready,
 	input_button_l_stick,
-	input_button_r_stick,
 	input_button_l_x1,
-	input_button_r_x1,
 	input_button_l_x2,
-	input_button_r_x2,
 	input_button_l_menu,
+	input_button_r_aim_ready,
+	input_button_r_stick,
+	input_button_r_x1,
+	input_button_r_x2,
 	input_button_r_menu,
 
 	input_button_bool_max
@@ -95,9 +95,7 @@ inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 	return result;
 }
 
-extern pose_t input_head_pose_world;
 extern pose_t input_head_pose_local;
-extern pose_t input_eyes_pose_world;
 extern pose_t input_eyes_pose_local;
 
 

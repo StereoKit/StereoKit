@@ -51,8 +51,7 @@ struct scene_mesh_t {
 struct su_mesh_inst_t {
 	mesh_t   mesh_ref;
 	matrix   local_transform;
-	matrix   transform;
-	matrix   inv_transform;
+	matrix   local_transform_inv;
 };
 
 typedef struct xr_scene_understanding_state_t {
@@ -158,7 +157,7 @@ bool oxr_su_is_su_needed(scene_request_info_t info) {
 
 bool oxr_su_check_needs_update(scene_request_info_t info) {
 	switch (info.refresh_type) {
-	case world_refresh_area:  return !vec3_in_radius(input_head()->position, info.center, info.radius * 0.5f);
+	case world_refresh_area:  return !vec3_in_radius(input_head().position, info.center, info.radius * 0.5f);
 	case world_refresh_timer: return (time_totalf_unscaled() - local.scene_last_refresh) >= info.refresh_interval;
 	default: return false;
 	}
@@ -209,8 +208,9 @@ void xr_ext_msft_su_step_begin(void*) {
 	if (local.scene_next_req.occlusion) {
 		material_t mat = world_get_occlusion_material();
 		if (mat) {
+			matrix root = render_get_cam_final();
 			for (int32_t i = 0; i < local.scene_visuals.count; i++) {
-				render_add_mesh(local.scene_visuals[i].mesh_ref, mat, local.scene_visuals[i].transform);
+				render_add_mesh(local.scene_visuals[i].mesh_ref, mat, root * local.scene_visuals[i].local_transform);
 			}
 			material_release(mat);
 		}
@@ -233,7 +233,8 @@ void oxr_su_request_update(scene_request_info_t info) {
 	if (!oxr_su_is_su_needed(info))
 		return;
 
-	local.scene_last_req.center = input_head()->position;
+	pose_t head = input_head();
+	local.scene_last_req.center = head.position;
 	local.scene_last_refresh    = time_totalf_unscaled();
 
 	if (local.scene_observer == XR_NULL_HANDLE) {
@@ -248,7 +249,7 @@ void oxr_su_request_update(scene_request_info_t info) {
 	if (info.raycast  ) features.add(XR_SCENE_COMPUTE_FEATURE_COLLIDER_MESH_MSFT); 
 
 	XrNewSceneComputeInfoMSFT compute_info = { XR_TYPE_NEW_SCENE_COMPUTE_INFO_MSFT };
-	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&input_head()->position, info.radius };
+	XrSceneSphereBoundMSFT    bound_sphere = { *(XrVector3f*)&head.position, info.radius };
 	compute_info.consistency           = occlusion_only
 		? XR_SCENE_COMPUTE_CONSISTENCY_OCCLUSION_OPTIMIZED_MSFT
 		: XR_SCENE_COMPUTE_CONSISTENCY_SNAPSHOT_COMPLETE_MSFT;
@@ -387,10 +388,9 @@ void oxr_su_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_ins
 
 		int32_t        mesh_idx = oxr_su_mesh_get_or_add(meshes.sceneMeshes[i].meshBufferId);
 		su_mesh_inst_t inst     = {};
-		inst.mesh_ref        = local.meshes[mesh_idx].mesh;
-		inst.local_transform = pose_matrix(pose);
-		inst.transform       = inst.local_transform * render_get_cam_final();
-		inst.inv_transform   = matrix_invert(inst.transform);
+		inst.mesh_ref            = local.meshes[mesh_idx].mesh;
+		inst.local_transform     = pose_matrix(pose);
+		inst.local_transform_inv = matrix_invert(inst.local_transform);
 		if (local.meshes[mesh_idx].buffer_updated != components.components[i].updateTime ||
 			(!mesh_get_keep_data(local.meshes[mesh_idx].mesh) && local.scene_last_req.raycast)) {
 			local.meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;
@@ -406,15 +406,17 @@ void oxr_su_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_ins
 
 ///////////////////////////////////////////
 
-bool32_t oxr_su_raycast(ray_t ray, ray_t *out_intersection) {
+bool32_t oxr_su_raycast(ray_t ray_world, ray_t *out_intersection) {
 	if (!local.scene_next_req.raycast) return false;
+
+	ray_t   ray_camera = matrix_transform_ray(render_get_cam_final_inv(), ray_world);
 
 	ray_t   result     = {};
 	float   result_mag = FLT_MAX;
 	int32_t result_id  = -1;
 	for (int32_t i = 0; i < local.scene_colliders.count; i++) {
 		ray_t intersection = {};
-		ray_t local_ray    = matrix_transform_ray(local.scene_colliders[i].inv_transform, ray);
+		ray_t local_ray    = matrix_transform_ray(local.scene_colliders[i].local_transform_inv, ray_camera);
 		if (mesh_ray_intersect(local.scene_colliders[i].mesh_ref, local_ray, cull_back, &intersection)) {
 			float intersection_mag = vec3_magnitude_sq(intersection.pos - local_ray.pos);
 			if (result_mag > intersection_mag) {
@@ -425,7 +427,8 @@ bool32_t oxr_su_raycast(ray_t ray, ray_t *out_intersection) {
 		}
 	}
 	if (result_id != -1) {
-		*out_intersection = matrix_transform_ray(local.scene_colliders[result_id].transform, *out_intersection);
+		*out_intersection = matrix_transform_ray(local.scene_colliders[result_id].local_transform, *out_intersection);
+		*out_intersection = matrix_transform_ray(render_get_cam_final(), *out_intersection);
 		return true;
 	} else {
 		return false;
@@ -509,20 +512,6 @@ void oxr_su_set_refresh_interval(float every_seconds) {
 
 float oxr_su_get_refresh_interval() {
 	return local.scene_next_req.refresh_interval;
-}
-
-///////////////////////////////////////////
-
-inline void oxr_su_update_inst(su_mesh_inst_t &inst) {
-	inst.transform     = inst.local_transform * render_get_cam_final();
-	inst.inv_transform = matrix_invert(inst.transform);
-}
-
-///////////////////////////////////////////
-
-void oxr_su_refresh_transforms() {
-	local.scene_colliders.each(oxr_su_update_inst);
-	local.scene_visuals  .each(oxr_su_update_inst);
 }
 
 ///////////////////////////////////////////

@@ -30,9 +30,7 @@ bool world_init() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
 	case backend_xr_type_openxr: {
-
-		xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
-		xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+		xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	}break;
 #endif
 	default: break;
@@ -191,20 +189,6 @@ float world_get_refresh_interval() {
 
 ///////////////////////////////////////////
 
-void world_refresh_transforms() {
-	switch (backend_xr_get_type()) {
-#if defined(SK_XR_OPENXR)
-	case backend_xr_type_openxr:
-		xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
-		oxr_su_refresh_transforms();
-		return;
-#endif
-	default: return;
-	}
-}
-
-///////////////////////////////////////////
-
 bool32_t world_has_bounds() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
@@ -232,7 +216,7 @@ vec2 world_get_bounds_size() {
 pose_t world_get_bounds_pose() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
-	case backend_xr_type_openxr:    return xr_bounds_pose;
+	case backend_xr_type_openxr:    return render_cam_final_transform(xr_bounds_pose_local);
 #endif
 	case backend_xr_type_simulator: return simulator_bounds_pose();
 	default:                        return pose_identity;

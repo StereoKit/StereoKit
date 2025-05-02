@@ -80,7 +80,7 @@ void hand_mouse_update_frame() {
 	mouse_pointer_id = input_hand_pointer_id[mouse_active_hand];
 
 	pointer_t *pointer_cursor = input_get_pointer(mouse_pointer_id);
-	hand_t    *hand           = (hand_t*)input_hand(mouse_active_hand);
+	hand_t    *hand           = input_hand_ref   (mouse_active_hand);
 	bool l_pressed     = false;
 	bool r_pressed     = false;
 	bool was_tracked   = hand->tracked_state & button_state_active;

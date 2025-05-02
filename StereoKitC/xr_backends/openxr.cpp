@@ -65,7 +65,6 @@ bool                 xr_system_success    = false;
 
 bool                 xr_has_bounds        = false;
 vec2                 xr_bounds_size       = {};
-pose_t               xr_bounds_pose       = pose_identity;
 pose_t               xr_bounds_pose_local = pose_identity;
 
 XrReferenceSpaceType xr_refspace;
@@ -376,8 +375,7 @@ bool openxr_init() {
 		default:                                      world_origin_mode = origin_mode_local; break;
 	}
 
-	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
-	xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+	xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 
 	return true;
 }
@@ -591,8 +589,7 @@ void openxr_set_origin_offset(pose_t offset) {
 		log_infof("xrCreateReferenceSpace failed [%s]", openxr_string(err));
 	}
 
-	xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
-	xr_bounds_pose = matrix_transform_pose  (render_get_cam_final(), xr_bounds_pose_local);
+	xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 }
 
 ///////////////////////////////////////////
@@ -760,8 +757,7 @@ bool openxr_poll_events() {
 				xr_app_space = new_space;
 			}
 
-			xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
-			xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 		} break;
 		default: break;
 		}

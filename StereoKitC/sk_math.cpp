@@ -179,13 +179,13 @@ vec3 ray_point_closest(ray_t ray, vec3 pt) {
 
 bool32_t ray_from_mouse(vec2 screen_pixel_pos, ray_t &out_ray) {
 	if (render_get_projection() == projection_perspective) {
-		out_ray.pos = input_head()->position;
+		out_ray.pos = input_head().position;
 		out_ray.dir = vec3{screen_pixel_pos.x, screen_pixel_pos.y, 1.0f};
 		out_ray.dir = render_unproject_pt(out_ray.dir) - out_ray.pos;
 		out_ray.dir = vec3_normalize(out_ray.dir);
 	} else {
 		out_ray.pos = render_unproject_pt(vec3{screen_pixel_pos.x, screen_pixel_pos.y, 0});
-		out_ray.dir = input_head()->orientation * vec3_forward;
+		out_ray.dir = input_head().orientation * vec3_forward;
 	}
 	return true;
 }

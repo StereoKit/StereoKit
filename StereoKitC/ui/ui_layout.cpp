@@ -505,6 +505,7 @@ void ui_panel_end() {
 
 pose_t ui_popup_pose(vec3 shift) {
 	pose_t result;
+	pose_t head = input_head();
 	if (ui_last_element_active() & (button_state_active | button_state_just_inactive) ) {
 		// If there was a UI element focused, we'll use that
 		vec3 at  = hierarchy_to_world_point   ( ui_layout_last().center );
@@ -525,15 +526,15 @@ pose_t ui_popup_pose(vec3 shift) {
 		// reach, touchable by the user.
 		const float max_dist = 0.6f;
 		const float rot_dist = 0.1f;
-		float dist_sq = vec3_distance_sq(input_head()->position, result.position);
+		float dist_sq = vec3_distance_sq(head.position, result.position);
 		if (dist_sq > max_dist * max_dist) {
-			result.position = input_head()->position + vec3_normalize(result.position - input_head()->position) * max_dist;
+			result.position = head.position + vec3_normalize(result.position - head.position) * max_dist;
 
 			// we don't want to rotate allll the way if the keyboard is pretty
 			// much in the right spot. Instead, we should gradually face
 			// towards the user as the pose gets further from its original
 			// position.
-			quat  dest_rot = quat_lookat(result.position, input_head()->position);
+			quat  dest_rot = quat_lookat(result.position, head.position);
 			float percent  = math_saturate((sqrtf(dist_sq) - max_dist) / rot_dist);
 			result.orientation = quat_slerp(result.orientation, dest_rot, percent);
 		}
@@ -547,7 +548,6 @@ pose_t ui_popup_pose(vec3 shift) {
 		const float height_blend   = 0.5f; // How much does the user's Y axis rotation affect the popup position
 		const float rotation_blend = 0.4f; // How much does the popup position's Y offset affect the popup orientation
 
-		pose_t head     = *input_head();
 		vec3   head_fwd = head.orientation * vec3_forward;
 		vec3   flat_fwd = vec3_normalize(vec3{ head_fwd.x, 0, head_fwd.z });
 		flat_fwd.y = head_fwd.y * height_blend;

@@ -9,5 +9,6 @@
 namespace sk {
 
 void xr_profile_ext_eye_gaze_register();
+bool xr_ext_eye_gaze_available       ();
 
 }

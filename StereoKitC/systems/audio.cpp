@@ -66,14 +66,14 @@ ma_uint32 read_and_mix_pcm_frames_f32(_sound_inst_t &inst, float *output, ma_uin
 	// The way mixing works is that we just read into a temporary buffer,
 	// then take the contents of that buffer and mix it with the contents of
 	// the output buffer by simply adding the samples together.
-	vec3 head_pos     = input_head()->position;
-	vec3 head_right   = vec3_normalize(input_head()->orientation * vec3_right);
-	vec3 head_forward = vec3_normalize(input_head()->orientation * vec3{0,0,1});
+	pose_t head         = input_head();
+	vec3   head_right   = vec3_normalize(head.orientation * vec3_right);
+	vec3   head_forward = vec3_normalize(head.orientation * vec3{0,0,1});
 
 	// Calculate the volume based on distance using 1/d. While sound
 	// "intensity" is best modeled with 1/d^2, sound percieved loudness
 	// comes from sound amplitude/pressure, which falls off as 1/d.
-	vec3  dir    = head_pos - inst.position;
+	vec3  dir    = head.position - inst.position;
 	float dist2  = vec3_magnitude_sq(dir);
 	float dist   = fmaxf(0.001f, sqrtf(dist2));
 	float volume = fminf(1, (1.f / dist) * inst.volume);
@@ -482,7 +482,7 @@ bool audio_init() {
 ///////////////////////////////////////////
 
 void audio_step() {
-	matrix head = pose_matrix(*input_head());
+	matrix head = pose_matrix(input_head());
 	matrix_inverse(head, au_head_transform);
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {

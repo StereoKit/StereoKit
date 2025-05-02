@@ -13,6 +13,7 @@
 #include "../libraries/ferr_thread.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/openxr_input.h"
+#include "../systems/render.h"
 
 namespace sk {
 
@@ -81,9 +82,7 @@ static input_state_t local = {};
 
 // TODO: these should be moved to local state
 pose_t input_head_pose_local;
-pose_t input_head_pose_world;
 pose_t input_eyes_pose_local;
-pose_t input_eyes_pose_world;
 
 ///////////////////////////////////////////
 
@@ -94,9 +93,7 @@ void input_mouse_update();
 bool input_init() {
 	local = {};
 	input_head_pose_local = pose_identity;
-	input_head_pose_world = pose_identity;
 	input_eyes_pose_local = pose_identity;
-	input_eyes_pose_world = pose_identity;
 
 	local.mtx_poses   = ft_mutex_create();
 	local.mtx_floats  = ft_mutex_create();
@@ -403,14 +400,14 @@ button_state_ input_key(key_ key) {
 
 ///////////////////////////////////////////
 
-const pose_t *input_head() {
-	return &input_head_pose_world;
+pose_t input_head() {
+	return render_cam_final_transform(input_head_pose_local);
 }
 
 ///////////////////////////////////////////
 
-const pose_t *input_eyes() {
-	return &input_eyes_pose_world;
+pose_t input_eyes() {
+	return render_cam_final_transform(input_eyes_pose_local);
 }
 
 ///////////////////////////////////////////
@@ -504,14 +501,14 @@ void input_mouse_override_pos(vec2 override_pos) {
 
 ///////////////////////////////////////////
 
-void input_pose_inject  (input_pose_ pose_type, pose_t pose, track_state_ pos_tracked, track_state_ rot_tracked) { ft_mutex_lock(local.mtx_poses); local.evt_poses.add({ pose_type, {pose, pos_tracked, rot_tracked} }); ft_mutex_unlock(local.mtx_poses); }
+void input_pose_inject  (input_pose_   pose_type,   pose_t pose, track_state_ pos_tracked, track_state_ rot_tracked) { ft_mutex_lock(local.mtx_poses); local.evt_poses.add({ pose_type, {pose, pos_tracked, rot_tracked} }); ft_mutex_unlock(local.mtx_poses); }
 void input_float_inject (input_float_  float_type,  float value) { ft_mutex_lock(local.mtx_floats ); local.evt_floats .add({ float_type,  value }); ft_mutex_unlock(local.mtx_floats ); }
 void input_button_inject(input_button_ button_type, bool  value) { ft_mutex_lock(local.mtx_buttons); local.evt_buttons.add({ button_type, value }); ft_mutex_unlock(local.mtx_buttons); }
 void input_xy_inject    (input_xy_     xy_type,     vec2  value) { ft_mutex_lock(local.mtx_xys    ); local.evt_xys    .add({ xy_type,     value }); ft_mutex_unlock(local.mtx_xys    ); }
 
 ///////////////////////////////////////////
 
-pose_t        input_pose_get  (input_pose_   pose_type)   { return pose_type   >= 0 && pose_type   < local.curr_poses  .count ? local.curr_poses  [pose_type].pose : pose_identity; }
+pose_t        input_pose_get  (input_pose_   pose_type)   { return pose_type   >= 0 && pose_type   < local.curr_poses  .count ? render_cam_final_transform(local.curr_poses[pose_type].pose) : pose_identity; }
 float         input_float_get (input_float_  float_type)  { return float_type  >= 0 && float_type  < local.curr_floats .count ? local.curr_floats [float_type]     : 0; }
 button_state_ input_button_get(input_button_ button_type) { return button_type >= 0 && button_type < local.curr_buttons.count ? local.curr_buttons[button_type]    : button_state_inactive; }
 vec2          input_xy_get    (input_xy_     xy_type)     { return xy_type     >= 0 && xy_type     < local.curr_xys    .count ? local.curr_xys    [xy_type]        : vec2_zero; }
@@ -583,13 +580,13 @@ void body_make_shoulders(vec3* out_left, vec3* out_right) {
 	const float neck_length        = 7*cm2m;
 
 	// Chest center is down to the base of the head, and then down the neck.
-	const pose_t *head = input_head();
-	vec3 chest_center = head->position + head->orientation * vec3{0,-head_length,0};
+	pose_t head = input_head();
+	vec3 chest_center = head.position + head.orientation * vec3{0,-head_length,0};
 	chest_center.y   -= neck_length;
 
 	// Shoulder forward facing direction is head direction weighted equally 
 	// with the direction of both hands.
-	vec3 face_fwd = input_head()->orientation * vec3_forward;
+	vec3 face_fwd = head.orientation * vec3_forward;
 	face_fwd.y = 0;
 	face_fwd   = vec3_normalize(face_fwd) * 2;
 	face_fwd  += vec3_normalize(input_hand(handed_left )->wrist.position - chest_center);
