@@ -21,36 +21,6 @@ typedef enum xra_type_ {
 	xra_type_max
 } xr_action_type_;
 
-typedef enum xraction_ {
-	xr_action_pose_eyes,
-
-	xr_action_r_pose_grip,
-	xr_action_r_pose_palm,
-	xr_action_r_pose_aim,
-	xr_action_r_float_trigger,
-	xr_action_r_float_grip,
-	xr_action_r_xy_stick,
-	xr_action_r_bool_aim_ready,
-	xr_action_r_bool_stick,
-	xr_action_r_bool_x1,
-	xr_action_r_bool_x2,
-	xr_action_r_bool_menu,
-
-	xr_action_l_pose_grip,
-	xr_action_l_pose_palm,
-	xr_action_l_pose_aim,
-	xr_action_l_float_trigger,
-	xr_action_l_float_grip,
-	xr_action_l_xy_stick,
-	xr_action_l_bool_aim_ready,
-	xr_action_l_bool_stick,
-	xr_action_l_bool_x1,
-	xr_action_l_bool_x2,
-	xr_action_l_bool_menu,
-
-	xr_action_max,
-} xr_action_;
-
 typedef struct xr_interaction_bind_t {
 	uint16_t    xra_type;
 	uint16_t    xra_type_val;
@@ -60,7 +30,7 @@ typedef struct xr_interaction_bind_t {
 typedef struct xr_interaction_profile_t {
 	const char*           name;
 	const char*           top_level_path;
-	xr_interaction_bind_t binding[xr_action_max];
+	xr_interaction_bind_t binding[32];
 	int32_t               binding_ct;
 	pose_t                palm_offset;
 	bool                  is_hand;
