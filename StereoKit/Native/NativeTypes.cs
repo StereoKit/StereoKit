@@ -242,7 +242,13 @@ namespace StereoKit
 		/// <summary>How wide is the back-border around the UI elements? In
 		/// meters.</summary>
 		public float backplateBorder;
-	}
+		/// <summary>
+		/// Defines the scale factor for the separator's thickness.
+		/// The thickness is calculated by multiplying the height of the text
+		/// by this factor. The default valus is 0.4f.
+		/// </summary>
+		public float separatorScale;
+    }
 
 	/// <summary>This represents a single vertex in a Mesh, all StereoKit
 	/// Meshes currently use this exact layout!

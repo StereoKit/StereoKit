@@ -40,6 +40,8 @@ class DemoUISettings : ITest
 		UI.HSlider("sl_depth",    ref activeSettings.depth,    0, 40 * U.mm, 0);
 		UI.Label("Rounding", size); UI.SameLine();
 		UI.HSlider("sl_rounding", ref activeSettings.rounding, 0, 40 * U.mm, 0);
+		UI.Label("Separator", size); UI.SameLine();
+		UI.HSlider("sl_separator", ref activeSettings.separatorScale, 0, 2.0f, 0.0f);
 		UI.PanelEnd();
 
 		UI.HSeparator();

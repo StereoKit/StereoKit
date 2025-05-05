@@ -138,7 +138,7 @@ void ui_model_at(model_t model, vec3 start, vec3 size, color128 color) {
 void ui_hseparator() {
 	vec3 pos;
 	vec2 size;
-	ui_layout_reserve_sz({ 0, text_style_get_baseline(ui_get_text_style())*0.4f }, false, &pos, &size);
+	ui_layout_reserve_sz({ 0, text_style_get_baseline(ui_get_text_style())*skui_settings.separator_scale }, false, &pos, &size);
 
 	ui_draw_element(ui_vis_separator, pos, vec3{ size.x, size.y, size.y / 2.0f }, 0);
 }

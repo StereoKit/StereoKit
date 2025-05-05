@@ -144,6 +144,7 @@ typedef struct ui_settings_t {
 	float rounding;
 	float backplate_depth;
 	float backplate_border;
+	float separator_scale;
 } ui_settings_t;
 
 typedef struct ui_slider_data_t {
