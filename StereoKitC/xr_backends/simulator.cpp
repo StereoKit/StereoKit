@@ -196,11 +196,13 @@ void simulator_step_begin() {
 	input_eyes_tracked_set(button_make_state(input_eyes_tracked() & button_state_active, sim_tracked));
 	ray_t ray = {};
 	if (sim_tracked && ray_from_mouse(input_mouse()->pos, ray)) {
-		input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
-		input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
+		input_pose_inject(input_pose_eyes, pose_t{
+			matrix_transform_pt(render_get_cam_final_inv(), ray.pos),
+			quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir)) }, 
+			track_state_known, track_state_known);
 	}
 
-	pose_t     eyes_world   = render_cam_final_transform(input_eyes_pose_local);
+	pose_t     eyes_world   = input_pose_get_world(input_pose_eyes);
 	pointer_t *pointer_head = input_get_pointer(sim_gaze_pointer);
 	pointer_head->tracked = button_state_active;
 	pointer_head->ray.pos = eyes_world.position;

@@ -511,12 +511,12 @@ void oxri_update_poses() {
 
 		track_state_ tr_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT   ) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) ? track_state_inferred : track_state_lost);
 		track_state_ tr_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) ? track_state_inferred : track_state_lost);
-		pose_t       pose   = input_pose_get((input_pose_)i);
+		pose_t       pose   = input_pose_get_local((input_pose_)i);
 		if (tr_pos != track_state_lost) memcpy(&pose.position,    &space_location.pose.position,    sizeof(vec3));
 		if (tr_rot != track_state_lost) memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
 		input_pose_inject((input_pose_)i, pose, tr_pos, tr_rot);
 
-		if (i == input_pose_eyes && xr_ext_eye_gaze_available() && tr_pos != track_state_lost && tr_rot != track_state_lost) {
+		if (i == input_pose_eyes && xr_ext_eye_gaze_available()) {
 			xr_eyes_sample_time = gaze_sample_time.time;
 		}
 	}

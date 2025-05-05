@@ -58,8 +58,10 @@ struct input_state_t {
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
 	button_state_         controller_menubtn;
-	button_state_         eyes_track_state;
 	pose_t                palm_offset[2];
+
+	button_state_         eyes_track_state;
+	pose_t                eyes_pose_local;
 
 	array_t<pose_info_t>  curr_poses;
 	array_t<button_state_>curr_buttons;
@@ -82,7 +84,6 @@ static input_state_t local = {};
 
 // TODO: these should be moved to local state
 pose_t input_head_pose_local;
-pose_t input_eyes_pose_local;
 
 ///////////////////////////////////////////
 
@@ -93,7 +94,6 @@ void input_mouse_update();
 bool input_init() {
 	local = {};
 	input_head_pose_local = pose_identity;
-	input_eyes_pose_local = pose_identity;
 
 	local.mtx_poses   = ft_mutex_create();
 	local.mtx_floats  = ft_mutex_create();
@@ -145,8 +145,14 @@ void input_pose_info_update() {
 	ft_mutex_lock(local.mtx_poses);
 	for (int32_t i = 0; i < local.evt_poses.count; i++) {
 		evt_pose_t e = local.evt_poses[i];
-		if (e.type >= local.curr_poses.count)
+		if (e.type >= local.curr_poses.count) {
+			int count = local.curr_poses.count;
 			local.curr_poses.add_empties((e.type - local.curr_poses.count) + 1);
+			// Set empty quats to identity
+			for (int32_t p = count; p < local.curr_poses.count; p++) {
+				local.curr_poses[p].pose.orientation = quat_identity;
+			}
+		}
 		local.curr_poses[e.type] = e.value;
 	}
 	local.evt_poses.clear();
@@ -171,7 +177,7 @@ void input_pose_info_update() {
 				local.curr_poses.add_empties((poses_palm[i] - local.curr_poses.count) + 1);
 
 			// Set up the new palm pose, based on the grip
-			pose_t      grip_pose = input_pose_get(poses_grip[i]);
+			pose_t      grip_pose = input_pose_get_local(poses_grip[i]);
 			pose_info_t new_pose  = {
 				grip_pose.position + grip_pose.orientation * local.palm_offset[i].position,
 				local.palm_offset[i].orientation * grip_pose.orientation };
@@ -261,15 +267,15 @@ void input_step() {
 	track_state_ pos_tracked, rot_tracked;
 
 	// Left
-	local.controllers[handed_left].aim          = input_pose_get  (input_pose_l_aim);
-	local.controllers[handed_left].palm         = input_pose_get  (input_pose_l_palm);
-	local.controllers[handed_left].pose         = input_pose_get  (input_pose_l_grip);
-	local.controllers[handed_left].grip         = input_float_get (input_float_l_grip);
-	local.controllers[handed_left].trigger      = input_float_get (input_float_l_trigger);
-	local.controllers[handed_left].stick_click  = input_button_get(input_button_l_stick);
-	local.controllers[handed_left].x1           = input_button_get(input_button_l_x1);
-	local.controllers[handed_left].x2           = input_button_get(input_button_l_x2);
-	local.controllers[handed_left].stick        = input_xy_get    (input_xy_l_stick);
+	local.controllers[handed_left].aim          = input_pose_get_world(input_pose_l_aim);
+	local.controllers[handed_left].palm         = input_pose_get_world(input_pose_l_palm);
+	local.controllers[handed_left].pose         = input_pose_get_world(input_pose_l_grip);
+	local.controllers[handed_left].grip         = input_float_get     (input_float_l_grip);
+	local.controllers[handed_left].trigger      = input_float_get     (input_float_l_trigger);
+	local.controllers[handed_left].stick_click  = input_button_get    (input_button_l_stick);
+	local.controllers[handed_left].x1           = input_button_get    (input_button_l_x1);
+	local.controllers[handed_left].x2           = input_button_get    (input_button_l_x2);
+	local.controllers[handed_left].stick        = input_xy_get        (input_xy_l_stick);
 
 	input_pose_get_state(input_pose_l_grip, &pos_tracked, &rot_tracked);
 	local.controllers[handed_left].tracked      = button_make_state((local.controllers[handed_left].tracked & button_state_active) > 0, pos_tracked != track_state_lost || rot_tracked != track_state_lost);
@@ -277,20 +283,34 @@ void input_step() {
 	local.controllers[handed_left].tracked_rot  = rot_tracked;
 
 	// Right
-	local.controllers[handed_right].aim         = input_pose_get  (input_pose_r_aim);
-	local.controllers[handed_right].palm        = input_pose_get  (input_pose_r_palm);
-	local.controllers[handed_right].pose        = input_pose_get  (input_pose_r_grip);
-	local.controllers[handed_right].grip        = input_float_get (input_float_r_grip);
-	local.controllers[handed_right].trigger     = input_float_get (input_float_r_trigger);
-	local.controllers[handed_right].stick_click = input_button_get(input_button_r_stick);
-	local.controllers[handed_right].x1          = input_button_get(input_button_r_x1);
-	local.controllers[handed_right].x2          = input_button_get(input_button_r_x2);
-	local.controllers[handed_right].stick       = input_xy_get    (input_xy_r_stick);
+	local.controllers[handed_right].aim         = input_pose_get_world(input_pose_r_aim);
+	local.controllers[handed_right].palm        = input_pose_get_world(input_pose_r_palm);
+	local.controllers[handed_right].pose        = input_pose_get_world(input_pose_r_grip);
+	local.controllers[handed_right].grip        = input_float_get     (input_float_r_grip);
+	local.controllers[handed_right].trigger     = input_float_get     (input_float_r_trigger);
+	local.controllers[handed_right].stick_click = input_button_get    (input_button_r_stick);
+	local.controllers[handed_right].x1          = input_button_get    (input_button_r_x1);
+	local.controllers[handed_right].x2          = input_button_get    (input_button_r_x2);
+	local.controllers[handed_right].stick       = input_xy_get        (input_xy_r_stick);
 
 	input_pose_get_state(input_pose_r_grip, &pos_tracked, &rot_tracked);
 	local.controllers[handed_right].tracked     = button_make_state((local.controllers[handed_right].tracked & button_state_active) > 0, pos_tracked != track_state_lost);
 	local.controllers[handed_right].tracked_pos = pos_tracked;
 	local.controllers[handed_right].tracked_rot = rot_tracked;
+
+	///////////////////////////////////////////
+	// Make eyes from our inputs
+	///////////////////////////////////////////
+
+	if (device_has_eye_gaze()) {
+		track_state_ eye_pos_tracked, eye_rot_tracked;
+		input_pose_get_state(input_pose_eyes, &eye_pos_tracked, &eye_rot_tracked);
+		local.eyes_pose_local  = input_pose_get_local(input_pose_eyes);
+		local.eyes_track_state = button_make_state(
+			(local.eyes_track_state & button_state_active) != 0,
+			eye_pos_tracked != track_state_lost ||
+			eye_rot_tracked != track_state_lost);
+	}
 
 	///////////////////////////////////////////
 	// Update more input systems
@@ -407,7 +427,7 @@ pose_t input_head() {
 ///////////////////////////////////////////
 
 pose_t input_eyes() {
-	return render_cam_final_transform(input_eyes_pose_local);
+	return render_cam_final_transform(local.eyes_pose_local);
 }
 
 ///////////////////////////////////////////
@@ -508,10 +528,11 @@ void input_xy_inject    (input_xy_     xy_type,     vec2  value) { ft_mutex_lock
 
 ///////////////////////////////////////////
 
-pose_t        input_pose_get  (input_pose_   pose_type)   { return pose_type   >= 0 && pose_type   < local.curr_poses  .count ? render_cam_final_transform(local.curr_poses[pose_type].pose) : pose_identity; }
-float         input_float_get (input_float_  float_type)  { return float_type  >= 0 && float_type  < local.curr_floats .count ? local.curr_floats [float_type]     : 0; }
-button_state_ input_button_get(input_button_ button_type) { return button_type >= 0 && button_type < local.curr_buttons.count ? local.curr_buttons[button_type]    : button_state_inactive; }
-vec2          input_xy_get    (input_xy_     xy_type)     { return xy_type     >= 0 && xy_type     < local.curr_xys    .count ? local.curr_xys    [xy_type]        : vec2_zero; }
+pose_t        input_pose_get_local(input_pose_   pose_type)   { return pose_type   >= 0 && pose_type   < local.curr_poses  .count ? local.curr_poses[pose_type].pose : pose_identity; }
+pose_t        input_pose_get_world(input_pose_   pose_type)   { return pose_type   >= 0 && pose_type   < local.curr_poses  .count ? render_cam_final_transform(local.curr_poses[pose_type].pose) : pose_identity; }
+float         input_float_get     (input_float_  float_type)  { return float_type  >= 0 && float_type  < local.curr_floats .count ? local.curr_floats [float_type]     : 0; }
+button_state_ input_button_get    (input_button_ button_type) { return button_type >= 0 && button_type < local.curr_buttons.count ? local.curr_buttons[button_type]    : button_state_inactive; }
+vec2          input_xy_get        (input_xy_     xy_type)     { return xy_type     >= 0 && xy_type     < local.curr_xys    .count ? local.curr_xys    [xy_type]        : vec2_zero; }
 
 ///////////////////////////////////////////
 

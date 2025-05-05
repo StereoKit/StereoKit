@@ -69,7 +69,8 @@ void          input_controller_set_hand(handed_ hand, bool is_hand);
 void          input_eyes_tracked_set   (button_state_ state);
 
 void          input_pose_inject        (input_pose_   pose_type, pose_t pose, track_state_ pos_tracked, track_state_ rot_tracked);
-pose_t        input_pose_get           (input_pose_   pose_type);
+pose_t        input_pose_get_local     (input_pose_   pose_type);
+pose_t        input_pose_get_world     (input_pose_   pose_type);
 void          input_pose_get_state     (input_pose_   pose_type, track_state_* out_pos_tracked, track_state_* out_rot_tracked);
 void          input_float_inject       (input_float_  float_type, float value);
 float         input_float_get          (input_float_  float_type);
@@ -96,7 +97,6 @@ inline button_state_ button_make_state(bool32_t was, bool32_t is) {
 }
 
 extern pose_t input_head_pose_local;
-extern pose_t input_eyes_pose_local;
 
 
 } // namespace sk
