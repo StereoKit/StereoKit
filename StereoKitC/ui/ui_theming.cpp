@@ -521,7 +521,7 @@ void ui_settings(ui_settings_t settings) {
 	if (settings.padding          == 0) settings.padding = 10 * mm2m;
 	if (settings.margin           == 0) settings.margin  = settings.padding;
 	if (settings.rounding         == 0) settings.rounding= 7.5f * mm2m;
-	if (settings.hseparator_scale == 0) settings.hseparator_scale = 0.4f;
+	if (settings.separator_scale == 0) settings.separator_scale = 0.4f;
 
 	bool rebuild_meshes = skui_settings.rounding != settings.rounding;
 	skui_settings = settings;

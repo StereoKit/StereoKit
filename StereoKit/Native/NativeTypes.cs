@@ -243,11 +243,11 @@ namespace StereoKit
 		/// meters.</summary>
 		public float backplateBorder;
 		/// <summary>
-		/// Defines the scale factor for the horizontal separator's thickness.
+		/// Defines the scale factor for the separator's thickness.
 		/// The thickness is calculated by multiplying the height of the text
 		/// by this factor. The default valus is 0.4f.
 		/// </summary>
-		public float hseparatorScale;
+		public float separatorScale;
     }
 
 	/// <summary>This represents a single vertex in a Mesh, all StereoKit
