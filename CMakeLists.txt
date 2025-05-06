@@ -62,7 +62,7 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 ###########################################
 
 if (MSVC)
-  if (DEFINED PROJECT_SOURCE_DIR)
+  if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     if ("${CMAKE_C_COMPILER_VERSION}" VERSION_GREATER_EQUAL "19.20")
       include(SourceLink)
       file(TO_NATIVE_PATH "${PROJECT_BINARY_DIR}/source_link.json" SOURCE_LINK_JSON)
