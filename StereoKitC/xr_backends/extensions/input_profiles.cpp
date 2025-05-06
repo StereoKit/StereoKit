@@ -46,18 +46,18 @@ void xr_profile_ext_hp_mr_controller_register() {
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "hp/mixed_reality_controller" };
-		profile_l.top_level_path = "/user/hand/right";
+		profile_r.top_level_path = "/user/hand/right";
 		profile_r.is_hand        = false;
 		profile_r.palm_offset    = palm_offset;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_menu,   "menu/click"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,   "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
 		oxri_register_profile(profile_r);
 
 		return xr_system_succeed;
