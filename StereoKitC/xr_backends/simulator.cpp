@@ -97,7 +97,7 @@ bool simulator_init() {
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
 
-	anchors_init(anchor_system_stage);
+	anchors_init();
 	return true;
 }
 
@@ -121,7 +121,7 @@ void simulator_shutdown() {
 	sim_surface = -1;
 	platform_win_destroy(sim_window);
 	sim_window = -1;
-	anchors_shutdown();
+	anchors_shutdown(NULL);
 }
 
 ///////////////////////////////////////////
@@ -196,26 +196,27 @@ void simulator_step_begin() {
 	input_eyes_tracked_set(button_make_state(input_eyes_tracked() & button_state_active, sim_tracked));
 	ray_t ray = {};
 	if (sim_tracked && ray_from_mouse(input_mouse()->pos, ray)) {
-		input_eyes_pose_world.position    = ray.pos;
-		input_eyes_pose_world.orientation = quat_lookat(vec3_zero, ray.dir);
-		input_eyes_pose_local.position    = matrix_transform_pt(render_get_cam_final_inv(), ray.pos);
-		input_eyes_pose_local.orientation = quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir));
+		input_pose_inject(input_pose_eyes, pose_t{
+			matrix_transform_pt(render_get_cam_final_inv(), ray.pos),
+			quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir)) }, 
+			track_state_known, track_state_known);
 	}
 
+	pose_t     eyes_world   = input_pose_get_world(input_pose_eyes);
 	pointer_t *pointer_head = input_get_pointer(sim_gaze_pointer);
 	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = input_eyes_pose_world.position;
-	pointer_head->ray.dir = input_eyes_pose_world.orientation * vec3_forward;
+	pointer_head->ray.pos = eyes_world.position;
+	pointer_head->ray.dir = eyes_world.orientation * vec3_forward;
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
-	anchors_step_begin();
+	anchors_step_begin(NULL);
 }
 
 ///////////////////////////////////////////
 
 void simulator_step_end() {
-	anchors_step_end();
+	anchors_step_end(NULL);
 	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());

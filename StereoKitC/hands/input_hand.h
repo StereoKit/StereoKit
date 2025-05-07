@@ -41,12 +41,26 @@ struct hand_mesh_t {
 	uint32_t ind_count;
 };
 
+typedef struct hand_system_t {
+	hand_system_ system;
+	hand_source_ source;
+	int32_t      priority;
+	float        pinch_blend;
+	bool       (*available)      ();
+	void       (*init)           ();
+	void       (*shutdown)       ();
+	void       (*update_inactive)();
+	void       (*update_frame)   ();
+	void       (*update_poses)   ();
+} hand_system_t;
+
 extern int32_t input_hand_pointer_id[handed_max];
 
 void input_hand_init    ();
 void input_hand_shutdown();
 void input_hand_update  ();
 
+void          input_hand_system_register   (hand_system_t system);
 hand_system_  input_hand_get_system        ();
 hand_t*       input_hand_ref               (handed_ hand);
 void          input_hand_refresh_system    ();

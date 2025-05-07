@@ -352,7 +352,7 @@ namespace StereoKit
 		/// On Flatscreen when the MR sim is still enabled, then eyes are 
 		/// emulated using the cursor position when the user holds down Alt.
 		/// </summary>
-		public static Pose     Eyes        => Marshal.PtrToStructure<Pose>(NativeAPI.input_eyes());
+		public static Pose     Eyes        => NativeAPI.input_eyes();
 		/// <summary>If eye hardware is available and app has permission, 
 		/// then this is the tracking state of the eyes. Eyes may move out of
 		/// bounds, hardware may fail to detect eyes, or who knows what else!
@@ -370,7 +370,7 @@ namespace StereoKit
 		/// the center point between the user's eyes, NOT the center of the
 		/// user's head. Forward points the same way the user's face is 
 		/// facing.</summary>
-		public static Pose  Head  => Marshal.PtrToStructure<Pose>(NativeAPI.input_head());
+		public static Pose  Head  => NativeAPI.input_head();
 		/// <summary>Information about this system's mouse, or lack thereof!
 		/// </summary>
 		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());

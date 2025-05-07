@@ -72,8 +72,9 @@ int32_t                asset_tasks_priority  = INT_MAX;
 ft_condition_t         asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
-int32_t asset_thread   (void *);
-void    asset_step_task();
+int32_t         asset_thread          (void *);
+void            asset_step_task       ();
+asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str);
 
 ///////////////////////////////////////////
 
@@ -98,6 +99,33 @@ void *assets_find(id_hash_t id, asset_type_ type) {
 
 ///////////////////////////////////////////
 
+asset_find_ assets_find_or_create(const char* id, asset_type_ type, void** out_asset) {
+	id_hash_t   hash   = hash_string(id);
+	asset_find_ result = asset_find_created;
+	ft_mutex_lock(assets_lock);
+	for (int32_t i = 0; i < assets.count; i++) {
+		if (assets[i]->id == hash && assets[i]->type == type && assets[i]->refs > 0) {
+			result     = asset_find_found;
+			assets_addref(assets[i]);
+			*out_asset = assets[i];
+			break;
+		}
+	}
+	if (result == asset_find_created) {
+		asset_header_t* header = assets_allocate_no_add(type, nullptr);
+		header->id      = hash;
+		header->id_text = string_copy(id);
+		header->index   = assets.count;
+		assets.add(header);
+
+		*out_asset = header;
+	}
+	ft_mutex_unlock(assets_lock);
+	return result;
+}
+
+///////////////////////////////////////////
+
 void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int dest_size) {
 	snprintf(dest, dest_size, "%s", root_name);
 	id_hash_t id    = hash_string(dest);
@@ -111,7 +139,7 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 
 ///////////////////////////////////////////
 
-void *assets_allocate(asset_type_ type) {
+asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str) {
 	size_t      size      = sizeof(asset_header_t);
 	const char* type_name = "asset";
 	switch(type) {
@@ -133,6 +161,18 @@ void *assets_allocate(asset_type_ type) {
 	header->type    = type;
 	header->state   = asset_state_none;
 	assets_addref(header);
+
+	if (out_type_str)
+		*out_type_str = type_name;
+
+	return header;
+}
+
+///////////////////////////////////////////
+
+void *assets_allocate(asset_type_ type) {
+	const char*     type_name;
+	asset_header_t* header = assets_allocate_no_add(type, &type_name);
 
 	ft_mutex_lock(assets_lock);
 	char name[64];

@@ -8,7 +8,7 @@
 #include "../asset_types/mesh_.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
-#include "../xr_backends/openxr_scene_understanding.h"
+#include "../xr_backends/extensions/msft_scene_understanding.h"
 #include "render.h"
 
 #include <float.h>
@@ -18,7 +18,6 @@ namespace sk {
 // These values are set by the XR backends.
 origin_mode_ world_origin_mode;
 pose_t       world_origin_offset;
-
 material_t   world_occlusion_material = {};
 
 ///////////////////////////////////////////
@@ -31,37 +30,24 @@ bool world_init() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
 	case backend_xr_type_openxr: {
-
-		xr_has_bounds  = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
-		xr_bounds_pose = matrix_transform_pose(render_get_cam_final(), xr_bounds_pose_local);
+		xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, xr_time);
 	}break;
 #endif
 	default: break;
 	}
 
-#if defined(SK_XR_OPENXR)
-	return oxr_su_init();
-#else
 	return true;
-#endif
 }
 
 ///////////////////////////////////////////
 
 void world_shutdown() {
 	material_release(world_occlusion_material);
-
-#if defined(SK_XR_OPENXR)
-	oxr_su_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
 
 void world_step() {
-#if defined(SK_XR_OPENXR)
-	oxr_su_step();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -203,17 +189,6 @@ float world_get_refresh_interval() {
 
 ///////////////////////////////////////////
 
-void world_refresh_transforms() {
-	switch (backend_xr_get_type()) {
-#if defined(SK_XR_OPENXR)
-	case backend_xr_type_openxr: oxr_su_refresh_transforms(); return;
-#endif
-	default: return;
-	}
-}
-
-///////////////////////////////////////////
-
 bool32_t world_has_bounds() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
@@ -241,7 +216,7 @@ vec2 world_get_bounds_size() {
 pose_t world_get_bounds_pose() {
 	switch (backend_xr_get_type()) {
 #if defined(SK_XR_OPENXR)
-	case backend_xr_type_openxr:    return xr_bounds_pose;
+	case backend_xr_type_openxr:    return render_cam_final_transform(xr_bounds_pose_local);
 #endif
 	case backend_xr_type_simulator: return simulator_bounds_pose();
 	default:                        return pose_identity;

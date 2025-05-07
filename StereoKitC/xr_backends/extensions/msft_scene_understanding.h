@@ -1,12 +1,16 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2025 Nick Klingensmith
+ * Copyright (c) 2025 Qualcomm Technologies, Inc.
+ */
+
 #pragma once
 
-#include "../stereokit.h"
+#include "../../stereokit.h"
 
 namespace sk {
 
-bool           oxr_su_init    ();
-void           oxr_su_step    ();
-void           oxr_su_shutdown();
+void xr_ext_msft_scene_understanding_register ();
 
 bool32_t       oxr_su_raycast               (ray_t ray, ray_t* out_intersection);
 void           oxr_su_set_occlusion_enabled (bool32_t enabled);

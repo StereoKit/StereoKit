@@ -4,7 +4,9 @@
 #include "../utils/random.h"
 #include "../platforms/platform.h"
 
-#include "../xr_backends/anchor_openxr_msft.h"
+#include "../xr_backends/openxr.h"
+#include "../xr_backends/extensions/ext_management.h"
+#include "../xr_backends/extensions/msft_anchors.h"
 #include "../xr_backends/anchor_stage.h"
 
 namespace sk {
@@ -18,45 +20,59 @@ bool32_t          anch_initialized  = false;
 
 ///////////////////////////////////////////
 
-void anchors_init(anchor_system_ system) {
-	if (anch_initialized) {
-		log_err("Anchor system already initialized!");
-		return;
-	}
-
-	bool32_t result = false;
-	switch (system) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: result = anchor_oxr_msft_init(); break;
-#endif
-	case anchor_system_stage:       result = anchor_stage_init(); break;
-	default: break;
-	}
-
-	if (!result) system = anchor_system_none;
-	anch_sys         = system;
-	anch_initialized = true;
-
-	switch (system) {
-	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
-	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
-	default:                        log_diagf("NOT using spatial anchors."); break;
-	}
+void anchors_register() {
+	xr_system_t system = {};
+	system.evt_initialize = { [](void*) { return anchors_init() ? xr_system_succeed : xr_system_fail; } };
+	system.evt_shutdown   = { anchors_shutdown   };
+	system.evt_step_begin = { anchors_step_begin };
+	system.evt_step_end   = { anchors_step_end   };
+	ext_management_sys_register(system);
 }
 
 ///////////////////////////////////////////
 
-void anchors_shutdown() {
+bool anchors_init() {
+	if (anch_initialized) {
+		log_err("Anchor system already initialized!");
+		return false;
+	}
+
+	if (xr_ext_msft_spatial_anchors_available())
+		anch_sys = anchor_system_openxr_msft;
+	else if (backend_xr_get_type() == backend_xr_type_simulator)
+		anch_sys = anchor_system_stage;
+	else
+		anch_sys = anchor_system_none;
+
+	bool32_t result = false;
+	switch (anch_sys) {
+	case anchor_system_stage:       result = anchor_stage_init(); break;
+	case anchor_system_openxr_msft: result = true;                break;
+	default: break;
+	}
+
+	if (!result) anch_sys = anchor_system_none;
+	anch_initialized = true;
+
+	switch (anch_sys) {
+	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
+	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
+	default:                        log_diagf("NOT using spatial anchors."); break;
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+void anchors_shutdown(void*) {
 	if (!anch_initialized) return;
 
 	for (int32_t i = anch_list   .count-1; i>=0; i--) anchor_release(anch_list   [i]);
 	for (int32_t i = anch_changed.count-1; i>=0; i--) anchor_release(anch_changed[i]);
 
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: anchor_oxr_msft_shutdown(); break;
-#endif
-	case anchor_system_stage:       anchor_stage_shutdown(); break;
+	case anchor_system_stage: anchor_stage_shutdown(); break;
 	default: break;
 	}
 
@@ -68,19 +84,16 @@ void anchors_shutdown() {
 
 ///////////////////////////////////////////
 
-void anchors_step_begin() {
+void anchors_step_begin(void*) {
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: anchor_oxr_msft_step(); break;
-#endif
-	case anchor_system_stage:       break;
+	case anchor_system_stage: break;
 	default: break;
 	}
 }
 
 ///////////////////////////////////////////
 
-void anchors_step_end() {
+void anchors_step_end(void*) {
 	for (int32_t i = 0; i < anch_changed.count; i++) {
 		//anch_changed[i]->changed = false;
 		anchor_release(anch_changed[i]);
@@ -109,10 +122,8 @@ anchor_t anchor_create(pose_t pose) {
 		to_hex(b,4), to_hex(b,5), to_hex(b,6), to_hex(b,7), '\0' };
 
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_create(pose, name);
-#endif
-	case anchor_system_stage:       return anchor_stage_create   (pose, name);
+	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_create(pose, name);
+	case anchor_system_stage:       return anchor_stage_create               (pose, name);
 	default: return nullptr;
 	}
 }
@@ -137,10 +148,8 @@ anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, const char 
 
 void anchor_destroy(anchor_t anchor) {
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: anchor_oxr_msft_destroy(anchor); break;
-#endif
-	//case anchor_system_stage:       anchor_stage_destroy   (anchor); break;
+	case anchor_system_openxr_msft: xr_ext_msft_spatial_anchors_destroy(anchor); break;
+	//case anchor_system_stage:       anchor_stage_destroy               (anchor); break;
 	default: break;
 	}
 
@@ -203,10 +212,8 @@ void anchor_update_manual(anchor_t anchor, pose_t pose) {
 
 bool32_t anchor_try_set_persistent(anchor_t anchor, bool32_t persistent) {
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_persist(anchor, persistent);
-#endif
-	case anchor_system_stage:       return anchor_stage_persist   (anchor, persistent);
+	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_persist(anchor, persistent);
+	case anchor_system_stage:       return anchor_stage_persist               (anchor, persistent);
 	default: return false;
 	}
 }
@@ -244,11 +251,9 @@ button_state_ anchor_get_tracked(const anchor_t anchor) {
 ///////////////////////////////////////////
 
 bool32_t anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor) {
-#if !defined(SK_XR_OPENXR)
-	return false;
-#endif
-	if (anch_sys != anchor_system_openxr_msft) return false;
-	return anchor_oxr_get_perception_anchor(anchor, perception_spatial_anchor);
+	return anch_sys == anchor_system_openxr_msft
+		? xr_ext_msft_spatial_anchors_get_perception_anchor(anchor, perception_spatial_anchor)
+		: false;
 }
 
 ///////////////////////////////////////////
@@ -265,9 +270,7 @@ void anchor_mark_dirty(anchor_t anchor) {
 
 void anchor_clear_stored() {
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: anchor_oxr_msft_clear_stored(); break;
-#endif
+	case anchor_system_openxr_msft: xr_ext_msft_spatial_anchors_clear_stored(); break;
 	case anchor_system_stage:       anchor_stage_clear_stored(); break;
 	default: break;
 	}
@@ -277,9 +280,7 @@ void anchor_clear_stored() {
 
 anchor_caps_ anchor_get_capabilities() {
 	switch (anch_sys) {
-#if defined(SK_XR_OPENXR)
-	case anchor_system_openxr_msft: return anchor_oxr_msft_capabilities();
-#endif
+	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_capabilities();
 	case anchor_system_stage:       return anchor_caps_storable;
 	default: return (anchor_caps_)0;
 	}

@@ -89,12 +89,11 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 		snprintf(sprite_id, sizeof(sprite_id), "%s/sprite/atlas/%s", image_id, atlas_id);
 	}
 	// Check if the id already exists
-	sprite_t result = sprite_find(sprite_id);
-	if (result != nullptr)
+	sprite_t result;
+	if (assets_find_or_create(sprite_id, asset_type_sprite, (void**)&result) == asset_find_found)
 		return result;
 
 	tex_addref(image);
-	result = (_sprite_t*)assets_allocate(asset_type_sprite);
 
 	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
 
@@ -144,7 +143,6 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	}
 
 	sprite_index += 1;
-	sprite_set_id(result, sprite_id);
 	return result;
 }
 

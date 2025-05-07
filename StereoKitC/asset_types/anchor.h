@@ -29,9 +29,10 @@ void           anchor_update_manual   (anchor_t anchor, pose_t pose);
 anchor_t       anchor_create_manual   (anchor_type_id system_id, pose_t pose, const char* name_utf8, void* data);
 void           anchor_mark_dirty      (anchor_t anchor);
 void           anchor_clear_all_dirty ();
-void           anchors_init           (anchor_system_ system);
-void           anchors_shutdown       ();
-void           anchors_step_begin     ();
-void           anchors_step_end       ();
+void           anchors_register       ();
+bool           anchors_init           ();
+void           anchors_shutdown       (void*);
+void           anchors_step_begin     (void*);
+void           anchors_step_end       (void*);
 
 }

@@ -9,40 +9,9 @@
 #include "../platforms/platform.h"
 #if defined(SK_XR_OPENXR)
 
-#if defined(SK_OS_ANDROID)
-	#define XR_USE_PLATFORM_ANDROID
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
-
-#elif defined(SK_OS_LINUX)
-	#define XR_USE_PLATFORM_EGL
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
-
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-
-#elif defined(SK_OS_WEB)
-	#define XR_USE_TIMESPEC
-	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_USE_GRAPHICS_API_OPENGL
-
-#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
-	#if defined(SKG_FORCE_OPENGL)
-		#define XR_USE_GRAPHICS_API_OPENGL
-	#else
-		#define XR_USE_GRAPHICS_API_D3D11
-	#endif
-
-	#define XR_USE_PLATFORM_WIN32
-	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
-
-#endif
-
 #include "../stereokit.h"
-
+#include "openxr_input.h"
 #include <openxr/openxr.h>
-
 #include <stdint.h>
 
 typedef struct XR_MAY_ALIAS XrBaseHeader {
@@ -53,29 +22,85 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 #define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
+// Some "X Macros" to simplify function loading. Otherwise, function loading
+// tends to have a lot of manual code duplication that gets spread out across
+// multiple spots.
+#define _OPENXR_DEFINE_FN(name) PFN_##name name;
+#define OPENXR_DEFINE_FN(list) list(_OPENXR_DEFINE_FN)
+#define _OPENXR_CLEAR_FN(name) name = nullptr;
+#define OPENXR_CLEAR_FN(list) list(_OPENXR_CLEAR_FN)
+#define _OPENXR_DEFINE_FN_STATIC(name) static PFN_##name name;
+#define OPENXR_DEFINE_FN_STATIC(list) list(_OPENXR_DEFINE_FN_STATIC)
+#define _OPENXR_LOAD_FN_RESULT(name) if (xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name)))<0) { result = result && false; }
+#define OPENXR_LOAD_FN_RETURN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
+
 namespace sk {
 
-bool openxr_init          ();
-void openxr_cleanup       ();
-void openxr_shutdown      ();
-void openxr_step_begin    ();
-void openxr_step_end      ();
-bool openxr_poll_events   ();
-bool openxr_render_frame  ();
-void openxr_poll_actions  ();
+typedef enum xr_system_ {
+	xr_system_succeed       = 1,
+	xr_system_fail          = 0,
+	xr_system_fail_critical = -1,
+} xr_system_;
+
+typedef struct context_callback_t {
+	void       (*callback)(void* context);
+	void*        context;
+} context_callback_t;
+
+typedef struct create_info_callback_t {
+	xr_system_ (*callback)(void* context, XrBaseHeader* create_info);
+	void*        context;
+} create_info_callback_t;
+
+typedef struct context_result_callback_t {
+	xr_system_ (*callback)(void* context);
+	void*        context;
+} context_result_callback_t;
+
+typedef struct profile_callback_t {
+	void       (*callback)(void* context, xr_interaction_profile_t *ref_profile);
+	void*        context;
+} profile_callback_t;
+
+typedef struct poll_event_callback_t {
+	void       (*callback)(void* context, void* XrEventDataBuffer);
+	void*        context;
+} poll_event_callback_t;
+
+typedef struct xr_system_t {
+	const char* request_exts[4];
+	int32_t     request_ext_count;
+
+	create_info_callback_t    evt_pre_instance;
+	create_info_callback_t    evt_pre_session;
+	create_info_callback_t    evt_begin_session;
+	context_result_callback_t evt_initialize;
+	profile_callback_t        evt_profile;
+	// These callbacks are only called if "initialize" succeeds, or if
+	// "initialize" isn't specified.
+	context_callback_t        evt_step_begin;
+	context_callback_t        evt_step_end;
+	context_callback_t        evt_shutdown;
+	poll_event_callback_t     evt_poll;
+} xr_system_t;
+
+bool openxr_init        ();
+void openxr_cleanup     ();
+void openxr_shutdown    ();
+void openxr_step_begin  ();
+void openxr_step_end    ();
+bool openxr_poll_events ();
+bool openxr_render_frame();
 
 void*         openxr_get_luid         ();
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
-bool32_t      openxr_get_gaze_space   (pose_t* out_pose, XrTime& out_gaze_sample_time, XrTime time = 0);
 const char*   openxr_string           (XrResult result);
 void          openxr_set_origin_offset(pose_t offset);
 bool          openxr_get_stage_bounds (vec2* out_size, pose_t* out_pose, XrTime time);
 button_state_ openxr_space_tracked    ();
 
-extern XrSpace    xrc_space_grip[2];
 extern XrSpace    xr_app_space;
 extern XrSpace    xr_head_space;
-extern XrSpace    xr_gaze_space;
 extern XrInstance xr_instance;
 extern XrSession  xr_session;
 extern XrSessionState xr_session_state;
@@ -84,7 +109,6 @@ extern bool       xr_has_bounds;
 extern XrTime     xr_time;
 extern XrTime     xr_eyes_sample_time;
 extern vec2       xr_bounds_size;
-extern pose_t     xr_bounds_pose;
 extern pose_t     xr_bounds_pose_local;
 
 #define XR_PRIMARY_CONFIG XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO

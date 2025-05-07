@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright 2021, Collabora, Ltd.
 # Copyright Moses Turner, 2021.
-# Copyright (c) 2021-2024 Nick Klingensmith
-# Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+# Copyright (c) 2021-2025 Nick Klingensmith
+# Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 # Many thanks to Ryan Pavlik for showing the way
 
 # This build file has the following options
@@ -184,9 +184,10 @@ include("cmake/CPM.cmake")
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.1.41
+    NAME openxr_loader # 1.1.47
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG 7d1c0961351bac61fd7bb72d402649d5ac3f2935
+    GIT_TAG release-1.1.47
+    GIT_SHALLOW 1
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
@@ -201,7 +202,8 @@ endif()
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME meshoptimizer # 0.20
   GITHUB_REPOSITORY zeux/meshoptimizer
-  GIT_TAG           c21d3be6ddf627f8ca852ba4b6db9903b0557858
+  GIT_TAG           v0.20
+  GIT_SHALLOW       1
 )
 target_compile_options(meshoptimizer PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -210,7 +212,8 @@ set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME basis_universal # 1.16.4
   GITHUB_REPOSITORY BinomialLLC/basis_universal
-  GIT_TAG           900e40fb5d2502927360fe2f31762bdbb624455f
+  GIT_TAG           1.16.4
+  GIT_SHALLOW       1
   DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
 add_compile_definitions(BASISD_SUPPORT_FXT1=0)
@@ -367,8 +370,6 @@ set(SK_SRC_HANDS
   StereoKitC/hands/hand_mouse.cpp
   StereoKitC/hands/hand_override.h
   StereoKitC/hands/hand_override.cpp
-  StereoKitC/hands/hand_oxr_articulated.h
-  StereoKitC/hands/hand_oxr_articulated.cpp
   StereoKitC/hands/hand_oxr_controller.h
   StereoKitC/hands/hand_oxr_controller.cpp
   StereoKitC/hands/hand_poses.h
@@ -395,13 +396,15 @@ set(SK_SRC_PLATFORMS
 set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/openxr.h
   StereoKitC/xr_backends/openxr.cpp
-  StereoKitC/xr_backends/openxr_extensions.h
+  StereoKitC/xr_backends/openxr_platform.h
   StereoKitC/xr_backends/openxr_input.h
   StereoKitC/xr_backends/openxr_input.cpp
-  StereoKitC/xr_backends/openxr_scene_understanding.h
-  StereoKitC/xr_backends/openxr_scene_understanding.cpp
   StereoKitC/xr_backends/openxr_view.h
   StereoKitC/xr_backends/openxr_view.cpp
+  StereoKitC/xr_backends/extensions/ext_management.h
+  StereoKitC/xr_backends/extensions/ext_management.cpp
+  StereoKitC/xr_backends/extensions/_registration.h
+  StereoKitC/xr_backends/extensions/_registration.cpp
   StereoKitC/xr_backends/xr.h
   StereoKitC/xr_backends/xr.cpp
   StereoKitC/xr_backends/simulator.h
@@ -410,10 +413,50 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/window.cpp
   StereoKitC/xr_backends/offscreen.h
   StereoKitC/xr_backends/offscreen.cpp
-  StereoKitC/xr_backends/anchor_openxr_msft.h
-  StereoKitC/xr_backends/anchor_openxr_msft.cpp
   StereoKitC/xr_backends/anchor_stage.h
   StereoKitC/xr_backends/anchor_stage.cpp )
+
+set(SK_SRC_XR_EXTS
+  StereoKitC/xr_backends/extensions/composition_depth.h
+  StereoKitC/xr_backends/extensions/composition_depth.cpp
+  StereoKitC/xr_backends/extensions/debug_utils.h
+  StereoKitC/xr_backends/extensions/debug_utils.cpp
+  StereoKitC/xr_backends/extensions/eye_interaction.h
+  StereoKitC/xr_backends/extensions/eye_interaction.cpp
+  StereoKitC/xr_backends/extensions/fb_colorspace.h
+  StereoKitC/xr_backends/extensions/fb_colorspace.cpp
+  StereoKitC/xr_backends/extensions/graphics.h
+  StereoKitC/xr_backends/extensions/graphics.cpp
+  StereoKitC/xr_backends/extensions/hand_mesh.h
+  StereoKitC/xr_backends/extensions/hand_mesh.cpp
+  StereoKitC/xr_backends/extensions/hand_tracking.h
+  StereoKitC/xr_backends/extensions/hand_tracking.cpp
+  StereoKitC/xr_backends/extensions/input_profiles.h
+  StereoKitC/xr_backends/extensions/input_profiles.cpp
+  StereoKitC/xr_backends/extensions/loader_init.h
+  StereoKitC/xr_backends/extensions/loader_init.cpp
+  StereoKitC/xr_backends/extensions/palm_pose.h
+  StereoKitC/xr_backends/extensions/palm_pose.cpp
+  StereoKitC/xr_backends/extensions/android_create_instance.h
+  StereoKitC/xr_backends/extensions/android_create_instance.cpp
+  StereoKitC/xr_backends/extensions/android_thread.h
+  StereoKitC/xr_backends/extensions/android_thread.cpp
+  StereoKitC/xr_backends/extensions/time.h
+  StereoKitC/xr_backends/extensions/time.cpp
+  StereoKitC/xr_backends/extensions/overlay.h
+  StereoKitC/xr_backends/extensions/overlay.cpp
+  StereoKitC/xr_backends/extensions/oculus_audio.h
+  StereoKitC/xr_backends/extensions/oculus_audio.cpp
+  StereoKitC/xr_backends/extensions/msft_anchors.h
+  StereoKitC/xr_backends/extensions/msft_anchors.cpp
+  StereoKitC/xr_backends/extensions/msft_anchor_interop.h
+  StereoKitC/xr_backends/extensions/msft_anchor_interop.cpp
+  StereoKitC/xr_backends/extensions/msft_bridge.h
+  StereoKitC/xr_backends/extensions/msft_bridge.cpp
+  StereoKitC/xr_backends/extensions/msft_observer.h
+  StereoKitC/xr_backends/extensions/msft_observer.cpp
+  StereoKitC/xr_backends/extensions/msft_scene_understanding.h
+  StereoKitC/xr_backends/extensions/msft_scene_understanding.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard.h
@@ -460,6 +503,7 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_HANDS}
   ${SK_SRC_PLATFORMS}
   ${SK_SRC_XR_BACKENDS}
+  ${SK_SRC_XR_EXTS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
   ${SK_SRC_BASISU}
@@ -502,6 +546,7 @@ source_group("systems"         FILES ${SK_SRC_SYSTEMS})
 source_group("hands"           FILES ${SK_SRC_HANDS})
 source_group("platform"        FILES ${SK_SRC_PLATFORMS})
 source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
+source_group("xr_exts"         FILES ${SK_SRC_XR_EXTS})
 source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
 source_group("basisu"          FILES ${SK_SRC_BASISU})
@@ -547,7 +592,6 @@ endif()
 
 target_link_libraries( StereoKitC
   PRIVATE
-    ${OPENXR_LIB}
     ${PHYSICS_LIB}
     ${LINUX_LIBS}
     ${WINDOWS_LIBS}
@@ -555,6 +599,7 @@ target_link_libraries( StereoKitC
     meshoptimizer
   PUBLIC
     sk_gpu
+    ${OPENXR_LIB}
     ${ANDROID_LIBS}
 )
 

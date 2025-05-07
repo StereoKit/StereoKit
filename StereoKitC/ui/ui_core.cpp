@@ -13,7 +13,6 @@
 #include "../systems/input.h"
 #include "../hands/input_hand.h"
 #include "../sk_math.h"
-#include "../xr_backends/openxr_extensions.h"
 
 #include <float.h>
 
@@ -160,7 +159,8 @@ void ui_core_hands_step() {
 
 		// Hand ray
 		if (ui_far_interact_enabled()) {
-			float hand_dist = vec3_distance(hand->palm.position, input_head()->position + vec3{0,-0.12f,0});
+			pose_t head      = input_head();
+			float  hand_dist = vec3_distance(hand->palm.position, head.position + vec3{0,-0.12f,0});
 
 			// Pinches can only start when aim_ready, but should remain true
 			// as long as the pinch remains active
@@ -174,7 +174,7 @@ void ui_core_hands_step() {
 			interactor_min_distance_set(skui_hand_interactors[i*3 + 2], math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (skui_hand_interactors[i*3 + 2],
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100, 0.01f,
-				hand->aim.position, hand->aim.orientation, input_head()->position + vec3{0,-0.12f,0},
+				hand->aim.position, hand->aim.orientation, head.position + vec3{0,-0.12f,0},
 				far_pinch_state, hand->aim_ready);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
 
@@ -187,6 +187,7 @@ void ui_core_hands_step() {
 void ui_core_controllers_step() {
 	if (ui_far_interact_enabled() == false) return;
 
+	pose_t head = input_head();
 	for (int32_t i = 0; i < handed_max; i++) {
 		const controller_t *ctrl = input_controller((handed_)i);
 
@@ -195,7 +196,7 @@ void ui_core_controllers_step() {
 		interactor_min_distance_set(skui_hand_interactors[i*3 + 2], -100000);
 		interactor_update(skui_hand_interactors[i*3 + 2],
 			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100, 0.005f,
-			ctrl->aim.position, ctrl->aim.orientation, input_head()->position,
+			ctrl->aim.position, ctrl->aim.orientation, head.position,
 			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
 		skui_controller_trigger_last[i] = ctrl->trigger;
@@ -208,8 +209,7 @@ void ui_core_controllers_step() {
 void ui_core_mouse_step() {
 	if (ui_far_interact_enabled() == false) return;
 
-	const pose_t*  head = input_head();
-	const mouse_t* m    = input_mouse();
+	const mouse_t* m = input_mouse();
 	ray_t ray;
 	bool tracked = ray_from_mouse(m->pos, ray);
 
@@ -224,6 +224,7 @@ void ui_core_mouse_step() {
 
 void ui_core_update() {
 	const matrix *to_local = hierarchy_to_local();
+	pose_t        head     = input_head();
 
 	for (int32_t i = 0; i < skui_interactors.count; i++) {
 		/*if (skui_interactors[i].tracked & button_state_active) {
@@ -257,7 +258,7 @@ void ui_core_update() {
 		skui_interactors[i].active         = 0;
 		skui_interactors[i].capsule_end    = matrix_transform_pt(*to_local, skui_interactors[i].capsule_end_world);
 		skui_interactors[i].capsule_start  = matrix_transform_pt(*to_local, skui_interactors[i].capsule_start_world);
-		skui_interactors[i].ray_enabled    = skui_interactors[i].tracked > 0 && skui_interactors[i].tracked && (vec3_dot(skui_interactors[i].capsule_end_world - skui_interactors[i].capsule_start_world, input_head()->position - skui_interactors[i].capsule_start_world) < 0);
+		skui_interactors[i].ray_enabled    = skui_interactors[i].tracked > 0 && skui_interactors[i].tracked && (vec3_dot(skui_interactors[i].capsule_end_world - skui_interactors[i].capsule_start_world, head.position - skui_interactors[i].capsule_start_world) < 0);
 
 		skui_interactors[i].tracked     = button_state_inactive;
 		skui_interactors[i].pinch_state = button_state_inactive;
@@ -522,6 +523,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 					actor->active  = id;
 					actor->focused = id;
 
+					pose_t head = input_head();
 					quat dest_rot = quat_identity;
 					switch (move_type) {
 					case ui_move_exact: {
@@ -531,7 +533,7 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 						if (device_display_get_type() == display_type_flatscreen) {
 							// If we're on a flat screen, facing the window is
 							// a better experience than facing the user.
-							dest_rot = quat_from_angles(0, 180, 0) * input_head()->orientation;
+							dest_rot = quat_from_angles(0, 180, 0) * head.orientation;
 						} else {
 							// We can't use the head position directly, it's
 							// more of a device position that matches the
@@ -539,8 +541,8 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bou
 							// head.
 							const float head_center_dist = 5    * cm2m; // Quarter head length (20cm front to back)
 							const float head_height      = 7.5f * cm2m; // Almost quarter head height (25cm top to bottom)
-							vec3 eye_center  = input_head()->position;
-							vec3 head_center = eye_center  + input_head()->orientation * vec3{0, 0, head_center_dist};
+							vec3 eye_center  = head.position;
+							vec3 head_center = eye_center  + head.orientation * vec3{0, 0, head_center_dist};
 							vec3 face_point  = head_center + vec3{0, -head_height, 0};
 
 							// Previously, facing happened from a point

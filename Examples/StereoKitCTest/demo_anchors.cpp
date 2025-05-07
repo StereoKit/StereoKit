@@ -41,13 +41,13 @@ void demo_anchors_update() {
 
 	// Some interaction for adding anchors
 	if (!ui_is_interacting(handed_right) && input_hand(handed_right)->pinch_state & button_state_just_active || input_key(key_space) & button_state_just_active) {
-		pose_t pose = *input_head();
+		pose_t pose = input_head();
 		pose.position += pose.orientation * vec3_forward * 0.5f;
 		if (input_hand(handed_right)->tracked_state & button_state_active)
 			pose.position = input_hand(handed_right)->pinch_pt;
 		else if (input_hand(handed_left)->tracked_state & button_state_active)
 			pose.position = input_hand(handed_left)->pinch_pt;
-		pose.orientation = quat_lookat(pose.position, input_head()->position);
+		pose.orientation = quat_lookat(pose.position, input_head().position);
 
 		anchor_t anch = anchor_create(pose);
 		if (anch) {

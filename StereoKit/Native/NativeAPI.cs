@@ -591,8 +591,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, [In] HandJoint[] hand_joints);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       input_hand_override  (Handed hand, IntPtr hand_joints);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_mouse          ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_head           ();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_eyes           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose       input_head           ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose       input_eyes           ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_eyes_tracked   ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   input_key            (Key key);
 

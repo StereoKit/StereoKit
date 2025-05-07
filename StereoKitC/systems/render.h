@@ -24,6 +24,7 @@ void          render_shutdown             ();
 
 matrix        render_get_projection_matrix();
 float         render_get_ortho_view_height();
+pose_t        render_cam_final_transform  (pose_t local_space);
 matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
 color128      render_get_clear_color_ln   ();

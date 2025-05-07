@@ -115,6 +115,7 @@ struct render_state_t {
 	matrix                  camera_root;
 	matrix                  camera_root_final;
 	matrix                  camera_root_final_inv;
+	quat                    camera_root_final_rot;
 	matrix                  default_camera_proj;
 	matrix                  sim_origin;
 	matrix                  sim_head;
@@ -486,6 +487,15 @@ matrix render_get_cam_final_inv() {
 
 ///////////////////////////////////////////
 
+pose_t render_cam_final_transform(pose_t local_space) {
+	return pose_t{ 
+		matrix_transform_pt(local.camera_root_final, local_space.position),
+		local_space.orientation * local.camera_root_final_rot
+	};
+}
+
+///////////////////////////////////////////
+
 render_list_t render_get_primary_list() {
 	render_list_addref(local.list_primary);
 	return local.list_primary;
@@ -494,19 +504,10 @@ render_list_t render_get_primary_list() {
 ///////////////////////////////////////////
 
 void render_set_cam_root(const matrix &cam_root) {
-	local.camera_root       = cam_root;
-	local.camera_root_final = local.sim_head * cam_root * local.sim_origin;
+	local.camera_root           = cam_root;
+	local.camera_root_final     = local.sim_head * cam_root * local.sim_origin;
+	local.camera_root_final_rot = matrix_extract_rotation(local.camera_root_final);
 	matrix_inverse(local.camera_root_final, local.camera_root_final_inv);
-
-	// TODO: May want to also update controllers/hands?
-	quat rot = matrix_extract_rotation(local.camera_root_final);
-	input_head_pose_world.position    = local.camera_root_final * input_head_pose_local.position;
-	input_head_pose_world.orientation = rot * input_head_pose_local.orientation;
-	input_eyes_pose_world.position    = local.camera_root_final * input_eyes_pose_local.position;
-	input_eyes_pose_world.orientation = rot * input_eyes_pose_local.orientation;
-
-	world_refresh_transforms();
-	input_update_poses();
 }
 
 ///////////////////////////////////////////
