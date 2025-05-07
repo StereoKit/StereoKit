@@ -63,7 +63,7 @@ void skt_lighting_shutdown() {
 ///////////////////////////////////////////
 
 void skt_lighting_step() {
-	vec3 pos  = input_head()->position;
+	vec3 pos  = input_head().position;
 	int  free = SKT_MAX_LIGHTS;
 	for (int i = 0; i < skt_lights.size(); i++) {
 		skt_light_info_t l = skt_lights[i];

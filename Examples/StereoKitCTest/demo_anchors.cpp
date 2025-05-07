@@ -47,7 +47,7 @@ void demo_anchors_update() {
 			pose.position = input_hand(handed_right)->pinch_pt;
 		else if (input_hand(handed_left)->tracked_state & button_state_active)
 			pose.position = input_hand(handed_left)->pinch_pt;
-		pose.orientation = quat_lookat(pose.position, input_head()->position);
+		pose.orientation = quat_lookat(pose.position, input_head().position);
 
 		anchor_t anch = anchor_create(pose);
 		if (anch) {
