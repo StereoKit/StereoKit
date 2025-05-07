@@ -298,6 +298,12 @@ void input_step() {
 	local.controllers[handed_right].tracked_pos = pos_tracked;
 	local.controllers[handed_right].tracked_rot = rot_tracked;
 
+	// Both
+	local.controller_menubtn = button_make_state(
+		(local.controller_menubtn & button_state_active) != 0,
+		(input_button_get(input_button_l_menu) & button_state_active) != 0 ||
+		(input_button_get(input_button_r_menu) & button_state_active) != 0);
+
 	///////////////////////////////////////////
 	// Make eyes from our inputs
 	///////////////////////////////////////////
