@@ -5,7 +5,7 @@
 
 #include "xr.h"
 #include "openxr.h"
-#include "..\systems\input.h"
+#include "../systems/input.h"
 
 namespace sk {
 
