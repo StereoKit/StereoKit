@@ -50,7 +50,6 @@ struct xrc_state_t {
 	array_t<button_state_>            input_bools;
 	array_t<vec2>                     input_xys;
 
-	int32_t                           eyes_pointer;
 	button_state_                     tracked_state;
 
 	array_t<xr_interaction_profile_t> registered_profiles;
@@ -363,8 +362,6 @@ xr_system_ oxri_init(void*) {
 		log_errf("%s [%s]", "xrAttachSessionActionSets", openxr_string(result));
 		return xr_system_fail_critical;
 	}
-
-	local.eyes_pointer = input_add_pointer(input_source_gaze | (device_has_eye_gaze() ? input_source_gaze_eyes : input_source_gaze_head));
 
 	return xr_system_succeed;
 }
