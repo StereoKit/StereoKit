@@ -2244,37 +2244,37 @@ typedef enum controller_key_ {
 
 typedef int32_t hand_sim_id_t;
 
-SK_API int32_t               input_pointer_count     (input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer           (int32_t index, input_source_ filter sk_default(input_source_any));
-SK_API const hand_t*         input_hand              (handed_ hand);
-SK_API void                  input_hand_override     (handed_ hand, const hand_joint_t *in_arr_hand_joints);
-SK_API hand_source_          input_hand_source       (handed_ hand);
-SK_API const controller_t*   input_controller        (handed_ hand);
-SK_API button_state_         input_controller_menu   (void);
-SK_API void                  input_controller_model_set(handed_ hand, model_t model);
-SK_API model_t               input_controller_model_get(handed_ hand);
-SK_API pose_t                input_head              (void);
-SK_API pose_t                input_eyes              (void);
-SK_API button_state_         input_eyes_tracked      (void);
-SK_API const mouse_t*        input_mouse             (void);
-SK_API button_state_         input_key               (key_ key);
-SK_API void                  input_key_inject_press  (key_ key);
-SK_API void                  input_key_inject_release(key_ key);
-SK_API char32_t              input_text_consume      (void);
-SK_API void                  input_text_reset        (void);
-SK_API void                  input_text_inject_char  (char32_t character);
-SK_API void                  input_hand_visible      (handed_ hand, bool32_t visible);
-SK_API void                  input_hand_material     (handed_ hand, material_t material);
-SK_API bool32_t              input_get_finger_glow   (void);
-SK_API void                  input_set_finger_glow   (bool32_t visible);
+SK_API int32_t               input_pointer_count             (input_source_ filter sk_default(input_source_any));
+SK_API pointer_t             input_pointer                   (int32_t index, input_source_ filter sk_default(input_source_any));
+SK_API const hand_t*         input_hand                      (handed_ hand);
+SK_API void                  input_hand_override             (handed_ hand, const hand_joint_t *in_arr_hand_joints);
+SK_API hand_source_          input_hand_source               (handed_ hand);
+SK_API const controller_t*   input_controller                (handed_ hand);
+SK_API button_state_         input_controller_menu           (void);
+SK_API void                  input_controller_model_set      (handed_ hand, model_t model);
+SK_API model_t               input_controller_model_get      (handed_ hand);
+SK_API pose_t                input_head                      (void);
+SK_API pose_t                input_eyes                      (void);
+SK_API button_state_         input_eyes_tracked              (void);
+SK_API const mouse_t*        input_mouse                     (void);
+SK_API button_state_         input_key                       (key_ key);
+SK_API void                  input_key_inject_press          (key_ key);
+SK_API void                  input_key_inject_release        (key_ key);
+SK_API char32_t              input_text_consume              (void);
+SK_API void                  input_text_reset                (void);
+SK_API void                  input_text_inject_char          (char32_t character);
+SK_API void                  input_hand_visible              (handed_ hand, bool32_t visible);
+SK_API void                  input_hand_material             (handed_ hand, material_t material);
+SK_API bool32_t              input_get_finger_glow           (void);
+SK_API void                  input_set_finger_glow           (bool32_t visible);
 
-SK_API hand_sim_id_t         input_hand_sim_pose_add   (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
-SK_API void                  input_hand_sim_pose_remove(hand_sim_id_t id);
-SK_API void                  input_hand_sim_pose_clear (void);
+SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
+SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
+SK_API void                  input_hand_sim_pose_clear       (void);
 
-SK_API void                  input_subscribe      (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_unsubscribe    (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_fire_event     (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
+SK_API void                  input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API void                  input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API void                  input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 
@@ -2292,26 +2292,26 @@ typedef enum anchor_caps_ {
 } anchor_caps_;
 SK_MakeFlag(anchor_caps_);
 
-SK_API anchor_t       anchor_find              (const char* asset_id_utf8);
-SK_API anchor_t       anchor_create            (pose_t pose);
-SK_API void           anchor_set_id            (      anchor_t anchor, const char* asset_id_utf8);
-SK_API const char*    anchor_get_id            (const anchor_t anchor);
-SK_API void           anchor_addref            (      anchor_t anchor);
-SK_API void           anchor_release           (      anchor_t anchor);
-SK_API bool32_t       anchor_try_set_persistent(      anchor_t anchor, bool32_t persistent);
-SK_API bool32_t       anchor_get_persistent    (const anchor_t anchor);
-SK_API pose_t         anchor_get_pose          (const anchor_t anchor);
-SK_API bool32_t       anchor_get_changed       (const anchor_t anchor);
-SK_API const char*    anchor_get_name          (const anchor_t anchor);
-SK_API button_state_  anchor_get_tracked       (const anchor_t anchor);
-SK_API bool32_t       anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor);
+SK_API anchor_t              anchor_find                     (const char* asset_id_utf8);
+SK_API anchor_t              anchor_create                   (pose_t pose);
+SK_API void                  anchor_set_id                   (      anchor_t anchor, const char* asset_id_utf8);
+SK_API const char*           anchor_get_id                   (const anchor_t anchor);
+SK_API void                  anchor_addref                   (      anchor_t anchor);
+SK_API void                  anchor_release                  (      anchor_t anchor);
+SK_API bool32_t              anchor_try_set_persistent       (      anchor_t anchor, bool32_t persistent);
+SK_API bool32_t              anchor_get_persistent           (const anchor_t anchor);
+SK_API pose_t                anchor_get_pose                 (const anchor_t anchor);
+SK_API bool32_t              anchor_get_changed              (const anchor_t anchor);
+SK_API const char*           anchor_get_name                 (const anchor_t anchor);
+SK_API button_state_         anchor_get_tracked              (const anchor_t anchor);
+SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** perception_spatial_anchor);
 
-SK_API void           anchor_clear_stored      (void);
-SK_API anchor_caps_   anchor_get_capabilities  (void);
-SK_API int32_t        anchor_get_count         (void);
-SK_API anchor_t       anchor_get_index         (int32_t index);
-SK_API int32_t        anchor_get_new_count     (void);
-SK_API anchor_t       anchor_get_new_index     (int32_t index);
+SK_API void                  anchor_clear_stored             (void);
+SK_API anchor_caps_          anchor_get_capabilities         (void);
+SK_API int32_t               anchor_get_count                (void);
+SK_API anchor_t              anchor_get_index                (int32_t index);
+SK_API int32_t               anchor_get_new_count            (void);
+SK_API anchor_t              anchor_get_new_index            (int32_t index);
 
 ///////////////////////////////////////////
 
@@ -2330,30 +2330,30 @@ typedef enum world_refresh_ {
 	world_refresh_timer,
 } world_refresh_;
 
-SK_API bool32_t       world_has_bounds                (void);
-SK_API vec2           world_get_bounds_size           (void);
-SK_API pose_t         world_get_bounds_pose           (void);
-SK_API pose_t         world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
-SK_API pose_t         world_from_perception_anchor    (void *perception_spatial_anchor);
-SK_API bool32_t       world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
-SK_API bool32_t       world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
-SK_API bool32_t       world_raycast                   (ray_t ray, ray_t *out_intersection);
-SK_API void           world_set_occlusion_enabled     (bool32_t enabled);
-SK_API bool32_t       world_get_occlusion_enabled     (void);
-SK_API void           world_set_raycast_enabled       (bool32_t enabled);
-SK_API bool32_t       world_get_raycast_enabled       (void);
-SK_API void           world_set_occlusion_material    (material_t material);
-SK_API material_t     world_get_occlusion_material    (void);
-SK_API void           world_set_refresh_type          (world_refresh_ refresh_type);
-SK_API world_refresh_ world_get_refresh_type          (void);
-SK_API void           world_set_refresh_radius        (float radius_meters);
-SK_API float          world_get_refresh_radius        (void);
-SK_API void           world_set_refresh_interval      (float every_seconds);
-SK_API float          world_get_refresh_interval      (void);
-SK_API button_state_  world_get_tracked               (void);
-SK_API origin_mode_   world_get_origin_mode           (void);
-SK_API pose_t         world_get_origin_offset         (void);
-SK_API void           world_set_origin_offset         (pose_t offset);
+SK_API bool32_t              world_has_bounds                (void);
+SK_API vec2                  world_get_bounds_size           (void);
+SK_API pose_t                world_get_bounds_pose           (void);
+SK_API pose_t                world_from_spatial_graph        (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time);
+SK_API pose_t                world_from_perception_anchor    (void *perception_spatial_anchor);
+SK_API bool32_t              world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
+SK_API bool32_t              world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
+SK_API bool32_t              world_raycast                   (ray_t ray, ray_t *out_intersection);
+SK_API void                  world_set_occlusion_enabled     (bool32_t enabled);
+SK_API bool32_t              world_get_occlusion_enabled     (void);
+SK_API void                  world_set_raycast_enabled       (bool32_t enabled);
+SK_API bool32_t              world_get_raycast_enabled       (void);
+SK_API void                  world_set_occlusion_material    (material_t material);
+SK_API material_t            world_get_occlusion_material    (void);
+SK_API void                  world_set_refresh_type          (world_refresh_ refresh_type);
+SK_API world_refresh_        world_get_refresh_type          (void);
+SK_API void                  world_set_refresh_radius        (float radius_meters);
+SK_API float                 world_get_refresh_radius        (void);
+SK_API void                  world_set_refresh_interval      (float every_seconds);
+SK_API float                 world_get_refresh_interval      (void);
+SK_API button_state_         world_get_tracked               (void);
+SK_API origin_mode_          world_get_origin_mode           (void);
+SK_API pose_t                world_get_origin_offset         (void);
+SK_API void                  world_set_origin_offset         (pose_t offset);
 
 ///////////////////////////////////////////
 
