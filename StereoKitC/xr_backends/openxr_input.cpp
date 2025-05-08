@@ -500,6 +500,8 @@ void oxri_update_poses() {
 	// Get input from whatever controllers may be present
 	XrEyeGazeSampleTimeEXT gaze_sample_time = { XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
 	for (int32_t i = 0; i < local.pose_spaces.count; i++) {
+		if (local.pose_spaces[i] == XR_NULL_HANDLE) continue;
+
 		XrSpaceLocation space_location = { XR_TYPE_SPACE_LOCATION };
 		if (i == input_pose_eyes && xr_ext_eye_gaze_available()) {
 			space_location.next = &gaze_sample_time;
@@ -529,6 +531,8 @@ void oxri_update_frame(void*) {
 	oxri_update_poses();
 
 	for (int32_t i = 0; i < local.actions[xra_type_bool].count; i++) {
+		if (local.actions[xra_type_bool][i] == XR_NULL_HANDLE) continue;
+
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		XrActionStateBoolean state    = { XR_TYPE_ACTION_STATE_BOOLEAN  };
 		get_info.action = local.actions[xra_type_bool][i];
@@ -537,6 +541,8 @@ void oxri_update_frame(void*) {
 	}
 
 	for (int32_t i = 0; i < local.actions[xra_type_float].count; i++) {
+		if (local.actions[xra_type_float][i] == XR_NULL_HANDLE) continue;
+
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		XrActionStateFloat   state    = { XR_TYPE_ACTION_STATE_FLOAT    };
 		get_info.action = local.actions[xra_type_float][i];
@@ -545,6 +551,8 @@ void oxri_update_frame(void*) {
 	}
 
 	for (int32_t i = 0; i < local.actions[xra_type_xy].count; i++) {
+		if (local.actions[xra_type_xy][i] == XR_NULL_HANDLE) continue;
+
 		XrActionStateGetInfo get_info = { XR_TYPE_ACTION_STATE_GET_INFO };
 		XrActionStateVector2f   state = { XR_TYPE_ACTION_STATE_VECTOR2F };
 		get_info.action = local.actions[xra_type_xy][i];
