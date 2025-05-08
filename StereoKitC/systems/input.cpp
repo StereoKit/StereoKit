@@ -94,6 +94,9 @@ void input_mouse_update();
 bool input_init() {
 	local = {};
 	input_head_pose_local = pose_identity;
+	local.eyes_pose_local = pose_identity;
+	local.palm_offset[0] = pose_identity;
+	local.palm_offset[1] = pose_identity;
 
 	local.mtx_poses   = ft_mutex_create();
 	local.mtx_floats  = ft_mutex_create();
