@@ -185,9 +185,6 @@ void          radix_sort_init         ();
 bool render_init() {
 	local = {};
 	local.initialized           = true;
-	local.camera_root           = matrix_identity;
-	local.camera_root_final     = matrix_identity;
-	local.camera_root_final_inv = matrix_identity;
 	local.sim_origin            = matrix_identity;
 	local.sim_head              = matrix_identity;
 	local.clip_planes           = {0.02f, 50};
@@ -213,7 +210,9 @@ bool render_init() {
 	local.instance_list.resize(render_instance_max);
 
 	// Setup a default camera
-	render_set_clip(local.clip_planes.x, local.clip_planes.y);
+	render_set_clip         (local.clip_planes.x, local.clip_planes.y);
+	render_set_cam_root     (matrix_identity);
+	render_update_projection();
 
 	// Set up resources for doing blit operations
 	local.blit_quad = mesh_find(default_id_mesh_screen_quad);
@@ -252,8 +251,6 @@ bool render_init() {
 
 	radix_sort_init();
 	hierarchy_init();
-
-	render_update_projection();
 
 	return true;
 }
