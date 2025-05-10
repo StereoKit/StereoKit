@@ -13,6 +13,7 @@ struct device_data_t {
 	display_type_    display_type;
 	display_blend_   display_blend;
 	float            display_refresh_rate;
+	float            display_refresh_interval;
 	int32_t          display_width;
 	int32_t          display_height;
 	fov_info_t       display_fov;

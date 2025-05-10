@@ -10,6 +10,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
 
 #include "../stereokit.h"
 #include "../sk_math.h"
@@ -328,6 +330,16 @@ recti_t platform_win_rect(platform_win_t window_id) {
 		win->save_rect.top,
 		win->save_rect.right  - win->save_rect.left,
 		win->save_rect.bottom - win->save_rect.top };
+}
+
+///////////////////////////////////////////
+
+float platform_win_refresh_rate(platform_win_t window_id) {
+	DWM_TIMING_INFO info = {sizeof(DWM_TIMING_INFO)};
+	HRESULT         hr   = DwmGetCompositionTimingInfo(nullptr, &info);
+	return SUCCEEDED(hr)
+		? info.rateRefresh.uiNumerator / (float)info.rateRefresh.uiDenominator
+		: 60;
 }
 
 ///////////////////////////////////////////

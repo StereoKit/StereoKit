@@ -97,6 +97,8 @@ bool simulator_init() {
 	if (swapchain)
 		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
 
+	device_data.display_refresh_rate     = platform_win_refresh_rate(sim_window);
+	device_data.display_refresh_interval = 1.f / device_data.display_refresh_rate;
 	anchors_init();
 	return true;
 }

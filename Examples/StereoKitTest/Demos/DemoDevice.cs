@@ -31,6 +31,8 @@ class DemoDevice : ITest
 		UI.Label(Device.DisplayType.ToString(), false);
 		UI.Label("Blend", labelSize); UI.SameLine();
 		UI.Label(Device.DisplayBlend.ToString(), false);
+		UI.Label("Hz", labelSize); UI.SameLine();
+		UI.Label($"{Device.DisplayRefreshRate:0.00} ({Device.DisplayRefreshInterval * 1000:0.00}ms)", false);
 
 		UI.HSeparator();
 

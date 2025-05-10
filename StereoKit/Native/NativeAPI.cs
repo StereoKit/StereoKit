@@ -38,7 +38,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_display_set_blend       (DisplayBlend blend);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_display_valid_blend     (DisplayBlend blend);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float          device_display_get_refresh_rate();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float          device_display_get_refresh_rate    ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float          device_display_get_refresh_interval();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_width       ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int            device_display_get_height      ();
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FovInfo        device_display_get_fov         ();

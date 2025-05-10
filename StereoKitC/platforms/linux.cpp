@@ -13,6 +13,7 @@
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/extensions/Xfixes.h>
+#include <X11/extensions/Xrandr.h>
 
 #include <unistd.h>
 #include <dirent.h>
@@ -500,6 +501,37 @@ recti_t platform_win_rect(platform_win_t window_id) {
 	return win->has_swapchain
 		? recti_t{ 0,0, win->swapchain.width, win->swapchain.height }
 		: recti_t{ 0, 0, 0, 0 };
+}
+
+///////////////////////////////////////////
+
+float platform_win_refresh_rate(platform_win_t window_id) {
+	XRRScreenResources* resources = XRRGetScreenResources(linux_display, DefaultRootWindow(linux_display));
+	if (!resources)
+		return 60;
+
+	float refresh_rate = 60.0f;
+	if (resources->noutput > 0) {
+		RROutput       output      = resources->outputs[0];
+		XRROutputInfo* output_info = XRRGetOutputInfo(linux_display, resources, output);
+
+		if (output_info->connection == RR_Connected) {
+			XRRCrtcInfo* crtc_info = XRRGetCrtcInfo(linux_display, resources, output_info->crtc);
+			if (crtc_info) {
+				for (int32_t i = 0; i < resources->nmode; i++) {
+					XRRModeInfo mode = resources->modes[i];
+					if (mode.id != crtc_info->mode) continue;
+
+					refresh_rate = (float)mode.dotClock / ((float)mode.hTotal * (float)mode.vTotal);
+					break;
+				}
+				XRRFreeCrtcInfo(crtc_info);
+			}
+		}
+		XRRFreeOutputInfo(output_info);
+	}
+	XRRFreeScreenResources(resources);
+	return refresh_rate;
 }
 
 ///////////////////////////////////////////

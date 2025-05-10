@@ -707,6 +707,17 @@ recti_t platform_win_rect(platform_win_t window_id) {
 
 ///////////////////////////////////////////
 
+float platform_win_refresh_rate(platform_win_t window_id) {
+	window_t*       win  = &uwp_windows[window_id];
+	DWM_TIMING_INFO info = {};
+	HRESULT         hr   = DwmGetCompositionTimingInfo(win->handle, &info);
+	return SUCCEEDED(hr)
+		? info.rateRefresh.uiNumerator / (float)info.rateRefresh.uiDenominator
+		: 60;
+}
+
+///////////////////////////////////////////
+
 void platform_win_add_event(platform_win_t win_id, window_event_t evt) {
 	if (uwp_windows[win_id].run_thread == false) return;
 	ft_mutex_lock(uwp_windows[win_id].event_mtx);

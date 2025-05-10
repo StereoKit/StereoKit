@@ -24,6 +24,21 @@
 		public static bool ValidBlend(DisplayBlend blend)
 			=> NativeAPI.device_display_valid_blend(blend);
 
+		/// <summary>How many times the display refreshes each second, you
+		/// might frequently see this at values like 75hz, 90hz, or 120hz! This
+		/// value may change on the fly, as some devices may artificially
+		/// throttle the display rate to save power or increase timing
+		/// consistency, such as in cases where the device is also recording
+		/// the display as a video stream.</summary>
+		public static float DisplayRefreshRate => NativeAPI.device_display_get_refresh_rate();
+		/// <summary>How much time between each screen refresh, you might
+		/// frequently see this at values like 13.3ms(75hz), 11.1ms(90hz), or
+		/// 8.3ms(120hz)! This value may change on the fly, as some devices may
+		/// artificially throttle the display rate to save power or increase
+		/// timing consistency, such as in cases where the device is also
+		/// recording the display as a video stream.</summary>
+		public static float DisplayRefreshInterval => NativeAPI.device_display_get_refresh_interval();
+
 		/// <summary>The tracking capabilities of this device! Is it 3DoF,
 		/// rotation only? Or is it 6DoF, with positional tracking as well?
 		/// Maybe it can't track at all!</summary>

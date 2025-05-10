@@ -132,6 +132,7 @@ elseif (UNIX)
     gbm
     X11
     Xfixes
+    Xrandr
     fontconfig )
 
   add_definitions("-DSKG_LINUX_EGL")

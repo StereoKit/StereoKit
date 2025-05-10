@@ -69,6 +69,12 @@ float device_display_get_refresh_rate() {
 
 ///////////////////////////////////////////
 
+float device_display_get_refresh_interval(void) {
+	return device_data.display_refresh_interval;
+}
+
+///////////////////////////////////////////
+
 int32_t device_display_get_width() {
 	return device_data.display_width;
 }

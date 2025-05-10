@@ -57,7 +57,7 @@ Here's the pre-reqs you'll need first!
 ```shell
 # here's the commands for installing Linux build pre-reqs:
 sudo apt-get update
-sudo apt-get install cmake ninja-build clang lld libx11-dev libxfixes-dev libegl-dev libgbm-dev libfontconfig-dev
+sudo apt-get install cmake ninja-build clang lld libx11-dev libxfixes-dev libxrandr-dev libegl-dev libgbm-dev libfontconfig-dev
 ```
 
 To build with cmake:

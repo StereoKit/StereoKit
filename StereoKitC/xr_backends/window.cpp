@@ -86,6 +86,9 @@ bool window_init() {
 	if (swapchain)
 		window_surface_resize(local->surface, swapchain->width, swapchain->height);
 
+	
+	device_data.display_refresh_rate     = platform_win_refresh_rate(local->window);
+	device_data.display_refresh_interval = 1.f / device_data.display_refresh_rate;
 	return true;
 }
 ///////////////////////////////////////////
