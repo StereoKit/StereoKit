@@ -315,6 +315,9 @@
     <ClCompile Include="xr_backends\extensions\_registration.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\future.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -652,6 +655,9 @@
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
     <ClInclude Include="xr_backends\extensions\_registration.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\future.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>

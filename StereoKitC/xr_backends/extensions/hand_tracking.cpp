@@ -149,7 +149,7 @@ xr_system_ xr_ext_hand_tracking_initialize(void*) {
 
 		XrResult result = xrCreateHandTrackerEXT(xr_session, &info, &local.hand_tracker[h]);
 		if (XR_FAILED(result)) {
-			log_warnf("xrCreateHandTrackerEXT failed: [%s]", openxr_string(result));
+			log_warnf("%s [%s]", "xrCreateHandTrackerEXT", openxr_string(result));
 			input_hand_refresh_system();
 			return xr_system_fail;
 		}

@@ -14,6 +14,7 @@
 #include "debug_utils.h"
 #include "eye_interaction.h"
 #include "fb_colorspace.h"
+#include "future.h"
 #include "graphics.h"
 #include "hand_tracking.h"
 #include "hand_mesh.h"
@@ -47,6 +48,7 @@ bool ext_registration() {
 
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
+	xr_ext_future_register();
 	xr_ext_android_create_instance_register();
 	xr_ext_android_thread_register();
 	xr_ext_graphics_register();
