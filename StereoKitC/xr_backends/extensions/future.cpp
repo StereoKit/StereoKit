@@ -91,7 +91,14 @@ void xr_ext_future_step_begin(void*) {
 void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context, XrFutureEXT future), void* context) {
 	if (!local.available)
 		return;
-	local.callbacks.add({ future, context, on_finish });
+
+	// Do a quick check on the future, in case the result is available right
+	// away! If not, queue it up for polling at the start of each frame.
+	if (xr_ext_future_check(future)) {
+		on_finish(context, future);
+	} else {
+		local.callbacks.add({ future, context, on_finish });
+	}
 }
 
 ///////////////////////////////////////////
