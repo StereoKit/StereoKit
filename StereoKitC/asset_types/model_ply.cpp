@@ -50,7 +50,11 @@ bool modelfmt_ply(model_t model, const char *filename, const void *file_data, si
 			{ PLY_PROP_COLOR_R,     ply_prop_uint,    sizeof(uint8_t), 32, &white },
 			{ PLY_PROP_COLOR_G,     ply_prop_uint,    sizeof(uint8_t), 33, &white },
 			{ PLY_PROP_COLOR_B,     ply_prop_uint,    sizeof(uint8_t), 34, &white },
-			{ PLY_PROP_COLOR_A,     ply_prop_uint,    sizeof(uint8_t), 35, &white }, };
+			{ PLY_PROP_COLOR_A,     ply_prop_uint,    sizeof(uint8_t), 35, &white },
+			{ PLY_PROP_COLOR_DIFF_R,ply_prop_uint,    sizeof(uint8_t), 32, NULL },
+			{ PLY_PROP_COLOR_DIFF_G,ply_prop_uint,    sizeof(uint8_t), 33, NULL },
+			{ PLY_PROP_COLOR_DIFF_B,ply_prop_uint,    sizeof(uint8_t), 34, NULL },
+			{ PLY_PROP_COLOR_DIFF_A,ply_prop_uint,    sizeof(uint8_t), 35, NULL }, };
 		ply_convert(&file, PLY_ELEMENT_VERTICES, map_verts, sizeof(map_verts)/sizeof(map_verts[0]), sizeof(vert_t), (void**)&verts, &vert_count);
 
 		// Properties defined as lists in the PLY format will get triangulated 
@@ -63,10 +67,19 @@ bool modelfmt_ply(model_t model, const char *filename, const void *file_data, si
 		// You gotta free the memory manually!
 		ply_free(&file);
 
+		// SK doesn't work well with zero face meshes, but PLYs often have
+		// point clouds, and we want to provide data for that.
+		vind_t* final_inds = inds;
+		vind_t  ind_tmp[] = { 0,0,0 };
+		if (ind_count == 0) {
+			final_inds = ind_tmp;
+			ind_count  = 3;
+		}
+
 		// Make a mesh out of it all
 		mesh = mesh_create();
 		mesh_set_id  (mesh, id);
-		mesh_set_data(mesh, verts, vert_count, inds, ind_count);
+		mesh_set_data(mesh, verts, vert_count, final_inds, ind_count);
 
 		model_node_add(model, nullptr, matrix_identity, mesh, material);
 
