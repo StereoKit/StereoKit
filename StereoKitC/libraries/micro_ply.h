@@ -341,7 +341,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 
 					// Make sure we have room for the elements
 					if (list_count+count >= list_cap) {
-						size_t offset = list_data - el->list_data;
+						size_t offset = list_data - (uint8_t*)el->list_data;
 						list_cap = (int32_t)(list_cap * 1.25f);
 						el->list_data = realloc(el->list_data, p->list_bytes * list_cap);
 						list_data = ((uint8_t*)el->list_data) + offset;
