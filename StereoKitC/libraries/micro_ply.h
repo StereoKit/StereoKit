@@ -90,6 +90,10 @@ Example usage:
 #define PLY_PROP_COLOR_G "green"
 #define PLY_PROP_COLOR_B "blue"
 #define PLY_PROP_COLOR_A "alpha"
+#define PLY_PROP_COLOR_DIFF_R "diffuse_red"
+#define PLY_PROP_COLOR_DIFF_G "diffuse_green"
+#define PLY_PROP_COLOR_DIFF_B "diffuse_blue"
+#define PLY_PROP_COLOR_DIFF_A "diffuse_alpha"
 #define PLY_PROP_INDICES "vertex_index"
 #define PLY_ELEMENT_VERTICES "vertex"
 #define PLY_ELEMENT_FACES "face"
@@ -114,10 +118,10 @@ typedef struct ply_prop_t {
 typedef struct ply_element_t {
 	char        name[64];
 	int32_t     count;
-	ply_prop_t *properties; 
-	int32_t     property_count; 
+	ply_prop_t *properties;
+	int32_t     property_count;
 	void       *data;
-	int32_t     data_stride; 
+	int32_t     data_stride;
 	void       *list_data;
 } ply_element_t;
 
@@ -146,6 +150,14 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 
 #include <stdlib.h>
 #include <string.h>
+
+///////////////////////////////////////////
+
+typedef enum ply_fmt_ {
+	ply_fmt_ascii = 1,
+	ply_fmt_binary_le,
+	ply_fmt_binary_be,
+} ply_fmt_;
 
 ///////////////////////////////////////////
 
@@ -198,7 +210,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 		return true;
 	};
 	// Support function, gets the following whitespace separated word
-	void (*get_word)(char *start, char *out, size_t out_size) = [](char *start, char *out, size_t out_size) {
+	void (*get_word)(const char *start, char *out, size_t out_size) = [](const char *start, char *out, size_t out_size) {
 		size_t count = 0;
 		while (*start != ' ' && *start != '\t' && *start != '\n' && *start != '\r' && *start != '\0' && count+1 < out_size) {
 			out[count] = *start++;
@@ -223,7 +235,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 		return false;
 
 	// File data
-	int32_t format     = 0;
+	ply_fmt_ format    = ply_fmt_ascii;
 	out_file->count    = 0;
 	out_file->elements = nullptr;
 
@@ -234,11 +246,11 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 		if (!line) return false;
 		line += 1;
 
-		if        (starts_with(line, "format ")) {
+		if (starts_with(line, "format ")) {
 			get_word(line + sizeof("format"), word, sizeof(word));
-			if      (strcmp(word, "ascii"               ) == 0) format = 0;
-			else if (strcmp(word, "binary_little_endian") == 0) format = 1;
-			else if (strcmp(word, "binary_big_endian"   ) == 0) format = 2;
+			if      (strcmp(word, "ascii"               ) == 0) format = ply_fmt_ascii;
+			else if (strcmp(word, "binary_little_endian") == 0) format = ply_fmt_binary_le;
+			else if (strcmp(word, "binary_big_endian"   ) == 0) format = ply_fmt_binary_be;
 		} else if (starts_with(line, "comment ")) {
 		} else if (starts_with(line, "element ")) {
 			ply_element_t el = {};
@@ -262,7 +274,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 				type_info(word, &prop.list_type, &prop.list_bytes);
 				off += strlen(word) + 1;
 				get_word(line + off, prop.name, sizeof(prop.name));
-			} else { 
+			} else {
 				type_info(word, &prop.type, &prop.bytes);
 				get_word(line + sizeof("property ") + strlen(word), prop.name, sizeof(prop.name));
 			}
@@ -288,60 +300,79 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 
 		// If it's a list type
 		if (el->property_count == 1 && el->properties[0].list_type != 0) {
+			const ply_prop_t* p = &el->properties[0];
 			int32_t list_cap   = el->count * 4;
 			int32_t list_count = 0;
-			el->list_data = malloc(el->properties[0].list_bytes * list_cap);
+			el->list_data = malloc(p->list_bytes * list_cap);
 			uint8_t *list_data = (uint8_t*)el->list_data;
 
-			for (int32_t e = 0; e < el->count; e++) {
-				size_t off = 0;
-				get_word(line + off, word, sizeof(word));
-				off += strlen(word) + 1;
-				int32_t count = atoi(word);
-				_ply_convert(data, el->properties[0].bytes, el->properties[0].type, (uint8_t*)&count, sizeof(double), ply_prop_int);
-				for (int32_t c = 0; c < count; c++) {
+			if (format == ply_fmt_ascii) {
+				for (int32_t e = 0; e < el->count; e++) {
+					size_t off = 0;
 					get_word(line + off, word, sizeof(word));
 					off += strlen(word) + 1;
-					if (el->properties[0].type == ply_prop_decimal) {
-						double  val = atof(word);
-						_ply_convert(list_data, el->properties[0].list_bytes, el->properties[0].list_type, (uint8_t*)&val, sizeof(double), ply_prop_decimal);
-					} else if (el->properties[0].type == ply_prop_int) {
-						int64_t val = atol(word);
-						_ply_convert(list_data, el->properties[0].list_bytes, el->properties[0].list_type, (uint8_t*)&val, sizeof(int64_t), ply_prop_int);
-					} else {
-						uint64_t val = atol(word);
-						_ply_convert(list_data, el->properties[0].list_bytes, el->properties[0].list_type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint);
+					int32_t count = atoi(word);
+					_ply_convert(data, p->bytes, p->type, (uint8_t*)&count, sizeof(count), ply_prop_int);
+					for (int32_t c = 0; c < count; c++) {
+						get_word(line + off, word, sizeof(word));
+						off += strlen(word) + 1;
+						if      (p->type == ply_prop_uint)    { uint64_t val = atol(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint   ); }
+						else if (p->type == ply_prop_decimal) { double   val = atof(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
+						else                                  { int64_t  val = atol(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(int64_t ), ply_prop_int    ); }
+						list_data  += p->list_bytes;
+						list_count += 1;
+						if (list_count >= list_cap) {
+							list_cap = (int32_t)(list_cap * 1.25f);
+							el->list_data = realloc(el->list_data, p->list_bytes * list_cap);
+							list_data = ((uint8_t*)el->list_data) + (list_count * p->list_bytes);
+						}
 					}
-					list_data  += el->properties[0].list_bytes;
-					list_count += 1;
-					if (list_count >= list_cap) {
-						list_cap = (int32_t)(list_cap * 1.25f);
-						el->list_data = realloc(el->list_data, el->properties[0].list_bytes * list_cap);
-						list_data = ((uint8_t*)el->list_data) + (list_count * el->properties[0].list_bytes);
-					}
+					line = strchr(line, '\n') + 1;
+					data += p->bytes;
 				}
-				line = strchr(line, '\n') + 1;
-				data += el->properties[0].bytes;
+			} else if (format == ply_fmt_binary_le) {
+				for (int32_t e = 0; e < el->count; e++) {
+					// Get the count of items in this element
+					memcpy(data, line, p->bytes);
+					int32_t count = 0;
+					_ply_convert((uint8_t*)&count, sizeof(count), ply_prop_int, data, p->bytes, p->type);
+					line += p->bytes;
+					data += p->bytes;
+
+					// Make sure we have room for the elements
+					if (list_count+count >= list_cap) {
+						size_t offset = list_data - (uint8_t*)el->list_data;
+						list_cap = (int32_t)(list_cap * 1.25f);
+						el->list_data = realloc(el->list_data, p->list_bytes * list_cap);
+						list_data = ((uint8_t*)el->list_data) + offset;
+					}
+					// Copy the elements
+					memcpy(list_data, line, p->list_bytes * count);
+					list_data  += p->list_bytes * count;
+					line       += p->list_bytes * count;
+					list_count += count;
+				}
 			}
 		} else {
-			for (int32_t e = 0; e < el->count; e++) {
-				size_t off = 0;
-				for (int32_t p = 0; p < el->property_count; p++) {
-					get_word(line + off, word, sizeof(word));
-					off += strlen(word) + 1;
-					if (el->properties[p].type == ply_prop_decimal) {
-						double  val = atof(word);
-						_ply_convert(data+el->properties[p].offset, el->properties[p].bytes, el->properties[p].type, (uint8_t*)&val, sizeof(double), ply_prop_decimal);
-					} else if (el->properties[p].type == ply_prop_int) {
-						int64_t val = atol(word);
-						_ply_convert(data+el->properties[p].offset, el->properties[p].bytes, el->properties[p].type, (uint8_t*)&val, sizeof(int64_t), ply_prop_int);
-					} else {
-						uint64_t val = atol(word);
-						_ply_convert(data+el->properties[p].offset, el->properties[p].bytes, el->properties[p].type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint);
+			if (format == ply_fmt_ascii) {
+				for (int32_t e = 0; e < el->count; e++) {
+					size_t off = 0;
+					for (int32_t prop = 0; prop < el->property_count; prop++) {
+						const ply_prop_t* p = &el->properties[prop];
+						get_word(line + off, word, sizeof(word));
+						off += strlen(word) + 1;
+						if      (p->type == ply_prop_decimal) { double   val = atof(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
+						else if (p->type == ply_prop_int)     { int64_t  val = atol(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(int64_t ), ply_prop_int    ); }
+						else                                  { uint64_t val = atol(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint   ); }
 					}
+					line = strchr(line, '\n') + 1;
+					data += el->data_stride;
 				}
-				line = strchr(line, '\n') + 1;
-				data += el->data_stride;
+			} else if (format == ply_fmt_binary_le) {
+				size_t copy = el->data_stride * el->count;
+				memcpy(data, line, copy);
+				data += copy;
+				line += copy;
 			}
 		}
 	}
@@ -387,7 +418,8 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 		for (int32_t i = 0; i < elements->count; i++) {
 			for (int32_t f = 0; f < format_count; f++) {
 				if (map[f] == -1) {
-					memcpy(dest+to_format[f].to_offset, to_format[f].default_val, to_format[f].to_size);
+					if (to_format[f].default_val)
+						memcpy(dest+to_format[f].to_offset, to_format[f].default_val, to_format[f].to_size);
 				} else {
 					ply_prop_t *prop = &elements->properties[map[f]];
 					_ply_convert(
