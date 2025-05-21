@@ -7,6 +7,7 @@
 #include "ui_layout.h"
 #include "ui_theming.h"
 #include "ui_core.h"
+#include "interactors.h"
 #include "../stereokit_ui.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"

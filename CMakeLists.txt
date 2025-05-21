@@ -469,6 +469,8 @@ set(SK_SRC_TOOLS
 set(SK_SRC_UI
   StereoKitC/stereokit_ui.h
   StereoKitC/ui/stereokit_ui.cpp
+  StereoKitC/ui/interactors.h
+  StereoKitC/ui/interactors.cpp
   StereoKitC/ui/ui_layout.h
   StereoKitC/ui/ui_layout.cpp
   StereoKitC/ui/ui_core.h
