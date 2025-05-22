@@ -57,37 +57,41 @@ void interaction_shutdown() {
 }
 
 ///////////////////////////////////////////
-
+#include <stdio.h>
 void interaction_update() {
 	const matrix *to_local = hierarchy_to_local();
 	pose_t        head     = input_head();
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		/*if (skui_interactors[i].tracked & button_state_active) {
+		// Visualize the interactors.
+		if (local.interactors[i].tracked & button_state_active) {
 			color32 color_start = {255,255,255,255};
 			color32 color_end   = {255,255,255,0};
-			if (skui_interactors[i].focused_prev != 0) {
+			if (local.interactors[i].focused_prev != 0) {
 				color_start = {255,255,0,255};
 				color_end   = {255,255,0,0};
 			}
-			if (skui_interactors[i].active_prev != 0) {
+			if (local.interactors[i].active_prev != 0) {
 				color_start = {0,255,0,255};
 				color_end   = {0,255,0,0};
 			}
-			line_add(skui_interactors[i].capsule_start_world, skui_interactors[i].capsule_end_world, color_start, color_end, 0.003f);
+			line_add(local.interactors[i].capsule_start_world, local.interactors[i].capsule_end_world, color_start, color_end, 0.003f);
 
-			//char txt[32];
-			//snprintf(txt,32, "%.2f", skui_interactors[i].focus_priority);
-			//text_add_at(txt,matrix_trs(skui_interactors[i].capsule_start_world, quat_lookat(skui_interactors[i].capsule_start_world, input_head()->position)), 1);
-		}*/
+			if (local.interactors[i].focus_priority < 1000) {
+				char txt[32];
+				snprintf(txt, 32, "%.2f", local.interactors[i].focus_priority);
+				text_add_at(txt, matrix_trs(local.interactors[i].capsule_start_world, quat_lookat(local.interactors[i].capsule_start_world, head.position)), 1);
+			}
+		}
 
 		local.interactors[i].focused_prev_prev   = local.interactors[i].focused_prev;
 		local.interactors[i].focused_prev        = local.interactors[i].focused;
 		local.interactors[i].active_prev_prev    = local.interactors[i].active_prev;
 		local.interactors[i].active_prev         = local.interactors[i].active;
-		local.interactors[i].orientation_prev    = local.interactors[i].orientation;
-		local.interactors[i].position_prev       = local.interactors[i].position;
+		local.interactors[i].motion_orientation_prev    = local.interactors[i].motion_orientation;
+		local.interactors[i].motion_position_prev       = local.interactors[i].motion_position;
 
+		local.interactors[i].secondary_motion    = vec3_zero;
 		local.interactors[i].focus_priority      = FLT_MAX;
 		local.interactors[i].focus_distance      = FLT_MAX;
 		local.interactors[i].focused             = 0;
@@ -229,15 +233,15 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 			if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
 				actor->active = id;
-				actor->interaction_start_position      = actor->position;
-				actor->interaction_start_orientation   = actor->orientation;
+				actor->interaction_start_position      = actor->motion_position;
+				actor->interaction_start_orientation   = actor->motion_orientation;
 				actor->interaction_start_motion_anchor = actor->motion_anchor;
 
 				actor->interaction_pt_position         = ref_handle_pose->position;
 				actor->interaction_pt_orientation      = ref_handle_pose->orientation;
 				actor->interaction_pt_pivot            = at;
 
-				actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->position, actor->orientation)), hierarchy_to_world_point(at));
+				actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->motion_position, actor->motion_orientation)), hierarchy_to_world_point(at));
 			}
 		} else { at = actor->interaction_pt_pivot; }
 		button_state_ focused = interactor_set_focus(actor, id, has_hand_attention, hand_attention_dist + 0.1f, hand_attention_dist, at);
@@ -256,7 +260,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 				quat dest_rot = quat_identity;
 				switch (move_type) {
 				case ui_move_exact: {
-					dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_orientation, actor->orientation);
+					dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_orientation, actor->motion_orientation);
 				} break;
 				case ui_move_face_user: {
 					if (device_display_get_type() == display_type_flatscreen) {
@@ -294,13 +298,13 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 				// distance can be manipulated easier.
 				const float amp = 3;
 				float amplify_factor = 
-					vec3_distance(actor->position,                   actor->motion_anchor) /
+					vec3_distance(actor->motion_position,                   actor->motion_anchor) /
 					vec3_distance(actor->interaction_start_position, actor->interaction_start_motion_anchor);
 				amplify_factor = fmaxf(0, (amplify_factor - 1) * amp + 1);
 				// Disable amplification for now
 				amplify_factor = 1;
 
-				vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->position, actor->orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
+				vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->motion_position, actor->motion_orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
 				vec3 handle_world_offset = dest_rot * (-actor->interaction_pt_pivot);
 				vec3 dest_pos            = pivot_new_position + handle_world_offset;
 
@@ -323,51 +327,60 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 ///////////////////////////////////////////
 
-int32_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type) {
+int32_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius) {
 	interactor_t result = {};
 	result.shape_type      = shape_type;
 	result.events          = events;
 	result.activation_type = activation_type;
+	result.capsule_radius  = capsule_radius;
 	result.min_distance    = -1000000;
 	return local.interactors.add(result);
 }
 
 ///////////////////////////////////////////
 
-void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked) {
-	if (interactor < 0 || interactor >= local.interactors.count) return;
-	interactor_t *actor = &local.interactors[interactor];
+void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked) {
+	interactor_t* actor = interactor_get(interactor);
+	if (actor == nullptr) return;
+
 	actor->tracked     = tracked;
 	actor->pinch_state = active;
 
 	if (tracked & button_state_active) {
 		actor->capsule_start_world = capsule_start;
 		actor->capsule_end_world   = capsule_end;
-		actor->capsule_radius      = capsule_radius;
-		actor->position            = motion_pos;
-		actor->orientation         = motion_orientation;
+		actor->motion_position     = motion_pos;
+		actor->motion_orientation  = motion_orientation;
 		actor->motion_anchor       = motion_anchor;
+		actor->secondary_motion    = secondary_motion;
 	}
 
 	// Don't let the hand trigger things while popping in and out of
 	// tracking
 	if (actor->tracked & button_state_just_active) {
-		actor->orientation_prev = actor->orientation;
-		actor->position_prev    = actor->position;
+		actor->motion_orientation_prev = actor->motion_orientation;
+		actor->motion_position_prev    = actor->motion_position;
 	}
 }
 
 ///////////////////////////////////////////
 
 void interactor_min_distance_set(int32_t interactor, float min_distance) {
-	if (interactor < 0 || interactor >= local.interactors.count) return;
-	local.interactors[interactor].min_distance = min_distance;
+	interactor_t* actor = interactor_get(interactor);
+	if (actor) actor->min_distance = min_distance;
+}
+
+///////////////////////////////////////////
+
+void interactor_radius_set(int32_t interactor, float radius) {
+	interactor_t* actor = interactor_get(interactor);
+	if (actor) actor->capsule_radius = radius;
 }
 
 ///////////////////////////////////////////
 
 interactor_t* interactor_get(int32_t interactor) {
-	return interactor >= 0 
+	return interactor >= 0 && interactor < local.interactors.count
 		? &local.interactors[interactor]
 		: nullptr;
 }
@@ -387,7 +400,7 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 	vec3     start_local = hierarchy_to_local_point(actor->capsule_start_world);
 	vec3     end_local   = hierarchy_to_local_point(actor->capsule_end_world  );
 	bool32_t result      = bounds_capsule_intersect(box, start_local, end_local, actor->capsule_radius, out_at);
-	if (actor->shape_type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->position);
+	if (actor->shape_type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->motion_position);
 	if (result) {
 		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, start_local);
 	}

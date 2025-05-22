@@ -21,31 +21,35 @@ enum interactor_activation_ {
 };
 
 struct interactor_t {
-	// What type of interactions does this provide
+	// A description of what the interactor is and how it behaves
 	interactor_event_      events;
 	interactor_activation_ activation_type;
 	interactor_type_       shape_type;
+	// While generally static, this does change for some interactors! For
+	// example, with hand far-rays, the minimum distance reduces as the hand
+	// get further from the head.
+	float                  min_distance;
+	float                  capsule_radius;
 
-	vec3      capsule_end_world;
-	vec3      capsule_start_world;
-	float     capsule_radius;
-	float     min_distance;
-
+	// User provided per-frame data
+	vec3          capsule_end_world;
+	vec3          capsule_start_world;
 	button_state_ tracked;
 	button_state_ pinch_state;
+	vec3          secondary_motion;
+	vec3          motion_position;
+	vec3          motion_position_prev;
+	quat          motion_orientation;
+	quat          motion_orientation_prev;
+	// This is a point that defines where the interactor's motion is rooted,
+	// like for a hand ray, this would be the shoulder. This can then be used
+	// to amplify or reduce motion based on the distance from this point.
+	vec3          motion_anchor;
+
 
 	bool      ray_enabled;
 	bool      ray_discard;
 	float     ray_visibility;
-
-	vec3 position;
-	vec3 position_prev;
-	quat orientation;
-	quat orientation_prev;
-	// This is a point that defines where the interactor's motion is rooted,
-	// like for a hand ray, this would be the shoulder. This can then be used
-	// to amplify or reduce motion based on the distance from this point.
-	vec3 motion_anchor;
 
 	vec3 interaction_start_position;
 	quat interaction_start_orientation;
@@ -77,9 +81,10 @@ void             interaction_1h_box         (id_hash_t id, interactor_event_ eve
 void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, int32_t* out_interactor, vec3* out_interaction_at_local);
 bool32_t         interaction_handle         (id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
-int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type);
-void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, float capsule_radius, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, button_state_ active, button_state_ tracked);
+int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius);
+void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
 void             interactor_min_distance_set(int32_t interactor, float min_distance);
+void             interactor_radius_set      (int32_t interactor, float radius);
 interactor_t*    interactor_get             (int32_t interactor);
 
 int32_t          interactor_last_focused    (                                id_hash_t for_el_id);
