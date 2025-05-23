@@ -1,0 +1,716 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2019-2024 Nick Klingensmith
+ * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ */
+
+#include "interactors.h"
+
+#include "../_stereokit.h"
+#include "../sk_math.h"
+#include "../libraries/array.h"
+#include "../systems/input.h"
+
+#include <float.h>
+
+///////////////////////////////////////////
+
+namespace sk {
+
+///////////////////////////////////////////
+
+struct interactor_state_t {
+	array_t<interactor_t> interactors;
+	id_hash_t             last_element;
+	bool32_t              show_volumes;
+
+	array_t<bool32_t>     enabled_stack;
+	array_t<id_hash_t>    id_stack;
+
+	array_t<bool>         preserve_keyboard_stack;
+	array_t<id_hash_t>    preserve_keyboard_ids[2];
+	array_t<id_hash_t>*   preserve_keyboard_ids_read;
+	array_t<id_hash_t>*   preserve_keyboard_ids_write;
+};
+static interactor_state_t local = {};
+
+///////////////////////////////////////////
+
+void interaction_init() {
+	local = {};
+	local.last_element                = 0xFFFFFFFFFFFFFFFF;
+	local.preserve_keyboard_ids_read  = &local.preserve_keyboard_ids[0];
+	local.preserve_keyboard_ids_write = &local.preserve_keyboard_ids[1];
+	local.id_stack.add({ default_hash_root });
+}
+
+///////////////////////////////////////////
+
+void interaction_shutdown() {
+	local.interactors             .free();
+	local.enabled_stack           .free();
+	local.id_stack                .free();
+	local.preserve_keyboard_stack .free();
+	local.preserve_keyboard_ids[0].free();
+	local.preserve_keyboard_ids[1].free();
+	local = {};
+}
+
+///////////////////////////////////////////
+#include <stdio.h>
+void interaction_update() {
+	const matrix *to_local = hierarchy_to_local();
+	pose_t        head     = input_head();
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		// Visualize the interactors.
+		/*if (local.interactors[i].tracked & button_state_active) {
+			color32 color_start = {255,255,255,255};
+			color32 color_end   = {255,255,255,0};
+			if (local.interactors[i].focused_prev != 0) {
+				color_start = {255,255,0,255};
+				color_end   = {255,255,0,0};
+			}
+			if (local.interactors[i].active_prev != 0) {
+				color_start = {0,255,0,255};
+				color_end   = {0,255,0,0};
+			}
+			line_add(local.interactors[i].capsule_start_world, local.interactors[i].capsule_end_world, color_start, color_end, 0.003f);
+
+			if (local.interactors[i].focus_priority < 1000) {
+				char txt[32];
+				snprintf(txt, 32, "%.2f", local.interactors[i].focus_priority);
+				text_add_at(txt, matrix_trs(local.interactors[i].capsule_start_world, quat_lookat(local.interactors[i].capsule_start_world, head.position)), 1);
+			}
+		}*/
+
+		local.interactors[i].focused_prev_prev   = local.interactors[i].focused_prev;
+		local.interactors[i].focused_prev        = local.interactors[i].focused;
+		local.interactors[i].active_prev_prev    = local.interactors[i].active_prev;
+		local.interactors[i].active_prev         = local.interactors[i].active;
+		local.interactors[i].motion_orientation_prev    = local.interactors[i].motion_orientation;
+		local.interactors[i].motion_position_prev       = local.interactors[i].motion_position;
+
+		local.interactors[i].secondary_motion    = vec3_zero;
+		local.interactors[i].focus_priority      = FLT_MAX;
+		local.interactors[i].focus_distance      = FLT_MAX;
+		local.interactors[i].focused             = 0;
+		local.interactors[i].active              = 0;
+
+		local.interactors[i].tracked             = button_state_inactive;
+		local.interactors[i].pinch_state         = button_state_inactive;
+	}
+
+	// Clear current keyboard ignore elements
+	local.preserve_keyboard_ids_read->clear();
+	array_t<id_hash_t>* tmp = local.preserve_keyboard_ids_read;
+	local.preserve_keyboard_ids_read  = local.preserve_keyboard_ids_write;
+	local.preserve_keyboard_ids_write = tmp;
+}
+
+///////////////////////////////////////////
+
+inline bounds_t size_box(vec3 top_left, vec3 dimensions) {
+	return { top_left - dimensions / 2, dimensions };
+}
+
+///////////////////////////////////////////
+
+void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_candidacy, int32_t *out_interactor, vec3 *out_interaction_at_local) {
+	*out_interactor           = -1;
+	*out_focus_candidacy      = button_state_inactive;
+	*out_interaction_at_local = vec3_zero;
+
+	local.last_element = id;
+	if (!ui_is_enabled()) return;
+	if (local.preserve_keyboard_stack.last()) {
+		local.preserve_keyboard_ids_write->add(id);
+	}
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		interactor_t *actor = &local.interactors[i];
+		if (interactor_is_preoccupied(actor, id, event_mask, false))
+			continue;
+
+		// Button interaction focus is detected out in front of the button to 
+		// prevent 'reverse' or 'side' presses where the finger comes from the
+		// back or side.
+		//
+		// Once focused is gained, interaction is tracked within a volume that
+		// extends from the detection plane, to a good distance through the
+		// button's back. This is to help when the user's finger inevitably goes
+		// completely through the button. Width and height is added to this 
+		// volume to account for vertical or horizontal movement during a press,
+		// such as the downward motion often accompanying a 'poke' motion.
+
+		float    surface_offset = actor->activation_type == interactor_activation_position ? actor->capsule_radius*2 : 0;
+
+		bool     was_focused = actor->focused_prev == id;
+		bool     was_active  = actor->active_prev  == id;
+		float    depth  = fmaxf(0.0001f, 8 * plate_size.z);
+		bounds_t bounds = was_focused && actor->activation_type == interactor_activation_position
+			? size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - surface_offset }, { plate_size.x, plate_size.y, depth })
+			: size_box({ plate_start.x, plate_start.y, plate_start.z           - surface_offset }, { plate_size.x, plate_size.y, 0.0001f });
+
+		float         priority = 0;
+		vec3          interact_at = vec3_zero;
+		bool          facing   = actor->shape_type == interactor_type_line ? vec3_dot(hierarchy_to_local_direction(actor->capsule_end_world - actor->capsule_start_world), vec3_forward) < 0 : true;
+		bool          in_box   = facing && interactor_check_box(actor, bounds, &interact_at, &priority);
+		button_state_ focus    = interactor_set_focus(actor, id, in_box || (actor->activation_type == interactor_activation_state && was_active), priority, priority, plate_start-vec3{plate_size.x/2, plate_size.y/2, 0});
+		if (focus != button_state_inactive) {
+			*out_interactor           = i;
+			*out_focus_candidacy      = focus;
+			*out_interaction_at_local = interact_at;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_candidacy, int32_t *out_interactor) {
+	*out_interactor      = -1;
+	*out_focus_candidacy = button_state_inactive;
+	
+	local.last_element = id;
+	if (!ui_is_enabled()) return;
+	if (local.preserve_keyboard_stack.last()) {
+		local.preserve_keyboard_ids_write->add(id);
+	}
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		interactor_t* actor = &local.interactors[i];
+		if (interactor_is_preoccupied(actor, id, event_mask, false))
+			continue;
+
+		bool     was_focused = actor->focused_prev == id;
+		bool     was_active  = actor->active_prev == id;
+		bounds_t bounds      = was_focused
+			? size_box(box_focused_start,   box_focused_size)
+			: size_box(box_unfocused_start, box_unfocused_size);
+
+		vec3          at;
+		float         priority;
+		bool          in_box = interactor_check_box(actor, bounds, &at, &priority);
+		button_state_ focus  = interactor_set_focus(actor, id, in_box || (actor->activation_type == interactor_activation_state && was_active), priority, priority, bounds.center);
+		if (focus != button_state_inactive) {
+			*out_interactor      = i;
+			*out_focus_candidacy = focus;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	bool result = false;
+
+	local.last_element = id;
+	if (!ui_is_enabled() || move_type == ui_move_none) return false;
+	if (local.preserve_keyboard_stack.last()) {
+		local.preserve_keyboard_ids_write->add(id);
+	}
+
+	matrix to_handle_parent_local = *hierarchy_to_local();
+	hierarchy_push(pose_matrix(*ref_handle_pose));
+
+	interactor_event_ event_mask = (interactor_event_)0;
+	if (allowed_gestures & ui_gesture_pinch) event_mask = (interactor_event_)(event_mask | interactor_event_pinch);
+	if (allowed_gestures & ui_gesture_grip ) event_mask = (interactor_event_)(event_mask | interactor_event_grip );
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		interactor_t* actor = &local.interactors[i];
+		// Skip this if something else has some focus!
+		if (interactor_is_preoccupied(actor, id, event_mask, false))
+			continue;
+
+		// Check to see if the handle has focus
+		bool  has_hand_attention  = actor->active_prev == id;
+		float hand_attention_dist = 0;
+		vec3  at;
+		if (interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist)) {
+			has_hand_attention = true;
+
+			if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
+				actor->active = id;
+				actor->interaction_start_motion_position      = actor->motion_position;
+				actor->interaction_start_motion_orientation   = actor->motion_orientation;
+				actor->interaction_start_motion_anchor = actor->motion_anchor;
+
+				actor->interaction_pt_position         = ref_handle_pose->position;
+				actor->interaction_pt_orientation      = ref_handle_pose->orientation;
+				actor->interaction_pt_pivot            = at;
+
+				actor->interaction_secondary_motion_total = vec3_zero;
+
+				actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->motion_position, actor->motion_orientation)), hierarchy_to_world_point(at));
+			}
+		} else { at = actor->interaction_pt_pivot; }
+		button_state_ focused = interactor_set_focus(actor, id, has_hand_attention, hand_attention_dist + 0.1f, hand_attention_dist, at);
+
+
+		// This waits until the window has been focused for a frame,
+		// otherwise the handle UI may try and use a frame of focus to move
+		// around a bit.
+		if (actor->focused_prev == id) {
+			if (actor->active_prev == id || actor->active == id) {
+				result = true;
+				actor->active  = id;
+				actor->focused = id;
+
+				pose_t head = input_head();
+				quat dest_rot = quat_identity;
+				switch (move_type) {
+				case ui_move_exact: {
+					dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_motion_orientation, actor->motion_orientation);
+				} break;
+				case ui_move_face_user: {
+					if (device_display_get_type() == display_type_flatscreen) {
+						// If we're on a flat screen, facing the window is
+						// a better experience than facing the user.
+						dest_rot = quat_from_angles(0, 180, 0) * head.orientation;
+					} else {
+						// We can't use the head position directly, it's
+						// more of a device position that matches the
+						// center of the eyes, and not the center of the
+						// head.
+						const float head_center_dist = 5    * cm2m; // Quarter head length (20cm front to back)
+						const float head_height      = 7.5f * cm2m; // Almost quarter head height (25cm top to bottom)
+						vec3 eye_center  = head.position;
+						vec3 head_center = eye_center  + head.orientation * vec3{0, 0, head_center_dist};
+						vec3 face_point  = head_center + vec3{0, -head_height, 0};
+
+						// Previously, facing happened from a point
+						// influenced by the hand-grip position:
+						// vec3 world_handle_center = { handle_pose.position.x, local_pt[i].y, handle_pose.position.z };
+						vec3 world_handle_center = hierarchy_to_world_point(handle_bounds.center);
+						vec3 world_pt            = hierarchy_to_world_point(actor->interaction_pt_pivot);
+
+						float head_xz_lerp = fminf(1, vec2_distance_sq({ face_point.x, face_point.z }, { world_pt.x, world_pt.z }) / 0.1f);
+						vec3  look_from    = vec3_lerp(world_pt, world_handle_center, head_xz_lerp);
+
+						dest_rot = quat_lookat_up(look_from, face_point, vec3_up);
+					}
+				} break;
+				case ui_move_pos_only: { dest_rot = actor->interaction_pt_orientation; } break;
+				default:               { dest_rot = actor->interaction_pt_orientation; log_err("Unimplemented move type!"); } break;
+				}
+
+				// Amplify the movement in and out, so that objects at a
+				// distance can be manipulated easier.
+				const float amplify_push = 1.5f;
+				const float amplify_pull = 2;
+				float amplify_factor = 
+					fmaxf(0.01f, vec3_distance(actor->motion_position,                   actor->motion_anchor)) /
+					fmaxf(0.01f, vec3_distance(actor->interaction_start_motion_position, actor->interaction_start_motion_anchor));
+				amplify_factor = powf(amplify_factor, amplify_factor > 1 ? amplify_push : amplify_pull);
+
+				vec3 secondary_motion = vec3_zero;
+				if      (actor->secondary_motion_dimensions == 1) { secondary_motion = actor->motion_orientation * vec3{ 0,0, actor->interaction_secondary_motion_total.x }; }
+				else if (actor->secondary_motion_dimensions == 2) { secondary_motion = actor->motion_orientation * vec3{ 0,0,-actor->interaction_secondary_motion_total.y }; }
+				else if (actor->secondary_motion_dimensions == 3) { secondary_motion = actor->motion_orientation * actor->interaction_secondary_motion_total; }
+
+				vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->motion_position + secondary_motion, actor->motion_orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
+				vec3 handle_world_offset = dest_rot * (-actor->interaction_pt_pivot);
+				vec3 dest_pos            = pivot_new_position + handle_world_offset;
+
+				// Transform from world space, to the space the handle is in
+				dest_pos = matrix_transform_pt  (to_handle_parent_local, dest_pos);
+				dest_rot = matrix_transform_quat(to_handle_parent_local, dest_rot);
+
+				ref_handle_pose->position    = vec3_lerp (ref_handle_pose->position,    dest_pos, 0.6f);
+				ref_handle_pose->orientation = quat_slerp(ref_handle_pose->orientation, dest_rot, 0.4f);
+
+				if (actor->pinch_state & button_state_just_inactive) {
+					actor->active = 0;
+				}
+			}
+		}
+	}
+	hierarchy_pop();
+	return result;
+}
+
+///////////////////////////////////////////
+
+int32_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions) {
+	interactor_t result = {};
+	result.shape_type      = shape_type;
+	result.events          = events;
+	result.activation_type = activation_type;
+	result.capsule_radius  = capsule_radius;
+	result.secondary_motion_dimensions = secondary_motion_dimensions;
+	result.min_distance    = -1000000;
+	return local.interactors.add(result);
+}
+
+///////////////////////////////////////////
+
+void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked) {
+	interactor_t* actor = interactor_get(interactor);
+	if (actor == nullptr) return;
+
+	actor->tracked     = tracked;
+	actor->pinch_state = active;
+
+	if (tracked & button_state_active) {
+		actor->capsule_start_world = capsule_start;
+		actor->capsule_end_world   = capsule_end;
+		actor->motion_position     = motion_pos;
+		actor->motion_orientation  = motion_orientation;
+		actor->motion_anchor       = motion_anchor;
+		actor->secondary_motion    = secondary_motion;
+		actor->interaction_secondary_motion_total += secondary_motion;
+	}
+
+	// Don't let the hand trigger things while popping in and out of
+	// tracking
+	if (actor->tracked & button_state_just_active) {
+		actor->motion_orientation_prev = actor->motion_orientation;
+		actor->motion_position_prev    = actor->motion_position;
+	}
+}
+
+///////////////////////////////////////////
+
+void interactor_min_distance_set(int32_t interactor, float min_distance) {
+	interactor_t* actor = interactor_get(interactor);
+	if (actor) actor->min_distance = min_distance;
+}
+
+///////////////////////////////////////////
+
+void interactor_radius_set(int32_t interactor, float radius) {
+	interactor_t* actor = interactor_get(interactor);
+	if (actor) actor->capsule_radius = radius;
+}
+
+///////////////////////////////////////////
+
+interactor_t* interactor_get(int32_t interactor) {
+	return interactor >= 0 && interactor < local.interactors.count
+		? &local.interactors[interactor]
+		: nullptr;
+}
+
+///////////////////////////////////////////
+
+bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority) {
+	*out_priority = FLT_MAX;
+	*out_at       = vec3_zero;
+
+	if (!(actor->tracked & button_state_active))
+		return false;
+
+	//if (local.show_volumes)
+	//	render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
+
+	vec3     start_local = hierarchy_to_local_point(actor->capsule_start_world);
+	vec3     end_local   = hierarchy_to_local_point(actor->capsule_end_world  );
+	bool32_t result      = bounds_capsule_intersect(box, start_local, end_local, actor->capsule_radius, out_at);
+	if (actor->shape_type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->motion_position);
+	if (result) {
+		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, start_local);
+	}
+	return result;
+}
+
+///////////////////////////////////////////
+
+button_state_ interactor_set_focus(interactor_t* interactor, id_hash_t for_el_id, bool32_t focused, float priority, float distance, vec3 element_center_local) {
+	if (interactor == nullptr) return button_state_inactive;
+	bool was_focused = interactor->focused_prev == for_el_id;
+	bool is_focused  = false;
+
+	if (focused && priority <= interactor->focus_priority) {
+		if (distance >= interactor->min_distance || interactor->active_prev == for_el_id) {
+			is_focused = focused;
+			interactor->focused = for_el_id;
+		} else {
+			is_focused = false;
+			interactor->focused = 0;
+		}
+		interactor->focus_priority     = priority;
+		interactor->focus_distance     = distance;
+		interactor->focus_center_world = hierarchy_to_world_point( element_center_local );
+	}
+
+	button_state_ result = button_state_inactive;
+	if ( is_focused                ) result  = button_state_active;
+	if ( is_focused && !was_focused) result |= button_state_just_active;
+	if (!is_focused &&  was_focused) result |= button_state_just_inactive;
+	return result;
+}
+
+///////////////////////////////////////////
+
+button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_id, bool32_t active) {
+	if (interactor == nullptr) return button_state_inactive;
+
+	bool was_active = interactor->active_prev == for_el_id;
+	bool is_active  = false;
+
+	if (active && (was_active || interactor->focused_prev == for_el_id || interactor->focused == for_el_id)) {
+		is_active = active;
+		interactor->active = for_el_id;
+	}
+
+	button_state_ result = button_state_inactive;
+	if ( is_active               ) result  = button_state_active;
+	if ( is_active && !was_active) result |= button_state_just_active; 
+	if (!is_active &&  was_active) result |= button_state_just_inactive;
+	return result;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_id_focused(id_hash_t id) {
+	for (int32_t i = 0; i < local.interactors.count; i++)
+		if (local.interactors[i].focused_prev == id) return true;
+	return false;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_id_focus_state(id_hash_t id) {
+	bool was_focused = false;
+	bool is_focused  = false;
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		if (local.interactors[i].focused_prev      == id) is_focused  = true;
+		if (local.interactors[i].focused_prev_prev == id) was_focused = true;
+	}
+	return button_make_state(was_focused, is_focused);
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_id_active(id_hash_t id) {
+	for (int32_t i = 0; i < local.interactors.count; i++)
+		if (local.interactors[i].active_prev == id) return true;
+	return false;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_id_active_state(id_hash_t id) {
+	bool was_active = false;
+	bool is_active  = false;
+
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		if (local.interactors[i].active_prev      == id) is_active  = true;
+		if (local.interactors[i].active_prev_prev == id) was_active = true;
+	}
+	return button_make_state(was_active, is_active);
+}
+
+///////////////////////////////////////////
+
+int32_t ui_id_active_interactor(id_hash_t id) {
+	for (int32_t i = 0; i < local.interactors.count; i++)
+		if (local.interactors[i].active_prev == id) return i;
+	return -1;
+}
+
+///////////////////////////////////////////
+
+void ui_show_volumes(bool32_t show) {
+	local.show_volumes = show;
+}
+
+///////////////////////////////////////////
+
+bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
+	return
+		(interactor->events & event_mask) == 0 ||
+		(include_focused && interactor->focused_prev != 0 && interactor->focused_prev != for_el_id) ||
+		(interactor->active_prev != 0 && interactor->active_prev != for_el_id);
+}
+
+///////////////////////////////////////////
+
+int32_t ui_last_active_hand(id_hash_t for_el_id) {
+	for (int32_t i = 0; i < local.interactors.count; i++)
+		if (local.interactors[i].active_prev == for_el_id) return i;
+	return -1;
+}
+
+///////////////////////////////////////////
+
+int32_t interactor_last_focused(id_hash_t for_el_id) {
+	for (int32_t i = 0; i < local.interactors.count; i++)
+		if (local.interactors[i].focused_prev == for_el_id) return i;
+	return -1;
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_is_interacting(handed_ hand) {
+	return local.interactors[hand].active_prev != 0 || local.interactors[hand].focused_prev != 0;
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_hand_active(handed_ hand) {
+	return button_make_state(
+		local.interactors[hand].active_prev == local.last_element,
+		local.interactors[hand].active      == local.last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_hand_focused(handed_ hand) {
+	// Because focus can change at any point during the frame, we'll check
+	// against the last two frame's focus ids, which are set in stone after the
+	// frame ends.
+	return button_make_state(
+		local.interactors[hand].focused_prev_prev == local.last_element,
+		local.interactors[hand].focused_prev      == local.last_element);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_active() {
+	bool was_active = false;
+	bool is_active  = false;
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		was_active = was_active || (local.interactors[i].active_prev == local.last_element);
+		is_active  = is_active  || (local.interactors[i].active      == local.last_element);
+	}
+	return button_make_state(was_active, is_active);
+}
+
+///////////////////////////////////////////
+
+button_state_ ui_last_element_focused() {
+	bool was_focused = false;
+	bool is_focused  = false;
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		// Because focus can change at any point during the frame, we'll check
+		// against the last two frame's focus ids, which are set in stone after the
+		// frame ends.
+		was_focused = was_focused || (local.interactors[i].focused_prev_prev == local.last_element);
+		is_focused  = is_focused  || (local.interactors[i].focused_prev      == local.last_element);
+	}
+	return button_make_state(was_focused, is_focused);
+}
+
+///////////////////////////////////////////
+
+id_hash_t hash_fnv64_string_16(const char16_t* string, id_hash_t start_hash = default_hash_root) {
+	id_hash_t hash = start_hash;
+	while (*string != '\0') {
+		hash = (hash ^ ((*string & 0xFF00) >> 2)) * 1099511628211;
+		hash = (hash ^ ( *string & 0x00FF      )) * 1099511628211;
+		string++;
+	}
+	return hash;
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_stack_hash(const char *string) {
+	return local.id_stack.count > 0
+		? hash_string_with(string, local.id_stack.last())
+		: hash_string     (string);
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_stack_hash_16(const char16_t *string) {
+	return local.id_stack.count > 0
+		? hash_fnv64_string_16(string, local.id_stack.last())
+		: hash_fnv64_string_16(string);
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_stack_hashi(int32_t id) {
+	return local.id_stack.count > 0
+		? hash_int_with(id, local.id_stack.last())
+		: hash_int     (id);
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_push_id(const char *id) {
+	id_hash_t result = ui_stack_hash(id);
+	local.id_stack.add({ result });
+	return result;
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_push_id_16(const char16_t *id) {
+	id_hash_t result = ui_stack_hash_16(id);
+	local.id_stack.add({ result });
+	return result;
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_push_idi(int32_t id) {
+	id_hash_t result = ui_stack_hashi(id);
+	local.id_stack.add({ result });
+	return result;
+}
+
+///////////////////////////////////////////
+
+void ui_pop_id() {
+	local.id_stack.pop();
+}
+
+///////////////////////////////////////////
+
+void ui_push_enabled(bool32_t enabled, hierarchy_parent_ parent_behavior) {
+	local.enabled_stack.add(parent_behavior == hierarchy_parent_ignore
+		? enabled
+		: ((bool)enabled == true) && ((bool)ui_is_enabled() == true));
+}
+
+///////////////////////////////////////////
+
+void ui_pop_enabled() {
+	if (local.enabled_stack.count <= 1) {
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "'enabled'");
+		return;
+	}
+	local.enabled_stack.pop();
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_is_enabled() {
+	return local.enabled_stack.count == 0
+		? true
+		: local.enabled_stack.last();
+}
+
+///////////////////////////////////////////
+
+void ui_push_preserve_keyboard(bool32_t preserve_keyboard){
+	local.preserve_keyboard_stack.add(preserve_keyboard);
+}
+
+///////////////////////////////////////////
+
+void ui_pop_preserve_keyboard(){
+	if (local.preserve_keyboard_stack.count <= 1) {
+		log_errf("Tried to pop too many %s! Do you have a push/pop mismatch?", "preserve keyboards");
+		return;
+	}
+	local.preserve_keyboard_stack.pop();
+}
+
+///////////////////////////////////////////
+
+bool32_t ui_keyboard_focus_lost(id_hash_t focused_id) {
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		id_hash_t active_id = local.interactors[i].active_prev;
+		if (active_id != 0 && active_id != focused_id && local.preserve_keyboard_ids_read->index_of(active_id) < 0)
+			return true;
+	}
+	return false;
+}
+
+}

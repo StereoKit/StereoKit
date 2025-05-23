@@ -1,6 +1,7 @@
 #include "ui_theming.h"
 #include "ui_core.h"
 #include "ui_layout.h"
+#include "interactors.h"
 
 #include "../libraries/array.h"
 #include "../utils/sdf.h"
