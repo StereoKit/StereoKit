@@ -38,14 +38,14 @@ void ui_core_init() {
 
 	skui_finger_radius = 0;
 
-	skui_hand_interactors[0] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0);
-	skui_hand_interactors[1] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0);
-	skui_hand_interactors[2] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f);
-	skui_hand_interactors[3] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0);
-	skui_hand_interactors[4] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0);
-	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f);
+	skui_hand_interactors[0] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0, 0);
+	skui_hand_interactors[1] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0, 0);
+	skui_hand_interactors[2] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f, 2);
+	skui_hand_interactors[3] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0, 0);
+	skui_hand_interactors[4] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0, 0);
+	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f, 2);
 
-	skui_mouse_interactor    = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f);
+	skui_mouse_interactor    = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 1);
 
 	skui_input_mode = device_display_get_type() == display_type_flatscreen
 		? 2  // Mouse
@@ -177,7 +177,7 @@ void ui_core_controllers_step() {
 		interactor_radius_set      (idx, 0.01f); // Since we're re-using the hand interactors, we need to update the radius each time
 		interactor_update          (idx,
 			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100,
-			ctrl->aim.position, ctrl->aim.orientation, head.position, vec3{ ctrl->stick.x, ctrl->stick.y, 0 },
+			ctrl->aim.position, ctrl->aim.orientation, head.position + vec3{ 0,-0.12f,0 }, vec3{ ctrl->stick.x, ctrl->stick.y, 0 }* 0.02f,
 			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
 		skui_controller_trigger_last[i] = ctrl->trigger;
@@ -197,7 +197,7 @@ void ui_core_mouse_step() {
 	vec3 end = ray.pos + ray.dir * 100;
 	interactor_update(skui_mouse_interactor,
 		ray.pos, end,
-		end, quat_lookat(ray.pos, end), end, vec3{ 0, 0, m->scroll_change },
+		end, quat_lookat(ray.pos, end), end, vec3{ m->scroll_change / -6000.0f, 0, 0 },
 		input_key(key_mouse_left), button_make_state(interactor_get(skui_mouse_interactor)->tracked & button_state_active, tracked));
 }
 

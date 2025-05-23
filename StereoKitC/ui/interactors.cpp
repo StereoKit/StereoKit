@@ -64,7 +64,7 @@ void interaction_update() {
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		// Visualize the interactors.
-		if (local.interactors[i].tracked & button_state_active) {
+		/*if (local.interactors[i].tracked & button_state_active) {
 			color32 color_start = {255,255,255,255};
 			color32 color_end   = {255,255,255,0};
 			if (local.interactors[i].focused_prev != 0) {
@@ -82,7 +82,7 @@ void interaction_update() {
 				snprintf(txt, 32, "%.2f", local.interactors[i].focus_priority);
 				text_add_at(txt, matrix_trs(local.interactors[i].capsule_start_world, quat_lookat(local.interactors[i].capsule_start_world, head.position)), 1);
 			}
-		}
+		}*/
 
 		local.interactors[i].focused_prev_prev   = local.interactors[i].focused_prev;
 		local.interactors[i].focused_prev        = local.interactors[i].focused;
@@ -96,7 +96,6 @@ void interaction_update() {
 		local.interactors[i].focus_distance      = FLT_MAX;
 		local.interactors[i].focused             = 0;
 		local.interactors[i].active              = 0;
-		local.interactors[i].ray_enabled         = local.interactors[i].tracked > 0 && local.interactors[i].tracked && (vec3_dot(local.interactors[i].capsule_end_world - local.interactors[i].capsule_start_world, head.position - local.interactors[i].capsule_start_world) < 0);
 
 		local.interactors[i].tracked             = button_state_inactive;
 		local.interactors[i].pinch_state         = button_state_inactive;
@@ -233,13 +232,15 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 			if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
 				actor->active = id;
-				actor->interaction_start_position      = actor->motion_position;
-				actor->interaction_start_orientation   = actor->motion_orientation;
+				actor->interaction_start_motion_position      = actor->motion_position;
+				actor->interaction_start_motion_orientation   = actor->motion_orientation;
 				actor->interaction_start_motion_anchor = actor->motion_anchor;
 
 				actor->interaction_pt_position         = ref_handle_pose->position;
 				actor->interaction_pt_orientation      = ref_handle_pose->orientation;
 				actor->interaction_pt_pivot            = at;
+
+				actor->interaction_secondary_motion_total = vec3_zero;
 
 				actor->interaction_intersection_local  = matrix_transform_pt(matrix_invert(matrix_trs(actor->motion_position, actor->motion_orientation)), hierarchy_to_world_point(at));
 			}
@@ -260,7 +261,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 				quat dest_rot = quat_identity;
 				switch (move_type) {
 				case ui_move_exact: {
-					dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_orientation, actor->motion_orientation);
+					dest_rot = actor->interaction_pt_orientation * quat_difference(actor->interaction_start_motion_orientation, actor->motion_orientation);
 				} break;
 				case ui_move_face_user: {
 					if (device_display_get_type() == display_type_flatscreen) {
@@ -296,15 +297,19 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 				// Amplify the movement in and out, so that objects at a
 				// distance can be manipulated easier.
-				const float amp = 3;
+				const float amplify_push = 1.5f;
+				const float amplify_pull = 2;
 				float amplify_factor = 
-					vec3_distance(actor->motion_position,                   actor->motion_anchor) /
-					vec3_distance(actor->interaction_start_position, actor->interaction_start_motion_anchor);
-				amplify_factor = fmaxf(0, (amplify_factor - 1) * amp + 1);
-				// Disable amplification for now
-				amplify_factor = 1;
+					fmaxf(0.01f, vec3_distance(actor->motion_position,                   actor->motion_anchor)) /
+					fmaxf(0.01f, vec3_distance(actor->interaction_start_motion_position, actor->interaction_start_motion_anchor));
+				amplify_factor = powf(amplify_factor, amplify_factor > 1 ? amplify_push : amplify_pull);
 
-				vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->motion_position, actor->motion_orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
+				vec3 secondary_motion = vec3_zero;
+				if      (actor->secondary_motion_dimensions == 1) { secondary_motion = actor->motion_orientation * vec3{ 0,0, actor->interaction_secondary_motion_total.x }; }
+				else if (actor->secondary_motion_dimensions == 2) { secondary_motion = actor->motion_orientation * vec3{ 0,0,-actor->interaction_secondary_motion_total.y }; }
+				else if (actor->secondary_motion_dimensions == 3) { secondary_motion = actor->motion_orientation * actor->interaction_secondary_motion_total; }
+
+				vec3 pivot_new_position  = matrix_transform_pt(matrix_trs(actor->motion_position + secondary_motion, actor->motion_orientation, vec3_one * amplify_factor), actor->interaction_intersection_local);
 				vec3 handle_world_offset = dest_rot * (-actor->interaction_pt_pivot);
 				vec3 dest_pos            = pivot_new_position + handle_world_offset;
 
@@ -327,12 +332,13 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 ///////////////////////////////////////////
 
-int32_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius) {
+int32_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions) {
 	interactor_t result = {};
 	result.shape_type      = shape_type;
 	result.events          = events;
 	result.activation_type = activation_type;
 	result.capsule_radius  = capsule_radius;
+	result.secondary_motion_dimensions = secondary_motion_dimensions;
 	result.min_distance    = -1000000;
 	return local.interactors.add(result);
 }
@@ -353,6 +359,7 @@ void interactor_update(int32_t interactor, vec3 capsule_start, vec3 capsule_end,
 		actor->motion_orientation  = motion_orientation;
 		actor->motion_anchor       = motion_anchor;
 		actor->secondary_motion    = secondary_motion;
+		actor->interaction_secondary_motion_total += secondary_motion;
 	}
 
 	// Don't let the hand trigger things while popping in and out of

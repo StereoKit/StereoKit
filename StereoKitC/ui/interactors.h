@@ -30,6 +30,7 @@ struct interactor_t {
 	// get further from the head.
 	float                  min_distance;
 	float                  capsule_radius;
+	int32_t                secondary_motion_dimensions;
 
 	// User provided per-frame data
 	vec3          capsule_end_world;
@@ -37,6 +38,7 @@ struct interactor_t {
 	button_state_ tracked;
 	button_state_ pinch_state;
 	vec3          secondary_motion;
+
 	vec3          motion_position;
 	vec3          motion_position_prev;
 	quat          motion_orientation;
@@ -46,26 +48,22 @@ struct interactor_t {
 	// to amplify or reduce motion based on the distance from this point.
 	vec3          motion_anchor;
 
-
-	bool      ray_enabled;
-	bool      ray_discard;
-	float     ray_visibility;
-
-	vec3 interaction_start_position;
-	quat interaction_start_orientation;
+	vec3 interaction_start_motion_position;
+	quat interaction_start_motion_orientation;
 	vec3 interaction_start_motion_anchor;
 
+	vec3 interaction_secondary_motion_total;
 	vec3 interaction_pt_position;
 	quat interaction_pt_orientation;
 	vec3 interaction_pt_pivot; // the location from where the interaction is happening, relative to the interaction pt
 
 	vec3 interaction_intersection_local;
 
+	float     focus_priority;
+	float     focus_distance;
 	id_hash_t focused_prev_prev;
 	id_hash_t focused_prev;
 	id_hash_t focused;
-	float     focus_priority;
-	float     focus_distance;
 	id_hash_t active_prev_prev;
 	id_hash_t active_prev;
 	id_hash_t active;
@@ -81,7 +79,7 @@ void             interaction_1h_box         (id_hash_t id, interactor_event_ eve
 void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, int32_t* out_interactor, vec3* out_interaction_at_local);
 bool32_t         interaction_handle         (id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
-int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius);
+int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions);
 void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
 void             interactor_min_distance_set(int32_t interactor, float min_distance);
 void             interactor_radius_set      (int32_t interactor, float radius);
