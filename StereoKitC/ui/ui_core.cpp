@@ -342,6 +342,31 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		activation_start = window_relative_pos;
 	}
 
+	// Secondary motion check
+	ui_push_idi(id);
+	button_state_ secondary_focus;
+	int32_t       secondary_interactor;
+	interaction_1h_box(ui_stack_hash("secondary"), (interactor_event_)(interactor_event_grip | interactor_event_pinch | interactor_event_poke),
+		window_relative_pos, {size.x, size.y, button_depth },
+		window_relative_pos, { size.x, size.y, button_depth },
+		& secondary_focus, &secondary_interactor);
+	ui_pop_id();
+	interactor_t* secondary_actor = interactor_get(secondary_interactor);
+	if (secondary_focus & button_state_active) {
+		vec2 secondary_motion = vec2_zero;
+		if (secondary_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ secondary_actor->secondary_motion.x,  secondary_actor->secondary_motion.x };
+		if (secondary_actor->secondary_motion_dimensions >= 2) secondary_motion = vec2{ secondary_actor->secondary_motion.x, -secondary_actor->secondary_motion.y };
+		vec2 new_percent = {
+			range.x == 0 ? 0.5f : fminf(1, fmaxf(0, percent.x + secondary_motion.x)),
+			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
+		vec2 new_val = min + new_percent * range;
+
+		out->button_center = {
+			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
+			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
+		*value = new_val;
+	}
+
 	if (confirm_method == ui_confirm_push) {
 		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
 
@@ -382,8 +407,8 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	vec2 new_percent = percent;
 	if (out->active_state & button_state_active) {
 		vec2 pos_in_slider = {
-			(float)fmin(1, fmax(0, ((window_relative_pos.x-button_size_visual.x/2)-finger_at.x) / (size.x-button_size_visual.x))),
-			(float)fmin(1, fmax(0, ((window_relative_pos.y-button_size_visual.y/2)-finger_at.y) / (size.y-button_size_visual.y)))};
+			fminf(1, fmaxf(0, ((window_relative_pos.x-button_size_visual.x/2)-finger_at.x) / (size.x-button_size_visual.x))),
+			fminf(1, fmaxf(0, ((window_relative_pos.y-button_size_visual.y/2)-finger_at.y) / (size.y-button_size_visual.y)))};
 		vec2 new_val = min + pos_in_slider*range;
 
 		new_percent = {
