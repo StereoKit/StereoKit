@@ -210,7 +210,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 	}
 
 	matrix to_handle_parent_local = *hierarchy_to_local();
-	hierarchy_push(pose_matrix(*ref_handle_pose));
+	hierarchy_push_pose(*ref_handle_pose);
 
 	interactor_event_ event_mask = (interactor_event_)0;
 	if (allowed_gestures & ui_gesture_pinch) event_mask = (interactor_event_)(event_mask | interactor_event_pinch);
@@ -236,7 +236,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 				actor->interaction_start_el                 = *ref_handle_pose;
 				actor->interaction_start_el_pivot           = at;
 				actor->interaction_secondary_motion_total   = vec3_zero;
-				actor->interaction_intersection_local       = matrix_transform_pt(matrix_invert(matrix_trs(actor->motion.position, actor->motion.orientation)), hierarchy_to_world_point(at));
+				actor->interaction_intersection_local       = matrix_transform_pt(pose_matrix_inv(actor->motion), hierarchy_to_world_point(at));
 			}
 		} else { at = actor->interaction_start_el_pivot; }
 		button_state_ focused = interactor_set_focus(actor, id, has_hand_attention, hand_attention_dist + 0.1f, hand_attention_dist, pose_identity, handle_bounds);

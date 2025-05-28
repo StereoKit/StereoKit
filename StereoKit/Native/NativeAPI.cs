@@ -498,6 +498,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void hierarchy_push(in Matrix transform, HierarchyParent parentBehavior);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void hierarchy_push_pose(Pose transform, HierarchyParent parentBehavior);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void hierarchy_pop();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void hierarchy_set_enabled([MarshalAs(UnmanagedType.Bool)] bool enabled);
 		[return: MarshalAs(UnmanagedType.Bool)]

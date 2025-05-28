@@ -128,7 +128,7 @@ void anchor_stage_clear_stored() {
 anchor_t anchor_stage_create(pose_t pose, const char* name_utf8) {
 	pose_t relative_pose = pose;
 	if (world_has_bounds()) {
-		matrix to_relative = matrix_invert( pose_matrix(world_get_bounds_pose()) );
+		matrix to_relative = pose_matrix_inv(world_get_bounds_pose());
 		relative_pose = matrix_transform_pose(to_relative, pose);
 	}
 

@@ -14,12 +14,12 @@
 	/// It'll save you a matrix multiplication in that case :)</summary>
 	public static class Hierarchy
 	{
-		/// <summary>Pushes a transform Matrix onto the stack, and combines 
+		/// <summary>Pushes a transform Matrix onto the stack, and combines
 		/// it with the Matrix below it. Any draw operation's Matrix will now
-		/// be combined with this Matrix to make it relative to the current 
-		/// hierarchy. Use Hierarchy.Pop to remove it from the Hierarchy 
+		/// be combined with this Matrix to make it relative to the current
+		/// hierarchy. Use Hierarchy.Pop to remove it from the Hierarchy
 		/// stack! All Push calls must have an accompanying Pop call.</summary>
-		/// <param name="parentTransform">The transform Matrix you want to 
+		/// <param name="parentTransform">The transform Matrix you want to
 		/// apply to all following draw calls.</param>
 		/// <param name="parentBehavior">This determines how this matrix
 		/// combines with the parent matrix below it. Normal behavior is to
@@ -28,6 +28,22 @@
 		/// UI space, and wish to do some world space rendering.</param>
 		public static void Push(in Matrix parentTransform, HierarchyParent parentBehavior = HierarchyParent.Inherit)
 			=> NativeAPI.hierarchy_push(parentTransform, parentBehavior);
+
+		/// <summary>Pushes a transform Matrix calculated from a Pose onto the
+		/// stack, and combines it with the Matrix below it. Any draw
+		/// operation's Matrix will now be combined with this Matrix to make it
+		/// relative to the current hierarchy. Use Hierarchy.Pop to remove it
+		/// from the Hierarchy stack! All Push calls must have an accompanying
+		/// Pop call.</summary>
+		/// <param name="parentTransform">The transform Pose you want to
+		/// apply to all following draw calls.</param>
+		/// <param name="parentBehavior">This determines how this Pose's Matrix
+		/// combines with the parent matrix below it. Normal behavior is to
+		/// "inherit" the parent matrix, but there are cases where you may wish
+		/// to entirely ignore the parent transform. For example, if you're in
+		/// UI space, and wish to do some world space rendering.</param>
+		public static void Push(Pose parentTransform, HierarchyParent parentBehavior = HierarchyParent.Inherit)
+			=> NativeAPI.hierarchy_push_pose(parentTransform, parentBehavior);
 
 		/// <summary>Removes the top Matrix from the stack!</summary>
 		public static void Pop()

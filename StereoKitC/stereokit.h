@@ -567,6 +567,7 @@ SK_API vec3     quat_mul_vec              (const sk_ref(quat) a, const sk_ref(ve
 SK_API void     quat_to_axis_angle        (quat a, vec3 *out_axis, float *out_rotation_deg);
 
 SK_API matrix   pose_matrix               (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
+SK_API matrix   pose_matrix_inv           (pose_t pose, vec3 scale sk_default({1,1,1}));
 SK_API void     pose_matrix_out           (const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void     matrix_inverse            (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
@@ -1746,6 +1747,7 @@ typedef enum hierarchy_parent_ {
 } hierarchy_parent_;
 
 SK_API void          hierarchy_push              (const sk_ref(matrix) transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
+SK_API void          hierarchy_push_pose         (pose_t transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void          hierarchy_pop               (void);
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        (void);

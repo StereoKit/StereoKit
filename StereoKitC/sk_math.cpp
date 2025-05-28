@@ -155,6 +155,15 @@ matrix pose_matrix(const pose_t &pose, vec3 scale) {
 }
 
 ///////////////////////////////////////////
+
+matrix pose_matrix_inv(pose_t pose, vec3 scale) {
+	quat inv_rotation    = quat{-pose.orientation.x, -pose.orientation.y, -pose.orientation.z, pose.orientation.w}; // aka conjugate
+	vec3 inv_scale       = vec3{ 1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z };
+	vec3 inv_translation = inv_rotation * ((-pose.position) * inv_scale);
+	return matrix_trs(inv_translation, inv_rotation, inv_scale);
+}
+
+///////////////////////////////////////////
 // ray_t                                 //
 ///////////////////////////////////////////
 
