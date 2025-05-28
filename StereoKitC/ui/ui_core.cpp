@@ -40,10 +40,10 @@ void ui_core_init() {
 
 	skui_hand_interactors[0] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0, 0);
 	skui_hand_interactors[1] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0, 0);
-	skui_hand_interactors[2] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f, 2);
+	skui_hand_interactors[2] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f,  2);
 	skui_hand_interactors[3] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0, 0);
 	skui_hand_interactors[4] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0, 0);
-	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f, 2);
+	skui_hand_interactors[5] = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f,  2);
 
 	skui_mouse_interactor    = interactor_create(interactor_type_line,  (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 1);
 
@@ -79,12 +79,13 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 	}
 
 	float length         = 0.35f;
-	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->motion_position);
+	vec3  uncentered_dir = vec3_normalize(actor->capsule_end_world  - actor->motion.position);
 	vec3  centered_dir   = uncentered_dir;
 	if (actor->focused_prev != 0) {
-		vec3 pt = actor->focus_center_world;
-		length       = vec3_distance (pt,  actor->motion_position);
-		centered_dir = vec3_normalize(pt - actor->motion_position);
+		vec3 pt = matrix_transform_pt(pose_matrix(actor->focus_pose_world), actor->focus_bounds_local.center );
+		line_add_axis(pose_t{ pt, actor->focus_pose_world.orientation }, 0.04f);
+		length       = vec3_distance (pt,  actor->motion.position);
+		centered_dir = vec3_normalize(pt - actor->motion.position);
 	}
 	length = math_lerp(0.35f, length, visibility);
 	length = fmaxf(0, length - skip);
@@ -93,10 +94,11 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 	if (hide_inactive) alpha *= visibility;
 
 	const int32_t ct = 20;
+	const float   ray_snap = 1.0f; // 0.2f
 	line_point_t pts[ct];
 	for (int32_t i = 0; i < ct; i += 1) {
 		float pct   = (float)i / (float)(ct - 1);
-		float blend = pct * pct * pct * 0.2f;
+		float blend = pct * pct * pct * ray_snap;
 		float d     = skip + pct * length;
 		
 		float pct_i = 1 - pct;
@@ -104,7 +106,7 @@ void ui_show_ray(int32_t interactor, float skip, bool hide_inactive, float *ref_
 			sinf(pct_i * pct_i * 3.14159f),
 			fminf(1,sinf(pct * pct * 3.14159f)*1.5f), active);
 		float width = (0.002f + curve * 0.003f) * visibility;
-		pts[i] = line_point_t{ actor->motion_position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*alpha*255) } };
+		pts[i] = line_point_t{ actor->motion.position + vec3_lerp(uncentered_dir*d, centered_dir*d, blend), width, color32{ 255,255,255,(uint8_t)(curve*alpha*255) } };
 	}
 	line_add_listv(pts, ct);
 }
@@ -123,7 +125,7 @@ void ui_core_hands_step() {
 		interactor_radius_set(idx, hand->fingers[1][4].radius);
 		interactor_update    (idx,
 			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : interactor->capsule_end_world, hand->fingers[1][4].position,
-			hand->fingers[1][4].position, hand->palm.orientation, hand->fingers[1][4].position, vec3_zero,
+			pose_t{ hand->fingers[1][4].position, hand->palm.orientation }, hand->fingers[1][4].position, vec3_zero,
 			button_state_inactive, hand->tracked_state);
 
 		// Pinch
@@ -131,7 +133,7 @@ void ui_core_hands_step() {
 		interactor_radius_set(idx, hand->fingers[1][4].radius);
 		interactor_update    (idx,
 			hand->fingers[0][4].position, hand->fingers[1][4].position,
-			hand->pinch_pt,    hand->palm.orientation, hand->pinch_pt, vec3_zero,
+			pose_t{ hand->pinch_pt, hand->palm.orientation }, hand->pinch_pt, vec3_zero,
 			hand->pinch_state, hand->tracked_state);
 
 		// Hand ray
@@ -153,7 +155,7 @@ void ui_core_hands_step() {
 			interactor_radius_set      (idx, 0.005f); // Since we're re-using the hand interactors, we need to update the radius each time
 			interactor_update          (idx,
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100,
-				hand->aim.position, hand->aim.orientation, head.position + vec3{0,-0.12f,0}, vec3_zero,
+				hand->aim, head.position + vec3{0,-0.12f,0}, vec3_zero,
 				far_pinch_state, hand->aim_ready);
 			ui_show_ray(skui_hand_interactors[i*3 + 2], 0.07f, true, &skui_ray_visible[i], &skui_ray_active[i]);
 
@@ -177,7 +179,7 @@ void ui_core_controllers_step() {
 		interactor_radius_set      (idx, 0.01f); // Since we're re-using the hand interactors, we need to update the radius each time
 		interactor_update          (idx,
 			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100,
-			ctrl->aim.position, ctrl->aim.orientation, head.position + vec3{ 0,-0.12f,0 }, vec3{ ctrl->stick.x, ctrl->stick.y, 0 }* 0.02f,
+			ctrl->aim, head.position + vec3{ 0,-0.12f,0 }, vec3{ ctrl->stick.x, ctrl->stick.y, 0 }* 0.02f,
 			button_make_state(skui_controller_trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
 		skui_controller_trigger_last[i] = ctrl->trigger;
@@ -197,7 +199,7 @@ void ui_core_mouse_step() {
 	vec3 end = ray.pos + ray.dir * 100;
 	interactor_update(skui_mouse_interactor,
 		ray.pos, end,
-		end, quat_lookat(ray.pos, end), end, vec3{ m->scroll_change / -6000.0f, 0, 0 },
+		pose_t{ end, quat_lookat(ray.pos, end) }, end, vec3{ m->scroll_change / -6000.0f, 0, 0 },
 		input_key(key_mouse_left), button_make_state(interactor_get(skui_mouse_interactor)->tracked & button_state_active, tracked));
 }
 
@@ -390,7 +392,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 
 	if (actor != nullptr) {
 		if (actor->shape_type == interactor_type_point) {
-			vec3 local_pos = hierarchy_to_local_point(actor->motion_position);
+			vec3 local_pos = hierarchy_to_local_point(actor->motion.position);
 			finger_at = { local_pos.x, local_pos.y };
 		} else {
 			vec3 local_start = hierarchy_to_local_point(actor->capsule_start_world);

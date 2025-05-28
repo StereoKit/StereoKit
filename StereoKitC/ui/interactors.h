@@ -37,25 +37,29 @@ struct interactor_t {
 	vec3          capsule_start_world;
 	button_state_ tracked;
 	button_state_ pinch_state;
-	vec3          secondary_motion;
 
-	vec3          motion_position;
-	vec3          motion_position_prev;
-	quat          motion_orientation;
-	quat          motion_orientation_prev;
+	pose_t        motion;
+	pose_t        motion_prev;
 	// This is a point that defines where the interactor's motion is rooted,
 	// like for a hand ray, this would be the shoulder. This can then be used
 	// to amplify or reduce motion based on the distance from this point.
 	vec3          motion_anchor;
+	vec3          secondary_motion;
 
-	vec3 interaction_start_motion_position;
-	quat interaction_start_motion_orientation;
-	vec3 interaction_start_motion_anchor;
+	// Internal vars for tracking information needed for interactions.
 
+	// This keeps a record of where our interactor motion data was when the
+	// interaction began.
+	pose_t interaction_start_motion;
+	vec3   interaction_start_motion_anchor;
+	// This is the location of the element we're interacting with at the start
+	// of the interaction.
+	pose_t interaction_start_el;
+	vec3   interaction_start_el_pivot; // the location from where the interaction is happening, relative to the start motion pose
+
+	// This is the total amount of secondary motion that has occurred since the
+	// interaction began. It needs to be reset when the interaction starts.
 	vec3 interaction_secondary_motion_total;
-	vec3 interaction_pt_position;
-	quat interaction_pt_orientation;
-	vec3 interaction_pt_pivot; // the location from where the interaction is happening, relative to the interaction pt
 
 	vec3 interaction_intersection_local;
 
@@ -68,7 +72,8 @@ struct interactor_t {
 	id_hash_t active_prev;
 	id_hash_t active;
 
-	vec3 focus_center_world;
+	pose_t   focus_pose_world;
+	bounds_t focus_bounds_local;
 };
 
 void             interaction_init           ();
@@ -80,14 +85,14 @@ void             interaction_1h_plate       (id_hash_t id, interactor_event_ eve
 bool32_t         interaction_handle         (id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
 int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions);
-void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, vec3 motion_pos, quat motion_orientation, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
+void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
 void             interactor_min_distance_set(int32_t interactor, float min_distance);
 void             interactor_radius_set      (int32_t interactor, float radius);
 interactor_t*    interactor_get             (int32_t interactor);
 
 int32_t          interactor_last_focused    (                                id_hash_t for_el_id);
 bool32_t         interactor_is_preoccupied  (const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused);
-button_state_    interactor_set_focus       (      interactor_t* interactor, id_hash_t for_el_id, bool32_t focused, float priority, float distance, vec3 element_center_local);
+button_state_    interactor_set_focus       (      interactor_t* interactor, id_hash_t for_el_id, bool32_t focused, float priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local);
 button_state_    interactor_set_active      (      interactor_t* interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const interactor_t* interactor, bounds_t box, vec3* out_at, float* out_priority);
 
