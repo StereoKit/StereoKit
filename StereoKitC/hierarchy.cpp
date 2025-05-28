@@ -102,8 +102,10 @@ const matrix *hierarchy_to_world() {
 const matrix *hierarchy_to_local() {
 	if (local->enabled) {
 		hierarchy_item_t &item = local->stack.last();
-		if (!item.has_inverse)
+		if (!item.has_inverse) {
 			matrix_inverse(item.transform, item.transform_inv);
+			item.has_inverse = true;
+		}
 		return &item.transform_inv;
 	} else {
 		return &matrix_identity;

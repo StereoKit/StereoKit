@@ -171,7 +171,7 @@ bool32_t ray_intersect_plane(ray_t ray, vec3 plane_pt, vec3 plane_normal, float 
 ///////////////////////////////////////////
 
 vec3 ray_point_closest(ray_t ray, vec3 pt) {
-	float t = vec3_dot(pt - ray.pos, ray.dir);
+	float t = fmaxf(0, vec3_dot(pt - ray.pos, ray.dir) / vec3_dot(ray.dir, ray.dir));
 	return ray.pos + ray.dir * t;
 }
 
@@ -620,57 +620,119 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 
 ///////////////////////////////////////////
 
-bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
-	float d   = 0;
-	ray_t ray = { line_start, line_end - line_start };
+vec3 bounds_segment_closest(bounds_t bounds, vec3 line_start, vec3 line_end) {
+	vec3 dir = line_end - line_start;
+	float dist;
+	if (bounds_ray_intersect_dist(bounds, {line_start, dir}, &dist) && dist <= 1)
+		return line_start + dir * dist;
+		
+	vec3 half_dim = bounds.dimensions * 0.5f;
+	vec3 min      = bounds.center - half_dim;
+	vec3 max      = bounds.center + half_dim;
 
-	// If the direction is too small, we can get inf/NaN's, so we treat it as a point.
-	if (vec3_magnitude_sq(ray.dir) < 0.0001f) {
-		*out_at = ray.pos;
-		return bounds_point_contains({ bounds.center, bounds.dimensions + vec3_one*(radius*2) }, ray.pos);
-	} 
-	
-	if (bounds_ray_intersect_dist(bounds, ray, &d) && d <= 1) {
-		*out_at = line_start + (line_end - line_start) * d;
-		return true;
+	// Check if line start is closest point
+	vec3  closest   = vec3_max(min, vec3_min(line_start, max));
+	float distance2 = vec3_distance_sq(line_start, closest);
+
+	// Check if line end is closest point
+	vec3  closest_end   = vec3_max(min, vec3_min(line_end, max));
+	float distance2_end = vec3_distance_sq(line_end, closest);
+	if (distance2_end < distance2) {
+		distance2 = distance2_end;
+		closest   = closest_end;
 	}
 
-	// Make this all relative to the center of the bounds
-	ray.pos    -= bounds.center;
-	line_start -= bounds.center;
-	line_end   -= bounds.center;
-	vec3 size = bounds.dimensions / 2;
+	// Check each face of the AABB
+	for (int32_t axis = 0; axis < 3; axis++) {
+		float ray_pos, ray_dir, plane_pos_neg, plane_pos_pos;
+		switch (axis) {
+			case  0: ray_pos = line_start.x; ray_dir = dir.x; plane_pos_neg = min.x; plane_pos_pos = max.x; break;
+			case  1: ray_pos = line_start.y; ray_dir = dir.y; plane_pos_neg = min.y; plane_pos_pos = max.y; break;
+			default: ray_pos = line_start.z; ray_dir = dir.z; plane_pos_neg = min.z; plane_pos_pos = max.z; break;
+		}
+		if (fabsf(ray_dir) < 1e-6f)
+			continue;
 
-	float closest_sq = FLT_MAX;
-	vec3  closest_pt = vec3{0,0,0};
+		for (int32_t side = 0; side < 2; side++) {
+			float plane = (side == 0) ? plane_pos_neg : plane_pos_pos;
+			float t     = (plane - ray_pos) / ray_dir;
+			if (t < 0.0f)
+				continue;
 
-	vec3 edges[] = {
-		{-1,-1,-1}, { 1,-1,-1},
-		{-1, 1,-1}, { 1, 1,-1},
-		{-1,-1, 1}, { 1,-1, 1},
-		{-1, 1, 1}, { 1, 1, 1},
-		{-1,-1,-1}, {-1, 1,-1},
-		{ 1,-1,-1}, { 1, 1,-1},
-		{-1,-1, 1}, {-1, 1, 1},
-		{ 1,-1, 1}, { 1, 1, 1},
-		{-1,-1,-1}, {-1,-1, 1},
-		{ 1,-1,-1}, { 1,-1, 1},
-		{-1, 1,-1}, {-1, 1, 1},
-		{ 1, 1,-1}, { 1, 1, 1}
-	};
-	// check all edges
-	for (int32_t i = 0; i < 12; i += 1) {
-		vec3 a, b;
-		line_line_closest_point_tdist(edges[i*2]*size, edges[i*2+1]*size, line_start, line_end, &a, &b);
-		float dist_sq = vec3_distance_sq(a, b);
-		if (closest_sq > dist_sq) {
-			closest_sq = dist_sq;
-			closest_pt = b;
+			vec3 point_on_plane  = line_start + dir * t;
+			vec3 point_on_bounds = vec3_max(min, vec3_min(point_on_plane, max));
+			float curr_dist2      = vec3_distance_sq(point_on_plane, point_on_bounds);
+			if (curr_dist2 < distance2) {
+				distance2 = curr_dist2;
+				closest   = point_on_bounds;
+			}
 		}
 	}
+	return closest;
+}
 
-	if (closest_sq <= radius * radius) {
-		*out_at = closest_pt + bounds.center;
+///////////////////////////////////////////
+
+vec3 bounds_ray_closest(bounds_t bounds, ray_t ray) {
+	float dist;
+	if (bounds_ray_intersect_dist(bounds, ray, &dist))
+		return ray.pos + ray.dir * dist;
+		
+	vec3 half_dim = bounds.dimensions * 0.5f;
+	vec3 min      = bounds.center - half_dim;
+	vec3 max      = bounds.center + half_dim;
+
+	// Check if ray origin is closest point
+	vec3  closest   = vec3_max(min, vec3_min(ray.pos, max));
+	float distance2 = vec3_distance_sq(ray.pos, closest);
+
+	// Check each face of the AABB
+	for (int32_t axis = 0; axis < 3; axis++) {
+		float ray_pos, ray_dir, plane_pos_neg, plane_pos_pos;
+		switch (axis) {
+			case  0: ray_pos = ray.pos.x; ray_dir = ray.dir.x; plane_pos_neg = min.x; plane_pos_pos = max.x; break;
+			case  1: ray_pos = ray.pos.y; ray_dir = ray.dir.y; plane_pos_neg = min.y; plane_pos_pos = max.y; break;
+			default: ray_pos = ray.pos.z; ray_dir = ray.dir.z; plane_pos_neg = min.z; plane_pos_pos = max.z; break;
+		}
+		if (fabsf(ray_dir) < 1e-6f)
+			continue;
+
+		for (int32_t side = 0; side < 2; side++) {
+			float plane = (side == 0) ? plane_pos_neg : plane_pos_pos;
+			float t     = (plane - ray_pos) / ray_dir;
+			if (t < 0.0f)
+				continue;
+
+			vec3 point_on_plane  = ray.pos + ray.dir * t;
+			vec3 point_on_bounds = vec3_max(min, vec3_min(point_on_plane, max));
+			float curr_dist2     = vec3_distance_sq(point_on_plane, point_on_bounds);
+			if (curr_dist2 < distance2) {
+				distance2 = curr_dist2;
+				closest   = point_on_bounds;
+			}
+		}
+	}
+	return closest;
+}
+
+///////////////////////////////////////////
+
+bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
+	// Quick sphere check, this is much faster than the bounds_segment_closest call.
+	float max_radius2 = vec3_magnitude_sq( bounds.center + bounds.dimensions * 0.5f + radius );
+	vec3  dir         = line_end - line_start;
+	float t           = fmaxf(0,fminf(1,line_closest_point_tdist(line_start, line_end, bounds.center)));
+	vec3  closest     = line_start + dir * t;
+	if (vec3_distance_sq(bounds.center, closest) > max_radius2) {
+		*out_at = {};
+		return false;
+	}
+
+	// Proper intersection check
+	vec3 closest_bounds = bounds_segment_closest(bounds, line_start, line_end);
+	vec3 closest_line   = line_start + line_closest_point_tdist(line_start, line_end, closest_bounds) * (line_end - line_start);
+	if (vec3_distance_sq(closest_bounds, closest_line) <= radius * radius) {
+		*out_at = closest_bounds;
 		return true;
 	}
 	return false;

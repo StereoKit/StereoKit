@@ -166,9 +166,9 @@ namespace StereoKit
 			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt);
 
 		/// <summary>Calculates the point on the Ray that's closest to the
-		/// given point! This can be in front of, or behind the ray's
-		/// starting position.</summary>
-		/// <param name="to">Any point in the same coordinate space as the 
+		/// given point! This will be clamped if the point is behind the ray's
+		/// origin.</summary>
+		/// <param name="to">Any point in the same coordinate space as the
 		/// Ray.</param>
 		/// <returns>The point on the ray that's closest to the given point.
 		/// </returns>

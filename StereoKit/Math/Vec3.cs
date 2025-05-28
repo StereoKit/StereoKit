@@ -330,7 +330,7 @@ namespace StereoKit
 		public static Vec3 Lerp(Vec3 a, Vec3 b, float blend)
 			=> Vector3.Lerp(a.v, b.v, blend);
 
-		/// <summary>Returns a vector where each elements is the maximum
+		/// <summary>Returns a vector where each element is the maximum
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
@@ -340,7 +340,7 @@ namespace StereoKit
 		public static Vec3 Max(Vec3 a, Vec3 b)
 			=> Vector3.Max(a.v, b.v);
 
-		/// <summary>Returns a vector where each elements is the minimum
+		/// <summary>Returns a vector where each element is the minimum
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
@@ -349,6 +349,15 @@ namespace StereoKit
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Vec3 Min(Vec3 a, Vec3 b)
 			=> Vector3.Min(a.v, b.v);
+
+		/// <summary>Returns a vector where each element is the absolute
+		/// value of the corresponding component.</summary>
+		/// <param name="a">Source vector.</param>
+		/// <returns>The absolute value for each corresponding component.
+		/// </returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static Vec3 Abs(Vec3 a)
+			=> Vector3.Abs(a.v);
 
 		/// <summary>Mostly for debug purposes, this is a decent way to log or
 		/// inspect the vector in debug mode. Looks like "[x, y, z]"</summary>
