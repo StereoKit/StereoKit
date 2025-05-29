@@ -79,7 +79,7 @@
   <PropertyGroup>
     <OutDir>$(ProjectDir)..\..\bin\$(Platform)_$(Configuration)_UWP\$(ProjectName)\</OutDir>
     <IntDir>$(ProjectDir)..\..\bin\intermediate\$(Platform)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(ProjectDir)..\lib\include\meshoptimizer;$(ProjectDir)..\lib\include;$(IntDir)shaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\lib\include\basisu;$(ProjectDir)..\lib\include\meshoptimizer;$(ProjectDir)..\lib\include;$(IntDir)shaders;$(ProjectDir)..\lib\include\sk_gpu;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)_UWP\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture)\$(Configuration);$(ProjectDir)..\lib\bin\$(LibrariesArchitecture);$(LibraryPath)</LibraryPath>
     <TargetName>StereoKitC</TargetName>
   </PropertyGroup>
@@ -107,7 +107,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>meshoptimizer.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
@@ -118,7 +118,7 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>meshoptimizer.lib;openxr_loader.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -131,7 +131,7 @@ xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\..\bin\distribute\bin\UWP\$(Platform)
     <PreBuildEvent>
       <SKShaderDebugFlag Condition="'$(Configuration)' == 'Debug'">-d</SKShaderDebugFlag>
       <Command>powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "$(ProjectDir)..\..\tools\Update-Dependencies.ps1" -arch $(PlatformTarget) -config $(Configuration) -plat UWP
-"$(ProjectDir)..\..\tools\skshaderc\win32_x64\skshaderc.exe" -O3 $(SKShaderDebugFlag) -e -h -z -t x -i "$(ProjectDir)..\..\tools\include" -o $(IntermediateOutputPath)shaders\ "$(ProjectDir)..\..\StereoKitC\shaders_builtin\*.hlsl"</Command>
+"$(ProjectDir)..\..\tools\skshaderc\win32_x64\skshaderc.exe" -O3 $(SKShaderDebugFlag) -e -h -z -t x -i "$(ProjectDir)..\..\tools\include" -o $(IntermediateOutputPath)shaders\ "$(ProjectDir)..\shaders_builtin\*.hlsl"</Command>
       <Message>Checking project dependencies and compiling shaders.</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -141,6 +141,8 @@ xcopy "$(TargetDir)*.pdb" "$(ProjectDir)..\..\bin\distribute\bin\UWP\$(Platform)
   <Target Name="AddWildCardItems" AfterTargets="BuildGenerateSources">
     <ItemGroup>
       <ClCompile Include="@(_WildCardClCompile)" />
+      <ClCompile Include="..\lib\include\basisu\basisu_transcoder.cpp" />
+      <ClCompile Include="..\lib\include\zstd\zstd.c" />
     </ItemGroup>
   </Target>
   <ItemGroup>
