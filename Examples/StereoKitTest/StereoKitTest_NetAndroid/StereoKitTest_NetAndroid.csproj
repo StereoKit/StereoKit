@@ -28,7 +28,7 @@
 		<NoWarn>XA4211;XA1006;XA4301;CS1587</NoWarn>
 	</PropertyGroup>
 
-	<!-- Include the Stereokit project manually. This is similar to including the
+	<!-- Include the StereoKit project manually. This is similar to including the
 	     StereoKit NuGet, but different because C# cannot consume a NuGet package
 	     directly. -->
 	<Import Project="$(ProjectDir)..\..\..\StereoKit\BuildStereoKitSDK.targets" />
