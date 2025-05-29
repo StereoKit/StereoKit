@@ -149,7 +149,9 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	if (hints == nullptr) {
 		log_err("XAllocSizeHints failed.");
 	} else {
-		hints->flags      = PMinSize;
+		hints -> flags  = PPosition | PMinSize;
+		hints -> x      = win_rect.x;       
+		hints -> y      = win_rect.y;
 		hints->min_width  = 100;
 		hints->min_height = 100;
 		XSetWMNormalHints(linux_display, win.x_window, hints);
