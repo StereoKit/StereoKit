@@ -660,6 +660,9 @@
     <ClInclude Include="ui\interactors.h">
       <Filter>ui</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\gen_ids.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

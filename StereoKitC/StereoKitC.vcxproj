@@ -254,6 +254,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="libraries\default_controller_r.h" />
     <ClInclude Include="libraries\ferr_hash.h" />
     <ClInclude Include="libraries\ferr_thread.h" />
+    <ClInclude Include="libraries\gen_ids.h" />
     <ClInclude Include="libraries\isac_spatial_sound.h" />
     <ClInclude Include="libraries\micro_ply.h" />
     <ClInclude Include="libraries\miniaudio.h" />

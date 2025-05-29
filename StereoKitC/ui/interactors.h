@@ -21,6 +21,8 @@ enum interactor_activation_ {
 };
 
 struct interactor_t {
+	int32_t generation;
+
 	// A description of what the interactor is and how it behaves
 	interactor_event_      events;
 	interactor_activation_ activation_type;
@@ -61,6 +63,7 @@ struct interactor_t {
 	// interaction began. It needs to be reset when the interaction starts.
 	vec3 interaction_secondary_motion_total;
 
+	// This is local to the motion pose
 	vec3 interaction_intersection_local;
 
 	float     focus_priority;
@@ -74,25 +77,29 @@ struct interactor_t {
 
 	pose_t   focus_pose_world;
 	bounds_t focus_bounds_local;
+	vec3     focus_intersection_local; // Relative to focus_bounds_local
 };
+
+typedef int32_t interactor_id;
 
 void             interaction_init           ();
 void             interaction_update         ();
 void             interaction_shutdown       ();
 
-void             interaction_1h_box         (id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_candidacy, int32_t* out_interactor);
-void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, int32_t* out_interactor, vec3* out_interaction_at_local);
+void             interaction_1h_box         (id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_candidacy, interactor_id* out_interactor);
+void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, interactor_id* out_interactor, vec3* out_interaction_at_local);
 bool32_t         interaction_handle         (id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
-int32_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions);
-void             interactor_update          (int32_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
-void             interactor_min_distance_set(int32_t interactor, float min_distance);
-void             interactor_radius_set      (int32_t interactor, float radius);
-interactor_t*    interactor_get             (int32_t interactor);
+interactor_id    interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions);
+void             interactor_destroy         (interactor_id interactor);
+interactor_t*    interactor_get             (interactor_id interactor);
+void             interactor_update          (interactor_id interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
+void             interactor_min_distance_set(interactor_id interactor, float min_distance);
+void             interactor_radius_set      (interactor_id interactor, float radius);
 
 int32_t          interactor_last_focused    (                                id_hash_t for_el_id);
 bool32_t         interactor_is_preoccupied  (const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused);
-button_state_    interactor_set_focus       (      interactor_t* interactor, id_hash_t for_el_id, bool32_t focused, float priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local);
+button_state_    interactor_set_focus       (      interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, float priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local, vec3 element_intersection_local);
 button_state_    interactor_set_active      (      interactor_t* interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const interactor_t* interactor, bounds_t box, vec3* out_at, float* out_priority);
 
