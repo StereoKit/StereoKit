@@ -728,7 +728,7 @@ vec3 bounds_ray_closest(bounds_t bounds, ray_t ray) {
 
 bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
 	// Quick sphere check, this is much faster than the bounds_segment_closest call.
-	float max_radius2 = vec3_magnitude_sq( bounds.center + bounds.dimensions * 0.5f + radius );
+	float max_radius2 = vec3_magnitude_sq( bounds.dimensions * 0.5f + radius );
 	vec3  dir         = line_end - line_start;
 	float t           = fmaxf(0,fminf(1,line_closest_point_tdist(line_start, line_end, bounds.center)));
 	vec3  closest     = line_start + dir * t;
