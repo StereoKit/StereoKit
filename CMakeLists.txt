@@ -40,6 +40,7 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
+set(SK_LOCAL_SK_GPU                 OFF CACHE BOOL "Build using a local version of sk_gpu, instead of the latest release. This is useful for testing in-progress changes to sk_gpu.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -225,13 +226,16 @@ add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
-CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2025.4.30
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.4.30/sk_gpu.v2025.4.30.zip
-)
-# For building directly with in-progress sk_gpu changes, point this to your
-# local sk_gpu clone, and use it instead of CPM.
-#add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+if (NOT SK_LOCAL_SK_GPU)
+  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
+    NAME sk_gpu # 2025.5.30
+    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.5.30/sk_gpu.v2025.5.30.zip
+  )
+else()
+  # For building directly with in-progress sk_gpu changes, point this to your
+  # local sk_gpu clone, and use it instead of CPM.
+  add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+endif()
 
 ###########################################
 ## StereoKitC                            ##
