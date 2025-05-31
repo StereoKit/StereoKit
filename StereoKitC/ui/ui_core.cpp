@@ -28,6 +28,7 @@ enum interact_mode_ {
 	interact_mode_hands,
 	interact_mode_controllers,
 	interact_mode_mouse,
+	interact_mode_eyes,
 };
 
 struct interact_mode_hands_t {
@@ -50,6 +51,12 @@ struct interact_mode_mouse_t {
 	interactor_id interactor;
 };
 
+struct interact_mode_eyes_t {
+	interactor_id interactor;
+	vec3          hand_motion_prev[2];
+	bool          active_prev;
+};
+
 ///////////////////////////////////////////
 
 interact_mode_ skui_input_mode;
@@ -58,6 +65,7 @@ interact_mode_ skui_input_mode_curr;
 interact_mode_hands_t       skui_hands;
 interact_mode_controllers_t skui_controllers;
 interact_mode_mouse_t       skui_mouse;
+interact_mode_eyes_t        skui_eyes;
 
 ///////////////////////////////////////////
 
@@ -70,6 +78,9 @@ void interact_mode_controllers_step (interact_mode_controllers_t* ref_controller
 void interact_mode_mouse_start      (interact_mode_mouse_t*       ref_mouse);
 void interact_mode_mouse_stop       (interact_mode_mouse_t*       ref_mouse);
 void interact_mode_mouse_step       (interact_mode_mouse_t*       ref_mouse);
+void interact_mode_eyes_start       (interact_mode_eyes_t*        ref_eyes);
+void interact_mode_eyes_stop        (interact_mode_eyes_t*        ref_eyes);
+void interact_mode_eyes_step        (interact_mode_eyes_t*        ref_eyes);
 
 ///////////////////////////////////////////
 
@@ -92,6 +103,7 @@ void ui_core_shutdown() {
 	if      (skui_input_mode_curr == interact_mode_controllers) interact_mode_controllers_start(&skui_controllers);
 	else if (skui_input_mode_curr == interact_mode_hands)       interact_mode_hands_start      (&skui_hands);
 	else if (skui_input_mode_curr == interact_mode_mouse)       interact_mode_mouse_start      (&skui_mouse);
+	else if (skui_input_mode_curr == interact_mode_eyes)        interact_mode_eyes_start       (&skui_eyes);
 
 	interaction_shutdown();
 }
@@ -299,6 +311,52 @@ void interact_mode_mouse_step(interact_mode_mouse_t *ref_mouse) {
 }
 
 ///////////////////////////////////////////
+// Eye Interactors
+///////////////////////////////////////////
+
+void interact_mode_eyes_start(interact_mode_eyes_t* ref_eyes) {
+	ref_eyes->interactor = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 1);
+}
+
+///////////////////////////////////////////
+
+void interact_mode_eyes_stop(interact_mode_eyes_t* ref_eyes) {
+	interactor_destroy(ref_eyes->interactor);
+	*ref_eyes = {};
+}
+
+///////////////////////////////////////////
+
+void interact_mode_eyes_step(interact_mode_eyes_t* ref_eyes) {
+	if (ui_far_interact_enabled() == false) return;
+
+	pose_t        eyes  = input_eyes        ();
+	button_state_ state = input_eyes_tracked();
+	ray_t         ray   = { eyes.position, eyes.orientation * vec3_forward };
+
+	vec3 secondary   = vec3_zero; // Accumulate movement from all active hands
+	bool active_curr = false;     // action is active if either hand is active
+	for (int32_t h = 0; h < handed_max; h++) {
+		const hand_t *hand  = input_hand((handed_)h);
+
+		if (hand->pinch_state & button_state_active) {
+			vec3 delta = hand->pinch_pt - ref_eyes->hand_motion_prev[h];
+			ref_eyes->hand_motion_prev[h] = hand->pinch_pt;
+			secondary  += delta;
+			active_curr = true;
+		}
+	}
+
+	vec3 end = ray.pos + ray.dir * 100;
+	interactor_update(ref_eyes->interactor,
+		ray.pos, end,
+		pose_t{ end, quat_lookat(ray.pos, end) }, end, secondary,
+		button_make_state(ref_eyes->active_prev, active_curr), state);
+
+	ref_eyes->active_prev = active_curr;
+}
+
+///////////////////////////////////////////
 
 void ui_core_update() {
 	interaction_update();
@@ -313,6 +371,7 @@ void ui_core_update() {
 		if      (skui_input_mode_curr == interact_mode_controllers) interact_mode_controllers_stop(&skui_controllers);
 		else if (skui_input_mode_curr == interact_mode_hands      ) interact_mode_hands_stop      (&skui_hands);
 		else if (skui_input_mode_curr == interact_mode_mouse      ) interact_mode_mouse_stop      (&skui_mouse);
+		else if (skui_input_mode_curr == interact_mode_eyes       ) interact_mode_eyes_stop       (&skui_eyes);
 
 		skui_input_mode_curr  = skui_input_mode;
 
