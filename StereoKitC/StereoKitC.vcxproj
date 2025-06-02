@@ -187,6 +187,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="tools\tools.cpp" />
     <ClCompile Include="tools\virtual_keyboard.cpp" />
     <ClCompile Include="ui\interactors.cpp" />
+    <ClCompile Include="ui\interactor_modes.cpp" />
     <ClCompile Include="ui\stereokit_ui.cpp" />
     <ClCompile Include="ui\ui_core.cpp" />
     <ClCompile Include="ui\ui_layout.cpp" />
@@ -302,6 +303,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="tools\tools.h" />
     <ClInclude Include="tools\virtual_keyboard.h" />
     <ClInclude Include="ui\interactors.h" />
+    <ClInclude Include="ui\interactor_modes.h" />
     <ClInclude Include="ui\ui_core.h" />
     <ClInclude Include="ui\ui_layout.h" />
     <ClInclude Include="ui\ui_theming.h" />

@@ -318,6 +318,9 @@
     <ClCompile Include="ui\interactors.cpp">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="ui\interactor_modes.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -662,6 +665,9 @@
     </ClInclude>
     <ClInclude Include="libraries\gen_ids.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\interactor_modes.h">
+      <Filter>ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
