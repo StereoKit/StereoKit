@@ -15,7 +15,7 @@ namespace sk {
 
 typedef struct anchor_stage_sys_t {
 	anchor_type_id    id;
-	array_t<anchor_t> persistant;
+	array_t<anchor_t> persistent;
 	bool32_t          loaded;
 } anchor_stage_sys_t;
 
@@ -86,11 +86,11 @@ void anchor_stage_shutdown() {
 	if (!anchor_stage_sys.loaded) return;
 
 	// Write our persistent anchors to file
-	if (anchor_stage_sys.persistant.count > 0) {
+	if (anchor_stage_sys.persistent.count > 0) {
 		char* file_data = string_copy("");
 		char  line[512];
-		for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
-			anchor_t a = anchor_stage_sys.persistant[i];
+		for (int32_t i = 0; i < anchor_stage_sys.persistent.count; i++) {
+			anchor_t a = anchor_stage_sys.persistent[i];
 			snprintf(line, sizeof(line), "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %s\n",
 				a->pose.position.x, a->pose.position.y, a->pose.position.z, 
 				a->pose.orientation.x, a->pose.orientation.y, a->pose.orientation.z, a->pose.orientation.w,
@@ -105,21 +105,21 @@ void anchor_stage_shutdown() {
 	}
 
 	// Release the persisted anchors and free the array
-	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
-		anchor_release(anchor_stage_sys.persistant[i]);
+	for (int32_t i = 0; i < anchor_stage_sys.persistent.count; i++) {
+		anchor_release(anchor_stage_sys.persistent[i]);
 	}
-	anchor_stage_sys.persistant.free();
+	anchor_stage_sys.persistent.free();
 }
 
 ///////////////////////////////////////////
 
 void anchor_stage_clear_stored() {
 	// Release the persisted anchors and free the array
-	for (int32_t i = 0; i < anchor_stage_sys.persistant.count; i++) {
-		anchor_stage_sys.persistant[i]->persisted = false;
-		anchor_release(anchor_stage_sys.persistant[i]);
+	for (int32_t i = 0; i < anchor_stage_sys.persistent.count; i++) {
+		anchor_stage_sys.persistent[i]->persisted = false;
+		anchor_release(anchor_stage_sys.persistent[i]);
 	}
-	anchor_stage_sys.persistant.free();
+	anchor_stage_sys.persistent.free();
 	platform_write_file_text(anchor_stage_store_filename, "");
 }
 
@@ -146,7 +146,7 @@ bool32_t anchor_stage_persist(anchor_t anchor, bool32_t persist) {
 	if (anchor->persisted == persist) return true;
 	anchor->persisted = persist;
 
-	array_t<anchor_t>* persist_list = &anchor_stage_sys.persistant;
+	array_t<anchor_t>* persist_list = &anchor_stage_sys.persistent;
 	if (persist) {
 		anchor_addref(anchor);
 		persist_list->add(anchor);
