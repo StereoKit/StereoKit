@@ -169,9 +169,9 @@ void ui_show_ray(interactor_id interactor, float skip, bool hide_inactive, float
 
 void interact_mode_hands_start(interact_mode_hands_t *ref_hands) {
 	for (int32_t h = 0; h < handed_max; h++) {
-		ref_hands->poke [h] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 0, 0);
-		ref_hands->pinch[h] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    0, 0);
-		ref_hands->far  [h] = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.01f, 2);
+		ref_hands->poke [h] = interactor_create(interactor_type_point, interactor_event_poke,  interactor_activation_position, 1000+h, 0, 0);
+		ref_hands->pinch[h] = interactor_create(interactor_type_point, interactor_event_pinch, interactor_activation_state,    1000+h, 0, 0);
+		ref_hands->far  [h] = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 1000+h, 0.01f, 2);
 		ref_hands->ray_active [h] = 0;
 		ref_hands->ray_visible[h] = 0;
 	}
@@ -242,7 +242,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 
 void interact_mode_controllers_start(interact_mode_controllers_t* ref_controllers) {
 	for (int32_t h = 0; h < handed_max; h++) {
-		ref_controllers->far[h] = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 2);
+		ref_controllers->far[h] = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, -1, 0.005f, 2);
 		ref_controllers->ray_active [h] = 0;
 		ref_controllers->ray_visible[h] = 0;
 	}
@@ -284,7 +284,7 @@ void interact_mode_controllers_step(interact_mode_controllers_t* ref_controllers
 ///////////////////////////////////////////
 
 void interact_mode_mouse_start(interact_mode_mouse_t* ref_mouse) {
-	ref_mouse->interactor = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 1);
+	ref_mouse->interactor = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, -1, 0.005f, 1);
 }
 
 ///////////////////////////////////////////
@@ -315,7 +315,7 @@ void interact_mode_mouse_step(interact_mode_mouse_t *ref_mouse) {
 ///////////////////////////////////////////
 
 void interact_mode_eyes_start(interact_mode_eyes_t* ref_eyes) {
-	ref_eyes->interactor = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, 0.005f, 1);
+	ref_eyes->interactor = interactor_create(interactor_type_line, (interactor_event_)(interactor_event_poke | interactor_event_pinch), interactor_activation_state, -1, 0.005f, 1);
 }
 
 ///////////////////////////////////////////
@@ -429,19 +429,19 @@ void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float
 ///////////////////////////////////////////
 
 void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
-	out_button_state = button_state_inactive;
-	out_focus_state  = button_state_inactive;
-	int32_t interactor = -1;
-	vec3    interaction_at;
-	button_state_ focus_candidacy = button_state_inactive;
+	out_button_state  = button_state_inactive;
+	out_focus_state   = button_state_inactive;
+	out_finger_offset = button_depth;
 
+	int32_t       interactor = -1;
+	vec3          interaction_at;
+	button_state_ focus_candidacy = button_state_inactive;
 	interaction_1h_plate(id, interactor_event_poke,
 		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, { size.x, size.y, button_depth },
-		& focus_candidacy, &interactor, &interaction_at);
-	interactor_t* actor = interactor_get(interactor);
+		&focus_candidacy, &interactor, &interaction_at);
 
 	// If a hand is interacting, adjust the button surface accordingly
-	out_finger_offset = button_depth;
+	interactor_t* actor = interactor_get(interactor);
 	if (actor) {
 		if (focus_candidacy & button_state_active) {
 			bool pressed;
@@ -452,18 +452,18 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 				pressed = (actor->pinch_state & button_state_active) && actor->focused_prev == id;
 				if (pressed) out_finger_offset = 0;
 			}
-			out_finger_offset = fminf(fmaxf(2 * mm2m, out_finger_offset), button_depth);
+			const float min_press_depth = 2 * mm2m;
+			out_finger_offset = fminf(fmaxf(min_press_depth, out_finger_offset), button_depth);
 			out_button_state  = interactor_set_active(actor, id, pressed);
 		} else if (focus_candidacy & button_state_just_inactive) {
 			out_button_state = interactor_set_active(actor, id, false);
 		}
+		out_focus_state = button_make_state(actor->focused_prev_prev == id, actor->focused_prev == id);
 	}
 	
 	if (out_button_state & button_state_just_active)
 		ui_play_sound_on_off(ui_vis_button, id, hierarchy_to_world_point(ui_layout_last().center));
 
-	if (actor)
-		out_focus_state = button_make_state(actor->focused_prev_prev == id, actor->focused_prev == id);
 	if (out_opt_hand)
 		*out_opt_hand = interactor;
 }

@@ -24,6 +24,8 @@ struct interactor_state_t {
 	array_t<interactor_t> interactors;
 	id_hash_t             last_element;
 	bool32_t              show_volumes;
+	material_t            show_volume_mat;
+	mesh_t                show_volume_mesh;
 
 	array_t<bool32_t>     enabled_stack;
 	array_t<id_hash_t>    id_stack;
@@ -43,11 +45,19 @@ void interaction_init() {
 	local.preserve_keyboard_ids_read  = &local.preserve_keyboard_ids[0];
 	local.preserve_keyboard_ids_write = &local.preserve_keyboard_ids[1];
 	local.id_stack.add({ default_hash_root });
+
+	local.show_volume_mesh = mesh_find       (default_id_mesh_cube);
+	local.show_volume_mat  = material_copy_id(default_id_material_unlit);
+	material_set_transparency(local.show_volume_mat, transparency_add);
+	material_set_color       (local.show_volume_mat, "color", color_hsv(0.4f, 0.6f, 0.2f, 1));
+	material_set_depth_write (local.show_volume_mat, false);
 }
 
 ///////////////////////////////////////////
 
 void interaction_shutdown() {
+	mesh_release    (local.show_volume_mesh);
+	material_release(local.show_volume_mat);
 	local.interactors             .free();
 	local.enabled_stack           .free();
 	local.id_stack                .free();
@@ -325,11 +335,12 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 ///////////////////////////////////////////
 
-interactor_id interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, float capsule_radius, int32_t secondary_motion_dimensions) {
+interactor_id interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions) {
 	interactor_t result = {};
 	result.shape_type      = shape_type;
 	result.events          = events;
 	result.activation_type = activation_type;
+	result.input_source_id = input_source_id;
 	result.capsule_radius  = capsule_radius;
 	result.secondary_motion_dimensions = secondary_motion_dimensions;
 	result.min_distance    = -1000000;
@@ -413,8 +424,8 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 	if (!(actor->tracked & button_state_active))
 		return false;
 
-	//if (local.show_volumes)
-	//	render_add_mesh(skui_box_dbg, skui_mat_dbg, matrix_trs(box.center, quat_identity, box.dimensions));
+	if (local.show_volumes)
+		render_add_mesh(local.show_volume_mesh, local.show_volume_mat, matrix_trs(box.center, quat_identity, box.dimensions));
 
 	vec3     start_local = hierarchy_to_local_point(actor->capsule_start_world);
 	vec3     end_local   = hierarchy_to_local_point(actor->capsule_end_world  );
@@ -536,10 +547,26 @@ void ui_show_volumes(bool32_t show) {
 ///////////////////////////////////////////
 
 bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
-	return
-		(interactor->events & event_mask) == 0 ||
+	// Check if this actor can interact, or if it's already busy with something
+	// else.
+	if ((interactor->events & event_mask) == 0 ||
 		(include_focused && interactor->focused_prev != 0 && interactor->focused_prev != for_el_id) ||
-		(interactor->active_prev != 0 && interactor->active_prev != for_el_id);
+		(interactor->active_prev != 0 && interactor->active_prev != for_el_id))
+		return true;
+
+	// Check if another interactor with the same source is already busy
+	if (interactor->input_source_id >= 0) {
+		for (int32_t i = 0; i < local.interactors.count; i++) {
+			const interactor_t* curr = &local.interactors[i];
+
+			if ((curr                  != interactor)                  &&
+				(curr->generation      >  0)                           &&
+				(curr->input_source_id == interactor->input_source_id) &&
+				(curr->active_prev     != 0 || curr->active != 0))
+				return true;
+		}
+	}
+	return false;
 }
 
 ///////////////////////////////////////////
