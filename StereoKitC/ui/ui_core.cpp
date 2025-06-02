@@ -57,15 +57,14 @@ struct interact_mode_eyes_t {
 	bool          active_prev;
 };
 
-///////////////////////////////////////////
-
-interact_mode_ skui_input_mode;
-interact_mode_ skui_input_mode_curr;
-
-interact_mode_hands_t       skui_hands;
-interact_mode_controllers_t skui_controllers;
-interact_mode_mouse_t       skui_mouse;
-interact_mode_eyes_t        skui_eyes;
+struct ui_core_state_t {
+	interact_mode_              input_mode;
+	interact_mode_hands_t       hands;
+	interact_mode_controllers_t controllers;
+	interact_mode_mouse_t       mouse;
+	interact_mode_eyes_t        eyes;
+};
+static ui_core_state_t local = {};
 
 ///////////////////////////////////////////
 
@@ -82,30 +81,29 @@ void interact_mode_eyes_start       (interact_mode_eyes_t*        ref_eyes);
 void interact_mode_eyes_stop        (interact_mode_eyes_t*        ref_eyes);
 void interact_mode_eyes_step        (interact_mode_eyes_t*        ref_eyes);
 
+void interact_mode_switch           (interact_mode_ mode);
+
 ///////////////////////////////////////////
 
 void ui_core_init() {
 	interaction_init();
 
-	skui_hands       = {};
-	skui_controllers = {};
-	skui_mouse       = {};
+	local.hands       = {};
+	local.controllers = {};
+	local.mouse       = {};
 
-	skui_input_mode_curr = interact_mode_none;
-	skui_input_mode = device_display_get_type() == display_type_flatscreen
+	interact_mode_switch(device_display_get_type() == display_type_flatscreen
 		? interact_mode_mouse
-		: interact_mode_hands;
+		: interact_mode_hands);
 }
 
 ///////////////////////////////////////////
 
 void ui_core_shutdown() {
-	if      (skui_input_mode_curr == interact_mode_controllers) interact_mode_controllers_start(&skui_controllers);
-	else if (skui_input_mode_curr == interact_mode_hands)       interact_mode_hands_start      (&skui_hands);
-	else if (skui_input_mode_curr == interact_mode_mouse)       interact_mode_mouse_start      (&skui_mouse);
-	else if (skui_input_mode_curr == interact_mode_eyes)        interact_mode_eyes_start       (&skui_eyes);
-
+	interact_mode_switch(interact_mode_none);
 	interaction_shutdown();
+
+	local = {};
 }
 
 ///////////////////////////////////////////
@@ -356,6 +354,22 @@ void interact_mode_eyes_step(interact_mode_eyes_t* ref_eyes) {
 	ref_eyes->active_prev = active_curr;
 }
 
+void interact_mode_switch(interact_mode_ mode) {
+	if (local.input_mode == mode) return;
+
+	if      (local.input_mode == interact_mode_controllers) interact_mode_controllers_stop(&local.controllers);
+	else if (local.input_mode == interact_mode_hands      ) interact_mode_hands_stop      (&local.hands);
+	else if (local.input_mode == interact_mode_mouse      ) interact_mode_mouse_stop      (&local.mouse);
+	else if (local.input_mode == interact_mode_eyes       ) interact_mode_eyes_stop       (&local.eyes);
+
+	local.input_mode = mode;
+
+	if      (local.input_mode == interact_mode_controllers) interact_mode_controllers_start(&local.controllers);
+	else if (local.input_mode == interact_mode_hands      ) interact_mode_hands_start      (&local.hands);
+	else if (local.input_mode == interact_mode_mouse      ) interact_mode_mouse_start      (&local.mouse);
+	else if (local.input_mode == interact_mode_eyes       ) interact_mode_eyes_start       (&local.eyes);
+}
+
 ///////////////////////////////////////////
 
 void ui_core_update() {
@@ -363,26 +377,15 @@ void ui_core_update() {
 
 	// auto-switch between hands and controllers
 	hand_source_ source = input_hand_source(handed_right);
-	if      (source == hand_source_articulated || source == hand_source_overridden)                   skui_input_mode = interact_mode_hands;
-	else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) skui_input_mode = interact_mode_mouse;
-	else                                                                                              skui_input_mode = interact_mode_controllers;
 
-	if (skui_input_mode_curr != skui_input_mode) {
-		if      (skui_input_mode_curr == interact_mode_controllers) interact_mode_controllers_stop(&skui_controllers);
-		else if (skui_input_mode_curr == interact_mode_hands      ) interact_mode_hands_stop      (&skui_hands);
-		else if (skui_input_mode_curr == interact_mode_mouse      ) interact_mode_mouse_stop      (&skui_mouse);
-		else if (skui_input_mode_curr == interact_mode_eyes       ) interact_mode_eyes_stop       (&skui_eyes);
+	if      (source == hand_source_articulated || source == hand_source_overridden)                   interact_mode_switch(interact_mode_hands);
+	else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) interact_mode_switch(interact_mode_mouse);
+	else                                                                                              interact_mode_switch(interact_mode_controllers);
 
-		skui_input_mode_curr  = skui_input_mode;
-
-		if      (skui_input_mode_curr == interact_mode_controllers) interact_mode_controllers_start(&skui_controllers);
-		else if (skui_input_mode_curr == interact_mode_hands      ) interact_mode_hands_start      (&skui_hands);
-		else if (skui_input_mode_curr == interact_mode_mouse      ) interact_mode_mouse_start      (&skui_mouse);
-	}
-
-	if      (skui_input_mode_curr == interact_mode_hands)       { interact_mode_hands_step      (&skui_hands); }
-	if      (skui_input_mode_curr == interact_mode_controllers) { interact_mode_controllers_step(&skui_controllers); }
-	else if (skui_input_mode_curr == interact_mode_mouse)       { interact_mode_mouse_step      (&skui_mouse); }
+	if      (local.input_mode == interact_mode_hands)       { interact_mode_hands_step      (&local.hands); }
+	else if (local.input_mode == interact_mode_controllers) { interact_mode_controllers_step(&local.controllers); }
+	else if (local.input_mode == interact_mode_mouse)       { interact_mode_mouse_step      (&local.mouse); }
+	else if (local.input_mode == interact_mode_eyes)        { interact_mode_eyes_step       (&local.eyes); }
 }
 
 ///////////////////////////////////////////
