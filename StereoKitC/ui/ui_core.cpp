@@ -514,8 +514,8 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	button_state_ secondary_focus;
 	int32_t       secondary_interactor;
 	interaction_1h_box(ui_stack_hash("secondary"), (interactor_event_)(interactor_event_grip | interactor_event_pinch | interactor_event_poke),
-		window_relative_pos, {size.x, size.y, button_depth },
-		window_relative_pos, { size.x, size.y, button_depth },
+		window_relative_pos, {size.x, size.y, button_depth*0.5f },
+		window_relative_pos, {size.x, size.y, button_depth*0.5f },
 		& secondary_focus, &secondary_interactor);
 	ui_pop_id();
 	interactor_t* secondary_actor = interactor_get(secondary_interactor);
