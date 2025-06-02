@@ -629,6 +629,15 @@ bool32_t bounds_ray_intersect(bounds_t bounds, ray_t ray, vec3* out_pt) {
 
 ///////////////////////////////////////////
 
+vec3 bounds_point_closest(bounds_t bounds, vec3 pt) {
+	vec3 half_dim = bounds.dimensions * 0.5f;
+	vec3 min      = bounds.center - half_dim;
+	vec3 max      = bounds.center + half_dim;
+	return vec3_max(min, vec3_min(pt, max));
+}
+
+///////////////////////////////////////////
+
 vec3 bounds_segment_closest(bounds_t bounds, vec3 line_start, vec3 line_end) {
 	vec3 dir = line_end - line_start;
 	float dist;
@@ -670,7 +679,7 @@ vec3 bounds_segment_closest(bounds_t bounds, vec3 line_start, vec3 line_end) {
 
 			vec3 point_on_plane  = line_start + dir * t;
 			vec3 point_on_bounds = vec3_max(min, vec3_min(point_on_plane, max));
-			float curr_dist2      = vec3_distance_sq(point_on_plane, point_on_bounds);
+			float curr_dist2     = vec3_distance_sq(point_on_plane, point_on_bounds);
 			if (curr_dist2 < distance2) {
 				distance2 = curr_dist2;
 				closest   = point_on_bounds;
@@ -727,6 +736,17 @@ vec3 bounds_ray_closest(bounds_t bounds, ray_t ray) {
 ///////////////////////////////////////////
 
 bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3 *out_at) {
+	// If the segment is too short, then we can just treat it as a point and do
+	// a simple contains check. Short lines can cause issues with segment math.
+	if (vec3_distance_sq(line_start, line_end) < 0.0001f) {
+		vec3 pt = bounds_point_closest(bounds, line_start);
+		if (vec3_in_radius(pt, line_start, radius)) {
+			*out_at = pt;
+			return true;
+		}
+		return false;
+	}
+
 	// Quick sphere check, this is much faster than the bounds_segment_closest call.
 	float max_radius2 = vec3_magnitude_sq( bounds.dimensions * 0.5f + radius );
 	vec3  dir         = line_end - line_start;
