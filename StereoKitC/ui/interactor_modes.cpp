@@ -225,7 +225,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 		// Poke
 		interactor_id id         = ref_hands->poke[i];
 		interactor_t* interactor = interactor_get(id);
-		interactor_radius_set(id, hand->fingers[1][4].radius);
+		interactor_set_radius(id, hand->fingers[1][4].radius);
 		interactor_update    (id,
 			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : interactor->capsule_end_world, hand->fingers[1][4].position,
 			pose_t{ hand->fingers[1][4].position, hand->palm.orientation }, hand->fingers[1][4].position, vec3_zero,
@@ -233,7 +233,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 
 		// Pinch
 		id = ref_hands->pinch[i];
-		interactor_radius_set(id, hand->fingers[1][4].radius);
+		interactor_set_radius(id, hand->fingers[1][4].radius);
 		interactor_update    (id,
 			hand->fingers[0][4].position, hand->fingers[1][4].position,
 			pose_t{ hand->pinch_pt, hand->palm.orientation }, hand->pinch_pt, vec3_zero,
@@ -254,7 +254,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 			ref_hands->prev_active[i] = is_active;
 
 			id = ref_hands->far[i];
-			interactor_min_distance_set(id, math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
+			interactor_set_min_distance(id, math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (id,
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100,
 				hand->aim, head.position + vec3{0,-0.12f,0}, vec3_zero,

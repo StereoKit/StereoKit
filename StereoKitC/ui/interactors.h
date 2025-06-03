@@ -82,7 +82,9 @@ struct interactor_t {
 
 	pose_t                 focus_pose_world;
 	bounds_t               focus_bounds_local;
-	vec3                   focus_intersection_local; // Relative to focus_bounds_local
+	// Last known intersection, relative to focus_bounds_local in case the
+	// element moves, like a slider's button.
+	vec3                   focus_intersection_local;
 };
 
 typedef int32_t interactor_id;
@@ -99,10 +101,16 @@ interactor_id    interactor_create          (interactor_type_ shape_type, intera
 void             interactor_destroy         (interactor_id interactor);
 interactor_t*    interactor_get             (interactor_id interactor);
 void             interactor_update          (interactor_id interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
-void             interactor_min_distance_set(interactor_id interactor, float min_distance);
-void             interactor_radius_set      (interactor_id interactor, float radius);
+void             interactor_set_min_distance(interactor_id interactor, float min_distance);
+float            interactor_get_min_distance(interactor_id interactor);
+void             interactor_set_radius      (interactor_id interactor, float radius);
+float            interactor_get_radius      (interactor_id interactor);
+button_state_    interactor_get_tracked     (interactor_id interactor);
+id_hash_t        interactor_get_focused     (interactor_id interactor);
+id_hash_t        interactor_get_active      (interactor_id interactor);
+bool32_t         interactor_get_focus_bounds(interactor_id interactor, pose_t *out_pose_world, bounds_t* out_bounds_local);
+pose_t           interactor_get_motion      (interactor_id interactor);
 
-int32_t          interactor_last_focused    (                                id_hash_t for_el_id);
 bool32_t         interactor_is_preoccupied  (const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused);
 button_state_    interactor_set_focus       (      interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, float priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local, vec3 element_intersection_local);
 button_state_    interactor_set_active      (      interactor_t* interactor, id_hash_t for_el_id, bool32_t active);

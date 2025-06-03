@@ -50,7 +50,7 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
-	int32_t       interactor = -1;
+	interactor_id interactor = -1;
 
 	vec3 start = bounds.center + bounds.dimensions / 2;
 	interaction_1h_box(id_hash, interact_type == ui_confirm_push ? interactor_event_poke : interactor_event_pinch,
@@ -152,15 +152,6 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		window_relative_pos.x - (percent.x * (size.x - button_size_visual.x) + button_size_visual.x/2.0f),
 		window_relative_pos.y - (percent.y * (size.y - button_size_visual.y) + button_size_visual.y/2.0f) };
 
-	vec2 finger_at = {};
-	interactor_t* actor = nullptr;
-	vec3 activation_size  = vec3{ button_size_interact.x, button_size_interact.y, button_depth };
-	vec3 activation_start = { out->button_center.x+activation_size.x/2.0f, out->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
-	if (button_size_interact.x == 0 && button_size_interact.y == 0) {
-		activation_size  = {size.x, size.y, button_depth};
-		activation_start = window_relative_pos;
-	}
-
 	// Secondary motion check
 	ui_push_idi(id);
 	button_state_ secondary_focus;
@@ -184,6 +175,15 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
 			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
 		*value = new_val;
+	}
+
+	vec2 finger_at = {};
+	interactor_t* actor = nullptr;
+	vec3 activation_size  = vec3{ button_size_interact.x, button_size_interact.y, button_depth };
+	vec3 activation_start = { out->button_center.x+activation_size.x/2.0f, out->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
+	if (button_size_interact.x == 0 && button_size_interact.y == 0) {
+		activation_size  = {size.x, size.y, button_depth};
+		activation_start = window_relative_pos;
 	}
 
 	if (confirm_method == ui_confirm_push) {
