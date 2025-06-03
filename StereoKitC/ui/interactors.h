@@ -120,7 +120,8 @@ bool32_t         ui_id_focused              (id_hash_t id);
 button_state_    ui_id_focus_state          (id_hash_t id);
 bool32_t         ui_id_active               (id_hash_t id);
 button_state_    ui_id_active_state         (id_hash_t id);
-int32_t          ui_id_active_interactor    (id_hash_t id);
+interactor_id    ui_id_active_interactor    (id_hash_t id);
+id_hash_t        ui_id_last_element         ();
 bool32_t         ui_keyboard_focus_lost     (id_hash_t focused_id);
 
 }

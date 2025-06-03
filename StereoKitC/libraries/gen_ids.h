@@ -6,6 +6,7 @@
 #define GEN_GENERATION_BITS 12 // 2^12 = 4096 generations per slot
 #define GEN_INDEX_MASK ((1u << GEN_INDEX_BITS) - 1)
 #define GEN_GENERATION_MASK ((1u << GEN_GENERATION_BITS) - 1)
+#define GEN_EMPTY_ID 0
 
 static inline uint32_t gen_id_index(uint32_t id) {
 	return id & GEN_INDEX_MASK;

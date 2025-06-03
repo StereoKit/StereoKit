@@ -77,7 +77,7 @@ void interaction_update() {
 		interactor_t* actor = &local.interactors[i];
 
 		// Visualize the interactors.
-		if (actor->tracked & button_state_active) {
+		/*if (actor->tracked & button_state_active) {
 			color32 color_start = {255,255,255,255};
 			color32 color_end   = {255,255,255,0};
 			if (actor->focused_prev != 0) {
@@ -99,7 +99,7 @@ void interaction_update() {
 				snprintf(txt, 32, "%.2f", actor->focus_priority);
 				text_add_at(txt, matrix_trs(actor->capsule_start_world, quat_lookat(actor->capsule_start_world, head.position)), 1);
 			}
-		}
+		}*/
 
 		actor->focused_prev_prev   = actor->focused_prev;
 		actor->focused_prev        = actor->focused;
@@ -607,14 +607,20 @@ button_state_ ui_id_active_state(id_hash_t id) {
 
 ///////////////////////////////////////////
 
-int32_t ui_id_active_interactor(id_hash_t id) {
+interactor_id ui_id_active_interactor(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
 		if (actor->generation <= 0) continue;
 
-		if (actor->active_prev == id) return i;
+		if (actor->active_prev == id) return gen_id_make(i, actor->generation);
 	}
-	return -1;
+	return GEN_EMPTY_ID;
+}
+
+///////////////////////////////////////////
+
+id_hash_t ui_id_last_element() {
+	return local.last_element;
 }
 
 ///////////////////////////////////////////
@@ -648,34 +654,6 @@ bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for
 		}
 	}
 	return false;
-}
-
-///////////////////////////////////////////
-
-// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
-bool32_t ui_is_interacting(handed_ hand) {
-	return local.interactors[hand].active_prev != 0 || local.interactors[hand].focused_prev != 0;
-}
-
-///////////////////////////////////////////
-
-// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
-button_state_ ui_last_element_hand_active(handed_ hand) {
-	return button_make_state(
-		local.interactors[hand].active_prev == local.last_element,
-		local.interactors[hand].active      == local.last_element);
-}
-
-///////////////////////////////////////////
-
-// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
-button_state_ ui_last_element_hand_focused(handed_ hand) {
-	// Because focus can change at any point during the frame, we'll check
-	// against the last two frame's focus ids, which are set in stone after the
-	// frame ends.
-	return button_make_state(
-		local.interactors[hand].focused_prev_prev == local.last_element,
-		local.interactors[hand].focused_prev      == local.last_element);
 }
 
 ///////////////////////////////////////////

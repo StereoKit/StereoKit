@@ -384,4 +384,110 @@ void interact_mode_eyes_step(interact_mode_eyes_t* ref_eyes) {
 	ref_eyes->active_prev = active_curr;
 }
 
+///////////////////////////////////////////
+
+// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
+bool32_t ui_is_interacting(handed_ hand) {
+	if (local.input_mode == interact_mode_controllers) {
+
+		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		return actor->active_prev != 0 || actor->focused_prev != 0;
+
+	} else if (local.input_mode == interact_mode_hands) {
+
+		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
+
+		actor = interactor_get(local.hands.pinch[hand]);
+		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
+
+		actor = interactor_get(local.hands.poke[hand]);
+		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
+
+	} else if (local.input_mode == interact_mode_mouse) {
+
+		if (hand == handed_left) return false;
+
+		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		return actor->active_prev != 0 || actor->focused_prev != 0;
+
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
+// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
+button_state_ ui_last_element_hand_active(handed_ hand) {
+	id_hash_t last = ui_id_last_element();
+
+	if (local.input_mode == interact_mode_controllers) {
+
+		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		return button_make_state(actor->active_prev == last, actor->active == last);
+
+	} else if (local.input_mode == interact_mode_hands) {
+
+		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		if (actor->active_prev != 0 || actor->active != 0)
+			return button_make_state( actor->active_prev == last, actor->active == last);
+
+		actor = interactor_get(local.hands.pinch[hand]);
+		if (actor->active_prev != 0 || actor->active != 0)
+			return button_make_state(actor->active_prev == last, actor->active == last);
+
+		actor = interactor_get(local.hands.poke[hand]);
+		if (actor->active_prev != 0 || actor->active != 0)
+			return button_make_state(actor->active_prev == last, actor->active == last);
+
+	} else if (local.input_mode == interact_mode_mouse) {
+
+		if (hand == handed_left) return button_state_inactive;
+
+		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		return button_make_state(actor->active_prev == last, actor->active == last);
+
+	}
+	return button_state_inactive;
+}
+
+///////////////////////////////////////////
+
+// TODO: v0.4 These functions use hands instead of interactors, they need replaced!
+button_state_ ui_last_element_hand_focused(handed_ hand) {
+	// Because focus can change at any point during the frame, we'll check
+	// against the last two frame's focus ids, which are set in stone after the
+	// frame ends.
+
+	id_hash_t last = ui_id_last_element();
+	if (local.input_mode == interact_mode_controllers) {
+
+		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
+
+	} else if (local.input_mode == interact_mode_hands) {
+
+		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
+			return button_make_state( actor->focused_prev_prev == last, actor->focused_prev == last);
+
+		actor = interactor_get(local.hands.pinch[hand]);
+		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
+			return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
+
+		actor = interactor_get(local.hands.poke[hand]);
+		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
+			return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
+
+	} else if (local.input_mode == interact_mode_mouse) {
+
+		if (hand == handed_left) return button_state_inactive;
+
+		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
+
+	}
+	return button_state_inactive;
+}
+
 }
