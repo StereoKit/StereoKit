@@ -40,7 +40,6 @@ static interactor_state_t local = {};
 
 void interaction_init() {
 	local = {};
-	local.last_element = 0xFFFFFFFFFFFFFFFF;
 	local.id_stack.add({ default_hash_root });
 
 	local.show_volume_mesh = mesh_find       (default_id_mesh_cube);
@@ -224,32 +223,25 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 			continue;
 
 		// Check to see if the handle has focus
-		bool  has_hand_attention  = actor->active_prev == id;
 		float hand_attention_dist = 0;
 		vec3  at;
-		if (interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist)) {
-			has_hand_attention = true;
+		bool  intersects = interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist);
+		button_state_ focused = interactor_set_focus (actor, id, intersects, actor->active_prev == id, hand_attention_dist + 0.1f, hand_attention_dist, pose_identity, handle_bounds, at);
+		button_state_ active  = interactor_set_active(actor, id,
+			(actor->pinch_state & button_state_just_active && actor->focused_prev == id) ||
+			(actor->pinch_state & button_state_active      && actor->active_prev  == id));
 
-			if (actor->pinch_state & button_state_just_active && actor->focused_prev == id) {
-				actor->active                               = id;
-				actor->interaction_start_motion             = actor->motion;
-				actor->interaction_start_motion_anchor      = actor->motion_anchor;
-				actor->interaction_start_el                 = *ref_handle_pose;
-				actor->interaction_start_el_pivot           = at;
-				actor->interaction_secondary_motion_total   = vec3_zero;
-				actor->interaction_intersection_local       = matrix_transform_pt(pose_matrix_inv(actor->motion), hierarchy_to_world_point(at));
-			}
-		} else { at = actor->interaction_start_el_pivot; }
-		button_state_ focused = interactor_set_focus(actor, id, has_hand_attention, has_hand_attention, hand_attention_dist + 0.1f, hand_attention_dist, pose_identity, handle_bounds, at);
+		if (active & button_state_just_active) {
+			actor->interaction_start_motion             = actor->motion;
+			actor->interaction_start_motion_anchor      = actor->motion_anchor;
+			actor->interaction_start_el                 = *ref_handle_pose;
+			actor->interaction_start_el_pivot           = at;
+			actor->interaction_secondary_motion_total   = vec3_zero;
+			actor->interaction_intersection_local       = matrix_transform_pt(pose_matrix_inv(actor->motion), hierarchy_to_world_point(at));
+		}
 
-
-		// This waits until the window has been focused for a frame,
-		// otherwise the handle UI may try and use a frame of focus to move
-		// around a bit.
-		if (actor->focused_prev == id && (actor->active_prev == id || actor->active == id)) {
+		if (active & button_state_active) {
 			result = true;
-			actor->active  = id;
-			actor->focused = id;
 
 			pose_t head     = input_head();
 			quat   dest_rot = quat_identity;
