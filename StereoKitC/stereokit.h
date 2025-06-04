@@ -567,6 +567,7 @@ SK_API vec3     quat_mul_vec              (const sk_ref(quat) a, const sk_ref(ve
 SK_API void     quat_to_axis_angle        (quat a, vec3 *out_axis, float *out_rotation_deg);
 
 SK_API matrix   pose_matrix               (const sk_ref(pose_t) pose, vec3 scale sk_default({1,1,1}));
+SK_API matrix   pose_matrix_inv           (pose_t pose, vec3 scale sk_default({1,1,1}));
 SK_API void     pose_matrix_out           (const sk_ref(pose_t) pose, sk_ref(matrix) out_result, vec3 scale sk_default({1,1,1}));
 
 SK_API void     matrix_inverse            (const sk_ref(matrix) a, sk_ref(matrix) out_matrix);
@@ -619,7 +620,9 @@ static inline vec3   operator* (vec3 a, float b) { return { a.x * b, a.y * b, a.
 static inline vec3   operator* (float b, vec3 a) { return { a.x * b, a.y * b, a.z * b }; }
 static inline vec3   operator/ (vec3 a, float b) { return { a.x / b, a.y / b, a.z / b }; }
 static inline vec3   operator+ (vec3 a, vec3  b) { return { a.x + b.x, a.y + b.y, a.z + b.z }; }
+static inline vec3   operator+ (vec3 a, float b) { return { a.x + b, a.y + b, a.z + b }; }
 static inline vec3   operator- (vec3 a, vec3  b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
+static inline vec3   operator- (vec3 a, float b) { return { a.x - b, a.y - b, a.z - b }; }
 static inline vec3   operator- (vec3 a)          { return { -a.x, -a.y, -a.z }; }
 static inline vec3   operator* (vec3 a, vec3  b) { return { a.x * b.x, a.y * b.y, a.z * b.z }; }
 static inline vec3   operator/ (vec3 a, vec3  b) { return { a.x / b.x, a.y / b.y, a.z / b.z }; }
@@ -658,6 +661,8 @@ static inline vec3     vec3_abs         (vec3 a) { vec3 v = { fabsf(a.x), fabsf(
 static inline vec2     vec2_abs         (vec2 a) { vec2 v = { fabsf(a.x), fabsf(a.y) }; return v; }
 static inline vec3     vec3_min         (vec3 a, vec3 b)          { vec3 v = { fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z) }; return v; }
 static inline vec2     vec2_min         (vec2 a, vec2 b)          { vec2 v = { fminf(a.x, b.x), fminf(a.y, b.y) }; return v; }
+static inline vec3     vec3_max         (vec3 a, vec3 b)          { vec3 v = { fmaxf(a.x, b.x), fmaxf(a.y, b.y), fmaxf(a.z, b.z) }; return v; }
+static inline vec2     vec2_max         (vec2 a, vec2 b)          { vec2 v = { fmaxf(a.x, b.x), fmaxf(a.y, b.y) }; return v; }
 static inline vec3     vec3_lerp        (vec3 a, vec3 b, float t) { vec3 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t, a.z + (b.z - a.z)*t }; return v; }
 static inline vec2     vec2_lerp        (vec2 a, vec2 b, float t) { vec2 v = { a.x + (b.x - a.x)*t, a.y + (b.y - a.y)*t }; return v; }
 static inline bool32_t vec3_in_radius   (vec3 pt, vec3 center, float radius) { return vec3_distance_sq(center, pt) < radius*radius; }
@@ -1742,6 +1747,7 @@ typedef enum hierarchy_parent_ {
 } hierarchy_parent_;
 
 SK_API void          hierarchy_push              (const sk_ref(matrix) transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
+SK_API void          hierarchy_push_pose         (pose_t transform, hierarchy_parent_ parent_behavior sk_default(hierarchy_parent_inherit));
 SK_API void          hierarchy_pop               (void);
 SK_API void          hierarchy_set_enabled       (bool32_t enabled);
 SK_API bool32_t      hierarchy_is_enabled        (void);

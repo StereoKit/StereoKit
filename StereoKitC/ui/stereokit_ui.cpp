@@ -953,7 +953,7 @@ void ui_window_end() {
 	float        line_height = ui_line_height();
 
 	ui_handle_end();
-	hierarchy_push(pose_matrix(win->pose));
+	hierarchy_push_pose(win->pose);
 
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;

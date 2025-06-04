@@ -685,15 +685,15 @@ namespace StereoKit
 			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && !active;
 		}
 
-		/// <summary>A pressable button! A button will expand to fit the text
-		/// provided to it, vertically and horizontally. Text is re-used as the
-		/// id. Will return true only on the first frame it is pressed!
-		/// </summary>
+		/// <summary>A pressable round button! This button has a square layout,
+		/// and only shows an image, no text. Will return true only on the
+		/// first frame it is pressed! </summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="image">An image to display as the face of the button.
 		/// </param>
-		/// <param name="diameter">The diameter of the button's visual.</param>
+		/// <param name="diameter">The diameter of the button's visual. This
+		/// defaults to the line height.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonRound(string id, Sprite image, float diameter = 0)

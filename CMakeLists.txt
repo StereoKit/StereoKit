@@ -307,6 +307,7 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/cgltf.cpp
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
+  StereoKitC/libraries/gen_ids.h
   StereoKitC/libraries/isac_spatial_sound.h
   StereoKitC/libraries/isac_spatial_sound.cpp
   StereoKitC/libraries/micro_ply.h
@@ -475,6 +476,8 @@ set(SK_SRC_UI
   StereoKitC/ui/stereokit_ui.cpp
   StereoKitC/ui/interactors.h
   StereoKitC/ui/interactors.cpp
+  StereoKitC/ui/interactor_modes.h
+  StereoKitC/ui/interactor_modes.cpp
   StereoKitC/ui/ui_layout.h
   StereoKitC/ui/ui_layout.cpp
   StereoKitC/ui/ui_core.h

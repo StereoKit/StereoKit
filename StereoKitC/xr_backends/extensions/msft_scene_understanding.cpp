@@ -389,8 +389,8 @@ void oxr_su_load_scene_meshes(XrSceneComponentTypeMSFT type, array_t<su_mesh_ins
 		int32_t        mesh_idx = oxr_su_mesh_get_or_add(meshes.sceneMeshes[i].meshBufferId);
 		su_mesh_inst_t inst     = {};
 		inst.mesh_ref            = local.meshes[mesh_idx].mesh;
-		inst.local_transform     = pose_matrix(pose);
-		inst.local_transform_inv = matrix_invert(inst.local_transform);
+		inst.local_transform     = pose_matrix    (pose);
+		inst.local_transform_inv = pose_matrix_inv(pose);
 		if (local.meshes[mesh_idx].buffer_updated != components.components[i].updateTime ||
 			(!mesh_get_keep_data(local.meshes[mesh_idx].mesh) && local.scene_last_req.raycast)) {
 			local.meshes[mesh_idx].buffer_updated  = components.components[i].updateTime;

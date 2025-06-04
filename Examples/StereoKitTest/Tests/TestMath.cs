@@ -71,6 +71,34 @@ class TestMath : ITest
 		return true;
 	}
 
+	bool TestPoseMatrix()
+	{
+		Pose pose = new Pose(V.XYZ(1, 2, 3), Quat.FromAngles(37, 90, 212));
+		Vec3 pt   = new Vec3(100, 73.89f, 0);
+
+		Matrix matPose = pose.ToMatrix();
+		Matrix matTRS  = Matrix.TR(pose.position, pose.orientation);
+		if (Vec3.Distance(matPose.Transform(Vec3.Zero), matTRS.Transform(Vec3.Zero)) > tolerance) return false;
+		if (Vec3.Distance(matPose.Transform(pt),        matTRS.Transform(pt)       ) > tolerance) return false;
+
+		matPose = pose.ToMatrixInv();
+		matTRS  = Matrix.TR(pose.position, pose.orientation).Inverse;
+		if (Vec3.Distance(matPose.Transform(Vec3.Zero), matTRS.Transform(Vec3.Zero)) > tolerance) return false;
+		if (Vec3.Distance(matPose.Transform(pt),        matTRS.Transform(pt)       ) > tolerance) return false;
+
+		matPose = pose.ToMatrix(0.7f);
+		matTRS  = Matrix.TRS(pose.position, pose.orientation, Vec3.One*0.7f);
+		if (Vec3.Distance(matPose.Transform(Vec3.Zero), matTRS.Transform(Vec3.Zero)) > tolerance) return false;
+		if (Vec3.Distance(matPose.Transform(pt),        matTRS.Transform(pt)       ) > tolerance) return false;
+
+		matPose = pose.ToMatrixInv(-1.7f);
+		matTRS  = Matrix.TRS(pose.position, pose.orientation, new Vec3(-1.7f, -1.7f, -1.7f)).Inverse;
+		if (Vec3.Distance(matPose.Transform(Vec3.Zero), matTRS.Transform(Vec3.Zero)) > tolerance) return false;
+		if (Vec3.Distance(matPose.Transform(pt),        matTRS.Transform(pt)       ) > tolerance) return false;
+
+		return true;
+	}
+
 	bool TestAngleDist()
 	{
 		float angleDistA = SKMath.AngleDist(0, 359);
@@ -191,6 +219,7 @@ class TestMath : ITest
 		Tests.Test(TestVector3Angles);
 		Tests.Test(TestQuaternionRotation);
 		Tests.Test(TestSphereContains);
+		Tests.Test(TestPoseMatrix);
 	}
 
 	public void Shutdown() { }
