@@ -31,9 +31,8 @@ struct interactor_state_t {
 	array_t<id_hash_t>    id_stack;
 
 	array_t<bool>         preserve_keyboard_stack;
-	array_t<id_hash_t>    preserve_keyboard_ids[2];
-	array_t<id_hash_t>*   preserve_keyboard_ids_read;
-	array_t<id_hash_t>*   preserve_keyboard_ids_write;
+	id_hash_t             keyboard_focus_lost;
+	id_hash_t             keyboard_focus_lost_write;
 };
 static interactor_state_t local = {};
 
@@ -41,9 +40,7 @@ static interactor_state_t local = {};
 
 void interaction_init() {
 	local = {};
-	local.last_element                = 0xFFFFFFFFFFFFFFFF;
-	local.preserve_keyboard_ids_read  = &local.preserve_keyboard_ids[0];
-	local.preserve_keyboard_ids_write = &local.preserve_keyboard_ids[1];
+	local.last_element = 0xFFFFFFFFFFFFFFFF;
 	local.id_stack.add({ default_hash_root });
 
 	local.show_volume_mesh = mesh_find       (default_id_mesh_cube);
@@ -58,12 +55,10 @@ void interaction_init() {
 void interaction_shutdown() {
 	mesh_release    (local.show_volume_mesh);
 	material_release(local.show_volume_mat);
-	local.interactors             .free();
-	local.enabled_stack           .free();
-	local.id_stack                .free();
-	local.preserve_keyboard_stack .free();
-	local.preserve_keyboard_ids[0].free();
-	local.preserve_keyboard_ids[1].free();
+	local.interactors            .free();
+	local.enabled_stack          .free();
+	local.id_stack               .free();
+	local.preserve_keyboard_stack.free();
 	local = {};
 }
 
@@ -118,10 +113,8 @@ void interaction_update() {
 	}
 
 	// Clear current keyboard ignore elements
-	local.preserve_keyboard_ids_read->clear();
-	array_t<id_hash_t>* tmp = local.preserve_keyboard_ids_read;
-	local.preserve_keyboard_ids_read  = local.preserve_keyboard_ids_write;
-	local.preserve_keyboard_ids_write = tmp;
+	local.keyboard_focus_lost       = local.keyboard_focus_lost_write;
+	local.keyboard_focus_lost_write = 0;
 }
 
 ///////////////////////////////////////////
@@ -139,9 +132,6 @@ void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate
 
 	local.last_element = id;
 	if (!ui_is_enabled()) return;
-	if (local.preserve_keyboard_stack.last()) {
-		local.preserve_keyboard_ids_write->add(id);
-	}
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		interactor_t *actor = &local.interactors[i];
@@ -189,9 +179,6 @@ void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unf
 	
 	local.last_element = id;
 	if (!ui_is_enabled()) return;
-	if (local.preserve_keyboard_stack.last()) {
-		local.preserve_keyboard_ids_write->add(id);
-	}
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		interactor_t* actor = &local.interactors[i];
@@ -222,9 +209,6 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 	local.last_element = id;
 	if (!ui_is_enabled() || move_type == ui_move_none) return false;
-	if (local.preserve_keyboard_stack.last()) {
-		local.preserve_keyboard_ids_write->add(id);
-	}
 
 	matrix to_handle_parent_local = *hierarchy_to_local();
 	hierarchy_push_pose(*ref_handle_pose);
@@ -541,6 +525,11 @@ button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_i
 	if (active && (was_active || interactor->focused_prev == for_el_id || interactor->focused == for_el_id)) {
 		is_active = active;
 		interactor->active = for_el_id;
+
+		// Mark an interaction for the keyboard focus system.
+		if (!local.preserve_keyboard_stack.last()) {
+			local.keyboard_focus_lost_write = for_el_id;
+		}
 	}
 
 	button_state_ result = button_state_inactive;
@@ -804,15 +793,9 @@ void ui_pop_preserve_keyboard(){
 ///////////////////////////////////////////
 
 bool32_t ui_keyboard_focus_lost(id_hash_t focused_id) {
-	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
-
-		id_hash_t active_id = actor->active_prev;
-		if (active_id != 0 && active_id != focused_id && local.preserve_keyboard_ids_read->index_of(active_id) < 0)
-			return true;
-	}
-	return false;
+	return
+		local.keyboard_focus_lost != 0 &&
+		local.keyboard_focus_lost != focused_id;
 }
 
 }
