@@ -336,7 +336,7 @@ interactor_id interactor_create(interactor_type_ shape_type, interactor_event_ e
 	result.min_distance    = -1000000;
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		if (local.interactors[i].generation <= 0) {
+		if (gen_is_dead(local.interactors[i].generation)) {
 			result.generation = gen_next_gen(local.interactors[i].generation);
 			local.interactors[i] = result;
 			return gen_id_make(i, result.generation);
@@ -361,7 +361,7 @@ interactor_t* interactor_get(interactor_id interactor) {
 	if (idx >= local.interactors.count) return nullptr;
 
 	interactor_t* actor = &local.interactors[idx];
-	return actor->generation > 0 && gen_id_generation(interactor) == actor->generation
+	return gen_id_valid_match(interactor, actor->generation)
 		? actor
 		: nullptr;
 }
@@ -544,7 +544,7 @@ button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_i
 bool32_t ui_id_focused(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->focused_prev == id) return true;
 	}
@@ -559,7 +559,7 @@ button_state_ ui_id_focus_state(id_hash_t id) {
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0 ) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->focused_prev      == id) is_focused  = true;
 		if (actor->focused_prev_prev == id) was_focused = true;
@@ -572,7 +572,7 @@ button_state_ ui_id_focus_state(id_hash_t id) {
 bool32_t ui_id_active(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation > 0 && actor->active_prev == id)
+		if (gen_is_alive(actor->generation) && actor->active_prev == id)
 			return true;
 	}
 	return false;
@@ -586,7 +586,7 @@ button_state_ ui_id_active_state(id_hash_t id) {
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->active_prev      == id) is_active  = true;
 		if (actor->active_prev_prev == id) was_active = true;
@@ -599,7 +599,7 @@ button_state_ ui_id_active_state(id_hash_t id) {
 interactor_id ui_id_active_interactor(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->active_prev == id) return gen_id_make(i, actor->generation);
 	}
@@ -621,7 +621,7 @@ void ui_show_volumes(bool32_t show) {
 ///////////////////////////////////////////
 
 bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
-	if (interactor == nullptr || interactor->generation <= 0) return true;
+	if (interactor == nullptr || gen_is_dead(interactor->generation)) return true;
 
 	// Check if this actor can interact, or if it's already busy with something
 	// else.
@@ -636,7 +636,7 @@ bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for
 			const interactor_t* curr = &local.interactors[i];
 
 			if ((curr                  != interactor)                  &&
-				(curr->generation      >  0)                           &&
+				(gen_is_alive(curr->generation))                       &&
 				(curr->input_source_id == interactor->input_source_id) &&
 				(curr->active_prev     != 0 || curr->active != 0))
 				return true;
@@ -652,7 +652,7 @@ button_state_ ui_last_element_active() {
 	bool is_active  = false;
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		was_active = was_active || (actor->active_prev == local.last_element);
 		is_active  = is_active  || (actor->active      == local.last_element);
@@ -667,7 +667,7 @@ button_state_ ui_last_element_focused() {
 	bool is_focused  = false;
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		const interactor_t* actor = &local.interactors[i];
-		if (actor->generation <= 0) continue;
+		if (gen_is_dead(actor->generation)) continue;
 
 		// Because focus can change at any point during the frame, we'll check
 		// against the last two frame's focus ids, which are set in stone after the

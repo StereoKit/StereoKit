@@ -30,3 +30,15 @@ static inline int32_t gen_next_gen(int32_t current_generation) {
 		:  current_generation + 1;
 	return (next > GEN_GENERATION_MASK) ? 1 : next;
 }
+
+static inline bool gen_is_alive(int32_t generation) {
+	return generation > GEN_EMPTY_ID;
+}
+
+static inline bool gen_is_dead(int32_t generation) {
+	return generation <= GEN_EMPTY_ID;
+}
+
+static inline bool gen_id_valid_match(uint32_t id, int32_t generation) {
+	return generation > GEN_EMPTY_ID && ((id >> GEN_INDEX_BITS) & GEN_GENERATION_MASK) == generation;
+}
