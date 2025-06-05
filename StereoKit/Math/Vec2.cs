@@ -263,7 +263,7 @@ namespace StereoKit
 		public static Vec2 Lerp(Vec2 a, Vec2 b, float blend)
 			=> Vector2.Lerp(a.v, b.v, blend);
 
-		/// <summary>Returns a vector where each elements is the maximum 
+		/// <summary>Returns a vector where each element is the maximum 
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
@@ -273,7 +273,7 @@ namespace StereoKit
 		public static Vec2 Max(Vec2 a, Vec2 b)
 			=> Vector2.Max(a.v, b.v);
 
-		/// <summary>Returns a vector where each elements is the minimum 
+		/// <summary>Returns a vector where each element is the minimum 
 		/// value for each corresponding pair.</summary>
 		/// <param name="a">Order isn't important here.</param>
 		/// <param name="b">Order isn't important here.</param>
