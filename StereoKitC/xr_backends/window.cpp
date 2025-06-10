@@ -8,6 +8,7 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../log.h"
+#include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../platforms/_platform.h"
 #include "../asset_types/texture.h"
@@ -66,6 +67,8 @@ bool window_init() {
 		win_size.w = settings->flatscreen_width;
 		win_size.h = settings->flatscreen_height;
 	}
+	win_size.w = maxi(1, win_size.w);
+	win_size.h = maxi(1, win_size.h);
 
 	switch (platform_win_type()) {
 	case platform_win_type_creatable: {
@@ -134,7 +137,7 @@ void window_step_begin() {
 		case platform_evt_mouse_press:  if (sk_app_focus() == app_focus_active) input_key_inject_press  (data.press_release); break;
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		case platform_evt_close:        sk_quit(quit_reason_user); break;
-		case platform_evt_resize:       window_surface_resize(local->surface, data.resize.width, data.resize.height); break;
+		case platform_evt_resize:       window_surface_resize(local->surface, maxi(1, data.resize.width), maxi(1, data.resize.height)); break;
 		case platform_evt_none: break;
 		default: break;
 		}
