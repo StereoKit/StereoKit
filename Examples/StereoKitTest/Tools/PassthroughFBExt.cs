@@ -68,7 +68,7 @@ namespace StereoKit.Framework
 
 			XrCompositionLayerPassthroughFB layer = new XrCompositionLayerPassthroughFB(
 				XrCompositionLayerFlags.BLEND_TEXTURE_SOURCE_ALPHA_BIT, activeLayer);
-			Backend.OpenXR.AddCompositionLayer(layer, -1);
+			Backend.OpenXR.AddCompositionLayer(layer, -10);
 		}
 
 		public void Shutdown()
