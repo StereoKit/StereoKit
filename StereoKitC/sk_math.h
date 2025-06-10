@@ -31,6 +31,9 @@ inline float math_ease_smooth   (float a, float b, float t) { t = 1-t; return a 
 void quat_decompose_swing_twist(quat rotation, vec3 direction, quat *out_swing, quat *out_twist);
 
 bool32_t bounds_ray_intersect_dist(bounds_t bounds, ray_t ray, float* out_distance);
+vec3     bounds_ray_closest       (bounds_t bounds, ray_t ray);
+vec3     bounds_segment_closest   (bounds_t bounds, vec3 line_start, vec3 line_end);
+vec3     bounds_point_closest     (bounds_t bounds, vec3 pt);
 bool32_t bounds_capsule_intersect (bounds_t bounds, vec3 line_start, vec3 line_end, float radius, vec3* out_at);
 vec3     bounds_corner            (bounds_t bounds, int32_t index8);
 float    bounds_sdf               (bounds_t bounds, vec3 point);

@@ -31,7 +31,7 @@ class DemoWorldAnchor : ITest
 		SpatialAnchor                     anchor     = SpatialAnchor.TryCreateRelativeTo(stationary.CoordinateSystem);
 		Pose                              pose       = World.FromPerceptionAnchor(anchor);
 
-		Pose newAnchor = pose.ToMatrix().Inverse.Transform(at);
+		Pose newAnchor = pose.ToMatrixInv().Transform(at);
 		anchor = SpatialAnchor.TryCreateRelativeTo(stationary.CoordinateSystem, newAnchor.position, newAnchor.orientation);
 		pose   = World.FromPerceptionAnchor(anchor);
 

@@ -1,6 +1,7 @@
 #include "ui_theming.h"
 #include "ui_core.h"
 #include "ui_layout.h"
+#include "interactors.h"
 
 #include "../libraries/array.h"
 #include "../utils/sdf.h"
@@ -432,10 +433,10 @@ sound_t ui_get_sound_off(ui_vis_ element_visual) {
 ///////////////////////////////////////////
 
 color128 ui_get_element_color(ui_vis_ element_visual, float focus) {
-	ui_color_ color       = ui_get_color(element_visual);
-	color128  final_color = ui_is_enabled()
-		? color_lerp(skui_palette[color].normal, skui_palette[color].active, focus)
-		: skui_palette[color].disabled;
+	const ui_theme_color_t* color = &skui_palette[ui_get_color(element_visual)];
+	color128 final_color = ui_is_enabled()
+		? color_lerp(color->normal, color->active, focus)
+		: color->disabled;
 	final_color   = final_color * skui_tint;
 	final_color.a = focus;
 

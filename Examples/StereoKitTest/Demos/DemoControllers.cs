@@ -50,7 +50,7 @@ class DemoControllers : ITest
 		Controller c = Input.Controller(hand);
 		if (!c.IsTracked) return;
 
-		Hierarchy.Push(c.pose.ToMatrix());
+		Hierarchy.Push(c.pose);
 			// Pick the controller color based on trackin info state
 			Color color = Color.Black;
 			if (c.trackedPos == TrackState.Inferred) color.g = 0.5f;

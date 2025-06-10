@@ -39,7 +39,7 @@ namespace sk {
 
 typedef struct xr_spatial_anchors_state_t {
 	bool                               available;
-	bool                               persistance;
+	bool                               persistence;
 	anchor_type_id                     id;
 	XrSpatialAnchorStoreConnectionMSFT store;
 	array_t<anchor_t>                  anchors;
@@ -76,12 +76,12 @@ xr_system_ xr_ext_msft_spatial_anchors_initialize(void*) {
 	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME))
 		return xr_system_fail;
-	local.persistance = backend_openxr_ext_enabled(XR_MSFT_SPATIAL_ANCHOR_PERSISTENCE_EXTENSION_NAME);
+	local.persistence = backend_openxr_ext_enabled(XR_MSFT_SPATIAL_ANCHOR_PERSISTENCE_EXTENSION_NAME);
 
 	// Load all the main anchor extension functions
 	OPENXR_LOAD_FN_RETURN(XR_EXT_ANCHOR_FUNCTIONS, xr_system_fail);
 
-	if (local.persistance) {
+	if (local.persistence) {
 		// Load the persistence extension functions
 		OPENXR_LOAD_FN_RETURN(XR_EXT_PERSISTENCE_FUNCTIONS, xr_system_fail);
 
@@ -188,14 +188,14 @@ bool xr_ext_msft_spatial_anchors_load_persistent_anchors() {
 anchor_caps_ xr_ext_msft_spatial_anchors_capabilities() {
 	anchor_caps_ result = {};
 	if (local.available  ) result |= anchor_caps_stability;
-	if (local.persistance) result |= anchor_caps_storable;
+	if (local.persistence) result |= anchor_caps_storable;
 	return result;
 }
 
 ///////////////////////////////////////////
 
 void xr_ext_msft_spatial_anchors_clear_stored() {
-	if (local.persistance)
+	if (local.persistence)
 		xrClearSpatialAnchorStoreMSFT(local.store);
 }
 
@@ -256,7 +256,7 @@ void xr_ext_msft_spatial_anchors_destroy(anchor_t anchor) {
 ///////////////////////////////////////////
 
 bool32_t xr_ext_msft_spatial_anchors_persist(anchor_t anchor, bool32_t persist) {
-	if (anchor->persisted == persist || local.persistance == false) return anchor->persisted == persist;
+	if (anchor->persisted == persist || local.persistence == false) return anchor->persisted == persist;
 
 	if (persist) {
 		oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -103,11 +104,66 @@ namespace StereoKit
 		public Matrix ToMatrix(float scale)
 			=> Matrix.TRS(position, orientation, scale);
 
-		/// <summary>Converts this pose into a transform matrix.</summary>
+		/// <summary>Converts this pose into the inverse of the Pose's
+		/// transform matrix. This can be used to transform points from the
+		/// space represented by the Pose into world space.</summary>
+		/// <param name="scale">A scale vector! Vec3.One would be an identity
+		/// scale.</param>
+		/// <returns>A Matrix that transforms from the given pose.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Matrix ToMatrixInv(Vec3 scale)
+		{
+			Quaternion invOrientation = Quaternion.Conjugate(orientation.q);
+			Vector3    invScale       = new Vector3( 1.0f / scale.v.X, 1.0f / scale.v.Y, 1.0f / scale.v.Z );
+			Vector3    invTransform   = Vector3.Transform((-position.v)*invScale, invOrientation);
+			return Matrix.TRS(invTransform, invOrientation, invScale);
+		}
+
+		/// <summary>Converts this pose into the inverse of the Pose's
+		/// transform matrix. This can be used to transform points from the
+		/// space represented by the Pose into world space.</summary>
+		/// <param name="scale">A scale vector! Vec3.One would be an identity
+		/// scale.</param>
+		/// <returns>A Matrix that transforms from the given pose.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Matrix ToMatrixInv(float scale)
+		{
+			float invScaleS = 1.0f / scale;
+			Quaternion invOrientation = Quaternion.Conjugate(orientation.q);
+			Vector3    invScale       = new Vector3(invScaleS, invScaleS, invScaleS);
+			Vector3    invTransform   = Vector3.Transform((-position.v)*invScale, invOrientation);
+			return Matrix.TRS(invTransform, invOrientation, invScale);
+		}
+
+		/// <summary>Converts this pose into a transform matrix. This can be
+		/// used to transform points into the space represented by the Pose.
+		/// </summary>
 		/// <returns>A Matrix that transforms to the given pose.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public Matrix ToMatrix() 
-			=> Matrix.TR(position, orientation);
+		public Matrix ToMatrix()
+		{
+			Matrix4x4 result = Matrix4x4.CreateFromQuaternion(orientation.q);
+			result.M41 = position.v.X;
+			result.M42 = position.v.Y;
+			result.M43 = position.v.Z;
+			return result;
+		}
+
+		/// <summary>Converts this pose into the inverse of the Pose's
+		/// transform matrix. This can be used to transform points from the
+		/// space represented by the Pose into world space.</summary>
+		/// <returns>A Matrix that transforms from the given pose.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Matrix ToMatrixInv()
+		{
+			Quaternion invOrientation = Quaternion.Conjugate(orientation.q);
+			Vector3    invTransform   = Vector3.Transform(-position.v, invOrientation);
+			Matrix4x4  result         = Matrix4x4.CreateFromQuaternion(invOrientation);
+			result.M41 = invTransform.X;
+			result.M42 = invTransform.Y;
+			result.M43 = invTransform.Z;
+			return result;
+		}
 
 		/// <summary>Interpolates between two poses! It is unclamped, so values
 		/// outside of (0,1) will extrapolate their position.</summary>

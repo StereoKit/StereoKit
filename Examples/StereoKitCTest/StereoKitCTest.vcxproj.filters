@@ -60,6 +60,8 @@
     <None Include="Shaders\skt_default_lighting.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\blit.hlsl" />
+    <None Include="Shaders\blit.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

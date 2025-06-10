@@ -46,7 +46,7 @@
 		<None Include="Guides\GuideGettingStarted.cs" />
 	</ItemGroup>
 
-	<!-- Include the Stereokit project manually. This is similar to including the
+	<!-- Include the StereoKit project manually. This is similar to including the
 	     StereoKit NuGet, but different because C# cannot consume a NuGet package
 	     directly. -->
 	<Import Project="$(ProjectDir)..\..\StereoKit\BuildStereoKitSDK.targets" />
