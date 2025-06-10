@@ -7,6 +7,7 @@
  // This implements XR_EXT_future
  // https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_EXT_future
 
+#include "future.h"
 #include "ext_management.h"
 #include "../openxr.h"
 

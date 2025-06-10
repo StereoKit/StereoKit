@@ -185,9 +185,9 @@ include("cmake/CPM.cmake")
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.1.47
+    NAME openxr_loader # 1.1.49
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.47
+    GIT_TAG release-1.1.49
     GIT_SHALLOW 1
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
@@ -422,6 +422,10 @@ set(SK_SRC_XR_BACKENDS
   StereoKitC/xr_backends/anchor_stage.cpp )
 
 set(SK_SRC_XR_EXTS
+  StereoKitC/xr_backends/extensions/android_create_instance.h
+  StereoKitC/xr_backends/extensions/android_create_instance.cpp
+  StereoKitC/xr_backends/extensions/android_thread.h
+  StereoKitC/xr_backends/extensions/android_thread.cpp
   StereoKitC/xr_backends/extensions/composition_depth.h
   StereoKitC/xr_backends/extensions/composition_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
@@ -442,18 +446,6 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/input_profiles.cpp
   StereoKitC/xr_backends/extensions/loader_init.h
   StereoKitC/xr_backends/extensions/loader_init.cpp
-  StereoKitC/xr_backends/extensions/palm_pose.h
-  StereoKitC/xr_backends/extensions/palm_pose.cpp
-  StereoKitC/xr_backends/extensions/android_create_instance.h
-  StereoKitC/xr_backends/extensions/android_create_instance.cpp
-  StereoKitC/xr_backends/extensions/android_thread.h
-  StereoKitC/xr_backends/extensions/android_thread.cpp
-  StereoKitC/xr_backends/extensions/time.h
-  StereoKitC/xr_backends/extensions/time.cpp
-  StereoKitC/xr_backends/extensions/overlay.h
-  StereoKitC/xr_backends/extensions/overlay.cpp
-  StereoKitC/xr_backends/extensions/oculus_audio.h
-  StereoKitC/xr_backends/extensions/oculus_audio.cpp
   StereoKitC/xr_backends/extensions/msft_anchors.h
   StereoKitC/xr_backends/extensions/msft_anchors.cpp
   StereoKitC/xr_backends/extensions/msft_anchor_interop.h
@@ -463,7 +455,17 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/msft_observer.h
   StereoKitC/xr_backends/extensions/msft_observer.cpp
   StereoKitC/xr_backends/extensions/msft_scene_understanding.h
-  StereoKitC/xr_backends/extensions/msft_scene_understanding.cpp )
+  StereoKitC/xr_backends/extensions/msft_scene_understanding.cpp
+  StereoKitC/xr_backends/extensions/oculus_audio.h
+  StereoKitC/xr_backends/extensions/oculus_audio.cpp
+  StereoKitC/xr_backends/extensions/overlay.h
+  StereoKitC/xr_backends/extensions/overlay.cpp
+  StereoKitC/xr_backends/extensions/palm_pose.h
+  StereoKitC/xr_backends/extensions/palm_pose.cpp
+  StereoKitC/xr_backends/extensions/spatial_entity.h
+  StereoKitC/xr_backends/extensions/spatial_entity.cpp
+  StereoKitC/xr_backends/extensions/time.h
+  StereoKitC/xr_backends/extensions/time.cpp )
 
 set(SK_SRC_TOOLS
   StereoKitC/tools/virtual_keyboard.h

@@ -10,6 +10,8 @@
 #include "ext_management.h"
 #include "_registration.h"
 
+#include "android_create_instance.h"
+#include "android_thread.h"
 #include "composition_depth.h"
 #include "debug_utils.h"
 #include "eye_interaction.h"
@@ -20,17 +22,16 @@
 #include "hand_mesh.h"
 #include "input_profiles.h"
 #include "loader_init.h"
-#include "palm_pose.h"
-#include "android_create_instance.h"
-#include "android_thread.h"
-#include "overlay.h"
-#include "time.h"
-#include "oculus_audio.h"
 #include "msft_anchors.h"
 #include "msft_bridge.h"
 #include "msft_observer.h"
 #include "msft_anchor_interop.h"
 #include "msft_scene_understanding.h"
+#include "oculus_audio.h"
+#include "overlay.h"
+#include "palm_pose.h"
+#include "spatial_entity.h"
+#include "time.h"
 
 ///////////////////////////////////////////
 
@@ -63,6 +64,8 @@ bool ext_registration() {
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
 	xr_ext_msft_anchor_interop_register();
+
+	xr_ext_spatial_entity_register();
 
 	// Input extensions all must go before the oxri/input system
 	xr_ext_palm_pose_register                    ();
