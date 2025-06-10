@@ -9,6 +9,7 @@
 #include "../stereokit_ui.h" // for ui_has_keyboard_focus
 #include "../device.h"
 #include "../log.h"
+#include "../sk_math.h"
 #include "../libraries/stref.h"
 #include "../libraries/sokol_time.h"
 #include "../platforms/platform.h"
@@ -77,6 +78,8 @@ bool simulator_init() {
 		win_size.w = settings->flatscreen_width;
 		win_size.h = settings->flatscreen_height;
 	}
+	win_size.w = maxi(1, win_size.w);
+	win_size.h = maxi(1, win_size.h);
 
 	switch (platform_win_type()) {
 	case platform_win_type_creatable: {
@@ -139,7 +142,7 @@ void simulator_step_begin() {
 		case platform_evt_mouse_release:if (sk_app_focus() == app_focus_active) input_key_inject_release(data.press_release); break;
 		//case platform_evt_scroll:       if (sk_app_focus() == app_focus_active) win32_scroll += data.scroll;                  break;
 		case platform_evt_close:        sk_quit(quit_reason_user); break;
-		case platform_evt_resize:       sim_surface_resize(sim_surface, data.resize.width, data.resize.height); break;
+		case platform_evt_resize:       sim_surface_resize(sim_surface, maxi(1, data.resize.width), maxi(1, data.resize.height)); break;
 		case platform_evt_none: break;
 		default: break;
 		}
