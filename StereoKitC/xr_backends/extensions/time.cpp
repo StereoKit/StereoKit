@@ -42,7 +42,6 @@ void       xr_ext_time_shutdown(void*);
 
 void xr_ext_time_register() {
 	xr_system_t sys = {};
-	sys.required = true;
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
 	sys.evt_initialize = { xr_ext_time_init };
 	sys.evt_shutdown   = { xr_ext_time_shutdown };
