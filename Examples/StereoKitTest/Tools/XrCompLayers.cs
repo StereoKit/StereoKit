@@ -20,12 +20,12 @@ namespace StereoKit.Framework
 		}
 
 		public bool Initialize()
-		{
-			Enabled =
+        {
+            _androidSwapchainAvailable = Backend.OpenXR.ExtEnabled("XR_KHR_android_surface_swapchain");
+            Enabled =
 				Backend.XRType == BackendXRType.OpenXR &&
 				LoadBindings();
 
-			_androidSwapchainAvailable = Backend.OpenXR.ExtEnabled("XR_KHR_android_surface_swapchain");
 			return true;
 		}
 
@@ -315,7 +315,8 @@ namespace StereoKit.Framework
 		bool LoadBindings()
 		{
 			// These are extension functions that may or may not be present.
-			xrCreateSwapchainAndroidSurfaceKHR = Backend.OpenXR.GetFunction<del_xrCreateSwapchainAndroidSurfaceKHR>("xrCreateSwapchainAndroidSurfaceKHR");
+			if (_androidSwapchainAvailable)
+				xrCreateSwapchainAndroidSurfaceKHR = Backend.OpenXR.GetFunction<del_xrCreateSwapchainAndroidSurfaceKHR>("xrCreateSwapchainAndroidSurfaceKHR");
 
 			xrCreateSwapchain          = Backend.OpenXR.GetFunction<del_xrCreateSwapchain         >("xrCreateSwapchain");
 			xrDestroySwapchain         = Backend.OpenXR.GetFunction<del_xrDestroySwapchain        >("xrDestroySwapchain");
