@@ -29,10 +29,19 @@ namespace StereoKit
 		public  bool        noFlatscreenFallback { get { return _noFlatscreenFallback>0; } set { _noFlatscreenFallback = value?1:0; } }
 		private int        _noFlatscreenFallback;
 		/// <summary>What kind of depth buffer should StereoKit use? A fast
-		/// one, a detailed one, one that uses stencils? By default,
-		/// StereoKit uses a balanced mix depending on platform, prioritizing
-		/// speed but opening up when there's headroom.</summary>
+		/// one, a detailed one, one that uses stencils? By default StereoKit
+		/// will let the XR runtime choose, which typically results in fast, 
+		/// 16bit depth buffers for battery powered devices, and detailed 32bit
+		/// depth buffers on PCs. If the requested mode is not available,
+		/// StereoKit will fall back to the XR runtime's preference.</summary>
 		public DepthMode    depthMode;
+		/// <summary> What kind of color buffer should StereoKit use for the
+		/// primary display surface? By default StereoKit will let the XR
+		/// runtime choose from a list that StereoKit likes. This is generally
+		/// the best choice, as the runtime can pick surface formats that can
+		/// improve performance. If a requested format is not available,
+		/// StereoKit will fall back to the XR runtime's preference.</summary>
+		public TexFormat    colorFormat;
 		/// <summary> The default log filtering level. This can be changed at
 		/// runtime, but this allows you to set the log filter before
 		/// Initialization occurs, so you can choose to get information from

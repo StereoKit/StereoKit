@@ -645,6 +645,17 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 			}
 		}
 	}
+	// If the user specified a color format we can check if it's present, and if
+	// so, overwrite OpenXR's preference.
+	if (sk_get_settings().color_format != tex_format_none) {
+		int64_t native_color = skg_tex_fmt_to_native((skg_tex_fmt_)sk_get_settings().color_format);
+		for (uint32_t i = 0; i < count; i++) {
+			if (native_color == formats[i]) {
+				*out_color_dx = formats[i];
+				break;
+			}
+		}
+	}
 
 	// Check those against our formats, prefer OpenXR's pick for depth format.
 	*out_depth_dx = 0;
