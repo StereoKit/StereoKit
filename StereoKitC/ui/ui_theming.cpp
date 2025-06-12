@@ -469,33 +469,33 @@ void ui_draw_element(ui_vis_ element_visual, vec3 start, vec3 size, float focus)
 
 ///////////////////////////////////////////
 
-void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at) {
-	sound_t snd_on  = ui_get_sound_on(element_visual);
+void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at_local) {
+	sound_t snd_on  = ui_get_sound_on (element_visual);
 	sound_t snd_off = ui_get_sound_off(element_visual);
 
 	if (snd_off) sound_addref(snd_off);
 	sound_release(skui_active_sound_off);
 
 	skui_active_sound_off        = snd_off;
-	skui_active_sound_pos        = at;
+	skui_active_sound_pos        = hierarchy_to_world_point(at_local);
 	skui_active_sound_element_id = element_id;
 
 	if (snd_on)
-		skui_active_sound_inst = sound_play(snd_on, at, 1);
+		skui_active_sound_inst = sound_play(snd_on, skui_active_sound_pos, 1);
 }
 
 ///////////////////////////////////////////
 
-void ui_play_sound_on(ui_vis_ element_visual, vec3 at) {
+void ui_play_sound_on(ui_vis_ element_visual, vec3 at_local) {
 	sound_t snd = ui_get_sound_on(element_visual);
-	if (snd) sound_play(snd, at, 1);
+	if (snd) sound_play(snd, hierarchy_to_world_point(at_local), 1);
 }
 
 ///////////////////////////////////////////
 
-void ui_play_sound_off(ui_vis_ element_visual, vec3 at) {
+void ui_play_sound_off(ui_vis_ element_visual, vec3 at_local) {
 	sound_t snd = ui_get_sound_off(element_visual);
-	if (snd) sound_play(snd, at, 1);
+	if (snd) sound_play(snd, hierarchy_to_world_point(at_local), 1);
 }
 
 ///////////////////////////////////////////
