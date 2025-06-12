@@ -16,12 +16,12 @@
 		<SKShaderCodeFolder>..\</SKShaderCodeFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
-		
-		<!--<TestBuildMode>x64</TestBuildMode>-->
-		<TestBuildMode>ARM64</TestBuildMode>
 
-		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='ARM64'">android-arm64</RuntimeIdentifiers>
-		<RuntimeIdentifiers Condition="'$(TestBuildMode)'=='x64'">android-x64</RuntimeIdentifiers>
+		<!--<SKSDKBuildMode>x64</SKSDKBuildMode>-->
+		<SKSDKBuildMode>ARM64</SKSDKBuildMode>
+
+		<RuntimeIdentifiers Condition="'$(SKSDKBuildMode)'=='ARM64'">android-arm64</RuntimeIdentifiers>
+		<RuntimeIdentifiers Condition="'$(SKSDKBuildMode)'=='x64'">android-x64</RuntimeIdentifiers>
 		
 		<!--Suppress targetSdkVersion 29 warnings. XR devices use old versions
 		    of Android.-->
