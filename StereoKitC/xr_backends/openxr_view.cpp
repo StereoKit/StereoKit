@@ -629,6 +629,21 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 	int64_t *formats = sk_malloc_t(int64_t, count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
 
+	log_diag("<~BLK>____________________<~clr>");
+	log_diag("<~BLK>| <~YLW>Swapchain Formats<~clr> ");
+	log_diag("<~BLK>|-------------------<~clr>");
+	for (uint32_t i = 0; i < count; i++) {
+		bool found = false;
+		for (int32_t f = 0; !found && f < _countof(pixel_formats); f++) found = formats[i] == pixel_formats[f];
+		for (int32_t f = 0; !found && f < _countof(depth_formats); f++) found = formats[i] == depth_formats[f];
+
+		const char* name = render_fmt_name((tex_format_)skg_tex_fmt_from_native(formats[i]));
+		if (strcmp(name, "none"   ) == 0) continue;
+		if (strcmp(name, "Unknown") == 0) log_diagf("<~BLK>|<~clr> %s0x%X<~clr>", found?"+":" <~BLK>", formats[i]);
+		else                              log_diagf("<~BLK>|<~clr> %s%s<~clr>",   found?"+":" <~BLK>", name);
+	}
+	log_diag("<~BLK>|___________________<~clr>");
+
 	// According to the OpenXR spec, formats should be ordered by the runtime's
 	// preference for that format. This means that if we can, we should choose
 	// the first format from the list, if we can use it! Mobile platforms will
