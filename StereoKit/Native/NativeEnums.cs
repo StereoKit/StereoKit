@@ -49,11 +49,11 @@ namespace StereoKit
 	/// <summary>This is used to determine what kind of depth buffer
 	/// StereoKit uses!</summary>
 	public enum DepthMode {
-		/// <summary>Default mode, uses 16 bit on mobile devices like
-		/// HoloLens and Quest, and 32 bit on higher powered platforms like
-		/// PC. If you need a far view distance even on mobile devices,
-		/// prefer D32 or Stencil instead.</summary>
-		Balanced     = 0,
+		/// <summary>Default mode, uses the OpenXR runtime's preferred depth format. This is
+		/// typically 16 bit on standalone/battery powered devices like Quest and
+		/// HoloLens, and 32 bit on higher powered platforms like PC. If you need a
+		/// far view distance even on mobile devices, prefer D32 or Stencil instead.</summary>
+		Default      = 0,
 		/// <summary>16 bit depth buffer, this is fast and recommended for
 		/// devices like the HoloLens. This is especially important for fast
 		/// depth based reprojection. Far view distances will suffer here
@@ -731,7 +731,7 @@ namespace StereoKit
 
 	/// <summary>A bit-flag enum for describing alignment or positioning.
 	/// Items can be combined using the '|' operator, like so:
-	/// `Pivot alignment = Pivot.YTop | Pivot.XLeft;`
+	/// `Align alignment = Align.YTop | Align.XLeft;`
 	/// Avoid combining multiple items of the same axis. There are also a
 	/// complete list of valid bit flag combinations! These are the values
 	/// without an axis listed in their names, 'TopLeft', 'BottomCenter',

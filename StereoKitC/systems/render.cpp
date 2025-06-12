@@ -438,7 +438,7 @@ const char *render_fmt_name(tex_format_ format) {
 tex_format_ render_preferred_depth_fmt() {
 	depth_mode_ mode = sk_get_settings().depth_mode;
 	switch (mode) {
-	case depth_mode_balanced:
+	case depth_mode_default:
 #if defined(SK_OS_WINDOWS_UWP) || defined(SK_OS_ANDROID)
 		return tex_format_depth16;
 #else

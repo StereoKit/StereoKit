@@ -619,7 +619,6 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
 
 	int64_t depth_formats[] = {
-		skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
@@ -629,6 +628,27 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 	xrEnumerateSwapchainFormats(xr_session, 0, &count, nullptr);
 	int64_t *formats = sk_malloc_t(int64_t, count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
+
+	log_diag("<~BLK>____________________<~clr>");
+	log_diag("<~BLK>| <~YLW>Swapchain Formats<~clr> ");
+	log_diag("<~BLK>|-------------------<~clr>");
+	for (uint32_t i = 0; i < count; i++) {
+		bool found = false;
+		for (int32_t f = 0; !found && f < _countof(pixel_formats); f++) found = formats[i] == pixel_formats[f];
+		for (int32_t f = 0; !found && f < _countof(depth_formats); f++) found = formats[i] == depth_formats[f];
+
+		const char* name = render_fmt_name((tex_format_)skg_tex_fmt_from_native(formats[i]));
+		if (strcmp(name, "none"   ) == 0) continue;
+		if (strcmp(name, "Unknown") == 0) log_diagf("<~BLK>|<~clr> %s0x%X<~clr>", found?"+":" <~BLK>", formats[i]);
+		else                              log_diagf("<~BLK>|<~clr> %s%s<~clr>",   found?"+":" <~BLK>", name);
+	}
+	log_diag("<~BLK>|___________________<~clr>");
+
+	// According to the OpenXR spec, formats should be ordered by the runtime's
+	// preference for that format. This means that if we can, we should choose
+	// the first format from the list, if we can use it! Mobile platforms will
+	// usually have Depth16 listed before Depth32, and PC platforms will have 
+	// Depth32 listed before Depth16, etc.
 
 	// Check those against our formats, prefer OpenXR's pick for color format
 	*out_color_dx = 0;
@@ -640,17 +660,44 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 			}
 		}
 	}
+	// If the user specified a color format we can check if it's present, and if
+	// so, overwrite OpenXR's preference.
+	if (sk_get_settings().color_format != tex_format_none) {
+		int64_t native_color = skg_tex_fmt_to_native((skg_tex_fmt_)sk_get_settings().color_format);
+		bool    found        = false;
+		for (uint32_t i = 0; i < count; i++) {
+			if (native_color == formats[i]) {
+				*out_color_dx = formats[i];
+				found         = true;
+				break;
+			}
+		}
+		if (!found) log_infof("Couldn't find explicit %s format '%s' for swapchains. Falling back to runtime's preference.", "color", render_fmt_name(sk_get_settings().color_format));
+	}
 
-	// For depth, prefer our top pick over OpenXR's top pick, since we have
-	// some extra qualifications to our selection.
+	// Check those against our formats, prefer OpenXR's pick for depth format.
 	*out_depth_dx = 0;
-	for (int32_t f=0;  f<_countof(depth_formats); f++) {
-		for (uint32_t i=0; *out_depth_dx == 0 && i<count; i++) {
+	for (uint32_t i = 0; i < count; i++) {
+		for (int32_t f = 0; *out_depth_dx == 0 && f < _countof(depth_formats); f++) {
 			if (formats[i] == depth_formats[f]) {
 				*out_depth_dx = depth_formats[f];
 				break;
 			}
 		}
+	}
+	// If the user specified a depth mode we can check if it's present, and if
+	// so, overwrite OpenXR's preference.
+	if (sk_get_settings().depth_mode != depth_mode_default) {
+		int64_t native_depth = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
+		bool    found        = false;
+		for (uint32_t i = 0; i < count; i++) {
+			if (native_depth == depth_formats[i]) {
+				*out_depth_dx = depth_formats[i];
+				found         = true;
+				break;
+			}
+		}
+		if (!found) log_infof("Couldn't find explicit %s format '%s' for swapchains. Falling back to runtime's preference.", "depth", render_fmt_name(sk_get_settings().color_format));
 	}
 
 	// Release memory
