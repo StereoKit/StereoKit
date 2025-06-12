@@ -656,17 +656,14 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 			}
 		}
 	}
-
 	// If the user specified a depth mode we can check if it's present, and if
 	// so, overwrite OpenXR's preference.
 	if (sk_get_settings().depth_mode != depth_mode_default) {
-		int64_t native_deptha = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
-		for (int32_t f = 0; f < _countof(depth_formats); f++) {
-			for (uint32_t i = 0; *out_depth_dx == 0 && i < count; i++) {
-				if (native_deptha == depth_formats[f]) {
-					*out_depth_dx = depth_formats[f];
-					break;
-				}
+		int64_t native_depth = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
+		for (uint32_t i = 0; i < count; i++) {
+			if (native_depth == depth_formats[i]) {
+				*out_depth_dx = depth_formats[i];
+				break;
 			}
 		}
 	}
