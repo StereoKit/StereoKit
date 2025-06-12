@@ -75,6 +75,7 @@ bool       oxri_bind_profile        (xr_interaction_profile_t* profiles, int32_t
 
 void oxri_register() {
 	xr_system_t system = {};
+	system.required       = true;
 	system.evt_initialize = { oxri_init };
 	system.evt_shutdown   = { oxri_shutdown };
 	system.evt_step_begin = { oxri_update_frame };

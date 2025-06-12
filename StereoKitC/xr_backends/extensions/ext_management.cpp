@@ -57,6 +57,23 @@ int32_t in_list(array_t<const char*> list, const char* str) {
 ///////////////////////////////////////////
 
 void ext_management_sys_register(xr_system_t system) {
+	// Skip non-required systems if we're told to use the minimum number of
+	// extensions.
+	if (local.minimum_exts && system.required == false) {
+		// If the user has manually requested all extensions this system relies
+		// on, then we can use it. Or if it uses no extensions.
+		for (int32_t e = 0; e < system.request_ext_count; e++) {
+			bool found = false;
+			for (int32_t u = 0; u < local.exts_user.count; u++) {
+				if (string_eq(system.request_exts[e], local.exts_user[u])) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) return;
+		}
+	}
+
 	local.system_list.add(system);
 
 	// These callback hooks are _not_ dependant on a successful initialization callback
@@ -66,6 +83,14 @@ void ext_management_sys_register(xr_system_t system) {
 
 	for (int32_t e = 0; e < system.request_ext_count; e++)
 		ext_management_request_ext(system.request_exts[e]);
+
+	// If we're using minimum exts, don't request optional extensions. We can
+	// still reach this code if all required extensions were in the user requested
+	// list.
+	if (!local.minimum_exts) {
+		for (int32_t e = 0; e < system.request_opt_ext_count; e++)
+			ext_management_request_ext(system.request_opt_exts[e]);
+	}
 }
 
 ///////////////////////////////////////////

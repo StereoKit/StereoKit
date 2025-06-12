@@ -29,6 +29,7 @@ xr_system_ xr_ext_android_create_instance_pre_instance(void*, XrBaseHeader* ref_
 
 void xr_ext_android_create_instance_register() {
 	xr_system_t sys = {};
+	sys.required = true;
 	sys.request_exts[sys.request_ext_count++] = XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME;
 	sys.evt_pre_instance = { xr_ext_android_create_instance_pre_instance };
 	ext_management_sys_register(sys);

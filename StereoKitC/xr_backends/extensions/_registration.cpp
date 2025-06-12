@@ -42,8 +42,10 @@ bool ext_registration() {
 		return false;
 
 	// These extensions require deep integration, so we just request them here.
-	ext_management_request_ext( XR_EXT_LOCAL_FLOOR_EXTENSION_NAME );
-	ext_management_request_ext( XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME );
+	if (ext_management_get_use_min() == false) {
+		ext_management_request_ext(XR_EXT_LOCAL_FLOOR_EXTENSION_NAME);
+		ext_management_request_ext(XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME);
+	}
 
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
