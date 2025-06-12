@@ -73,6 +73,9 @@ internal class TestCustomButton : ITest
 		Mesh.Cube.Draw(Material.UI, Matrix.TS(layout.center, layout.dimensions), UI.GetElementColor(UIVisual.Button, UI.GetAnimFocus(id, focus, state)));
 		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(UIVisual.Button, id, layout.center);
+
 		return state.IsJustInactive();
 	}
 
@@ -88,6 +91,9 @@ internal class TestCustomButton : ITest
 		layout.dimensions.z = offset;
 		UI.DrawElement(UIVisual.Button, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
 		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
+
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(UIVisual.Button, id, layout.center);
 
 		return state.IsJustInactive();
 	}
@@ -105,6 +111,9 @@ internal class TestCustomButton : ITest
 		UI.DrawElement(CustomUIVisual.Button, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
 		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
 
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(CustomUIVisual.Nonexistent, id, layout.center);
+
 		return state.IsJustInactive();
 	}
 
@@ -120,6 +129,9 @@ internal class TestCustomButton : ITest
 		layout.dimensions.z = offset;
 		UI.DrawElement(CustomUIVisual.Nonexistent, layout.TLB, layout.dimensions, UI.GetAnimFocus(id, focus, state));
 		Text.Add(text, Matrix.T(layout.center.x, layout.center.y, -(offset + 0.002f)), UI.TextStyle, Pivot.Center);
+
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(CustomUIVisual.Nonexistent, id, layout.center);
 
 		return state.IsJustInactive();
 	}
