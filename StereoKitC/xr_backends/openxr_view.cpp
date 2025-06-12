@@ -649,12 +649,15 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 	// so, overwrite OpenXR's preference.
 	if (sk_get_settings().color_format != tex_format_none) {
 		int64_t native_color = skg_tex_fmt_to_native((skg_tex_fmt_)sk_get_settings().color_format);
+		bool    found        = false;
 		for (uint32_t i = 0; i < count; i++) {
 			if (native_color == formats[i]) {
 				*out_color_dx = formats[i];
+				found         = true;
 				break;
 			}
 		}
+		if (!found) log_infof("Couldn't find explicit %s format '%s' for swapchains. Falling back to runtime's preference.", "color", render_fmt_name(sk_get_settings().color_format));
 	}
 
 	// Check those against our formats, prefer OpenXR's pick for depth format.
@@ -671,12 +674,15 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 	// so, overwrite OpenXR's preference.
 	if (sk_get_settings().depth_mode != depth_mode_default) {
 		int64_t native_depth = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
+		bool    found        = false;
 		for (uint32_t i = 0; i < count; i++) {
 			if (native_depth == depth_formats[i]) {
 				*out_depth_dx = depth_formats[i];
+				found         = true;
 				break;
 			}
 		}
+		if (!found) log_infof("Couldn't find explicit %s format '%s' for swapchains. Falling back to runtime's preference.", "depth", render_fmt_name(sk_get_settings().color_format));
 	}
 
 	// Release memory
