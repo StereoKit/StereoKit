@@ -619,7 +619,6 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 		skg_tex_fmt_to_native(skg_tex_fmt_bgra32_linear) };
 
 	int64_t depth_formats[] = {
-		skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt()),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth16),
 		skg_tex_fmt_to_native(skg_tex_fmt_depth32),
 		skg_tex_fmt_to_native(skg_tex_fmt_depthstencil)};
@@ -629,6 +628,12 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 	xrEnumerateSwapchainFormats(xr_session, 0, &count, nullptr);
 	int64_t *formats = sk_malloc_t(int64_t, count);
 	xrEnumerateSwapchainFormats(xr_session, count, &count, formats);
+
+	// According to the OpenXR spec, formats should be ordered by the runtime's
+	// preference for that format. This means that if we can, we should choose
+	// the first format from the list, if we can use it! Mobile platforms will
+	// usually have Depth16 listed before Depth32, and PC platforms will have 
+	// Depth32 listed before Depth16, etc.
 
 	// Check those against our formats, prefer OpenXR's pick for color format
 	*out_color_dx = 0;
@@ -641,14 +646,27 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 		}
 	}
 
-	// For depth, prefer our top pick over OpenXR's top pick, since we have
-	// some extra qualifications to our selection.
+	// Check those against our formats, prefer OpenXR's pick for depth format.
 	*out_depth_dx = 0;
-	for (int32_t f=0;  f<_countof(depth_formats); f++) {
-		for (uint32_t i=0; *out_depth_dx == 0 && i<count; i++) {
+	for (uint32_t i = 0; i < count; i++) {
+		for (int32_t f = 0; *out_depth_dx == 0 && f < _countof(depth_formats); f++) {
 			if (formats[i] == depth_formats[f]) {
 				*out_depth_dx = depth_formats[f];
 				break;
+			}
+		}
+	}
+
+	// If the user specified a depth mode we can check if it's present, and if
+	// so, overwrite OpenXR's preference.
+	if (sk_get_settings().depth_mode != depth_mode_default) {
+		int64_t native_deptha = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
+		for (int32_t f = 0; f < _countof(depth_formats); f++) {
+			for (uint32_t i = 0; *out_depth_dx == 0 && i < count; i++) {
+				if (native_deptha == depth_formats[f]) {
+					*out_depth_dx = depth_formats[f];
+					break;
+				}
 			}
 		}
 	}

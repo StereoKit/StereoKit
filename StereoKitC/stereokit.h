@@ -157,11 +157,11 @@ typedef enum app_mode_ {
 /*This is used to determine what kind of depth buffer
   StereoKit uses!*/
 typedef enum depth_mode_ {
-	/*Default mode, uses 16 bit on mobile devices like
-	  HoloLens and Quest, and 32 bit on higher powered platforms like
-	  PC. If you need a far view distance even on mobile devices,
-	  prefer D32 or Stencil instead.*/
-	depth_mode_balanced           = 0,
+	/*Default mode, uses the OpenXR runtime's preferred depth format. This is
+	  typically 16 bit on standalone/battery powered devices like Quest and
+	  HoloLens, and 32 bit on higher powered platforms like PC. If you need a
+	  far view distance even on mobile devices, prefer D32 or Stencil instead.*/
+	depth_mode_default = 0,
 	/*16 bit depth buffer, this is fast and recommended for
 	  devices like the HoloLens. This is especially important for fast
 	  depth based reprojection. Far view distances will suffer here
