@@ -62,8 +62,8 @@ bool       xr_ext_msft_spatial_anchors_load_persistent_anchors();
 
 void xr_ext_msft_spatial_anchors_register() {
 	xr_system_t sys = {};
-	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME;
-	sys.request_exts[sys.request_ext_count++] = XR_MSFT_SPATIAL_ANCHOR_PERSISTENCE_EXTENSION_NAME;
+	sys.request_exts    [sys.request_ext_count    ++] = XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME;
+	sys.request_opt_exts[sys.request_opt_ext_count++] = XR_MSFT_SPATIAL_ANCHOR_PERSISTENCE_EXTENSION_NAME;
 	sys.evt_initialize = { xr_ext_msft_spatial_anchors_initialize };
 	sys.evt_step_begin = { xr_ext_msft_spatial_anchors_step_begin };
 	sys.evt_shutdown   = { xr_ext_msft_spatial_anchors_shutdown };

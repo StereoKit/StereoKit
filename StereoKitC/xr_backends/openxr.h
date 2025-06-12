@@ -70,6 +70,9 @@ typedef struct poll_event_callback_t {
 typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
+	const char* request_opt_exts[4];
+	int32_t     request_opt_ext_count;
+	bool        required;
 
 	create_info_callback_t    evt_pre_instance;
 	create_info_callback_t    evt_pre_session;

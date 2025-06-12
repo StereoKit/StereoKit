@@ -39,6 +39,7 @@ void       xr_ext_graphics_shutdown   (void*);
 
 void xr_ext_graphics_register() {
 	xr_system_t sys = {};
+	sys.required = true;
 	sys.request_exts[sys.request_ext_count++] = XR_GFX_EXTENSION;
 #ifdef XR_USE_PLATFORM_EGL
 	sys.request_exts[sys.request_ext_count++] = XR_MNDX_EGL_ENABLE_EXTENSION_NAME;
