@@ -106,6 +106,14 @@ void xr_ext_interaction_render_model_draw_controller(handed_ hand) {
 
 ///////////////////////////////////////////
 
+model_t xr_ext_interaction_render_model_get(handed_ hand) {
+	return local.controller_idx[hand] >= 0
+		? local.models[local.controller_idx[hand]].model
+		: nullptr;
+}
+
+///////////////////////////////////////////
+
 bool xr_ext_interaction_render_model_available() {
 	return local.available;
 }

@@ -43,9 +43,6 @@ bool input_render_init() {
 	local = {};
 	local.render_mode = input_render_hand_fallback;
 
-	input_controller_model_set(handed_left,  nullptr); // Assigning to null sets it to default
-	input_controller_model_set(handed_right, nullptr);
-
 	material_t hand_mat = material_copy_id(default_id_material);
 	material_set_id          (hand_mat, default_id_material_hand);
 	material_set_transparency(hand_mat, transparency_blend);
@@ -134,10 +131,15 @@ void input_render_step_late() {
 		} else if (source == hand_source_simulated) {
 			const controller_t* control = input_controller((handed_)i);
 			if (!input_controller_is_hand((handed_)i) && (control->tracked & button_state_active) != 0) {
-				if (xr_ext_interaction_render_model_available()) {
-					xr_ext_interaction_render_model_draw_controller((handed_)i);
-				} else if (local.controller_model[i] != nullptr) {
+				if (local.controller_model[i] != nullptr) {
+					// If the user has explicitly assigned a model
 					render_add_model(local.controller_model[i], matrix_trs(control->pose.position, control->pose.orientation));
+				} else if (xr_ext_interaction_render_model_available()) {
+					// If OpenXR has a model for the controller
+					xr_ext_interaction_render_model_draw_controller((handed_)i);
+				} else {
+					// Otherwise, our built-in backup models
+					render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(control->pose.position, control->pose.orientation));
 				}
 			}
 		} else if (source == hand_source_overridden) {
@@ -184,12 +186,8 @@ void input_controller_model_set(handed_ hand, model_t model) {
 		return;
 	}
 
-	// If the model is null, set it to the default controller model, later on
-	// this may tap into some OpenXR extensions. TODO
-	if (model == nullptr)
-		model = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
-
-	model_addref(model);
+	if (model)
+		model_addref(model);
 	model_release(local.controller_model[hand]);
 
 	local.controller_model[hand] = model;
@@ -198,9 +196,15 @@ void input_controller_model_set(handed_ hand, model_t model) {
 ///////////////////////////////////////////
 
 model_t input_controller_model_get(handed_ hand) {
-	if (local.controller_model[hand] != nullptr)
-		model_addref(local.controller_model[hand]);
-	return local.controller_model[hand];
+	model_t result = nullptr;
+	if (local.controller_model[hand] == nullptr) {
+		if (xr_ext_interaction_render_model_available()) result = xr_ext_interaction_render_model_get(hand);
+		else                                             result = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
+	}
+
+	if (result != nullptr)
+		model_addref(result);
+	return result;
 }
 
 } // namespace sk
