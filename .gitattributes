@@ -1,7 +1,6 @@
 StereoKitC/libraries/* linguist-vendored
 StereoKitC/lib/** linguist-vendored
 Tools/** -linguist-detectable
-.vscode/ linguist-generated=true
 
 * text=auto
 

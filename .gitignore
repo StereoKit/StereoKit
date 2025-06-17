@@ -355,5 +355,5 @@ build_*/
 
 **.DS_Store**
 
+.vscode/*
 !.vscode/tasks.json
-.vscode/
