@@ -11,6 +11,7 @@
 #include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/extensions/hand_mesh.h"
+#include "../xr_backends/extensions/ext_interaction_render_model.h"
 #include "../systems/defaults.h"
 
 namespace sk {
@@ -132,8 +133,12 @@ void input_render_step_late() {
 			}
 		} else if (source == hand_source_simulated) {
 			const controller_t* control = input_controller((handed_)i);
-			if ((control->tracked & button_state_active) != 0 && local.controller_model[i] != nullptr) {
-				render_add_model(local.controller_model[i], matrix_trs(control->pose.position, control->pose.orientation));
+			if (!input_controller_is_hand((handed_)i) && (control->tracked & button_state_active) != 0) {
+				if (xr_ext_interaction_render_model_available()) {
+					xr_ext_interaction_render_model_draw_controller((handed_)i);
+				} else if (local.controller_model[i] != nullptr) {
+					render_add_model(local.controller_model[i], matrix_trs(control->pose.position, control->pose.orientation));
+				}
 			}
 		} else if (source == hand_source_overridden) {
 			const hand_t* hand = input_hand((handed_)i);
@@ -144,6 +149,8 @@ void input_render_step_late() {
 			}
 		}
 	}
+
+	xr_ext_interaction_render_model_draw_others();
 }
 
 ///////////////////////////////////////////

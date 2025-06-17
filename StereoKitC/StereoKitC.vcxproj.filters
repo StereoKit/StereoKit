@@ -321,6 +321,12 @@
     <ClCompile Include="ui\interactor_modes.cpp">
       <Filter>ui</Filter>
     </ClCompile>
+    <ClCompile Include="xr_backends\extensions\ext_render_model.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="xr_backends\extensions\ext_interaction_render_model.cpp">
+      <Filter>xr_backends\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -668,6 +674,12 @@
     </ClInclude>
     <ClInclude Include="ui\interactor_modes.h">
       <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\ext_render_model.h">
+      <Filter>xr_backends\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="xr_backends\extensions\ext_interaction_render_model.h">
+      <Filter>xr_backends\extensions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

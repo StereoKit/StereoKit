@@ -28,6 +28,7 @@ typedef struct xr_ext_interaction_render_model_t {
 	bool               available;
 	xr_render_model_t* models;
 	int32_t            model_count;
+	int32_t            controller_idx[handed_max];
 } xr_ext_interaction_render_model_t;
 static xr_ext_interaction_render_model_t local = { };
 
@@ -35,7 +36,6 @@ static xr_ext_interaction_render_model_t local = { };
 
 xr_system_ xr_ext_interaction_render_model_initialize(void*);
 void       xr_ext_interaction_render_model_shutdown  (void*);
-void       xr_ext_interaction_render_model_step_begin(void*);
 void       xr_ext_interaction_render_model_poll      (void*, XrEventDataBuffer* event);
 
 ///////////////////////////////////////////
@@ -46,23 +46,20 @@ void xr_ext_interaction_render_model_register() {
 	sys.evt_initialize = { xr_ext_interaction_render_model_initialize };
 	sys.evt_shutdown   = { xr_ext_interaction_render_model_shutdown   };
 	sys.evt_poll       = { (void (*)(void*, void*))xr_ext_interaction_render_model_poll };
-	sys.evt_step_begin = { xr_ext_interaction_render_model_step_begin };
 	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////
 
 xr_system_ xr_ext_interaction_render_model_initialize(void*) {
+	local.controller_idx[0] = -1;
+	local.controller_idx[1] = -1;
 	if (!backend_openxr_ext_enabled(XR_EXT_INTERACTION_RENDER_MODEL_EXTENSION_NAME))
 		return xr_system_fail;
 
 	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	local.available = true;
-
-	// This ext gets added a bit late, and misses some early polling?
-	XrEventDataInteractionRenderModelsChangedEXT evt = { XR_TYPE_EVENT_DATA_INTERACTION_RENDER_MODELS_CHANGED_EXT };
-	xr_ext_interaction_render_model_poll(nullptr, (XrEventDataBuffer*)&evt);
 
 	return xr_system_succeed;
 }
@@ -75,21 +72,42 @@ void xr_ext_interaction_render_model_shutdown(void*) {
 
 ///////////////////////////////////////////
 
-void xr_ext_interaction_render_model_step_begin(void*) {
-	for (int32_t i = 0; i < local.model_count; i++) {
-		xr_render_model_t* model = &local.models[i];
-		xr_ext_render_model_update(model);
+void _xr_ext_interaction_render_model_draw(xr_render_model_t *model) {
+	xr_ext_render_model_update(model);
 
-		XrSpaceLocation loc = { XR_TYPE_SPACE_LOCATION };
-		if (XR_FAILED(xrLocateSpace(model->space, xr_app_space, xr_time, &loc)))
-			continue;
-		if ((loc.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) != 0 &&
-			(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
-			XrVector3f    p = loc.pose.position;
-			XrQuaternionf r = loc.pose.orientation;
-			model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, {r.x, r.y, r.z, r.w}));
-		}
+	XrSpaceLocation loc = { XR_TYPE_SPACE_LOCATION };
+	if (XR_FAILED(xrLocateSpace(model->space, xr_app_space, xr_time, &loc)))
+		return;
+	if ((loc.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)    != 0 &&
+		(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
+		XrVector3f    p = loc.pose.position;
+		XrQuaternionf r = loc.pose.orientation;
+		model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, { r.x, r.y, r.z, r.w }));
 	}
+}
+
+///////////////////////////////////////////
+
+void xr_ext_interaction_render_model_draw_others() {
+	for (int32_t i = 0; i < local.model_count; i++) {
+		if (i == local.controller_idx[0] ||
+			i == local.controller_idx[1])
+			continue;
+		_xr_ext_interaction_render_model_draw(&local.models[i]);
+	}
+}
+
+///////////////////////////////////////////
+
+void xr_ext_interaction_render_model_draw_controller(handed_ hand) {
+	if (local.controller_idx[hand] >= 0)
+		_xr_ext_interaction_render_model_draw(&local.models[local.controller_idx[hand]]);
+}
+
+///////////////////////////////////////////
+
+bool xr_ext_interaction_render_model_available() {
+	return local.available;
 }
 
 ///////////////////////////////////////////
@@ -113,6 +131,7 @@ void xr_ext_interaction_render_model_poll(void*, XrEventDataBuffer* event) {
 	for (int32_t i = 0; i < count; i++) {
 		new_list[i] = xr_ext_render_model_get(model_ids[i]);
 	}
+	sk_free(model_ids);
 
 	// Release our previous list of models (this comes second so we don't
 	// release models that are re-used in the new list).
@@ -125,9 +144,26 @@ void xr_ext_interaction_render_model_poll(void*, XrEventDataBuffer* event) {
 	local.models      = new_list;
 	local.model_count = new_count;
 
-	log_infof("Found %d render models", local.model_count);
+	// See which models are for the left or right controller
+	XrPath hand_path[handed_max] = { };
+	xrStringToPath(xr_instance, "/user/hand/left",  &hand_path[handed_left ]);
+	xrStringToPath(xr_instance, "/user/hand/right", &hand_path[handed_right]);
+	local.controller_idx[0] = -1;
+	local.controller_idx[1] = -1;
+	for (int32_t i = 0; i < local.model_count; i++) {
+		XrInteractionRenderModelSubactionPathInfoEXT info = { XR_TYPE_INTERACTION_RENDER_MODEL_SUBACTION_PATH_INFO_EXT };
+		uint32_t path_count = 0;
+		xrEnumerateRenderModelSubactionPathsEXT(new_list[i].render_model, &info, 0,          &path_count, nullptr);
+		XrPath* paths = sk_malloc_t(XrPath, path_count);
+		xrEnumerateRenderModelSubactionPathsEXT(new_list[i].render_model, &info, path_count, &path_count, paths);
 
-	sk_free(model_ids);
+		for (int32_t p = 0; p < path_count; p++) {
+			if      (paths[p] == hand_path[handed_left ]) local.controller_idx[handed_left ] = i;
+			else if (paths[p] == hand_path[handed_right]) local.controller_idx[handed_right] = i;
+		}
+
+		sk_free(paths);
+	}
 }
 
 } // namespace sk
