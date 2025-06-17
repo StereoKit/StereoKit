@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Android",
+            "group": "build",
+            "type": "shell",
+            "command": "dotnet run --verbosity detailed",
+            "options": { "cwd": "${workspaceFolder}/Examples/StereoKitTest/StereoKitTest_NetAndroid" }
+        },
+        {
+            "label": "Run StereoKitTest",
+            "group": { "kind":"build", "isDefault": true },
+            "type": "shell",
+            "command": "dotnet run --verbosity detailed -c Debug --project StereoKitTest.csproj --",
+            "options": { "cwd": "${workspaceFolder}/Examples/StereoKitTest" }
+        },
+        {
+            "label": "Run Unit Tests",
+            "group": "test",
+            "type": "shell",
+            "command": "dotnet run --verbosity detailed --project StereoKitTest.csproj -- -test -screenfolder ../../../tools/screenshots/",
+            "options": { "cwd": "${workspaceFolder}/Examples/StereoKitTest" }
+        }
+    ]
+}
