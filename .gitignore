@@ -28,8 +28,6 @@ zig-cache/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
-#Moses VSCode
-.vscode/
 # Uncomment if you have tasks that create the project's static files in wwwroot
 #wwwroot/
 
@@ -340,20 +338,12 @@ tools/deps_current.txt
 tools/skshaderc/**
 StereoKitC/lib/include/**
 StereoKitC/lib/bin/**
-# An exception for the Android loader
-!StereoKitC/lib/bin/arm64-v8a/**
-
-# Ignore cached shader blobs
-*/Assets/cache
-StereoKitC/shaders_builtin/*.sks
 
 _site/
 .jekyll-cache/
 *.lock
 build/
 build_*/
-
-.vscode/
 
 # Xmake cache files
 .xmake/
@@ -364,3 +354,6 @@ build_*/
 .deps_cache/
 
 **.DS_Store**
+
+.vscode/*
+!.vscode/tasks.json
