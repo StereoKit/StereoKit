@@ -4,27 +4,29 @@ using StereoKit;
 
 class TestInteractors : ITest
 {
+	struct Update(Vec3 pos, Vec3 dir, BtnState state)
+	{
+		public Vec3     pos   = pos;
+		public Vec3     dir   = dir;
+		public BtnState state = state;
+	}
+
+	struct Test(string name, Update[] u, Action draw, Func<int, bool> expects)
+	{
+		public string          name    = name;
+		public Update[]        u       = u;
+		public Action          draw    = draw;
+		public Func<int, bool> expects = expects;
+	}
+
 	DefaultInteractors prevDefault;
 	Interactor         ray;
 
-	struct Update
-	{
-		public Vec3 pos, dir;
-		public BtnState state;
-		public Update(Vec3 pos, Vec3 dir, BtnState state)
-		{
-			this.pos = pos;
-			this.dir = dir;
-			this.state = state;
-		}
-	}
-	struct Test
-	{
-		public string name;
-		public Update[] u;
-		public Action draw;
-		public Func<int, bool> expects;
-	}
+	Pose windowPose = new Pose(0, 0, -0.5f, Quat.LookDir(-Vec3.Forward));
+	Vec3 activeElementPos;
+
+	int frameIdx = -1;
+	int testIdx  = 0;
 
 	Update[] buttonClick = [
 		new (V.XYZ(0,0,0.2f), V.XYZ(0,0,-1), BtnState.Inactive), // Must have focus for a frame before element can activate
@@ -55,13 +57,13 @@ class TestInteractors : ITest
 	public void Initialize()
 	{
 		testUpdates = [
-			new Test { name = "Button", u = buttonClick, draw = ()=>{ button      = UI.Button     ("Button"); },                         expects = (f)=>{ return new bool[] {false, false, false, true}[f] == button; } },
-			new Test { name = "Round",  u = buttonClick, draw = ()=>{ roundButton = UI.ButtonRound("RoundButton", Sprite.Shift); },      expects = (f)=>{ return new bool[] {false, false, false, true}[f] == roundButton; } },
-			new Test { name = "Toggle", u = buttonClick, draw = ()=>{ toggleEvt   = UI.Toggle     ("Toggle", ref toggle); },             expects = (f)=>{ return new bool[] {false, false, false, true}[f] == toggleEvt && new bool[] {false, false, false, true}[f] == toggle; } },
-			new Test { name = "Radio1", u = buttonClick, draw = ()=>{ if (UI.Radio("Radio 1", radio == 0)) radio = 0; },                 expects = (f)=>{ return new int [] {-1,    -1,    -1,    0}   [f] == radio; } },
-			new Test { name = "Radio2", u = buttonClick, draw = ()=>{ if (UI.Radio("Radio 2", radio == 1)) radio = 1; },                 expects = (f)=>{ return new int [] { 0,     0,     0,    1}   [f] == radio; } },
-			new Test { name = "Slider1", u = sliderDrag, draw = ()=>{ slider1Evt = UI.HSlider("slider1", ref slider1, 0, 1, 0, 0.2f); }, expects = (f)=>{ return new bool[] { false, false, true, true, true, false}[f] == slider1Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0}[f] - slider1) < 0.0001f; } },
-			new Test { name = "Slider2", u = sliderDrag, draw = ()=>{ slider2Evt = UI.HSlider("slider2", ref slider2, 0, 1, 0, 0.2f); }, expects = (f)=>{ return new bool[] { false, false, true, true, true, false}[f] == slider2Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0}[f] - slider2) < 0.0001f; } },
+			new ("Button",  buttonClick, ()=>{ button      = UI.Button     ("Button"); },                         (f)=>{ return new bool[] {false, false, false, true}[f] == button; } ),
+			new ("Round",   buttonClick, ()=>{ roundButton = UI.ButtonRound("RoundButton", Sprite.Shift); },      (f)=>{ return new bool[] {false, false, false, true}[f] == roundButton; } ),
+			new ("Toggle",  buttonClick, ()=>{ toggleEvt   = UI.Toggle     ("Toggle", ref toggle); },             (f)=>{ return new bool[] {false, false, false, true}[f] == toggleEvt && new bool[] {false, false, false, true}[f] == toggle; } ),
+			new ("Radio1",  buttonClick, ()=>{ if (UI.Radio("Radio 1", radio == 0)) radio = 0; },                 (f)=>{ return new int [] {-1,    -1,    -1,    0}   [f] == radio; } ),
+			new ("Radio2",  buttonClick, ()=>{ if (UI.Radio("Radio 2", radio == 1)) radio = 1; },                 (f)=>{ return new int [] { 0,     0,     0,    1}   [f] == radio; } ),
+			new ("Slider1", sliderDrag,  ()=>{ slider1Evt = UI.HSlider("slider1", ref slider1, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false}[f] == slider1Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0}[f] - slider1) < 0.0001f; } ),
+			new ("Slider2", sliderDrag,  ()=>{ slider2Evt = UI.HSlider("slider2", ref slider2, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false}[f] == slider2Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0}[f] - slider2) < 0.0001f; } ),
 		];
 
 		prevDefault = Interaction.DefaultInteractors;
@@ -80,19 +82,13 @@ class TestInteractors : ITest
 		Interaction.DefaultInteractors = prevDefault;
 	}
 
-	Pose windowPose = new Pose(0, 0, -0.5f, Quat.LookDir(-Vec3.Forward));
-	Vec3 uiPos;
-
-	int frame = -1;
-	int test  = 0;
-
 	public void Step()
 	{
-		if (TestUpdate(testUpdates[test].u, uiPos, frame))
+		if (TestUpdate(ray, testUpdates[testIdx].u, activeElementPos, frameIdx))
 		{
-			frame = -1;
-			test  = (test + 1) % testUpdates.Length;
-			if (test == 0)
+			frameIdx = -1;
+			testIdx  = (testIdx + 1) % testUpdates.Length;
+			if (testIdx == 0)
 			{
 				button      = false;
 				roundButton = false;
@@ -111,21 +107,21 @@ class TestInteractors : ITest
 		for (int i = 0; i < testUpdates.Length; i++)
 		{
 			testUpdates[i].draw();
-			if (test == i) uiPos = Hierarchy.ToWorld(UI.LayoutLast.center);
-			if (test == i && frame >= 0)
+			if (testIdx == i) activeElementPos = Hierarchy.ToWorld(UI.LayoutLast.center);
+			if (testIdx == i && frameIdx >= 0)
 			{
-				if (!testUpdates[i].expects(frame))
-					Log.Err($"Failed interactor test {testUpdates[i].name} frame {frame}");
+				if (!testUpdates[i].expects(frameIdx))
+					Log.Err($"Failed interactor test {testUpdates[i].name} frame {frameIdx}");
 			}
 		}
 		UI.WindowEnd();
 
-		frame++;
+		frameIdx++;
 	}
 
-	bool TestUpdate(Update[] update, Vec3 elementCenter, int frame)
+	static bool TestUpdate(Interactor ray, Update[] update, Vec3 elementCenter, int frame)
 	{
-		if (frame < 0) return false;
+		if (frame < 0)              return false;
 		if (frame >= update.Length) return true;
 
 		Update u   = update[frame];
