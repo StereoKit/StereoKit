@@ -694,8 +694,17 @@ if(SK_DISTRIBUTE)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
-  add_custom_command(TARGET StereoKitC POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${sk_gpu_SOURCE_DIR}/tools" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc" )
+
+  # Copy all shader build tools, but only if they're newer
+  file(GLOB_RECURSE SOURCE_FILES "${sk_gpu_SOURCE_DIR}/tools/*")
+  foreach(SOURCE_FILE ${SOURCE_FILES})
+    file(RELATIVE_PATH REL_PATH "${sk_gpu_SOURCE_DIR}/tools" ${SOURCE_FILE})
+    get_filename_component(DEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}" DIRECTORY)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${DEST_DIR}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SOURCE_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}")
+  endforeach()
+
   if (SK_SEPARATE_DBG)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
