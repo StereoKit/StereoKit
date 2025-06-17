@@ -157,11 +157,11 @@ typedef enum app_mode_ {
 /*This is used to determine what kind of depth buffer
   StereoKit uses!*/
 typedef enum depth_mode_ {
-	/*Default mode, uses 16 bit on mobile devices like
-	  HoloLens and Quest, and 32 bit on higher powered platforms like
-	  PC. If you need a far view distance even on mobile devices,
-	  prefer D32 or Stencil instead.*/
-	depth_mode_balanced           = 0,
+	/*Default mode, uses the OpenXR runtime's preferred depth format. This is
+	  typically 16 bit on standalone/battery powered devices like Quest and
+	  HoloLens, and 32 bit on higher powered platforms like PC. If you need a
+	  far view distance even on mobile devices, prefer D32 or Stencil instead.*/
+	depth_mode_default = 0,
 	/*16 bit depth buffer, this is fast and recommended for
 	  devices like the HoloLens. This is especially important for fast
 	  depth based reprojection. Far view distances will suffer here
@@ -178,6 +178,146 @@ typedef enum depth_mode_ {
 	  stencil support right now though (v0.3).*/
 	depth_mode_stencil,
 } depth_mode_;
+
+/*What type of color information will the texture contain? A
+  good default here is Rgba32.*/
+typedef enum tex_format_ {
+	/*A default zero value for TexFormat! Uninitialized formats
+	  will get this value and **** **** up so you know to assign it
+	  properly :)*/
+	tex_format_none = 0,
+	/*Red/Green/Blue/Transparency data channels, at 8 bits
+	  per-channel in sRGB color space. This is what you'll want most of
+	  the time you're dealing with color images! Matches well with the
+	  Color32 struct! If you're storing normals, rough/metal, or
+	  anything else, use Rgba32Linear.*/
+	tex_format_rgba32 = 1,
+	/*Red/Green/Blue/Transparency data channels, at 8 bits
+	  per-channel in linear color space. This is what you'll want most
+	  of the time you're dealing with color data! Matches well with the
+	  Color32 struct.*/
+	tex_format_rgba32_linear = 2,
+	/*Blue/Green/Red/Transparency data channels, at 8 bits
+	  per-channel in sRGB color space. This is a common swapchain format
+	  on Windows.*/
+	tex_format_bgra32 = 3,
+	/*Blue/Green/Red/Transparency data channels, at 8 bits
+	  per-channel in linear color space. This is a common swapchain
+	  format on Windows.*/
+	tex_format_bgra32_linear = 4,
+	/*Red/Green/Blue data channels, with 11 bits for R and G,
+	  and 10 bits for blue. This is a great presentation format for high
+	  bit depth displays that still fits in 32 bits! This format has no
+	  alpha channel.*/
+	tex_format_rg11b10 = 5,
+	/*Red/Green/Blue/Transparency data channels, with 10 
+	  bits for R, G, and B, and 2 for alpha. This is a great presentation
+	  format for high bit depth displays that still fits in 32 bits, and
+	  also includes at least a bit of transparency!*/
+	tex_format_rgb10a2 = 6,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. TODO: remove during major version
+	  update, prefer s, f, or u postfixed versions of this format.*/
+	tex_format_rgba64 = 7,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The u postfix indicates that the raw
+	  color data is stored as an unsigned 16 bit integer, which is then
+	  normalized into the 0, 1 floating point range on the GPU.*/
+	tex_format_rgba64u = tex_format_rgba64,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The s postfix indicates that the raw
+	  color data is stored as a signed 16 bit integer, which is then
+	  normalized into the -1, +1 floating point range on the GPU.*/
+	tex_format_rgba64s = 8,
+	/*Red/Green/Blue/Transparency data channels, at 16 bits
+	  per-channel! This is not common, but you might encounter it with
+	  raw photos, or HDR images. The f postfix indicates that the raw
+	  color data is stored as 16 bit floats, which may be tricky to work
+	  with in most languages.*/
+	tex_format_rgba64f = 9,
+	/*Red/Green/Blue/Transparency data channels at 32 bits
+	  per-channel! Basically 4 floats per color, which is bonkers
+	  expensive. Don't use this unless you know -exactly- what you're
+	  doing.*/
+	tex_format_rgba128 = 10,
+	/*A single channel of data, with 8 bits per-pixel! This
+	  can be great when you're only using one channel, and want to
+	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
+	tex_format_r8 = 11,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. Values in the shader are always 0.0-1.0.
+	  TODO: remove during major version update, prefer s, f, or u
+	  postfixed versions of this format, this item is the same as
+	  r16u.*/
+	tex_format_r16 = 12,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The u postfix indicates that the raw color data
+	  is stored as an unsigned 16 bit integer, which is then normalized
+	  into the 0, 1 floating point range on the GPU.*/
+	tex_format_r16u = tex_format_r16,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The s postfix indicates that the raw color
+	  data is stored as a signed 16 bit integer, which is then
+	  normalized into the -1, +1 floating point range on the GPU.*/
+	tex_format_r16s = 13,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for height maps, since it stores a fair bit of
+	  information in it. The f postfix indicates that the raw color
+	  data is stored as 16 bit floats, which may be tricky to work with
+	  in most languages.*/
+	tex_format_r16f = 14,
+	/*A single channel of data, with 32 bits per-pixel! This
+	  basically treats each pixel as a generic float, so you can do all
+	  sorts of strange and interesting things with this.*/
+	tex_format_r32 = 15,
+	/*A depth data format, 24 bits for depth data, and 8 bits
+	  to store stencil information! Stencil data can be used for things
+	  like clipping effects, deferred rendering, or shadow effects.*/
+	tex_format_depthstencil = 16,
+	/*32 bits of data per depth value! This is pretty detailed,
+	  and is excellent for experiences that have a very far view
+	  distance.*/
+	tex_format_depth32 = 17,
+	/*16 bits of depth is not a lot, but it can be enough if
+	  your far clipping plane is pretty close. If you're seeing lots of
+	  flickering where two objects overlap, you either need to bring
+	  your far clip in, or switch to 32/24 bit depth.*/
+	tex_format_depth16 = 18,
+	/*A double channel of data that supports 8 bits for the red
+	  channel and 8 bits for the green channel.*/
+	tex_format_r8g8 = 19,
+
+	tex_format_bc1_rgb_srgb,
+	tex_format_bc1_rgb,
+	tex_format_bc3_rgba_srgb,
+	tex_format_bc3_rgba,
+	tex_format_bc4_r,
+	tex_format_bc5_rg,
+	tex_format_bc7_rgba_srgb,
+	tex_format_bc7_rgba,
+
+	tex_format_etc1_rgb,
+	tex_format_etc2_rgba_srgb,
+	tex_format_etc2_rgba,
+	tex_format_etc2_r11,
+	tex_format_etc2_rg11,
+	tex_format_pvrtc1_rgb_srgb,
+	tex_format_pvrtc1_rgb,
+	tex_format_pvrtc1_rgba_srgb,
+	tex_format_pvrtc1_rgba,
+	tex_format_pvrtc2_rgba_srgb,
+	tex_format_pvrtc2_rgba,
+	tex_format_astc4x4_rgba_srgb,
+	tex_format_astc4x4_rgba,
+	tex_format_atc_rgb,
+	tex_format_atc_rgba,
+} tex_format_;
 
 /*This describes the way the display's content blends with
   whatever is behind it. VR headsets are normally Opaque, but some VR
@@ -407,6 +547,7 @@ typedef struct sk_settings_t {
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
 	depth_mode_    depth_mode;
+	tex_format_    color_format;
 	log_           log_filter;
 	bool32_t       overlay_app;
 	uint32_t       overlay_priority;
@@ -891,146 +1032,6 @@ typedef enum tex_type_ {
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
 } tex_type_;
 SK_MakeFlag(tex_type_);
-
-/*What type of color information will the texture contain? A
-  good default here is Rgba32.*/
-typedef enum tex_format_ {
-	/*A default zero value for TexFormat! Uninitialized formats
-	  will get this value and **** **** up so you know to assign it
-	  properly :)*/
-	tex_format_none = 0,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is what you'll want most of
-	  the time you're dealing with color images! Matches well with the
-	  Color32 struct! If you're storing normals, rough/metal, or
-	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32 = 1,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is what you'll want most
-	  of the time you're dealing with color data! Matches well with the
-	  Color32 struct.*/
-	tex_format_rgba32_linear = 2,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is a common swapchain format
-	  on Windows.*/
-	tex_format_bgra32 = 3,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is a common swapchain
-	  format on Windows.*/
-	tex_format_bgra32_linear = 4,
-	/*Red/Green/Blue data channels, with 11 bits for R and G,
-	  and 10 bits for blue. This is a great presentation format for high
-	  bit depth displays that still fits in 32 bits! This format has no
-	  alpha channel.*/
-	tex_format_rg11b10 = 5,
-	/*Red/Green/Blue/Transparency data channels, with 10 
-	  bits for R, G, and B, and 2 for alpha. This is a great presentation
-	  format for high bit depth displays that still fits in 32 bits, and
-	  also includes at least a bit of transparency!*/
-	tex_format_rgb10a2 = 6,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. TODO: remove during major version
-	  update, prefer s, f, or u postfixed versions of this format.*/
-	tex_format_rgba64 = 7,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The u postfix indicates that the raw
-	  color data is stored as an unsigned 16 bit integer, which is then
-	  normalized into the 0, 1 floating point range on the GPU.*/
-	tex_format_rgba64u = tex_format_rgba64,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The s postfix indicates that the raw
-	  color data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_rgba64s = 8,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The f postfix indicates that the raw
-	  color data is stored as 16 bit floats, which may be tricky to work
-	  with in most languages.*/
-	tex_format_rgba64f = 9,
-	/*Red/Green/Blue/Transparency data channels at 32 bits
-	  per-channel! Basically 4 floats per color, which is bonkers
-	  expensive. Don't use this unless you know -exactly- what you're
-	  doing.*/
-	tex_format_rgba128 = 10,
-	/*A single channel of data, with 8 bits per-pixel! This
-	  can be great when you're only using one channel, and want to
-	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
-	tex_format_r8 = 11,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. Values in the shader are always 0.0-1.0.
-	  TODO: remove during major version update, prefer s, f, or u
-	  postfixed versions of this format, this item is the same as
-	  r16u.*/
-	tex_format_r16 = 12,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The u postfix indicates that the raw color data
-	  is stored as an unsigned 16 bit integer, which is then normalized
-	  into the 0, 1 floating point range on the GPU.*/
-	tex_format_r16u = tex_format_r16,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The s postfix indicates that the raw color
-	  data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_r16s = 13,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The f postfix indicates that the raw color
-	  data is stored as 16 bit floats, which may be tricky to work with
-	  in most languages.*/
-	tex_format_r16f = 14,
-	/*A single channel of data, with 32 bits per-pixel! This
-	  basically treats each pixel as a generic float, so you can do all
-	  sorts of strange and interesting things with this.*/
-	tex_format_r32 = 15,
-	/*A depth data format, 24 bits for depth data, and 8 bits
-	  to store stencil information! Stencil data can be used for things
-	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil = 16,
-	/*32 bits of data per depth value! This is pretty detailed,
-	  and is excellent for experiences that have a very far view
-	  distance.*/
-	tex_format_depth32 = 17,
-	/*16 bits of depth is not a lot, but it can be enough if
-	  your far clipping plane is pretty close. If you're seeing lots of
-	  flickering where two objects overlap, you either need to bring
-	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 18,
-	/*A double channel of data that supports 8 bits for the red
-	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 19,
-
-	tex_format_bc1_rgb_srgb,
-	tex_format_bc1_rgb,
-	tex_format_bc3_rgba_srgb,
-	tex_format_bc3_rgba,
-	tex_format_bc4_r,
-	tex_format_bc5_rg,
-	tex_format_bc7_rgba_srgb,
-	tex_format_bc7_rgba,
-
-	tex_format_etc1_rgb,
-	tex_format_etc2_rgba_srgb,
-	tex_format_etc2_rgba,
-	tex_format_etc2_r11,
-	tex_format_etc2_rg11,
-	tex_format_pvrtc1_rgb_srgb,
-	tex_format_pvrtc1_rgb,
-	tex_format_pvrtc1_rgba_srgb,
-	tex_format_pvrtc1_rgba,
-	tex_format_pvrtc2_rgba_srgb,
-	tex_format_pvrtc2_rgba,
-	tex_format_astc4x4_rgba_srgb,
-	tex_format_astc4x4_rgba,
-	tex_format_atc_rgb,
-	tex_format_atc_rgba,
-} tex_format_;
 
 /*How does the shader grab pixels from the texture? Or more
   specifically, how does the shader grab colors between the provided

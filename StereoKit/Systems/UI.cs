@@ -1727,5 +1727,36 @@ namespace StereoKit
 		/// its events.</param>
 		public static void SliderBehavior(Vec3 windowRelativePos, Vec2 size, IdHash id, ref Vec2 value, Vec2 min, Vec2 max, Vec2 buttonSizeVisual, Vec2 buttonSizeInteract, UIConfirm confirmMethod, out UISliderData data)
 			=> NativeAPI.ui_slider_behavior(windowRelativePos, size, id, ref value, min, max, buttonSizeVisual, buttonSizeInteract, confirmMethod, out data);
+
+		/// <summary>This will play the 'on' sound associated with the given
+		/// UIVisual at the local position. It will also play the 'off' sound
+		/// when the given element becomes inactive, at the world location of
+		/// the initial local position!</summary>
+		/// <param name="elementVisual">The UIVisual to pull sound information
+		/// from.</param>
+		/// <param name="elementId">The id of the element that will be tracked
+		/// for playing the 'off' sound.</param>
+		/// <param name="atLocal">The hierarchy local location where the sound
+		/// will play. </param>
+		public static void PlaySoundOnOff(UIVisual elementVisual, IdHash elementId, Vec3 atLocal)
+			=> NativeAPI.ui_play_sound_on_off(elementVisual, elementId, atLocal);
+
+		/// <summary>This will play the 'on' sound associated with the given
+		/// UIVisual at the world position.</summary>
+		/// <param name="elementVisual">The UIVisual to pull sound information
+		/// from.</param>
+		/// <param name="atLocal">The hierarchy local location where the sound
+		/// will play. </param>
+		public static void PlaySoundOn(UIVisual elementVisual, Vec3 atLocal)
+			=> NativeAPI.ui_play_sound_on(elementVisual, atLocal);
+
+		/// <summary>This will play the 'off' sound associated with the given
+		/// UIVisual at the world position.</summary>
+		/// <param name="elementVisual">The UIVisual to pull sound information
+		/// from.</param>
+		/// <param name="atLocal">The hierarchy local location where the sound
+		/// will play. </param>
+		public static void PlaySoundOff(UIVisual elementVisual, Vec3 atLocal)
+			=> NativeAPI.ui_play_sound_off(elementVisual, atLocal);
 	}
 }

@@ -77,7 +77,7 @@ namespace StereoKit
 			/// extensions via `OpenXR.RequestExt`, and this can be used to
 			/// opt-in to extensions that StereoKit would normally request
 			/// automatically.</summary>
-			public static bool UseMinimumExts { set => NativeAPI.backend_openxr_use_minimum_exts(value); }
+			public static bool UseMinimumExts { set { NativeLib.Load(); NativeAPI.backend_openxr_use_minimum_exts(value); } }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be

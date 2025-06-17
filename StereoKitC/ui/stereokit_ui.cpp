@@ -290,6 +290,9 @@ bool32_t ui_button_img_at_g(const C* text, sprite_t image, ui_btn_layout_ image_
 	ui_draw_element(ui_vis_button, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
 	_ui_button_img_surface(text, image, image_layout, align_center, window_relative_pos, size, finger_offset, image_tint);
 
+	if (state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_button, id, window_relative_pos - vec3{ size.x/2.f, size.y/2.f, 0 });
+
 	return state & button_state_just_inactive;
 }
 
@@ -359,6 +362,9 @@ bool32_t ui_toggle_img_at_g(const C* text, bool32_t& pressed, sprite_t toggle_of
 	ui_draw_element(ui_vis_toggle, window_relative_pos, vec3{ size.x,size.y,finger_offset }, fmaxf(min_activation, ui_get_anim_focus(id, focus, state)));
 	_ui_button_img_surface(text, pressed?toggle_on:toggle_off, image_layout, align_center, window_relative_pos, size, finger_offset, color128{1,1,1,1});
 
+	if (state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_button, id, window_relative_pos - vec3{ size.x/2.f, size.y/2.f, 0 });
+
 	return state & button_state_just_inactive;
 }
 bool32_t ui_toggle_img_at   (const char*     text, bool32_t& pressed, sprite_t toggle_off, sprite_t toggle_on, ui_btn_layout_ image_layout, vec3 window_relative_pos, vec2 size) { return ui_toggle_img_at_g<char    >(text, pressed, toggle_off, toggle_on, image_layout, window_relative_pos, size); }
@@ -424,6 +430,9 @@ bool32_t ui_button_round_at_g(const C *text, sprite_t image, vec3 window_relativ
 	float sprite_scale = fmaxf(1, sprite_get_aspect(image));
 	float sprite_size  = (diameter * 0.7f) / sprite_scale;
 	sprite_draw(image, matrix_ts(window_relative_pos + vec3{ -diameter/2, -diameter/2, -(finger_offset + 2*mm2m) }, vec3{ sprite_size, sprite_size, 1 }), pivot_center);
+
+	if (state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_button, id, window_relative_pos - vec3{ diameter/2.f, diameter/2.f, 0 });
 
 	return state & button_state_just_inactive;
 }
@@ -622,6 +631,9 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 
 	ui_text_in(draw_text, pivot_top_left, align_center_left, text_fit_clip, window_relative_pos - vec3{ skui_settings.padding, 0, text_depth }, text_bounds, vec2_zero);
 
+	if (state & button_state_just_active)
+		ui_play_sound_on_off(ui_vis_button, id_hash, window_relative_pos - vec3{ size.x/2.f, size.y/2.f, 0 });
+
 	return result;
 }
 
@@ -754,13 +766,13 @@ bool32_t ui_slider_at_g(ui_dir_ bar_direction, const C *id_text, float &value, f
 		vis_focus);
 	
 	if (slider.active_state & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_slider_pinch, id, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y,0 }));
+		ui_play_sound_on_off(ui_vis_slider_pinch, id, { slider.button_center.x, slider.button_center.y, window_relative_pos.z });
 
 	// Play tick sound as the value updates
 	if (slider.active_state & button_state_active && old_value != value) {
 		if (step != 0) {
 			// Play on every change if there's a user specified step value
-			ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y, window_relative_pos.z }));
+			ui_play_sound_on(ui_vis_slider_line, { slider.button_center.x, slider.button_center.y, window_relative_pos.z });
 		} else {
 			// If no user specified step, then we'll do a set number of
 			// clicks across the whole bar.
@@ -771,7 +783,7 @@ bool32_t ui_slider_at_g(ui_dir_ bar_direction, const C *id_text, float &value, f
 			int32_t new_quantize = (int32_t)(percent     * click_steps + 0.5f);
 
 			if (old_quantize != new_quantize) {
-				ui_play_sound_on(ui_vis_slider_line, hierarchy_to_world_point({ slider.button_center.x, slider.button_center.y, window_relative_pos.z }));
+				ui_play_sound_on(ui_vis_slider_line, { slider.button_center.x, slider.button_center.y, window_relative_pos.z });
 			}
 		}
 	}

@@ -54,8 +54,8 @@ void       xr_ext_hand_tracking_sys_update_poses   ();
 
 void xr_ext_hand_tracking_register() {
 	xr_system_t sys = {};
-	sys.request_exts[sys.request_ext_count++] = XR_EXT_HAND_TRACKING_EXTENSION_NAME;
-	sys.request_exts[sys.request_ext_count++] = XR_EXT_HAND_TRACKING_DATA_SOURCE_EXTENSION_NAME;
+	sys.request_exts    [sys.request_ext_count    ++] = XR_EXT_HAND_TRACKING_EXTENSION_NAME;
+	sys.request_opt_exts[sys.request_opt_ext_count++] = XR_EXT_HAND_TRACKING_DATA_SOURCE_EXTENSION_NAME;
 	sys.evt_initialize  = { xr_ext_hand_tracking_initialize };
 	sys.evt_shutdown    = { xr_ext_hand_tracking_shutdown };
 	ext_management_sys_register(sys);

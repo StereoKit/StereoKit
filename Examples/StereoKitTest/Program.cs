@@ -52,6 +52,7 @@ class Program
 		// LogWindow for early log registration!
 		SK.AddStepper<PassthroughFBExt>();
 		SK.AddStepper<Win32PerformanceCounterExt>();
+		SK.AddStepper<XrCompLayers>();
 		WindowLog = SK.AddStepper<LogWindow>();
 		WindowLog.Enabled = false;
 

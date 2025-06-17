@@ -763,7 +763,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_draw_element_color   (UIVisual element_visual, UIVisual element_color, Vec3 start, Vec3 size, float focus);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color  ui_get_element_color    (UIVisual element_visual,                                                float focus);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float  ui_get_anim_focus       (IdHash id, BtnState focus_state, BtnState activation_state);
-
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_play_sound_on_off    (UIVisual element_visual, IdHash element_id, Vec3 at_local);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_play_sound_on        (UIVisual element_visual, Vec3 at_local);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   ui_play_sound_off       (UIVisual element_visual, Vec3 at_local);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_push_grab_aura        ([MarshalAs(UnmanagedType.Bool)] bool enabled);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void ui_pop_grab_aura         ();

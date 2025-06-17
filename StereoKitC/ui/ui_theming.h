@@ -20,9 +20,6 @@ void     ui_theming_update   ();
 void     ui_theming_shutdown ();
 
 vec2     ui_get_mesh_minsize (ui_vis_ element_visual);
-void     ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at);
-void     ui_play_sound_on    (ui_vis_ element_visual, vec3 at);
-void     ui_play_sound_off   (ui_vis_ element_visual, vec3 at);
 void     ui_draw_cube        (vec3 start, vec3 size, ui_color_ color, float focus);
 
 void     ui_anim_start        (id_hash_t id, int32_t channel);

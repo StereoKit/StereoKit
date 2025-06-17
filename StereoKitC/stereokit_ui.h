@@ -182,6 +182,9 @@ SK_API void     ui_draw_element         (ui_vis_ element_visual,                
 SK_API void     ui_draw_element_color   (ui_vis_ element_visual, ui_vis_ element_color, vec3 start, vec3 size, float focus);
 SK_API color128 ui_get_element_color    (ui_vis_ element_visual,                                               float focus);
 SK_API float    ui_get_anim_focus       (id_hash_t id, button_state_ focus_state, button_state_ activation_state);
+SK_API void     ui_play_sound_on_off    (ui_vis_ element_visual, id_hash_t element_id, vec3 at_local);
+SK_API void     ui_play_sound_on        (ui_vis_ element_visual, vec3 at_local);
+SK_API void     ui_play_sound_off       (ui_vis_ element_visual, vec3 at_local);
 
 SK_API void     ui_push_grab_aura        (bool32_t enabled);
 SK_API void     ui_pop_grab_aura         ();

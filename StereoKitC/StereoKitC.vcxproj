@@ -198,7 +198,9 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="xr_backends\extensions\android_thread.cpp" />
     <ClCompile Include="xr_backends\extensions\composition_depth.cpp" />
     <ClCompile Include="xr_backends\extensions\debug_utils.cpp" />
+    <ClCompile Include="xr_backends\extensions\ext_interaction_render_model.cpp" />
     <ClCompile Include="xr_backends\extensions\ext_management.cpp" />
+    <ClCompile Include="xr_backends\extensions\ext_render_model.cpp" />
     <ClCompile Include="xr_backends\extensions\eye_interaction.cpp" />
     <ClCompile Include="xr_backends\extensions\fb_colorspace.cpp" />
     <ClCompile Include="xr_backends\extensions\graphics.cpp" />
@@ -313,7 +315,9 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="xr_backends\extensions\android_thread.h" />
     <ClInclude Include="xr_backends\extensions\composition_depth.h" />
     <ClInclude Include="xr_backends\extensions\debug_utils.h" />
+    <ClInclude Include="xr_backends\extensions\ext_interaction_render_model.h" />
     <ClInclude Include="xr_backends\extensions\ext_management.h" />
+    <ClInclude Include="xr_backends\extensions\ext_render_model.h" />
     <ClInclude Include="xr_backends\extensions\eye_interaction.h" />
     <ClInclude Include="xr_backends\extensions\fb_colorspace.h" />
     <ClInclude Include="xr_backends\extensions\graphics.h" />

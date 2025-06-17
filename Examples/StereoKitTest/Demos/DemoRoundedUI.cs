@@ -76,6 +76,9 @@ internal class DemoRoundedUI : ITest
 		layout.dimensions.z  = offset;
 		RoundedSprite.Mesh(UI.Settings.rounding).Draw(roundedSprite.material, Matrix.TS(layout.center, layout.dimensions), UI.GetElementColor(UIVisual.Aura, UI.GetAnimFocus(id, focus, state)));
 
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(UIVisual.Button, id, layout.center);
+
 		return state.IsJustInactive();
 	}
 

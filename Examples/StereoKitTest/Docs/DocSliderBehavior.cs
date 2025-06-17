@@ -29,6 +29,9 @@ class DocSliderBehavior : ITest
 		UI.DrawElement(UIVisual.SliderLine, bounds.TLB, new Vec3(bounds.dimensions.x, bounds.dimensions.y, depth*0.1f), slider.focusState.IsActive() ? 0.5f:0);
 		UI.DrawElement(UIVisual.SliderPush, slider.buttonCenter.XY0 + btnSize.XY0/2.0f, btnSize, focus);
 
+		if (slider.activeState.IsJustActive  ()) UI.PlaySoundOn (UIVisual.SliderPush, slider.buttonCenter.XY0);
+		if (slider.activeState.IsJustInactive()) UI.PlaySoundOff(UIVisual.SliderPush, slider.buttonCenter.XY0);
+
 		return prev.x != pt.x || prev.y != pt.y;
 	}
 

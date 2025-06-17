@@ -12,6 +12,8 @@
 
 #include "composition_depth.h"
 #include "debug_utils.h"
+#include "ext_interaction_render_model.h"
+#include "ext_render_model.h"
 #include "eye_interaction.h"
 #include "fb_colorspace.h"
 #include "graphics.h"
@@ -42,8 +44,10 @@ bool ext_registration() {
 		return false;
 
 	// These extensions require deep integration, so we just request them here.
-	ext_management_request_ext( XR_EXT_LOCAL_FLOOR_EXTENSION_NAME );
-	ext_management_request_ext( XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME );
+	if (ext_management_get_use_min() == false) {
+		ext_management_request_ext(XR_EXT_LOCAL_FLOOR_EXTENSION_NAME);
+		ext_management_request_ext(XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME);
+	}
 
 	xr_ext_debug_utils_register();
 	xr_ext_time_register();
@@ -61,6 +65,8 @@ bool ext_registration() {
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
 	xr_ext_msft_anchor_interop_register();
+	xr_ext_interaction_render_model_register();
+	xr_ext_render_model_register();
 
 	// Input extensions all must go before the oxri/input system
 	xr_ext_palm_pose_register                    ();
