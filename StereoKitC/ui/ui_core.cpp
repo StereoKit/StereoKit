@@ -50,7 +50,7 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
-	interactor_id interactor = -1;
+	interactor_t interactor = -1;
 
 	vec3 start = bounds.center + bounds.dimensions / 2;
 	interaction_1h_box(id_hash, interact_type == ui_confirm_push ? interactor_event_poke : interactor_event_pinch,
@@ -58,7 +58,7 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 		start, bounds.dimensions,
 		&focus, &interactor);
 
-	interactor_t *actor = interactor_get(interactor);
+	_interactor_t *actor = interactor_get(interactor);
 	if (actor != nullptr) {
 		result = interactor_set_active(actor, id_hash, actor->activation_type == interactor_activation_position
 			? (bool32_t)((focus              & button_state_active) != 0)
@@ -93,7 +93,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 		&focus_candidacy, &interactor, &interaction_at);
 
 	// If a hand is interacting, adjust the button surface accordingly
-	interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = interactor_get(interactor);
 	if (actor) {
 		if (focus_candidacy & button_state_active) {
 			bool pressed;
@@ -158,7 +158,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		window_relative_pos, {size.x, size.y, button_depth*0.5f },
 		& secondary_focus, &secondary_interactor);
 	ui_pop_id();
-	interactor_t* secondary_actor = interactor_get(secondary_interactor);
+	_interactor_t* secondary_actor = interactor_get(secondary_interactor);
 	if (secondary_focus & button_state_active) {
 		vec2 secondary_motion = vec2_zero;
 		if (secondary_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ secondary_actor->secondary_motion.x,  secondary_actor->secondary_motion.x };
@@ -175,7 +175,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	}
 
 	vec2 finger_at = {};
-	interactor_t* actor = nullptr;
+	_interactor_t* actor = nullptr;
 	vec3 activation_size  = vec3{ button_size_interact.x, button_size_interact.y, button_depth };
 	vec3 activation_start = { out->button_center.x+activation_size.x/2.0f, out->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
 	if (button_size_interact.x == 0 && button_size_interact.y == 0) {

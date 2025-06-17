@@ -407,6 +407,22 @@ namespace StereoKit
 		/// <returns>True if the state just changed this frame, false if not.
 		/// </returns>
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
+
+		/// <summary>Creates a Button State using the current and previous
+		/// frame's state! These two states allow us to add the "JustActive"
+		/// and "JustInactive" bitflags when changes happen.</summary>
+		/// <param name="wasActive">Was it active previously?</param>
+		/// <param name="isActive">And is it active currently?</param>
+		/// <returns>A bitflag with "Just" events added in!</returns>
+		public static BtnState Make(bool wasActive, bool isActive)
+		{
+			BtnState result = isActive ? BtnState.Active : BtnState.Inactive;
+			if (wasActive && !isActive)
+				result |= BtnState.JustInactive;
+			if (isActive && !wasActive)
+				result |= BtnState.JustActive;
+			return result;
+		}
 	}
 
 	/// <summary>The callback type for Input events.</summary>
@@ -936,6 +952,9 @@ namespace StereoKit
 		/// <returns>A new style IdHash hash.</returns>
 		[Obsolete]
 		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
+
+		/// <summary>An empty IdHash that represents the unassigned state.</summary>
+		public static IdHash None => new IdHash { hash = 0 };
 	}
 
 	/// <summary>Information about the current state of the UI's

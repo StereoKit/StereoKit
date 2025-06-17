@@ -25,33 +25,34 @@ enum interact_mode_ {
 };
 
 struct interact_mode_hands_t {
-	interactor_id poke [2];
-	interactor_id pinch[2];
-	interactor_id far  [2];
-	float         ray_active [2];
-	float         ray_visible[2];
-	bool          prev_active[2];
+	interactor_t poke [2];
+	interactor_t pinch[2];
+	interactor_t far  [2];
+	float        ray_active [2];
+	float        ray_visible[2];
+	bool         prev_active[2];
 };
 
 struct interact_mode_controllers_t {
-	interactor_id far[2];
-	float         ray_active  [2];
-	float         ray_visible [2];
-	float         trigger_last[2];
+	interactor_t far[2];
+	float        ray_active  [2];
+	float        ray_visible [2];
+	float        trigger_last[2];
 };
 
 struct interact_mode_mouse_t {
-	interactor_id interactor;
+	interactor_t interactor;
 };
 
 struct interact_mode_eyes_t {
-	interactor_id interactor;
-	vec3          hand_motion_prev[2];
-	bool          active_prev;
+	interactor_t interactor;
+	vec3         hand_motion_prev[2];
+	bool         active_prev;
 };
 
 struct interactor_modes_state_t {
-	interactor_default_         default_interactors;
+	default_interactors_        default_interactors;
+	bool32_t                    draw_interactors;
 	interact_mode_              input_mode;
 	interact_mode_              input_permitted;
 	interact_mode_hands_t       hands;
@@ -95,7 +96,7 @@ void interactor_modes_shutdown() {
 
 void interactor_modes_update() {
 	// auto-switch between hands and controllers
-	if (local.default_interactors == interactor_default_default) {
+	if (local.default_interactors == default_interactors_default) {
 		hand_source_ source = input_hand_source(handed_right);
 		if      (source == hand_source_articulated || source == hand_source_overridden)                   interact_mode_switch(interact_mode_hands);
 		else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) interact_mode_switch(interact_mode_mouse);
@@ -110,12 +111,30 @@ void interactor_modes_update() {
 
 ///////////////////////////////////////////
 
-void interactors_default_set(interactor_default_ default_interactors) {
+void interaction_set_default_interactors(default_interactors_ default_interactors) {
 	if (local.default_interactors == default_interactors) return;
 	local.default_interactors = default_interactors;
 
-	if (local.default_interactors == interactor_default_none)
+	if (local.default_interactors == default_interactors_none)
 		interact_mode_switch(interact_mode_none);
+}
+
+///////////////////////////////////////////
+
+default_interactors_ interaction_get_default_interactors() {
+	return local.default_interactors;
+}
+
+///////////////////////////////////////////
+
+void interaction_set_default_draw(bool32_t draw_interactors) {
+	local.draw_interactors = draw_interactors;
+}
+
+///////////////////////////////////////////
+
+bool32_t interaction_get_default_draw() {
+	return local.draw_interactors;
 }
 
 ///////////////////////////////////////////
@@ -138,8 +157,8 @@ void interact_mode_switch(interact_mode_ mode) {
 
 ///////////////////////////////////////////
 
-void interactor_show_ray(interactor_id interactor, float skip, bool hide_inactive, float *ref_visible_amt, float *ref_active_amt) {
-	interactor_t* actor = interactor_get(interactor);
+void interactor_show_ray(interactor_t interactor, float skip, bool hide_inactive, float *ref_visible_amt, float *ref_active_amt) {
+	_interactor_t* actor = interactor_get(interactor);
 	if ((actor->tracked & button_state_active) == 0) return;
 
 	bool  actor_visible = hide_inactive == false || actor->focused_prev != 0;
@@ -223,8 +242,8 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 		const hand_t* hand = input_hand((handed_)i);
 
 		// Poke
-		interactor_id id         = ref_hands->poke[i];
-		interactor_t* interactor = interactor_get(id);
+		interactor_t id         = ref_hands->poke[i];
+		_interactor_t* interactor = interactor_get(id);
 		interactor_set_radius(id, hand->fingers[1][4].radius);
 		interactor_update    (id,
 			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : interactor->capsule_end_world, hand->fingers[1][4].position,
@@ -259,7 +278,8 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100,
 				hand->aim, head.position + vec3{0,-0.12f,0}, vec3_zero,
 				far_pinch_state, hand->aim_ready);
-			interactor_show_ray(id, 0.07f, true, &ref_hands->ray_visible[i], &ref_hands->ray_active[i]);
+			if (local.draw_interactors)
+				interactor_show_ray(id, 0.07f, true, &ref_hands->ray_visible[i], &ref_hands->ray_active[i]);
 		}
 	}
 }
@@ -296,14 +316,15 @@ void interact_mode_controllers_step(interact_mode_controllers_t* ref_controllers
 
 		// controller ray
 
-		interactor_id id = ref_controllers->far[i];
+		interactor_t id = ref_controllers->far[i];
 		interactor_update(id,
 			ctrl->aim.position, ctrl->aim.position + ctrl->aim.orientation*vec3_forward * 100,
 			ctrl->aim, head.position + vec3{ 0,-0.12f,0 }, vec3{ ctrl->stick.x, ctrl->stick.y, 0 }* 0.02f,
 			button_make_state(ref_controllers->trigger_last[i]>0.5f, ctrl->trigger>0.5f),
 			ctrl->tracked);
 		ref_controllers->trigger_last[i] = ctrl->trigger;
-		interactor_show_ray(id, 0, false, &ref_controllers->ray_visible[i], &ref_controllers->ray_active[i]);
+		if (local.draw_interactors)
+			interactor_show_ray(id, 0, false, &ref_controllers->ray_visible[i], &ref_controllers->ray_active[i]);
 	}
 }
 
@@ -390,12 +411,12 @@ void interact_mode_eyes_step(interact_mode_eyes_t* ref_eyes) {
 bool32_t ui_is_interacting(handed_ hand) {
 	if (local.input_mode == interact_mode_controllers) {
 
-		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
 		return actor->active_prev != 0 || actor->focused_prev != 0;
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
 		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
 
 		actor = interactor_get(local.hands.pinch[hand]);
@@ -408,7 +429,7 @@ bool32_t ui_is_interacting(handed_ hand) {
 
 		if (hand == handed_left) return false;
 
-		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = interactor_get(local.mouse.interactor);
 		return actor->active_prev != 0 || actor->focused_prev != 0;
 
 	}
@@ -423,12 +444,12 @@ button_state_ ui_last_element_hand_active(handed_ hand) {
 
 	if (local.input_mode == interact_mode_controllers) {
 
-		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
 		return button_make_state(actor->active_prev == last, actor->active == last);
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
 		if (actor->active_prev != 0 || actor->active != 0)
 			return button_make_state( actor->active_prev == last, actor->active == last);
 
@@ -444,7 +465,7 @@ button_state_ ui_last_element_hand_active(handed_ hand) {
 
 		if (hand == handed_left) return button_state_inactive;
 
-		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = interactor_get(local.mouse.interactor);
 		return button_make_state(actor->active_prev == last, actor->active == last);
 
 	}
@@ -462,12 +483,12 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 	id_hash_t last = ui_id_last_element();
 	if (local.input_mode == interact_mode_controllers) {
 
-		const interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
 		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
 		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
 			return button_make_state( actor->focused_prev_prev == last, actor->focused_prev == last);
 
@@ -483,7 +504,7 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 
 		if (hand == handed_left) return button_state_inactive;
 
-		const interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = interactor_get(local.mouse.interactor);
 		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
 	}
