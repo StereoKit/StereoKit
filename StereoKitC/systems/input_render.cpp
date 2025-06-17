@@ -196,14 +196,11 @@ void input_controller_model_set(handed_ hand, model_t model) {
 ///////////////////////////////////////////
 
 model_t input_controller_model_get(handed_ hand) {
-	model_t result = nullptr;
-	if (local.controller_model[hand] == nullptr) {
-		if (xr_ext_interaction_render_model_available()) result = xr_ext_interaction_render_model_get(hand);
-		else                                             result = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
-	}
-
-	if (result != nullptr)
-		model_addref(result);
+	model_t result = local.controller_model[hand];
+	if (result == nullptr && xr_ext_interaction_render_model_available()) result = xr_ext_interaction_render_model_get(hand);
+	if (result == nullptr)                                                result = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
+	
+	model_addref(result);
 	return result;
 }
 
