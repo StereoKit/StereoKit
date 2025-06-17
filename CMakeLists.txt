@@ -185,9 +185,9 @@ include("cmake/CPM.cmake")
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.1.47
+    NAME openxr_loader # 1.1.49
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.47
+    GIT_TAG release-1.1.49
     GIT_SHALLOW 1
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
@@ -426,6 +426,10 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/composition_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
   StereoKitC/xr_backends/extensions/debug_utils.cpp
+  StereoKitC/xr_backends/extensions/ext_interaction_render_model.h
+  StereoKitC/xr_backends/extensions/ext_interaction_render_model.cpp
+  StereoKitC/xr_backends/extensions/ext_render_model.h
+  StereoKitC/xr_backends/extensions/ext_render_model.cpp
   StereoKitC/xr_backends/extensions/eye_interaction.h
   StereoKitC/xr_backends/extensions/eye_interaction.cpp
   StereoKitC/xr_backends/extensions/fb_colorspace.h
