@@ -37,7 +37,7 @@
         Square44x44Logo="Assets\UWP\Square44x44Logo.png"
         Description="StereoKitTest_NetUWP"
         BackgroundColor="transparent">
-        <uap:DefaultTile Wide310x150Logo="Assets\UWP\Wide310x150Logo.png"/>
+        <uap:DefaultTile Wide310x150Logo="Assets\UWP\Wide310x150Logo.png" Square71x71Logo="Assets\UWP\SmallTile.png" Square310x310Logo="Assets\UWP\LargeTile.png"/>
         <uap:SplashScreen Image="Assets\UWP\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
