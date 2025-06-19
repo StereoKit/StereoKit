@@ -549,317 +549,6 @@ namespace StereoKit
 		Tip          = 4
 	}
 
-	/// <summary>This describes how a UI element moves when being dragged 
-	/// around by a user!</summary>
-	public enum UIMove
-	{
-		/// <summary>The element follows the position and orientation of the 
-		/// user's hand exactly.</summary>
-		Exact,
-		/// <summary>The element follows the position of the user's hand, but
-		/// orients to face the user's head instead of just using the hand's
-		/// rotation.</summary>
-		FaceUser,
-		/// <summary>This element follows the hand's position only, completely
-		/// discarding any rotation information.</summary>
-		PosOnly,
-		/// <summary>Do not allow user input to change the element's pose at
-		/// all! You may also be interested in UI.Push/PopSurface.</summary>
-		None,
-	}
-
-	/// <summary>A description of what type of window to draw! This is a bit
-	/// flag, so it can contain multiple elements.</summary>
-	[Flags]
-	public enum UIWin
-	{
-		/// <summary>A normal window has a head and a body to it. Both can be
-		/// grabbed.</summary>
-		Normal = Head | Body,
-		/// <summary>No body, no head. Not really a flag, just set to this
-		/// value. The Window will still be grab/movable. To prevent it from
-		/// being grabbable, combine with the UIMove.None option, or switch
-		/// to UI.Push/PopSurface.</summary>
-		Empty = 1 << 0,
-		/// <summary>Flag to include a head on the window.</summary>
-		Head = 1 << 1,
-		/// <summary>Flag to include a body on the window.</summary>
-		Body = 1 << 2,
-	}
-
-	/// <summary>Used with StereoKit's UI, and determines the interaction
-	/// confirmation behavior for certain elements, such as the UI.HSlider!
-	/// </summary>
-	public enum UIConfirm
-	{
-		/// <summary>The user must push a button with their finger to confirm
-		/// interaction with this element. This is simpler to activate as it
-		/// requires no learned gestures, but may result in more false 
-		/// positives.</summary>
-		Push = 0,
-		/// <summary>The user must use a pinch gesture to interact with this
-		/// element. This is much harder to activate by accident, but does
-		/// require the user to make a precise pinch gesture. You can pretty
-		/// much be sure that's what the user meant to do!</summary>
-		Pinch,
-		/// <summary>HSlider specific. Same as Pinch, but pulling out from the
-		/// slider creates a scaled slider that lets you adjust the slider at a
-		/// more granular resolution.</summary>
-		VariablePinch
-	}
-
-	/// <summary>This is a bit flag that describes different types and
-	/// combinations of gestures used within the UI system.</summary>
-	[Flags]
-	public enum UIGesture
-	{
-		/// <summary>Default zero state, no gesture at all.</summary>
-		None = 0,
-		/// <summary>A pinching action, calculated by taking the distance
-		/// between the tip of the thumb and the index finger.</summary>
-		Pinch = 1 << 0,
-		/// <summary>A gripping or grasping motion meant to represent a full
-		/// hand grab. This is calculated using the distance between the root
-		/// and the tip of the ring finger.</summary>
-		Grip = 1 << 1,
-		/// <summary>This is a bit flag combination of both Pinch and Grip.
-		/// </summary>
-		PinchGrip = Pinch | Grip,
-	}
-
-	/// <summary>Determines when this UI function returns true.</summary>
-	public enum UINotify
-	{
-		/// <summary>This function returns true any time the values has 
-		/// changed!</summary>
-		Change,
-		/// <summary>This function returns true when the user has finished
-		/// interacting with it. This does not guarantee the value has changed.
-		/// </summary>
-		Finalize,
-	}
-
-	/// <summary>Used with StereoKit's UI to indicate a particular type of UI
-	/// element visual.</summary>
-	public enum UIVisual
-	{
-		/// <summary>Default state, no UI element at all.</summary>
-		None = 0,
-		/// <summary>A default root UI element. Not a particular element, but
-		/// other elements may refer to this if there is nothing more specific
-		/// present.</summary>
-		Default,
-		/// <summary>Refers to UI.Button elements.</summary>
-		Button,
-		/// <summary>Refers to UI.Toggle elements.</summary>
-		Toggle,
-		/// <summary>Refers to UI.Input elements.</summary>
-		Input,
-		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
-		Handle,
-		/// <summary>Refers to UI.Window/WindowBegin body panel element, this
-		/// element is used when a Window head is also present.</summary>
-		WindowBody,
-		/// <summary>Refers to UI.Window/WindowBegin body element, this element
-		/// is used when a Window only has the body panel, without a head.
-		/// </summary>
-		WindowBodyOnly,
-		/// <summary>Refers to UI.Window/WindowBegin head panel element, this
-		/// element is used when a Window body is also present.</summary>
-		WindowHead,
-		/// <summary>Refers to UI.Window/WindowBegin head element, this element
-		/// is used when a Window only has the head panel, without a body.
-		/// </summary>
-		WindowHeadOnly,
-		/// <summary>Refers to UI.HSeparator element.</summary>
-		Separator,
-		/// <summary>Refers to the back line component of the UI.HSlider
-		/// element for full lines.</summary>
-		SliderLine,
-		/// <summary>Refers to the back line component of the UI.HSlider
-		/// element for the active or "full" half of the line.</summary>
-		SliderLineActive,
-		/// <summary>Refers to the back line component of the UI.HSlider
-		/// element for the inactive or "empty" half of the line.</summary>
-		SliderLineInactive,
-		/// <summary>Refers to the push button component of the UI.HSlider
-		/// element when using UIConfirm.Push.</summary>
-		SliderPush,
-		/// <summary>Refers to the pinch button component of the UI.HSlider
-		/// element when using UIConfirm.Pinch.</summary>
-		SliderPinch,
-		/// <summary>Refers to UI.ButtonRound elements.</summary>
-		ButtonRound,
-		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
-		Panel,
-		/// <summary>Refers to the text position indicator carat on text input
-		/// elements.</summary>
-		Carat,
-		/// <summary>Refers to the grabbable area indicator outside a window.
-		/// </summary>
-		Aura,
-		/// <summary>A maximum enum value to allow for iterating through enum
-		/// values.</summary>
-		Max,
-	}
-
-	/// <summary>Theme color categories to pair with `UI.SetThemeColor`.
-	/// </summary>
-	public enum UIColor
-	{
-		/// <summary>The default category, used to indicate that no category
-		/// has been selected.</summary>
-		None = 0,
-		/// <summary>This is the main accent color used by window headers,
-		/// separators, etc.</summary>
-		Primary,
-		/// <summary>This is a background sort of color that should generally
-		/// be dark. Used by window bodies and backgrounds of certain elements.
-		/// </summary>
-		Background,
-		/// <summary>A normal UI element color, for elements like buttons and
-		/// sliders.</summary>
-		Common,
-		/// <summary>Not really used anywhere at the moment, maybe for the
-		/// UI.Panel.</summary>
-		Complement,
-		/// <summary>Text color! This should generally be really bright, and at
-		/// the very least contrast-ey.</summary>
-		Text,
-		/// <summary>A maximum enum value to allow for iterating through enum
-		/// values.</summary>
-		Max,
-	}
-
-	/// <summary>Indicates the state of a UI theme color.</summary>
-	public enum UIColorState
-	{
-		/// <summary>The UI element is in its normal resting state.</summary>
-		Normal,
-		/// <summary>The UI element has been activated fully by some type of
-		/// interaction.</summary>
-		Active,
-		/// <summary>The UI element is currently disabled, and cannot be used.
-		/// </summary>
-		Disabled
-	}
-
-	/// <summary>This specifies a particular padding mode for certain UI
-	/// elements, such as the UI.Panel! This describes where padding is applied
-	/// and how it affects the layout of elements.</summary>
-	public enum UIPad
-	{
-		/// <summary>No padding, this matches the element's layout bounds
-		/// exactly!</summary>
-		None,
-		/// <summary>This applies padding inside the element's layout bounds,
-		/// and will inflate the layout bounds to fit the extra padding.</summary>
-		Inside,
-		/// <summary>This will apply the padding outside of the layout bounds!
-		/// This will maintain the size and position of the layout volume, but
-		/// the visual padding will go outside of the volume.</summary>
-		Outside
-	}
-
-	/// <summary>Describes the layout of a button with image/text contents! You
-	/// can think of the naming here as being the location of the image, with
-	/// the text filling the remaining space.</summary>
-	public enum UIBtnLayout
-	{
-		/// <summary>Hide the image, and only show text.</summary>
-		None,
-		/// <summary>Image to the left, text to the right. Image will take up
-		/// no more than half the width.</summary>
-		Left,
-		/// <summary>Image to the right, text to the left. Image will take up
-		/// no more than half the width.</summary>
-		Right,
-		/// <summary>Image will be centered in the button, and fill up the
-		/// button as though it was the only element. Text will cram itself
-		/// under the padding below the image.</summary>
-		Center,
-		/// <summary>Same as `Center`, but omitting the text.</summary>
-		CenterNoText,
-	}
-
-	/// <summary>This describes how a layout should be cut up! Used with
-	/// `UI.LayoutPushCut`.</summary>
-	public enum UICut
-	{
-		/// <summary>This cuts a chunk from the left side of the current
-		/// layout. This will work for layouts that are auto-sizing, and fixed
-		/// sized.</summary>
-		Left,
-		/// <summary>This cuts a chunk from the right side of the current
-		/// layout. This will work for layouts that are fixed sized, but not
-		/// layouts that auto-size on the X axis!</summary>
-		Right,
-		/// <summary>This cuts a chunk from the top side of the current
-		/// layout. This will work for layouts that are auto-sizing, and fixed
-		/// sized.</summary>
-		Top,
-		/// <summary>This cuts a chunk from the bottom side of the current
-		/// layout. This will work for layouts that are fixed sized, but not
-		/// layouts that auto-size on the Y axis!</summary>
-		Bottom,
-	}
-
-	/// <summary>For UI elements that can be oriented horizontally or
-	/// vertically, this specifies that orientation.</summary>
-	public enum UIDir
-	{
-		/// <summary>The element should be layed out along the horizontal axis.
-		/// </summary>
-		Horizontal,
-		/// <summary>The element should be layed out along the vertical axis.
-		/// </summary>
-		Vertical,
-	}
-
-	/// <summary>For elements that contain corners, this bit flag allows you to
-	/// specify which corners.</summary>
-	public enum UICorner
-	{
-		/// <summary> No corners at all. </summary>
-		None        = 0,
-		/// <summary>The top right corner.</summary>
-		TopRight    = 1 << 1,
-		/// <summary>The top left corner.</summary>
-		TopLeft     = 1 << 0,
-		/// <summary>The bottom left corner.</summary>
-		BottomLeft  = 1 << 3,
-		/// <summary>The bottom right corner.</summary>
-		BottomRight = 1 << 2,
-		/// <summary>All corners.</summary>
-		All    = TopLeft    | TopRight | BottomLeft | BottomRight,
-		/// <summary>The top left and top right corners.</summary>
-		Top    = TopLeft    | TopRight,
-		/// <summary>The bottom left and bottom right corners.</summary>
-		Bottom = BottomLeft | BottomRight,
-		/// <summary>The top left and bottom left corners.</summary>
-		Left   = TopLeft    | BottomLeft,
-		/// <summary>The top right and bottom right corners.</summary>
-		Right  = TopRight   | BottomRight,
-	}
-
-	/// <summary>This describes how UI elements with scrollable regions scroll
-	/// around or use scroll bars! This allows you to enable or disable
-	/// vertical and horizontal scrolling.</summary>
-	public enum UIScroll
-	{
-		/// <summary>No scroll bars or scrolling.</summary>
-		None       = 0,
-		/// <summary>This will enable vertical scroll bars or scrolling.
-		/// </summary>
-		Vertical   = 1 << 0,
-		/// <summary>This will enable horizontal scroll bars or scrolling.
-		/// </summary>
-		Horizontal = 1 << 1,
-		/// <summary>This will enable both vertical and horizontal scroll bars
-		/// or scrolling.</summary>
-		Both = Vertical | Horizontal,
-	}
-
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the
 	/// 'silhouette' of the mesh, or the shape the mesh would take if you spun
 	/// this line of points in a cylinder.</summary>
@@ -961,22 +650,22 @@ namespace StereoKit
 		public int      interactor;
 	}
 
-    /// <summary>A bit-flag enum for describing alignment or positioning.
-    /// Items can be combined using the '|' operator, like so:
-    /// `Align alignment = Align.YTop | Align.XLeft;`
-    /// Avoid combining multiple items of the same axis. There are also a
-    /// complete list of valid bit flag combinations! These are the values
-    /// without an axis listed in their names, 'TopLeft', 'BottomCenter',
-    /// etc.</summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct TextAlign
-    {
+	/// <summary>A bit-flag enum for describing alignment or positioning.
+	/// Items can be combined using the '|' operator, like so:
+	/// `Align alignment = Align.YTop | Align.XLeft;`
+	/// Avoid combining multiple items of the same axis. There are also a
+	/// complete list of valid bit flag combinations! These are the values
+	/// without an axis listed in their names, 'TopLeft', 'BottomCenter',
+	/// etc.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct TextAlign
+	{
 		private int value;
 		private TextAlign(int v) => value = v;
 		private TextAlign(TextAlign v) => value = v.value;
 
-        /// <summary>On the x axis, this item should start on the left.</summary>
-        public static TextAlign XLeft = new TextAlign(1 << 0);
+		/// <summary>On the x axis, this item should start on the left.</summary>
+		public static TextAlign XLeft = new TextAlign(1 << 0);
 		/// <summary>On the y axis, this item should start at the top.</summary>
 		public static TextAlign YTop = new TextAlign(1 << 1);
 		/// <summary>On the x axis, the item should be centered.</summary>
@@ -1020,34 +709,34 @@ namespace StereoKit
 		/// <param name="b">Second TextAlign</param>
 		/// <returns>Bitwise operation of a and b.</returns>
 		public static TextAlign operator |(TextAlign a, TextAlign b) => new TextAlign(a.value | b.value);
-        /// <summary>Allow Flag-like enum behavior.</summary>
-        /// <param name="a">First TextAlign</param>
-        /// <param name="b">Second TextAlign</param>
-        /// <returns>Bitwise operation of a and b.</returns>
-        public static TextAlign operator &(TextAlign a, TextAlign b) => new TextAlign(a.value & b.value);
-        /// <summary>Allow Flag-like enum behavior.</summary>
-        /// <param name="a">First TextAlign</param>
-        /// <param name="b">Second TextAlign</param>
-        /// <returns>Bitwise operation of a and b.</returns>
-        public static TextAlign operator ^(TextAlign a, TextAlign b) => new TextAlign(a.value ^ b.value);
-        /// <summary>Allow Flag-like enum behavior.</summary>
-        /// <param name="a">First TextAlign</param>
-        /// <returns>Bitwise operation of a.</returns>
-        public static TextAlign operator ~(TextAlign a) => new TextAlign(~a.value);
+		/// <summary>Allow Flag-like enum behavior.</summary>
+		/// <param name="a">First TextAlign</param>
+		/// <param name="b">Second TextAlign</param>
+		/// <returns>Bitwise operation of a and b.</returns>
+		public static TextAlign operator &(TextAlign a, TextAlign b) => new TextAlign(a.value & b.value);
+		/// <summary>Allow Flag-like enum behavior.</summary>
+		/// <param name="a">First TextAlign</param>
+		/// <param name="b">Second TextAlign</param>
+		/// <returns>Bitwise operation of a and b.</returns>
+		public static TextAlign operator ^(TextAlign a, TextAlign b) => new TextAlign(a.value ^ b.value);
+		/// <summary>Allow Flag-like enum behavior.</summary>
+		/// <param name="a">First TextAlign</param>
+		/// <returns>Bitwise operation of a.</returns>
+		public static TextAlign operator ~(TextAlign a) => new TextAlign(~a.value);
 
-        /// <summary>For back compatibility, allows conversion from a TextAlign
-        /// into an Align while providing a good obsolescence message for it.
+		/// <summary>For back compatibility, allows conversion from a TextAlign
+		/// into an Align while providing a good obsolescence message for it.
 		/// </summary>
-        /// <param name="a">Source TextAlign.</param>
-        /// <returns>An equivalent Align.</returns>
-        [Obsolete("Use Align instead")]
-        public static implicit operator Align(TextAlign a) => (Align)a;
-        /// <summary>For back compatibility, allows conversion from a TextAlign
-        /// into a Pivot while providing a good obsolescence message for it.
+		/// <param name="a">Source TextAlign.</param>
+		/// <returns>An equivalent Align.</returns>
+		[Obsolete("Use Align instead")]
+		public static implicit operator Align(TextAlign a) => (Align)a;
+		/// <summary>For back compatibility, allows conversion from a TextAlign
+		/// into a Pivot while providing a good obsolescence message for it.
 		/// </summary>
-        /// <param name="a">Source TextAlign.</param>
-        /// <returns>An equivalent Pivot.</returns>
-        [Obsolete("Use Pivot instead")]
-        public static implicit operator Pivot(TextAlign a) => (Pivot)a;
-    }
+		/// <param name="a">Source TextAlign.</param>
+		/// <returns>An equivalent Pivot.</returns>
+		[Obsolete("Use Pivot instead")]
+		public static implicit operator Pivot(TextAlign a) => (Pivot)a;
+	}
 }
