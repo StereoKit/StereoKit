@@ -7,7 +7,9 @@ class Program
 	enum BindLang
 	{
 		None,
+		Debug,
 		CSharp,
+		Zig,
 	}
 
 	static void Main(string[] args)
@@ -18,6 +20,7 @@ class Program
 			//-f "$(SolutionDir)\StereoKitC\stereokit.h" -o SKOverrides.txt -d "$(SolutionDir)\StereoKit\Native"
 			args = new string[] { 
 				"-f", "../../../../../StereoKitC/stereokit.h",
+				"-f", "../../../../../StereoKitC/stereokit_ui.h",
 				"-o", "SKOverrides.txt",
 				"-d", "../../../../../StereoKit/Native"};
 		}
@@ -97,12 +100,27 @@ class Program
 
 		// Parse the files provided
 		Console.WriteLine($"Parsing {files.Count} file(s)");
-		CppCompilation ast = CppParser.ParseFiles(files);
+
+		// Any exception here is room for improvement
+		ModuleException[] moduleExceptions = new[]
+		{
+			// These modules are multiple word names, which isn't so clear
+			new ModuleException { name = "model_node",       prefix = "model_node_" },
+			new ModuleException { name = "text_style",       prefix = "text_style_" },
+			// Nested modules don't have great support in the header
+			new ModuleException { name = "backend_openxr",  prefix = "backend_openxr_" },
+			new ModuleException { name = "backend_android", prefix = "backend_android_" },
+			new ModuleException { name = "backend_d3d11",   prefix = "backend_d3d11_" },
+			new ModuleException { name = "backend_opengl",  prefix = "backend_opengl_" },
+		};
+		SKHeaderData parseData = SKHeaderParser.Parse(files, moduleExceptions);
 
 		// And create bindings for it all!
 		switch(lang)
 		{
-			case BindLang.CSharp: BindCSharp.Bind(ast, destFolder); break;
+			case BindLang.CSharp: BindCSharp.Bind(parseData, destFolder); break;
+			case BindLang.Zig:    BindZig   .Bind(parseData, destFolder); break;
+			case BindLang.Debug:  BindDebug .Bind(parseData);             break;
 		}
 	}
 
@@ -120,6 +138,6 @@ class Program
                   parsing and converting. You can provide more than one file
                   this way.
     -l language   Binding language. What bindings are generated from the the 
-                  provided header files. Valid options are: CSharp.");
+                  provided header files. Valid options are: Debug, CSharp, Zig.");
 	}
 }

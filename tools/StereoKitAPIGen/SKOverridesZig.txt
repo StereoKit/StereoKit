@@ -1,17 +1,20 @@
-﻿# Start with the native types that don't follow our rules
-int8_t sbyte
-int16_t short
-int32_t int
-int64_t long
-uint8_t byte
-uint16_t ushort
-uint32_t uint
-uint64_t ulong
-bool32_t bool
-float float
-double double
+# Start with the native types that don't follow our rules
+int8_t i8
+int16_t i16
+int32_t i32
+int64_t i64
+uint8_t u8
+uint16_t u16
+uint32_t u32
+uint64_t u64
+bool32_t bool32
+float f32
+double f64
 void void
-char32_t uint
+char32_t u32
+char16_t u16
+char8_t u8
+char u8
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -48,12 +51,11 @@ material_param_uint4 UInt4
 log_ LogLevel
 log_inform Info
 
+backend_openxr BackendOpenXR
 backend_xr_type_ BackendXRType
 backend_xr_type_webxr WebXR
 backend_xr_type_openxr OpenXR
 backend_graphics_d3d11 D3D11
-
-app_mode_xr XR
 
 backend_graphics_opengl_glx OpenGL_GLX
 backend_graphics_opengl_wgl OpenGL_WGL
@@ -67,21 +69,35 @@ display_mode_mixedreality MixedReality
 tex_format_depthstencil DepthStencil
 button_state_ BtnState
 color128 Color
-transparency_msaa MSAA
 
-sk_settings_t SKSettings
-vind_t uint
-vert_t Vertex
-model_node_id int
-sh_light_t SHLight
-openxr_handle_t ulong
-asset_t IntPtr
+vind_t u32
+vert_t Vert
+model_node_id i32
+openxr_handle_t u64
+asset_t anyopaque
 
-size_t UIntPtr
+size_t usize
 
-device_display_get_fov _
-platform_file_picker _
-platform_file_picker_sz _
-sk_step _
-sk_run _
-sk_run_data _
+# reserved names
+align alignment
+type typ
+
+pose_matrix toMatrix
+pose_matrix_out toMatrixOut
+tex_asset_state getAssetState
+input_pointer getPointer
+input_pointer_count getPointerCount
+input_hand getHand
+input_controller getController
+input_key getKey
+input_mouse getMouse
+input_head getHead
+input_eyes getEyes
+mic_device_name getDeviceName
+mic_device_count getDeviceCount
+time_scale setScale
+sound_duration getDuration
+text_size sizeOf
+text_size_16 sizeOf16
+
+ui_settings setSettings
