@@ -143,7 +143,7 @@ void sound_write_samples(sound_t sound, const float *samples, uint64_t sample_co
 
 ///////////////////////////////////////////
 
-uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_count) {
+uint64_t sound_read_samples(sound_t sound, float *ref_samples, uint64_t sample_count) {
 	if (sound->type != sound_type_stream) { log_err("Sound read/write is only supported for streaming type sounds!"); return 0; }
 
 	ma_uint32 available = ma_pcm_rb_available_read(&sound->stream_buffer);
@@ -159,7 +159,7 @@ uint64_t sound_read_samples(sound_t sound, float *out_samples, uint64_t sample_c
 		ma_result res = ma_pcm_rb_acquire_read(&sound->stream_buffer, &readable, &read_from);
 		if (res != MA_SUCCESS) { break; }
 		
-		memcpy(out_samples+read, read_from, (size_t)(readable * sizeof(float)));
+		memcpy(ref_samples+read, read_from, (size_t)(readable * sizeof(float)));
 		
 		res = ma_pcm_rb_commit_read(&sound->stream_buffer, readable);
 		if (res != MA_SUCCESS && res != MA_AT_END) { break; }

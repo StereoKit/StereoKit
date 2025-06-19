@@ -1708,7 +1708,7 @@ public enum UIScroll
 
 /// <summary>Used with StereoKit's UI to indicate a particular type of UI
 /// element visual.</summary>
-public enum UIVis
+public enum UIVisual
 {
 	/// <summary>Default state, no UI element at all.</summary>
 	None = 0,

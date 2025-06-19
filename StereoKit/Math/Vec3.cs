@@ -5,6 +5,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -14,6 +15,7 @@ namespace StereoKit
 	/// 
 	/// StereoKit uses a right-handed coordinate system, where +x is to the
 	/// right, +y is upwards, and -z is forward.</summary>
+	[StructLayout(LayoutKind.Sequential)]
 	public struct Vec3
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be

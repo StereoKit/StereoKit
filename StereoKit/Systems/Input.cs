@@ -1,7 +1,7 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 using System;
 using System.Collections.Generic;
@@ -54,12 +54,20 @@ namespace StereoKit
 
 	/// <summary>Information about a hand!</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public class Hand {
+	public struct Hand {
+		// To keep this struct blittable, we're doing some arcane stuff with
+		// Span and a whole lot of fields so that we can avoid C#'s managed
+		// arrays.
+		private HandJoint _0,  _1,  _2,  _3,  _4;
+		private HandJoint _5,  _6,  _7,  _8,  _9;
+		private HandJoint _10, _11, _12, _13, _14;
+		private HandJoint _15, _16, _17, _18, _19;
+		private HandJoint _20, _21, _22, _23, _24;
 		/// <summary>This is a 2D array with 25 HandJoints. You can get the
 		/// right joint by `finger*5 + joint`, but really, just use Hand.Get
 		/// or Hand[] instead. See Hand.Get for more info!</summary>
-		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 25)]
-		public HandJoint[]  fingers;
+		public Span<HandJoint> fingers => MemoryMarshal.CreateSpan(ref _0, 25);
+
 		/// <summary>Pose of the wrist. This is located at the base of your
 		/// hand, and has a rigid orientation that points forward towards your
 		/// fingers. Its orientation is unrelated to the forearm. This pose can
@@ -201,7 +209,7 @@ namespace StereoKit
 	/// information, buttons, analog sticks and triggers! There's also a Menu
 	/// button that's tracked separately at Input.ContollerMenu.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public class Controller
+	public struct Controller
 	{
 		/// <summary>The grip pose of the controller. This approximately
 		/// represents the center of the controller where it's gripped by the
@@ -338,8 +346,6 @@ namespace StereoKit
 		static List<EventListener> listeners   = new List<EventListener>();
 		static bool                initialized = false;
 		static InputEventCallback  callback;
-		static Hand[]              hands       = new Hand[2] { new Hand(), new Hand() };
-		static Controller[]        controllers = new Controller[2] { new Controller(), new Controller() };
 
 		/// <summary>If the device has eye tracking hardware and the app has
 		/// permission to use it, then this is the most recently tracked eye
@@ -395,10 +401,8 @@ namespace StereoKit
 		/// <returns>A reference to a class that contains state information 
 		/// about the indicated controller.</returns>
 		public static Controller Controller(Handed handed)
-		{
-			Marshal.PtrToStructure(NativeAPI.input_controller(handed), controllers[(int)handed]);
-			return controllers[(int)handed];
-		}
+			=> Marshal.PtrToStructure<Controller>(NativeAPI.input_controller(handed));
+
 		/// <summary>This is the state of the controller's menu button, this
 		/// is not attached to any particular hand, so it's independent of a
 		/// left or right controller.</summary>
@@ -444,10 +448,8 @@ namespace StereoKit
 		/// <param name="handed">Do you want the left or the right hand?
 		/// </param>
 		/// <returns>A copy of the entire set of hand data!</returns>
-		public static Hand Hand(Handed handed) {
-			Marshal.PtrToStructure(NativeAPI.input_hand(handed), hands[(int)handed]);
-			return hands[(int)handed];
-		}
+		public static Hand Hand(Handed handed) => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+
 		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
 		/// that information is simulated, like in the case of a mouse, or
@@ -461,10 +463,7 @@ namespace StereoKit
 		/// <param name="handed">Do you want the left or the right hand? 0 is
 		/// left, and 1 is right.</param>
 		/// <returns>A copy of the entire set of hand data!</returns>
-		public static Hand Hand(int handed){
-			Marshal.PtrToStructure(NativeAPI.input_hand((Handed)handed), hands[handed]);
-			return hands[handed];
-		}
+		public static Hand Hand(int handed) => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand((Handed)handed));
 
 		/// <summary>This gets the _current_ source of the hand joints! This
 		/// allows you to distinguish between fully articulated joints, and

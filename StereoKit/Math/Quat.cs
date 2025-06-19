@@ -6,6 +6,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -17,6 +18,7 @@ namespace StereoKit
 	/// If you're interested in learning the details though, 3Blue1Brown and
 	/// Ben Eater have an [excellent interactive lesson](https://eater.net/quaternions)
 	/// about them!</summary>
+	[StructLayout(LayoutKind.Sequential)]
 	public struct Quat
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be

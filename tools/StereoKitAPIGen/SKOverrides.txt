@@ -69,6 +69,8 @@ button_state_ BtnState
 color128 Color
 transparency_msaa MSAA
 
+ui_vis_ UIVisual
+
 sk_settings_t SKSettings
 vind_t uint
 vert_t Vertex

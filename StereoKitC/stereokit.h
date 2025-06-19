@@ -1780,7 +1780,7 @@ SK_API sound_t      sound_create_stream  (float buffer_duration);
 SK_API sound_t      sound_create_samples (const float *in_arr_samples_at_48000s, uint64_t sample_count);
 SK_API sound_t      sound_generate       (float (*audio_generator)(float sample_time), float duration);
 SK_API void         sound_write_samples  (sound_t sound, const float *in_arr_samples,  uint64_t sample_count);
-SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_arr_samples, uint64_t sample_count);
+SK_API uint64_t     sound_read_samples   (sound_t sound, float       *ref_arr_samples, uint64_t sample_count);
 SK_API uint64_t     sound_unread_samples (sound_t sound);
 SK_API uint64_t     sound_total_samples  (sound_t sound);
 SK_API uint64_t     sound_cursor_samples (sound_t sound);
@@ -1853,7 +1853,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
-SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** keyboard_layout, int layouts_num);
+SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** keyboard_layout, int32_t layouts_num);
 
 ///////////////////////////////////////////
 
@@ -2311,7 +2311,7 @@ SK_API pose_t                anchor_get_pose                 (const anchor_t anc
 SK_API bool32_t              anchor_get_changed              (const anchor_t anchor);
 SK_API const char*           anchor_get_name                 (const anchor_t anchor);
 SK_API button_state_         anchor_get_tracked              (const anchor_t anchor);
-SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** perception_spatial_anchor);
+SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** out_perception_spatial_anchor);
 
 SK_API void                  anchor_clear_stored             (void);
 SK_API anchor_caps_          anchor_get_capabilities         (void);

@@ -6,12 +6,14 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
 	/// <summary>A vector with 2 components: x and y. This can represent a 
 	/// point in 2D space, a directional vector, or any other sort of value 
 	/// with 2 dimensions to it!</summary>
+	[StructLayout(LayoutKind.Sequential)]
 	public struct Vec2
 	{
 		/// <summary>The internal, wrapped System.Numerics type. This can be
