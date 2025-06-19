@@ -1,10 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<OutputPath>../bin/</OutputPath>
 		<DocumentationFile>../bin/StereoKit.xml</DocumentationFile>
+
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<NoWarn>1701;1702;1573</NoWarn>
 	</PropertyGroup>
