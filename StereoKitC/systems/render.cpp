@@ -762,6 +762,16 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
 
+	// A temporary fix for multiview trying to render to mono rendertargets
+	if (view_count == 1) {
+		memset(&local.global_buffer.view      [1], 0, sizeof(local.global_buffer.view      [1]));
+		memset(&local.global_buffer.proj      [1], 0, sizeof(local.global_buffer.proj      [1]));
+		memset(&local.global_buffer.proj_inv  [1], 0, sizeof(local.global_buffer.proj_inv  [1]));
+		memset(&local.global_buffer.viewproj  [1], 0, sizeof(local.global_buffer.viewproj  [1]));
+		memset(&local.global_buffer.camera_pos[1], 0, sizeof(local.global_buffer.camera_pos[1]));
+		memset(&local.global_buffer.camera_dir[1], 0, sizeof(local.global_buffer.camera_dir[1]));
+	}
+
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
