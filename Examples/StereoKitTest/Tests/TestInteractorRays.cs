@@ -2,7 +2,7 @@
 using System.Linq;
 using StereoKit;
 
-class TestInteractors : ITest
+class TestInteractorRays : ITest
 {
 	struct Update(Vec3 pos, Vec3 dir, BtnState state)
 	{
