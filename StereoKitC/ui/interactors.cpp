@@ -211,6 +211,7 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 	if (!ui_is_enabled() || move_type == ui_move_none) return false;
 
 	matrix to_handle_parent_local = *hierarchy_to_local();
+	matrix handle_parent_to_world = *hierarchy_to_world();
 	hierarchy_push_pose(*ref_handle_pose);
 
 	interactor_event_ event_mask = (interactor_event_)0;
