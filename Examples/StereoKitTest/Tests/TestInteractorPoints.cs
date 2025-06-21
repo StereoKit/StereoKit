@@ -36,13 +36,12 @@ class TestInteractorPoints : ITest
 		new (V.XYZ(0,0, 0.2f), V.XYZ(0,0,-1), BtnState.Inactive),
 	];
 	Update[] sliderDrag = [ // Requires slider size of 0.2f
-		new (V.XYZ(-.1f,0,0.2f),   V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ(-.1f,0,0), V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ(-.1f,0,0), V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ(  0, 0,0), V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ( .1f,0,0), V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ(-.1f,0,0), V.XYZ(0,0,-1), BtnState.Inactive),
-		new (V.XYZ(-.1f,0,0.2f),   V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ(-.1f,0,0.2f), V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ(-.1f,0,0.0f), V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ(  0, 0,0.0f), V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ( .1f,0,0.0f), V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ(-.1f,0,0.0f), V.XYZ(0,0,-1), BtnState.Inactive),
+		new (V.XYZ(-.1f,0,0.2f), V.XYZ(0,0,-1), BtnState.Inactive),
 	];
 	Test[] testUpdates;
 
@@ -64,8 +63,8 @@ class TestInteractorPoints : ITest
 			new ("Toggle",  buttonClick, ()=>{ toggleEvt   = UI.Toggle     ("Toggle", ref toggle); },             (f)=>{ return new bool[] {false, false, true, false}[f] == toggleEvt && new bool[] {false, false, true, true}[f] == toggle; } ),
 			new ("Radio1",  buttonClick, ()=>{ if (UI.Radio("Radio 1", radio == 0)) radio = 0; },                 (f)=>{ return new int [] {-1,    -1,     0,    0}   [f] == radio; } ),
 			new ("Radio2",  buttonClick, ()=>{ if (UI.Radio("Radio 2", radio == 1)) radio = 1; },                 (f)=>{ return new int [] { 0,     0,     1,    1}   [f] == radio; } ),
-			new ("Slider1", sliderDrag,  ()=>{ slider1Evt = UI.HSlider("slider1", ref slider1, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false, false}[f] == slider1Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0, 0}[f] - slider1) < 0.0001f; } ),
-			new ("Slider2", sliderDrag,  ()=>{ slider2Evt = UI.HSlider("slider2", ref slider2, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false, false}[f] == slider2Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0, 0}[f] - slider2) < 0.0001f; } ),
+			new ("Slider1", sliderDrag,  ()=>{ slider1Evt = UI.HSlider("slider1", ref slider1, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false, false, false}[f] == slider1Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0, 0, 0}[f] - slider1) < 0.0001f; } ),
+			new ("Slider2", sliderDrag,  ()=>{ slider2Evt = UI.HSlider("slider2", ref slider2, 0, 1, 0, 0.2f); }, (f)=>{ return new bool[] { false, false, true, true, true, false, false, false}[f] == slider2Evt && Math.Abs(new float[] { 0, 0, .5f, 1, 0, 0, 0, 0}[f] - slider2) < 0.0001f; } ),
 		];
 
 		prevDefault = Interaction.DefaultInteractors;
@@ -117,12 +116,11 @@ class TestInteractorPoints : ITest
 					Log.Err($"Failed interactor test {testUpdates[i].name} frame {frameIdx}");
 			}
 		}
-		UI.Button("Hi");
 		UI.WindowEnd();
 
 		//if (timer < Time.Totalf) {
 		//	timer = Time.Totalf + 0.25f;
-			frameIdx++;
+		frameIdx++;
 		//}
 	}
 	static float timer = 0;
@@ -142,7 +140,7 @@ class TestInteractorPoints : ITest
 	{
 		Mesh.Sphere.Draw(Material.Default, Matrix.TS(actor.Motion.position, actor.Radius*2));
 		Lines.Add(actor.Motion.position, prevPoint, Color.White, new Color(1,1,1,0.0f), 0.002f);
-		if (actor.TryGetFocusBounds(out Pose p, out Bounds b))
+		if (actor.TryGetFocusBounds(out Pose p, out Bounds b, out _))
 			Mesh.Cube.Draw(Material.UIBox, Matrix.TS(b.center, b.dimensions) * p.ToMatrix());
 	}
 }

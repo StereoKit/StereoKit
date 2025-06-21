@@ -133,7 +133,7 @@ class TestInteractorRays : ITest
 	static void DrawInteractor(Interactor actor)
 	{
 		Lines.Add(actor.Motion.Ray, 100, Color.White, 0.002f);
-		if (actor.TryGetFocusBounds(out Pose p, out Bounds b))
+		if (actor.TryGetFocusBounds(out Pose p, out Bounds b, out _))
 			Mesh.Cube.Draw(Material.UIBox, Matrix.TS(b.center, b.dimensions) * p.ToMatrix());
 	}
 }
