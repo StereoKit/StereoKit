@@ -83,6 +83,7 @@ void interact_mode_eyes_step        (interact_mode_eyes_t*        ref_eyes);
 
 void interactor_modes_init() {
 	local = {};
+	local.draw_interactors = true;
 }
 
 ///////////////////////////////////////////
