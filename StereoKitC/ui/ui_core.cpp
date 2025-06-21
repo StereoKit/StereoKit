@@ -58,7 +58,7 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 		start, bounds.dimensions,
 		&focus, &interactor);
 
-	_interactor_t *actor = interactor_get(interactor);
+	_interactor_t *actor = _interactor_get(interactor);
 	if (actor != nullptr) {
 		result = interactor_set_active(actor, id_hash, actor->activation_type == interactor_activation_position
 			? (bool32_t)((focus              & button_state_active) != 0)
@@ -93,7 +93,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 		&focus_candidacy, &interactor, &interaction_at);
 
 	// If a hand is interacting, adjust the button surface accordingly
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) {
 		if (focus_candidacy & button_state_active) {
 			bool pressed;
@@ -187,7 +187,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	if (confirm_method == ui_confirm_push) {
 		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
 
-		actor = interactor_get(out->interactor);
+		actor = _interactor_get(out->interactor);
 		
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		activation_start.z += skui_settings.depth;
@@ -199,7 +199,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		actor = interactor_get(out->interactor);
+		actor = _interactor_get(out->interactor);
 		if (actor != nullptr) {
 			out->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
 		}

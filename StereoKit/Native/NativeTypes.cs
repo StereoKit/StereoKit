@@ -935,7 +935,7 @@ namespace StereoKit
 	/// hashes to represent UI elements. See `UI.StackHash` for creating a UI
 	/// identifier.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct IdHash
+	public struct IdHash : IEquatable<IdHash>
 	{
 		ulong hash;
 
@@ -955,6 +955,28 @@ namespace StereoKit
 
 		/// <summary>An empty IdHash that represents the unassigned state.</summary>
 		public static IdHash None => new IdHash { hash = 0 };
+
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another hash.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public override bool Equals(object b) => (b is IdHash h) ? hash == h.hash : false;
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another hash.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public bool Equals(IdHash b) => hash == b.hash;
+		/// <summary>Same as ulong.GetHashCode</summary>
+		/// <returns>Same as ulong.GetHashCode</returns>
+		public override int GetHashCode() => hash.GetHashCode();
+		/// <summary>An equality test.</summary>
+		/// <param name="a">A hashed id.</param>
+		/// <param name="b">A hashed id.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public static bool operator ==(IdHash a, IdHash b) => a.hash == b.hash;
+		/// <summary>An inequality test.</summary>
+		/// <param name="a">A hashed id.</param>
+		/// <param name="b">A hashed id.</param>
+		/// <returns>True if unequal, false otherwise.</returns>
+		public static bool operator !=(IdHash a, IdHash b) => a.hash != b.hash;
 	}
 
 	/// <summary>Information about the current state of the UI's

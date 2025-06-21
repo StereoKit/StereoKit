@@ -1928,18 +1928,23 @@ typedef enum default_interactors_ {
 
 typedef int32_t interactor_t;
 
-SK_API interactor_t          interactor_create          (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
-SK_API void                  interactor_destroy         (      interactor_t interactor);
-SK_API void                  interactor_update          (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
-SK_API void                  interactor_set_min_distance(      interactor_t interactor, float min_distance);
-SK_API float                 interactor_get_min_distance(const interactor_t interactor);
-SK_API void                  interactor_set_radius      (      interactor_t interactor, float radius);
-SK_API float                 interactor_get_radius      (const interactor_t interactor);
-SK_API button_state_         interactor_get_tracked     (const interactor_t interactor);
-SK_API id_hash_t             interactor_get_focused     (const interactor_t interactor);
-SK_API id_hash_t             interactor_get_active      (const interactor_t interactor);
-SK_API bool32_t              interactor_get_focus_bounds(const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local);
-SK_API pose_t                interactor_get_motion      (const interactor_t interactor);
+SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
+SK_API void                  interactor_destroy                 (      interactor_t interactor);
+SK_API void                  interactor_update                  (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
+SK_API void                  interactor_set_min_distance        (      interactor_t interactor, float min_distance);
+SK_API float                 interactor_get_min_distance        (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_start       (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_end         (const interactor_t interactor);
+SK_API void                  interactor_set_radius              (      interactor_t interactor, float radius);
+SK_API float                 interactor_get_radius              (const interactor_t interactor);
+SK_API button_state_         interactor_get_tracked             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_focused             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_active              (const interactor_t interactor);
+SK_API bool32_t              interactor_get_focus_bounds        (const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local);
+SK_API pose_t                interactor_get_motion              (const interactor_t interactor);
+
+SK_API int32_t               interactor_count                   (void);
+SK_API interactor_t          interactor_get                     (int32_t index);
 
 SK_API void                  interaction_set_default_interactors(default_interactors_ default_interactors);
 SK_API default_interactors_  interaction_get_default_interactors();

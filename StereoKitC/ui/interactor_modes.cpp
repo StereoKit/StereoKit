@@ -159,7 +159,7 @@ void interact_mode_switch(interact_mode_ mode) {
 ///////////////////////////////////////////
 
 void interactor_show_ray(interactor_t interactor, float skip, bool hide_inactive, float *ref_visible_amt, float *ref_active_amt) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if ((actor->tracked & button_state_active) == 0) return;
 
 	bool  actor_visible = hide_inactive == false || actor->focused_prev != 0;
@@ -244,7 +244,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 
 		// Poke
 		interactor_t id         = ref_hands->poke[i];
-		_interactor_t* interactor = interactor_get(id);
+		_interactor_t* interactor = _interactor_get(id);
 		interactor_set_radius(id, hand->fingers[1][4].radius);
 		interactor_update    (id,
 			(hand->tracked_state & button_state_just_active) ? hand->fingers[1][4].position : interactor->capsule_end_world, hand->fingers[1][4].position,
@@ -357,7 +357,7 @@ void interact_mode_mouse_step(interact_mode_mouse_t *ref_mouse) {
 	interactor_update(ref_mouse->interactor,
 		ray.pos, end,
 		pose_t{ end, quat_lookat(ray.pos, end) }, end, vec3{ m->scroll_change / -6000.0f, 0, 0 },
-		input_key(key_mouse_left), button_make_state(interactor_get(ref_mouse->interactor)->tracked & button_state_active, tracked));
+		input_key(key_mouse_left), button_make_state(_interactor_get(ref_mouse->interactor)->tracked & button_state_active, tracked));
 }
 
 ///////////////////////////////////////////
@@ -412,25 +412,25 @@ void interact_mode_eyes_step(interact_mode_eyes_t* ref_eyes) {
 bool32_t ui_is_interacting(handed_ hand) {
 	if (local.input_mode == interact_mode_controllers) {
 
-		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.controllers.far[hand]);
 		return actor->active_prev != 0 || actor->focused_prev != 0;
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.hands.far[hand]);
 		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
 
-		actor = interactor_get(local.hands.pinch[hand]);
+		actor = _interactor_get(local.hands.pinch[hand]);
 		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
 
-		actor = interactor_get(local.hands.poke[hand]);
+		actor = _interactor_get(local.hands.poke[hand]);
 		if (actor->active_prev != 0 || actor->focused_prev != 0) return true;
 
 	} else if (local.input_mode == interact_mode_mouse) {
 
 		if (hand == handed_left) return false;
 
-		const _interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = _interactor_get(local.mouse.interactor);
 		return actor->active_prev != 0 || actor->focused_prev != 0;
 
 	}
@@ -445,20 +445,20 @@ button_state_ ui_last_element_hand_active(handed_ hand) {
 
 	if (local.input_mode == interact_mode_controllers) {
 
-		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.controllers.far[hand]);
 		return button_make_state(actor->active_prev == last, actor->active == last);
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.hands.far[hand]);
 		if (actor->active_prev != 0 || actor->active != 0)
 			return button_make_state( actor->active_prev == last, actor->active == last);
 
-		actor = interactor_get(local.hands.pinch[hand]);
+		actor = _interactor_get(local.hands.pinch[hand]);
 		if (actor->active_prev != 0 || actor->active != 0)
 			return button_make_state(actor->active_prev == last, actor->active == last);
 
-		actor = interactor_get(local.hands.poke[hand]);
+		actor = _interactor_get(local.hands.poke[hand]);
 		if (actor->active_prev != 0 || actor->active != 0)
 			return button_make_state(actor->active_prev == last, actor->active == last);
 
@@ -466,7 +466,7 @@ button_state_ ui_last_element_hand_active(handed_ hand) {
 
 		if (hand == handed_left) return button_state_inactive;
 
-		const _interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = _interactor_get(local.mouse.interactor);
 		return button_make_state(actor->active_prev == last, actor->active == last);
 
 	}
@@ -484,20 +484,20 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 	id_hash_t last = ui_id_last_element();
 	if (local.input_mode == interact_mode_controllers) {
 
-		const _interactor_t* actor = interactor_get(local.controllers.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.controllers.far[hand]);
 		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
 	} else if (local.input_mode == interact_mode_hands) {
 
-		const _interactor_t* actor = interactor_get(local.hands.far[hand]);
+		const _interactor_t* actor = _interactor_get(local.hands.far[hand]);
 		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
 			return button_make_state( actor->focused_prev_prev == last, actor->focused_prev == last);
 
-		actor = interactor_get(local.hands.pinch[hand]);
+		actor = _interactor_get(local.hands.pinch[hand]);
 		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
 			return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
-		actor = interactor_get(local.hands.poke[hand]);
+		actor = _interactor_get(local.hands.poke[hand]);
 		if (actor->focused_prev_prev != 0 || actor->focused_prev != 0)
 			return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
@@ -505,7 +505,7 @@ button_state_ ui_last_element_hand_focused(handed_ hand) {
 
 		if (hand == handed_left) return button_state_inactive;
 
-		const _interactor_t* actor = interactor_get(local.mouse.interactor);
+		const _interactor_t* actor = _interactor_get(local.mouse.interactor);
 		return button_make_state(actor->focused_prev_prev == last, actor->focused_prev == last);
 
 	}

@@ -22,17 +22,18 @@ namespace sk {
 
 struct interactor_state_t {
 	array_t<_interactor_t> interactors;
-	id_hash_t             last_element;
-	bool32_t              show_volumes;
-	material_t            show_volume_mat;
-	mesh_t                show_volume_mesh;
+	int32_t                interactors_live;
+	id_hash_t              last_element;
+	bool32_t               show_volumes;
+	material_t             show_volume_mat;
+	mesh_t                 show_volume_mesh;
 
-	array_t<bool32_t>     enabled_stack;
-	array_t<id_hash_t>    id_stack;
+	array_t<bool32_t>      enabled_stack;
+	array_t<id_hash_t>     id_stack;
 
-	array_t<bool>         preserve_keyboard_stack;
-	id_hash_t             keyboard_focus_lost;
-	id_hash_t             keyboard_focus_lost_write;
+	array_t<bool>          preserve_keyboard_stack;
+	id_hash_t              keyboard_focus_lost;
+	id_hash_t              keyboard_focus_lost_write;
 };
 static interactor_state_t local = {};
 
@@ -327,6 +328,8 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 ///////////////////////////////////////////
 
 interactor_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions) {
+	local.interactors_live += 1;
+
 	_interactor_t result = {};
 	result.shape_type      = shape_type;
 	result.events          = events;
@@ -351,13 +354,36 @@ interactor_t interactor_create(interactor_type_ shape_type, interactor_event_ ev
 ///////////////////////////////////////////
 
 void interactor_destroy(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
-	if (actor) actor->generation = -actor->generation;
+	_interactor_t* actor = _interactor_get(interactor);
+	if (actor) {
+		actor->generation = -actor->generation;
+		local.interactors_live -= 1;
+	}
 }
 
 ///////////////////////////////////////////
 
-_interactor_t* interactor_get(interactor_t interactor) {
+int32_t interactor_count() {
+	return local.interactors_live;
+}
+
+///////////////////////////////////////////
+
+interactor_t interactor_get(int32_t index) {
+	int32_t curr = 0;
+	for (int32_t i=0; i<local.interactors.count; i+=1) {
+		int32_t gen = local.interactors[i].generation;
+		if (gen_is_alive(gen)) {
+			if (curr == index) return gen_id_make(i, gen);
+			curr++;
+		}
+	}
+	return 0;
+}
+
+///////////////////////////////////////////
+
+_interactor_t* _interactor_get(interactor_t interactor) {
 	int32_t idx = gen_id_index(interactor);
 	if (idx >= local.interactors.count) return nullptr;
 
@@ -370,7 +396,7 @@ _interactor_t* interactor_get(interactor_t interactor) {
 ///////////////////////////////////////////
 
 void interactor_update(interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor == nullptr) return;
 
 	actor->tracked     = tracked;
@@ -395,70 +421,86 @@ void interactor_update(interactor_t interactor, vec3 capsule_start, vec3 capsule
 ///////////////////////////////////////////
 
 void interactor_set_min_distance(interactor_t interactor, float min_distance) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) actor->min_distance = min_distance;
 }
 
 ///////////////////////////////////////////
 
 float interactor_get_min_distance(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->min_distance : 0;
 }
 
 ///////////////////////////////////////////
 
+vec3 interactor_get_capsule_start(const interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
+	return actor ? actor->capsule_start_world : vec3{};
+}
+
+///////////////////////////////////////////
+
+vec3 interactor_get_capsule_end(const interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
+	return actor ? actor->capsule_end_world : vec3{};
+}
+
+///////////////////////////////////////////
+
 void interactor_set_radius(interactor_t interactor, float radius) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) actor->capsule_radius = radius;
 }
 
 ///////////////////////////////////////////
 
 float interactor_get_radius(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->capsule_radius : 0;
 }
 
 ///////////////////////////////////////////
 
 button_state_ interactor_get_tracked(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->tracked : button_state_inactive;
 }
 
 ///////////////////////////////////////////
 
 id_hash_t interactor_get_focused(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->focused_prev : 0;
 }
 
 ///////////////////////////////////////////
 
 id_hash_t interactor_get_active(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->active_prev : 0;
 }
 
 ///////////////////////////////////////////
 
-bool32_t interactor_get_focus_bounds(interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local) {
-	_interactor_t* actor = interactor_get(interactor);
+bool32_t interactor_get_focus_bounds(interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local) {
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor == nullptr || actor->focused_prev == 0) {
 		if (out_pose_world  ) *out_pose_world   = pose_identity;
 		if (out_bounds_local) *out_bounds_local = {};
+		if (out_bounds_local) *out_at_local     = {};
 		return false;
 	}
 	if (out_pose_world  ) *out_pose_world   = actor->focus_pose_world;
 	if (out_bounds_local) *out_bounds_local = actor->focus_bounds_local;
+	if (out_at_local    ) *out_at_local     = actor->focus_intersection_local;
 	return true;
 }
 
 ///////////////////////////////////////////
 
 pose_t interactor_get_motion(interactor_t interactor) {
-	_interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->motion : pose_identity;
 }
 
