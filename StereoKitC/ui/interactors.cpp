@@ -310,6 +310,14 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 			if (actor->pinch_state & button_state_just_inactive) {
 				actor->active = 0;
 			}
+
+			// Update the focus pose with the updated position
+			actor->focus_pose_world = matrix_transform_pose(handle_parent_to_world, *ref_handle_pose);
+			matrix to_local_update = pose_matrix_inv(actor->focus_pose_world);
+			vec3 update_at;
+			if (bounds_capsule_intersect(handle_bounds, matrix_transform_pt(to_local_update, actor->capsule_start_world), matrix_transform_pt(to_local_update, actor->capsule_end_world), actor->capsule_radius, &update_at)) {
+				actor->focus_intersection_local = update_at - actor->focus_bounds_local.center;
+			}
 		}
 	}
 	hierarchy_pop();
