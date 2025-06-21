@@ -159,21 +159,6 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		window_relative_pos, {size.x, size.y, button_depth*0.4f },
 		& secondary_focus, &secondary_interactor);
 	ui_pop_id();
-	_interactor_t* secondary_actor = interactor_get(secondary_interactor);
-	if (secondary_focus & button_state_active) {
-		vec2 secondary_motion = vec2_zero;
-		if (secondary_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ secondary_actor->secondary_motion.x,  secondary_actor->secondary_motion.x };
-		if (secondary_actor->secondary_motion_dimensions >= 2) secondary_motion = vec2{ secondary_actor->secondary_motion.x, -secondary_actor->secondary_motion.y };
-		vec2 new_percent = {
-			range.x == 0 ? 0.5f : fminf(1, fmaxf(0, percent.x + secondary_motion.x)),
-			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
-		vec2 new_val = min + new_percent * range;
-
-		out->button_center = {
-			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
-			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
-		*value = new_val;
-	}
 
 	vec2 finger_at = {};
 	_interactor_t* actor = nullptr;
@@ -203,6 +188,27 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		if (actor != nullptr) {
 			out->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
 		}
+	}
+
+	// Combine focus from both elements for using secondary motion
+	_interactor_t* secondary_actor = _interactor_get(secondary_interactor);
+	if ((secondary_actor && secondary_actor->focused_prev == secondary_id) ||
+		(actor           && actor          ->focused_prev == id)) {
+
+		_interactor_t* motion_actor     = actor ? actor : secondary_actor;
+		vec2           secondary_motion = vec2_zero;
+		if (motion_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ motion_actor->secondary_motion.x,  motion_actor->secondary_motion.x };
+		if (motion_actor->secondary_motion_dimensions >= 2) secondary_motion = vec2{ motion_actor->secondary_motion.x, -motion_actor->secondary_motion.y };
+
+		vec2 new_percent = {
+			range.x == 0 ? 0.5f : fminf(1, fmaxf(0, percent.x + secondary_motion.x)),
+			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
+		vec2 new_val = min + new_percent * range;
+
+		out->button_center = {
+			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
+			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
+		*value = new_val;
 	}
 
 	if (actor != nullptr) {
