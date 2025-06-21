@@ -664,7 +664,7 @@ void ui_show_volumes(bool32_t show) {
 ///////////////////////////////////////////
 
 bool32_t interactor_is_preoccupied(const _interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
-	if (interactor == nullptr || gen_is_dead(interactor->generation)) return true;
+	if (interactor == nullptr || gen_is_dead(interactor->generation) || interactor->tracked == button_state_inactive) return true;
 
 	// Check if this actor can interact, or if it's already busy with something
 	// else.
