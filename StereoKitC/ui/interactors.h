@@ -54,7 +54,8 @@ struct _interactor_t {
 	// This is local to the motion pose
 	vec3                   interaction_intersection_local;
 
-	float                  focus_priority;
+
+	int32_t                focus_priority;
 	float                  focus_distance;
 	id_hash_t              focused_prev_prev;
 	id_hash_t              focused_prev;
@@ -76,13 +77,13 @@ void             interaction_init           ();
 void             interaction_update         ();
 void             interaction_shutdown       ();
 
-void             interaction_1h_box         (id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_candidacy, interactor_t* out_interactor);
-void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, interactor_t* out_interactor, vec3* out_interaction_at_local);
-bool32_t         interaction_handle         (id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
+void             interaction_1h_box         (id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_candidacy, interactor_t* out_interactor);
+void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, interactor_t* out_interactor, vec3* out_interaction_at_local);
+bool32_t         interaction_handle         (id_hash_t id, int32_t priority, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
 
 _interactor_t*   interactor_get             (interactor_t interactor);
 bool32_t         interactor_is_preoccupied  (const _interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused);
-button_state_    interactor_set_focus       (      _interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, float priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local, vec3 element_intersection_local);
+button_state_    interactor_set_focus       (      _interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, int32_t priority, float distance, pose_t element_pose_world, bounds_t element_bounds_local, vec3 element_intersection_local);
 button_state_    interactor_set_active      (      _interactor_t* interactor, id_hash_t for_el_id, bool32_t active);
 bool32_t         interactor_check_box       (const _interactor_t* interactor, bounds_t box, vec3* out_at, float* out_priority);
 
