@@ -11,13 +11,13 @@
 namespace sk {
 
 typedef struct xr_render_model_t {
-	XrRenderModelIdEXT id;
-	XrRenderModelEXT   render_model;
-	model_t            model;
-	XrSpace            space;
-	model_node_id*     anim_nodes;
-	int32_t            anim_node_count;
-	XrRenderModelStateEXT state_query;
+	XrRenderModelIdEXT    id;
+	XrRenderModelEXT      render_model;
+	model_t               model;
+	XrSpace               space;
+	model_node_id*        anim_nodes;
+	int32_t               anim_node_count;
+	XrRenderModelStateEXT state_query = { XR_TYPE_RENDER_MODEL_STATE_EXT };
 } xr_render_model_t;
 
 void              xr_ext_render_model_register();
