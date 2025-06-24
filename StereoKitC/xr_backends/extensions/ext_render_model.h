@@ -18,7 +18,7 @@ typedef struct xr_render_model_t {
 	model_node_id*     anim_nodes;
 	int32_t            anim_node_count;
 	XrRenderModelStateEXT state_query;
-};
+} xr_render_model_t;
 
 void              xr_ext_render_model_register();
 xr_render_model_t xr_ext_render_model_get     (XrRenderModelIdEXT id);
