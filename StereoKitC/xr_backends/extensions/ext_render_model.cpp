@@ -92,23 +92,17 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 	model_info.gltfExtensionCount = sizeof(gltf_exts) / sizeof(gltf_exts[0]);
 	model_info.gltfExtensions     = gltf_exts;
 	XrResult r = xrCreateRenderModelEXT(xr_session, &model_info, &result.render_model);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrCreateRenderModelEXT", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelEXT", openxr_string(r)); return {}; }
 
-	XrRenderModelSpaceCreateInfoEXT   space_info       = { XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT };
+	XrRenderModelSpaceCreateInfoEXT space_info = { XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT };
 	space_info.renderModel = result.render_model;
 	r = xrCreateRenderModelSpaceEXT(xr_session, &space_info, &result.space);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrCreateRenderModelSpaceEXT", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelSpaceEXT", openxr_string(r)); xr_ext_render_model_destroy(&result); return {}; }
 
 	XrRenderModelPropertiesGetInfoEXT props_info       = { XR_TYPE_RENDER_MODEL_PROPERTIES_GET_INFO_EXT };
 	XrRenderModelPropertiesEXT        props            = { XR_TYPE_RENDER_MODEL_PROPERTIES_EXT          };
 	r = xrGetRenderModelPropertiesEXT(result.render_model, &props_info, &props);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]","xrGetRenderModelPropertiesEXT", openxr_string(r));
-
-	XrRenderModelAssetEXT            asset;
-	XrRenderModelAssetCreateInfoEXT  asset_info = { XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT };
-	asset_info.cacheId = props.cacheId;
-	r = xrCreateRenderModelAssetEXT(xr_session, &asset_info, &asset);
-	if (XR_FAILED(r)) log_warnf("xrCreateRenderModelAssetEXT: [%s]", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelPropertiesEXT", openxr_string(r)); xr_ext_render_model_destroy(&result); return {}; }
 
 	char name[128];
 	XrUuidEXT uuid = props.cacheId;
@@ -119,6 +113,12 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 		uuid.data[12], uuid.data[13], uuid.data[14], uuid.data[15]);
 	result.model = model_find(name);
 
+	XrRenderModelAssetEXT            asset;
+	XrRenderModelAssetCreateInfoEXT  asset_info = { XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT };
+	asset_info.cacheId = props.cacheId;
+	r = xrCreateRenderModelAssetEXT(xr_session, &asset_info, &asset);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelAssetEXT", openxr_string(r)); xr_ext_render_model_destroy(&result); return {}; }
+
 	if (result.model == nullptr) {
 		XrRenderModelAssetDataGetInfoEXT data_info = { XR_TYPE_RENDER_MODEL_ASSET_DATA_GET_INFO_EXT };
 		XrRenderModelAssetDataEXT        data      = { XR_TYPE_RENDER_MODEL_ASSET_DATA_EXT };
@@ -126,7 +126,7 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 		data.bufferCapacityInput = data.bufferCountOutput;
 		data.buffer              = sk_malloc_t(uint8_t, data.bufferCountOutput);
 		r = xrGetRenderModelAssetDataEXT(asset, &data_info, &data);
-		if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelAssetDataEXT", openxr_string(r));
+		if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelAssetDataEXT", openxr_string(r)); xrDestroyRenderModelAssetEXT(asset); xr_ext_render_model_destroy(&result); return {}; }
 
 		result.model = model_create_mem(name, data.buffer, data.bufferCountOutput);
 		model_set_id(result.model, name);
@@ -135,13 +135,14 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 	}
 	result.model = model_copy(result.model);
 
+	// This part may be cacheable so we don't need to get an asset _every_ time
 	XrRenderModelAssetPropertiesGetInfoEXT asset_props_info = { XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_GET_INFO_EXT };
 	XrRenderModelAssetPropertiesEXT        asset_props      = { XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_EXT };
 	XrRenderModelAssetNodePropertiesEXT*   node_props       = sk_malloc_t(XrRenderModelAssetNodePropertiesEXT, props.animatableNodeCount);
 	asset_props.nodePropertyCount = props.animatableNodeCount;
 	asset_props.nodeProperties    = node_props;
 	r = xrGetRenderModelAssetPropertiesEXT(asset, &asset_props_info, &asset_props);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelAssetPropertiesEXT", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelAssetPropertiesEXT", openxr_string(r)); sk_free(node_props); xrDestroyRenderModelAssetEXT(asset); xr_ext_render_model_destroy(&result); return {}; }
 	result.anim_nodes      = sk_malloc_t(model_node_id, asset_props.nodePropertyCount);
 	result.anim_node_count = asset_props.nodePropertyCount;
 	for (int32_t i = 0; i < asset_props.nodePropertyCount; i++) {
@@ -163,10 +164,10 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 ///////////////////////////////////////////
 
 void xr_ext_render_model_update(xr_render_model_t* ref_model) {
-	XrRenderModelStateGetInfoEXT info  = { XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT };
+	XrRenderModelStateGetInfoEXT info = { XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT };
 	info.displayTime = xr_time;
 	XrResult r = xrGetRenderModelStateEXT(ref_model->render_model, &info, &ref_model->state_query);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelStateEXT", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelStateEXT", openxr_string(r)); return; }
 
 	for (int32_t i = 0; i < ref_model->state_query.nodeStateCount; i++) {
 		model_node_id node = ref_model->anim_nodes[i];
@@ -181,8 +182,9 @@ void xr_ext_render_model_update(xr_render_model_t* ref_model) {
 ///////////////////////////////////////////
 
 void xr_ext_render_model_destroy(xr_render_model_t* ref_model) {
-	model_release (ref_model->model);
-	xrDestroySpace(ref_model->space);
+	model_release(ref_model->model);
+	if (ref_model->render_model != XR_NULL_HANDLE) xrDestroyRenderModelEXT(ref_model->render_model);
+	if (ref_model->space        != XR_NULL_HANDLE) xrDestroySpace         (ref_model->space);
 	sk_free(ref_model->anim_nodes);
 	sk_free(ref_model->state_query.nodeStates);
 	*ref_model = {};

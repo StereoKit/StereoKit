@@ -131,7 +131,7 @@ void xr_ext_interaction_render_model_poll(void*, XrEventDataBuffer* event) {
 	xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, 0, &count, NULL);
 	XrRenderModelIdEXT* model_ids = sk_malloc_t(XrRenderModelIdEXT, count);
 	XrResult r = xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, count, &count, model_ids);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrEnumerateInteractionRenderModelIdsEXT", openxr_string(r));
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrEnumerateInteractionRenderModelIdsEXT", openxr_string(r)); return; }
 
 	// Get the new models
 	int32_t            new_count = count;
