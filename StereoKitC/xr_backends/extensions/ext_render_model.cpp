@@ -150,6 +150,7 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 		vec3   p = matrix_extract_translation(m);
 	}
 
+	result.state_query                = { XR_TYPE_RENDER_MODEL_STATE_EXT };
 	result.state_query.nodeStateCount = asset_props.nodePropertyCount;
 	result.state_query.nodeStates     = sk_malloc_t(XrRenderModelNodeStateEXT, asset_props.nodePropertyCount);
 
