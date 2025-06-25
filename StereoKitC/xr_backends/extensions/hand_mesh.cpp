@@ -92,6 +92,7 @@ xr_system_ xr_ext_msft_hand_mesh_initialize(void*) {
 	// mesh trackers.
 	for (int32_t h = 0; h < handed_max; h++) {
 		// Allocate memory for OpenXR to store hand mesh data in.
+		local.mesh_src[h]                                  = { XR_TYPE_HAND_MESH_MSFT };
 		local.mesh_src[h].indexBuffer.indexCapacityInput   = properties_mesh.maxHandMeshIndexCount;
 		local.mesh_src[h].indexBuffer.indices              = sk_malloc_t(uint32_t, properties_mesh.maxHandMeshIndexCount);
 		local.mesh_src[h].vertexBuffer.vertexCapacityInput = properties_mesh.maxHandMeshVertexCount;
