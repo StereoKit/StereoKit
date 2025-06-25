@@ -22,9 +22,9 @@ OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
 
 typedef struct xr_hand_mesh_state_t {
 	bool           available;
-	XrSpace        hand_space[2];
-	bool           mesh_dirty[2];
-	XrHandMeshMSFT mesh_src  [2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
+	XrSpace        hand_space[sk::handed_::handed_max];
+	bool           mesh_dirty[sk::handed_::handed_max];
+	XrHandMeshMSFT mesh_src  [sk::handed_::handed_max];
 } xr_hand_mesh_state_t;
 static xr_hand_mesh_state_t local = { };
 
