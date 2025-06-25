@@ -144,12 +144,13 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelAssetPropertiesEXT", openxr_string(r));
 	result.anim_nodes      = sk_malloc_t(model_node_id, asset_props.nodePropertyCount);
 	result.anim_node_count = asset_props.nodePropertyCount;
-	for (int32_t i = 0; i < asset_props.nodePropertyCount; i++) {
+	for (uint32_t i = 0; i < asset_props.nodePropertyCount; i++) {
 		result.anim_nodes[i] = model_node_find(result.model, asset_props.nodeProperties[i].uniqueName);
 		matrix m = model_node_get_transform_local(result.model, result.anim_nodes[i]);
 		vec3   p = matrix_extract_translation(m);
 	}
 
+	result.state_query                = { XR_TYPE_RENDER_MODEL_STATE_EXT };
 	result.state_query.nodeStateCount = asset_props.nodePropertyCount;
 	result.state_query.nodeStates     = sk_malloc_t(XrRenderModelNodeStateEXT, asset_props.nodePropertyCount);
 
@@ -168,7 +169,7 @@ void xr_ext_render_model_update(xr_render_model_t* ref_model) {
 	XrResult r = xrGetRenderModelStateEXT(ref_model->render_model, &info, &ref_model->state_query);
 	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelStateEXT", openxr_string(r));
 
-	for (int32_t i = 0; i < ref_model->state_query.nodeStateCount; i++) {
+	for (uint32_t i = 0; i < ref_model->state_query.nodeStateCount; i++) {
 		model_node_id node = ref_model->anim_nodes[i];
 
 		XrVector3f    p = ref_model->state_query.nodeStates[i].nodePose.position;
