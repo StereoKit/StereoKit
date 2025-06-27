@@ -149,9 +149,21 @@ elseif(WIN32)
     Comdlg32
     DXGI
     D3D11)
-    if (MSVC)
-      list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
-    endif()
+  if (MSVC)
+    # Required for ISAC spatial audio code
+    list(APPEND WINDOWS_LIBS WindowsApp)
+
+    # Static link with the vcruntime, otherwise we'll need to ship the vcruntime
+    # installer anywhere StereoKit needs to run (Windows). This costs ~3-400kb.
+    # Usually this is easier to do with CMAKE_MSVC_RUNTIME_LIBRARY, but something
+    # here was not liking that method.
+    set(CompilerFlags
+      CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
+      CMAKE_C_FLAGS   CMAKE_C_FLAGS_DEBUG   CMAKE_C_FLAGS_RELEASE   CMAKE_C_FLAGS_MINSIZEREL   CMAKE_C_FLAGS_RELWITHDEBINFO )
+    foreach(CompilerFlag ${CompilerFlags})
+      string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+    endforeach()
+  endif()
 endif()
 
 if (__MINGW32__)

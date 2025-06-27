@@ -17,7 +17,7 @@
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
-	#if defined(_DLL) || defined(BUILDING_DLL)
+	#if defined(SK_BUILD_SHARED)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
 		#define SK_EXIMPORT
