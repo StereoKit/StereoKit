@@ -34,7 +34,7 @@ jobs:
         cmake --build --preset Uwp_x64_Release_Fast
 
   native-linux-android-dotnet:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       CPM_SOURCE_CACHE: .deps_cache
 
