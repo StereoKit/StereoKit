@@ -8,7 +8,7 @@
 
 #define SK_VERSION_MAJOR 0
 #define SK_VERSION_MINOR 3
-#define SK_VERSION_PATCH 10
+#define SK_VERSION_PATCH 11
 #define SK_VERSION_PRERELEASE 0
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -17,7 +17,7 @@
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
-	#if defined(_DLL) || defined(BUILDING_DLL)
+	#if defined(SK_BUILD_SHARED)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
 		#define SK_EXIMPORT

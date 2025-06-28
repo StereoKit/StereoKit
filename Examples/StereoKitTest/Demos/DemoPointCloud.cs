@@ -39,7 +39,7 @@ public class PointCloud
 			verts = new Vertex[points.Length*4];
 		if (verts.Length != points.Length * 4)
 		{
-			Log.Err("You can re-use a point cloud, but  the number of points should stay the same!");
+			Log.Err("You can re-use a point cloud, but the number of points should stay the same!");
 			return;
 		}
 
@@ -145,7 +145,7 @@ class DemoPointCloud : ITest
 					Model model = Model.FromFile(file);
 					cloud      = new PointCloud(pointSize, model);
 					cloudScale = 0.5f / model.Bounds.dimensions.Length;
-				}, null, ".gltf", ".glb");
+				}, null, Assets.ModelFormats);
 			}
 			UI.HSlider("Cloud Scale", ref cloudScale, 0.001f, 2, 0);
 

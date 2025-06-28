@@ -11,7 +11,6 @@ namespace StereoKit
 	/// library!</summary>
 	public static class SK
 	{
-		private static SystemInfo              _system;
 		private static Steppers                _steppers         = new Steppers();
 		private static ConcurrentQueue<Action> _mainThreadInvoke = new ConcurrentQueue<Action>();
 
@@ -35,7 +34,7 @@ namespace StereoKit
 		/// system and its capabilities. There's a lot of different MR devices,
 		/// so it's nice to have code for systems with particular 
 		/// characteristics!</summary>
-		public static SystemInfo System => _system;
+		public static SystemInfo System => NativeAPI.sk_system_info();
 
 		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
@@ -157,10 +156,13 @@ namespace StereoKit
 			// of the final defaults or calculated settings.
 			Settings = NativeAPI.sk_get_settings();
 
-			// Get system information
-			if (result) { 
-				_system = NativeAPI.sk_system_info();
+			// Do a few things on success
+			if (result) {
 				Default.Initialize();
+
+				// Ensure any steppers already in the queue get initialized
+				// right away.
+				_steppers.DequeueActions();
 			}
 
 			Backend.OpenXR.CleanupInitialize();

@@ -149,9 +149,10 @@ elseif(WIN32)
     Comdlg32
     DXGI
     D3D11)
-    if (MSVC)
-      list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
-    endif()
+  if (MSVC)
+    # Required for ISAC spatial audio code
+    list(APPEND WINDOWS_LIBS WindowsApp)
+  endif()
 endif()
 
 if (__MINGW32__)
@@ -246,8 +247,8 @@ add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-  NAME sk_gpu # 2025.2.11
-  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.2.11/sk_gpu.v2025.2.11.zip
+  NAME sk_gpu # 2025.6.27
+  URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.6.27/sk_gpu.v2025.6.27.zip
 )
 # For building directly with in-progress sk_gpu changes, point this to your
 # local sk_gpu clone, and use it instead of CPM.
