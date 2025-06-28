@@ -4,57 +4,56 @@
 
 | Platform | Arch  | Size, kb | Size, bytes |
 | -------- | ----- | -------- | ----------- |
-| Win32    | x64   |    2,354 |   2,409,984 |
-| Win32    | ARM64 |    2,121 |   2,171,904 |
-| UWP      | x64   |    2,383 |   2,440,192 |
-| UWP      | ARM64 |    2,190 |   2,243,072 |
-| UWP      | ARM   |    1,872 |   1,917,440 |
-| Linux    | x64   |    3,631 |   3,718,576 |
-| Linux    | ARM64 |    3,272 |   3,350,384 |
-| Android  | x64   |    4,265 |   4,367,504 |
-| Android  | ARM64 |    3,946 |   4,040,312 |
+| Win32    | x64   |    2,748 |   2,813,952 |
+| Win32    | ARM64 |    2,440 |   2,498,048 |
+| UWP      | x64   |    2,398 |   2,456,064 |
+| UWP      | ARM64 |    2,184 |   2,236,928 |
+| UWP      | ARM   |    1,868 |   1,912,320 |
+| Linux    | x64   |    3,458 |   3,540,672 |
+| Linux    | ARM64 |    3,111 |   3,186,024 |
+| Android  | x64   |    4,267 |   4,369,736 |
+| Android  | ARM64 |    3,948 |   4,042,432 |
 ## Linux x64 Binary Breakdown
 
-This summary represents 2805/3090 kb, or 90.8%.
+This summary represents 2593/2894 kb, or 89.6%.
 
 |      Prefix/Function | kb   |
 | -------------------- | ---- |
-|                 ZSTD | 665  |
-|       reactphysics3d | 399  |
-|                   sk | 396  |
-|               basist | 386  |
-|                   ma | 219  |
-|                 stbi | 156  |
-|                cgltf | 81   |
-|                model | 47   |
+|                 ZSTD | 527  |
+|                   sk | 415  |
+|               basist | 388  |
+|       reactphysics3d | 381  |
+|                   ma | 209  |
+|                 stbi | 97   |
+|                cgltf | 82   |
+|                model | 44   |
 |               int sk | 44   |
+|                  HUF | 43   |
 |                   ui | 42   |
-|                  HUF | 39   |
-|                  tex | 37   |
-|                ZDICT | 35   |
+|                ZDICT | 36   |
 |                 Json | 32   |
-|                 mesh | 29   |
-| LoaderXrCreateInstance | 23   |
+|                  tex | 31   |
+|                      | 31   |
 |              meshopt | 22   |
+|                 mesh | 22   |
+|                stbtt | 20   |
 |                  sks | 19   |
-|                      | 19   |
 |     RuntimeInterface | 17   |
 |               render | 16   |
-|                stbtt | 14   |
-|             float sk | 13   |
-|                  std | 13   |
+|                  std | 16   |
+| LoaderXrCreateInstance | 14   |
 |             material | 12   |
-|               ZSTDMT | 11   |
+| ApiLayerManifestFile | 11   |
 |                   ss | 10   |
-| ApiLayerManifestFile | 10   |
+|             float sk | 10   |
 ## Android arm64 Binary Breakdown
 
-This summary represents 2538/2777 kb, or 91.4%.
+This summary represents 2539/2778 kb, or 91.4%.
 
 |      Prefix/Function | kb   |
 | -------------------- | ---- |
 |                 ZSTD | 422  |
-|                   sk | 385  |
+|                   sk | 386  |
 |               basist | 375  |
 |                  std | 303  |
 |       reactphysics3d | 269  |
