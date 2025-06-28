@@ -228,8 +228,8 @@ add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 if (NOT SK_LOCAL_SK_GPU)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.5.30
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.5.30/sk_gpu.v2025.5.30.zip
+    NAME sk_gpu # 2025.6.27
+    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.6.27/sk_gpu.v2025.6.27.zip
   )
 else()
   # For building directly with in-progress sk_gpu changes, point this to your

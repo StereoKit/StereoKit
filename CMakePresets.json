@@ -156,7 +156,11 @@
       "name":        "Win32_x64_Release",
       "description": "Release build for Win32 x64",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_RELEASE": "/MT",
+        "CMAKE_C_FLAGS_RELEASE": "/MT"
+      }
     },
     {
       "name":        "Win32_x64_Release_Fast",
@@ -200,7 +204,19 @@
       "description":  "Release build for Win32 Arm64",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS_RELEASE": "/MT",
+        "CMAKE_C_FLAGS_RELEASE": "/MT"
+      }
+    },
+    {
+      "name":     "Win32_Arm64_Release_Fast",
+      "inherits": "Win32_Arm64_Release",
+      "binaryDir":"${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
+      "cacheVariables": {
+        "SK_BUILD_TESTS":"OFF"
+      }
     },
     {
       "name":     "Win32_Arm64_Release_Fast",

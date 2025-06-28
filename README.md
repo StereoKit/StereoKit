@@ -23,7 +23,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 - Mixed Reality inputs like hands and eyes are trivial to access
 - Easy and powerful UI and interactions
-- Model formats: .gltf, .glb, .obj, .stl, ASCII .ply
+- Model formats: .gltf, .glb, .obj, .stl, .ply
 - Texture formats: .jpg, .png, .tga, .bmp, .psd, .gif, .hdr, .pic, .qoi, ktx2, cubemaps
 - Flexible shader/material system with built-in PBR
 - Performance-by-default instanced render pipeline
@@ -35,7 +35,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 ## Platform Support
 
-StereoKit supports HoloLens 2, Oculus Quest, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
+StereoKit supports Meta Quest, HoloLens 2, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
 
 These are the binaries that currently ship in the NuGet package. StereoKit developers working from C/C++ should be fine to build any architecture from this list of platforms.
 
@@ -59,7 +59,7 @@ using StereoKit;
 
 SK.Initialize();
 
-Model helmet = Model.FromFile("Assets/DamagedHelmet.gltf");
+Model helmet = Model.FromFile("DamagedHelmet.gltf");
 
 SK.Run(() => {
     helmet.Draw(Matrix.TS(Vec3.Zero, 0.1f));
