@@ -25,7 +25,7 @@ namespace sk {
 // GLTF spec can be found here:
 // https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html
 
-// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we 
+// GLTF uses a right-handed system, but it also defines +Z as forward. Here, we
 // rotate the gltf matrices so that they use -Z as forward, simplifying lookat math
 matrix gltf_orientation_correction = matrix_trs(vec3_zero, quat_from_angles(0, 180, 0));
 
@@ -35,8 +35,15 @@ matrix gltf_build_node_matrix (cgltf_node *curr);
 matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
 void   gltf_add_warning       (array_t<const char *> *warnings, const char *text);
 
-// This needs to be in cgltf.cpp due to the location of the json parser
-void gltf_parse_extras(model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+// These need to be in cgltf.cpp due to the location of the json parser
+
+typedef struct gltf_extension_t {
+	char* name;
+	dictionary_t<char*> data;
+} gltf_extension_t;
+
+void gltf_parse_extras    (model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+void gltf_parse_extensions(const cgltf_extension *extensions, size_t extensions_count, gltf_extension_t *out_result);
 
 ///////////////////////////////////////////
 
@@ -53,7 +60,7 @@ void gltf_add_warning(array_t<const char *> *warnings, const char *text) {
 bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const char *filename) {
 	if (node->skin == nullptr)
 		return false;
-	
+
 	cgltf_mesh      *m = node->mesh;
 	cgltf_primitive *p = &m->primitives[primitive_id];
 
@@ -159,7 +166,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 	// Find the skeleton for the mesh
 	bone_tr_ct = (int32_t)node->skin->joints_count;
 	bone_trs   = sk_malloc_t(matrix, bone_tr_ct);
-	if (node->skin->inverse_bind_matrices != nullptr) { 
+	if (node->skin->inverse_bind_matrices != nullptr) {
 		cgltf_buffer_view *buff      = node->skin->inverse_bind_matrices->buffer_view;
 		size_t             offset    = buff->offset + node->skin->inverse_bind_matrices->offset;
 		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
@@ -323,7 +330,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute* attr = &p->attributes[a];
 		const uint8_t*   buff = cgltf_buffer_view_data(attr->data->buffer_view) + attr->data->offset;
-		
+
 		// Make sure we have memory for our verts
 		if (vert_count < (int32_t)attr->data->count) {
 			vert_count = (int32_t)attr->data->count;
@@ -392,7 +399,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	// Now grab the mesh indices
-	
+
 	size_t  ind_count = 0;
 	vind_t *inds      = nullptr;
 	if (p->indices == nullptr) {
@@ -448,7 +455,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	meshopt_optimizeVertexCache(inds, inds, ind_count, final_vertex_count);
 	meshopt_optimizeOverdraw   (inds, inds, ind_count, &final_verts[0].pos.x, final_vertex_count, sizeof(vert_t), 1.05f);
 	meshopt_optimizeVertexFetch(final_verts, inds, ind_count, final_verts,    final_vertex_count, sizeof(vert_t));
-	
+
 	result = mesh_create();
 	mesh_set_data(result, final_verts, final_vertex_count, inds, (int32_t)ind_count);
 
@@ -538,7 +545,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 	if (image->buffer_view != nullptr) {
 		// If it's already a loaded buffer, like in a .glb
 		result = tex_create_mem((void*)((uint8_t*)image->buffer_view->buffer->data + image->buffer_view->offset), image->buffer_view->size, srgb_data, priority);
-		if (result == nullptr) 
+		if (result == nullptr)
 			log_warnf("[%s] Couldn't load texture: %s", filename, image->name);
 		else
 			tex_set_id(result, id);
@@ -606,7 +613,7 @@ material_t gltf_parsematerial(cgltf_data *data, cgltf_material *material, const 
 		return result;
 	}
 
-	// Use the shader that was provided, or pick a shader based on the 
+	// Use the shader that was provided, or pick a shader based on the
 	// material's attributes.
 	bool is_lightmap = gltf_material_is_lightmap(material);
 	if (shader != nullptr) {
@@ -829,7 +836,7 @@ matrix gltf_build_node_matrix(cgltf_node *curr) {
 ///////////////////////////////////////////
 
 matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root) {
-	return curr->parent == nullptr || curr == root 
+	return curr->parent == nullptr || curr == root
 		? gltf_build_node_matrix(curr)
 		: gltf_build_node_matrix(curr) * gltf_build_world_matrix(curr->parent, root);
 }
@@ -866,7 +873,7 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 
 		material_t    material = gltf_parsematerial(data, node->mesh->primitives[p].material, filename, shader, warnings);
 		model_node_id new_node = model_node_add_child(model, primitive_parent, node->name, node_transform, mesh, material);
-		if (node->skin) 
+		if (node->skin)
 			gltf_parseskin(model_node_get_mesh(model, new_node), node, (int)p, filename);
 		if (node_id == -1)
 			node_id = new_node;
@@ -884,6 +891,12 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 	if (node->extras.data) {
 		gltf_parse_extras(model, node_id, node->extras.data, strlen(node->extras.data));
 	}
+
+	// gltf_extension_t* extensions = nullptr;
+	// if (node->extensions_count > 0) {
+	// 	extensions = sk_malloc_t(gltf_extension_t, node->extensions_count);
+	// 	gltf_parse_extensions(node->extensions, node->extensions_count, extensions);
+	// }
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);
