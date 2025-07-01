@@ -36,14 +36,8 @@ matrix gltf_build_world_matrix(cgltf_node *curr, cgltf_node *root);
 void   gltf_add_warning       (array_t<const char *> *warnings, const char *text);
 
 // These need to be in cgltf.cpp due to the location of the json parser
-
-typedef struct gltf_extension_t {
-	char* name;
-	dictionary_t<char*> data;
-} gltf_extension_t;
-
-void gltf_parse_extras    (model_t model, model_node_id node, const char* extras_json, size_t extras_size);
-void gltf_parse_extensions(const cgltf_extension *extensions, size_t extensions_count, gltf_extension_t *out_result);
+void gltf_parse_extras   (model_t model, model_node_id node, const char* extras_json, size_t extras_size);
+void gltf_parse_extension(cgltf_extension extension, dictionary_t<char*> *out_result);
 
 ///////////////////////////////////////////
 
@@ -892,11 +886,22 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 		gltf_parse_extras(model, node_id, node->extras.data, strlen(node->extras.data));
 	}
 
-	// gltf_extension_t* extensions = nullptr;
-	// if (node->extensions_count > 0) {
-	// 	extensions = sk_malloc_t(gltf_extension_t, node->extensions_count);
-	// 	gltf_parse_extensions(node->extensions, node->extensions_count, extensions);
-	// }
+	for (int i = 0; i < node->extensions_count; i++) {
+		dictionary_t<char*> extension_values = {};
+		gltf_parse_extension(node->extensions[i], &extension_values);
+
+		if (strcmp(node->extensions[i].name, "KHR_node_visibility") == 0) {
+			for (int j = 0; j < extension_values.capacity; j++) {
+				if (extension_values.items[j].hash != 0) {
+					if (strcmp(extension_values.items[j].key, "visible") == 0) {
+						model_node_set_visible(model, node_id, strcmp(extension_values.items[j].value, "true") == 0);
+					} else {
+						log_warnf("[%s] Unhandled KHR_node_visibility value: %s", filename, extension_values.items[j].key);
+					}
+				}
+			}
+		}
+	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
 		gltf_add_node(model, shader, node_id, filename, data, node->children[i], node_map, warnings);
