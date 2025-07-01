@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
 // Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
 
 #define _CRT_SECURE_NO_WARNINGS 1
 
