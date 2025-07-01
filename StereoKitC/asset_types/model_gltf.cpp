@@ -901,6 +901,9 @@ void gltf_add_node(model_t model, shader_t shader, model_node_id parent, const c
 				}
 			}
 		}
+
+		extension_values.each([](char*& val) { sk_free(val); });
+		extension_values.free();
 	}
 
 	for (size_t i = 0; i < node->children_count; i++) {
