@@ -354,31 +354,6 @@ pointer_t *input_get_pointer(int32_t id) {
 
 ///////////////////////////////////////////
 
-int32_t input_pointer_count(input_source_ filter) {
-	int32_t result = 0;
-	for (int32_t i = 0; i < local.pointers.count; i++) {
-		if (local.pointers[i].source & filter)
-			result += 1;
-	}
-	return result;
-}
-
-///////////////////////////////////////////
-
-pointer_t input_pointer(int32_t index, input_source_ filter) {
-	int32_t curr = 0;
-	for (int32_t i = 0; i < local.pointers.count; i++) {
-		if (local.pointers[i].source & filter) {
-			if (curr == index)
-				return local.pointers[i];
-			curr += 1;
-		}
-	}
-	return {};
-}
-
-///////////////////////////////////////////
-
 void input_subscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
 	local.listeners.add({ source, input_event, input_event_callback });
 }
