@@ -524,12 +524,12 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 		int32_t idx = index + start;
 		if (idx > 1) return {};
 
-		interactor_id actor_id = local.controllers.far[idx];
+		interactor_t actor_id = local.controllers.far[idx];
 		pointer_t result   = {};
 		result.orientation = interactor_get_motion (actor_id).orientation;
-		result.state       = interactor_get        (actor_id)->pinch_state;
+		result.state       = _interactor_get       (actor_id)->pinch_state;
 		result.tracked     = interactor_get_tracked(actor_id);
-		result.ray         = { interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
+		result.ray         = { _interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
 		result.source      = idx == 0 ? input_source_hand_left : input_source_hand_right;
 		return result;
 	} break;
@@ -541,23 +541,23 @@ pointer_t input_pointer(int32_t index, input_source_ filter) {
 		int32_t idx = index + start;
 		if (idx > 1) return {};
 
-		interactor_id actor_id = local.hands.far[idx];
+		interactor_t actor_id = local.hands.far[idx];
 		pointer_t result   = {};
 		result.orientation = interactor_get_motion (actor_id).orientation;
-		result.state       = interactor_get        (actor_id)->pinch_state;
+		result.state       = _interactor_get        (actor_id)->pinch_state;
 		result.tracked     = interactor_get_tracked(actor_id);
-		result.ray         = { interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
+		result.ray         = { _interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
 		result.source      = idx == 0 ? input_source_hand_left : input_source_hand_right;
 		return result;
 	} break;
 	case interact_mode_mouse: {
 		if (index > 0) return {};
-		interactor_id actor_id = local.mouse.interactor;
+		interactor_t actor_id = local.mouse.interactor;
 		pointer_t result   = {};
 		result.orientation = interactor_get_motion (actor_id).orientation;
-		result.state       = interactor_get        (actor_id)->pinch_state;
+		result.state       = _interactor_get        (actor_id)->pinch_state;
 		result.tracked     = interactor_get_tracked(actor_id);
-		result.ray         = { interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
+		result.ray         = { _interactor_get(actor_id)->capsule_start_world, result.orientation * vec3_forward };
 		result.source      = input_source_hand_right;
 		return result;
 	} break;
