@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2024 Nick Klingensmith
- * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -53,8 +53,6 @@ typedef struct hand_system_t {
 	void       (*update_frame)   ();
 	void       (*update_poses)   ();
 } hand_system_t;
-
-extern int32_t input_hand_pointer_id[handed_max];
 
 void input_hand_init    ();
 void input_hand_shutdown();

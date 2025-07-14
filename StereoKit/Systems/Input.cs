@@ -1,10 +1,9 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -329,17 +328,8 @@ namespace StereoKit
 	/// heads, mice and pointers!</summary>
 	public static class Input
 	{
-		struct EventListener
-		{
-			public InputSource source;
-			public BtnState type;
-			public Action<InputSource, BtnState, Pointer> callback;
-		}
-		static List<EventListener> listeners   = new List<EventListener>();
-		static bool                initialized = false;
-		static InputEventCallback  callback;
-		static Hand[]              hands       = new Hand[2] { new Hand(), new Hand() };
-		static Controller[]        controllers = new Controller[2] { new Controller(), new Controller() };
+		static Hand[]       hands       = new Hand[2] { new Hand(), new Hand() };
+		static Controller[] controllers = new Controller[2] { new Controller(), new Controller() };
 
 		/// <summary>If the device has eye tracking hardware and the app has
 		/// permission to use it, then this is the most recently tracked eye
@@ -654,24 +644,6 @@ namespace StereoKit
 		public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
 			=> NativeAPI.input_pointer(index, filter);
 
-		static void Initialize()
-		{
-			initialized = true;
-			callback    = OnEvent; // This is stored in a persistent variable to force the callback from getting garbage collected!
-			NativeAPI.input_subscribe(InputSource.Any, BtnState.Any, callback);
-		}
-		static void OnEvent(InputSource source, BtnState evt, in Pointer pointer)
-		{
-			for (int i = 0; i < listeners.Count; i++)
-			{
-				if ((listeners[i].source & source) > 0 &&
-					(listeners[i].type   & evt) > 0)
-				{
-					listeners[i].callback(source, evt, pointer);
-				}
-			}
-		}
-
 		/// <summary>You can subscribe to input events from Pointer sources
 		/// here. StereoKit will call your callback and pass along a Pointer
 		/// that matches the position of that pointer at the moment the event
@@ -683,16 +655,9 @@ namespace StereoKit
 		/// is a bit flag.</param>
 		/// <param name="onEvent">The callback to call when the event occurs!
 		/// </param>
+		[Obsolete]
 		public static void Subscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
-			if (!initialized)
-				Initialize();
-
-			EventListener item;
-			item.callback = onEvent;
-			item.source   = eventSource;
-			item.type     = eventTypes;
-			listeners.Add(item);
 		}
 		/// <summary>Unsubscribes a listener from input events.</summary>
 		/// <param name="eventSource">The source this listener was originally
@@ -701,19 +666,9 @@ namespace StereoKit
 		/// registered for.</param>
 		/// <param name="onEvent">The callback this listener originally used.
 		/// </param>
+		[Obsolete]
 		public static void Unsubscribe(InputSource eventSource, BtnState eventTypes, Action<InputSource, BtnState, Pointer> onEvent)
 		{
-			if (!initialized)
-				Initialize();
-
-			for (int i = 0; i < listeners.Count; i++)
-			{
-				if (listeners[i].callback == onEvent && listeners[i].source == eventSource && listeners[i].type == eventTypes)
-				{
-					listeners.RemoveAt(i);
-					i--;
-				}
-			}
 		}
 		/// <summary>This function allows you to artifically insert an input
 		/// event, simulating any device source and event type you want.
@@ -724,12 +679,9 @@ namespace StereoKit
 		/// flag.</param>
 		/// <param name="pointer">The pointer data to pass along with this
 		/// simulated input event.</param>
-		public static void FireEvent  (InputSource eventSource, BtnState eventTypes, Pointer pointer)
+		[Obsolete]
+		public static void FireEvent(InputSource eventSource, BtnState eventTypes, Pointer pointer)
 		{
-			IntPtr arg = Marshal.AllocCoTaskMem(Marshal.SizeOf<Pointer>());
-			Marshal.StructureToPtr(pointer, arg, false);
-			NativeAPI.input_fire_event(eventSource, eventTypes, arg);
-			Marshal.FreeCoTaskMem(arg);
 		}
 	}
 }
