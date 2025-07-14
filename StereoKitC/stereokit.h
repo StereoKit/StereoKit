@@ -2279,9 +2279,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
-SK_API void                  input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
+SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 
