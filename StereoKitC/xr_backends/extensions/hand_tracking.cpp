@@ -343,13 +343,6 @@ void xr_ext_hand_tracking_update_states() {
 		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head.position.x, head.position.z}) > (near_dist*near_dist);
 		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
 		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
-
-		// Update the hand pointer
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
-		pointer->ray.pos     = inp_hand->aim.position;
-		pointer->ray.dir     = inp_hand->aim.orientation * vec3_forward;
-		pointer->orientation = inp_hand->aim.orientation;
-		pointer->tracked     = inp_hand->aim_ready;
 	}
 }
 

@@ -965,14 +965,19 @@ namespace StereoKit
 		/// <summary>Matches with right hand input sources.</summary>
 		HandRight    = 1 << 2,
 		/// <summary>Matches with Gaze category input sources.</summary>
+		[Obsolete("Use Input.Eyes")]
 		Gaze         = 1 << 4,
 		/// <summary>Matches with the head gaze input source.</summary>
+		[Obsolete("Use Input.Eyes")]
 		GazeHead     = 1 << 5,
 		/// <summary>Matches with the eye gaze input source.</summary>
+		[Obsolete("Use Input.Eyes")]
 		GazeEyes     = 1 << 6,
 		/// <summary>Matches with mouse cursor simulated gaze as an input source.</summary>
+		[Obsolete("Use Input.Eyes")]
 		GazeCursor   = 1 << 7,
 		/// <summary>Matches with any input source that has an activation button!</summary>
+		[Obsolete]
 		CanPress     = 1 << 8,
 	}
 
