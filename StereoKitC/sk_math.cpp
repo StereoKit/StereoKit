@@ -621,7 +621,7 @@ bool32_t bounds_ray_intersect_dist(bounds_t bounds, ray_t ray, float* out_distan
 		return false;
 	}
 
-	if (out_distance) *out_distance = t_near;
+	if (out_distance) *out_distance = t_near < 0 ? 0 : t_near;
 	return true;
 }
 
