@@ -767,7 +767,7 @@ bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_en
 
 	// Proper intersection check
 	vec3 closest_bounds = bounds_segment_closest(bounds, line_start, line_end);
-	vec3 closest_line   = line_start + line_closest_point_tdist(line_start, line_end, closest_bounds) * (line_end - line_start);
+	vec3 closest_line   = line_start + fmaxf(0,fminf(1,line_closest_point_tdist(line_start, line_end, closest_bounds))) * dir;
 	if (vec3_distance_sq(closest_bounds, closest_line) <= radius * radius) {
 		*out_at = closest_bounds;
 		return true;
