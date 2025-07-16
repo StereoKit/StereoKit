@@ -520,9 +520,20 @@ bool32_t interactor_check_box(const _interactor_t* actor, bounds_t box, vec3* ou
 	vec3     start_local = hierarchy_to_local_point(actor->capsule_start_world);
 	vec3     end_local   = hierarchy_to_local_point(actor->capsule_end_world  );
 	bool32_t result      = bounds_capsule_intersect(box, start_local, end_local, actor->capsule_radius, out_at);
-	if (actor->shape_type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->motion.position);
 	if (result) {
-		*out_distance = bounds_sdf(box, *out_at) + vec3_distance(*out_at, start_local);
+		*out_distance = bounds_sdf(box, *out_at);
+
+		// Line interactors need to choose the closest element they point at,
+		// since they're long lines that can intersect with a lot of different
+		// elements.
+		if (actor->shape_type == interactor_type_line)
+			*out_distance += vec3_distance(*out_at, start_local);
+	}
+	// Point interactors should always be intersecting from their position,
+	// even if they're just passing through. Some elements rely on this
+	// position for animation and activation.
+	if (actor->shape_type == interactor_type_point) {
+		*out_at = hierarchy_to_local_point(actor->motion.position);
 	}
 	return result;
 }

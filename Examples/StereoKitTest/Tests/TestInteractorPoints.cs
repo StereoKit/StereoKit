@@ -132,7 +132,7 @@ class TestInteractorPoints : ITest
 
 		Update u   = update[frame];
 		Vec3   pos = u.pos + elementCenter;
-		ray.Update(pos, prevPoint, new Pose(pos, Quat.LookDir(u.dir)), pos, Vec3.Zero, u.state, BtnState.Active);
+		ray.Update(prevPoint, pos, new Pose(pos, Quat.LookDir(u.dir)), pos, Vec3.Zero, u.state, BtnState.Active);
 		return false;
 	}
 

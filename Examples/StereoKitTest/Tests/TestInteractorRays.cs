@@ -116,6 +116,16 @@ class TestInteractorRays : ITest
 		}
 		UI.WindowEnd();
 
+		Pose pose = windowPose;
+		pose.position += pose.Forward * -0.1f;
+		UI.WindowBegin("Occluded UI", ref pose, V.XY(0.3f, 0.4f));
+		for (int i = 0; i < testUpdates.Length; i++)
+		{
+			if (UI.Button("Don't Press " + i))
+				Log.Err($"Pressed occluded button {i}!");
+		}
+		UI.WindowEnd();
+
 		frameIdx++;
 	}
 
