@@ -631,7 +631,7 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 	array_t<XrAction>* actions = &local.actions[type];
 
 	// Ensure we have capacity for this action
-	if (actions->count <= xra_val) {
+	if (actions->count <= (int32_t)xra_val) {
 		actions->resize(xra_val + 1);
 		for (int32_t i = actions->count; i < actions->capacity; i++)
 			actions->set(i, XR_NULL_HANDLE);
