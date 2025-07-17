@@ -100,7 +100,7 @@ void xr_ext_interaction_render_model_draw_others() {
 ///////////////////////////////////////////
 
 void xr_ext_interaction_render_model_draw_controller(handed_ hand) {
-	if (local.controller_idx[hand] >= 0)
+	if (local.controller_idx[hand] >= 0 && local.models)
 		_xr_ext_interaction_render_model_draw(&local.models[local.controller_idx[hand]]);
 }
 
