@@ -13,6 +13,7 @@
 #include "../systems/input.h"
 
 #include <float.h>
+#include <limits.h>
 
 ///////////////////////////////////////////
 
@@ -21,18 +22,19 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct interactor_state_t {
-	array_t<interactor_t> interactors;
-	id_hash_t             last_element;
-	bool32_t              show_volumes;
-	material_t            show_volume_mat;
-	mesh_t                show_volume_mesh;
+	array_t<_interactor_t> interactors;
+	int32_t                interactors_live;
+	id_hash_t              last_element;
+	bool32_t               show_volumes;
+	material_t             show_volume_mat;
+	mesh_t                 show_volume_mesh;
 
-	array_t<bool32_t>     enabled_stack;
-	array_t<id_hash_t>    id_stack;
+	array_t<bool32_t>      enabled_stack;
+	array_t<id_hash_t>     id_stack;
 
-	array_t<bool>         preserve_keyboard_stack;
-	id_hash_t             keyboard_focus_lost;
-	id_hash_t             keyboard_focus_lost_write;
+	array_t<bool>          preserve_keyboard_stack;
+	id_hash_t              keyboard_focus_lost;
+	id_hash_t              keyboard_focus_lost_write;
 };
 static interactor_state_t local = {};
 
@@ -68,7 +70,7 @@ void interaction_update() {
 	pose_t        head     = input_head();
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		interactor_t* actor = &local.interactors[i];
+		_interactor_t* actor = &local.interactors[i];
 
 		// Visualize the interactors.
 		/*if (actor->tracked & button_state_active) {
@@ -102,7 +104,7 @@ void interaction_update() {
 		actor->motion_prev         = actor->motion;
 
 		actor->secondary_motion    = vec3_zero;
-		actor->focus_priority      = FLT_MAX;
+		actor->focus_priority      = SHRT_MIN;
 		actor->focus_distance      = FLT_MAX;
 		actor->focused             = 0;
 		actor->active              = 0;
@@ -124,7 +126,7 @@ inline bounds_t size_box(vec3 top_left, vec3 dimensions) {
 
 ///////////////////////////////////////////
 
-void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_candidacy, interactor_id* out_interactor, vec3 *out_interaction_at_local) {
+void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_candidacy, interactor_t* out_interactor, vec3 *out_interaction_at_local) {
 	*out_interactor           = -1;
 	*out_focus_candidacy      = button_state_inactive;
 	*out_interaction_at_local = vec3_zero;
@@ -133,7 +135,7 @@ void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate
 	if (!ui_is_enabled()) return;
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		interactor_t *actor = &local.interactors[i];
+		_interactor_t *actor = &local.interactors[i];
 		if (interactor_is_preoccupied(actor, id, event_mask, false))
 			continue;
 
@@ -157,11 +159,11 @@ void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate
 			? size_box({ plate_start.x, plate_start.y, (plate_start.z + depth) - surface_offset }, { plate_size.x, plate_size.y, depth })
 			: size_box({ plate_start.x, plate_start.y, plate_start.z           - surface_offset }, { plate_size.x, plate_size.y, 0.0001f });
 
-		float         priority = 0;
+		float         distance = 0;
 		vec3          interact_at = vec3_zero;
 		bool          facing   = actor->shape_type == interactor_type_line ? vec3_dot(hierarchy_to_local_direction(actor->capsule_end_world - actor->capsule_start_world), vec3_forward) < 0 : true;
-		bool          in_box   = facing && interactor_check_box(actor, bounds, &interact_at, &priority);
-		button_state_ focus    = interactor_set_focus(actor, id, in_box, (actor->activation_type == interactor_activation_state && was_active), priority, priority, pose_identity, size_box({ plate_start.x, plate_start.y, plate_start.z - surface_offset }, { plate_size.x, plate_size.y, 0.0001f }), interact_at);
+		bool          in_box   = facing && interactor_check_box(actor, bounds, &interact_at, &distance);
+		button_state_ focus    = interactor_set_focus(actor, id, in_box, (actor->activation_type == interactor_activation_state && was_active), priority, distance, pose_identity, size_box({ plate_start.x, plate_start.y, plate_start.z - surface_offset }, { plate_size.x, plate_size.y, 0.0001f }), interact_at);
 		if (focus != button_state_inactive) {
 			*out_interactor           = gen_id_make(i, actor->generation);
 			*out_focus_candidacy      = focus;
@@ -172,7 +174,7 @@ void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, vec3 plate
 
 ///////////////////////////////////////////
 
-void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_candidacy, interactor_id* out_interactor) {
+void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_ *out_focus_candidacy, interactor_t* out_interactor) {
 	*out_interactor      = -1;
 	*out_focus_candidacy = button_state_inactive;
 	
@@ -180,7 +182,7 @@ void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unf
 	if (!ui_is_enabled()) return;
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		interactor_t* actor = &local.interactors[i];
+		_interactor_t* actor = &local.interactors[i];
 		if (interactor_is_preoccupied(actor, id, event_mask, false))
 			continue;
 
@@ -191,9 +193,9 @@ void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unf
 			: size_box(box_unfocused_start, box_unfocused_size);
 
 		vec3          at;
-		float         priority;
-		bool          in_box = interactor_check_box(actor, bounds, &at, &priority);
-		button_state_ focus  = interactor_set_focus(actor, id, in_box, (actor->activation_type == interactor_activation_state && was_active), priority, priority, pose_identity, size_box(box_unfocused_start, box_unfocused_size), at);
+		float         distance;
+		bool          in_box = interactor_check_box(actor, bounds, &at, &distance);
+		button_state_ focus  = interactor_set_focus(actor, id, in_box, (actor->activation_type == interactor_activation_state && was_active), priority, distance, pose_identity, size_box(box_unfocused_start, box_unfocused_size), at);
 		if (focus != button_state_inactive) {
 			*out_interactor      = gen_id_make(i, actor->generation);
 			*out_focus_candidacy = focus;
@@ -203,13 +205,14 @@ void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, vec3 box_unf
 
 ///////////////////////////////////////////
 
-bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures) {
 	bool result = false;
 
 	local.last_element = id;
 	if (!ui_is_enabled() || move_type == ui_move_none) return false;
 
 	matrix to_handle_parent_local = *hierarchy_to_local();
+	matrix handle_parent_to_world = *hierarchy_to_world();
 	hierarchy_push_pose(*ref_handle_pose);
 
 	interactor_event_ event_mask = (interactor_event_)0;
@@ -217,7 +220,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 	if (allowed_gestures & ui_gesture_grip ) event_mask = (interactor_event_)(event_mask | interactor_event_grip );
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		interactor_t* actor = &local.interactors[i];
+		_interactor_t* actor = &local.interactors[i];
 		// Skip this if something else has some focus!
 		if (interactor_is_preoccupied(actor, id, event_mask, false))
 			continue;
@@ -226,7 +229,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 		float hand_attention_dist = 0;
 		vec3  at;
 		bool  intersects = interactor_check_box(actor, handle_bounds, &at, &hand_attention_dist);
-		button_state_ focused = interactor_set_focus (actor, id, intersects, actor->active_prev == id, hand_attention_dist + 0.1f, hand_attention_dist, pose_identity, handle_bounds, at);
+		button_state_ focused = interactor_set_focus (actor, id, intersects, actor->active_prev == id, priority, hand_attention_dist, pose_identity, handle_bounds, at);
 		button_state_ active  = interactor_set_active(actor, id,
 			(actor->pinch_state & button_state_just_active && actor->focused_prev == id) ||
 			(actor->pinch_state & button_state_active      && actor->active_prev  == id));
@@ -290,6 +293,7 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 				fmaxf(0.01f, vec3_distance(actor->interaction_start_motion.position, actor->interaction_start_motion_anchor));
 			amplify_factor = powf(amplify_factor, amplify_factor > 1 ? amplify_push : amplify_pull);
 
+			// Find secondary motion from scroll wheels/analog sticks, etc.
 			vec3 secondary_motion = vec3_zero;
 			if      (actor->secondary_motion_dimensions == 1) { secondary_motion = actor->motion.orientation * vec3{ 0,0, actor->interaction_secondary_motion_total.x }; }
 			else if (actor->secondary_motion_dimensions == 2) { secondary_motion = actor->motion.orientation * vec3{ 0,0,-actor->interaction_secondary_motion_total.y }; }
@@ -309,6 +313,14 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 			if (actor->pinch_state & button_state_just_inactive) {
 				actor->active = 0;
 			}
+
+			// Update the focus pose with the updated position
+			actor->focus_pose_world = matrix_transform_pose(handle_parent_to_world, *ref_handle_pose);
+			matrix to_local_update = pose_matrix_inv(actor->focus_pose_world);
+			vec3 update_at;
+			if (bounds_capsule_intersect(handle_bounds, matrix_transform_pt(to_local_update, actor->capsule_start_world), matrix_transform_pt(to_local_update, actor->capsule_end_world), actor->capsule_radius, &update_at)) {
+				actor->focus_intersection_local = update_at - actor->focus_bounds_local.center;
+			}
 		}
 	}
 	hierarchy_pop();
@@ -317,8 +329,10 @@ bool32_t interaction_handle(id_hash_t id, pose_t* ref_handle_pose, bounds_t hand
 
 ///////////////////////////////////////////
 
-interactor_id interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions) {
-	interactor_t result = {};
+interactor_t interactor_create(interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions) {
+	local.interactors_live += 1;
+
+	_interactor_t result = {};
 	result.shape_type      = shape_type;
 	result.events          = events;
 	result.activation_type = activation_type;
@@ -341,18 +355,41 @@ interactor_id interactor_create(interactor_type_ shape_type, interactor_event_ e
 
 ///////////////////////////////////////////
 
-void interactor_destroy(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
-	if (actor) actor->generation = -actor->generation;
+void interactor_destroy(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
+	if (actor) {
+		actor->generation = -actor->generation;
+		local.interactors_live -= 1;
+	}
 }
 
 ///////////////////////////////////////////
 
-interactor_t* interactor_get(interactor_id interactor) {
+int32_t interactor_count() {
+	return local.interactors_live;
+}
+
+///////////////////////////////////////////
+
+interactor_t interactor_get(int32_t index) {
+	int32_t curr = 0;
+	for (int32_t i=0; i<local.interactors.count; i+=1) {
+		int32_t gen = local.interactors[i].generation;
+		if (gen_is_alive(gen)) {
+			if (curr == index) return gen_id_make(i, gen);
+			curr++;
+		}
+	}
+	return 0;
+}
+
+///////////////////////////////////////////
+
+_interactor_t* _interactor_get(interactor_t interactor) {
 	int32_t idx = gen_id_index(interactor);
 	if (idx >= local.interactors.count) return nullptr;
 
-	interactor_t* actor = &local.interactors[idx];
+	_interactor_t* actor = &local.interactors[idx];
 	return gen_id_valid_match(interactor, actor->generation)
 		? actor
 		: nullptr;
@@ -360,8 +397,8 @@ interactor_t* interactor_get(interactor_id interactor) {
 
 ///////////////////////////////////////////
 
-void interactor_update(interactor_id interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked) {
-	interactor_t* actor = interactor_get(interactor);
+void interactor_update(interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked) {
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor == nullptr) return;
 
 	actor->tracked     = tracked;
@@ -385,78 +422,94 @@ void interactor_update(interactor_id interactor, vec3 capsule_start, vec3 capsul
 
 ///////////////////////////////////////////
 
-void interactor_set_min_distance(interactor_id interactor, float min_distance) {
-	interactor_t* actor = interactor_get(interactor);
+void interactor_set_min_distance(interactor_t interactor, float min_distance) {
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) actor->min_distance = min_distance;
 }
 
 ///////////////////////////////////////////
 
-float interactor_get_min_distance(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+float interactor_get_min_distance(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->min_distance : 0;
 }
 
 ///////////////////////////////////////////
 
-void interactor_set_radius(interactor_id interactor, float radius) {
-	interactor_t* actor = interactor_get(interactor);
+vec3 interactor_get_capsule_start(const interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
+	return actor ? actor->capsule_start_world : vec3{};
+}
+
+///////////////////////////////////////////
+
+vec3 interactor_get_capsule_end(const interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
+	return actor ? actor->capsule_end_world : vec3{};
+}
+
+///////////////////////////////////////////
+
+void interactor_set_radius(interactor_t interactor, float radius) {
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) actor->capsule_radius = radius;
 }
 
 ///////////////////////////////////////////
 
-float interactor_get_radius(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+float interactor_get_radius(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->capsule_radius : 0;
 }
 
 ///////////////////////////////////////////
 
-button_state_ interactor_get_tracked(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+button_state_ interactor_get_tracked(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->tracked : button_state_inactive;
 }
 
 ///////////////////////////////////////////
 
-id_hash_t interactor_get_focused(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+id_hash_t interactor_get_focused(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->focused_prev : 0;
 }
 
 ///////////////////////////////////////////
 
-id_hash_t interactor_get_active(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+id_hash_t interactor_get_active(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->active_prev : 0;
 }
 
 ///////////////////////////////////////////
 
-bool32_t interactor_get_focus_bounds(interactor_id interactor, pose_t* out_pose_world, bounds_t* out_bounds_local) {
-	interactor_t* actor = interactor_get(interactor);
+bool32_t interactor_get_focus_bounds(interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local) {
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor == nullptr || actor->focused_prev == 0) {
 		if (out_pose_world  ) *out_pose_world   = pose_identity;
 		if (out_bounds_local) *out_bounds_local = {};
+		if (out_bounds_local) *out_at_local     = {};
 		return false;
 	}
 	if (out_pose_world  ) *out_pose_world   = actor->focus_pose_world;
 	if (out_bounds_local) *out_bounds_local = actor->focus_bounds_local;
+	if (out_at_local    ) *out_at_local     = actor->focus_intersection_local;
 	return true;
 }
 
 ///////////////////////////////////////////
 
-pose_t interactor_get_motion(interactor_id interactor) {
-	interactor_t* actor = interactor_get(interactor);
+pose_t interactor_get_motion(interactor_t interactor) {
+	_interactor_t* actor = _interactor_get(interactor);
 	return actor ? actor->motion : pose_identity;
 }
 
 ///////////////////////////////////////////
 
-bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out_at, float* out_priority) {
-	*out_priority = FLT_MAX;
+bool32_t interactor_check_box(const _interactor_t* actor, bounds_t box, vec3* out_at, float* out_distance) {
+	*out_distance = FLT_MAX;
 	*out_at       = vec3_zero;
 
 	if (actor == nullptr || !(actor->tracked & button_state_active))
@@ -468,22 +521,33 @@ bool32_t interactor_check_box(const interactor_t* actor, bounds_t box, vec3* out
 	vec3     start_local = hierarchy_to_local_point(actor->capsule_start_world);
 	vec3     end_local   = hierarchy_to_local_point(actor->capsule_end_world  );
 	bool32_t result      = bounds_capsule_intersect(box, start_local, end_local, actor->capsule_radius, out_at);
-	if (actor->shape_type == interactor_type_point) *out_at = hierarchy_to_local_point(actor->motion.position);
 	if (result) {
-		*out_priority = bounds_sdf(box, *out_at) + vec3_distance(*out_at, start_local);
+		*out_distance = bounds_sdf(box, *out_at);
+
+		// Line interactors need to choose the closest element they point at,
+		// since they're long lines that can intersect with a lot of different
+		// elements.
+		if (actor->shape_type == interactor_type_line)
+			*out_distance += vec3_distance(*out_at, start_local);
+	}
+	// Point interactors should always be intersecting from their position,
+	// even if they're just passing through. Some elements rely on this
+	// position for animation and activation.
+	if (actor->shape_type == interactor_type_point) {
+		*out_at = hierarchy_to_local_point(actor->motion.position);
 	}
 	return result;
 }
 
 ///////////////////////////////////////////
 
-button_state_ interactor_set_focus(interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, float priority, float distance, pose_t element_pose_local, bounds_t element_bounds_local, vec3 element_intersection_local) {
+button_state_ interactor_set_focus(_interactor_t* interactor, id_hash_t for_el_id, bool32_t physical_focused, bool32_t soft_focused, int32_t priority, float distance, pose_t element_pose_local, bounds_t element_bounds_local, vec3 element_intersection_local) {
 	if (interactor == nullptr) return button_state_inactive;
 	bool was_focused = interactor->focused_prev == for_el_id;
 	bool is_focused  = false;
 
 	bool focused = physical_focused || soft_focused;
-	if (focused && priority <= interactor->focus_priority) {
+	if (focused && (distance <= interactor->focus_distance || (distance <= interactor->capsule_radius && priority >= interactor->focus_priority))) {
 		if (distance >= interactor->min_distance || interactor->active_prev == for_el_id) {
 			is_focused = focused;
 			interactor->focused = for_el_id;
@@ -508,7 +572,7 @@ button_state_ interactor_set_focus(interactor_t* interactor, id_hash_t for_el_id
 
 ///////////////////////////////////////////
 
-button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_id, bool32_t active) {
+button_state_ interactor_set_active(_interactor_t* interactor, id_hash_t for_el_id, bool32_t active) {
 	if (interactor == nullptr) return button_state_inactive;
 
 	bool was_active = interactor->active_prev == for_el_id;
@@ -526,7 +590,7 @@ button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_i
 
 	button_state_ result = button_state_inactive;
 	if ( is_active               ) result  = button_state_active;
-	if ( is_active && !was_active) result |= button_state_just_active; 
+	if ( is_active && !was_active) result |= button_state_just_active;
 	if (!is_active &&  was_active) result |= button_state_just_inactive;
 	return result;
 }
@@ -535,7 +599,7 @@ button_state_ interactor_set_active(interactor_t* interactor, id_hash_t for_el_i
 
 bool32_t ui_id_focused(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->focused_prev == id) return true;
@@ -550,7 +614,7 @@ button_state_ ui_id_focus_state(id_hash_t id) {
 	bool is_focused  = false;
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->focused_prev      == id) is_focused  = true;
@@ -563,7 +627,7 @@ button_state_ ui_id_focus_state(id_hash_t id) {
 
 bool32_t ui_id_active(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_alive(actor->generation) && actor->active_prev == id)
 			return true;
 	}
@@ -577,7 +641,7 @@ button_state_ ui_id_active_state(id_hash_t id) {
 	bool is_active  = false;
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->active_prev      == id) is_active  = true;
@@ -588,9 +652,9 @@ button_state_ ui_id_active_state(id_hash_t id) {
 
 ///////////////////////////////////////////
 
-interactor_id ui_id_active_interactor(id_hash_t id) {
+interactor_t ui_id_active_interactor(id_hash_t id) {
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		if (actor->active_prev == id) return gen_id_make(i, actor->generation);
@@ -612,8 +676,8 @@ void ui_show_volumes(bool32_t show) {
 
 ///////////////////////////////////////////
 
-bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
-	if (interactor == nullptr || gen_is_dead(interactor->generation)) return true;
+bool32_t interactor_is_preoccupied(const _interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused) {
+	if (interactor == nullptr || gen_is_dead(interactor->generation) || interactor->tracked == button_state_inactive) return true;
 
 	// Check if this actor can interact, or if it's already busy with something
 	// else.
@@ -625,7 +689,7 @@ bool32_t interactor_is_preoccupied(const interactor_t* interactor, id_hash_t for
 	// Check if another interactor with the same source is already busy
 	if (interactor->input_source_id >= 0) {
 		for (int32_t i = 0; i < local.interactors.count; i++) {
-			const interactor_t* curr = &local.interactors[i];
+			const _interactor_t* curr = &local.interactors[i];
 
 			if ((curr                  != interactor)                  &&
 				(gen_is_alive(curr->generation))                       &&
@@ -643,7 +707,7 @@ button_state_ ui_last_element_active() {
 	bool was_active = false;
 	bool is_active  = false;
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		was_active = was_active || (actor->active_prev == local.last_element);
@@ -658,7 +722,7 @@ button_state_ ui_last_element_focused() {
 	bool was_focused = false;
 	bool is_focused  = false;
 	for (int32_t i = 0; i < local.interactors.count; i++) {
-		const interactor_t* actor = &local.interactors[i];
+		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
 		// Because focus can change at any point during the frame, we'll check

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2025 Qualcomm Technologies, Inc.
+
 #include "stereokit.h"
 #include "sk_math.h"
 #include "sk_math_dx.h"
@@ -600,20 +605,23 @@ bool32_t bounds_point_contains(bounds_t bounds, vec3 pt) {
 
 // From here: http://www.iquilezles.org/www/articles/intersectors/intersectors.htm
 bool32_t bounds_ray_intersect_dist(bounds_t bounds, ray_t ray, float* out_distance) {
-	vec3 rayRelative = ray.pos - bounds.center;
-	vec3 m = { 1.f / ray.dir.x, 1.f / ray.dir.y, 1.f / ray.dir.z };
-	vec3 n = m * rayRelative; 
-	vec3 k = vec3_abs(m) * bounds.dimensions/2;
-	vec3 t1 = -n - k;
-	vec3 t2 = -n + k;
-	float tN = fmaxf(fmaxf(t1.x, t1.y), t1.z);
-	float tF = fminf(fminf(t2.x, t2.y), t2.z);
-	if (tN > tF || tF < 0.0) {
+	vec3 ray_relative = ray.pos - bounds.center;
+	vec3 m = {
+		fabsf(ray.dir.x) > 1e-6f ? 1.f / ray.dir.x : 1e6f,
+		fabsf(ray.dir.y) > 1e-6f ? 1.f / ray.dir.y : 1e6f,
+		fabsf(ray.dir.z) > 1e-6f ? 1.f / ray.dir.z : 1e6f };
+	vec3  n      = m * ray_relative;
+	vec3  k      = vec3_abs(m) * bounds.dimensions/2;
+	vec3  t_min  = -n - k;
+	vec3  t_max  = -n + k;
+	float t_near = fmaxf(fmaxf(t_min.x, t_min.y), t_min.z);
+	float t_far  = fminf(fminf(t_max.x, t_max.y), t_max.z);
+	if (t_near > t_far || t_far < 0.0) {
 		if (out_distance) *out_distance = 0;
 		return false;
 	}
 
-	if (out_distance) *out_distance = tN;
+	if (out_distance) *out_distance = t_near < 0 ? 0 : t_near;
 	return true;
 }
 
@@ -759,7 +767,7 @@ bool32_t bounds_capsule_intersect(bounds_t bounds, vec3 line_start, vec3 line_en
 
 	// Proper intersection check
 	vec3 closest_bounds = bounds_segment_closest(bounds, line_start, line_end);
-	vec3 closest_line   = line_start + line_closest_point_tdist(line_start, line_end, closest_bounds) * (line_end - line_start);
+	vec3 closest_line   = line_start + fmaxf(0,fminf(1,line_closest_point_tdist(line_start, line_end, closest_bounds))) * dir;
 	if (vec3_distance_sq(closest_bounds, closest_line) <= radius * radius) {
 		*out_at = closest_bounds;
 		return true;

@@ -883,6 +883,85 @@ namespace StereoKit
 		Password     = 3,
 	}
 
+	/// <summary>Should this interactor behave like a single point in space interacting with
+	/// elements? Or should it behave more like an intangible line? Hit detection is
+	/// still capsule shaped, but behavior may change a little to reflect the primary
+	/// position of the point interactor. This can also be thought of as direct
+	/// interaction vs indirect interaction. </summary>
+	public enum InteractorType {
+		/// <summary>The interactor represents a physical point in space, such as a fingertip
+		/// or the point of a pencil. Points do not use directionality for their
+		/// interactions, nor do they take into account the distance of an element
+		/// along the 'ray' of the capsule. </summary>
+		Point,
+		/// <summary>The interactor represents a less tangible line or ray of interaction,
+		/// such as a laser pointer or eye gaze. Lines will occasionally consider the
+		/// directionality of the interactor to discard backpressing certain
+		/// elements,and use distance along the line for occluding elements that are
+		/// behind other elements.</summary>
+		Line,
+	}
+
+	/// <summary>A bit-flag mask for interaction event types. This allows or informs what type
+	/// of events an interactor can perform, or an element can respond to.</summary>
+	[Flags]
+	public enum InteractorEvent {
+		/// <summary>Poke events represent direct physical interaction with elements via a
+		/// single point. This might be like a fingertip pressing a button, or a
+		/// pencil tip on a page of a paper.</summary>
+		Poke         = 1 << 1,
+		/// <summary>Grip events represent the gripping gesture of the hand. This can also map
+		/// to something like the grip button on a controller. This is generally for
+		/// larger objects where humans have a tendency to make full fisted grasping
+		/// motions, like with door handles or sword hilts.</summary>
+		Grip         = 1 << 2,
+		/// <summary>Pinch events represent the pinching gesture of the hand, where the index
+		/// finger tip and thumb tip come together. This can also map to something
+		/// like the trigger button of a controller. This is generally for smaller
+		/// objects where humans tend to grasp more delicately with just their
+		/// fingertips, like with a pencil or switches.</summary>
+		Pinch        = 1 << 3,
+	}
+
+	/// <summary>TODO: is this redundant with interactor_type_?
+	/// This describes how an interactor activates elements. Does it use the physical
+	/// position of the interactor, or the activation state?</summary>
+	public enum InteractorActivation {
+		/// <summary>This interactor uses its `active` state to determine element
+		/// activation.</summary>
+		State,
+		/// <summary>This interactor uses its motion position to determine the element
+		/// activation.</summary>
+		Position,
+	}
+
+	/// <summary>A bit-flag for the current state of a button input.</summary>
+	[Flags]
+	public enum BtnState {
+		/// <summary>Is the button currently up, unpressed?</summary>
+		Inactive     = 0,
+		/// <summary>Is the button currently down, pressed?</summary>
+		Active       = 1 << 0,
+		/// <summary>Has the button just been released? Only true for a single frame.</summary>
+		JustInactive = 1 << 1,
+		/// <summary>Has the button just been pressed? Only true for a single frame.</summary>
+		JustActive   = 1 << 2,
+		/// <summary>Has the button just changed state this frame?</summary>
+		Changed      = JustInactive | JustActive,
+		/// <summary>Matches with all states!</summary>
+		Any          = 0x7FFFFFFF,
+	}
+
+	/// <summary>Options for what type of interactors StereoKit provides by default.</summary>
+	public enum DefaultInteractors {
+		/// <summary>StereoKit's default interactors, this provides an aim ray for a mouse,
+		/// aim rays for controllers, and aim, pinch, and poke interactors for hands.</summary>
+		Default,
+		/// <summary>Don't provide any interactors at all. This means you either don't want
+		/// interaction, or are providing your own custom interactors.</summary>
+		None,
+	}
+
 	/// <summary>What type of device is the source of the pointer? This is a
 	/// bit-flag that can contain some input source family information.</summary>
 	[Flags]
@@ -922,23 +1001,6 @@ namespace StereoKit
 		/// than doing a for loop with '2' as the condition! It's much clearer
 		/// when you can loop Hand.Max times instead.</summary>
 		Max          = 2,
-	}
-
-	/// <summary>A bit-flag for the current state of a button input.</summary>
-	[Flags]
-	public enum BtnState {
-		/// <summary>Is the button currently up, unpressed?</summary>
-		Inactive     = 0,
-		/// <summary>Is the button currently down, pressed?</summary>
-		Active       = 1 << 0,
-		/// <summary>Has the button just been released? Only true for a single frame.</summary>
-		JustInactive = 1 << 1,
-		/// <summary>Has the button just been pressed? Only true for a single frame.</summary>
-		JustActive   = 1 << 2,
-		/// <summary>Has the button just changed state this frame?</summary>
-		Changed      = JustInactive | JustActive,
-		/// <summary>Matches with all states!</summary>
-		Any          = 0x7FFFFFFF,
 	}
 
 	/// <summary>This is the tracking state of a sensory input in the world,
