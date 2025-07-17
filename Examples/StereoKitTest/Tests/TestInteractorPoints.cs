@@ -117,13 +117,7 @@ class TestInteractorPoints : ITest
 			}
 		}
 		UI.WindowEnd();
-
-		//if (timer < Time.Totalf) {
-		//	timer = Time.Totalf + 0.25f;
-		frameIdx++;
-		//}
 	}
-	static float timer = 0;
 
 	static bool TestUpdate(Interactor ray, Update[] update, Vec3 prevPoint, Vec3 elementCenter, int frame)
 	{

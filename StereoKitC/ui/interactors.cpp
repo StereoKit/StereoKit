@@ -13,6 +13,7 @@
 #include "../systems/input.h"
 
 #include <float.h>
+#include <limits.h>
 
 ///////////////////////////////////////////
 
