@@ -890,10 +890,15 @@ namespace StereoKit
 	/// interaction vs indirect interaction. </summary>
 	public enum InteractorType {
 		/// <summary>The interactor represents a physical point in space, such as a fingertip
-		/// or the point of a pencil. </summary>
+		/// or the point of a pencil. Points do not use directionality for their
+		/// interactions, nor do they take into account the distance of an element
+		/// along the 'ray' of the capsule. </summary>
 		Point,
 		/// <summary>The interactor represents a less tangible line or ray of interaction,
-		/// such as a laser pointer or eye gaze.</summary>
+		/// such as a laser pointer or eye gaze. Lines will occasionally consider the
+		/// directionality of the interactor to discard backpressing certain
+		/// elements,and use distance along the line for occluding elements that are
+		/// behind other elements.</summary>
 		Line,
 	}
 
@@ -947,8 +952,13 @@ namespace StereoKit
 		Any          = 0x7FFFFFFF,
 	}
 
+	/// <summary>Options for what type of interactors StereoKit provides by default.</summary>
 	public enum DefaultInteractors {
+		/// <summary>StereoKit's default interactors, this provides an aim ray for a mouse,
+		/// aim rays for controllers, and aim, pinch, and poke interactors for hands.</summary>
 		Default,
+		/// <summary>Don't provide any interactors at all. This means you either don't want
+		/// interaction, or are providing your own custom interactors.</summary>
 		None,
 	}
 

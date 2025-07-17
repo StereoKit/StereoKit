@@ -1864,10 +1864,15 @@ SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const c
   interaction vs indirect interaction. */
 typedef enum interactor_type_ {
 	/*The interactor represents a physical point in space, such as a fingertip
-	  or the point of a pencil. */
+	  or the point of a pencil. Points do not use directionality for their
+	  interactions, nor do they take into account the distance of an element
+	  along the 'ray' of the capsule. */
 	interactor_type_point,
 	/*The interactor represents a less tangible line or ray of interaction,
-	  such as a laser pointer or eye gaze.*/
+	  such as a laser pointer or eye gaze. Lines will occasionally consider the
+	  directionality of the interactor to discard backpressing certain
+	  elements,and use distance along the line for occluding elements that are
+	  behind other elements.*/
 	interactor_type_line,
 } interactor_type_;
 
@@ -1921,8 +1926,13 @@ typedef enum button_state_ {
 } button_state_;
 SK_MakeFlag(button_state_);
 
+/*Options for what type of interactors StereoKit provides by default.*/
 typedef enum default_interactors_ {
+	/*StereoKit's default interactors, this provides an aim ray for a mouse,
+	aim rays for controllers, and aim, pinch, and poke interactors for hands.*/
 	default_interactors_default,
+	/*Don't provide any interactors at all. This means you either don't want
+	interaction, or are providing your own custom interactors.*/
 	default_interactors_none,
 } default_interactors_;
 
