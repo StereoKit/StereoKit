@@ -436,12 +436,18 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 ///////////////////////////////////////////
 
 tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_format_ color_format, tex_format_ depth_format) {
-	tex_t result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
+	tex_t result;
+	if (color_format == tex_format_none && depth_format != tex_format_none) {
+		result = tex_create(tex_type_image_nomips | tex_type_depthtarget, depth_format);
 
-	tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
-	if (depth_format != tex_format_none)
-		tex_add_zbuffer(result, depth_format);
+		tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
+	} else {
+		result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
+		tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
+		if (depth_format != tex_format_none)
+			tex_add_zbuffer(result, depth_format);
+	}
 	return result;
 }
 
@@ -779,8 +785,9 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
 	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	else if (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -811,8 +818,9 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
 	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	else if (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -921,8 +929,9 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skg_mip_      use_mips = texture->type & tex_type_mips    ? skg_mip_generate : skg_mip_none;
 		skg_tex_type_ type     = skg_tex_type_image;
 		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
-		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
+		else if (texture->type & tex_type_zbuffer)      type = skg_tex_type_zbuffer;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
+		else if (texture->type & tex_type_depthtarget)  type = skg_tex_type_depthtarget;
 
 		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
 		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);

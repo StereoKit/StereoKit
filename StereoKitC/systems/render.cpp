@@ -1063,7 +1063,7 @@ void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projec
 ///////////////////////////////////////////
 
 void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
-	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
+	if (!(to_rendertarget->type & tex_type_rendertarget || to_rendertarget->type & tex_type_depthtarget || to_rendertarget->type & tex_type_zbuffer)) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}

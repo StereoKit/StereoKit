@@ -198,6 +198,11 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_sw
 
 	skg_event_begin("Present");
 	{
+		// If this is a zbuffer, then we don't need depth data after this point. We
+		// discard it if we can.
+		if (surface->tex->depth_buffer)
+			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+
 		// This copies the color data over to the swapchain, and resolves any
 		// multisampling on the primary target texture.
 		skg_tex_copy_to_swapchain(&surface->tex->tex, swapchain);
@@ -215,6 +220,11 @@ void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destin
 
 	skg_event_begin("Present to Tex");
 	{
+		// If this is a zbuffer, then we don't need depth data after this point. We
+		// discard it if we can.
+		if (surface->tex->depth_buffer)
+			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+
 		if (mat) {
 			material_set_texture(mat, "source", surface->tex);
 			render_blit(destination, mat);

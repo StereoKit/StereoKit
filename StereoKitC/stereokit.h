@@ -1016,8 +1016,14 @@ typedef enum tex_type_ {
 	  that might be passed in as a target to Renderer.Blit, or other
 	  such situations.*/
 	tex_type_rendertarget  = 1 << 2,
-	/*This texture contains depth data, not color data!*/
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
 	tex_type_depth         = 1 << 3,
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
+	tex_type_zbuffer       = 1 << 3,
 	/*This texture will generate mip-maps any time the contents
 	  change. Mip-maps are a list of textures that are each half the
 	  size of the one before them! This is used to prevent textures from
@@ -1027,6 +1033,10 @@ typedef enum tex_type_ {
 	  CPU (not renders)! This ensures the graphics card stores it
 	  someplace where writes are easy to do quickly.*/
 	tex_type_dynamic       = 1 << 5,
+	/*This texture contains depth data, not color data! It is writeable and
+	  readable. This makes it great for shadowmaps or other textures that need to
+	  be read from later on.*/
+	tex_type_depthtarget   = 1 << 6,
 	/*A standard color image that also generates mip-maps
 	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
