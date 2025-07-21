@@ -88,6 +88,11 @@ namespace StereoKit
 			get => NativeAPI.tex_get_sample(_inst);
 			set => NativeAPI.tex_set_sample(_inst, value); }
 
+		public TexSampleComp SampleComp {
+			get => NativeAPI.tex_get_sample_comp(_inst);
+			set => NativeAPI.tex_set_sample_comp(_inst, value);
+		}
+
 		/// <summary>When SampleMode is set to Anisotropic, this is the number
 		/// of samples the GPU takes to figure out the correct color. Default
 		/// is 4, and 16 is pretty high.</summary>

@@ -218,6 +218,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        tex_get_height      (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_sample      (IntPtr texture, TexSample sample = TexSample.Linear);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSample  tex_get_sample      (IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          tex_set_sample_comp (IntPtr texture, TexSampleComp compare = TexSampleComp.None);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSampleComp tex_get_sample_comp (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_address     (IntPtr texture, TexAddress address_mode = TexAddress.Wrap);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexAddress tex_get_address     (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_anisotropy  (IntPtr texture, int anisotropy_level = 4);

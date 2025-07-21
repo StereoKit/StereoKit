@@ -368,8 +368,14 @@ namespace StereoKit
 		/// that might be passed in as a target to Renderer.Blit, or other
 		/// such situations.</summary>
 		Rendertarget = 1 << 2,
-		/// <summary>This texture contains depth data, not color data!</summary>
+		/// <summary>This texture contains depth data, not color data! It is writeable, but
+		/// not readable. This makes it great for zbuffers, but not shadowmaps or
+		/// other textures that need to be read from later on.</summary>
 		Depth        = 1 << 3,
+		/// <summary>This texture contains depth data, not color data! It is writeable, but
+		/// not readable. This makes it great for zbuffers, but not shadowmaps or
+		/// other textures that need to be read from later on.</summary>
+		Zbuffer      = 1 << 3,
 		/// <summary>This texture will generate mip-maps any time the contents
 		/// change. Mip-maps are a list of textures that are each half the
 		/// size of the one before them! This is used to prevent textures from
@@ -379,6 +385,10 @@ namespace StereoKit
 		/// CPU (not renders)! This ensures the graphics card stores it
 		/// someplace where writes are easy to do quickly.</summary>
 		Dynamic      = 1 << 5,
+		/// <summary>This texture contains depth data, not color data! It is writeable and
+		/// readable. This makes it great for shadowmaps or other textures that need to
+		/// be read from later on.</summary>
+		Depthtarget  = 1 << 6,
 		/// <summary>A standard color image that also generates mip-maps
 		/// automatically.</summary>
 		Image        = ImageNomips | Mips,
@@ -514,6 +524,18 @@ namespace StereoKit
 		/// <summary>This helps reduce texture blurriness when a surface is
 		/// viewed at an extreme angle!</summary>
 		Anisotropic,
+	}
+
+	public enum TexSampleComp {
+		None         = 0,
+		Less,
+		LessOrEq,
+		Greater,
+		GreaterOrEq,
+		Equal,
+		NotEqual,
+		Always,
+		Never,
 	}
 
 	/// <summary>What happens when the shader asks for a texture coordinate

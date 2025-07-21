@@ -30,7 +30,7 @@ bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex
 bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
-void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
+void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -934,7 +934,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		else if (texture->type & tex_type_depthtarget)  type = skg_tex_type_depthtarget;
 
 		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
-		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);
+		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 		skg_tex_set_contents_arr(&new_tex, (const void**)array_data, array_count, mip_count, width, height, multisample);
 		skg_tex_t old_tex = texture->tex;
 		texture->tex = new_tex;
@@ -1086,7 +1086,7 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 
 ///////////////////////////////////////////
 
-void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	skg_tex_address_ skg_addr;
 	switch (address_mode) {
 	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
@@ -1103,17 +1103,32 @@ void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ addre
 	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skg_tex_settings(texture, skg_addr, skg_sample, anisotropy_level);
+	skg_sample_compare_ skg_compare;
+	switch (compare) {
+	case tex_sample_comp_none:          skg_compare = skg_sample_compare_none;          break;
+	case tex_sample_comp_less:          skg_compare = skg_sample_compare_less;          break;
+	case tex_sample_comp_less_or_eq: 	skg_compare = skg_sample_compare_less_or_eq;    break;
+	case tex_sample_comp_greater:       skg_compare = skg_sample_compare_greater;       break;
+	case tex_sample_comp_greater_or_eq: skg_compare = skg_sample_compare_greater_or_eq; break;
+	case tex_sample_comp_equal:         skg_compare = skg_sample_compare_equal;         break;
+	case tex_sample_comp_not_equal:     skg_compare = skg_sample_compare_not_equal;     break;
+	case tex_sample_comp_always:        skg_compare = skg_sample_compare_always;        break;
+	case tex_sample_comp_never:         skg_compare = skg_sample_compare_never;         break;
+	default:                            skg_compare = skg_sample_compare_none;          break;
+	}
+
+	skg_tex_settings(texture, skg_addr, skg_sample, skg_compare, anisotropy_level);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	texture->address_mode = address_mode;
 	texture->anisotropy   = anisotropy_level;
 	texture->sample_mode  = sample;
+	texture->sample_comp  = compare;
 
-	_tex_set_options(&texture->tex, sample, address_mode, anisotropy_level);
+	_tex_set_options(&texture->tex, sample, address_mode, texture->sample_comp, anisotropy_level);
 	tex_update_label(texture);
 }
 
@@ -1142,7 +1157,7 @@ int32_t tex_get_height(tex_t texture) {
 
 void tex_set_sample(tex_t texture, tex_sample_ sample) {
 	texture->sample_mode = sample;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1153,9 +1168,22 @@ tex_sample_ tex_get_sample(tex_t texture) {
 
 ///////////////////////////////////////////
 
+void tex_set_sample_comp(tex_t texture, tex_sample_comp_ compare) {
+	texture->sample_comp = compare;
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+tex_sample_comp_ tex_get_sample_comp(tex_t texture) {
+	return texture->sample_comp;
+}
+
+///////////////////////////////////////////
+
 void tex_set_address(tex_t texture, tex_address_ address_mode) {
 	texture->address_mode = address_mode;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1168,7 +1196,7 @@ tex_address_ tex_get_address(tex_t texture) {
 
 void tex_set_anisotropy(tex_t texture, int32_t anisotropy_level) {
 	texture->anisotropy = anisotropy_level;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////

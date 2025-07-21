@@ -1060,6 +1060,18 @@ typedef enum tex_sample_ {
 	tex_sample_anisotropic
 } tex_sample_;
 
+typedef enum tex_sample_comp_ {
+	tex_sample_comp_none = 0,
+	tex_sample_comp_less,
+	tex_sample_comp_less_or_eq,
+	tex_sample_comp_greater,
+	tex_sample_comp_greater_or_eq,
+	tex_sample_comp_equal,
+	tex_sample_comp_not_equal,
+	tex_sample_comp_always,
+	tex_sample_comp_never,
+} tex_sample_comp_;
+
 /*What happens when the shader asks for a texture coordinate
   that's outside the texture?? Believe it or not, this happens plenty
   often!*/
@@ -1120,6 +1132,8 @@ SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
+SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
+SK_API tex_sample_comp_ tex_get_sample_comp (tex_t texture);
 SK_API void         tex_set_address         (tex_t texture, tex_address_ address_mode sk_default(tex_address_wrap));
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
