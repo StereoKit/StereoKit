@@ -1,53 +1,26 @@
 ﻿using StereoKit;
+using StereoKit.Framework;
 using System;
 using System.Runtime.InteropServices;
 
 class DemoShadows : ITest
 {
-	[StructLayout(LayoutKind.Sequential)]
-	struct ShadowBuffer
-	{
-		public Matrix transform;
-		public float texSize;
-		public float bias;
-		public float biasSlope;
-		public float depthDistance;
-		public Vec3 lightDirection;
-		public float farScale;
-		public Vec3 lightColor;
-		public float biasFar;
-	}
+	DynamicShadows shadows;
 
-	Tex[] shadowMap    = new Tex[2];
-	Tex[] shadowMapFar = new Tex[2];
-	Model model;
-	MaterialBuffer<ShadowBuffer> shadowBuffer;
-	ShadowBuffer last;
-	Mesh cylinder;
+	Model    model;
+	Mesh     cylinder;
 	Material shadowMat;
 
 	SphericalHarmonics oldLighting;
-	Tex oldTex;
+	Tex                oldTex;
 
 	public void Initialize()
-	{ 
-		shadowBuffer = new MaterialBuffer<ShadowBuffer>(12);
-		const int resolution = 512;
-		for (int i = 0; i < shadowMap.Length; i++) {
-			shadowMap[i] = Tex.RenderTarget(resolution, resolution, 1, TexFormat.None, TexFormat.Depth16);
-			shadowMap[i].SampleMode  = TexSample.Linear;
-			shadowMap[i].SampleComp  = TexSampleComp.Less;
-			shadowMap[i].AddressMode = TexAddress.Clamp;
-			shadowMap[i].Id          = "app/shadow/zbuffer/"+i;
-
-			shadowMapFar[i] = Tex.RenderTarget(resolution, resolution, 1, TexFormat.None, TexFormat.Depth16);
-			shadowMapFar[i].SampleMode  = TexSample.Linear;
-			shadowMapFar[i].SampleComp  = TexSampleComp.Less;
-			shadowMapFar[i].AddressMode = TexAddress.Clamp;
-			shadowMapFar[i].Id          = "app/shadow/zbuffer/far_"+i;
-		}
+	{
+		shadows = SK.AddStepper(new DynamicShadows(1, Color.HSV(0.16f, 0.1f, 1.0f), 512));
 
 		model = Model.FromFile("Townscaper.glb", Shader.FromFile("Shaders/basic_shadow.hlsl"));
+		//model = Model.FromFile(@"C:\Data\GLTF\marsh.glb", Shader.FromFile("Shaders/basic_shadow.hlsl"));
+		model.PlayAnim(model.Anims[0], AnimMode.Loop);
 		cylinder = Mesh.GenerateCylinder(0.1f, 10, Vec3.Up);
 		shadowMat = new Material("Shaders/basic_shadow.hlsl");
 
@@ -121,24 +94,101 @@ class DemoShadows : ITest
 		//Vec3 sunLookAt = new Vec3(0,-1.5f,0);
 		//Vec3 sunDir    = (sunLookAt-sunPose.position).Normalized;
 
+		shadows.LightDirection = sunDir;
 
-		float size    = 1f;
-		float farSize = size * 4;
-		float nearClip = 0.01f;
-		float farClip  = 20.0f;
+		//Mesh.Quad  .Draw(shadowMat, Matrix.TRS(new Vec3(0,-2.5f,0),Quat.LookAt(Vec3.Zero, Vec3.UnitY, Vec3.UnitZ),4));
+		//Mesh.Sphere.Draw(shadowMat, Matrix.TS (new Vec3(0,-2,-0.5f), 0.5f));
+		model.Draw(Matrix.S(0.1f));
+		cylinder.Draw(shadowMat, Matrix.T(-0.2f,0,0));
+		//cylinder.Draw(Default.MaterialHand, Matrix.T(-0.2f,0,0));
 
-		Pose head = Input.Head;
+		Mesh.Sphere.Draw(Material.Unlit, Input.Hand(Handed.Right).palm.ToMatrix(0.01f), Color.White, RenderLayer.Vfx);
+	}
+}
+
+public class DynamicShadows : IStepper
+{
+	[StructLayout(LayoutKind.Sequential)]
+	struct ShadowBuffer
+	{
+		public Matrix transform;
+		public float texSize;
+		public float bias;
+		public float biasSlope;
+		public float depthDistance;
+		public Vec3  lightDirection;
+		public float farScale;
+		public Vec3  lightColor;
+		public float biasFar;
+	}
+
+	Tex[] shadowMap    = new Tex[2];
+	Tex[] shadowMapFar = new Tex[2];
+	MaterialBuffer<ShadowBuffer> shadowBuffer;
+	ShadowBuffer last;
+
+	private Color _lightColor;
+
+	public int   Resolution { get; private set; }
+	public Color LightColor { get => _lightColor.ToGamma(); set => _lightColor = value.ToLinear(); }
+	public float Size;
+
+	public float Bias      = 50.0f  / ushort.MaxValue;
+	public float BiasSlope = 800.0f / ushort.MaxValue;
+
+	public float NearClip          = 0.01f;
+	public float FarClip           = 20;
+	public float CascadeMultiplier = 4;
+	public Vec3  LightDirection;
+
+	public bool Enabled => true;
+
+	public DynamicShadows(float sizeMeters, Color colorGamma, int resolution = 512)
+	{
+		Size       = sizeMeters;
+		Resolution = resolution;
+		LightColor = colorGamma;
+	}
+
+	public bool Initialize()
+	{
+		shadowBuffer = new MaterialBuffer<ShadowBuffer>(12);
+		for (int i = 0; i < shadowMap.Length; i++) {
+			shadowMap   [i] = Tex.RenderTarget(Resolution, Resolution, 1, TexFormat.None, TexFormat.Depth16);
+			shadowMap   [i].SampleMode  = TexSample.Linear;
+			shadowMap   [i].SampleComp  = TexSampleComp.Less;
+			shadowMap   [i].AddressMode = TexAddress.Clamp;
+			shadowMap   [i].Id          = "app/shadow/zbuffer/"+i;
+
+			shadowMapFar[i] = Tex.RenderTarget(Resolution, Resolution, 1, TexFormat.None, TexFormat.Depth16);
+			shadowMapFar[i].SampleMode  = TexSample.Linear;
+			shadowMapFar[i].SampleComp  = TexSampleComp.Less;
+			shadowMapFar[i].AddressMode = TexAddress.Clamp;
+			shadowMapFar[i].Id          = "app/shadow/zbuffer/far_"+i;
+		}
+		return true;
+	}
+
+	public void Shutdown()
+	{
+	}
+
+	public void Step()
+	{
+		Pose head       = Input.Head;
 		Vec3 forward    = head.Forward.X0Z.Normalized;
-		Vec3 forwardPos = head.position.X0Z + forward * 0.5f * size;
+		Vec3 forwardPos = head.position.X0Z + forward * 0.5f * Size;
+		Vec3 lightDir   = LightDirection.Normalized;
 
 		// Stabilize the shadow map so we don't get sparkles when moving the camera
-		sunPose.position    = sunDir * -10;
-		sunPose.orientation = Quat.LookAt(Vec3.Zero, sunDir, Vec3.Up);
+		Pose sunPose;
+		sunPose.position    = lightDir * -10;
+		sunPose.orientation = Quat.LookAt(Vec3.Zero, lightDir, Vec3.Up);
 		Vec3 localP      = forwardPos - sunPose.position;
 		Vec2 planeCoords = new Vec2(
 			Vec3.Dot(localP, sunPose.orientation * Vec3.UnitX),
 			Vec3.Dot(localP, sunPose.orientation * Vec3.UnitY) );
-		float texelSize = farSize / shadowMapFar[0].Width;
+		float texelSize = (Size * CascadeMultiplier) / shadowMapFar[0].Width;
 		Vec2  texCoords = planeCoords / texelSize;
 		texCoords = new Vec2((float)Math.Round(texCoords.x), (float)Math.Round(texCoords.y));
 		Vec2 quantizedPlaneCoords = texCoords * texelSize;
@@ -147,29 +197,25 @@ class DemoShadows : ITest
 			(sunPose.orientation * Vec3.UnitY) * quantizedPlaneCoords.y;
 
 		sunPose.position = quantizedPos;
-		//sunPose.position    = forwardPos - sunDir * 10;
 
-
-		Matrix view = Matrix.TR(sunPose.position, sunPose.orientation);
-		//Matrix view = Matrix.TR          (shadowPos, Quat.LookDir(sunDir));
-		Matrix proj    = Matrix.Orthographic(size,    size,    nearClip, farClip);
-		Matrix projFar = Matrix.Orthographic(farSize, farSize, nearClip, farClip);
+		Matrix view    = Matrix.TR(sunPose.position, sunPose.orientation);
+		Matrix proj    = Matrix.Orthographic(Size,                   Size,                   NearClip, FarClip);
+		Matrix projFar = Matrix.Orthographic(Size*CascadeMultiplier, Size*CascadeMultiplier, NearClip, FarClip);
 
 		int renderTo   = (int)( Time.Frame                                  % (ulong)shadowMap.Length);
 		int renderFrom = (int)((Time.Frame + ((ulong)shadowMap.Length - 1)) % (ulong)shadowMap.Length);
 
-		Color lightColor = Color.HSV(0.16f, 0.1f, 1.0f).ToLinear();
 		ShadowBuffer curr = new ShadowBuffer
 		{
-			transform = (view.Inverse * proj).Transposed,
-			texSize   = 1.0f / shadowMap[renderTo].Width,
-			bias      = bias,
-			biasSlope = biasSlope,
-			biasFar   = biasSlope,
-			depthDistance = farClip - nearClip,
-			lightDirection = -sunDir,
-			farScale = farSize/size,
-			lightColor = V.XYZ(lightColor.r, lightColor.g, lightColor.b),
+			transform      = (view.Inverse * proj).Transposed,
+			texSize        = 1.0f / shadowMap[renderTo].Width,
+			bias           = Bias,
+			biasSlope      = BiasSlope,
+			biasFar        = BiasSlope,
+			depthDistance  = FarClip - NearClip,
+			lightDirection = -lightDir,
+			farScale       = CascadeMultiplier,
+			lightColor     = V.XYZ(_lightColor.r, _lightColor.g, _lightColor.b),
 		};
 		shadowBuffer.Set(last);
 		last = curr;
@@ -178,15 +224,9 @@ class DemoShadows : ITest
 		Renderer.RenderTo(shadowMapFar[renderTo], view, projFar, RenderLayer.All &~ RenderLayer.Vfx);
 		Renderer.SetGlobalTexture(12, shadowMap   [renderFrom]);
 		Renderer.SetGlobalTexture(13, shadowMapFar[renderFrom]);
+	}
 
-		//Mesh.Quad  .Draw(shadowMat, Matrix.TRS(new Vec3(0,-2.5f,0),Quat.LookAt(Vec3.Zero, Vec3.UnitY, Vec3.UnitZ),4));
-		//Mesh.Sphere.Draw(shadowMat, Matrix.TS (new Vec3(0,-2,-0.5f), 0.5f));
-		model.Draw(Matrix.S(0.1f));
-		cylinder.Draw(shadowMat, Matrix.T(-0.2f,0,0));
-
-		Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(sunPose.position, 0.1f), Color.White, RenderLayer.Vfx);
-		Lines.Add(sunPose.position + sunPose.Right*size*0.5f, sunPose.position - sunPose.Right*size*0.5f, new Color32(255,200,200,255), 0.01f);
-		Lines.Add(sunPose.position + sunPose.Up   *size*0.5f, sunPose.position - sunPose.Up   *size*0.5f, new Color32(200,255,200,255), 0.01f);
-		//Lines.Add(sunPose.position, sunPose.position + sunPose.Forward * size * (20.0f - 0.01f), new Color32(200, 255, 200, 255), 0.01f);
+	public void DebugDraw()
+	{
 	}
 }
