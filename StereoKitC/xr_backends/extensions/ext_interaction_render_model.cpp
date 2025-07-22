@@ -9,6 +9,7 @@
 #include "ext_interaction_render_model.h"
 #include "ext_render_model.h"
 #include "ext_management.h"
+#include "../../systems/render.h"
 
  ///////////////////////////////////////////
 
@@ -82,7 +83,7 @@ void _xr_ext_interaction_render_model_draw(xr_render_model_t *model) {
 		(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
 		XrVector3f    p = loc.pose.position;
 		XrQuaternionf r = loc.pose.orientation;
-		model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, { r.x, r.y, r.z, r.w }));
+		model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, { r.x, r.y, r.z, r.w }) * render_get_cam_final());
 	}
 }
 
