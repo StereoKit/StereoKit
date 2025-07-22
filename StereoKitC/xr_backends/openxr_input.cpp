@@ -470,15 +470,6 @@ void oxri_update_poses() {
 	// called separate from button press and tracking events to prevent
 	// issues with hiding 'just_active/inactive' events.
 
-	// Update our action set with up-to-date input data!
-	XrActiveActionSet action_set = { };
-	action_set.actionSet     = local.action_set;
-	action_set.subactionPath = XR_NULL_PATH;
-	XrActionsSyncInfo sync_info = { XR_TYPE_ACTIONS_SYNC_INFO };
-	sync_info.countActiveActionSets = 1;
-	sync_info.activeActionSets      = &action_set;
-	xrSyncActions(xr_session, &sync_info);
-
 	// Track the head location, and use it to determine the tracking state of
 	// the world.
 	XrSpaceLocation head_location = { XR_TYPE_SPACE_LOCATION };
@@ -528,7 +519,18 @@ void oxri_update_frame(void*) {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED)
 		return;
 
-	// This function call already syncs OpenXR actions
+	// Update our action set with up-to-date input data!
+	XrActiveActionSet action_set = { };
+	action_set.actionSet = local.action_set;
+	action_set.subactionPath = XR_NULL_PATH;
+	XrActionsSyncInfo sync_info = { XR_TYPE_ACTIONS_SYNC_INFO };
+	sync_info.countActiveActionSets = 1;
+	sync_info.activeActionSets = &action_set;
+	xrSyncActions(xr_session, &sync_info);
+
+	// Update poses, this is separate because we update poses multiple times
+	// per frame, once at the start, and once when we have our "predicted time"
+	// for low latency poses.
 	oxri_update_poses();
 
 	for (int32_t i = 0; i < local.actions[xra_type_bool].count; i++) {

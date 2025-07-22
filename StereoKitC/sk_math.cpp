@@ -81,7 +81,13 @@ quat quat_lookat_up(const vec3 &from, const vec3 &at, const vec3 &up) {
 	if (from.x == at.x && from.y == at.y && from.z == at.z)
 		return quat_identity;
 
-	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), math_vec3_to_fast(up));
+	// Check if up vector is zero and replace with default up vector
+	vec3 safe_up = up;
+	if (up.x == 0.0f && up.y == 0.0f && up.z == 0.0f) {
+		safe_up = vec3{0, 1, 0}; // Default up vector (Y-axis)
+	}
+
+	XMMATRIX mat = XMMatrixLookAtRH(math_vec3_to_fast(from), math_vec3_to_fast(at), math_vec3_to_fast(safe_up));
 	return math_fast_to_quat(XMQuaternionRotationMatrix(XMMatrixTranspose(mat)));
 }
 
