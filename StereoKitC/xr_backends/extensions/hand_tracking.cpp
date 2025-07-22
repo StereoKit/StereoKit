@@ -16,6 +16,7 @@
 #include "../../systems/input.h"
 #include "../../systems/render.h"
 #include "../../hands/input_hand.h"
+#include "../../libraries/stref.h"
 
 #define XR_EXT_FUNCTIONS( X )  \
 	X(xrCreateHandTrackerEXT)  \
@@ -27,6 +28,7 @@ typedef struct xr_hand_tracking_state_t {
 	bool             has_data_source;
 	bool             available;
 	bool             hand_active;
+	bool             tip_fix;
 	float            hand_joint_scale;
 	XrHandTrackerEXT hand_tracker[2];
 	sk::hand_joint_t hand_joints [2][26];
@@ -158,6 +160,12 @@ xr_system_ xr_ext_hand_tracking_initialize(void*) {
 	local.available        = true;
 	local.hand_joint_scale = 1;
 
+	// The Oculus runtime adds an offset position to the fingertips, so we
+	// apply a fix to put them in the right place.
+	if (string_startswith(device_get_runtime(), "Oculus")) {
+		local.tip_fix = true;
+	}
+
 	device_data.has_hand_tracking = true;
 
 	// Register this extension's functionality with our hand management system.
@@ -282,6 +290,16 @@ void xr_ext_hand_tracking_update_joints() {
 			local.hand_joints[h][j].radius      = locations.jointLocations[j].radius * local.hand_joint_scale;
 			local.hand_joints[h][j].position    = matrix_transform_pt(root, local.hand_joints[h][j].position);
 			local.hand_joints[h][j].orientation = local.hand_joints[h][j].orientation * root_q;
+		}
+
+		// Some runtimes provide the finger tip at the very tip of the finger,
+		// rather than the tip minus the radius. This will make the finger too
+		// long when adding the radius, so we add this offset manually here.
+		if (local.tip_fix) {
+			for (int32_t t = 0; t < 5; t++) {
+				int32_t idx = 1 + t * 5 + hand_joint_tip;
+				local.hand_joints[h][idx].position += local.hand_joints[h][idx].orientation * vec3{ 0,0,local.hand_joints[h][idx].radius };
+			}
 		}
 
 		// Copy the pose data into our hand
