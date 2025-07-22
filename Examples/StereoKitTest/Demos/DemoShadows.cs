@@ -56,7 +56,7 @@ class DemoShadows : ITest
 
 		SphericalHarmonics ambient = new SphericalHarmonics();
 		ambient.Add( Vec3.UnitY, Color.HSV(0.55f, 0.3f,  0.4f).ToLinear());
-		ambient.Add(-Vec3.UnitY, Color.HSV(0.0f,  0.05f, 0.2f).ToLinear());
+		ambient.Add(-Vec3.UnitY, Color.HSV(0.0f,  0.01f, 0.15f).ToLinear());
 		SphericalHarmonics ambientSky = ambient;
 		ambientSky.Brightness(2.5f);
 
@@ -71,20 +71,44 @@ class DemoShadows : ITest
 	}
 
 	Pose sunPose = new Pose(V.XYZ(0.2f,0.6f,-1.001f)*20);
-	float angle = 1;
-	float bias      = 4.0f / ushort.MaxValue;
-	float biasSlope = 40.0f / ushort.MaxValue;
+	Vec3 sunDir = -Vec3.UnitY;
+	float angleX = 1;
+	float angleY = 1;
+	float bias      = 50.0f  / ushort.MaxValue;
+	float biasSlope = 800.0f / ushort.MaxValue;
 	public void Step()
 	{
-		if (Input.Key(Key.K).IsActive()) angle -= 0.01f;
-		if (Input.Key(Key.L).IsActive()) angle += 0.01f;
+		if (Input.Key(Key.K).IsActive()) angleX  -= 0.01f;
+		if (Input.Key(Key.L).IsActive()) angleX  += 0.01f;
+
+		if (Input.Key(Key.I).IsActive()) angleY -= 0.01f;
+		if (Input.Key(Key.O).IsActive()) angleY += 0.01f;
+
+		Controller c = Input.Controller(Handed.Right);
+		//if (c.grip > 0.5f)
+		//{
+		//	sunDir = c.stick.X0Y;
+		//	sunDir.y = -1;
+		//	sunDir = sunDir.Normalized;
+		//}
+		//else
+		{
+			float cosX = (float)Math.Cos(angleX);
+			float sinX = (float)Math.Sin(angleX);
+			float cosY = (float)Math.Cos(angleY);
+			float sinY = (float)Math.Sin(angleY);
+			sunDir = -V.XYZ(
+				cosX * sinY,
+				sinX,
+				cosX * cosY);
+		}
 
 
-		if (Input.Key(Key.H).IsJustActive()) { bias += 1.0f / ushort.MaxValue; Log.Info($"Bias: {bias*ushort.MaxValue}"); }
-		if (Input.Key(Key.N).IsJustActive()) { bias -= 1.0f / ushort.MaxValue; Log.Info($"Bias: {bias*ushort.MaxValue}"); }
+		if (Input.Key(Key.H).IsJustActive()) { bias += 10.0f / ushort.MaxValue; Log.Info($"Bias: {bias * ushort.MaxValue}"); }
+		if (Input.Key(Key.N).IsJustActive()) { bias -= 10.0f / ushort.MaxValue; Log.Info($"Bias: {bias*ushort.MaxValue}"); }
 
-		if (Input.Key(Key.J).IsJustActive()) { biasSlope += 1.0f / ushort.MaxValue; Log.Info($"Bias Slope: {biasSlope*ushort.MaxValue}"); }
-		if (Input.Key(Key.M).IsJustActive()) { biasSlope -= 1.0f / ushort.MaxValue; Log.Info($"Bias Slope: {biasSlope*ushort.MaxValue}"); }
+		if (Input.Key(Key.J).IsJustActive()) { biasSlope += 10.0f / ushort.MaxValue; Log.Info($"Bias Slope: {biasSlope*ushort.MaxValue}"); }
+		if (Input.Key(Key.M).IsJustActive()) { biasSlope -= 10.0f / ushort.MaxValue; Log.Info($"Bias Slope: {biasSlope*ushort.MaxValue}"); }
 
 		UI.Handle("sun", ref sunPose, new Bounds(Vec3.One*0.1f));
 		//sunPose.position = Vec3.AngleXZ(Time.Totalf*90, 1);
@@ -98,15 +122,16 @@ class DemoShadows : ITest
 		//Vec3 sunDir    = (sunLookAt-sunPose.position).Normalized;
 
 
-		float size    = 2;
-		float farSize = size * 10;
+		float size    = 1f;
+		float farSize = size * 4;
+		float nearClip = 0.01f;
+		float farClip  = 20.0f;
 
 		Pose head = Input.Head;
 		Vec3 forward    = head.Forward.X0Z.Normalized;
 		Vec3 forwardPos = head.position.X0Z + forward * 0.5f * size;
 
 		// Stabilize the shadow map so we don't get sparkles when moving the camera
-		Vec3 sunDir = -V.XYZ(0, (float)Math.Sin(angle), (float)Math.Cos(angle));
 		sunPose.position    = sunDir * -10;
 		sunPose.orientation = Quat.LookAt(Vec3.Zero, sunDir, Vec3.Up);
 		Vec3 localP      = forwardPos - sunPose.position;
@@ -127,8 +152,8 @@ class DemoShadows : ITest
 
 		Matrix view = Matrix.TR(sunPose.position, sunPose.orientation);
 		//Matrix view = Matrix.TR          (shadowPos, Quat.LookDir(sunDir));
-		Matrix proj    = Matrix.Orthographic(size,    size,    0.01f, 20);
-		Matrix projFar = Matrix.Orthographic(farSize, farSize, 0.01f, 20);
+		Matrix proj    = Matrix.Orthographic(size,    size,    nearClip, farClip);
+		Matrix projFar = Matrix.Orthographic(farSize, farSize, nearClip, farClip);
 
 		int renderTo   = (int)( Time.Frame                                  % (ulong)shadowMap.Length);
 		int renderFrom = (int)((Time.Frame + ((ulong)shadowMap.Length - 1)) % (ulong)shadowMap.Length);
@@ -141,7 +166,7 @@ class DemoShadows : ITest
 			bias      = bias,
 			biasSlope = biasSlope,
 			biasFar   = biasSlope,
-			depthDistance = 20.0f - 0.01f,
+			depthDistance = farClip - nearClip,
 			lightDirection = -sunDir,
 			farScale = farSize/size,
 			lightColor = V.XYZ(lightColor.r, lightColor.g, lightColor.b),

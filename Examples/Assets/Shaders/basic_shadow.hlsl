@@ -53,8 +53,15 @@ psIn vs(vsIn input, sk_vs_input_t sk_in) {
 
 	float4 world = mul(input.pos, sk_inst[id].world);
 	o.pos        = mul(world,     sk_viewproj[view_id]);
+	
+	float3 normal = normalize(mul(input.norm, (float3x3) sk_inst[id].world));
+	o.shadow_ndotl = dot(normal, light_direction);
 
-	float4 shadow_pos = mul(float4(world.xyz, 1), shadowmap_transform);
+	// Apply bias to the shadow map position directly in world space:
+	// https://c0de517e.blogspot.com/2011/05/shadowmap-bias-notes.html
+	float  slope      = saturate(min(1, sqrt(1 - o.shadow_ndotl * o.shadow_ndotl) / o.shadow_ndotl));
+	float3 bias       = normal * (shadowmap_bias + shadowmap_bias_slope * slope);
+	float4 shadow_pos = mul(float4(world.xyz + bias, 1), shadowmap_transform);
 	o.shadow_uv = float3(shadow_pos.xy, shadow_pos.z / shadow_pos.w);
 	// In GL, shadow_pos.z/shadow_pos.w seems to be in the range [-1, 1], so we
 	// need to adjust it to [0, 1] to match D3D. There's also a flip in the Y
@@ -64,15 +71,6 @@ psIn vs(vsIn input, sk_vs_input_t sk_in) {
 #else
 	o.shadow_uv.xy = o.shadow_uv.xy * float2(0.5f, -0.5f) + 0.5;
 #endif
-	//o.shadow_uv.z -= shadowmap_bias;
-
-
-	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
-	o.shadow_ndotl = dot(normal, light_direction);
-
-	float cos_alpha = saturate(o.shadow_ndotl);
-	float tan_alpha  = min(1, sqrt(1 - cos_alpha * cos_alpha) / cos_alpha);
-	o.shadow_uv.z -= shadowmap_bias +shadowmap_bias_slope * tan_alpha;
 	
 	o.world      = world.xyz;
 	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
@@ -85,9 +83,6 @@ psIn vs(vsIn input, sk_vs_input_t sk_in) {
 
 // Fast
 float shadow_factor_fast(float3 uv) {
-	//float shadow_depth = shadow_map.Sample(shadow_map_s, uv.xy).r;
-	//return (shadow_depth + shadowmap_bias < uv.z) ? 0.1 : 1.0;
-
 	if (any(uv.xy != saturate(uv.xy))) { // Check if this is the far cascade or the near one
 		return shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, (uv.xy - 0.5) / far_scale + 0.5, uv.z);
 	} else {
@@ -149,15 +144,14 @@ float shadow_factor_pcf3(float3 uv, float scale) {
 	if (any(uv.xy != saturate(uv.xy))) { // Check if this is the far cascade or the near one
 		// Convert this to the far cascade space
 		uv.xy = (uv.xy - 0.5) / far_scale + 0.5;
-		uv.z -= bias_far;
-		//return shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, uv.xy, uv.z);
-		for (int x = -1; x <= 1; x++) {
-			for (int y = -1; y <= 1; y++) {
-				float2 offset = float2(x, y) * radius;
-				shadow_factor += shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, uv.xy + offset, uv.z);
-			}
-		}
-		return shadow_factor / 9.0;
+		return shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, uv.xy, uv.z);
+		//for (int x = -1; x <= 1; x++) {
+		//	for (int y = -1; y <= 1; y++) {
+		//		float2 offset = float2(x, y) * radius;
+		//		shadow_factor += shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, uv.xy + offset, uv.z);
+		//	}
+		//}
+		//return shadow_factor / 9.0;
 	} else {
 		for (int x = -1; x <= 1; x++) {
 			for (int y = -1; y <= 1; y++) {
@@ -457,7 +451,7 @@ float4 ps(psIn input) : SV_TARGET {
 	col.a = 1;
 	
 	float shadow_factor = input.shadow_ndotl;
-	if (shadow_factor < 0.0) {
+	if (shadow_factor <= 0.0) {
 		shadow_factor = 0.0;
 	} else {
 		//shadow_factor = min(shadow_factor, shadow_factor_fast(input.shadow_uv));
